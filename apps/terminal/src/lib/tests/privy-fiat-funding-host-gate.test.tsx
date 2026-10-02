@@ -7,8 +7,8 @@ import { createRoot, type Root } from "react-dom/client";
 import { toast } from "sonner";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 // Transform the subject during collection; every test re-evaluates it after resetting modules.
-import "@/components/trade/tradebox/privy-fiat-funding-host-gate";
-import "@/components/ui/sonner";
+import "@/components/app-toaster";
+import "@/components/trade/tradebox/privy-fiat-funding-host";
 import "@/lib/trade/privy-fiat-funding-launch";
 import { installSonnerClock } from "./harness/sonner-clock";
 
@@ -17,6 +17,7 @@ const OTHER = "0x2222222222222222222222222222222222222222";
 const HOST_MODULE = "@/components/trade/tradebox/privy-fiat-funding-host";
 const UNAVAILABLE = "Card purchase could not open. Check your connection and try again.";
 const IMPORT_ERROR = "Failed to fetch dynamically imported module";
+const OTHER_NOTIFICATIONS = ["another-earlier", "another-later"] as const;
 
 const session = vi.hoisted(() => {
 	let state = { clientKey: "", isTestnet: false };
@@ -34,6 +35,20 @@ const session = vi.hoisted(() => {
 	};
 });
 
+const sdk = vi.hoisted(() => ({ fund: vi.fn() }));
+
+vi.mock("@/components/trade/order-notification-gate", () => ({ OrderNotificationGate: () => null }));
+vi.mock("@/components/trade/tradebox/cctp-deposit-tracking-notifier", () => ({
+	CctpDepositTrackingNotifier: () => null,
+}));
+vi.mock("@/components/funds-action/funds-action-recovery-host", () => ({ FundsActionRecoveryHost: () => null }));
+vi.mock("@privy-io/react-auth", () => ({
+	useFiatOnramp: () => ({ fund: sdk.fund }),
+	useModalStatus: () => ({ isOpen: false }),
+}));
+vi.mock("@/hooks/trade/use-privy-fiat-funding-destination", () => ({
+	usePrivyFiatFundingDestination: () => ({ address: OWNER, walletKind: "embedded" }),
+}));
 vi.mock("@/lib/hyperliquid", async () => {
 	const { useSyncExternalStore } = await import("react");
 	return {
@@ -48,12 +63,12 @@ vi.mock("@/stores/use-global-settings-store", async (importOriginal) => {
 	};
 });
 
+/** The production toaster as the application mounts it, with only its unrelated hosts left out. */
 async function loadSubject() {
 	const launch = await import("@/lib/trade/privy-fiat-funding-launch");
-	const { PrivyFiatFundingHostGate } = await import("@/components/trade/tradebox/privy-fiat-funding-host-gate");
+	const { AppToaster } = await import("@/components/app-toaster");
 	const store = await import("@/stores/use-privy-fiat-funding-store");
-	const { Toaster } = await import("@/components/ui/sonner");
-	return { ...launch, PrivyFiatFundingHostGate, Toaster, store };
+	return { ...launch, AppToaster, store };
 }
 
 function createAttempt(network: "mainnet" | "testnet" = "mainnet") {
@@ -89,13 +104,12 @@ describe("card funding host loading", () => {
 		container = document.createElement("div");
 		document.body.appendChild(container);
 		root = createRoot(container);
-		const { PrivyFiatFundingHostGate, Toaster } = subject;
+		const { AppToaster } = subject;
 		await act(async () =>
 			root.render(
 				<StrictMode>
 					<I18nProvider i18n={i18n}>
-						<Toaster />
-						<PrivyFiatFundingHostGate />
+						<AppToaster />
 					</I18nProvider>
 				</StrictMode>,
 			),
@@ -104,6 +118,7 @@ describe("card funding host loading", () => {
 
 	afterEach(async () => {
 		await act(async () => {
+			for (const id of OTHER_NOTIFICATIONS) toast.dismiss(id);
 			toast.dismiss();
 		});
 		await clock.settle();
@@ -129,6 +144,32 @@ describe("card funding host loading", () => {
 		});
 		await clock.timers();
 	}
+
+	it("opens Privy from the production toaster once a purchase is launched, and reports its result there", async () => {
+		let confirm: (result: unknown) => void = () => undefined;
+		const purchase = new Promise((resolve) => {
+			confirm = resolve;
+		});
+		sdk.fund.mockReturnValue(purchase);
+		const attempt = createAttempt();
+
+		await act(async () => subject.launchPrivyFiatFunding(attempt));
+		await settleHostImport();
+
+		expect(sdk.fund).toHaveBeenCalledTimes(1);
+		expect(sdk.fund).toHaveBeenCalledWith(
+			expect.objectContaining({ destination: expect.objectContaining({ address: OWNER }) }),
+		);
+		expect(subject.store.isCurrentPrivyFiatFundingAttempt(attempt)).toBe(true);
+
+		await act(async () => {
+			confirm({ status: "confirmed" });
+			await purchase;
+		});
+		await clock.timers();
+		expect(subject.store.isCurrentPrivyFiatFundingAttempt(attempt)).toBe(false);
+		expect(cards().map((card) => card.dataset.privyFiatFundingNotice)).toEqual(["confirmed"]);
+	});
 
 	it("mounts nothing until the purchase entry loads the host", async () => {
 		const hostRenders = vi.fn(() => null);
@@ -203,6 +244,49 @@ describe("card funding host loading", () => {
 		expect(hostRenders).toHaveBeenCalled();
 		expect(subject.store.isCurrentPrivyFiatFundingAttempt(attempt)).toBe(true);
 		expect(toasts()).toHaveLength(0);
+	});
+
+	it("gives the failure notice its full time when it returns to the front while the stack is held open", async () => {
+		vi.doMock(HOST_MODULE, () => {
+			throw new Error(IMPORT_ERROR);
+		});
+		const showOther = (id: string) =>
+			toast.custom(() => <span>Another notification</span>, { id, duration: Number.POSITIVE_INFINITY });
+		await act(async () => {
+			showOther(OTHER_NOTIFICATIONS[0]);
+		});
+		await clock.timers();
+		await act(async () => subject.launchPrivyFiatFunding(createAttempt()));
+		await settleHostImport();
+		await clock.timers(1_000);
+		await act(async () => {
+			showOther(OTHER_NOTIFICATIONS[1]);
+		});
+		await clock.timers();
+		await clock.timers(30_000);
+		expect(toasts()).toHaveLength(3);
+		const stack = container.querySelector("[data-sonner-toaster]");
+		if (!stack) throw new Error("Expected Sonner's toast list");
+
+		await act(async () => {
+			stack.dispatchEvent(new MouseEvent("mouseover", { bubbles: true }));
+		});
+		await act(async () => {
+			toast.dismiss(OTHER_NOTIFICATIONS[1]);
+		});
+		await clock.settle();
+		expect(toasts()).toHaveLength(2);
+		expect(cards()[0].closest("[data-sonner-toast]")?.getAttribute("data-front")).toBe("true");
+
+		await act(async () => {
+			stack.dispatchEvent(new MouseEvent("mouseout", { bubbles: true }));
+		});
+		await clock.timers(9_800);
+		expect(cards()).toHaveLength(1);
+		await clock.timers(400);
+		await clock.settle();
+		expect(cards()).toHaveLength(0);
+		expect(toasts()).toHaveLength(1);
 	});
 
 	it.each([

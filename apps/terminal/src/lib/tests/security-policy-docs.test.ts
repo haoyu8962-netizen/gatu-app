@@ -62,6 +62,9 @@ describe("security policy documentation", () => {
 		]);
 		expect(stripeSources(cspReportOnlyDirectives, "script-src")).toEqual(scripts);
 		expect(stripeSources(cspReportOnlyDirectives, "img-src")).toEqual(["https://*.stripe.com", "https://*.link.com"]);
+		for (const directive of ["frame-src", "child-src", "connect-src"]) {
+			expect(cspReportOnlyDirectives[directive], directive).toBe(cspDirectives[directive]);
+		}
 		for (const directive of ["script-src", "frame-src", "child-src", "connect-src"]) {
 			for (const directives of [cspDirectives, cspReportOnlyDirectives]) {
 				const openSources = (directives[directive] ?? "")

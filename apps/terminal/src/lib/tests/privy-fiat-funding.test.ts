@@ -36,6 +36,7 @@ import {
 } from "@/lib/trade/privy-fiat-funding-feedback";
 import {
 	finishPrivyFiatFunding,
+	followPrivyFiatFundingWindow,
 	isCurrentPrivyFiatFundingAttempt,
 	type PrivyFiatFundingAttempt,
 	requestPrivyFiatFunding,
@@ -46,12 +47,221 @@ const OWNER = "0xabcdefabcdefabcdefabcdefabcdefabcdef1234";
 const OWNER_CHECKSUM_CASE = "0xABCDEFabcdefABCDEFabcdefABCDEFabcdef1234";
 const OTHER = "0x2222222222222222222222222222222222222222";
 const PRIVY_DIST = resolve(__dirname, "../../../node_modules/@privy-io/react-auth/dist/esm");
+const PRIVY_CJS_DIST = resolve(__dirname, "../../../node_modules/@privy-io/react-auth/dist/cjs");
+const SONNER_DIST = resolve(__dirname, "../../../node_modules/sonner/dist");
+const PRIVY_ONRAMP_HOOK_FILE = "use-headless-crypto-deposit-";
+
+function readPrivyBundle(directory: string, prefix: string, extension: string): string {
+	return readdirSync(directory)
+		.filter((name) => name.startsWith(prefix) && name.endsWith(extension))
+		.map((name) => readFileSync(resolve(directory, name), "utf8"))
+		.join("\n");
+}
 
 function readPrivyFiatOnrampScreen(): string {
-	return readdirSync(PRIVY_DIST)
-		.filter((name) => name.startsWith("FiatOnrampScreen-") && name.endsWith(".mjs"))
-		.map((name) => readFileSync(resolve(PRIVY_DIST, name), "utf8"))
-		.join("\n");
+	return readPrivyBundle(PRIVY_DIST, "FiatOnrampScreen-", ".mjs");
+}
+
+/** The source of the hook behind `useFiatOnramp` in the installed SDK, as one arrow function. */
+function readPrivyFiatOnrampHook(): string {
+	const bundle = readPrivyBundle(PRIVY_DIST, PRIVY_ONRAMP_HOOK_FILE, ".mjs");
+	const start =
+		/\(\)=>\{let\{openModal:\w+,closePrivyModal:\w+,privy:\w+\}=\w+\(\),\{navigate:\w+\}=\w+\(\),\{user:\w+\}=/.exec(
+			bundle,
+		);
+	if (!start) throw new Error("The installed Privy SDK no longer contains the expected fiat onramp hook");
+	let depth = 0;
+	let quote = "";
+	for (let index = bundle.indexOf("{", start.index); index < bundle.length; index++) {
+		const character = bundle[index];
+		if (quote) {
+			if (character === "\\") index++;
+			else if (character === quote) quote = "";
+		} else if (character === '"' || character === "'" || character === "`") quote = character;
+		else if (character === "{") depth++;
+		else if (character === "}" && --depth === 0) return bundle.slice(start.index, index + 1);
+	}
+	throw new Error("The fiat onramp hook of the installed Privy SDK does not end");
+}
+
+interface PrivyFiatOnrampFlow {
+	onFailure: (error: unknown) => Promise<void>;
+	onSuccess: (value: unknown) => Promise<void>;
+}
+
+interface Deferred {
+	promise: Promise<unknown>;
+	resolve: (value: unknown) => void;
+	reject: (error: unknown) => void;
+}
+
+function createDeferred(): Deferred {
+	let resolve: Deferred["resolve"] = () => undefined;
+	let reject: Deferred["reject"] = () => undefined;
+	const promise = new Promise<unknown>((onResolve, onReject) => {
+		resolve = onResolve;
+		reject = onReject;
+	});
+	return { promise, resolve, reject };
+}
+
+/**
+ * Runs the hook of the installed SDK with its surroundings replaced: Privy's window, its quote
+ * request, its flow store and its deferred timer are recorded instead of performed, and every
+ * other name it reads resolves to an empty stand-in. What `fund()` does with them is the SDK's own
+ * code, so the order in which it opens the window, waits for quotes, closes and settles is
+ * observed, not assumed. `rejectionHandlers` counts the `catch` calls on a result promise, which is
+ * what the patch adds; the stand-in handles the rejection itself, so a run without the patch stays
+ * quiet too.
+ */
+function runPrivyFiatOnrampHook(source: string) {
+	function role(pattern: RegExp): string {
+		const name = pattern.exec(source)?.[1];
+		if (!name) throw new Error(`The fiat onramp hook of the installed Privy SDK no longer matches ${pattern}`);
+		return name;
+	}
+	let flow: PrivyFiatOnrampFlow | null = null;
+	const events: unknown[] = [];
+	const quoteRequests: Deferred[] = [];
+	const timers: (() => void)[] = [];
+	const results: { rejectionHandlers: number }[] = [];
+	const appliedQuotes: unknown[] = [];
+
+	function createResult(): Deferred {
+		const result = createDeferred();
+		const handle = result.promise.catch.bind(result.promise);
+		const record = { rejectionHandlers: 0 };
+		handle(() => undefined);
+		result.promise.catch = ((onRejected: never) => {
+			record.rejectionHandlers += 1;
+			return handle(onRejected);
+		}) as typeof result.promise.catch;
+		results.push(record);
+		return result;
+	}
+
+	const surroundings: Record<string, unknown> = {
+		[role(/\{openModal:\w+,closePrivyModal:\w+,privy:\w+\}=(\w+)\(\)/)]: () => ({
+			openModal: (screen: unknown) => events.push(screen === null ? "screen cleared" : `opened ${screen}`),
+			closePrivyModal: async () => {
+				await nextTask();
+				events.push("window closed");
+			},
+			privy: {
+				fetchPrivyRoute() {
+					const request = createDeferred();
+					quoteRequests.push(request);
+					return request.promise;
+				},
+			},
+		}),
+		[role(/\},(\w+)\(\(\(\)=>\(\{fund:/)]: (create: () => unknown) => create(),
+		[role(/promise:\w+\}=(\w+)\(\)/)]: createResult,
+		[role(/Object\.keys\((\w+)\)/)]: { usd: true },
+		[role(/if\((\w+)\.getState\(\)\)return/)]: {
+			getState: () => flow,
+			setState(next: PrivyFiatOnrampFlow | null) {
+				flow = next;
+			},
+		},
+		[role(/return (\w+)\(\{initialQuotes:/)]: (quotes: { initialQuotes: unknown }) =>
+			appliedQuotes.push(quotes.initialQuotes),
+		setTimeout: (callback: () => void) => timers.push(callback),
+	};
+	const scope = new Proxy(surroundings, {
+		has: (target, name) => typeof name === "string" && (name in target || !(name in globalThis)),
+		get: (target, name) => (typeof name === "string" && !(name in target) ? () => ({}) : Reflect.get(target, name)),
+	});
+	const useFiatOnramp = new Function("scope", `with (scope) { return ${source}; }`)(scope) as () => {
+		fund: (request: unknown) => Promise<unknown>;
+	};
+	const { fund } = useFiatOnramp();
+
+	return {
+		appliedQuotes,
+		events,
+		quoteRequests,
+		results,
+		flow: () => flow,
+		fund(label: string) {
+			fund({
+				source: { defaultAsset: "usd" },
+				destination: { address: OWNER, chain: "eip155:42161", asset: "0xaf88d065e77c8cC2239327C5EDb3A432268e5831" },
+				environment: "production",
+				defaultAmount: "100",
+			}).then(
+				(value) => events.push(`${label} resolved ${JSON.stringify(value)}`),
+				(error: unknown) => events.push(`${label} rejected ${error instanceof Error ? error.message : error}`),
+			);
+		},
+		runTimers() {
+			for (const callback of timers.splice(0)) callback();
+		},
+	};
+}
+
+/**
+ * What the app relies on from `fund()` of the installed SDK, observed on the SDK's own code: a
+ * closed flow closes Privy's window before it settles; `fund()` itself still waits for its first
+ * quotes; a later purchase is untouched by the quotes of a closed one; a flow that was never ended
+ * refuses the next purchase; and (the patch) the result has a rejection handler from the start.
+ */
+async function observePrivyFiatOnrampFund(source: string) {
+	const closedEarly = runPrivyFiatOnrampHook(source);
+	closedEarly.fund("first");
+	const handledFromTheStart = closedEarly.results.map((result) => result.rejectionHandlers);
+	await closedEarly.flow()?.onFailure(new Error(PRIVY_FIAT_FUNDING_USER_EXIT_MESSAGE));
+	await nextTask();
+	const beforeQuotes = [...closedEarly.events];
+	const registeredUntilTimer = closedEarly.flow() !== null;
+	closedEarly.runTimers();
+	const clearedByTimer = closedEarly.flow() === null;
+	closedEarly.fund("second");
+	const secondFlow = closedEarly.flow();
+	closedEarly.quoteRequests[0].resolve({ quotes: ["stale"] });
+	await nextTask();
+	const afterStaleQuotes = {
+		events: closedEarly.events.slice(beforeQuotes.length),
+		appliedQuotes: [...closedEarly.appliedQuotes],
+		secondFlowKept: closedEarly.flow() === secondFlow,
+	};
+	closedEarly.quoteRequests[1].resolve({ quotes: ["fresh"] });
+	await nextTask();
+
+	const finished = runPrivyFiatOnrampHook(source);
+	finished.fund("purchase");
+	finished.quoteRequests[0].resolve({ quotes: ["shown"] });
+	await nextTask();
+	await finished.flow()?.onSuccess({ status: "submitted" });
+	await nextTask();
+
+	const failed = runPrivyFiatOnrampHook(source);
+	failed.fund("purchase");
+	failed.quoteRequests[0].resolve({ quotes: ["shown"] });
+	await nextTask();
+	await failed.flow()?.onFailure(new Error("Transaction failed"));
+	await nextTask();
+
+	const unended = runPrivyFiatOnrampHook(source);
+	unended.fund("first");
+	unended.fund("second");
+	await nextTask();
+
+	return {
+		handledFromTheStart,
+		beforeQuotes,
+		registeredUntilTimer,
+		clearedByTimer,
+		afterStaleQuotes,
+		appliedQuotes: closedEarly.appliedQuotes,
+		finished: finished.events,
+		failed: failed.events,
+		unended: unended.events,
+	};
+}
+
+function nextTask(): Promise<void> {
+	return new Promise((resolve) => setTimeout(resolve, 0));
 }
 
 const PRIVY_ONRAMP_CLOSE_HANDLER =
@@ -307,24 +517,73 @@ describe("card funding outcomes", () => {
 		expect(screen).toMatch(new RegExp(`\\w+\\.current=${handler};`));
 	});
 
-	it("relies on when the installed Privy SDK closes its window and settles fund()", () => {
-		const hook = readdirSync(PRIVY_DIST)
-			.filter((name) => name.startsWith("use-headless-crypto-deposit-") && name.endsWith(".mjs"))
-			.map((name) => readFileSync(resolve(PRIVY_DIST, name), "utf8"))
-			.join("\n");
-		const cleanup =
-			/(\w+)=async\(\)=>\{\w+\.current\?\.abort\(\),\w+\(null\),await \w+\(\{shouldCallAuthOnSuccess:!1,isSuccess:!0\}\),setTimeout\(\(\(\)=>\{\w+\.setState\(null\)\}\),0\)\}/.exec(
-				hook,
-			)?.[1];
-		expect(cleanup).toBeDefined();
-		expect(hook).toMatch(
-			new RegExp(
-				`onSuccess:async (\\w+)=>\\{await ${cleanup}\\(\\),\\w+\\(\\1\\)\\},onFailure:async (\\w+)=>\\{await ${cleanup}\\(\\),\\w+\\(\\2\\)\\}`,
-			),
+	it("relies on how fund() of the installed Privy SDK opens, waits, closes and settles", async () => {
+		expect(await observePrivyFiatOnrampFund(readPrivyFiatOnrampHook())).toEqual({
+			handledFromTheStart: [1],
+			beforeQuotes: ["opened FiatOnrampScreen", "screen cleared", "window closed"],
+			registeredUntilTimer: true,
+			clearedByTimer: true,
+			afterStaleQuotes: {
+				events: ["opened FiatOnrampScreen", `first rejected ${PRIVY_FIAT_FUNDING_USER_EXIT_MESSAGE}`],
+				appliedQuotes: [],
+				secondFlowKept: true,
+			},
+			appliedQuotes: [["fresh"]],
+			finished: [
+				"opened FiatOnrampScreen",
+				"screen cleared",
+				"window closed",
+				'purchase resolved {"status":"submitted"}',
+			],
+			failed: ["opened FiatOnrampScreen", "screen cleared", "window closed", "purchase rejected Transaction failed"],
+			unended: ["opened FiatOnrampScreen", `second rejected ${PRIVY_FIAT_FUNDING_BUSY_MESSAGE}`],
+		});
+	});
+
+	it.each([
+		["fund()'s result has no rejection handler until its first quotes return", /;\w+\.catch\(\(\(\)=>\{\}\)\);/, ";"],
+		[
+			"a closed flow settles before Privy's window is closed",
+			/onFailure:async (\w+)=>\{await (\w+)\(\),(\w+)\(\1\)\}/,
+			"onFailure:async $1=>{$3($1),await $2()}",
+		],
+		[
+			"a finished flow settles before Privy's window is closed",
+			/onSuccess:async (\w+)=>\{await (\w+)\(\),(\w+)\(\1\)\}/,
+			"onSuccess:async $1=>{$3($1),await $2()}",
+		],
+		["fund() no longer waits for its first quotes", /let (\w+)=await (\w+\(\{source:)/, "let $1={quotes:[]};$2"],
+		[
+			"the quotes of a closed flow reach a later purchase",
+			/if\(\w+\.getState\(\)\?\.flowId!==\w+\)return await \w+;/,
+			"",
+		],
+		["a closed flow stays registered", /setTimeout\(\(\(\)=>\{\w+\.setState\(null\)\}\),0\)/, "0"],
+		[
+			"a registered flow no longer refuses the next purchase",
+			/if\(\w+\.getState\(\)\)return \w+\(Error\("Existing fiat onramp flow in progress"\)\),await \w+;/,
+			"",
+		],
+	])("would notice if %s in the installed Privy SDK", async (_label, change, replacement) => {
+		const source = readPrivyFiatOnrampHook();
+		const changed = source.replace(change, replacement);
+		expect(changed).not.toBe(source);
+		const noticed = await observePrivyFiatOnrampFund(changed).catch((error: Error) => error.message);
+		expect(noticed).not.toEqual(await observePrivyFiatOnrampFund(source));
+	});
+
+	it("relies on the same patch in the CommonJS build of the installed Privy SDK", () => {
+		expect(readPrivyBundle(PRIVY_CJS_DIST, PRIVY_ONRAMP_HOOK_FILE, ".js")).toMatch(
+			/fund:async \w+=>\{let\{reject:\w+,resolve:\w+,promise:(\w+)\}=\w+\(\),\w+=[^;]+;\1\.catch\(\(\(\)=>\{\}\)\);/,
 		);
-		expect(hook).toMatch(
-			/\("FiatOnrampScreen"\);let (\w+)=await \w+\(\{source:.*?\}\)\.catch\(\(\(\)=>\(\{quotes:\[\]\}\)\)\);if\(\w+\.getState\(\)\?\.flowId!==\w+\)return await \w+;/,
-		);
+	});
+
+	it("relies on the Sonner patch that starts a new period when a toast's duration changes", () => {
+		for (const file of ["index.mjs", "index.js"]) {
+			expect(readFileSync(resolve(SONNER_DIST, file), "utf8")).toMatch(
+				/remainingTime\.current = duration;\s+(?:\/\/[^\n]*\s+)*lastCloseTimerStartTimeRef\.current = closeTimerStartTimeRef\.current;/,
+			);
+		}
 	});
 
 	it.each([
@@ -428,6 +687,30 @@ describe("card funding attempt store", () => {
 		expect(requestPrivyFiatFunding(second)).toBe(true);
 		finishPrivyFiatFunding(first);
 		expect(isCurrentPrivyFiatFundingAttempt(second)).toBe(true);
+	});
+
+	it("releases an attempt when Privy's window, once open for it, has closed", () => {
+		const earlier = createAttempt();
+		requestPrivyFiatFunding(earlier);
+		followPrivyFiatFundingWindow(earlier, false);
+		expect(isCurrentPrivyFiatFundingAttempt(earlier)).toBe(true);
+
+		followPrivyFiatFundingWindow(earlier, true);
+		expect(isCurrentPrivyFiatFundingAttempt(earlier)).toBe(true);
+		followPrivyFiatFundingWindow(earlier, false);
+		expect(isCurrentPrivyFiatFundingAttempt(earlier)).toBe(false);
+
+		const later = createAttempt();
+		requestPrivyFiatFunding(later);
+		followPrivyFiatFundingWindow(later, false);
+		followPrivyFiatFundingWindow(earlier, true);
+		followPrivyFiatFundingWindow(later, false);
+		expect(isCurrentPrivyFiatFundingAttempt(later)).toBe(true);
+
+		followPrivyFiatFundingWindow(later, true);
+		followPrivyFiatFundingWindow(earlier, true);
+		followPrivyFiatFundingWindow(later, false);
+		expect(isCurrentPrivyFiatFundingAttempt(later)).toBe(false);
 	});
 });
 

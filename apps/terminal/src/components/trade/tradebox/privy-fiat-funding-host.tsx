@@ -15,6 +15,7 @@ import { useIsTestnet } from "@/stores/use-global-settings-store";
 import {
 	addPrivyFiatFundingNotice,
 	finishPrivyFiatFunding,
+	followPrivyFiatFundingWindow,
 	type PrivyFiatFundingAttempt,
 	removePrivyFiatFundingNotice,
 	startPrivyFiatFunding,
@@ -33,7 +34,6 @@ export function PrivyFiatFundingHost() {
 	const notices = usePrivyFiatFundingNotices();
 	const ownerKey = getPrivyFiatFundingOwnerKey(isTestnet ? "testnet" : "mainnet", clientKey);
 	const sessionRef = useRef({ destination, ownerKey });
-	const windowSeenRef = useRef<PrivyFiatFundingAttempt | null>(null);
 	const displayedRef = useRef(new Map<PrivyFiatFundingNotice, PrivyFiatFundingNoticePresentation>());
 
 	useEffect(() => {
@@ -71,12 +71,7 @@ export function PrivyFiatFundingHost() {
 	}, [attempt, fund]);
 
 	useEffect(() => {
-		if (!attempt) return;
-		if (privyWindowOpen) {
-			windowSeenRef.current = attempt;
-			return;
-		}
-		if (windowSeenRef.current === attempt) finishPrivyFiatFunding(attempt);
+		if (attempt) followPrivyFiatFundingWindow(attempt, privyWindowOpen);
 	}, [attempt, privyWindowOpen]);
 
 	useEffect(() => {

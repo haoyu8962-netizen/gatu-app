@@ -12,11 +12,18 @@ export interface PrivyFiatFundingAttempt {
 interface PrivyFiatFundingStore {
 	attempt: PrivyFiatFundingAttempt | null;
 	started: PrivyFiatFundingAttempt | null;
+	windowSeen: PrivyFiatFundingAttempt | null;
 	Host: ComponentType | null;
 	notices: readonly PrivyFiatFundingNotice[];
 }
 
-const INITIAL_STATE: PrivyFiatFundingStore = { attempt: null, started: null, Host: null, notices: [] };
+const INITIAL_STATE: PrivyFiatFundingStore = {
+	attempt: null,
+	started: null,
+	windowSeen: null,
+	Host: null,
+	notices: [],
+};
 
 const usePrivyFiatFundingStore = create<PrivyFiatFundingStore>(() => INITIAL_STATE);
 
@@ -62,6 +69,18 @@ export function startPrivyFiatFunding(attempt: PrivyFiatFundingAttempt): boolean
 	}
 	usePrivyFiatFundingStore.setState({ started: attempt });
 	return true;
+}
+
+/**
+ * Follows Privy's window for the current attempt: once the window was open for it and is closed
+ * again, the flow has ended and the attempt is released, even if Privy's promise settles later or
+ * never. A window that was not yet open for this attempt releases nothing. The record lives here,
+ * not in the host, so a host that mounts again still knows that the window was open.
+ */
+export function followPrivyFiatFundingWindow(attempt: PrivyFiatFundingAttempt, open: boolean): void {
+	if (!isCurrentPrivyFiatFundingAttempt(attempt)) return;
+	if (open) usePrivyFiatFundingStore.setState({ windowSeen: attempt });
+	else if (usePrivyFiatFundingStore.getState().windowSeen === attempt) finishPrivyFiatFunding(attempt);
 }
 
 export function finishPrivyFiatFunding(attempt: PrivyFiatFundingAttempt): void {

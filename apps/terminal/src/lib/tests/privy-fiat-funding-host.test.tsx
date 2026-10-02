@@ -616,6 +616,22 @@ describe("PrivyFiatFundingHost", () => {
 		expect(await request(createAttempt())).toBe(false);
 	});
 
+	it("still frees the entry when Privy's window closed while no host was mounted", async () => {
+		testState.fund.mockImplementation(() => new Promise(() => undefined));
+		const attempt = createAttempt();
+		await request(attempt);
+		await switchSession({ privyWindowOpen: true });
+		await act(async () => root.render(<Harness showHost={false} />));
+		await switchSession({ privyWindowOpen: false });
+		expect(isCurrentPrivyFiatFundingAttempt(attempt)).toBe(true);
+
+		await act(async () => root.render(<Harness />));
+
+		expect(isCurrentPrivyFiatFundingAttempt(attempt)).toBe(false);
+		expect(testState.fund).toHaveBeenCalledTimes(1);
+		expect(await request(createAttempt())).toBe(true);
+	});
+
 	it("frees the entry when Privy closes its window without ending the flow, and asks for a reload when Privy still holds it", async () => {
 		testState.fund
 			.mockImplementationOnce(() => new Promise(() => undefined))
@@ -689,6 +705,35 @@ describe("PrivyFiatFundingHost", () => {
 		await switchSession({ clientKey: OWNER.toLowerCase() });
 		await clock.settle();
 		expect(toasts()).toHaveLength(0);
+	});
+
+	it("gives a result its full time when it returns to the front while the stack is held open", async () => {
+		await purchase({ reject: new Error("status never confirmed") });
+		await purchase({ resolve: { status: "confirmed" } });
+		await clock.timers(1_000);
+		await purchase({ resolve: { status: "submitted" } });
+		await clock.timers(30_000);
+		expect(cards().map((card) => card.dataset.privyFiatFundingNotice)).toEqual(["submitted", "confirmed", "unknown"]);
+		const stack = container.querySelector("[data-sonner-toaster]");
+		if (!stack) throw new Error("Expected Sonner's toast list");
+
+		await act(async () => {
+			stack.dispatchEvent(new MouseEvent("mouseover", { bubbles: true }));
+		});
+		await dismiss(cards()[0]);
+		await clock.settle();
+		expect(cards().map((card) => card.dataset.privyFiatFundingNotice)).toEqual(["confirmed", "unknown"]);
+		expect(toasts()[0].getAttribute("data-front")).toBe("true");
+		expect(toasts()[0].getAttribute("data-expanded")).toBe("true");
+
+		await act(async () => {
+			stack.dispatchEvent(new MouseEvent("mouseout", { bubbles: true }));
+		});
+		await clock.timers(9_800);
+		expect(cards().map((card) => card.dataset.privyFiatFundingNotice)).toEqual(["confirmed", "unknown"]);
+		await clock.timers(400);
+		await clock.settle();
+		expect(cards().map((card) => card.dataset.privyFiatFundingNotice)).toEqual(["unknown"]);
 	});
 
 	it("opens Privy once and still reports the result when the host mounts again during a purchase", async () => {

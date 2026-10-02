@@ -115,6 +115,43 @@ describe("Toaster configuration", () => {
 		expect(toaster?.style.getPropertyValue("--offset-bottom")).toContain("56px + 12px");
 		expect(toaster?.style.zIndex).toBe("var(--z-toast)");
 	});
+	it("gives a toast a full period when its duration comes back from Infinity while the stack is held open", async () => {
+		const showTimed = (duration: number) =>
+			toast.custom(() => <span>Timed notification</span>, { id: "timed", duration });
+		await act(async () => {
+			toast.custom(() => <span>Other notification</span>, { id: "other", duration: Infinity });
+			await vi.advanceTimersByTimeAsync(0);
+		});
+		await act(async () => {
+			showTimed(10_000);
+			await vi.advanceTimersByTimeAsync(0);
+		});
+		await act(() => vi.advanceTimersByTimeAsync(1_000));
+		await act(async () => {
+			showTimed(Infinity);
+			await vi.advanceTimersByTimeAsync(0);
+		});
+		await act(() => vi.advanceTimersByTimeAsync(30_000));
+		const stack = container.querySelector("[data-sonner-toaster]");
+		if (!stack) throw new Error("Expected Sonner's toast list");
+
+		await act(async () => {
+			stack.dispatchEvent(new MouseEvent("mouseover", { bubbles: true }));
+		});
+		await act(async () => {
+			showTimed(10_000);
+			await vi.advanceTimersByTimeAsync(0);
+		});
+		await act(async () => {
+			stack.dispatchEvent(new MouseEvent("mouseout", { bubbles: true }));
+		});
+		await act(() => vi.advanceTimersByTimeAsync(9_800));
+		expect(container.textContent).toContain("Timed notification");
+		await act(() => vi.advanceTimersByTimeAsync(1_000));
+		expect(container.textContent).not.toContain("Timed notification");
+		toast.dismiss("other");
+	});
+
 	it("replays notifications received before the lazy container mounted", async () => {
 		act(() => root.unmount());
 		toast.info("Recovered notification", { id: "pre-host", duration: Infinity });

@@ -498,6 +498,9 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Fixed
 
+- A notification that waited behind others and came back to the front while the pointer was
+  holding the stack open (or while the page was hidden) no longer disappears the moment the
+  pointer leaves; it now gets its full time on screen. This affected order results as well.
 - In the light theme, browsers that tint their toolbar or status bar from the page's theme color
   (Safari 15 and later, Chrome on Android) now use white like the page header instead of the dark
   terminal teal. The theme color follows the theme chosen in Settings from the first paint and on

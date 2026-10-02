@@ -93,7 +93,12 @@ Do not collapse these states into one boolean.
   when Privy's window, once seen open for that attempt, has closed: `fund()`
   itself waits for its first quote request, and a window that Privy closes
   without ending the flow (a logout) never settles it. A result that arrives
-  later is still reported. Each result is stored with the owner and network
+  later is still reported. `patches/@privy-io__react-auth@3.46.0.patch` also
+  gives the result promise inside `fund()` a rejection handler when it is
+  created, so that closing the window before the first quotes return does
+  not raise an unhandled rejection; `privy-fiat-funding.test.ts` runs the
+  installed hook and fails without that hunk, and must be re-derived on
+  every Privy upgrade. Each result is stored with the owner and network
   that started it. A notice is
   a custom Sonner card that checks its presentation, the current owner and
   the current network every time it renders and translates in place, so it
@@ -132,7 +137,9 @@ Do not collapse these states into one boolean.
   `patches/@privy-io__react-auth@3.46.0.patch` does the same for an empty
   embedded list (external-wallet and logged-out sessions). Before upgrading
   Privy, run `privy-theme-switch-wallet-stability.test.tsx` against the new
-  version and drop the patch only when the test passes without it.
+  version and drop that hunk only when the test passes without it. The same
+  file carries a second, unrelated hunk for card funding (`fund()`'s result
+  promise, below), so remove hunks, not the file.
 - The nonempty embedded-wallet path (ordinary email trading) has no behavioral
   test: no test can log in a real embedded owner. The same test file only
   checks that the SDK's field comparison (address, chain, connector type and
