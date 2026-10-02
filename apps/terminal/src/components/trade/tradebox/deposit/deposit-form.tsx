@@ -1,6 +1,5 @@
 import { Trans } from "@lingui/react/macro";
 import { Button } from "@sairn/ui";
-import type { ReactNode } from "react";
 import { formatUnits } from "viem";
 import { USDC_ICON_URL } from "@/config/bridge";
 import { MIN_DEPOSIT_USDC, USDC_DECIMALS } from "@/config/contracts";
@@ -43,7 +42,6 @@ interface Props {
 	fundingAddress?: `0x${string}`;
 	onRetryFundingAddress?: () => void;
 	onDone?: () => void;
-	fiatFundingEntry?: ReactNode;
 }
 
 export function DepositForm({
@@ -78,7 +76,6 @@ export function DepositForm({
 	fundingAddress,
 	onRetryFundingAddress,
 	onDone,
-	fiatFundingEntry = null,
 }: Props) {
 	const minimumDeposit = `${formatUnits(MIN_DEPOSIT_USDC, USDC_DECIMALS)} USDC`;
 	const bridgeRoutingReady = routingStatus === "ready" && depositRoute === "bridge";
@@ -414,8 +411,6 @@ export function DepositForm({
 					</div>
 				) : null}
 
-				{fiatFundingEntry}
-
 				{preflightError ? (
 					<div role="alert" className="text-xs text-market-close-danger">
 						{preflightError}
@@ -498,8 +493,6 @@ export function DepositForm({
 				isPending={isPending}
 				onSubmit={onSubmit}
 			/>
-
-			{fiatFundingEntry}
 		</div>
 	);
 }

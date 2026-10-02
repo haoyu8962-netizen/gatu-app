@@ -304,32 +304,48 @@ The total-client baseline moved from 3,185,921 to 3,269,608 and the static trade
 unchanged. No static import cycle was reported. This is a byte measurement, not a browser timing; LCP and INP on the
 heavier startup were not measured.
 
+Correction (2026-10-02): both sides of this measurement read the developer `apps/terminal/.env.local` (the Privy app ID
+and three CCTP flags, which every whole-object `import.meta.env` literal then carries). The change column compares like
+with like, but CI builds without that file: a CI-equivalent build of the after side (`c0e550c7`) reads 3,274,893 total,
+1,624,100 static startup, 117,422 mobile and 200,714 desktop (-531, -327, +9 and -4 against the table). Take future
+re-baseline measurements in a checkout without `.env.local`.
+
 ## Card funding total-client re-baseline (2026-10-02)
 
 Card funding ([ADR 0034](adr/0034-privy-card-funding.md)) first mounted its onramp host statically in `AppToaster`, which
 put the desktop runtime increment at 202,247 bytes (over the 201,988-byte limit) and the total client 14,438 bytes over
 its baseline. The host now loads lazily on the first purchase request (`PrivyFiatFundingHostGate`), which removed the
-runtime overage. The remaining total growth was re-baselined, measured with the same fixed build identity, Node 22.15.0,
-pnpm 10.21.0 and pairing off as the section above, after (card funding working tree) minus before (upgrade commit
-`c0e550c7` in an isolated worktree):
+runtime overage. A later build of the method-chooser version left the desktop increment only 196 bytes under its limit;
+the gate then stopped importing the notification copy for its single "could not open" message (the copy stays in the
+lazy host chunk), which returned about 420 bytes to both runtime increments.
+
+The remaining total growth was re-baselined, measured with the same fixed build identity, Node 22.15.0, pnpm 10.21.0 and
+pairing off as the section above, but in isolated worktrees without `.env.local` so both sides match CI: before = the
+upgrade commit `c0e550c7`, after = the card funding working tree with the method chooser and the review fixes.
 
 | Metric | Before (`c0e550c7`) | After | Change |
 | --- | ---: | ---: | ---: |
-| All client JS + CSS | 3,275,424 | 3,285,149 | +9,725 |
-| Static trade startup | 1,624,427 | 1,626,880 | +2,453 |
-| Mobile runtime increment | 117,413 | 118,090 | +677 |
-| Desktop runtime increment | 200,718 | 201,646 | +928 |
+| All client JS + CSS | 3,274,893 | 3,286,669 | +11,776 |
+| Static trade startup | 1,624,100 (101 assets) | 1,626,692 (102 assets) | +2,592 |
+| Mobile runtime increment | 117,422 | 117,794 | +372 |
+| Desktop runtime increment | 200,714 | 201,375 | +661 |
 
-Per-asset gzip comparison: using `useFiatOnramp` makes Rollup split Privy's funding module out of its main chunk
-(76,568 new against 74,989 removed, +1,579 net) and renames that import in Privy's lazy screens (about 31 bytes each);
-the six locale catalogs grow by 1,592 for twelve messages, the lazy host chunk is 1,131, the deposit dialog grows by 875,
-the store, domain and gate chunks add about 1,800, and the card icon adds 411. Only the total-client baseline moved
-(3,269,608 → 3,279,333). A second complete build of the same source with the same fixed identity, run to confirm the
-whole pipeline (cycle check, budgets, shell preloads, inline script hashes) passes, read 3,285,514 total, 1,627,095
-static startup, 118,097 mobile and 201,735 desktop: a few bytes moved in many chunks, consistent with renamed chunk
-imports, so treat a few hundred bytes as build-to-build noise. The desktop runtime increment now sits only about 250 to
-340 bytes under its 10,000-byte allowance, so the next first-render addition on desktop needs its own reduction or
-review.
+Per-asset gzip comparison: using `useFiatOnramp` makes Rollup split Privy's funding module out of its main chunk (76,156
+new against 74,776 removed, +1,380 net; both chunks sit in the static trade startup closure); the six locale catalogs grow
+by 2,024; the deposit dialog grows by 1,922 for the method chooser; the lazy host chunk is 1,346 and the domain module
+chunk 676; the store joins the small shared chunk that held the deposit explorer link (601 against 492, which also renames
+that chunk); the toaster gains the gate (+236); the router vendor chunk grows by 505 because Vite's preload dependency
+lists name the new chunks; the shared icon chunk grows by 402; and 239 other chunks change by less than 60 bytes each
+(+3,001 in total, mostly renamed imports). The desktop runtime +661 is the store chunk (+109), the gate (+236) and about
+30 bytes in each of eleven desktop chunks that import the renamed shared chunk; the static startup +2,592 is the
+funding-module split, the preload lists, the icon chunk and the stylesheet.
+
+Only the total-client baseline moved: 3,269,608 + 11,776 = 3,281,384. This replaces the +9,725 raise of the first
+version (an entry card inside the deposit form), which had been measured with `.env.local` on both sides. The desktop
+runtime increment now sits 613 bytes under its 10,000-byte allowance (201,375 against 201,988), so the next first-render
+addition on desktop needs its own reduction or review. Builds of the same source differ by a few hundred bytes
+(renamed chunk imports), and a build that reads the developer `.env.local` is larger: 3,287,147 total and 1,627,062
+static startup for the same after tree, while its runtime increments differ by 1 to 2 bytes.
 
 ## Functional acceptance gates
 

@@ -1,19 +1,28 @@
 import { Trans, useLingui } from "@lingui/react/macro";
-import { WarningCircleIcon } from "@phosphor-icons/react";
-import { AdaptiveModal, Button, ModalContent, ModalHeader, ModalTitle } from "@sairn/ui";
+import { CaretLeftIcon, WarningCircleIcon } from "@phosphor-icons/react";
+import { AdaptiveModal, Button, ButtonIcon, ModalContent, ModalHeader, ModalTitle } from "@sairn/ui";
 import { ButtonLoading } from "@/components/brand/button-loading";
 import { formatTransferError } from "@/lib/errors/format";
 
 interface Props {
 	open: boolean;
 	onClose: () => void;
+	onBack?: () => void;
 	onSwitch: () => void;
 	isSwitching: boolean;
 	error?: Error | null;
 	presentation?: "modal" | "drawer";
 }
 
-export function WrongNetworkScreen({ open, onClose, onSwitch, isSwitching, error, presentation = "modal" }: Props) {
+export function WrongNetworkScreen({
+	open,
+	onClose,
+	onBack,
+	onSwitch,
+	isSwitching,
+	error,
+	presentation = "modal",
+}: Props) {
 	const { t } = useLingui();
 
 	return (
@@ -27,7 +36,21 @@ export function WrongNetworkScreen({ open, onClose, onSwitch, isSwitching, error
 			handleClassName="top-2 h-1 w-9 bg-fill/30"
 			className={presentation === "drawer" ? "max-h-[calc(100dvh-1rem)] overflow-y-auto !rounded-t-[18px]" : undefined}
 		>
-			<ModalHeader>
+			<ModalHeader className={onBack ? "flex-row items-center gap-2" : undefined}>
+				{onBack ? (
+					<ButtonIcon
+						type="button"
+						variant="ghost"
+						intent="neutral"
+						size="sm"
+						onClick={onBack}
+						disabled={isSwitching}
+						aria-label={t`Back`}
+						className="-ml-1 rounded-16 hover:bg-transparent not-data-disabled:hover:bg-fill-hover"
+					>
+						<CaretLeftIcon className="size-4 rtl:rotate-180" aria-hidden="true" />
+					</ButtonIcon>
+				) : null}
 				<ModalTitle>
 					<Trans>Deposit</Trans>
 				</ModalTitle>

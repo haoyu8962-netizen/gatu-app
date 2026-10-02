@@ -10,7 +10,7 @@ export interface PrivyFiatFundingDestination {
 	walletKind: PrivyFiatFundingWalletKind;
 }
 
-export type PrivyFiatFundingOutcome = "busy" | "cancelled" | "confirmed" | "failed" | "submitted" | "unavailable";
+export type PrivyFiatFundingOutcome = "busy" | "cancelled" | "confirmed" | "failed" | "submitted" | "unknown";
 
 /**
  * The receive address Privy's onramp credits. Card providers only deliver to Arbitrum One, and
@@ -20,9 +20,33 @@ export type PrivyFiatFundingOutcome = "busy" | "cancelled" | "confirmed" | "fail
 export const PRIVY_FIAT_FUNDING_CHAIN = `eip155:${CCTP_DEPOSIT_NETWORKS.mainnet.chainId}` as const;
 export const PRIVY_FIAT_FUNDING_ASSET = CCTP_DEPOSIT_NETWORKS.mainnet.usdc;
 
+/**
+ * Opens the purchase at about 100 USDC in US dollars, as the official terminal does, instead of
+ * Privy's locale currency at zero; the user can still change both in Privy's window.
+ */
+export const PRIVY_FIAT_FUNDING_DEFAULT_CURRENCY = "usd";
+export const PRIVY_FIAT_FUNDING_DEFAULT_AMOUNT = "100";
+
 export const PRIVY_FIAT_FUNDING_USER_EXIT_MESSAGE = "User exited flow";
 export const PRIVY_FIAT_FUNDING_BACK_NAVIGATION_ERROR = "BackNavigationError";
 export const PRIVY_FIAT_FUNDING_BUSY_MESSAGE = "Existing fiat onramp flow in progress";
+
+/**
+ * Privy ends a flow with these errors before any payment was taken (checkout setup) or after the
+ * provider reported the transaction as failed. Every other rejection, including Privy's
+ * "Could not confirm payment status yet." and "Unable to check payment status. Please try again.",
+ * may follow a charge, so it is reported as an unknown status rather than a failure.
+ */
+export const PRIVY_FIAT_FUNDING_FAILURE_MESSAGES = [
+	"Something went wrong setting up checkout. Please try again.",
+	"Unable to open payment window",
+	"Unable to start payment session",
+	"Transaction failed",
+] as const;
+export const PRIVY_FIAT_FUNDING_UNCONFIRMED_MESSAGES = [
+	"Could not confirm payment status yet.",
+	"Unable to check payment status. Please try again.",
+] as const;
 
 interface DestinationInput {
 	clientKey: string;
@@ -34,13 +58,14 @@ interface DestinationInput {
 }
 
 export interface PrivyFiatFundingRequest {
-	source: Record<string, never>;
+	source: { defaultAsset: typeof PRIVY_FIAT_FUNDING_DEFAULT_CURRENCY };
 	destination: {
 		address: `0x${string}`;
 		chain: typeof PRIVY_FIAT_FUNDING_CHAIN;
 		asset: string;
 	};
 	environment: "production" | "sandbox";
+	defaultAmount: string;
 }
 
 /**
@@ -79,9 +104,10 @@ export function createPrivyFiatFundingRequest(
 	network: PrivyFiatFundingNetwork,
 ): PrivyFiatFundingRequest {
 	return {
-		source: {},
+		source: { defaultAsset: PRIVY_FIAT_FUNDING_DEFAULT_CURRENCY },
 		destination: { address: destination.address, chain: PRIVY_FIAT_FUNDING_CHAIN, asset: PRIVY_FIAT_FUNDING_ASSET },
 		environment: network === "testnet" ? "sandbox" : "production",
+		defaultAmount: PRIVY_FIAT_FUNDING_DEFAULT_AMOUNT,
 	};
 }
 
@@ -95,12 +121,13 @@ export function classifyPrivyFiatFundingResult(result: unknown): PrivyFiatFundin
 }
 
 export function classifyPrivyFiatFundingError(error: unknown): PrivyFiatFundingOutcome {
-	if (!(error instanceof Error)) return "failed";
+	if (!(error instanceof Error)) return "unknown";
 	if (
 		error.name === PRIVY_FIAT_FUNDING_BACK_NAVIGATION_ERROR ||
 		error.message === PRIVY_FIAT_FUNDING_USER_EXIT_MESSAGE
 	) {
 		return "cancelled";
 	}
-	return error.message === PRIVY_FIAT_FUNDING_BUSY_MESSAGE ? "busy" : "failed";
+	if (error.message === PRIVY_FIAT_FUNDING_BUSY_MESSAGE) return "busy";
+	return (PRIVY_FIAT_FUNDING_FAILURE_MESSAGES as readonly string[]).includes(error.message) ? "failed" : "unknown";
 }

@@ -183,7 +183,8 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/privy-fiat-funding.test.ts \
   src/lib/tests/privy-fiat-funding-host.test.tsx \
   src/lib/tests/privy-fiat-funding-host-gate.test.tsx \
-  src/lib/tests/privy-fiat-funding-entry.test.tsx \
+  src/lib/tests/use-privy-fiat-funding-offer.test.tsx \
+  src/lib/tests/deposit-method-chooser.test.tsx \
   src/lib/tests/client-root-theme-lifecycle.test.tsx \
   src/lib/tests/wallet-modal.test.tsx \
   src/lib/tests/wallet-session.test.tsx \

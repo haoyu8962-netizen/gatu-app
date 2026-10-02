@@ -41,12 +41,14 @@ const budgets = {
 	// so the illustrations load only with their dialogs (desktop runtime startup +769, mobile +151). Measured as the
 	// local Node 22.15.0 build (3,193,087) minus the local build of f440fa1b before the change (3,186,543).
 	// Raised 2026-10-02 by +83,687 for the Privy React Auth 3.46.0 upgrade (docs/terminal-performance-baseline.md):
-	// fixed-metadata Node 22.15.0 builds, pairing off, 3,275,424 after minus 3,191,737 for 682430ba before.
-	// Raised 2026-10-02 by +9,725 for card funding (ADR 0034): the onramp host loads lazily, but using
-	// useFiatOnramp splits Privy's funding module into its own chunk (+1,579 net, plus import renames in
-	// Privy's lazy screens), 12 messages in six catalogs (+1,592), the host (+1,131) and the entry. Measured
-	// as the same fixed-metadata build after (3,285,149) minus the upgrade commit c0e550c7 (3,275,424).
-	totalGzipBaselineBytes: 3_279_333,
+	// fixed-metadata Node 22.15.0 builds, pairing off, 3,275,424 after minus 3,191,737 for 682430ba before (both
+	// sides read a developer .env.local; a CI-equivalent build of the after side reads 3,274,893).
+	// Raised 2026-10-02 by +11,776 for card funding (ADR 0034): the onramp host loads lazily, but using
+	// useFiatOnramp splits Privy's funding module out of its main chunk (+1,380 net, both in trade startup), the
+	// six catalogs (+2,024), the deposit method chooser (+1,922), the host (+1,346), the domain, store and gate
+	// chunks (+1,021) and renamed imports. CI-equivalent builds (no .env.local): 3,286,669 after minus 3,274,893
+	// for the upgrade commit c0e550c7.
+	totalGzipBaselineBytes: 3_281_384,
 	totalGzipAllowedIncreaseBytes: 10_000,
 	tradeStartup: {
 		requiredRouteIds: ["__root__", "/trade/$symbol"],

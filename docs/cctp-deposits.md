@@ -103,9 +103,12 @@ enforce.
 
 ## Card Funding Before A Deposit
 
-When the per-network card funding flag is on ([ADR 0034](adr/0034-privy-card-funding.md)),
-the deposit form also offers to buy USDC by card or bank transfer through
-Privy's fiat onramp. The purchase only delivers native USDC on Arbitrum One to
+When the per-network card funding flag is on and the session has an exact owner
+([ADR 0034](adr/0034-privy-card-funding.md)), the deposit dialog opens on a choice
+between two separate entries, as the official terminal's does: "Transfer USDC"
+leads to the paths below (with a back control to the choice), and "Buy USDC with a
+card" buys USDC by card or bank transfer through Privy's fiat onramp. With the flag
+off, or without an exact owner, the dialog opens directly on the transfer form. The purchase only delivers native USDC on Arbitrum One to
 the exact Hyperliquid owner (the embedded EOA of an email session, or the
 connected external wallet); it is not a deposit. The user then deposits that
 USDC through the paths above, so the sponsored or external-wallet gates, the

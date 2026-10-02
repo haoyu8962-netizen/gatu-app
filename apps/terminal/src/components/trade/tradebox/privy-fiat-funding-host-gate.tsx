@@ -1,7 +1,6 @@
 import { useLingui } from "@lingui/react/macro";
 import { type ComponentType, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { getPrivyFiatFundingFeedback } from "@/lib/trade/privy-fiat-funding-feedback";
 import { finishPrivyFiatFunding, usePrivyFiatFundingAttempt } from "@/stores/use-privy-fiat-funding-store";
 
 export function PrivyFiatFundingHostGate() {
@@ -19,10 +18,7 @@ export function PrivyFiatFundingHostGate() {
 			() => {
 				if (cancelled) return;
 				finishPrivyFiatFunding(attempt);
-				const feedback = getPrivyFiatFundingFeedback("unavailable", attempt.destination.walletKind, (descriptor) =>
-					t(descriptor),
-				);
-				if (feedback) toast.error(feedback.title);
+				toast.error(t`Card purchase could not open. Check your connection and try again.`);
 			},
 		);
 		return () => {

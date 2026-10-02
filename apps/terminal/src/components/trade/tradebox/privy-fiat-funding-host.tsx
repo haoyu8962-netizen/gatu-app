@@ -39,6 +39,10 @@ export function PrivyFiatFundingHost() {
 		if (!attempt || startedAttemptRef.current === attempt) return;
 		const current: PrivyFiatFundingAttempt = attempt;
 		startedAttemptRef.current = current;
+		if (ownerKeyRef.current !== current.ownerKey) {
+			finishPrivyFiatFunding(current);
+			return;
+		}
 
 		function settle(outcome: PrivyFiatFundingOutcome) {
 			finishPrivyFiatFunding(current);
@@ -47,7 +51,18 @@ export function PrivyFiatFundingHost() {
 				t(descriptor),
 			);
 			if (!feedback) return;
-			const options = { description: feedback.description ?? undefined, duration: FUNDS_OUTCOME_TOAST_DURATION_MS };
+			const options = {
+				description:
+					feedback.descriptionLines.length > 0 ? (
+						<span className="flex flex-col gap-1">
+							{feedback.descriptionLines.map((line) => (
+								<span key={line}>{line}</span>
+							))}
+						</span>
+					) : undefined,
+				duration: feedback.persistent ? Number.POSITIVE_INFINITY : FUNDS_OUTCOME_TOAST_DURATION_MS,
+				closeButton: feedback.persistent,
+			};
 			if (feedback.tone === "success") toast.success(feedback.title, options);
 			else if (feedback.tone === "uncertain")
 				toast.warning(feedback.title, { ...options, icon: <StatusGlyph glyph={STATUS_GLYPH_UNKNOWN} /> });

@@ -11,6 +11,8 @@ import {
 	PRIVY_FIAT_FUNDING_BACK_NAVIGATION_ERROR,
 	PRIVY_FIAT_FUNDING_BUSY_MESSAGE,
 	PRIVY_FIAT_FUNDING_CHAIN,
+	PRIVY_FIAT_FUNDING_FAILURE_MESSAGES,
+	PRIVY_FIAT_FUNDING_UNCONFIRMED_MESSAGES,
 	PRIVY_FIAT_FUNDING_USER_EXIT_MESSAGE,
 	resolvePrivyFiatFundingDestination,
 } from "@/domain/trade/privy-fiat-funding";
@@ -74,13 +76,14 @@ describe("card funding destination", () => {
 });
 
 describe("card funding request", () => {
-	it("asks for Arbitrum USDC at the exact owner in production on Mainnet", () => {
+	it("asks for Arbitrum USDC at the exact owner in production on Mainnet, opening at 100 US dollars", () => {
 		expect(PRIVY_FIAT_FUNDING_CHAIN).toBe("eip155:42161");
 		expect(PRIVY_FIAT_FUNDING_ASSET).toBe("0xaf88d065e77c8cC2239327C5EDb3A432268e5831");
 		expect(createPrivyFiatFundingRequest({ address: OWNER, walletKind: "external" }, "mainnet")).toEqual({
-			source: {},
+			source: { defaultAsset: "usd" },
 			destination: { address: OWNER, chain: "eip155:42161", asset: "0xaf88d065e77c8cC2239327C5EDb3A432268e5831" },
 			environment: "production",
+			defaultAmount: "100",
 		});
 	});
 
@@ -104,14 +107,21 @@ describe("card funding outcomes", () => {
 		expect(classifyPrivyFiatFundingResult(undefined)).toBe("submitted");
 	});
 
-	it("separates a user exit, a flow already in progress and other failures", () => {
+	it("separates a user exit, a flow already in progress, a definite failure and an unknown status", () => {
 		const back = new Error("Back navigation");
 		back.name = PRIVY_FIAT_FUNDING_BACK_NAVIGATION_ERROR;
 		expect(classifyPrivyFiatFundingError(back)).toBe("cancelled");
 		expect(classifyPrivyFiatFundingError(new Error(PRIVY_FIAT_FUNDING_USER_EXIT_MESSAGE))).toBe("cancelled");
 		expect(classifyPrivyFiatFundingError(new Error(PRIVY_FIAT_FUNDING_BUSY_MESSAGE))).toBe("busy");
-		expect(classifyPrivyFiatFundingError(new Error("Card declined"))).toBe("failed");
-		expect(classifyPrivyFiatFundingError("Card declined")).toBe("failed");
+		for (const message of PRIVY_FIAT_FUNDING_FAILURE_MESSAGES) {
+			expect(classifyPrivyFiatFundingError(new Error(message))).toBe("failed");
+		}
+		for (const message of PRIVY_FIAT_FUNDING_UNCONFIRMED_MESSAGES) {
+			expect(classifyPrivyFiatFundingError(new Error(message))).toBe("unknown");
+		}
+		expect(classifyPrivyFiatFundingError(new Error("Transaction pending"))).toBe("unknown");
+		expect(classifyPrivyFiatFundingError(new Error("stripe: network error after confirm"))).toBe("unknown");
+		expect(classifyPrivyFiatFundingError("Card declined")).toBe("unknown");
 	});
 
 	it("relies on the error texts the installed Privy SDK actually throws", () => {
@@ -122,28 +132,49 @@ describe("card funding outcomes", () => {
 		expect(bundles).toContain(`Error("${PRIVY_FIAT_FUNDING_USER_EXIT_MESSAGE}")`);
 		expect(bundles).toContain(`this.name="${PRIVY_FIAT_FUNDING_BACK_NAVIGATION_ERROR}"`);
 		expect(bundles).toContain(`Error("${PRIVY_FIAT_FUNDING_BUSY_MESSAGE}")`);
+		for (const message of [...PRIVY_FIAT_FUNDING_FAILURE_MESSAGES, ...PRIVY_FIAT_FUNDING_UNCONFIRMED_MESSAGES]) {
+			if (message === "Transaction failed") {
+				expect(bundles).toMatch(/Error\(`Transaction \$\{[^}]*\?\?"failed"\}`\)/);
+			} else {
+				expect(bundles).toContain(`Error("${message}")`);
+			}
+		}
 	});
 });
 
 describe("card funding feedback", () => {
 	const translate = (descriptor: MessageDescriptor) => descriptor.message ?? descriptor.id;
 
-	it("never claims arrival and adds the gas note only for external wallets", () => {
+	it("never claims arrival and adds the gas note as its own line only for external wallets", () => {
 		const embedded = getPrivyFiatFundingFeedback("confirmed", "embedded", translate);
 		const external = getPrivyFiatFundingFeedback("confirmed", "external", translate);
-		expect(embedded?.tone).toBe("success");
-		expect(embedded?.description).toContain("on its way");
-		expect(embedded?.description).not.toContain("ETH");
-		expect(external?.description).toContain("ETH on Arbitrum");
+		expect(embedded).toMatchObject({ tone: "success", persistent: false });
+		expect(embedded?.descriptionLines).toEqual([
+			"USDC is on its way to your wallet on Arbitrum. Open Deposit once it arrives.",
+		]);
+		expect(external?.descriptionLines).toEqual([
+			"USDC is on its way to your wallet on Arbitrum. Open Deposit once it arrives.",
+			"Depositing it needs a little ETH on Arbitrum for network fees.",
+		]);
 	});
 
-	it("reports a submitted purchase as uncertain, a failure as an error and stays silent on cancel", () => {
-		expect(getPrivyFiatFundingFeedback("submitted", "embedded", translate)?.tone).toBe("uncertain");
+	it("keeps results that may follow a charge on screen as an unknown status, never as an error", () => {
+		for (const outcome of ["submitted", "unknown"] as const) {
+			expect(getPrivyFiatFundingFeedback(outcome, "embedded", translate)).toMatchObject({
+				tone: "uncertain",
+				persistent: true,
+			});
+		}
+		expect(getPrivyFiatFundingFeedback("unknown", "embedded", translate)?.title).toBe("Card purchase status unknown");
+	});
+
+	it("reports a definite failure as an error, a busy flow as a warning and stays silent on cancel", () => {
 		expect(getPrivyFiatFundingFeedback("busy", "embedded", translate)?.tone).toBe("warning");
 		expect(getPrivyFiatFundingFeedback("failed", "external", translate)).toEqual({
 			tone: "error",
 			title: "Card purchase did not complete",
-			description: "If you were charged, check the payment provider's email before trying again.",
+			descriptionLines: ["If you were charged, check the payment provider's email before trying again."],
+			persistent: false,
 		});
 		expect(getPrivyFiatFundingFeedback("cancelled", "external", translate)).toBeNull();
 	});

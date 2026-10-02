@@ -1,9 +1,8 @@
 // @vitest-environment jsdom
 
 import { act, createElement } from "react";
-import type { Root } from "react-dom/client";
+import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { createI18nRoot } from "./harness/react";
 
 const OWNER = "0xabcdefabcdefabcdefabcdefabcdefabcdef1234";
 const OTHER = "0x2222222222222222222222222222222222222222";
@@ -26,8 +25,8 @@ vi.mock("@/lib/hyperliquid", () => ({
 }));
 vi.mock("@/stores/use-global-settings-store", () => ({ useIsTestnet: () => testState.isTestnet }));
 
-import { PrivyFiatFundingEntry } from "@/components/trade/tradebox/deposit/privy-fiat-funding-entry";
 import { getPrivyFiatFundingOwnerKey } from "@/domain/trade/privy-fiat-funding";
+import { type PrivyFiatFundingOffer, usePrivyFiatFundingOffer } from "@/hooks/trade/use-privy-fiat-funding-offer";
 import {
 	isCurrentPrivyFiatFundingAttempt,
 	type PrivyFiatFundingAttempt,
@@ -36,10 +35,28 @@ import {
 	resetPrivyFiatFundingStore,
 } from "@/stores/use-privy-fiat-funding-store";
 
-describe("PrivyFiatFundingEntry", () => {
+describe("usePrivyFiatFundingOffer", () => {
 	let container: HTMLDivElement;
 	let root: Root;
+	let offer: PrivyFiatFundingOffer | null;
 	const onBeforeStart = vi.fn();
+
+	function Probe(props: { enabled: boolean; available: boolean; embeddedWalletAddress: string | undefined }) {
+		offer = usePrivyFiatFundingOffer({ ...props, onBeforeStart });
+		return null;
+	}
+
+	function render(props: { enabled?: boolean; available?: boolean; embeddedWalletAddress?: string } = {}) {
+		act(() =>
+			root.render(
+				createElement(Probe, {
+					enabled: props.enabled ?? true,
+					available: props.available ?? true,
+					embeddedWalletAddress: "embeddedWalletAddress" in props ? props.embeddedWalletAddress : OWNER,
+				}),
+			),
+		);
+	}
 
 	beforeEach(() => {
 		testState.clientKey = OWNER.toLowerCase();
@@ -48,9 +65,10 @@ describe("PrivyFiatFundingEntry", () => {
 		testState.wallets = [{ address: OWNER }];
 		testState.walletSession = { walletAddress: OWNER, walletIntent: "embedded" };
 		resetPrivyFiatFundingStore();
+		offer = null;
 		container = document.createElement("div");
 		document.body.appendChild(container);
-		root = createI18nRoot(container);
+		root = createRoot(container);
 	});
 
 	afterEach(() => {
@@ -59,32 +77,13 @@ describe("PrivyFiatFundingEntry", () => {
 		vi.clearAllMocks();
 	});
 
-	function render(props: { available?: boolean; embeddedWalletAddress?: string } = {}) {
-		act(() =>
-			root.render(
-				createElement(PrivyFiatFundingEntry, {
-					available: props.available ?? true,
-					embeddedWalletAddress: "embeddedWalletAddress" in props ? props.embeddedWalletAddress : OWNER,
-					onBeforeStart,
-				}),
-			),
-		);
-	}
-
-	function button() {
-		return [...container.querySelectorAll("button")].find((element) => element.textContent === "Buy USDC");
-	}
-
-	it("closes the deposit dialog first, then requests funding for the exact embedded owner", () => {
+	it("closes the caller first, then requests funding for the exact embedded owner", () => {
 		const attemptsAtClose: (PrivyFiatFundingAttempt | null)[] = [];
 		onBeforeStart.mockImplementation(() => attemptsAtClose.push(readPrivyFiatFundingAttempt()));
 		render();
-		expect(container.querySelector("[data-deposit-slot='fiat-funding']")?.getAttribute("data-wallet-kind")).toBe(
-			"embedded",
-		);
-		expect(container.textContent).not.toContain("ETH on Arbitrum");
+		expect(offer).toMatchObject({ walletKind: "embedded", disabled: false });
 
-		act(() => button()?.click());
+		act(() => offer?.start());
 
 		expect(attemptsAtClose).toEqual([null]);
 		expect(readPrivyFiatFundingAttempt()).toEqual({
@@ -94,57 +93,68 @@ describe("PrivyFiatFundingEntry", () => {
 		});
 	});
 
-	it("offers an external owner the purchase with the Arbitrum gas note", () => {
+	it("offers an external owner and keys a testnet attempt by network", () => {
 		testState.walletSession = { walletAddress: OWNER, walletIntent: "external" };
+		testState.isTestnet = true;
 		render({ embeddedWalletAddress: undefined });
+		expect(offer?.walletKind).toBe("external");
 
-		expect(container.querySelector("[data-deposit-slot='fiat-funding']")?.getAttribute("data-wallet-kind")).toBe(
-			"external",
-		);
-		expect(container.textContent).toContain("Depositing it needs a little ETH on Arbitrum for network fees.");
+		act(() => offer?.start());
+
+		expect(readPrivyFiatFundingAttempt()).toMatchObject({
+			network: "testnet",
+			ownerKey: getPrivyFiatFundingOwnerKey("testnet", OWNER),
+		});
 	});
 
 	it.each([
+		[
+			"the build flag is off",
+			() => {
+				testState.clientKey = OWNER.toLowerCase();
+			},
+			{ enabled: false },
+		],
 		[
 			"the owner is not the selected Hyperliquid user",
 			() => {
 				testState.clientKey = OTHER;
 			},
+			{},
 		],
 		[
 			"the session is agent-only",
 			() => {
 				testState.sessionMode = "agent-only";
 			},
+			{},
 		],
 		[
 			"Privy does not list the owner wallet",
 			() => {
 				testState.wallets = [{ address: OTHER }];
 			},
+			{},
 		],
-	])("renders nothing when %s", (_label, arrange) => {
+		["the embedded wallet is not the owner", () => {}, { embeddedWalletAddress: OTHER }],
+	])("offers nothing when %s", (_label, arrange, props) => {
 		arrange();
-		render();
+		render(props);
 
-		expect(container.innerHTML).toBe("");
+		expect(offer).toBeNull();
 	});
 
-	it("renders nothing for an email session whose embedded wallet is not the owner", () => {
-		render({ embeddedWalletAddress: OTHER });
-
-		expect(container.innerHTML).toBe("");
-	});
-
-	it("keeps the action disabled while funding actions are unavailable", () => {
+	it("stays disabled and requests nothing while funding actions are unavailable", () => {
 		render({ available: false });
-		act(() => button()?.click());
+		expect(offer?.disabled).toBe(true);
 
-		expect(button()?.disabled).toBe(true);
+		act(() => offer?.start());
+
 		expect(onBeforeStart).not.toHaveBeenCalled();
+		expect(readPrivyFiatFundingAttempt()).toBeNull();
 	});
 
-	it("keeps the action disabled while another card purchase is open", () => {
+	it("stays disabled while another card purchase is open", () => {
 		const open: PrivyFiatFundingAttempt = {
 			destination: { address: OWNER, walletKind: "embedded" },
 			network: "mainnet",
@@ -154,9 +164,10 @@ describe("PrivyFiatFundingEntry", () => {
 			requestPrivyFiatFunding(open);
 		});
 		render();
-		act(() => button()?.click());
+		expect(offer?.disabled).toBe(true);
 
-		expect(button()?.disabled).toBe(true);
+		act(() => offer?.start());
+
 		expect(onBeforeStart).not.toHaveBeenCalled();
 		expect(isCurrentPrivyFiatFundingAttempt(open)).toBe(true);
 	});

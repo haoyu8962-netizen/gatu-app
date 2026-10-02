@@ -87,6 +87,14 @@ const testState = vi.hoisted(() => ({
 	emailAddress: null as string | null,
 	submissionOutcomeUnknown: false,
 	exchangeSignal: undefined as AbortSignal | undefined,
+	fiatOffer: null as null | { walletKind: "embedded" | "external"; disabled: boolean; start: ReturnType<typeof vi.fn> },
+	fiatOfferOptions: null as null | {
+		enabled: boolean;
+		available: boolean;
+		embeddedWalletAddress: string | undefined;
+		onBeforeStart: () => void;
+	},
+	isArbitrum: true,
 	exchangeGuards: new Map<string, ((params?: unknown, signal?: AbortSignal) => Promise<void>) | undefined>(),
 	exchangeFinalWait: vi.fn(),
 	exchangeErrors: new Map<string, unknown>(),
@@ -150,6 +158,8 @@ Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 vi.mock("@sairn/ui", () => ({
 	Button: ({ children, disabled, onClick }: ButtonHTMLAttributes<HTMLButtonElement>) =>
 		createElement("button", { disabled, onClick, type: "button" }, children),
+	ButtonIcon: ({ children, disabled, onClick, "aria-label": label }: ButtonHTMLAttributes<HTMLButtonElement>) =>
+		createElement("button", { "aria-label": label, disabled, onClick, type: "button" }, children),
 	ModalContent: ({ children }: { children?: ReactNode }) => createElement("div", null, children),
 	ModalHeader: ({ children }: { children?: ReactNode }) => createElement("div", null, children),
 	ModalTitle: ({ children, className }: { children?: ReactNode; className?: string }) =>
@@ -413,7 +423,7 @@ vi.mock("@/lib/hyperliquid/use-deposit", () => ({
 			executionAmount: null,
 			executionRoute: testState.depositExecutionRoute,
 			hash: testState.depositHash,
-			isArbitrum: true,
+			isArbitrum: testState.isArbitrum,
 			isSwitching: false,
 			maxAmount: "10",
 			maxDepositRaw: testState.depositMaxRaw,
@@ -460,6 +470,18 @@ vi.mock("@/stores/use-global-modal-store", () => ({
 vi.mock("@/stores/use-global-settings-store", () => ({
 	getResolvedFormatLocale: () => "en-US",
 	useIsTestnet: () => false,
+}));
+
+vi.mock("@/hooks/trade/use-privy-fiat-funding-offer", () => ({
+	usePrivyFiatFundingOffer: (options: {
+		enabled: boolean;
+		available: boolean;
+		embeddedWalletAddress: string | undefined;
+		onBeforeStart: () => void;
+	}) => {
+		testState.fiatOfferOptions = options;
+		return testState.fiatOffer;
+	},
 }));
 
 vi.mock("@/components/trade/components/pending-action-modal", () => ({
@@ -599,7 +621,12 @@ vi.mock("@/components/trade/tradebox/deposit/withdraw-form", () => ({
 }));
 
 vi.mock("@/components/trade/tradebox/deposit/wrong-network-screen", () => ({
-	WrongNetworkScreen: () => null,
+	WrongNetworkScreen: ({ onBack }: { onBack?: () => void }) =>
+		createElement(
+			"div",
+			{ "data-testid": "wrong-network-screen" },
+			onBack ? createElement("button", { onClick: onBack, type: "button" }, "Back to deposit methods") : null,
+		),
 }));
 
 describe("DepositModal withdrawal route pre-execution guard wiring", () => {
@@ -635,6 +662,9 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 		testState.fundsActionUnavailableReason = null;
 		testState.infoQueryCalls.length = 0;
 		testState.activeTab = "deposit";
+		testState.fiatOffer = null;
+		testState.fiatOfferOptions = null;
+		testState.isArbitrum = true;
 		testState.modalOpen = false;
 		testState.modalOnOpenChange = null;
 		testState.deposit.mockReset();
@@ -2163,5 +2193,183 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 		expect(toastMocks.success).not.toHaveBeenCalled();
 		expect(toastMocks.warning).not.toHaveBeenCalled();
 		expect(closeDepositModal).toHaveBeenCalledOnce();
+	});
+
+	describe("deposit method choice", () => {
+		function offerCardFunding(walletKind: "embedded" | "external" = "embedded") {
+			testState.fiatOffer = { walletKind, disabled: false, start: vi.fn() };
+		}
+
+		function methods() {
+			return container.querySelector('[data-deposit-layout="methods"]');
+		}
+
+		function depositForm() {
+			return container.querySelector('[data-testid="deposit-routing-status"]');
+		}
+
+		function backButton() {
+			return container.querySelector<HTMLButtonElement>('button[aria-label="Back"]');
+		}
+
+		function chooseMethod(method: "fiat" | "transfer") {
+			const option = container.querySelector<HTMLButtonElement>(`[data-deposit-method="${method}"]`);
+			if (!option) throw new Error(`Missing ${method} option`);
+			act(() => option.click());
+		}
+
+		it("goes straight to the deposit form when no card funding is offered", async () => {
+			testState.modalOpen = true;
+			await rerender();
+
+			expect(methods()).toBeNull();
+			expect(depositForm()).not.toBeNull();
+			expect(backButton()).toBeNull();
+		});
+
+		it("opens on the method choice, leads to the deposit form and back", async () => {
+			offerCardFunding();
+			testState.modalOpen = true;
+			await rerender();
+			expect(methods()).not.toBeNull();
+			expect(depositForm()).toBeNull();
+
+			chooseMethod("transfer");
+			expect(methods()).toBeNull();
+			expect(depositForm()).not.toBeNull();
+
+			const back = backButton();
+			expect(back).not.toBeNull();
+			act(() => back?.click());
+			expect(methods()).not.toBeNull();
+			expect(depositForm()).toBeNull();
+		});
+
+		it("starts the card purchase from its own entry", async () => {
+			offerCardFunding();
+			testState.modalOpen = true;
+			await rerender();
+
+			chooseMethod("fiat");
+
+			expect(testState.fiatOffer?.start).toHaveBeenCalledOnce();
+			expect(testState.deposit).not.toHaveBeenCalled();
+		});
+
+		it("returns to the method choice every time the dialog opens", async () => {
+			offerCardFunding();
+			testState.modalOpen = true;
+			await rerender();
+			chooseMethod("transfer");
+			expect(depositForm()).not.toBeNull();
+
+			testState.modalOpen = false;
+			await rerender();
+			expect(depositForm()).not.toBeNull();
+			testState.modalOpen = true;
+			await rerender();
+
+			expect(methods()).not.toBeNull();
+		});
+
+		it("offers the choice before asking an external wallet to switch to Arbitrum", async () => {
+			offerCardFunding("external");
+			testState.isArbitrum = false;
+			testState.walletProviderStatus = "ready";
+			testState.modalOpen = true;
+			await rerender();
+			expect(methods()).not.toBeNull();
+			expect(container.querySelector('[data-testid="wrong-network-screen"]')).toBeNull();
+
+			chooseMethod("transfer");
+
+			expect(container.querySelector('[data-testid="wrong-network-screen"]')).not.toBeNull();
+		});
+
+		it("closes the deposit dialog before the card purchase starts", async () => {
+			offerCardFunding();
+			testState.modalOpen = true;
+			await rerender();
+
+			act(() => testState.fiatOfferOptions?.onBeforeStart());
+
+			expect(closeDepositModal).toHaveBeenCalledOnce();
+		});
+
+		it("keeps the way back disabled while a deposit is being prepared", async () => {
+			offerCardFunding("external");
+			testState.routingResponse = { depositRoute: "cctp", withdrawalRoute: "cctp" };
+			testState.modalOpen = true;
+			await rerender();
+			chooseMethod("transfer");
+			expect(backButton()?.disabled).toBe(false);
+
+			let releaseRouting: () => void = () => undefined;
+			testState.fetchFreshRouting.mockImplementation(
+				() =>
+					new Promise((resolve) => {
+						releaseRouting = () => resolve({ depositRoute: "bridge", withdrawalRoute: "cctp" });
+					}),
+			);
+			await act(async () => getButton("Submit deposit").click());
+			expect(backButton()?.disabled).toBe(true);
+
+			await act(async () => releaseRouting());
+			expect(backButton()?.disabled).toBe(false);
+			expect(testState.deposit).not.toHaveBeenCalled();
+		});
+
+		it("decides the first screen once per opening instead of flipping while the session settles", async () => {
+			testState.modalOpen = true;
+			await rerender();
+			expect(depositForm()).not.toBeNull();
+
+			offerCardFunding();
+			await rerender();
+			expect(depositForm()).not.toBeNull();
+			expect(methods()).toBeNull();
+
+			testState.modalOpen = false;
+			await rerender();
+			testState.modalOpen = true;
+			await rerender();
+			expect(methods()).not.toBeNull();
+
+			testState.fiatOffer = null;
+			await rerender();
+			expect(methods()).not.toBeNull();
+			const fiat = container.querySelector<HTMLButtonElement>('[data-deposit-method="fiat"]');
+			expect(fiat?.disabled).toBe(true);
+		});
+
+		it("lets an external wallet go back from the network switch to the method choice", async () => {
+			offerCardFunding("external");
+			testState.isArbitrum = false;
+			testState.walletProviderStatus = "ready";
+			testState.modalOpen = true;
+			await rerender();
+			chooseMethod("transfer");
+
+			act(() => getButton("Back to deposit methods").click());
+
+			expect(methods()).not.toBeNull();
+			expect(container.querySelector('[data-testid="wrong-network-screen"]')).toBeNull();
+		});
+
+		it("lets the offer know when deposits are unavailable or busy", async () => {
+			offerCardFunding();
+			testState.modalOpen = true;
+			await rerender();
+			expect(testState.fiatOfferOptions?.available).toBe(true);
+
+			testState.depositStatus = "pending";
+			await rerender();
+			expect(testState.fiatOfferOptions?.available).toBe(false);
+
+			testState.depositStatus = "idle";
+			testState.depositAvailable = false;
+			await rerender();
+			expect(testState.fiatOfferOptions?.available).toBe(false);
+		});
 	});
 });

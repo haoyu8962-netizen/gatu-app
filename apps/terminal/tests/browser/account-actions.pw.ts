@@ -228,7 +228,7 @@ for (const width of [375, 393, 1363]) {
 
 for (const width of [375, 1363]) {
 	for (const theme of ["light", "dark"] as const) {
-		test(`shows the ${theme} card funding entry in both deposit forms at ${width}px`, async ({ page }) => {
+		test(`offers ${theme} card funding as its own deposit method at ${width}px`, async ({ page }) => {
 			await page.setViewportSize({ width, height: width === 375 ? 666 : 852 });
 			await page.goto("/account-actions.html?surface=funds");
 			await page.getByRole("button", { name: `Theme ${theme}`, exact: true }).click();
@@ -237,19 +237,29 @@ for (const width of [375, 1363]) {
 			for (const walletKind of ["embedded", "external"] as const) {
 				if (walletKind === "external") await page.getByRole("button", { name: "Toggle email", exact: true }).click();
 				await page.getByRole("button", { name: "Open deposit", exact: true }).click();
-				const card = dialog.locator('[data-deposit-slot="fiat-funding"]');
-				await expect(card).toHaveAttribute("data-wallet-kind", walletKind);
-				await expect(card.getByRole("heading", { name: "Buy USDC with a card" })).toBeVisible();
-				await expect(card.getByText("ETH on Arbitrum", { exact: false })).toHaveCount(walletKind === "external" ? 1 : 0);
+				const methods = dialog.locator('[data-deposit-layout="methods"]');
+				await expect(methods.getByRole("heading", { name: "Deposit", exact: true })).toBeVisible();
+				const transfer = methods.locator('[data-deposit-method="transfer"]');
+				const fiat = methods.locator('[data-deposit-method="fiat"]');
+				await expect(transfer).toContainText("Transfer USDC");
+				await expect(fiat).toContainText("Buy USDC with a card");
+				await expect(fiat.getByText("ETH on Arbitrum", { exact: false })).toHaveCount(walletKind === "external" ? 1 : 0);
+				await expect(dialog.getByRole("heading", { name: "Deposit USDC from Arbitrum" })).toHaveCount(0);
 				expect(await dialog.evaluate((node) => node.scrollWidth <= node.clientWidth + 1)).toBe(true);
-				const button = card.getByRole("button", { name: "Buy USDC", exact: true });
-				await button.scrollIntoViewIfNeeded();
-				await expect(button).toBeInViewport();
-				await expect(button).toBeEnabled();
-				await page.screenshot({ path: test.info().outputPath(`card-funding-${walletKind}-${width}-${theme}.png`) });
-				await button.click();
+				await expect(fiat).toBeInViewport({ ratio: 1 });
+				await page.screenshot({ path: test.info().outputPath(`deposit-methods-${walletKind}-${width}-${theme}.png`) });
+
+				await transfer.click();
+				await expect(dialog.getByRole("heading", { name: "Deposit USDC from Arbitrum" })).toBeVisible();
+				await expect(dialog.locator('[data-deposit-layout="methods"]')).toHaveCount(0);
+				await dialog.getByRole("button", { name: "Close", exact: true }).click();
+				await expect(dialog).toHaveCount(0);
+
+				await page.getByRole("button", { name: "Open deposit", exact: true }).click();
+				await methods.locator('[data-deposit-method="fiat"]').click();
 				await expect(dialog).toHaveCount(0);
 			}
+			await expect(page.getByRole("status", { name: "Fixture card purchases" })).toHaveText("2");
 		});
 	}
 }

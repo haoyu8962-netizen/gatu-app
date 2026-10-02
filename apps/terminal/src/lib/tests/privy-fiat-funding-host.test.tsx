@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
 
-import { act, createElement, StrictMode } from "react";
+import { act, createElement, isValidElement, type ReactNode, StrictMode } from "react";
 import type { Root } from "react-dom/client";
+import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createI18nRoot } from "./harness/react";
 
@@ -42,6 +43,10 @@ import {
 	requestPrivyFiatFunding,
 	resetPrivyFiatFundingStore,
 } from "@/stores/use-privy-fiat-funding-store";
+
+function descriptionText(node: ReactNode): string {
+	return isValidElement(node) ? renderToStaticMarkup(node).replace(/<[^>]+>/g, "|") : String(node ?? "");
+}
 
 function deferred<T>() {
 	let resolve!: (value: T) => void;
@@ -106,9 +111,10 @@ describe("PrivyFiatFundingHost", () => {
 
 		expect(testState.fund).toHaveBeenCalledTimes(1);
 		expect(testState.fund).toHaveBeenCalledWith({
-			source: {},
+			source: { defaultAsset: "usd" },
 			destination: { address: OWNER, chain: "eip155:42161", asset: "0xaf88d065e77c8cC2239327C5EDb3A432268e5831" },
 			environment: "production",
+			defaultAmount: "100",
 		});
 		expect(request(createAttempt())).toBe(false);
 	});
@@ -118,16 +124,19 @@ describe("PrivyFiatFundingHost", () => {
 		request(attempt);
 		await settle({ resolve: { status: "confirmed" } });
 
-		expect(toastMocks.success).toHaveBeenCalledWith("Card purchase confirmed", {
-			description: "USDC is on its way to your wallet on Arbitrum. Open Deposit once it arrives.",
-			duration: 10_000,
-		});
+		expect(toastMocks.success).toHaveBeenCalledTimes(1);
+		const [title, options] = toastMocks.success.mock.calls[0];
+		expect(title).toBe("Card purchase confirmed");
+		expect(options).toMatchObject({ duration: 10_000, closeButton: false });
+		expect(descriptionText(options.description)).toContain(
+			"USDC is on its way to your wallet on Arbitrum. Open Deposit once it arrives.",
+		);
 		expect(isCurrentPrivyFiatFundingAttempt(attempt)).toBe(false);
 		testState.fund.mockImplementation(() => new Promise(() => {}));
 		expect(request(createAttempt())).toBe(true);
 	});
 
-	it("reports a submitted purchase as uncertain and adds the gas note for an external wallet", async () => {
+	it("keeps a submitted purchase on screen as uncertain, with the gas note on its own line for an external wallet", async () => {
 		request(createAttempt("external"));
 		await settle({ resolve: { status: "submitted" } });
 
@@ -135,9 +144,11 @@ describe("PrivyFiatFundingHost", () => {
 		expect(toastMocks.warning).toHaveBeenCalledTimes(1);
 		const [title, options] = toastMocks.warning.mock.calls[0];
 		expect(title).toBe("Card purchase submitted");
-		expect(options.description).toContain("still processing");
-		expect(options.description).toContain("ETH on Arbitrum");
+		expect(options).toMatchObject({ duration: Number.POSITIVE_INFINITY, closeButton: true });
 		expect(options.icon).toBeDefined();
+		const text = descriptionText(options.description);
+		expect(text).toContain("still processing");
+		expect(text).toContain("|Depositing it needs a little ETH on Arbitrum for network fees.|");
 	});
 
 	it("stays silent when the user leaves the flow", async () => {
@@ -151,12 +162,34 @@ describe("PrivyFiatFundingHost", () => {
 		expect(request(createAttempt())).toBe(true);
 	});
 
-	it("never shows the provider's raw error text", async () => {
+	it("reports an unrecognized rejection as an unknown status without the provider's raw text", async () => {
 		request(createAttempt());
 		await settle({ reject: new Error("stripe: card_declined do_not_honor") });
 
+		expect(toastMocks.error).not.toHaveBeenCalled();
+		expect(toastMocks.warning).toHaveBeenCalledTimes(1);
+		const [title, options] = toastMocks.warning.mock.calls[0];
+		expect(title).toBe("Card purchase status unknown");
+		expect(options).toMatchObject({ duration: Number.POSITIVE_INFINITY, closeButton: true });
+		expect(descriptionText(options.description)).not.toContain("card_declined");
+	});
+
+	it("reports a definite provider failure as an error", async () => {
+		request(createAttempt());
+		await settle({ reject: new Error("Unable to start payment session") });
+
 		expect(toastMocks.error).toHaveBeenCalledTimes(1);
-		expect(JSON.stringify(toastMocks.error.mock.calls[0])).not.toContain("card_declined");
+		expect(toastMocks.error.mock.calls[0][0]).toBe("Card purchase did not complete");
+		expect(descriptionText(toastMocks.error.mock.calls[0][1].description)).not.toContain("payment session");
+	});
+
+	it("does not open Privy when the owner changed before the host started the attempt", () => {
+		act(() => identity.set(OTHER));
+		const attempt = createAttempt();
+		request(attempt);
+
+		expect(testState.fund).not.toHaveBeenCalled();
+		expect(isCurrentPrivyFiatFundingAttempt(attempt)).toBe(false);
 	});
 
 	it("drops the result of an attempt whose owner is no longer current", async () => {

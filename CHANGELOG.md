@@ -8,13 +8,15 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Added
 
-- Card funding, off by default: when a network's flag is on, the deposit form can buy USDC by card
-  or bank transfer through Privy's payment providers. The USDC goes only to your own trading wallet
-  on Arbitrum (your email wallet, or the external wallet you are connected with), and you then
-  deposit it as usual; external wallets need a little Arbitrum ETH for that step. Notifications say
-  a purchase was confirmed or is still processing, never that USDC has arrived. Releasing it on
-  Mainnet needs the Privy funding setup, reviewed legal text and an explicit release option
-  (ADR 0034).
+- Card funding, off by default: when a network's flag is on, the Deposit dialog opens on two
+  separate choices, as on the official terminal: transfer USDC on Arbitrum, or buy USDC by card or
+  bank transfer through Privy's payment providers (the amount is prefilled with 100 US dollars and
+  can be changed). The USDC goes only to your own trading wallet on Arbitrum (your email wallet, or
+  the external wallet you are connected with), and you then deposit it as usual; external wallets
+  need a little Arbitrum ETH for that step. Notifications say a purchase was confirmed, is still
+  processing or has an unknown status (the last two stay until you dismiss them), never that USDC
+  has arrived. Releasing it on Mainnet needs the Privy funding setup, reviewed legal text and an
+  explicit release option (ADR 0034).
 - Earn is live. The new `/earn` page lists Hyperliquid's borrow and lend reserves with their LTV,
   APY, oracle price and totals, your supplied and borrowed amounts, interest and liquidation
   prices, plus your health factor, and lets you supply, withdraw, borrow and repay. Max follows the
