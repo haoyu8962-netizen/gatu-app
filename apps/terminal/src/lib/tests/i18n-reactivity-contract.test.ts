@@ -336,6 +336,22 @@ describe("dependencies React Compiler can see", () => {
 			"const context = { i18n }; const { i18n: intl } = context; return at === null ? null : format(at, { locale: intl.locale });",
 		],
 		[
+			"an i18n object returned by a function called through an alias",
+			"function getIntl() { return i18n; } const readIntl = getIntl; const intl = readIntl(); return at === null ? null : format(at, { locale: intl.locale });",
+		],
+		[
+			"an i18n object returned by an object method",
+			"const helpers = { getIntl() { return i18n; } }; const intl = helpers.getIntl(); return at === null ? null : format(at, { locale: intl.locale });",
+		],
+		[
+			"an i18n object returned by an object getter",
+			"const helpers = { get intl() { return i18n; } }; return at === null ? null : format(at, { locale: helpers.intl.locale });",
+		],
+		[
+			"an i18n object destructured from a spread useLingui() result",
+			"const context = { ...useLingui() }; const { i18n: intl } = context; return <div>{groups.map((group) => intl.locale + group[0])}</div>;",
+		],
+		[
 			"an i18n object wrapped in an object and read through an alias",
 			"const box = { intl: i18n }; const copy = box; return at === null ? null : format(at, { locale: copy.intl.locale });",
 		],
@@ -396,6 +412,10 @@ describe("dependencies React Compiler can see", () => {
 		[
 			"a locale member of a value that no hook returned",
 			"const settings = readSettings(); return at === null ? null : format(at, { locale: settings.locale });",
+		],
+		[
+			"a member that a later property overrides after a spread",
+			'const box = { intl: i18n }; const copy = { ...box, intl: { locale: "en" } }; return at === null ? null : format(at, { locale: copy.intl.locale });',
 		],
 		[
 			"an i18n member of a value that no hook returned",
@@ -588,6 +608,11 @@ function Sample({ at }: Props) { const { i18n } = useLingui(); return memoize(()
 			["lingui.i18n.locale"],
 		],
 		[
+			"a locale dependency of an i18n object destructured from a spread useLingui() result",
+			"const context = { ...useLingui() }; const { i18n: intl } = context; return useMemo(() => format(at, intl), [at, intl.locale]);",
+			["intl.locale"],
+		],
+		[
 			"a locale dependency below an i18n object chosen between two object literals",
 			"const box = flag ? { i18n: other } : { i18n }; return useMemo(() => format(at, box.i18n), [at, box.i18n.locale]);",
 			["box.i18n.locale"],
@@ -730,11 +755,13 @@ function listSourceFiles(directory: string): string[] {
 type LinguiRole = "coreNamespace" | "hook" | "hookNamespace" | "hookResult" | "i18n" | "lingui";
 type Roles = ReadonlySet<LinguiRole>;
 
-// What is known about a value: the Lingui roles it may hold, and for an object built from literals the
-// values its members may hold. Values nest at most MAX_VALUE_DEPTH levels so the analysis settles.
+// What is known about a value: the Lingui roles it may hold, for an object built from literals the
+// values its members may hold, and for a function in this file what a call to it may return. Values
+// nest at most MAX_VALUE_DEPTH levels so the analysis settles.
 interface LinguiValue {
 	roles: Roles;
 	members: ReadonlyMap<string, LinguiValue>;
+	returns?: LinguiValue;
 }
 
 const NO_VALUE: LinguiValue = { roles: new Set(), members: new Map() };
@@ -746,8 +773,6 @@ interface FileContext {
 	// useLingui() result, the useLingui hook, a namespace import of @lingui/core or @lingui/react, or a
 	// hook's result that may be one of these.
 	values: Map<ts.Identifier, LinguiValue>;
-	// What a call to a function in this file may return, keyed by the function's declaring identifier.
-	returnValues: Map<ts.Identifier, LinguiValue>;
 	// React hooks imported under another name.
 	hookAliases: Map<string, string>;
 }
@@ -755,19 +780,15 @@ interface FileContext {
 const LINGUI_HOOK_MODULES = new Set(["@lingui/react", "@lingui/react/macro"]);
 
 function describeFile(file: ts.SourceFile, fileName: string): FileContext {
-	const context: FileContext = { fileName, values: new Map(), returnValues: new Map(), hookAliases: new Map() };
+	const context: FileContext = { fileName, values: new Map(), hookAliases: new Map() };
 	const declarations: (ts.VariableDeclaration | ts.ParameterDeclaration)[] = [];
-	const functions: [ts.Identifier, ts.SignatureDeclaration][] = [];
+	const functions: ts.FunctionDeclaration[] = [];
 	const visit = (node: ts.Node) => {
 		if (ts.isImportDeclaration(node) && ts.isStringLiteral(node.moduleSpecifier)) {
 			describeImport(node, node.moduleSpecifier.text, context);
 		}
 		if ((ts.isVariableDeclaration(node) && node.initializer) || ts.isParameter(node)) declarations.push(node);
-		if (ts.isVariableDeclaration(node) && node.initializer && ts.isIdentifier(node.name)) {
-			const value = skipTransparentExpressions(node.initializer);
-			if (ts.isFunctionExpression(value) || ts.isArrowFunction(value)) functions.push([node.name, value]);
-		}
-		if (ts.isFunctionDeclaration(node) && node.name) functions.push([node.name, node]);
+		if (ts.isFunctionDeclaration(node) && node.name) functions.push(node);
 		ts.forEachChild(node, visit);
 	};
 	visit(file);
@@ -779,8 +800,9 @@ function describeFile(file: ts.SourceFile, fileName: string): FileContext {
 				changed = addValue(context.values, binding, value) || changed;
 			}
 		}
-		for (const [binding, fn] of functions) {
-			changed = addValue(context.returnValues, binding, getReturnValue(fn, context)) || changed;
+		for (const fn of functions) {
+			const name = fn.name as ts.Identifier;
+			changed = addValue(context.values, name, functionValue(fn, context, 0)) || changed;
 		}
 	}
 	return context;
@@ -812,8 +834,8 @@ function describeImport(declaration: ts.ImportDeclaration, from: string, context
 }
 
 // What a variable or parameter binds: whatever its initializer may hold (an alias, a hook call, an
-// object, a conditional or logical choice), and for a destructured name the member it takes or its
-// default.
+// object, a function, a conditional or logical choice), and for a destructured name the member it
+// takes or its default.
 function describeLinguiBinding(
 	declaration: ts.VariableDeclaration | ts.ParameterDeclaration,
 	context: FileContext,
@@ -836,7 +858,7 @@ function describePatternValues(
 }
 
 function getElementValue(element: ts.BindingElement, source: LinguiValue, context: FileContext): LinguiValue {
-	if (element.dotDotDotToken) return { roles: NO_VALUE.roles, members: source.members };
+	if (element.dotDotDotToken) return { roles: NO_VALUE.roles, members: getSpreadMembers(source) };
 	const member = getMemberValue(source, getDestructuredKey(element));
 	return element.initializer ? mergeValues(member, getLinguiValue(element.initializer, context)) : member;
 }
@@ -854,30 +876,33 @@ function getPatternSource(pattern: ts.ObjectBindingPattern, context: FileContext
 	return NO_VALUE;
 }
 
-// What every `return` value (or an expression body) may hold.
-function getReturnValue(fn: ts.SignatureDeclaration, context: FileContext): LinguiValue {
+// A function value: what every `return` value (or an expression body) may hold.
+function functionValue(fn: ts.SignatureDeclaration, context: FileContext, depth: number): LinguiValue {
 	const body = (fn as ts.FunctionLikeDeclaration).body;
 	if (!body) return NO_VALUE;
-	if (!ts.isBlock(body)) return getLinguiValue(body, context);
-	let value = NO_VALUE;
+	if (!ts.isBlock(body)) return { ...NO_VALUE, returns: getLinguiValue(body, context, depth + 1) };
+	let returns = NO_VALUE;
 	const visit = (node: ts.Node) => {
 		if (ts.isFunctionLike(node)) return;
-		if (ts.isReturnStatement(node) && node.expression)
-			value = mergeValues(value, getLinguiValue(node.expression, context));
+		if (ts.isReturnStatement(node) && node.expression) {
+			returns = mergeValues(returns, getLinguiValue(node.expression, context, depth + 1));
+		}
 		ts.forEachChild(node, visit);
 	};
 	ts.forEachChild(body, visit);
-	return value;
+	return { ...NO_VALUE, returns };
 }
 
-// A call to useLingui returns its result; a call to a function in this file returns what that function
-// returns; a call to any other hook may return the i18n object or a context that carries it, so it is
-// treated as possibly either (stricter, never looser). A conditional or logical expression may hold
-// any of its operands, and an object literal holds what its members hold.
+// A call to useLingui returns its result; a call to a function value returns what that function returns,
+// whether it is called by its own name, an alias or as a method; a call to any other hook may return the
+// i18n object or a context that carries it, so it is treated as possibly either (stricter, never
+// looser). A conditional or logical expression may hold any of its operands, and an object literal
+// holds what its members hold.
 function getLinguiValue(expression: ts.Expression, context: FileContext, depth = 0): LinguiValue {
 	if (depth > MAX_VALUE_DEPTH) return NO_VALUE;
 	const target = skipTransparentExpressions(expression);
 	if (ts.isObjectLiteralExpression(target)) return getObjectValue(target, context, depth);
+	if (ts.isFunctionExpression(target) || ts.isArrowFunction(target)) return functionValue(target, context, depth);
 	if (ts.isIdentifier(target)) {
 		const binding = findBinding(target);
 		return (binding && context.values.get(binding)) ?? NO_VALUE;
@@ -891,33 +916,52 @@ function getLinguiValue(expression: ts.Expression, context: FileContext, depth =
 	if (ts.isBinaryExpression(target) && SHORT_CIRCUIT_OPERATORS.has(target.operatorToken.kind)) {
 		return mergeValues(getLinguiValue(target.left, context, depth), getLinguiValue(target.right, context, depth));
 	}
-	if (ts.isCallExpression(target)) return getCallValue(target, context);
+	if (ts.isCallExpression(target)) return getCallValue(target, context, depth);
 	if (!ts.isPropertyAccessExpression(target) && !ts.isElementAccessExpression(target)) return NO_VALUE;
 	return getMemberValue(getLinguiValue(target.expression, context, depth), getMemberKey(target));
 }
 
+// Members in source order: a later property, method or getter replaces an earlier one of the same
+// name, and a spread copies the members its value is known to carry.
 function getObjectValue(literal: ts.ObjectLiteralExpression, context: FileContext, depth: number): LinguiValue {
-	let members = new Map<string, LinguiValue>();
+	const members = new Map<string, LinguiValue>();
 	for (const property of literal.properties) {
 		if (ts.isSpreadAssignment(property)) {
-			members = mergeMembers(members, getLinguiValue(property.expression, context, depth + 1).members);
+			for (const [key, value] of getSpreadMembers(getLinguiValue(property.expression, context, depth + 1))) {
+				members.set(key, value);
+			}
 			continue;
 		}
-		if (!ts.isPropertyAssignment(property) && !ts.isShorthandPropertyAssignment(property)) continue;
 		const key = getStaticName(property.name);
 		if (key === undefined) continue;
-		const valueExpression = ts.isPropertyAssignment(property) ? property.initializer : property.name;
-		members.set(key, mergeValues(members.get(key) ?? NO_VALUE, getLinguiValue(valueExpression, context, depth + 1)));
+		if (ts.isPropertyAssignment(property)) members.set(key, getLinguiValue(property.initializer, context, depth + 1));
+		else if (ts.isShorthandPropertyAssignment(property))
+			members.set(key, getLinguiValue(property.name, context, depth + 1));
+		else if (ts.isMethodDeclaration(property)) members.set(key, functionValue(property, context, depth + 1));
+		else if (ts.isGetAccessorDeclaration(property)) {
+			members.set(key, functionValue(property, context, depth + 1).returns ?? NO_VALUE);
+		}
 	}
 	return { roles: NO_VALUE.roles, members };
 }
 
-function getCallValue(call: ts.CallExpression, context: FileContext): LinguiValue {
-	if (getLinguiValue(call.expression, context).roles.has("hook")) return roleValue("lingui");
-	const callee = skipTransparentExpressions(call.expression);
-	const binding = ts.isIdentifier(callee) ? findBinding(callee) : undefined;
-	const returned = binding ? context.returnValues.get(binding) : undefined;
-	if (returned && (returned.roles.size > 0 || returned.members.size > 0)) return returned;
+// The members a spread copies: those known from object literals, and the Lingui members a role implies
+// (`{ ...useLingui() }` carries `i18n`). Spreading the i18n object itself copies plain values only.
+function getSpreadMembers(value: LinguiValue): Map<string, LinguiValue> {
+	const members = new Map(value.members);
+	for (const role of value.roles) {
+		for (const key of ["i18n", "useLingui"]) {
+			const member = getMemberRole(role, key);
+			if (member) members.set(key, mergeValues(members.get(key) ?? NO_VALUE, roleValue(member)));
+		}
+	}
+	return members;
+}
+
+function getCallValue(call: ts.CallExpression, context: FileContext, depth: number): LinguiValue {
+	const callee = getLinguiValue(call.expression, context, depth);
+	if (callee.roles.has("hook")) return roleValue("lingui");
+	if (callee.returns && !isEmptyValue(callee.returns)) return callee.returns;
 	return /^use[A-Z0-9]/.test(calleeName(call) ?? "") ? roleValue("hookResult") : NO_VALUE;
 }
 
@@ -929,15 +973,26 @@ function getMemberValue(owner: LinguiValue, key: string | undefined): LinguiValu
 		if (member) roles.add(member);
 	}
 	const member = owner.members.get(key);
-	return member ? mergeValues({ roles, members: new Map() }, member) : { roles, members: new Map() };
+	const known: LinguiValue = { roles, members: new Map() };
+	return member ? mergeValues(known, member) : known;
 }
 
 function roleValue(role: LinguiRole): LinguiValue {
 	return { roles: new Set([role]), members: new Map() };
 }
 
+function isEmptyValue(value: LinguiValue): boolean {
+	return value.roles.size === 0 && value.members.size === 0 && (!value.returns || isEmptyValue(value.returns));
+}
+
 function mergeValues(first: LinguiValue, second: LinguiValue): LinguiValue {
-	return { roles: new Set([...first.roles, ...second.roles]), members: mergeMembers(first.members, second.members) };
+	const returns =
+		first.returns && second.returns ? mergeValues(first.returns, second.returns) : (first.returns ?? second.returns);
+	return {
+		roles: new Set([...first.roles, ...second.roles]),
+		members: mergeMembers(first.members, second.members),
+		...(returns ? { returns } : {}),
+	};
 }
 
 function mergeMembers(
@@ -954,6 +1009,7 @@ function truncateValue(value: LinguiValue, depth: number): LinguiValue {
 	return {
 		roles: value.roles,
 		members: new Map([...value.members].map(([key, member]) => [key, truncateValue(member, depth - 1)])),
+		...(value.returns ? { returns: truncateValue(value.returns, depth - 1) } : {}),
 	};
 }
 
@@ -961,7 +1017,8 @@ function serializeValue(value: LinguiValue): string {
 	const members = [...value.members]
 		.sort(([first], [second]) => first.localeCompare(second))
 		.map(([key, member]) => `${key}:${serializeValue(member)}`);
-	return `${[...value.roles].sort().join(",")}{${members.join(";")}}`;
+	const returns = value.returns ? `=>${serializeValue(value.returns)}` : "";
+	return `${[...value.roles].sort().join(",")}{${members.join(";")}}${returns}`;
 }
 
 function getMemberRole(ownerRole: LinguiRole, key: string): LinguiRole | undefined {
