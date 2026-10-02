@@ -605,6 +605,16 @@ export function Sample() { const numberFormat = useNumberFormat(); void numberFo
 			["components/sample.tsx:2 Sample useNumberFormat() result unused"],
 		],
 		[
+			"an alias of the subscription imported from another module and called bare",
+			{
+				"lib/alias.ts": `import { useNumberFormat } from "@/lib/format";
+export const useFormat = useNumberFormat;`,
+				"components/sample.tsx": `import { useFormat } from "@/lib/alias";
+export function Sample() { useFormat(); return <p />; }`,
+			},
+			["components/sample.tsx:2 Sample useNumberFormat() result unused"],
+		],
+		[
 			"a member of the subscription read and dropped",
 			{
 				"components/sample.tsx": `import { useNumberFormat } from "@/lib/format";
@@ -904,7 +914,7 @@ function mayReachNumberFormatting(
 	}
 	for (const name of module.imports.keys()) {
 		const key = resolveBinding(modules, module.path, name, new Set());
-		if (key && (formatting.has(key) || key === NUMBER_FORMAT_HOOK)) return true;
+		if (key && (formatting.has(key) || followAliases(modules, key) === NUMBER_FORMAT_HOOK)) return true;
 	}
 	return false;
 }
