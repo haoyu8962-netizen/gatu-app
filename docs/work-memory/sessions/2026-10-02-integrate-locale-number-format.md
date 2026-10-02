@@ -10,7 +10,7 @@
   "summary": "进行中：把 claude/laughing-engelbart-b9dbe6（页脚时钟）、claude/relaxed-roentgen-fd0316（Vault 与组合收益图语言依赖）、claude/wonderful-goldberg-e47b19（数字格式刷新，ADR 0036）三条叠放的未推送分支以 --no-ff 合进从 origin/dev 建的 claude/integrate-locale-number-format，新增 CI 步骤，并按用户要求用 Codex 做至少 3 轮只读对抗审查、评分大于 9。",
   "thread": null,
   "baseCommit": "682430ba",
-  "commits": ["b99a1190", "2b7973b4", "5425b7c1", "04469b52", "41c585cb", "089747f5", "18cc35b1", "90dc70ef", "1419edb8", "6ed51e97", "c51cb05c"],
+  "commits": ["b99a1190", "2b7973b4", "5425b7c1", "04469b52", "41c585cb", "089747f5", "18cc35b1", "90dc70ef", "1419edb8", "6ed51e97", "c51cb05c", "8b0dde85"],
   "sources": [
     { "path": "docs/work-memory/sessions/2026-10-02-footer-clock-live-minute.md" },
     { "path": "docs/work-memory/sessions/2026-10-02-vault-fetched-time-locale.md" },
@@ -287,6 +287,30 @@ C 路没有任何发现。B 路提 1 项 P2、1 项 P3；V 路确认第 6 轮修
 - 数字契约 77 项（61 个应报出、12 个应放行、4 项源码树检查），语言契约 206 项，全部通过。
 - 本轮新增 23 个样例（数字 8 个、语言 15 个）。接到上一版（`c51cb05c`）的检查器与共用模块上运行，21 个失败。另 2 个是防止规则放宽的守卫，新旧检查器都通过：`useMutation` 的 `onSuccess` 回调放行；回调读到 `i18n.locale` 本身时不报。
 - 把两份契约与共用模块复制到基线 `5425b7c1` 的 worktree 上运行：数字契约仍报 356 处违规、4 项失败；语言契约在收紧后的规则下仍全部通过；运行后已还原。
+
+**第 8 轮（三路并行，22:45–22:52）**
+
+| 路 | 重点 | 用量 | 评分 |
+|---|---|---|---|
+| V | 系统复核两份契约（终评） | 17 条命令、约 14.5 万 token | 8.7 |
+| B | 规范、文档与记录终评 | 14 条命令、约 9.8 万 token | 8.7 |
+| C | 全 PR 遗漏与测试强度终评 | 20 条命令、约 11.8 万 token | 9.4 |
+
+C 路仍没有发现。B 路核对了第 7 轮一节与两处更正，全部对上，另提 2 项 P2；V 路确认第 7 轮修复成立，另提 2 项 P2、3 组 P3，其中两项与 B 路重合。经本会话核实，以下全部成立：
+
+- **V-P2：Lingui 来源按名字识别。** `import { useLingui as useI18n } from "@lingui/react"` 后 `const { i18n: intl } = useI18n()`，以及 `const intl = i18n` 这类局部别名，都没被当成 Lingui 对象；编译产物的缓存守卫只有 `at` 与稳定的 `intl`。已按导入来源识别 `useLingui` 与 `@lingui/core` 的 `i18n`（含别名），并把 `const intl = i18n`、`const intl = lingui.i18n`、`const { i18n: intl } = lingui` 等别名反复传播到不再增加。名字仍按整个文件计，同名遮蔽会让检查偏严、不会漏报。
+- **V-P2：回调里解构出的 `locale` 不算语言读取。** `rows.map((at) => { const { locale } = i18n; … })` 与 `useQuery({ select })` 里的同样写法都漏报；TanStack Query 在数据与 `select` 身份不变时复用结果，这正是上一轮把 `select` 留在渲染期检查的原因。已把 `const { locale } = i18n` 与 `const { i18n: { locale } } = useLingui()` 当作读取 `locale` 的位置。
+- **B-P2 / V-P3：依赖路径没有统一。** 回调写 `i18n["locale"]`、`(i18n as I18n).locale` 或解构 `locale` 时，依赖 `i18n.locale` 被误报为未读；依赖写成 `i18n["locale"]` 时被跳过；只读稳定的 `lingui.i18n` 却算读到了 `lingui.i18n.locale`。已统一读取路径：点、静态键、断言与解构都归一到同一条路径；`lingui.i18n` 与 `i18n` 一样按稳定对象处理，读到它上面的 `lingui` 仍算读取；只被丢弃的值（`void locale`）不算读取。
+- **B-P2 / V-P3：没有 `export` 的本地声明仍会遮住 `export *`。** 上一轮只撤回了导入别名这一条路，模块级声明仍被无条件当成导出。已把「实际导出的声明」单独登记（`export` 修饰的函数、类、变量与默认导出），跨模块解析只认它们，本模块内部的引用仍按全部声明解析。正反两个方向都补了样例。
+- **V-P3：`followAliases` 把函数的成员当成函数本身。** `useNumberFormat.toString` 被追成 `useNumberFormat`，裸调用时误报「结果未用到」。已只对命名空间导入的成员做这种解析。初稿样例把调用结果放进了 JSX，旧检查器不会误报，没有隔离出问题；已改为裸调用，再验证旧检查器确实误报。
+
+C 路再次提到既有的 CI 失效路径 `geo-server-functions.test.ts`，已在上文登记为后续。
+
+修复后的验证：
+
+- 数字契约 80 项（62 个应报出、14 个应放行、4 项源码树检查），语言契约 217 项，全部通过；真实源码树仍是 0 处违规。
+- 本轮新增 14 个样例（数字 3 个、语言 11 个）。接到上一版（`8b0dde85`）的检查器与共用模块上运行，13 个失败；另 1 个是守卫（组件顶层解构 `locale` 放行），新旧检查器都通过。
+- 把两份契约与共用模块复制到基线 `5425b7c1` 的 worktree 上运行：数字契约仍报 356 处违规、4 项失败；语言契约全部通过；运行后已还原。
 
 ## 验证与限制
 

@@ -613,6 +613,18 @@ export function Sample() { useFormat(); return <p />; }`,
 			},
 			["components/sample.tsx:3 Sample useNumberFormat() result unused"],
 		],
+		[
+			"a name exported through export * over an unexported local declaration",
+			{
+				"lib/other.ts": `export { formatUSD as label } from "@/lib/format";`,
+				"lib/amount.ts": `function label(value: number) { return String(value); }
+export * from "@/lib/other";
+export const local = label;`,
+				"components/sample.tsx": `import { label } from "@/lib/amount";
+export function Sample({ value }: { value: number }) { return <p>{label(value)}</p>; }`,
+			},
+			["components/sample.tsx:2 Sample label"],
+		],
 	])("flags %s", (_name, files, expected) => {
 		expect(findNumberFormatViolations(withFormatStubs(files))).toEqual(expected);
 	});
@@ -711,6 +723,26 @@ export function Sample({ value }: { value: number }) { return <p>{label(value)}<
 			},
 		],
 		[
+			"an unexported local declaration hidden by a safe name exported through export *",
+			{
+				"lib/safe.ts": "export function label(value: number) { return String(value); }",
+				"lib/amount.ts": `import { formatUSD } from "@/lib/format";
+function label(value: number) { return formatUSD(value); }
+export * from "@/lib/safe";
+export function csvCell(value: number) { return label(value); }`,
+				"components/sample.tsx": `import { label } from "@/lib/amount";
+export function Sample({ value }: { value: number }) { return <p>{label(value)}</p>; }`,
+			},
+		],
+		[
+			"a member of the subscription function rather than the subscription",
+			{
+				"components/sample.tsx": `import { useNumberFormat } from "@/lib/format";
+const describe = useNumberFormat.toString;
+export function Sample() { describe(); return <p />; }`,
+			},
+		],
+		[
 			"a class expression named like a formatter",
 			{
 				"components/sample.tsx": `import { formatUSD } from "@/lib/format";
@@ -744,6 +776,9 @@ interface SourceModule {
 	reexports: Map<string, ModuleBinding>;
 	starExports: (string | null)[];
 	localExports: Map<string, string>;
+	// Declarations other modules can import by name: those written with `export` and the default export.
+	// A declaration without `export` stays local, so an `export *` of the same name is what importers get.
+	exportedDeclarations: Set<string>;
 	// The nodes a module-level name takes its value from: an initializer, plus the defaults on its
 	// destructuring path, or the function or class declaration itself.
 	declarations: Map<string, ts.Node[]>;
@@ -876,6 +911,7 @@ function describeModule(path: string, text: string, sources: Map<string, string>
 		reexports: new Map(),
 		starExports: [],
 		localExports: new Map(),
+		exportedDeclarations: new Set(),
 		declarations: new Map(),
 		namespaceSources: new Map(),
 	};
@@ -909,20 +945,34 @@ function describeModule(path: string, text: string, sources: Map<string, string>
 			}
 		} else if (ts.isExportAssignment(statement)) {
 			const expression = skipTransparentExpressions(statement.expression);
-			if (ts.isIdentifier(expression)) module.localExports.set("default", expression.text);
-			else module.declarations.set("default", [expression]);
+			if (ts.isIdentifier(expression)) {
+				module.localExports.set("default", expression.text);
+			} else {
+				module.declarations.set("default", [expression]);
+				module.exportedDeclarations.add("default");
+			}
 		} else if (ts.isFunctionDeclaration(statement) || ts.isClassDeclaration(statement)) {
+			const isExported = hasModifier(statement, ts.SyntaxKind.ExportKeyword);
 			const isDefault = hasModifier(statement, ts.SyntaxKind.DefaultKeyword);
 			if (statement.name) {
 				module.declarations.set(statement.name.text, [statement]);
 				if (isDefault) module.localExports.set("default", statement.name.text);
+				else if (isExported) module.exportedDeclarations.add(statement.name.text);
 			} else if (isDefault) {
 				module.declarations.set("default", [statement]);
+				module.exportedDeclarations.add("default");
 			}
 		} else if (ts.isVariableStatement(statement)) {
 			const exported = hasModifier(statement, ts.SyntaxKind.ExportKeyword);
 			for (const declaration of statement.declarationList.declarations) {
-				if (declaration.initializer) describeVariable(module, declaration.name, declaration.initializer, exported);
+				if (!declaration.initializer) continue;
+				describeVariable(module, declaration.name, declaration.initializer, exported);
+				if (!exported) continue;
+				const bound: ts.Identifier[] = [];
+				collectBindingIdentifiers(declaration.name, bound);
+				for (const identifier of bound) {
+					if (module.declarations.has(identifier.text)) module.exportedDeclarations.add(identifier.text);
+				}
 			}
 		}
 	}
@@ -1083,7 +1133,8 @@ function resolveCallee(
 	return followAliases(modules, resolveExpressionKey(modules, module, call.expression));
 }
 
-// The module-level key an expression names: an unshadowed identifier or a member of a namespace.
+// The module-level key an expression names: an unshadowed identifier or a member of a namespace
+// import. A member of anything else, such as `useNumberFormat.toString`, names no declaration.
 function resolveExpressionKey(
 	modules: Map<string, SourceModule>,
 	module: SourceModule,
@@ -1095,7 +1146,7 @@ function resolveExpressionKey(
 	}
 	if (ts.isPropertyAccessExpression(target) || ts.isElementAccessExpression(target)) {
 		const object = skipTransparentExpressions(target.expression);
-		if (ts.isIdentifier(object) && !isLocallyBound(object)) {
+		if (ts.isIdentifier(object) && module.namespaces.has(object.text) && !isLocallyBound(object)) {
 			return resolveReference(modules, module, object)?.key ?? null;
 		}
 	}
@@ -1146,7 +1197,7 @@ function resolveExport(
 	seen.add(key);
 	const module = modules.get(path);
 	if (!module) return null;
-	if (module.declarations.has(name)) return key;
+	if (module.exportedDeclarations.has(name)) return key;
 	const localName = module.localExports.get(name);
 	if (localName) return resolveBinding(modules, path, localName, seen);
 	const reexport = module.reexports.get(name);

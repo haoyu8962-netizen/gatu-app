@@ -7,6 +7,7 @@ import {
 	findDeclaringScope,
 	getComponentOrHookName,
 	getStaticName,
+	isTransparentExpression,
 	isWithin,
 	outermostTransparentExpression,
 	parseSource,
@@ -319,6 +320,14 @@ describe("dependencies React Compiler can see", () => {
 		["a logical assignment", 'let label = ""; label ||= format(at, { locale: i18n.locale }); return label;'],
 		["a destructuring default", "const { label = format(at, { locale: i18n.locale }) } = options; return label;"],
 		[
+			"a locale destructured inside a render callback",
+			"return <div>{groups.map((group) => { const { locale } = i18n; return formatList(group, { locale }); })}</div>;",
+		],
+		[
+			"a locale destructured inside a select option",
+			'useQuery({ queryKey: ["rows"], select: (data) => { const { locale } = i18n; return format(data, { locale }); } }); return null;',
+		],
+		[
 			"a branch inside useMemo",
 			"return useMemo(() => (at === null ? null : format(at, { locale: i18n.locale })), [at]);",
 		],
@@ -352,6 +361,10 @@ describe("dependencies React Compiler can see", () => {
 		["a query function", "useQuery({ queryKey: [i18n.locale], queryFn: () => load(i18n.locale) }); return null;"],
 		["a mutation callback", "useMutation({ mutationFn: send, onSuccess: () => notify(i18n.locale) }); return null;"],
 		["a parenthesized effect callback", "useEffect((() => { send(i18n.locale); }), [i18n.locale]); return null;"],
+		[
+			"a locale destructured at the top of the component",
+			"const { locale } = i18n; return at === null ? null : format(at, { locale });",
+		],
 	])("allows a locale read in %s", (_, body) => {
 		expect(findBranchOnlyLocaleReads(sampleComponent(body))).toEqual([]);
 	});
@@ -382,6 +395,15 @@ describe("dependencies React Compiler can see", () => {
 		[
 			"a function that opts in to compilation with a directive",
 			`function label({ at }: Props) { "use memo"; ${BRANCHED_READ} }`,
+		],
+		[
+			"a useLingui imported under another name",
+			`import { useLingui as useI18n } from "@lingui/react";
+function Sample({ at }: Props) { const { i18n: intl } = useI18n(); return at === null ? null : format(at, { locale: intl.locale }); }`,
+		],
+		[
+			"a local alias of the i18n object",
+			`function Sample({ at }: Props) { const { i18n } = useLingui(); const intl = i18n; return at === null ? null : format(at, { locale: intl.locale }); }`,
 		],
 		[
 			"a renamed useLingui binding",
@@ -456,6 +478,36 @@ function Sample({ at }: Props) { const { i18n } = useLingui(); return memoize(()
 			["i18n.locale"],
 		],
 		[
+			"no dependency when the callback reads it with a string key",
+			'return useMemo(() => format(at, { locale: i18n["locale"] }), [at, i18n.locale]);',
+			[],
+		],
+		[
+			"no dependency when the callback reads it through an assertion",
+			"return useMemo(() => format(at, { locale: (i18n as I18n).locale }), [at, i18n.locale]);",
+			[],
+		],
+		[
+			"no dependency when the callback destructures it",
+			"return useMemo(() => { const { locale } = i18n; return format(at, { locale }); }, [at, i18n.locale]);",
+			[],
+		],
+		[
+			"a dependency below lingui.i18n when the callback reads only lingui.i18n",
+			"const lingui = useLingui(); return useMemo(() => format(at, lingui.i18n), [at, lingui.i18n.locale]);",
+			["lingui.i18n.locale"],
+		],
+		[
+			"a dependency read only by a dropped expression",
+			"const locale = i18n.locale; return useMemo(() => { void locale; return format(at); }, [at, locale]);",
+			["locale"],
+		],
+		[
+			"a dependency written with a string key that the callback never reads",
+			'return useMemo(() => format(at), [at, i18n["locale"]]);',
+			["i18n.locale"],
+		],
+		[
 			"no dependency when the callback reads the i18n path itself",
 			"return useMemo(() => format(at, { locale: i18n.locale }), [at, i18n.locale]);",
 			[],
@@ -527,47 +579,115 @@ function listSourceFiles(directory: string): string[] {
 
 interface FileContext {
 	fileName: string;
-	// Names bound to Lingui's i18n object: `i18n` and the aliases in `const { i18n: alias } = useLingui()`.
+	// Names bound to Lingui's i18n object: `i18n`, its imported or local aliases and the names in
+	// `const { i18n: alias } = useLingui()`.
 	i18nNames: ReadonlySet<string>;
 	// Names bound to the whole `useLingui()` result, read as `lingui.i18n`.
 	linguiNames: ReadonlySet<string>;
+	// `useLingui` and the names it is imported under.
+	linguiHooks: ReadonlySet<string>;
 	// React hooks imported under another name.
 	hookAliases: ReadonlyMap<string, string>;
 }
 
+const LINGUI_HOOK_MODULES = new Set(["@lingui/react", "@lingui/react/macro"]);
+
 function describeFile(file: ts.SourceFile, fileName: string): FileContext {
-	const i18nNames = new Set(["i18n"]);
-	const linguiNames = new Set<string>();
-	const hookAliases = new Map<string, string>();
+	const context = {
+		fileName,
+		i18nNames: new Set(["i18n"]),
+		linguiNames: new Set<string>(),
+		linguiHooks: new Set(["useLingui"]),
+		hookAliases: new Map<string, string>(),
+	};
+	const declarations: ts.VariableDeclaration[] = [];
 	const visit = (node: ts.Node) => {
-		if (
-			ts.isImportDeclaration(node) &&
-			ts.isStringLiteral(node.moduleSpecifier) &&
-			node.moduleSpecifier.text === "react"
-		) {
-			const bindings = node.importClause?.namedBindings;
-			if (bindings && ts.isNamedImports(bindings)) {
-				for (const element of bindings.elements) {
-					if (element.propertyName) hookAliases.set(element.name.text, element.propertyName.text);
-				}
-			}
+		if (ts.isImportDeclaration(node) && ts.isStringLiteral(node.moduleSpecifier)) {
+			describeImport(node, node.moduleSpecifier.text, context);
 		}
-		if (ts.isVariableDeclaration(node) && node.initializer) {
-			const source = skipTransparentExpressions(node.initializer);
-			if (ts.isCallExpression(source) && calleeName(source) === "useLingui") {
-				if (ts.isIdentifier(node.name)) linguiNames.add(node.name.text);
-				else if (ts.isObjectBindingPattern(node.name)) {
-					for (const element of node.name.elements) {
-						const key = element.propertyName ? getStaticName(element.propertyName) : undefined;
-						if (key === "i18n" && ts.isIdentifier(element.name)) i18nNames.add(element.name.text);
-					}
-				}
-			}
-		}
+		if (ts.isVariableDeclaration(node) && node.initializer) declarations.push(node);
 		ts.forEachChild(node, visit);
 	};
 	visit(file);
-	return { fileName, i18nNames, linguiNames, hookAliases };
+	let changed = true;
+	while (changed) {
+		changed = false;
+		for (const declaration of declarations) {
+			for (const [names, name] of describeLinguiBinding(declaration, context)) {
+				if (!names.has(name)) {
+					names.add(name);
+					changed = true;
+				}
+			}
+		}
+	}
+	return context;
+}
+
+function describeImport(
+	declaration: ts.ImportDeclaration,
+	from: string,
+	context: { i18nNames: Set<string>; linguiHooks: Set<string>; hookAliases: Map<string, string> },
+): void {
+	const bindings = declaration.importClause?.namedBindings;
+	if (!bindings || !ts.isNamedImports(bindings)) return;
+	for (const element of bindings.elements) {
+		const imported = (element.propertyName ?? element.name).text;
+		if (from === "react" && element.propertyName) context.hookAliases.set(element.name.text, imported);
+		if (LINGUI_HOOK_MODULES.has(from) && imported === "useLingui") context.linguiHooks.add(element.name.text);
+		if (from === "@lingui/core" && imported === "i18n") context.i18nNames.add(element.name.text);
+	}
+}
+
+// The Lingui names a declaration binds: `useLingui()` results, the i18n object destructured from one,
+// and plain aliases such as `const intl = i18n` or `const intl = lingui.i18n`.
+function describeLinguiBinding(
+	declaration: ts.VariableDeclaration,
+	context: { i18nNames: Set<string>; linguiNames: Set<string>; linguiHooks: Set<string> },
+): [Set<string>, string][] {
+	const source = skipTransparentExpressions(declaration.initializer as ts.Expression);
+	const isLinguiResult = isLinguiResultExpression(source, context);
+	if (ts.isIdentifier(declaration.name)) {
+		if (isLinguiResult) return [[context.linguiNames, declaration.name.text]];
+		return isLinguiI18nExpression(source, context) ? [[context.i18nNames, declaration.name.text]] : [];
+	}
+	if (!isLinguiResult || !ts.isObjectBindingPattern(declaration.name)) return [];
+	return declaration.name.elements.flatMap((element): [Set<string>, string][] =>
+		getDestructuredKey(element) === "i18n" && ts.isIdentifier(element.name)
+			? [[context.i18nNames, element.name.text]]
+			: [],
+	);
+}
+
+function isLinguiResultExpression(
+	expression: ts.Expression,
+	context: { linguiNames: ReadonlySet<string>; linguiHooks: ReadonlySet<string> },
+): boolean {
+	if (ts.isIdentifier(expression)) return context.linguiNames.has(expression.text);
+	return ts.isCallExpression(expression) && context.linguiHooks.has(calleeName(expression) ?? "");
+}
+
+function isLinguiI18nExpression(
+	expression: ts.Expression,
+	context: { i18nNames: ReadonlySet<string>; linguiNames: ReadonlySet<string>; linguiHooks: ReadonlySet<string> },
+): boolean {
+	if (ts.isIdentifier(expression)) return context.i18nNames.has(expression.text);
+	if (!ts.isPropertyAccessExpression(expression) && !ts.isElementAccessExpression(expression)) return false;
+	return (
+		getMemberKey(expression) === "i18n" &&
+		isLinguiResultExpression(skipTransparentExpressions(expression.expression), context)
+	);
+}
+
+function getMemberKey(member: ts.PropertyAccessExpression | ts.ElementAccessExpression): string | undefined {
+	if (ts.isPropertyAccessExpression(member)) return member.name.text;
+	const key = skipTransparentExpressions(member.argumentExpression);
+	return ts.isStringLiteralLike(key) ? key.text : undefined;
+}
+
+function getDestructuredKey(element: ts.BindingElement): string | undefined {
+	if (element.propertyName) return getStaticName(element.propertyName);
+	return ts.isIdentifier(element.name) ? element.name.text : undefined;
 }
 
 function resolveHookName(call: ts.CallExpression, context: FileContext): string | undefined {
@@ -580,7 +700,7 @@ function findBranchOnlyLocaleReads(source: string, fileName = "sample.tsx"): num
 	const context = describeFile(file, fileName);
 	const lines: number[] = [];
 	const visit = (node: ts.Node) => {
-		if (isLocaleRead(node, context) && isBranchOnlyRenderRead(node, context)) {
+		if ((isLocaleRead(node, context) || isLocaleBinding(node, context)) && isBranchOnlyRenderRead(node, context)) {
 			lines.push(file.getLineAndCharacterOfPosition(node.getStart()).line + 1);
 		}
 		ts.forEachChild(node, visit);
@@ -592,24 +712,31 @@ function findBranchOnlyLocaleReads(source: string, fileName = "sample.tsx"): num
 // `i18n.locale`, `i18n["locale"]` and `(i18n as I18n).locale` on Lingui's i18n object, whatever the
 // local name of that object.
 function isLocaleRead(node: ts.Node, context: FileContext): boolean {
-	let object: ts.Expression;
-	if (ts.isPropertyAccessExpression(node) && node.name.text === "locale") object = node.expression;
-	else if (ts.isElementAccessExpression(node) && getLiteralKey(node) === "locale") object = node.expression;
-	else return false;
-	return isLinguiI18n(skipTransparentExpressions(object), context);
+	if (!ts.isPropertyAccessExpression(node) && !ts.isElementAccessExpression(node)) return false;
+	return (
+		getMemberKey(node) === "locale" && isLinguiI18nExpression(skipTransparentExpressions(node.expression), context)
+	);
 }
 
-function isLinguiI18n(expression: ts.Expression, context: FileContext): boolean {
-	if (ts.isIdentifier(expression)) return context.i18nNames.has(expression.text);
-	if (!ts.isPropertyAccessExpression(expression) || expression.name.text !== "i18n") return false;
-	const owner = skipTransparentExpressions(expression.expression);
-	if (ts.isIdentifier(owner)) return context.linguiNames.has(owner.text);
-	return ts.isCallExpression(owner) && calleeName(owner) === "useLingui";
-}
-
-function getLiteralKey(node: ts.ElementAccessExpression): string | undefined {
-	const key = skipTransparentExpressions(node.argumentExpression);
-	return ts.isStringLiteralLike(key) ? key.text : undefined;
+// `const { locale } = i18n` and `const { i18n: { locale } } = useLingui()` read the locale where the
+// binding is declared.
+function isLocaleBinding(node: ts.Node, context: FileContext): boolean {
+	if (!ts.isBindingElement(node) || getDestructuredKey(node) !== "locale" || !ts.isObjectBindingPattern(node.parent)) {
+		return false;
+	}
+	const owner = node.parent.parent;
+	if (ts.isVariableDeclaration(owner)) {
+		return (
+			owner.initializer !== undefined && isLinguiI18nExpression(skipTransparentExpressions(owner.initializer), context)
+		);
+	}
+	if (!ts.isBindingElement(owner) || getDestructuredKey(owner) !== "i18n") return false;
+	const declaration = owner.parent.parent;
+	return (
+		ts.isVariableDeclaration(declaration) &&
+		declaration.initializer !== undefined &&
+		isLinguiResultExpression(skipTransparentExpressions(declaration.initializer), context)
+	);
 }
 
 function isBranchOnlyRenderRead(read: ts.Node, context: FileContext): boolean {
@@ -739,23 +866,24 @@ function resolveCallback(argument: ts.Expression): ts.SignatureDeclaration | und
 }
 
 // Reads whose root name resolves to a binding outside the callback: a parameter or local of the
-// callback that shadows a dependency's name does not read the dependency, and types are not reads.
-// A property read counts as that path only; a method call also reads its receiver.
+// callback that shadows a dependency's name does not read the dependency, types and dropped values
+// (`void locale`) are not reads. A member read counts as its path, written with dots, static keys or
+// assertions; a method call also reads its receiver; destructuring reads each key it takes.
 function collectReadPaths(callback: ts.Node): string[] {
 	const reads: string[] = [];
 	const readsOuterBinding = (identifier: ts.Identifier) => !isWithin(findDeclaringScope(identifier), callback);
 	const visit = (node: ts.Node): void => {
 		if (ts.isTypeNode(node) || ts.isTypeAliasDeclaration(node) || ts.isInterfaceDeclaration(node)) return;
 		if (ts.isIdentifier(node)) {
-			if (!isMemberOrLabelName(node) && readsOuterBinding(node)) reads.push(node.text);
+			if (!isMemberOrLabelName(node) && !isDroppedRead(node) && readsOuterBinding(node)) reads.push(node.text);
 			return;
 		}
-		if (ts.isPropertyAccessExpression(node)) {
+		if (ts.isPropertyAccessExpression(node) || ts.isElementAccessExpression(node)) {
 			const path = getReadPath(node);
 			const root = getReadRoot(node);
 			if (path === undefined || root === undefined) {
 				ts.forEachChild(node, visit);
-			} else if (readsOuterBinding(root)) {
+			} else if (!isDroppedRead(node) && readsOuterBinding(root)) {
 				reads.push(path);
 				const value = outermostTransparentExpression(node);
 				const receiver = getReadPath(node.expression);
@@ -778,7 +906,14 @@ function collectReadPaths(callback: ts.Node): string[] {
 			if (ts.isBindingElement(node) && node.propertyName && ts.isComputedPropertyName(node.propertyName)) {
 				visit(node.propertyName.expression);
 			}
-			if (node.initializer) visit(node.initializer);
+			if (node.initializer) {
+				visit(node.initializer);
+				const source = getReadPath(node.initializer);
+				const root = getReadRoot(node.initializer);
+				if (source && root && readsOuterBinding(root) && ts.isObjectBindingPattern(node.name)) {
+					collectDestructuredPaths(node.name, source, reads);
+				}
+			}
 			return;
 		}
 		if (ts.isJsxAttribute(node)) {
@@ -791,13 +926,31 @@ function collectReadPaths(callback: ts.Node): string[] {
 	return reads;
 }
 
+function collectDestructuredPaths(pattern: ts.ObjectBindingPattern, base: string, reads: string[]): void {
+	for (const element of pattern.elements) {
+		const key = getDestructuredKey(element);
+		if (key === undefined || element.dotDotDotToken) continue;
+		reads.push(`${base}.${key}`);
+		if (ts.isObjectBindingPattern(element.name)) collectDestructuredPaths(element.name, `${base}.${key}`, reads);
+	}
+}
+
+function isDroppedRead(node: ts.Expression): boolean {
+	const value = outermostTransparentExpression(node);
+	const parent = value.parent;
+	if (ts.isExpressionStatement(parent) || ts.isVoidExpression(parent)) return true;
+	return (
+		ts.isBinaryExpression(parent) && parent.operatorToken.kind === ts.SyntaxKind.CommaToken && parent.left === value
+	);
+}
+
 function getReadPath(node: ts.Node): string | undefined {
 	if (ts.isIdentifier(node)) return node.text;
-	if (ts.isPropertyAccessExpression(node)) {
-		const base = getReadPath(node.expression);
-		return base === undefined ? undefined : `${base}.${node.name.text}`;
-	}
-	return undefined;
+	if (isTransparentExpression(node)) return getReadPath(node.expression);
+	if (!ts.isPropertyAccessExpression(node) && !ts.isElementAccessExpression(node)) return undefined;
+	const base = getReadPath(node.expression);
+	const key = getMemberKey(node);
+	return base === undefined || key === undefined ? undefined : `${base}.${key}`;
 }
 
 function isMemberOrLabelName(identifier: ts.Identifier): boolean {
@@ -811,16 +964,28 @@ function isMemberOrLabelName(identifier: ts.Identifier): boolean {
 	return isMember && parent.name === identifier;
 }
 
-function getReadRoot(node: ts.Expression): ts.Identifier | undefined {
+function getReadRoot(node: ts.Node): ts.Identifier | undefined {
 	if (ts.isIdentifier(node)) return node;
-	return ts.isPropertyAccessExpression(node) ? getReadRoot(node.expression) : undefined;
+	if (isTransparentExpression(node)) return getReadRoot(node.expression);
+	return ts.isPropertyAccessExpression(node) || ts.isElementAccessExpression(node)
+		? getReadRoot(node.expression)
+		: undefined;
 }
 
 // Reading an object counts as reading its properties, because the object usually changes identity
-// with them. Lingui's i18n object never does, so a dependency below it must itself be read.
+// with them. Lingui's i18n object (`i18n`, `lingui.i18n`) never does, so a dependency below it counts
+// only when that path itself is read; reading an ancestor above it, such as `lingui`, still counts.
 function isPathRead(path: string, reads: readonly string[], context: FileContext): boolean {
-	const stableRoot = context.i18nNames.has(path.split(".")[0]);
-	return reads.some(
-		(read) => read === path || read.startsWith(`${path}.`) || (!stableRoot && path.startsWith(`${read}.`)),
-	);
+	const stableObject = getStableObjectPath(path, context);
+	return reads.some((read) => {
+		if (read === path || read.startsWith(`${path}.`)) return true;
+		if (!path.startsWith(`${read}.`)) return false;
+		return stableObject === undefined || stableObject.startsWith(`${read}.`);
+	});
+}
+
+function getStableObjectPath(path: string, context: FileContext): string | undefined {
+	const [root, member] = path.split(".");
+	if (context.i18nNames.has(root)) return root;
+	return context.linguiNames.has(root) && member === "i18n" ? `${root}.i18n` : undefined;
 }
