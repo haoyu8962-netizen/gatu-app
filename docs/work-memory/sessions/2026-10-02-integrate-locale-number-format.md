@@ -5,12 +5,12 @@
   "date": "2026-10-02",
   "title": "集成 PR：页脚时钟、Vault 语言依赖与数字格式刷新三条分支合并进 dev，Codex 多轮对抗审查",
   "kind": "task",
-  "status": "recorded",
+  "status": "verified",
   "topics": ["i18n-runtime", "pr-review"],
-  "summary": "进行中：把 claude/laughing-engelbart-b9dbe6（页脚时钟）、claude/relaxed-roentgen-fd0316（Vault 与组合收益图语言依赖）、claude/wonderful-goldberg-e47b19（数字格式刷新，ADR 0036）三条叠放的未推送分支以 --no-ff 合进从 origin/dev 建的 claude/integrate-locale-number-format，新增 CI 步骤，并按用户要求用 Codex 做至少 3 轮只读对抗审查、评分大于 9。",
+  "summary": "把 claude/laughing-engelbart-b9dbe6（页脚时钟）、claude/relaxed-roentgen-fd0316（Vault 与组合收益图语言依赖）、claude/wonderful-goldberg-e47b19（数字格式刷新，ADR 0036）三条叠放的未推送分支以 --no-ff 合进从 origin/dev 建的 claude/integrate-locale-number-format，代码树与 04469b52 相同；新增 CI 步骤（34 个文件），按 16 轮 Codex 只读对抗审查补测试、加强两份源码契约（共用 harness/react-source.ts）并更新文档，集成后不再改产品代码。第 16 轮三路 9.1/9.3/9.3、无 P0–P2，余 3 项 P3 已登记。类型检查、全量单测（8,242 项通过）、Biome、记忆检查通过；按 CI 环境构建时总量超出预算 154 字节，按性能基线规则用固定元数据测得本 PR 增量 +4,671 并在 00169c24 重定基线，之后预算检查通过；没有浏览器验收。",
   "thread": null,
   "baseCommit": "682430ba",
-  "commits": ["b99a1190", "2b7973b4", "5425b7c1", "04469b52", "41c585cb", "089747f5", "18cc35b1", "90dc70ef", "1419edb8", "6ed51e97", "c51cb05c", "8b0dde85", "cb15f488", "1bee47ea", "deff2eba", "5ea0d370", "f1956c10", "a8a4fed1", "236c998d", "1dba0675", "446cbfc6"],
+  "commits": ["b99a1190", "2b7973b4", "5425b7c1", "04469b52", "41c585cb", "089747f5", "18cc35b1", "90dc70ef", "1419edb8", "6ed51e97", "c51cb05c", "8b0dde85", "cb15f488", "1bee47ea", "deff2eba", "5ea0d370", "f1956c10", "a8a4fed1", "236c998d", "1dba0675", "446cbfc6", "2d6f4676", "00169c24"],
   "sources": [
     { "path": "docs/work-memory/sessions/2026-10-02-footer-clock-live-minute.md" },
     { "path": "docs/work-memory/sessions/2026-10-02-vault-fetched-time-locale.md" },
@@ -19,7 +19,9 @@
     { "path": ".github/workflows/terminal-tests.yml" },
     { "path": "apps/terminal/src/lib/tests/number-format-reactivity-contract.test.ts" },
     { "path": "apps/terminal/src/lib/tests/i18n-reactivity-contract.test.ts" },
-    { "path": "apps/terminal/src/lib/tests/harness/react-source.ts" }
+    { "path": "apps/terminal/src/lib/tests/harness/react-source.ts" },
+    { "path": "scripts/check-client-bundle-budget.mjs" },
+    { "path": "docs/terminal-performance-baseline.md" }
   ],
   "supersedes": []
 }
@@ -496,12 +498,72 @@ C 路没有发现。B 路核对了第 14 轮一节，全部对上，另提 1 项
 - V 路提 2 项 P3，B 路提 1 项 P3（与 V 路第一项同源），本会话核实成立：
   - 分析只增不减，所以闭包或函数读取「下文才声明」的绑定时，早期迭代里留下的角色不会被后来识别出的覆盖移除，会偏严误报。反例有两个：闭包引用稍后声明的对象；用同文件函数返回的对象做展开覆盖。
   - 「四层嵌套」没写明函数返回值与对象成员共用这个深度。
-- 这三项都只会让检查偏严或属于说明精度，不会漏报；为避免在验收后再改分析逻辑，处理方式是写进 `docs/i18n-presentation.md`：深度预算由成员与返回值共用；分析只增不减可能偏严。这处改动只涉及文档，没有再单独审查。
+- 第一项只会让检查偏严，不会漏报。第二项是已登记深度上限处的漏报：V 路用四层对象里的方法返回 `i18n` 做探针，检查器没有报出，编译产物切换语言后仍输出旧语言；同样四层的对象直接保存 `i18n` 则能报出。原文档只写了「四层嵌套」，没说明函数返回值也计入这个深度，所以属于说明不准；尚未发现生产代码使用这种写法。
+- 为避免在验收后再改分析逻辑，处理方式是写进 `docs/i18n-presentation.md`：深度预算由对象成员与函数返回值共用；分析只增不减，可能偏严。这处改动只涉及文档，没有再单独审查。
+- 更正记录：上面两条原写作「这三项都只会让检查偏严或属于说明精度，不会漏报」。提交 `2d6f4676` 后自查发现第二项其实是深度上限处的漏报，推送前改正。
+
+### 包体预算
+
+最终验证时，按 CI 的 Production Builds 环境构建失败：Node 22.15.0，`SAIRN_BUILD_SHA` 取 HEAD，`SAIRN_RELEASE_ID=ci-18000000000-1`，不固定构建时间，`NODE_ENV=production`、`NITRO_PRESET=node-server`、配对关闭。客户端总量 gzip 为 3,196,075 字节，比基线 3,185,921 多 10,154 字节，超出允许增量（10,000）154 字节。`04469b52` 的任务记录量到的是 3,195,280、余 641；那次没有固定构建元数据，值不同于 CI，与另一会话记录的「固定与不固定相差约 700 字节」一致。
+
+`docs/terminal-performance-baseline.md` 的规则要求：超出容差时，要么去掉增量，要么记录并审查一次有意的重定基线，不能只为让 CI 变绿改数字；重定基线必须用 CI 的 Node 与 pnpm 版本和固定的构建元数据做干净构建。因此用该文档第 3 步的固定元数据（`SAIRN_BUILD_SHA=e4e09966…`、`SAIRN_RELEASE_ID=startup-guardrail-baseline`、`SAIRN_BUILD_TIME=2026-08-27T00:00:00.000Z`），加上 `NODE_ENV=production`、`NITRO_PRESET=node-server`、`VITE_MOBILE_PAIRING_ENABLED=false`，依次构建了两边：
+
+- `dev`：在草稿目录的独立 worktree 里，切到 `682430ba`，它有自己安装的 `node_modules`，没有 `.env.local`；
+- 本分支：`2d6f4676`，本工作树，同样没有 `.env.local`。
+
+两边都用 Node 22.15.0、pnpm 10.21.0，并在构建后运行 `pnpm --filter @sairn/terminal perf:startup`。
+
+| 项（gzip 字节） | `dev` 682430ba | 本 PR 2d6f4676 | 增量 |
+|---|---:|---:|---:|
+| 客户端总量 | 3,191,081 | 3,195,752 | +4,671 |
+| 交易页静态启动（102 个资产，种子为 6 个路由预加载、1 个运行时脚本、4 个语义入口） | 1,561,273 | 1,563,683 | +2,410 |
+| 手机运行时增量（14 个资产） | 117,439 | 117,581 | +142 |
+| 手机静态加运行时（116 个资产） | 1,678,712 | 1,681,264 | +2,552 |
+| 桌面运行时增量（29 个资产） | 201,013 | 201,842 | +829 |
+| 桌面静态加运行时（131 个资产） | 1,762,286 | 1,765,525 | +3,239 |
+| `trade-terminal-page` | 125,169 | 125,834 | +665 |
+| `client-root` 静态闭包（34 个 chunk） | 1,203,737 | 1,203,660 | -77 |
+| 最大 chunk `index-D-3aiQ0j`（1,538,745 原始字节） | 435,011 | 435,007 | -4 |
+
+两边的产物图都是 schema v3，有 437 个资产，其中 435 个 chunk。路由预加载本身的字节数没有单独计算，只记录了种子数。
+
+- 决定：在 `00169c24` 里把 `totalGzipBaselineBytes` 上调 +4,671，到 3,190,592，理由和测量写在脚本注释里。做法与 2026-10-01 两次上调相同：只加本 PR 的实测增量，`dev` 已经用掉的 +5,160 照旧计入。
+- 理由：增量来自修复本身。组件从 `useNumberFormat()` 取格式化函数、格式化前先读 `locale`，都会让 React Compiler 的缓存守卫多出依赖项（`04469b52` 的记录也这样归因）。要去掉增量就得撤回修复。
+- 没有调整的项：其余各项都在容差内，按规则不调。桌面运行时增量用 CI 元数据测是 201,906（+9,918），离上限只剩 82 字节；用固定元数据测是 146 字节。下一个让桌面运行时变大的改动会超限，需要自己说明理由并重定基线。
+- 验证：调整后对同一份固定元数据产物重跑 `check-client-bundle-budget.mjs`，通过（总量比新基线多 5,160），脚本自带测试 16 项通过。用 CI 元数据时同一份代码是 3,196,075，比新基线多 5,483，在 10,000 以内；这一点是按数字推算的，没有用 CI 元数据重新构建。
+- 本机两种元数据下，同一份代码的总量相差 323 字节。CI 的实际数字要以 PR 的 Production Builds 为准。
 
 ## 验证与限制
 
-（进行中，后续轮次与最终验证完成后补全。）
+版本：`2d6f4676`，加上本节与上面第 16 轮那条更正（只改本记录）；预算基线调整 `00169c24` 只改了一个数和注释，之后只重跑了预算检查和它的测试。产品代码与 `04469b52`、`5d3ff8e7` 相同，之后的提交只改测试、CI、规则与文档。检查在 2026-10-03 00:47 之后、全部 Codex 进程结束后进行，没有和审查同时运行。
+
+- `pnpm --filter @sairn/terminal typecheck`：通过，2 分 47 秒。
+- 全量 `pnpm --filter @sairn/terminal test`（00:50:54–00:56:30，负载约 45，另有别的会话在跑）：650 个文件中 649 个通过、1 个跳过；8,243 项中 8,242 项通过、1 项跳过；332.8 秒。
+- `pnpm exec biome check`：本 PR 相对 `origin/dev` 改动了 143 个 TS/TSX/JS 文件，Biome 检查其中 141 个，没有问题；另 2 个在 `apps/terminal/tests/`，不在 Biome 的 `includes` 内。
+- `node --test scripts/ci-workflows.test.mjs`：7 项通过。`git diff --check origin/dev...HEAD`：通过。
+- 生产构建与包体预算：先按 CI 环境构建，总量超出允许增量 154 字节；改用固定元数据测量并在 `00169c24` 重定基线，经过见上文「包体预算」。重定基线后预算检查通过；其间 chunk 循环检查、`perf:startup` 均通过。这几次构建的日志在 `.worklog/2026-10-02/integrate-locale-number-format/final-verification/`。
+- `pnpm memory:index`、`memory:check` 通过，`memory:test` 8 项通过。
+
+限制：
+
+- 本次集成没有做浏览器或真机验收。集成之后没有改产品代码；各分支在开发服务器上核对页面的情况，见各自记录。
+- Codex 审查是只读的代码审查与内存推演，评分是模型判断，不是运行时验收。命令数与 token 取自 `.worklog` 的汇总，原始日志没有归档。
+- 第 16 轮之后的两处改动没有再审查：`docs/i18n-presentation.md` 补登 2 项 P3，以及本记录里的一处措辞更正。
+- 两份契约都是覆盖所列写法的词法守卫，边界与「不跟随」清单分别见 ADR 0036 第 6 项与 `docs/i18n-presentation.md` 第 7、8 段。语言契约剩余的偏严误报与深度预算两项 P3 没有修。
+- 不经 `lib/format.ts` 的手写数字不跟随设置；不传 `locale` 的日期调用碰巧正确，目前没有契约检查。两者都列在 `docs/number-format-setting.md`「未完成」。
 
 ## 后续与替代关系
 
-（进行中。）
+- 推送分支并开 PR 到 `dev`。合入后，三条源分支的提交随之进入 `dev`。
+- 有三条未推送的分支与本 PR 有关，本 PR 合入后都要先合并 `dev`（2026-10-03 用 `git log`/`git diff` 核对）：
+  - `claude/angry-northcutt-d85ed7`（`f7ae69a2`，ADR 0037，叠在 `04469b52` 上）处理了上面「手写数字」清单的大部分，会和本 PR 在 `docs/number-format-setting.md` 的「未完成」清单处冲突。它没有改图表仓位线里的仓位数量（`lib/chart/tradingview-overlays.ts`），合并时这一条要保留。
+  - `claude/sleepy-archimedes-fbff3e`（`cae7c133`、`6b18c20b`，叠在 `04469b52` 上）加了日期 `locale` 契约。它的组件识别代码复制自 `04469b52`/`089747f5`，没有用共用模块 `harness/react-source.ts`，所以第 4–16 轮对识别规则的修补都没有带过去。合并时要改用共用模块，并把 CI 条目移到本 PR 新增的步骤。
+  - `claude/wonderful-mccarthy-709acd`（`f66d36f2`，基于 `dev`）删除未用的 `lib/chart/format.ts`，与本 PR 只在 `INDEX.md` 重叠。
+  - 包体预算：前两条分支都各自上调过 `totalGzipBaselineBytes`。
+    - `cae7c133`：+475，到 3,186,396；
+    - `f7ae69a2`：+1,216，到 3,187,137，另把桌面运行时基线上调 +170。
+
+    它们都会和 `00169c24` 在这一行冲突。合并时应在 3,190,592 上叠加各自的实测增量，并用干净 worktree、固定元数据重新测量。
+  - `f7ae69a2` 的注释称：用固定元数据测 `04469b52`，结果是 3,198,667，超出允许增量 2,746 字节。本会话用同样的固定元数据，在没有 `.env.local` 的干净 worktree 里测产品代码完全相同的 `2d6f4676`，结果是 3,195,752，相差 2,915 字节。原因没有查，可能是那个工作树的 `node_modules` 或环境文件不同。合并那条分支时，这段注释需要按重测结果改写。
+- CI 里既有的失效路径 `src/lib/tests/geo-server-functions.test.ts` 与本 PR 无关。已另开会话「Fix stale geo test path in terminal CI」处理，2026-10-03 时那条分支还没有提交。
+- 如果要处理语言契约剩余的两项 P3，做法是区分「尚未解析」和「已知的普通值」，或者按需重算受影响的绑定，避免把迭代中的临时结果永久并入。
