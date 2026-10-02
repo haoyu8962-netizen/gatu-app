@@ -605,6 +605,14 @@ export function Sample() { const numberFormat = useNumberFormat(); void numberFo
 			["components/sample.tsx:2 Sample useNumberFormat() result unused"],
 		],
 		[
+			"a member of the subscription read and dropped",
+			{
+				"components/sample.tsx": `import { useNumberFormat } from "@/lib/format";
+export function Sample() { void useNumberFormat().formatUSD; return <p />; }`,
+			},
+			["components/sample.tsx:2 Sample useNumberFormat() result unused"],
+		],
+		[
 			"a module-level alias of the subscription called bare",
 			{
 				"components/sample.tsx": `import { useNumberFormat } from "@/lib/format";
@@ -1228,7 +1236,9 @@ function collectModuleReferences(modules: Map<string, SourceModule>, module: Sou
 function numberFormatResultIsUsed(call: ts.CallExpression, scope: ts.Node): boolean {
 	const value = outermostTransparentExpression(call);
 	const declaration = value.parent;
-	if (!ts.isVariableDeclaration(declaration) || declaration.initializer !== value) return !isDiscarded(value);
+	if (!ts.isVariableDeclaration(declaration) || declaration.initializer !== value) {
+		return !isDiscarded(climbMemberReads(call));
+	}
 	const bindings: ts.Identifier[] = [];
 	collectBindingIdentifiers(declaration.name, bindings);
 	if (bindings.length === 0) return false;
@@ -1253,8 +1263,8 @@ function numberFormatResultIsUsed(call: ts.CallExpression, scope: ts.Node): bool
 }
 
 // `result.formatUSD` read and dropped is as unused as `result` itself; calling it is a use.
-function climbMemberReads(identifier: ts.Identifier): ts.Expression {
-	let value: ts.Expression = outermostTransparentExpression(identifier);
+function climbMemberReads(expression: ts.Expression): ts.Expression {
+	let value: ts.Expression = outermostTransparentExpression(expression);
 	while (
 		(ts.isPropertyAccessExpression(value.parent) || ts.isElementAccessExpression(value.parent)) &&
 		value.parent.expression === value

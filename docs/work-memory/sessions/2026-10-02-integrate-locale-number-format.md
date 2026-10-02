@@ -10,7 +10,7 @@
   "summary": "进行中：把 claude/laughing-engelbart-b9dbe6（页脚时钟）、claude/relaxed-roentgen-fd0316（Vault 与组合收益图语言依赖）、claude/wonderful-goldberg-e47b19（数字格式刷新，ADR 0036）三条叠放的未推送分支以 --no-ff 合进从 origin/dev 建的 claude/integrate-locale-number-format，新增 CI 步骤，并按用户要求用 Codex 做至少 3 轮只读对抗审查、评分大于 9。",
   "thread": null,
   "baseCommit": "682430ba",
-  "commits": ["b99a1190", "2b7973b4", "5425b7c1", "04469b52", "41c585cb", "089747f5", "18cc35b1", "90dc70ef", "1419edb8", "6ed51e97", "c51cb05c", "8b0dde85", "cb15f488", "1bee47ea", "deff2eba"],
+  "commits": ["b99a1190", "2b7973b4", "5425b7c1", "04469b52", "41c585cb", "089747f5", "18cc35b1", "90dc70ef", "1419edb8", "6ed51e97", "c51cb05c", "8b0dde85", "cb15f488", "1bee47ea", "deff2eba", "5ea0d370"],
   "sources": [
     { "path": "docs/work-memory/sessions/2026-10-02-footer-clock-live-minute.md" },
     { "path": "docs/work-memory/sessions/2026-10-02-vault-fetched-time-locale.md" },
@@ -377,6 +377,27 @@ C 路没有发现。B 路核对了第 10 轮一节，全部对上。B 路的 P2 
 
 - 数字契约 80 项、语言契约 234 项、共用模块自测 7 项，全部通过；真实源码树仍是 0 处违规。
 - 本轮新增 5 个语言样例，接到上一版（`deff2eba`）的检查器与共用模块上运行，4 个失败；另 1 个是守卫（不是 Hook 返回的值上的 `.locale` 不算），新旧都通过。
+- 把两份契约与共用模块复制到基线 `5425b7c1` 的 worktree 上运行：数字契约仍报 356 处违规、4 项失败；语言契约全部通过；运行后已还原。
+
+**第 12 轮（三路并行，23:43–23:50）**
+
+| 路 | 重点 | 用量 | 评分 |
+|---|---|---|---|
+| V | 系统复核两份契约（终评） | 19 条命令、约 12.7 万 token | 8.8 |
+| B | 规范、文档与记录终评 | 12 条命令、约 9.3 万 token | 8.8 |
+| C | 全 PR 遗漏与测试强度终评 | 21 条命令、约 14.3 万 token | 9.4 |
+
+C 路没有发现。B 路核对了第 11 轮一节，全部对上；B 路的 P2 与 V 路第一项相同。V 路另提 1 项 P2、1 项 P3。经本会话核实，以下全部成立，根因都在上一轮的改动不完整：
+
+- **B-P2 / V-P2：「Hook 结果可能就是 i18n 对象」只用在了 `.locale` 读取上，没进入稳定对象判断。** 其他模块的 `useI18nObject()` 返回 i18n 对象时，`useMemo(() => format(at, intl), [at, intl, intl.locale])` 只读了整个 `intl`，却被当成读到了 `intl.locale`；编译产物切换语言后仍输出旧语言。
+- **V-P2：同一判断也没进入解构读取。** `const { locale } = intl`（`intl` 来自这样的 Hook）在渲染回调里不算语言读取。
+- 已把「这个值可能是 i18n 对象」收成一个判断 `mayBeI18nObject`，`.locale` 读取、`locale` 解构与依赖的稳定对象判断三处都用它，不会再各说各话；真实源码在这条更严的判断下仍是 0 处违规。
+- **V-P3：`void useNumberFormat().formatUSD` 被当成用到了结果。** 直接调用的结果现在也先越过成员读取，再判断是否被丢弃。
+
+修复后的验证：
+
+- 数字契约 81 项（63 个应报出、14 个应放行、4 项源码树检查）、语言契约 237 项、共用模块自测 7 项，全部通过；真实源码树仍是 0 处违规。
+- 本轮新增 4 个样例（语言 3 个、数字 1 个），接到上一版（`5ea0d370`）的检查器与共用模块上运行时全部失败。
 - 把两份契约与共用模块复制到基线 `5425b7c1` 的 worktree 上运行：数字契约仍报 356 处违规、4 项失败；语言契约全部通过；运行后已还原。
 
 ## 验证与限制

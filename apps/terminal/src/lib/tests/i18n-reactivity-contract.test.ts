@@ -324,6 +324,10 @@ describe("dependencies React Compiler can see", () => {
 			"return <div>{groups.map((group) => { const { locale } = i18n; return formatList(group, { locale }); })}</div>;",
 		],
 		[
+			"a locale destructured from a hook's result inside a render callback",
+			'const intl = useI18nObject(); return <div>{groups.map((group) => { const { locale = "en" } = intl; return formatList(group, { locale }); })}</div>;',
+		],
+		[
 			"a locale destructured inside a select option",
 			'useQuery({ queryKey: ["rows"], select: (data) => { const { locale } = i18n; return format(data, { locale }); } }); return null;',
 		],
@@ -543,6 +547,16 @@ function Sample({ at }: Props) { const { i18n } = useLingui(); return memoize(()
 			"a dependency below lingui.i18n when the callback reads only lingui.i18n",
 			"const lingui = useLingui(); return useMemo(() => format(at, lingui.i18n), [at, lingui.i18n.locale]);",
 			["lingui.i18n.locale"],
+		],
+		[
+			"a locale dependency of a hook's result when the callback reads only the result",
+			"const intl = useI18nObject(); return useMemo(() => format(at, intl), [at, intl, intl.locale]);",
+			["intl.locale"],
+		],
+		[
+			"a locale alias dependency of a hook's result when the callback reads only the result",
+			"const intl = useI18nObject(); const locale = intl.locale; return useMemo(() => format(at, intl), [at, intl, locale]);",
+			["locale"],
 		],
 		[
 			"a locale alias dependency when the callback reads only the i18n object",
@@ -790,6 +804,12 @@ function getMemberRole(ownerRole: LinguiRole, key: string | undefined): LinguiRo
 	return key === "useLingui" && ownerRole === "hookNamespace" ? "hook" : undefined;
 }
 
+// Lingui's i18n object, or a hook's result, which may be that object returned from another module.
+// Every rule that asks whether a value is the i18n object asks this, so they cannot disagree.
+function mayBeI18nObject(role: LinguiRole | undefined): boolean {
+	return role === "i18n" || role === "hookResult";
+}
+
 function getMemberKey(member: ts.PropertyAccessExpression | ts.ElementAccessExpression): string | undefined {
 	if (ts.isPropertyAccessExpression(member)) return member.name.text;
 	const key = skipTransparentExpressions(member.argumentExpression);
@@ -825,7 +845,7 @@ function findBranchOnlyLocaleReads(source: string, fileName = "sample.tsx"): num
 function isLocaleRead(node: ts.Node, context: FileContext): boolean {
 	if (!ts.isPropertyAccessExpression(node) && !ts.isElementAccessExpression(node)) return false;
 	const ownerRole = getLinguiRole(node.expression, context);
-	return getMemberKey(node) === "locale" && (ownerRole === "i18n" || ownerRole === "hookResult");
+	return getMemberKey(node) === "locale" && mayBeI18nObject(ownerRole);
 }
 
 // `const { locale } = i18n` and `const { i18n: { locale } } = useLingui()` read the locale where the
@@ -836,7 +856,7 @@ function isLocaleBinding(node: ts.Node, context: FileContext): boolean {
 	}
 	const owner = node.parent.parent;
 	if (ts.isVariableDeclaration(owner)) {
-		return owner.initializer !== undefined && getLinguiRole(owner.initializer, context) === "i18n";
+		return owner.initializer !== undefined && mayBeI18nObject(getLinguiRole(owner.initializer, context));
 	}
 	if (!ts.isBindingElement(owner) || !ts.isObjectBindingPattern(owner.parent)) return false;
 	const declaration = owner.parent.parent;
@@ -1130,6 +1150,6 @@ function getStableObjectPath(dependency: ts.Expression, context: FileContext): s
 	if (!canonical) return undefined;
 	const [root, member] = canonical.path.split(".");
 	const rootRole = getLinguiRole(canonical.root, context);
-	if (rootRole === "i18n") return root;
+	if (mayBeI18nObject(rootRole)) return root;
 	return rootRole !== undefined && getMemberRole(rootRole, member) === "i18n" ? `${root}.${member}` : undefined;
 }

@@ -39,7 +39,7 @@
    - `memo`/`forwardRef` 任一参数位置的回调，写作 `memo`、`React.memo` 或 `React[memo]`（`isReactAPI`）；
    - 用 `"use memo"`、`"use forget"` 指令选择编译的函数。
 
-   契约在此之上还认：函数表达式自身的名称，赋值目标、对象与类属性、解构默认值给出的名称，任意对象上的 `memo`/`forwardRef`、嵌套或加括号与断言的包装、字符串键、`.tsx` 里匿名的默认导出函数（包括 `export default memo(function render…)`），以及路由 `component`、`pendingComponent`、`errorComponent`、`notFoundComponent` 选项的函数或方法。所以它是编译器当前规则的超集，不依赖编译器是否真的编译了某个函数；升级编译器或改变编译模式时要重新对照。附 76 个正反样例（62 个应报出、14 个应放行）。它在基线代码上报出 356 处违规，在本次代码上为 0。
+   契约在此之上还认：函数表达式自身的名称，赋值目标、对象与类属性、解构默认值给出的名称，任意对象上的 `memo`/`forwardRef`、嵌套或加括号与断言的包装、字符串键、`.tsx` 里匿名的默认导出函数（包括 `export default memo(function render…)`），以及路由 `component`、`pendingComponent`、`errorComponent`、`notFoundComponent` 选项的函数或方法。所以它是编译器当前规则的超集，不依赖编译器是否真的编译了某个函数；升级编译器或改变编译模式时要重新对照。附 77 个正反样例（63 个应报出、14 个应放行）。它在基线代码上报出 356 处违规，在本次代码上为 0。
 
 ## 备选方案与代价
 
