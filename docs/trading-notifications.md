@@ -14,7 +14,7 @@
 
 ## 唯一宿主与入口矩阵
 
-[AppToaster](../apps/terminal/src/components/app-toaster.tsx) 在应用运行时浮层中稳定挂载，组合一个 [Toaster](../apps/terminal/src/components/ui/sonner.tsx)、订单通知 gate、`CctpDepositTrackingNotifier` 与 `FundsActionRecoveryHost`。gate 只在当前 owner/env 存在未隐藏任务时按需加载 [OrderNotificationHost](../apps/terminal/src/components/trade/order-notification-host.tsx)。首次加载期间队列保留最新结果，宿主加载并发布通知后才开始成功展示计时。它不依赖交易页、选定市场就绪或桌面/移动交易布局。订单宿主及两个资金桥向同一个 Sonner 容器写内容，不各建固定定位容器。
+[AppToaster](../apps/terminal/src/components/app-toaster.tsx) 在应用运行时浮层中稳定挂载，组合一个 [Toaster](../apps/terminal/src/components/ui/sonner.tsx)、订单通知 gate、`CctpDepositTrackingNotifier`、`PrivyFiatFundingHostGate` 与 `FundsActionRecoveryHost`。gate 只在当前 owner/env 存在未隐藏任务时按需加载 [OrderNotificationHost](../apps/terminal/src/components/trade/order-notification-host.tsx)。首次加载期间队列保留最新结果，宿主加载并发布通知后才开始成功展示计时。它不依赖交易页、选定市场就绪或桌面/移动交易布局。订单宿主及两个资金桥向同一个 Sonner 容器写内容，不各建固定定位容器。
 
 | 入口 | 当前反馈 | 对账、刷新与保留边界 |
 | --- | --- | --- |
@@ -30,6 +30,7 @@
 | 推荐码录入、创建与奖励领取 | 同 ID pending、成功、未知或失败；成功保留既有较长时长 | 仅内存反馈；未知继续提示先刷新推荐数据再签名，不自动重试 |
 | 划转、发送、提现、充值弹窗 | 沿用标准 Sonner 结果通知；资金弹窗保持打开到请求结束，外部钱包保留 `Confirm in wallet`；划转、发送、提现结果不明为常驻警告 | 保留尝试对象身份、草稿与资金守卫；未统一改成 OrderQueue。广播前失败的充值可回到表单；提现没有新增本地持久待处理列表 |
 | CCTP 充值转发 | 标准 Sonner 同 ID loading → 转发已提交 / 明确失败；带区块浏览器链接 | ID 含 env、owner、source hash；从已有 CCTP 跟踪记录恢复。弹窗打开时让位给原转发页；转发提交不等于 HyperCore 已到账 |
+| 银行卡购买 USDC（Privy 入金，默认关闭，[ADR 0034](adr/0034-privy-card-funding.md)） | 标准 Sonner：服务商确认为成功但不声称到账；已提交与状态未知为常驻警告并带未知状态符号；确定没成交为错误；已有流程在进行为警告；用户退出静默。每次展示使用新的展示 ID | `PrivyFiatFundingHost` 按尝试保存发起时的 owner/网络、结果和钱包类型，发布时翻译、切语言原位重译；别的身份为当前时撤下展示，回到该身份再显示，迟到结果记在原 owner 名下。只在内存里：刷新后不恢复，也没有服务商之后退款或拒付的监听 |
 | 邮箱钱包自动充值 | 原控制器与标准 Sonner 进度/结局，稳定 ID 包含 env/owner | 原自动充值重试、恢复及路由守卫不变；并未迁入 OrderQueue |
 | 金库、质押恢复 | `FundsActionRecoveryHost` 的待核验/损坏记录提醒使用 Sonner custom；`Review` 仍打开专用核验面板 | 资金 marker、账本/新状态核验、锁与两步清理确认保留；切身份只撤显示，不清 marker。合法 marker 按当前身份筛选；无法归属的损坏存储用通用锁定提醒，不猜 owner。提醒不能用普通关闭代替核验 |
 | 金库、质押执行；API 钱包 | 保留核验步骤及原结果通知；API 钱包保留一次性密钥展示/保存面板 | 不将私钥、签名核验或需要用户决策的恢复步骤改成短 toast |

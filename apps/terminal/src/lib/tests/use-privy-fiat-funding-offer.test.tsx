@@ -25,7 +25,7 @@ vi.mock("@/lib/hyperliquid", () => ({
 }));
 vi.mock("@/stores/use-global-settings-store", () => ({ useIsTestnet: () => testState.isTestnet }));
 
-import { getPrivyFiatFundingOwnerKey } from "@/domain/trade/privy-fiat-funding";
+import { getPrivyFiatFundingOwnerKey } from "@/domain/trade/privy-fiat-funding-owner-key";
 import { type PrivyFiatFundingOffer, usePrivyFiatFundingOffer } from "@/hooks/trade/use-privy-fiat-funding-offer";
 import {
 	isCurrentPrivyFiatFundingAttempt,

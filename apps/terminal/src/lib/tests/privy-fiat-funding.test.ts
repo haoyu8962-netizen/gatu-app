@@ -1,22 +1,31 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import type { MessageDescriptor } from "@lingui/core";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { resolvePrivyFiatFundingFeatureFlags } from "@/config/privy-fiat-funding-flags";
 import {
 	classifyPrivyFiatFundingError,
 	classifyPrivyFiatFundingResult,
 	createPrivyFiatFundingRequest,
-	getPrivyFiatFundingOwnerKey,
 	PRIVY_FIAT_FUNDING_ASSET,
 	PRIVY_FIAT_FUNDING_BACK_NAVIGATION_ERROR,
 	PRIVY_FIAT_FUNDING_BUSY_MESSAGE,
 	PRIVY_FIAT_FUNDING_CHAIN,
 	PRIVY_FIAT_FUNDING_FAILURE_MESSAGES,
+	PRIVY_FIAT_FUNDING_PAYMENT_METHOD_ERROR,
 	PRIVY_FIAT_FUNDING_UNCONFIRMED_MESSAGES,
 	PRIVY_FIAT_FUNDING_USER_EXIT_MESSAGE,
 	resolvePrivyFiatFundingDestination,
 } from "@/domain/trade/privy-fiat-funding";
+import { getPrivyFiatFundingOwnerKey } from "@/domain/trade/privy-fiat-funding-owner-key";
 import { getPrivyFiatFundingFeedback } from "@/lib/trade/privy-fiat-funding-feedback";
+import {
+	finishPrivyFiatFunding,
+	isCurrentPrivyFiatFundingAttempt,
+	type PrivyFiatFundingAttempt,
+	requestPrivyFiatFunding,
+	resetPrivyFiatFundingStore,
+} from "@/stores/use-privy-fiat-funding-store";
 
 const OWNER = "0xabcdefabcdefabcdefabcdefabcdefabcdef1234";
 const OWNER_CHECKSUM_CASE = "0xABCDEFabcdefABCDEFabcdefABCDEFabcdef1234";
@@ -124,6 +133,19 @@ describe("card funding outcomes", () => {
 		expect(classifyPrivyFiatFundingError("Card declined")).toBe("unknown");
 	});
 
+	it("treats a declined payment method as a definite failure and a refund notice as an unknown status", () => {
+		const declined = new Error("The card was declined. Try another Visa or Mastercard.");
+		declined.name = PRIVY_FIAT_FUNDING_PAYMENT_METHOD_ERROR;
+		expect(classifyPrivyFiatFundingError(declined)).toBe("failed");
+		expect(
+			classifyPrivyFiatFundingError(
+				new Error(
+					"We could not complete your purchase. Any charge will be refunded — contact support if it does not appear within a few days.",
+				),
+			),
+		).toBe("unknown");
+	});
+
 	it("relies on the error texts the installed Privy SDK actually throws", () => {
 		const bundles = readdirSync(PRIVY_DIST)
 			.filter((name) => name.endsWith(".mjs"))
@@ -133,12 +155,104 @@ describe("card funding outcomes", () => {
 		expect(bundles).toContain(`this.name="${PRIVY_FIAT_FUNDING_BACK_NAVIGATION_ERROR}"`);
 		expect(bundles).toContain(`Error("${PRIVY_FIAT_FUNDING_BUSY_MESSAGE}")`);
 		for (const message of [...PRIVY_FIAT_FUNDING_FAILURE_MESSAGES, ...PRIVY_FIAT_FUNDING_UNCONFIRMED_MESSAGES]) {
-			if (message === "Transaction failed") {
+			if (message.startsWith("Transaction ")) {
 				expect(bundles).toMatch(/Error\(`Transaction \$\{[^}]*\?\?"failed"\}`\)/);
+				expect(bundles).toContain(`"${message.slice("Transaction ".length)}"===e.status`);
 			} else {
 				expect(bundles).toContain(`Error("${message}")`);
 			}
 		}
+		expect(bundles).toContain(`this.name="${PRIVY_FIAT_FUNDING_PAYMENT_METHOD_ERROR}"`);
+	});
+
+	it("relies on how the installed Privy SDK ends a flow that the user closes", () => {
+		const screen = readdirSync(PRIVY_DIST)
+			.filter((name) => name.startsWith("FiatOnrampScreen-") && name.endsWith(".mjs"))
+			.map((name) => readFileSync(resolve(PRIVY_DIST, name), "utf8"))
+			.join("\n");
+		expect(screen).toMatch(
+			/\?\{type:"failure",error:\w+\}:"provider-success"===\w+\.status\?\{type:"success",value:\{status:"confirmed"\}\}/,
+		);
+		expect(screen).toMatch(/"provider-confirming"===\w+\.status\|\|/);
+		expect(screen).toMatch(
+			/\?\{type:"success",value:\{status:"submitted"\}\}:\{type:"failure",error:Error\("User exited flow"\)\}/,
+		);
+	});
+});
+
+describe("card funding flags", () => {
+	afterEach(() => {
+		vi.unstubAllEnvs();
+		vi.resetModules();
+	});
+
+	it.each([
+		[undefined, false],
+		["", false],
+		["false", false],
+		["TRUE", false],
+		["True", false],
+		[" true", false],
+		["1", false],
+		["yes", false],
+		["true", true],
+	])("turns a network on only for the exact string true: %j", (value, enabled) => {
+		expect(resolvePrivyFiatFundingFeatureFlags({ VITE_PRIVY_FIAT_FUNDING_MAINNET_ENABLED: value })).toEqual({
+			mainnet: enabled,
+			testnet: false,
+		});
+		expect(resolvePrivyFiatFundingFeatureFlags({ VITE_PRIVY_FIAT_FUNDING_TESTNET_ENABLED: value })).toEqual({
+			mainnet: false,
+			testnet: enabled,
+		});
+	});
+
+	it.each([
+		["true", "false", true, false],
+		["false", "true", false, true],
+		["true", "true", true, true],
+		["false", "false", false, false],
+	])(
+		"reads each network from its own flag at runtime: mainnet %s, testnet %s",
+		async (mainnet, testnet, onMainnet, onTestnet) => {
+			vi.stubEnv("VITE_PRIVY_FIAT_FUNDING_MAINNET_ENABLED", mainnet);
+			vi.stubEnv("VITE_PRIVY_FIAT_FUNDING_TESTNET_ENABLED", testnet);
+			vi.resetModules();
+			const { isPrivyFiatFundingEnabled, PRIVY_FIAT_FUNDING_FEATURES } = await import("@/config/privy-fiat-funding");
+
+			expect(PRIVY_FIAT_FUNDING_FEATURES).toEqual({ mainnet: onMainnet, testnet: onTestnet });
+			expect(isPrivyFiatFundingEnabled(false)).toBe(onMainnet);
+			expect(isPrivyFiatFundingEnabled(true)).toBe(onTestnet);
+		},
+	);
+});
+
+describe("card funding attempt store", () => {
+	function createAttempt(): PrivyFiatFundingAttempt {
+		return {
+			destination: { address: OWNER, walletKind: "embedded" },
+			network: "mainnet",
+			ownerKey: getPrivyFiatFundingOwnerKey("mainnet", OWNER),
+		};
+	}
+
+	afterEach(() => {
+		resetPrivyFiatFundingStore();
+	});
+
+	it("holds one attempt at a time and lets only that attempt end itself", () => {
+		const first = createAttempt();
+		const second = createAttempt();
+		expect(requestPrivyFiatFunding(first)).toBe(true);
+		expect(requestPrivyFiatFunding(second)).toBe(false);
+
+		finishPrivyFiatFunding(second);
+		expect(isCurrentPrivyFiatFundingAttempt(first)).toBe(true);
+
+		finishPrivyFiatFunding(first);
+		expect(requestPrivyFiatFunding(second)).toBe(true);
+		finishPrivyFiatFunding(first);
+		expect(isCurrentPrivyFiatFundingAttempt(second)).toBe(true);
 	});
 });
 

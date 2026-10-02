@@ -1480,6 +1480,7 @@ msgstr "Impossible d’ouvrir l’achat par carte. Vérifiez votre connexion et 
 msgid "Card purchase did not complete"
 msgstr "L’achat par carte n’a pas abouti"
 
+#: src/lib/tests/privy-fiat-funding-host.test.tsx
 #: src/lib/trade/privy-fiat-funding-feedback.ts
 msgid "Card purchase status unknown"
 msgstr "Statut de l’achat par carte inconnu"

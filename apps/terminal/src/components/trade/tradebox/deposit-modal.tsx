@@ -516,7 +516,7 @@ export function DepositModal() {
 	const isDepositPending = isDepositPreflighting || depositStatus === "pending" || depositStatus === "confirming";
 	const fiatFundingOffer = usePrivyFiatFundingOffer({
 		enabled: isPrivyFiatFundingEnabled(isTestnet),
-		available: depositAvailability.available && !isDepositPending && !isWithdrawPending,
+		available: open && depositAvailability.available && !isDepositPending && !isWithdrawPending,
 		embeddedWalletAddress: depositEmbeddedWalletAddress,
 		onBeforeStart: handleClose,
 	});

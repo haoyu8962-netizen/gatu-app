@@ -84,7 +84,10 @@ Do not collapse these states into one boolean.
   The deposit dialog closes before Privy's window opens, the page-level
   `PrivyFiatFundingHost` (lazily loaded by `PrivyFiatFundingHostGate` on the
   first request, so the onramp code stays out of runtime startup) owns the
-  request, and both networks stay behind their own fail-closed flags. Stripe's embedded onramp is the only provider that
+  request, and both networks stay behind their own fail-closed flags. The
+  host keeps each result with the owner and network that started it, shows
+  it only while that identity is current and retranslates it in place when
+  the language changes. Stripe's embedded onramp is the only provider that
   runs inside the page; its documented script, frame and connect origins are
   the only card-funding entries in the CSP, and `permissions-policy` keeps
   `payment=()` and `camera=(self)` until a separate decision.

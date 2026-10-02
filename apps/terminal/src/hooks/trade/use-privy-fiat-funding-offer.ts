@@ -1,9 +1,6 @@
 import { useWallets } from "@privy-io/react-auth";
-import {
-	getPrivyFiatFundingOwnerKey,
-	type PrivyFiatFundingWalletKind,
-	resolvePrivyFiatFundingDestination,
-} from "@/domain/trade/privy-fiat-funding";
+import { type PrivyFiatFundingWalletKind, resolvePrivyFiatFundingDestination } from "@/domain/trade/privy-fiat-funding";
+import { getPrivyFiatFundingOwnerKey } from "@/domain/trade/privy-fiat-funding-owner-key";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { useHyperliquid } from "@/lib/hyperliquid";
 import { useIsTestnet } from "@/stores/use-global-settings-store";

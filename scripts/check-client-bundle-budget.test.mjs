@@ -5,6 +5,7 @@ import { dirname, join } from "node:path";
 import test from "node:test";
 import {
 	collectTradeStartupFiles,
+	describeLocalEnvFiles,
 	findLocalEnvFiles,
 	getBudgetIncreaseViolation,
 	TRADE_DESKTOP_RUNTIME_MODULE_IDS,
@@ -399,6 +400,18 @@ test("names developer-only env files that make a local build measure differently
 
 	assert.deepEqual(findLocalEnvFiles(appDirectory), [".env.local", ".env.production.local"]);
 	assert.deepEqual(findLocalEnvFiles(join(appDirectory, "missing")), []);
+});
+
+test("notes a local env file next to the application whose built assets are measured", (context) => {
+	const appDirectory = mkdtempSync(join(tmpdir(), "sairn-budget-app-"));
+	context.after(() => rmSync(appDirectory, { recursive: true, force: true }));
+	const assetsDirectory = join(appDirectory, ".output", "public", "assets");
+	mkdirSync(assetsDirectory, { recursive: true });
+
+	assert.equal(describeLocalEnvFiles(assetsDirectory), null);
+
+	writeFileSync(join(appDirectory, ".env.local"), "");
+	assert.match(describeLocalEnvFiles(assetsDirectory) ?? "", /^Note: \.env\.local sits next to this build\. CI has no local env file/);
 });
 
 test("keeps every deterministic PositionsPanel idle preload in the desktop runtime profile", () => {

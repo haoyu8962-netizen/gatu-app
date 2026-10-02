@@ -1480,6 +1480,7 @@ msgstr "No se pudo abrir la compra con tarjeta. Revisa tu conexión e inténtalo
 msgid "Card purchase did not complete"
 msgstr "La compra con tarjeta no se completó"
 
+#: src/lib/tests/privy-fiat-funding-host.test.tsx
 #: src/lib/trade/privy-fiat-funding-feedback.ts
 msgid "Card purchase status unknown"
 msgstr "Estado de la compra con tarjeta desconocido"

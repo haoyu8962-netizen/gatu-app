@@ -1480,6 +1480,7 @@ msgstr "कार्ड खरीदारी नहीं खुल सकी�
 msgid "Card purchase did not complete"
 msgstr "कार्ड खरीदारी पूरी नहीं हुई"
 
+#: src/lib/tests/privy-fiat-funding-host.test.tsx
 #: src/lib/trade/privy-fiat-funding-feedback.ts
 msgid "Card purchase status unknown"
 msgstr "कार्ड खरीदारी की स्थिति अज्ञात"

@@ -1480,6 +1480,7 @@ msgstr "تعذّر فتح الشراء بالبطاقة. تحقّق من اتص�
 msgid "Card purchase did not complete"
 msgstr "لم تكتمل عملية الشراء بالبطاقة"
 
+#: src/lib/tests/privy-fiat-funding-host.test.tsx
 #: src/lib/trade/privy-fiat-funding-feedback.ts
 msgid "Card purchase status unknown"
 msgstr "حالة الشراء بالبطاقة غير معروفة"

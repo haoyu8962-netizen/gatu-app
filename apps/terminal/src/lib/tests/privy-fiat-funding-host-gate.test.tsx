@@ -6,10 +6,31 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createI18nRoot } from "./harness/react";
 
 const OWNER = "0xabcdefabcdefabcdefabcdefabcdefabcdef1234" as const;
+const OTHER = "0x2222222222222222222222222222222222222222";
 const HOST_MODULE = "@/components/trade/tradebox/privy-fiat-funding-host";
 const toastMocks = vi.hoisted(() => ({ error: vi.fn(), success: vi.fn(), warning: vi.fn() }));
+const identity = vi.hoisted(() => {
+	let clientKey = "";
+	const listeners = new Set<() => void>();
+	return {
+		get: () => clientKey,
+		set(next: string) {
+			clientKey = next;
+			for (const listener of listeners) listener();
+		},
+		subscribe(listener: () => void) {
+			listeners.add(listener);
+			return () => listeners.delete(listener);
+		},
+	};
+});
 
 vi.mock("sonner", () => ({ toast: toastMocks }));
+vi.mock("@/lib/hyperliquid", async () => {
+	const { useSyncExternalStore } = await import("react");
+	return { useHyperliquid: () => ({ clientKey: useSyncExternalStore(identity.subscribe, identity.get) }) };
+});
+vi.mock("@/stores/use-global-settings-store", () => ({ useIsTestnet: () => false }));
 
 async function loadGate() {
 	const gate = await import("@/components/trade/tradebox/privy-fiat-funding-host-gate");
@@ -31,6 +52,7 @@ describe("PrivyFiatFundingHostGate", () => {
 
 	beforeEach(() => {
 		vi.resetModules();
+		identity.set(OWNER);
 		container = document.createElement("div");
 		document.body.appendChild(container);
 		root = createI18nRoot(container);
@@ -149,6 +171,27 @@ describe("PrivyFiatFundingHostGate", () => {
 		expect(toastMocks.error).toHaveBeenCalledExactlyOnceWith(
 			"Card purchase could not open. Check your connection and try again.",
 		);
+		expect(store.isCurrentPrivyFiatFundingAttempt(attempt)).toBe(false);
+	});
+
+	it("ends the attempt without telling a different owner that the purchase could not open", async () => {
+		let failHostImport: (error: Error) => void = () => undefined;
+		const hostImport = new Promise<never>((_resolve, reject) => {
+			failHostImport = reject;
+		});
+		vi.doMock(HOST_MODULE, () => hostImport);
+		const { PrivyFiatFundingHostGate, store } = await loadGate();
+		await act(async () => root.render(createElement(PrivyFiatFundingHostGate)));
+		const attempt = createAttempt();
+
+		await act(async () => {
+			store.requestPrivyFiatFunding(attempt);
+		});
+		act(() => identity.set(OTHER));
+		failHostImport(new Error("Failed to fetch dynamically imported module"));
+		await settleHostImport();
+
+		expect(toastMocks.error).not.toHaveBeenCalled();
 		expect(store.isCurrentPrivyFiatFundingAttempt(attempt)).toBe(false);
 	});
 });

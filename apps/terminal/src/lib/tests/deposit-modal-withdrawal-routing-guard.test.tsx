@@ -99,6 +99,7 @@ const testState = vi.hoisted(() => ({
 	exchangeGuards: new Map<string, ((params?: unknown, signal?: AbortSignal) => Promise<void>) | undefined>(),
 	exchangeFinalWait: vi.fn(),
 	exchangeErrors: new Map<string, unknown>(),
+	exchangePending: new Set<string>(),
 	exchangeMutations: new Map<string, ReturnType<typeof vi.fn>>(),
 	exchangeSdkCalls: new Map<string, ReturnType<typeof vi.fn>>(),
 	fetchFreshRouting: vi.fn(),
@@ -375,7 +376,7 @@ vi.mock("@/lib/hyperliquid", () => ({
 		testState.exchangeMutations.set(method, mutateAsync);
 		return {
 			error: testState.exchangeErrors.get(method) ?? null,
-			isPending: false,
+			isPending: testState.exchangePending.has(method),
 			isSuccess: false,
 			mutateAsync,
 			reset: vi.fn(),
@@ -643,6 +644,7 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 		i18n.loadAndActivate({ locale: "en", messages: {} });
 		testState.exchangeGuards.clear();
 		testState.exchangeErrors.clear();
+		testState.exchangePending.clear();
 		toastMocks.error.mockReset();
 		toastMocks.success.mockReset();
 		toastMocks.warning.mockReset();
@@ -766,13 +768,13 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 		return guard;
 	}
 
-	async function rerender() {
+	async function rerender(sessionKey?: string) {
 		await act(async () => {
 			root.render(
 				createElement(
 					QueryClientProvider,
 					{ client: queryClient },
-					createElement(I18nProvider, { i18n }, createElement(DepositModal)),
+					createElement(I18nProvider, { i18n }, createElement(DepositModal, sessionKey ? { key: sessionKey } : null)),
 				),
 			);
 		});
@@ -2388,6 +2390,23 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 			expect(warmPrivyFiatFundingHost).not.toHaveBeenCalled();
 		});
 
+		it("decides the first screen again when the dialog is rebuilt for another wallet identity", async () => {
+			testState.modalOpen = true;
+			await rerender("mainnet:none");
+			expect(depositForm()).not.toBeNull();
+			expect(methods()).toBeNull();
+
+			offerCardFunding();
+			await rerender("mainnet:owner");
+			expect(methods()).not.toBeNull();
+			expect(depositForm()).toBeNull();
+
+			testState.fiatOffer = null;
+			await rerender("mainnet:agent-only");
+			expect(methods()).toBeNull();
+			expect(depositForm()).not.toBeNull();
+		});
+
 		it("lets the offer know when deposits are unavailable or busy", async () => {
 			offerCardFunding();
 			testState.modalOpen = true;
@@ -2401,6 +2420,26 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 			testState.depositStatus = "idle";
 			testState.depositAvailable = false;
 			await rerender();
+			expect(testState.fiatOfferOptions?.available).toBe(false);
+		});
+
+		it("turns the purchase entry off while a withdrawal is pending and once the dialog is closing", async () => {
+			offerCardFunding();
+			testState.modalOpen = true;
+			await rerender();
+			expect(testState.fiatOfferOptions?.available).toBe(true);
+
+			testState.exchangePending.add("sendToEvmWithData");
+			await rerender();
+			expect(testState.fiatOfferOptions?.available).toBe(false);
+
+			testState.exchangePending.clear();
+			await rerender();
+			expect(testState.fiatOfferOptions?.available).toBe(true);
+
+			testState.modalOpen = false;
+			await rerender();
+			expect(methods()).not.toBeNull();
 			expect(testState.fiatOfferOptions?.available).toBe(false);
 		});
 	});

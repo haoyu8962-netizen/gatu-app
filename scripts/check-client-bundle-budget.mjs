@@ -125,6 +125,13 @@ export function findLocalEnvFiles(appDirectory) {
 	}
 }
 
+/** The note printed after the budget lines when a local env file sits next to the measured build. */
+export function describeLocalEnvFiles(assetsDirectory) {
+	const files = findLocalEnvFiles(resolve(assetsDirectory, "../../.."));
+	if (files.length === 0) return null;
+	return `Note: ${files.join(", ")} sits next to this build. CI has no local env file, so a build that read it measures a few hundred bytes above CI; take re-baseline measurements in a checkout without it.`;
+}
+
 export function getBudgetIncreaseViolation({ label, actualBytes, baselineBytes, allowedIncreaseBytes }) {
 	const increase = actualBytes - baselineBytes;
 	if (increase <= allowedIncreaseBytes) return undefined;
@@ -342,12 +349,8 @@ export async function checkClientBundleBudget(assetsDirectoryArgument) {
 		const asset = surface.assets.length === 1 ? surface.assets[0] : undefined;
 		if (asset) console.log(`- ${asset.file}: ${asset.gzip} gzip bytes`);
 	}
-	const localEnvFiles = findLocalEnvFiles(resolve(assetsDirectory, "../../.."));
-	if (localEnvFiles.length > 0) {
-		console.log(
-			`Note: ${localEnvFiles.join(", ")} sits next to this build. CI has no local env file, so a build that read it measures a few hundred bytes above CI; take re-baseline measurements in a checkout without it.`,
-		);
-	}
+	const localEnvNote = describeLocalEnvFiles(assetsDirectory);
+	if (localEnvNote) console.log(localEnvNote);
 
 	if (violations.length > 0) {
 		console.error("Client bundle budget exceeded:");

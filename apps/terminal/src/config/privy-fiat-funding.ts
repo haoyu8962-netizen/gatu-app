@@ -1,8 +1,5 @@
 import { type PrivyFiatFundingFeatureEnv, resolvePrivyFiatFundingFeatureFlags } from "./privy-fiat-funding-flags";
 
-export type { PrivyFiatFundingFeatureEnv, PrivyFiatFundingFeatureFlags } from "./privy-fiat-funding-flags";
-export { resolvePrivyFiatFundingFeatureFlags } from "./privy-fiat-funding-flags";
-
 export const PRIVY_FIAT_FUNDING_FEATURES = resolvePrivyFiatFundingFeatureFlags(
 	import.meta.env as PrivyFiatFundingFeatureEnv,
 );

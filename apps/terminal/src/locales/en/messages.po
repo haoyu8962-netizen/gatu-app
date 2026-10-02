@@ -1480,6 +1480,7 @@ msgstr "Card purchase could not open. Check your connection and try again."
 msgid "Card purchase did not complete"
 msgstr "Card purchase did not complete"
 
+#: src/lib/tests/privy-fiat-funding-host.test.tsx
 #: src/lib/trade/privy-fiat-funding-feedback.ts
 msgid "Card purchase status unknown"
 msgstr "Card purchase status unknown"

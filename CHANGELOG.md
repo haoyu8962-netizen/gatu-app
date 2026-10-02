@@ -15,7 +15,8 @@ changes, not evidence that a build has been deployed or accepted on real devices
   the external wallet you are connected with), and you then deposit it as usual; external wallets
   need a little Arbitrum ETH for that step. Notifications say a purchase was confirmed, is still
   processing or has an unknown status (the last two stay until you dismiss them), never that USDC
-  has arrived. Releasing it on Mainnet needs the Privy funding setup, reviewed legal text and an
+  has arrived; they are shown only to the account that made the purchase and follow the interface
+  language. Releasing it on Mainnet needs the Privy funding setup, reviewed legal text and an
   explicit release option (ADR 0034).
 - Earn is live. The new `/earn` page lists Hyperliquid's borrow and lend reserves with their LTV,
   APY, oracle price and totals, your supplied and borrowed amounts, interest and liquidation

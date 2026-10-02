@@ -30,18 +30,21 @@ export const PRIVY_FIAT_FUNDING_DEFAULT_AMOUNT = "100";
 export const PRIVY_FIAT_FUNDING_USER_EXIT_MESSAGE = "User exited flow";
 export const PRIVY_FIAT_FUNDING_BACK_NAVIGATION_ERROR = "BackNavigationError";
 export const PRIVY_FIAT_FUNDING_BUSY_MESSAGE = "Existing fiat onramp flow in progress";
+export const PRIVY_FIAT_FUNDING_PAYMENT_METHOD_ERROR = "StripePaymentMethodError";
 
 /**
- * Privy ends a flow with these errors before any payment was taken (checkout setup) or after the
- * provider reported the transaction as failed. Every other rejection, including Privy's
- * "Could not confirm payment status yet." and "Unable to check payment status. Please try again.",
- * may follow a charge, so it is reported as an unknown status rather than a failure.
+ * Privy ends a flow with these errors before any payment was taken (checkout setup), after the
+ * provider reported the transaction as failed or cancelled, or, as a
+ * `StripePaymentMethodError`, after the card was declined. Every other rejection, including
+ * Privy's "Could not confirm payment status yet." and "Unable to check payment status. Please try
+ * again.", may follow a charge, so it is reported as an unknown status rather than a failure.
  */
 export const PRIVY_FIAT_FUNDING_FAILURE_MESSAGES = [
 	"Something went wrong setting up checkout. Please try again.",
 	"Unable to open payment window",
 	"Unable to start payment session",
 	"Transaction failed",
+	"Transaction cancelled",
 ] as const;
 export const PRIVY_FIAT_FUNDING_UNCONFIRMED_MESSAGES = [
 	"Could not confirm payment status yet.",
@@ -95,10 +98,6 @@ export function resolvePrivyFiatFundingDestination({
 	return walletIntent === "external" ? { address, walletKind: "external" } : null;
 }
 
-export function getPrivyFiatFundingOwnerKey(network: PrivyFiatFundingNetwork, clientKey: string): string {
-	return `${network}:${clientKey.toLowerCase()}`;
-}
-
 export function createPrivyFiatFundingRequest(
 	destination: PrivyFiatFundingDestination,
 	network: PrivyFiatFundingNetwork,
@@ -129,5 +128,6 @@ export function classifyPrivyFiatFundingError(error: unknown): PrivyFiatFundingO
 		return "cancelled";
 	}
 	if (error.message === PRIVY_FIAT_FUNDING_BUSY_MESSAGE) return "busy";
+	if (error.name === PRIVY_FIAT_FUNDING_PAYMENT_METHOD_ERROR) return "failed";
 	return (PRIVY_FIAT_FUNDING_FAILURE_MESSAGES as readonly string[]).includes(error.message) ? "failed" : "unknown";
 }
