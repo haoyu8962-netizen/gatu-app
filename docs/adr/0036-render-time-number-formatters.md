@@ -29,12 +29,12 @@
 4. **外部创建、在别处渲染的回调由渲染方传入格式化函数。** `EarnOutcomeToastContent` 渲染的 `render` 回调是提交时在异步流程里创建的。它原先只裸订阅，缓存的输出不会重算。现在由它把自己的 `NumberFormatters` 和 `translate` 一起传给回调。
 5. **删除 `useNumberFormatRevision`。** `lib/number-format-reactivity.ts` 只保留通知、订阅与修订号读取。`TradeRowComponent` 的 `"use no memo"` 当初只是为了这个依赖加的（`6e70351b`），一并删除，显式的 `memo` 比较函数保留。标签页标题的 effect 把 `formatPrice` 列入依赖，替代原来的 `void numberFormatRevision`。
 6. **契约。** `number-format-reactivity-contract.test.ts` 用 TypeScript AST 扫描 `apps/terminal/src`（测试、`locales`、`.gen.ts` 除外）：
-   - 先跨模块求出「经模块级数字格式化函数格式化」的模块级声明。这是传递闭包，跟随 `@/` 与相对导入、具名与默认导入、命名空间导入（`format.formatNumber`）、具名再导出、`export *` 与本地别名导出；
+   - 先跨模块求出「经模块级数字格式化函数格式化」的模块级声明。这是传递闭包，跟随 `@/` 与相对导入、具名与默认导入、命名空间导入（`format.formatNumber`、`format["formatNumber"]`，以及从命名空间解构出的名字）、具名再导出、`export *` 与本地别名导出。括号、类型断言（`as`、`satisfies`、尖括号）与非空断言不改变值，判断时都会穿透；
    - 组件与 Hook 里引用这些声明、模块级格式化函数或上述读取函数，且没有被局部绑定遮蔽的，都算违规；
-   - `useNumberFormat()` 的结果没有被用到算违规：裸调用（包括以别名导入后裸调用），或赋给的变量与解构出的名字在其作用域里没有被引用。引用按绑定判断，同名的内层参数不算；只出现在 `void` 或单独的表达式语句里也不算。这检查的是引用，不是格式化数据流；
-   - 模块顶层在导入时调用格式化函数算违规；只保存函数引用不算，但引用这个别名的组件仍会被拦下。
+   - `useNumberFormat()` 的结果没有被用到算违规：结果被丢弃（裸调用、`void`、逗号运算符左侧，包括以别名导入后调用），或赋给的变量与解构出的名字在其作用域里没有被引用。引用按绑定判断，即找到声明这个名字的最近作用域（块、`switch` 的各分支、`for` 初始化、函数参数），同名的内层参数不算；只出现在 `void`、单独的表达式语句或逗号左侧也不算。这检查的是引用，不是格式化数据流；
+   - 模块顶层在导入时调用格式化函数，或把它交给一次调用（如 `[0, 1].map(formatUSD)`），算违规；只保存函数引用（别名、对象表）不算，但引用这个别名或表的组件仍会被拦下。
 
-   组件按名称识别（大写开头或 `use` 后接大写或数字，`memo`/`forwardRef` 包装按变量名）。另外两类也算组件：`.tsx` 里匿名的默认导出函数，以及传给路由 `component`、`pendingComponent`、`errorComponent`、`notFoundComponent` 选项的函数。附 24 个正反样例（19 个应报出、5 个应放行）。它在基线代码上报出 356 处违规，在本次代码上为 0。
+   组件与 Hook 的识别和语言契约共用 `src/lib/tests/harness/react-source.ts`。名称取自函数本身、接收它的变量、赋值目标或对象键，大写开头或 `use` 后接大写或数字的算组件或 Hook。`memo`/`forwardRef` 包装的函数不论自身名称都算组件，包装可以嵌套、加括号或断言。另外两类也算组件：`.tsx` 里匿名的默认导出函数（包括 `export default memo(function render…)`），以及路由 `component`、`pendingComponent`、`errorComponent`、`notFoundComponent` 选项的函数或方法。这是 React Compiler 推断规则的超集，不依赖编译器当前是否编译某个函数。附 50 个正反样例（42 个应报出、8 个应放行）。它在基线代码上报出 356 处违规，在本次代码上为 0。
 
 ## 备选方案与代价
 
@@ -48,17 +48,23 @@
 ## 后果与边界
 
 - 数字格式化有两个入口。渲染期的 React 代码用 `useNumberFormat()`，其余代码可以用模块级函数或 `getNumberFormatters()`。规则写在 [数字格式设置](../number-format-setting.md) 与 AGENTS.md。
-- 契约只看源码中的名字绑定。经 props 传给子组件、在子组件渲染时调用的闭包，只要创建它的组件正常重渲染，闭包会随格式化函数身份更新。在渲染之外创建的元素（提示内容）契约看不到，靠决策 4 的约定。它也不识别类组件、`memo`/`forwardRef` 之外的包装函数，以及按计算属性名访问的格式化函数（`format[name]`）。
+- 契约只看源码中的名字绑定。经 props 传给子组件、在子组件渲染时调用的闭包，只要创建它的组件正常重渲染，闭包会随格式化函数身份更新。在渲染之外创建的元素（提示内容）契约看不到，靠决策 4 的约定。它也看不到以下写法，出现时需要人工审查：
+  - 类组件，以及 `memo`/`forwardRef` 之外的包装函数；
+  - 动态 `import()`、`require()` 取得的格式化函数，整体传递的命名空间对象，按非字面量键访问的命名空间成员（`format[name]`），以及被重新赋值的变量；
+  - 模块顶层由其他函数在导入时调用的回调，例如立即执行的函数，或传给模块顶层调用的箭头函数（`[0, 1].map((value) => formatUSD(value))`）。
 - 资金类提示（划转、发送、提现、金库）在弹出时把金额格式化成字符串，已显示的提示不随设置变化。这与这些提示在弹出时按当前语言生成文案的既有约定一致。
-- 没有经 `lib/format.ts` 的数字显示不受本决策约束，也不跟随设置，固定输出 `,` 分组与 `.` 小数点（或 `toFixed` 的 `.`）。2026-10-02 的审查与排查确认了这些：
+- 没有经 `lib/format.ts` 的数字显示不受本决策约束，也不跟随设置，固定输出 `,` 分组与 `.` 小数点（或 `toFixed` 的 `.`），或原样显示协议字符串。2026-10-02 的审查与排查确认了这些：
   - 质押金额与比例（`formatStakingAmount`、`formatStakingRatio`）；
-  - 金库精确金额（`groupDecimal`）；
+  - 金库页的金额、紧凑金额与比例（`formatVaultUsd`、`formatVaultSignedUsd`、`formatVaultCompactUsd`、`formatVaultRatio`），包括资产总值、APR 与 Leader commission；
   - 跨链各屏金额（`lib/bridge/format.ts` 的 `formatTokenBalance`、`formatSendAmount`、`formatTokenAmount`）；
   - 手机行情条的 24h 涨跌额与涨跌幅（`formatSignedFixed`、`formatSignedPercent`）；
   - 手机下单页的涨跌幅；
   - 下单费率（`formatOrderFeeRatePercent`，与换算后的金额同在一串里，德式格式下显示为 `0.0450% ($1,23)`）；
   - TP/SL 风险收益比（`lib/trade/tpsl.ts`）；
-  - 订单簿价格分组标签（`formatTickSize`）。
+  - 订单簿价格分组标签（`formatTickSize`）；
+  - 图表仓位线里的仓位数量（`lib/chart/tradingview-overlays.ts`，同一行的盈亏与 ROE 已跟随设置）；
+  - 成交通知里的成交数量与部分成交进度（`lib/trade/order-notification-copy.ts`，成交均价已跟随设置）；
+  - 平仓滑块的读屏文本（`position-close-sizing-controls.tsx` 的 `aria-valuetext`，百分比来自 `formatPositionMarketClosePercent`）。
 
   全仓库还有约 119 处 `toFixed`，多数用于协议值或计算，没有逐处分类。登记为后续。
 - 日期是同一类问题：`formatDateTime` 等函数不传 `locale` 时读全局语言。本次修复了编译产物确认的 15 处，规则写入[运行时多语言](../i18n-presentation.md)，尚无契约，登记为后续。

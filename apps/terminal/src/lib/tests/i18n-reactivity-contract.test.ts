@@ -2,6 +2,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import { relative, resolve } from "node:path";
 import ts from "typescript";
 import { describe, expect, it } from "vitest";
+import { calleeName, findDeclaringScope, getComponentOrHookName, isWithin, parseSource } from "./harness/react-source";
 
 const SOURCE_ROOT = resolve(__dirname, "../..");
 const SHORT_CIRCUIT_OPERATORS = new Set([
@@ -9,7 +10,6 @@ const SHORT_CIRCUIT_OPERATORS = new Set([
 	ts.SyntaxKind.BarBarToken,
 	ts.SyntaxKind.QuestionQuestionToken,
 ]);
-const COMPONENT_WRAPPERS = new Set(["forwardRef", "memo"]);
 const EFFECT_HOOKS = new Set(["useEffect", "useInsertionEffect", "useLayoutEffect"]);
 
 const REACTIVE_COMPONENTS = [
@@ -329,6 +329,37 @@ describe("dependencies React Compiler can see", () => {
 		expect(findBranchOnlyLocaleReads(sampleComponent(body))).toEqual([]);
 	});
 
+	const BRANCHED_READ =
+		"const { i18n } = useLingui(); return at === null ? null : format(at, { locale: i18n.locale });";
+
+	it.each([
+		[
+			"a memoized component whose function has a lowercase name",
+			`const Sample = memo(function render({ at }: Props) { ${BRANCHED_READ} });`,
+		],
+		[
+			"a memoized default export whose function has a lowercase name",
+			`export default memo(function render({ at }: Props) { ${BRANCHED_READ} });`,
+		],
+		["an anonymous default-exported component", `export default function ({ at }: Props) { ${BRANCHED_READ} }`],
+		["an anonymous default-exported arrow component", `export default ({ at }: Props) => { ${BRANCHED_READ} };`],
+		[
+			"a route component",
+			`export const Route = createFileRoute("/sample")({ component: function render() { ${BRANCHED_READ} } });`,
+		],
+		["a component held by an object key", `export const cells = { Time: ({ at }: Props) => { ${BRANCHED_READ} } };`],
+	])("flags a branch-only locale read in %s", (_, declaration) => {
+		expect(findBranchOnlyLocaleReads(`import { useLingui } from "@lingui/react/macro";\n${declaration}`)).toHaveLength(
+			1,
+		);
+	});
+
+	it("allows a branch-only locale read in a helper that is neither named nor wrapped as a component", () => {
+		const source =
+			"function label(at: number | null, i18n: I18n) { return at === null ? null : format(at, { locale: i18n.locale }); }";
+		expect(findBranchOnlyLocaleReads(source)).toEqual([]);
+	});
+
 	it.each([
 		["a dependency the callback never reads", "return useMemo(() => format(at), [at, i18n.locale]);", ["i18n.locale"]],
 		[
@@ -347,6 +378,26 @@ describe("dependencies React Compiler can see", () => {
 			[],
 		],
 		["no dependency for a property of a read object", "return useMemo(() => groups.map(String), [groups.length]);", []],
+		[
+			"a dependency that only a shadowing callback parameter reads",
+			"const locale = i18n.locale; return useMemo(() => groups.map((locale) => locale[0]), [groups, locale]);",
+			["locale"],
+		],
+		[
+			"a dependency that only a shadowing local reads",
+			'const locale = i18n.locale; return useMemo(() => { const locale = "en"; return format(at, { locale }); }, [at, locale]);',
+			["locale"],
+		],
+		[
+			"a property dependency read only through a shadowing parameter",
+			"return useMemo(() => groups.map((i18n) => i18n.locale), [groups, i18n.locale]);",
+			["i18n.locale"],
+		],
+		[
+			"no dependency when a nested callback reads the outer binding",
+			"const locale = i18n.locale; return useMemo(() => groups.map((group) => formatList(group, { locale })), [groups, locale]);",
+			[],
+		],
 	])("reports %s", (_, body, expected) => {
 		expect(findUnreadMemoDependencies(sampleComponent(body)).map((violation) => violation.split(" ").at(-1))).toEqual(
 			expected,
@@ -372,16 +423,11 @@ function listSourceFiles(directory: string): string[] {
 	});
 }
 
-function parseSource(source: string, fileName: string): ts.SourceFile {
-	const scriptKind = fileName.endsWith(".ts") ? ts.ScriptKind.TS : ts.ScriptKind.TSX;
-	return ts.createSourceFile(fileName, source, ts.ScriptTarget.Latest, true, scriptKind);
-}
-
 function findBranchOnlyLocaleReads(source: string, fileName = "sample.tsx"): number[] {
 	const file = parseSource(source, fileName);
 	const lines: number[] = [];
 	const visit = (node: ts.Node) => {
-		if (isLocaleRead(node) && isBranchOnlyRenderRead(node)) {
+		if (isLocaleRead(node) && isBranchOnlyRenderRead(node, fileName)) {
 			lines.push(file.getLineAndCharacterOfPosition(node.getStart()).line + 1);
 		}
 		ts.forEachChild(node, visit);
@@ -399,12 +445,12 @@ function isLocaleRead(node: ts.Node): node is ts.PropertyAccessExpression {
 	);
 }
 
-function isBranchOnlyRenderRead(read: ts.Node): boolean {
+function isBranchOnlyRenderRead(read: ts.Node, fileName: string): boolean {
 	let branched = false;
 	let child = read;
 	for (let parent = read.parent; parent; child = parent, parent = parent.parent) {
 		if (ts.isFunctionLike(parent)) {
-			if (isComponentOrHook(parent)) return branched;
+			if (getComponentOrHookName(parent, fileName) !== undefined) return branched;
 			if (isDeferredCallback(parent)) return false;
 			if (!isHookCallback(parent, "useMemo")) branched = true;
 			continue;
@@ -458,32 +504,6 @@ function isHookCallback(node: ts.Node, hookName: string): boolean {
 	return ts.isCallExpression(call) && call.arguments[0] === node && calleeName(call) === hookName;
 }
 
-function calleeName(call: ts.CallExpression): string | undefined {
-	if (ts.isIdentifier(call.expression)) return call.expression.text;
-	if (ts.isPropertyAccessExpression(call.expression)) return call.expression.name.text;
-	return undefined;
-}
-
-function isComponentOrHook(node: ts.SignatureDeclaration): boolean {
-	const name = getDeclaredName(node);
-	return name !== undefined && /^(?:[A-Z]|use[A-Z0-9])/.test(name);
-}
-
-function getDeclaredName(node: ts.SignatureDeclaration): string | undefined {
-	if (node.name && ts.isIdentifier(node.name)) return node.name.text;
-	let parent = node.parent;
-	while (
-		ts.isParenthesizedExpression(parent) ||
-		ts.isAsExpression(parent) ||
-		ts.isSatisfiesExpression(parent) ||
-		(ts.isCallExpression(parent) && COMPONENT_WRAPPERS.has(calleeName(parent) ?? ""))
-	) {
-		parent = parent.parent;
-	}
-	if (ts.isVariableDeclaration(parent) && ts.isIdentifier(parent.name)) return parent.name.text;
-	return undefined;
-}
-
 function findUnreadMemoDependencies(source: string, fileName = "sample.tsx"): string[] {
 	const file = parseSource(source, fileName);
 	const violations: string[] = [];
@@ -510,21 +530,25 @@ function findUnreadMemoDependencies(source: string, fileName = "sample.tsx"): st
 	return violations;
 }
 
+// Reads whose root name resolves to a binding outside the callback: a parameter or local of the
+// callback that shadows a dependency's name does not read the dependency.
 function collectReadPaths(callback: ts.Node): string[] {
 	const reads: string[] = [];
+	const readsOuterBinding = (identifier: ts.Identifier) => !isWithin(findDeclaringScope(identifier), callback);
 	const visit = (node: ts.Node): void => {
 		if (ts.isIdentifier(node)) {
-			reads.push(node.text);
+			if (readsOuterBinding(node)) reads.push(node.text);
 			return;
 		}
 		if (ts.isPropertyAccessExpression(node)) {
 			const path = getReadPath(node);
-			if (path) reads.push(path);
+			const root = getReadRoot(node);
+			if (path && root && readsOuterBinding(root)) reads.push(path);
 			visit(node.expression);
 			return;
 		}
 		if (ts.isShorthandPropertyAssignment(node)) {
-			reads.push(node.name.text);
+			if (readsOuterBinding(node.name)) reads.push(node.name.text);
 			return;
 		}
 		if (ts.isPropertyAssignment(node)) {
@@ -553,6 +577,11 @@ function getReadPath(node: ts.Node): string | undefined {
 		return base === undefined ? undefined : `${base}.${node.name.text}`;
 	}
 	return undefined;
+}
+
+function getReadRoot(node: ts.Expression): ts.Identifier | undefined {
+	if (ts.isIdentifier(node)) return node;
+	return ts.isPropertyAccessExpression(node) ? getReadRoot(node.expression) : undefined;
 }
 
 function isPathRead(path: string, reads: readonly string[]): boolean {

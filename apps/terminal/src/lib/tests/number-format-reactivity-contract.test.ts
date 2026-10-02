@@ -2,13 +2,26 @@ import { readdirSync, readFileSync } from "node:fs";
 import { relative, resolve } from "node:path";
 import ts from "typescript";
 import { describe, expect, it } from "vitest";
+import {
+	collectBindingIdentifiers,
+	findDeclaringScope,
+	getComponentOrHookName,
+	hasModifier,
+	outermostTransparentExpression,
+	parseSource,
+	skipTransparentExpressions,
+} from "./harness/react-source";
 
 // React Compiler caches a call such as formatNumber(x) by its arguments only. The module-level
 // formatters in lib/format.ts read the number-format setting from global state, so a cached result
 // keeps the previous format after a switch even when its component re-renders. Components and hooks
 // therefore take their formatters from useNumberFormat(), whose functions change identity with the
 // setting, and pass them to any helper that formats during render (ADR 0036). Source-level rules,
-// independent of whether the compiler currently compiles a given component.
+// independent of whether the compiler currently compiles a given component. Names resolve lexically
+// through imports, re-exports, destructuring, parentheses and type assertions; a formatter reached
+// through import(), require(), a namespace object passed as a whole or a reassigned variable is out
+// of reach, and a useNumberFormat() result counts as used when one of its references does something
+// with it, without following where the value flows.
 const SOURCE_ROOT = resolve(__dirname, "../..");
 const FORMAT_MODULE = "lib/format.ts";
 const GLOBAL_NUMBER_FORMAT_READERS = new Set([
@@ -25,8 +38,6 @@ const GLOBAL_NUMBER_FORMAT_READERS = new Set([
 const REACTIVITY_MODULE = "lib/number-format-reactivity.ts";
 const REACTIVITY_READERS = new Set(["getNumberFormatRevision", "subscribeNumberFormatChange"]);
 const NUMBER_FORMAT_HOOK = `${FORMAT_MODULE}#useNumberFormat`;
-const COMPONENT_WRAPPERS = new Set(["forwardRef", "memo"]);
-const ROUTE_COMPONENT_PROPERTIES = new Set(["component", "errorComponent", "notFoundComponent", "pendingComponent"]);
 const DOCUMENT_TITLE_SOURCE = readFileSync(resolve(SOURCE_ROOT, "hooks/use-document-title.ts"), "utf8");
 
 describe("number format reactivity contract", () => {
@@ -279,6 +290,141 @@ export function Sample() { return <p>{ZERO}</p>; }`,
 			},
 			["components/sample.tsx:2 <module> formatUSD", "components/sample.tsx:3 Sample ZERO"],
 		],
+		[
+			"a memoized default export whose function has a lowercase name",
+			{
+				"components/sample.tsx": `import { memo } from "react";
+import { formatUSD } from "@/lib/format";
+export default memo(function render() { return <p>{formatUSD(1)}</p>; });`,
+			},
+			["components/sample.tsx:3 <default> formatUSD"],
+		],
+		[
+			"a memoized component held by a lowercase name",
+			{
+				"components/sample.tsx": `import { memo } from "react";
+import { formatUSD } from "@/lib/format";
+const sample = memo(() => <p>{formatUSD(1)}</p>);
+export { sample as Sample };`,
+			},
+			["components/sample.tsx:3 sample formatUSD"],
+		],
+		[
+			"nested component wrappers",
+			{
+				"components/sample.tsx": `import { forwardRef, memo } from "react";
+import { formatUSD } from "@/lib/format";
+export const Sample = memo(forwardRef(function render() { return <p>{formatUSD(1)}</p>; }));`,
+			},
+			["components/sample.tsx:3 Sample formatUSD"],
+		],
+		[
+			"a hook behind an angle-bracket type assertion",
+			{
+				"hooks/use-sample.ts": `import { formatUSD } from "@/lib/format";
+export const useSample = <() => string>(() => formatUSD(1));`,
+			},
+			["hooks/use-sample.ts:2 useSample formatUSD"],
+		],
+		[
+			"a component held by an object key",
+			{
+				"components/sample.tsx": `import { formatUSD } from "@/lib/format";
+export const cells = { Price: () => <p>{formatUSD(1)}</p> };`,
+			},
+			["components/sample.tsx:2 Price formatUSD"],
+		],
+		[
+			"a route component written as a method",
+			{
+				"routes/sample.tsx": `import { formatUSD } from "@/lib/format";
+export const Route = createFileRoute("/sample")({ component() { return <p>{formatUSD(1)}</p>; } });`,
+			},
+			["routes/sample.tsx:2 component formatUSD"],
+		],
+		[
+			"a route component function with a lowercase name",
+			{
+				"routes/sample.tsx": `import { formatUSD } from "@/lib/format";
+export const Route = createFileRoute("/sample")({ component: function render() { return <p>{formatUSD(1)}</p>; } });`,
+			},
+			["routes/sample.tsx:2 component formatUSD"],
+		],
+		[
+			"formatters asserted to their type and never used",
+			{
+				"components/sample.tsx": `import { type NumberFormatters, useNumberFormat } from "@/lib/format";
+export function Sample() { const numberFormat = useNumberFormat() as NumberFormatters; return <p />; }`,
+			},
+			["components/sample.tsx:2 Sample useNumberFormat() result unused"],
+		],
+		[
+			"formatters asserted with angle brackets and never used",
+			{
+				"hooks/use-sample.ts": `import { type NumberFormatters, useNumberFormat } from "@/lib/format";
+export function useSample() { const numberFormat = <NumberFormatters>useNumberFormat(); return "label"; }`,
+			},
+			["hooks/use-sample.ts:2 useSample useNumberFormat() result unused"],
+		],
+		[
+			"formatters only voided inside parentheses",
+			{
+				"components/sample.tsx": `import { useNumberFormat } from "@/lib/format";
+export function Sample() { const numberFormat = useNumberFormat(); void (numberFormat); return <p />; }`,
+			},
+			["components/sample.tsx:2 Sample useNumberFormat() result unused"],
+		],
+		[
+			"formatters only named in a parenthesized statement or a comma operand",
+			{
+				"components/sample.tsx": `import { useNumberFormat } from "@/lib/format";
+export function Sample() { const numberFormat = useNumberFormat(); (numberFormat); const label = (numberFormat, "x"); return <p>{label}</p>; }`,
+			},
+			["components/sample.tsx:2 Sample useNumberFormat() result unused"],
+		],
+		[
+			"a parenthesized subscription call whose result is dropped",
+			{
+				"components/sample.tsx": `import { useNumberFormat } from "@/lib/format";
+export function Sample() { (useNumberFormat)(); return <p />; }`,
+			},
+			["components/sample.tsx:2 Sample useNumberFormat() result unused"],
+		],
+		[
+			"formatters destructured into an empty pattern",
+			{
+				"components/sample.tsx": `import { useNumberFormat } from "@/lib/format";
+export function Sample() { const {} = useNumberFormat(); return <p />; }`,
+			},
+			["components/sample.tsx:2 Sample useNumberFormat() result unused"],
+		],
+		[
+			"parenthesized and asserted formatters called at import",
+			{
+				"components/sample.tsx": `import { formatUSD } from "@/lib/format";
+const ZERO = (formatUSD)(0);
+const ONE = (formatUSD as typeof formatUSD)(1);
+export function Sample() { return <p />; }`,
+			},
+			["components/sample.tsx:2 <module> formatUSD", "components/sample.tsx:3 <module> formatUSD"],
+		],
+		[
+			"a formatter handed to a call at import",
+			{
+				"components/sample.tsx": `import { formatUSD } from "@/lib/format";
+const LABELS = [0, 1].map(formatUSD);
+export function Sample() { return <p />; }`,
+			},
+			["components/sample.tsx:2 <module> formatUSD"],
+		],
+		[
+			"namespace formatters read through brackets or parentheses",
+			{
+				"components/sample.tsx": `import * as format from "@/lib/format";
+export function Sample() { return <p>{format["formatUSD"](1)}{(format).formatPrice(1)}</p>; }`,
+			},
+			["components/sample.tsx:2 Sample formatPrice", "components/sample.tsx:2 Sample formatUSD"],
+		],
 	])("flags %s", (_name, files, expected) => {
 		expect(findNumberFormatViolations(withFormatStubs(files))).toEqual(expected);
 	});
@@ -332,6 +478,28 @@ export function csvCell(value: number) { return fmt(value); }`,
 			{
 				"lib/sample-export.ts": `import { formatToken } from "@/lib/format";
 export function buildCsvCell(value: string) { return formatToken(value); }`,
+			},
+		],
+		[
+			"formatters declared in a switch clause or a for initializer and used there",
+			{
+				"components/sample.tsx": `import { useNumberFormat } from "@/lib/format";
+export function Sample({ kind }: { kind: number }) {
+	switch (kind) {
+		case 1:
+			const numberFormat = useNumberFormat();
+			return <p>{numberFormat.formatUSD(1)}</p>;
+	}
+	for (let formatters = useNumberFormat(); ; ) return <p>{formatters.formatUSD(2)}</p>;
+}`,
+			},
+		],
+		[
+			"a module-level table of formatters that only non-React code calls",
+			{
+				"lib/sample-csv.ts": `import { formatToken, formatUSD } from "@/lib/format";
+const CELL_FORMATTERS = { token: formatToken, usd: formatUSD };
+export function csvCell(kind: "token" | "usd", value: number) { return CELL_FORMATTERS[kind](value); }`,
 			},
 		],
 	])("allows %s", (_name, files) => {
@@ -396,7 +564,7 @@ function findNumberFormatViolations(sources: Map<string, string>): string[] {
 	for (const module of modules.values()) {
 		if (module.path === FORMAT_MODULE || module.path === REACTIVITY_MODULE) continue;
 		for (const [name, node] of module.declarations) {
-			if (ts.isFunctionLike(node) && getOwnerName(node, module) !== undefined) continue;
+			if (ts.isFunctionLike(node) && getComponentOrHookName(node, module.path) !== undefined) continue;
 			references.set(`${module.path}#${name}`, collectModuleReferences(modules, module, node));
 		}
 	}
@@ -420,7 +588,7 @@ function findNumberFormatViolations(sources: Map<string, string>): string[] {
 			let currentOwner = owner;
 			let currentOwnerNode = ownerNode;
 			if (ts.isFunctionLike(node)) {
-				const name = getOwnerName(node, module);
+				const name = getComponentOrHookName(node, module.path);
 				if (name !== undefined) {
 					currentOwner = name;
 					currentOwnerNode = node;
@@ -433,8 +601,8 @@ function findNumberFormatViolations(sources: Map<string, string>): string[] {
 			}
 			if (ts.isIdentifier(node) && isValueReference(node) && !isLocallyBound(node)) {
 				const reference = resolveReference(modules, module, node);
-				const formatsAtImport = currentOwner === null && !isInsideFunction(node) && isCalleeReference(node);
-				if (reference && formatting.has(reference.key) && (currentOwner !== null || formatsAtImport)) {
+				const atImport = currentOwner === null && !isInsideFunction(node) && formatsAtImport(node);
+				if (reference && formatting.has(reference.key) && (currentOwner !== null || atImport)) {
 					violations.push(`${module.path}:${line(node)} ${currentOwner ?? "<module>"} ${reference.name}`);
 				}
 			}
@@ -502,7 +670,7 @@ function describeModule(path: string, text: string, sources: Map<string, string>
 				}
 			}
 		} else if (ts.isExportAssignment(statement)) {
-			const expression = skipOuterExpressions(statement.expression);
+			const expression = skipTransparentExpressions(statement.expression);
 			if (ts.isIdentifier(expression)) module.localExports.set("default", expression.text);
 			else module.declarations.set("default", expression);
 		} else if (ts.isFunctionDeclaration(statement)) {
@@ -529,7 +697,7 @@ function describeVariable(module: SourceModule, name: ts.BindingName, initialize
 		module.declarations.set(name.text, initializer);
 		return;
 	}
-	const source = skipOuterExpressions(initializer);
+	const source = skipTransparentExpressions(initializer);
 	const namespaceTarget = ts.isIdentifier(source) ? module.namespaces.get(source.text) : undefined;
 	for (const element of name.elements) {
 		if (ts.isOmittedExpression(element)) continue;
@@ -538,29 +706,24 @@ function describeVariable(module: SourceModule, name: ts.BindingName, initialize
 			module.imports.set(element.name.text, { path: namespaceTarget, name: property ?? element.name.text });
 			continue;
 		}
-		const names: string[] = [];
-		collectBindingNames(element.name, names);
-		for (const bound of names) module.declarations.set(bound, initializer);
+		const bound: ts.Identifier[] = [];
+		collectBindingIdentifiers(element.name, bound);
+		for (const identifier of bound) module.declarations.set(identifier.text, initializer);
 	}
 }
 
-function skipOuterExpressions(expression: ts.Expression): ts.Expression {
-	let current = expression;
-	while (ts.isParenthesizedExpression(current) || ts.isAsExpression(current) || ts.isSatisfiesExpression(current)) {
-		current = current.expression;
+// At module scope a formatter that is called, or handed to a call, formats once at import; one that
+// is only stored, as an alias or in a table, is checked where it is called.
+function formatsAtImport(identifier: ts.Identifier): boolean {
+	let value = outermostTransparentExpression(identifier);
+	const member = value.parent;
+	if ((ts.isPropertyAccessExpression(member) || ts.isElementAccessExpression(member)) && member.expression === value) {
+		value = outermostTransparentExpression(member);
 	}
-	return current;
-}
-
-function isCalleeReference(identifier: ts.Identifier): boolean {
-	const parent = identifier.parent;
-	if (ts.isCallExpression(parent)) return parent.expression === identifier;
-	return (
-		ts.isPropertyAccessExpression(parent) &&
-		parent.expression === identifier &&
-		ts.isCallExpression(parent.parent) &&
-		parent.parent.expression === parent
-	);
+	const parent = value.parent;
+	if (ts.isCallExpression(parent)) return parent.expression === value || parent.arguments.includes(value);
+	if (ts.isNewExpression(parent)) return parent.expression === value || (parent.arguments?.includes(value) ?? false);
+	return ts.isTaggedTemplateExpression(parent) && parent.tag === value;
 }
 
 function resolveModulePath(fromPath: string, specifier: string, sources: Map<string, string>): string | null {
@@ -579,15 +742,30 @@ function resolveReference(
 	module: SourceModule,
 	identifier: ts.Identifier,
 ): { key: string; name: string } | null {
-	const parent = identifier.parent;
 	if (module.namespaces.has(identifier.text)) {
 		const target = module.namespaces.get(identifier.text);
-		if (!target || !ts.isPropertyAccessExpression(parent) || parent.expression !== identifier) return null;
-		const key = resolveExport(modules, target, parent.name.text, new Set());
-		return key ? { key, name: parent.name.text } : null;
+		const member = getNamespaceMember(identifier);
+		if (!target || member === undefined) return null;
+		const key = resolveExport(modules, target, member, new Set());
+		return key ? { key, name: member } : null;
 	}
 	const key = resolveBinding(modules, module.path, identifier.text, new Set());
 	return key ? { key, name: identifier.text } : null;
+}
+
+// `format.formatUSD`, `(format).formatUSD` and `format["formatUSD"]` name one export of a namespace.
+function getNamespaceMember(identifier: ts.Identifier): string | undefined {
+	const value = outermostTransparentExpression(identifier);
+	const parent = value.parent;
+	if (ts.isPropertyAccessExpression(parent) && parent.expression === value) return parent.name.text;
+	if (
+		ts.isElementAccessExpression(parent) &&
+		parent.expression === value &&
+		ts.isStringLiteralLike(parent.argumentExpression)
+	) {
+		return parent.argumentExpression.text;
+	}
+	return undefined;
 }
 
 function resolveCallee(
@@ -595,16 +773,15 @@ function resolveCallee(
 	module: SourceModule,
 	call: ts.CallExpression,
 ): string | null {
-	const callee = call.expression;
+	const callee = skipTransparentExpressions(call.expression);
 	if (ts.isIdentifier(callee)) {
 		return isLocallyBound(callee) ? null : (resolveReference(modules, module, callee)?.key ?? null);
 	}
-	if (
-		ts.isPropertyAccessExpression(callee) &&
-		ts.isIdentifier(callee.expression) &&
-		!isLocallyBound(callee.expression)
-	) {
-		return resolveReference(modules, module, callee.expression)?.key ?? null;
+	if (ts.isPropertyAccessExpression(callee) || ts.isElementAccessExpression(callee)) {
+		const object = skipTransparentExpressions(callee.expression);
+		if (ts.isIdentifier(object) && !isLocallyBound(object)) {
+			return resolveReference(modules, module, object)?.key ?? null;
+		}
 	}
 	return null;
 }
@@ -660,23 +837,25 @@ function collectModuleReferences(modules: Map<string, SourceModule>, module: Sou
 }
 
 // A result counts as used when a reference that resolves to its own binding does something with it;
-// `void result;` or a bare `result;` statement does not.
+// discarding it (`void result`, a bare `result;` statement, the left operand of a comma) does not.
 function numberFormatResultIsUsed(call: ts.CallExpression, scope: ts.Node): boolean {
-	const parent = call.parent;
-	if (!ts.isVariableDeclaration(parent) || parent.initializer !== call) return !ts.isExpressionStatement(parent);
-	const names: string[] = [];
-	collectBindingNames(parent.name, names);
-	const declaringScope = parent.parent.parent.parent;
+	const value = outermostTransparentExpression(call);
+	const declaration = value.parent;
+	if (!ts.isVariableDeclaration(declaration) || declaration.initializer !== value) return !isDiscarded(value);
+	const bindings: ts.Identifier[] = [];
+	collectBindingIdentifiers(declaration.name, bindings);
+	if (bindings.length === 0) return false;
+	const declaringScope = findDeclaringScope(bindings[0]);
+	const names = new Set(bindings.map((binding) => binding.text));
 	let used = false;
 	const visit = (node: ts.Node) => {
 		if (used) return;
 		if (
 			ts.isIdentifier(node) &&
-			names.includes(node.text) &&
+			names.has(node.text) &&
 			isValueReference(node) &&
-			!ts.isVoidExpression(node.parent) &&
-			!ts.isExpressionStatement(node.parent) &&
-			nearestDeclaringScope(node) === declaringScope
+			!isDiscarded(node) &&
+			findDeclaringScope(node) === declaringScope
 		) {
 			used = true;
 		}
@@ -686,11 +865,13 @@ function numberFormatResultIsUsed(call: ts.CallExpression, scope: ts.Node): bool
 	return used;
 }
 
-function nearestDeclaringScope(identifier: ts.Identifier): ts.Node | undefined {
-	for (let node: ts.Node = identifier.parent; !ts.isSourceFile(node); node = node.parent) {
-		if (scopeDeclares(node, identifier.text)) return node;
-	}
-	return undefined;
+function isDiscarded(expression: ts.Expression): boolean {
+	const value = outermostTransparentExpression(expression);
+	const parent = value.parent;
+	if (ts.isExpressionStatement(parent) || ts.isVoidExpression(parent)) return true;
+	return (
+		ts.isBinaryExpression(parent) && parent.operatorToken.kind === ts.SyntaxKind.CommaToken && parent.left === value
+	);
 }
 
 function isValueReference(identifier: ts.Identifier): boolean {
@@ -714,57 +895,7 @@ function isValueReference(identifier: ts.Identifier): boolean {
 }
 
 function isLocallyBound(identifier: ts.Identifier): boolean {
-	for (let node: ts.Node = identifier.parent; !ts.isSourceFile(node); node = node.parent) {
-		if (scopeDeclares(node, identifier.text)) return true;
-	}
-	return false;
-}
-
-const scopeNameCache = new WeakMap<ts.Node, ReadonlySet<string>>();
-
-function scopeDeclares(scope: ts.Node, name: string): boolean {
-	let names = scopeNameCache.get(scope);
-	if (!names) {
-		names = new Set(collectScopeNames(scope));
-		scopeNameCache.set(scope, names);
-	}
-	return names.has(name);
-}
-
-function collectScopeNames(scope: ts.Node): string[] {
-	const names: string[] = [];
-	if (ts.isFunctionLike(scope)) {
-		for (const parameter of scope.parameters) collectBindingNames(parameter.name, names);
-		if (ts.isFunctionExpression(scope) && scope.name) names.push(scope.name.text);
-	} else if (ts.isCatchClause(scope)) {
-		if (scope.variableDeclaration) collectBindingNames(scope.variableDeclaration.name, names);
-	} else if (ts.isForStatement(scope) || ts.isForOfStatement(scope) || ts.isForInStatement(scope)) {
-		if (scope.initializer && ts.isVariableDeclarationList(scope.initializer)) {
-			for (const declaration of scope.initializer.declarations) collectBindingNames(declaration.name, names);
-		}
-	} else if (ts.isBlock(scope) || ts.isCaseBlock(scope)) {
-		const statements = ts.isBlock(scope) ? scope.statements : scope.clauses.flatMap((clause) => [...clause.statements]);
-		for (const statement of statements) {
-			if (ts.isVariableStatement(statement)) {
-				for (const declaration of statement.declarationList.declarations) {
-					collectBindingNames(declaration.name, names);
-				}
-			} else if ((ts.isFunctionDeclaration(statement) || ts.isClassDeclaration(statement)) && statement.name) {
-				names.push(statement.name.text);
-			}
-		}
-	}
-	return names;
-}
-
-function collectBindingNames(name: ts.BindingName, into: string[]): void {
-	if (ts.isIdentifier(name)) {
-		into.push(name.text);
-		return;
-	}
-	for (const element of name.elements) {
-		if (!ts.isOmittedExpression(element)) collectBindingNames(element.name, into);
-	}
+	return !ts.isSourceFile(findDeclaringScope(identifier));
 }
 
 function isInsideFunction(node: ts.Node): boolean {
@@ -791,7 +922,7 @@ function hasNumberFormatCall(body: ts.Block): boolean {
 function findFunction(file: ts.SourceFile, name: string): ts.FunctionLikeDeclaration | undefined {
 	let match: ts.FunctionLikeDeclaration | undefined;
 	const visit = (node: ts.Node) => {
-		if (isFunctionLikeDeclaration(node) && getDeclaredName(node) === name) match = node;
+		if (isFunctionLikeDeclaration(node) && getComponentOrHookName(node, file.fileName) === name) match = node;
 		ts.forEachChild(node, visit);
 	};
 	visit(file);
@@ -805,66 +936,4 @@ function isFunctionLikeDeclaration(node: ts.Node): node is ts.FunctionLikeDeclar
 		ts.isFunctionExpression(node) ||
 		ts.isArrowFunction(node)
 	);
-}
-
-// Components and hooks are recognized by name, plus an anonymous default-exported function in a .tsx
-// module and a function passed as a route's component option.
-function getOwnerName(node: ts.SignatureDeclaration, module: SourceModule): string | undefined {
-	const ownName = node.name && ts.isIdentifier(node.name) ? node.name.text : undefined;
-	if (ownName !== undefined && isComponentOrHookName(ownName)) return ownName;
-	let parent = node.parent;
-	while (
-		ts.isParenthesizedExpression(parent) ||
-		ts.isAsExpression(parent) ||
-		ts.isSatisfiesExpression(parent) ||
-		(ts.isCallExpression(parent) && COMPONENT_WRAPPERS.has(calleeName(parent) ?? ""))
-	) {
-		parent = parent.parent;
-	}
-	if (ts.isVariableDeclaration(parent) && ts.isIdentifier(parent.name)) {
-		return isComponentOrHookName(parent.name.text) ? parent.name.text : undefined;
-	}
-	if (ownName !== undefined || !isFunctionLikeDeclaration(node)) return undefined;
-	const isAnonymousDefault =
-		(ts.isFunctionDeclaration(node) && hasModifier(node, ts.SyntaxKind.DefaultKeyword)) ||
-		ts.isExportAssignment(parent);
-	if (isAnonymousDefault && module.path.endsWith(".tsx")) return "<default>";
-	if (ts.isPropertyAssignment(parent) && (ts.isIdentifier(parent.name) || ts.isStringLiteral(parent.name))) {
-		return ROUTE_COMPONENT_PROPERTIES.has(parent.name.text) ? parent.name.text : undefined;
-	}
-	return undefined;
-}
-
-function isComponentOrHookName(name: string): boolean {
-	return /^(?:[A-Z]|use[A-Z0-9])/.test(name);
-}
-
-function getDeclaredName(node: ts.SignatureDeclaration): string | undefined {
-	if (node.name && ts.isIdentifier(node.name)) return node.name.text;
-	let parent = node.parent;
-	while (
-		ts.isParenthesizedExpression(parent) ||
-		ts.isAsExpression(parent) ||
-		ts.isSatisfiesExpression(parent) ||
-		(ts.isCallExpression(parent) && COMPONENT_WRAPPERS.has(calleeName(parent) ?? ""))
-	) {
-		parent = parent.parent;
-	}
-	if (ts.isVariableDeclaration(parent) && ts.isIdentifier(parent.name)) return parent.name.text;
-	return undefined;
-}
-
-function hasModifier(node: ts.Node, kind: ts.SyntaxKind): boolean {
-	return ts.canHaveModifiers(node) && (ts.getModifiers(node)?.some((modifier) => modifier.kind === kind) ?? false);
-}
-
-function calleeName(call: ts.CallExpression): string | undefined {
-	if (ts.isIdentifier(call.expression)) return call.expression.text;
-	if (ts.isPropertyAccessExpression(call.expression)) return call.expression.name.text;
-	return undefined;
-}
-
-function parseSource(source: string, fileName: string): ts.SourceFile {
-	const scriptKind = fileName.endsWith(".ts") ? ts.ScriptKind.TS : ts.ScriptKind.TSX;
-	return ts.createSourceFile(fileName, source, ts.ScriptTarget.Latest, true, scriptKind);
 }
