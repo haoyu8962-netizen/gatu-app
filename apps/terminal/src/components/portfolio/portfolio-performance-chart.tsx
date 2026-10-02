@@ -103,6 +103,7 @@ export function PortfolioPerformanceChart({
 }: Props) {
 	const numberFormatRevision = useNumberFormatRevision();
 	const { i18n, t } = useLingui();
+	const locale = i18n.locale;
 	const plotRef = useRef<HTMLDivElement>(null);
 	const [metric, setMetric] = useState<ChartMetric>("pnl");
 	const [chartSize, setChartSize] = useState<ChartSize>(DEFAULT_CHART_SIZE);
@@ -118,17 +119,16 @@ export function PortfolioPerformanceChart({
 	if (!interactionContextIsCurrent) {
 		setInteractionStore({ history, metric, period, value: null });
 	}
-	// biome-ignore lint/correctness/useExhaustiveDependencies: chart labels also read Lingui and number-format external state
 	const chart = useMemo(
-		() => buildChart(history, period, chartSize),
-		[chartSize, history, i18n.locale, numberFormatRevision, period],
+		() => buildChart(history, period, chartSize, locale, numberFormatRevision),
+		[chartSize, history, locale, numberFormatRevision, period],
 	);
 	const activeInteraction = interactionContextIsCurrent ? interactionStore.value : null;
 	const activePoint = activeInteraction ? chart.points[activeInteraction.index] : undefined;
 	const latestValue = chart.points.at(-1)?.rawValue ?? null;
 	const formattedLatestValue = formatLatestValue(latestValue, metric);
 	const latestValueTone = metric === "accountValue" ? "text-fg" : getMarketToneClass(latestValue);
-	const activeLabel = activePoint ? formatPointLabel(activePoint) : null;
+	const activeLabel = activePoint ? formatPointLabel(activePoint, locale, numberFormatRevision) : null;
 	const hasRenderableChart = !isLoading && !isUnavailable && chart.points.length > 0;
 	const tooltipAnchor =
 		activeInteraction?.source === "pointer"
@@ -485,8 +485,8 @@ function formatLatestValue(latestValue: string | null, metric: ChartMetric): str
 	});
 }
 
-function formatPointLabel(point: ChartPoint): string {
-	const date = formatDateTime(point.timestamp, { year: "numeric", month: "long", day: "numeric" });
+function formatPointLabel(point: ChartPoint, locale: string, _numberFormatRevision: number): string {
+	const date = formatDateTime(point.timestamp, { locale, year: "numeric", month: "long", day: "numeric" });
 	const value = formatUSD(point.rawValue, {
 		compact: false,
 		signDisplay: "exceptZero",
@@ -515,7 +515,13 @@ function ChartTab({ active, onClick, children }: { active: boolean; onClick: () 
 	);
 }
 
-function buildChart(history: History, period: PortfolioPeriod | undefined, size: ChartSize): ChartModel {
+function buildChart(
+	history: History,
+	period: PortfolioPeriod | undefined,
+	size: ChartSize,
+	locale: string,
+	_numberFormatRevision: number,
+): ChartModel {
 	const points = parsePoints(history);
 	const plotLeft = PLOT_PADDING_LEFT;
 	const plotRight = Math.max(plotLeft + 1, size.width - PLOT_PADDING_RIGHT);
@@ -544,7 +550,7 @@ function buildChart(history: History, period: PortfolioPeriod | undefined, size:
 					.map((point, index) => `${index === 0 ? "M" : "L"}${roundCoordinate(point.x)},${roundCoordinate(point.y)}`)
 					.join(" ");
 	const resolvedPeriod = period ?? inferPeriod(points);
-	const timeTicks = createTimeTicks(startTime, endTime, plotLeft, plotRight, resolvedPeriod);
+	const timeTicks = createTimeTicks(startTime, endTime, plotLeft, plotRight, resolvedPeriod, locale);
 
 	return {
 		path,
@@ -655,9 +661,10 @@ function createTimeTicks(
 	plotLeft: number,
 	plotRight: number,
 	period: PortfolioPeriod,
+	locale: string,
 ): TimeTick[] {
 	if (startTime === endTime) {
-		return [{ timestamp: startTime, label: formatTimeTick(startTime, period), x: (plotLeft + plotRight) / 2 }];
+		return [{ timestamp: startTime, label: formatTimeTick(startTime, period, locale), x: (plotLeft + plotRight) / 2 }];
 	}
 	const plotWidth = plotRight - plotLeft;
 	const count = clamp(Math.floor(plotWidth / TIME_TICK_SPACING) + 1, 2, 5);
@@ -666,16 +673,16 @@ function createTimeTicks(
 		const timestamp = Math.round(startTime + (endTime - startTime) * ratio);
 		return {
 			timestamp,
-			label: formatTimeTick(timestamp, period),
+			label: formatTimeTick(timestamp, period, locale),
 			x: plotLeft + plotWidth * ratio,
 		};
 	});
 	return ticks.filter((tick, index) => index === 0 || tick.label !== ticks[index - 1].label);
 }
 
-function formatTimeTick(timestamp: number, period: PortfolioPeriod): string {
+function formatTimeTick(timestamp: number, period: PortfolioPeriod, locale: string): string {
 	if (period === "day") {
-		return formatTime(timestamp, { hour: "2-digit", minute: "2-digit", hour12: false });
+		return formatTime(timestamp, { locale, hour: "2-digit", minute: "2-digit", hour12: false });
 	}
 	const date = new Date(timestamp);
 	const month = String(date.getMonth() + 1).padStart(2, "0");

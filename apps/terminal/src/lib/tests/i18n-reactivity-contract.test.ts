@@ -1,7 +1,16 @@
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { readdirSync, readFileSync } from "node:fs";
+import { relative, resolve } from "node:path";
 import ts from "typescript";
 import { describe, expect, it } from "vitest";
+
+const SOURCE_ROOT = resolve(__dirname, "../..");
+const SHORT_CIRCUIT_OPERATORS = new Set([
+	ts.SyntaxKind.AmpersandAmpersandToken,
+	ts.SyntaxKind.BarBarToken,
+	ts.SyntaxKind.QuestionQuestionToken,
+]);
+const COMPONENT_WRAPPERS = new Set(["forwardRef", "memo"]);
+const EFFECT_HOOKS = new Set(["useEffect", "useInsertionEffect", "useLayoutEffect"]);
 
 const REACTIVE_COMPONENTS = [
 	"components/funding-comparison/funding-comparison-view.tsx",
@@ -230,3 +239,322 @@ it.each(PURE_PRESENTATION_VIEWS)("receives translated presentation props in %s",
 	expect(source).toContain("interface Props");
 	expect(source).not.toMatch(/@lingui|use[A-Z]\w*\(|@\/stores|window|document|Date\.|Math\.random/);
 });
+
+// React Compiler records `i18n.locale` as a memo dependency only when the memoized computation
+// reads it unconditionally. A read that only happens in a branch or inside a function called during
+// render is recorded as the `i18n` object, which stays the same Lingui instance across a language
+// switch, and dependency-array entries that the useMemo or useCallback callback never reads are
+// dropped. Effects, lazy state initializers, JSX event handlers and options passed to other hooks run
+// outside the cached render output and may read the live locale.
+describe("dependencies React Compiler can see", () => {
+	it("reads i18n.locale unconditionally during render in every component and hook", () => {
+		const violations = listSourceFiles(SOURCE_ROOT).flatMap((filePath) => {
+			const source = readFileSync(filePath, "utf8");
+			if (!source.includes("i18n.locale")) return [];
+			return findBranchOnlyLocaleReads(source, filePath).map((line) => `${relative(SOURCE_ROOT, filePath)}:${line}`);
+		});
+
+		expect(violations).toEqual([]);
+	});
+
+	it("lists only values the callback reads in useMemo and useCallback dependencies", () => {
+		const violations = listSourceFiles(SOURCE_ROOT).flatMap((filePath) => {
+			const source = readFileSync(filePath, "utf8");
+			if (!source.includes("useMemo") && !source.includes("useCallback")) return [];
+			return findUnreadMemoDependencies(source, filePath).map(
+				(violation) => `${relative(SOURCE_ROOT, filePath)}:${violation}`,
+			);
+		});
+
+		expect(violations).toEqual([]);
+	});
+
+	it.each([
+		["a conditional expression branch", "return at === null ? null : format(at, { locale: i18n.locale });"],
+		["the right side of &&", "return <span>{at !== null && format(at, { locale: i18n.locale })}</span>;"],
+		["the right side of ??", "return <span>{groups[0]?.[0] ?? i18n.locale}</span>;"],
+		["a JSX branch", "return <p>{at === null ? <b /> : <i>{format(at, { locale: i18n.locale })}</i>}</p>;"],
+		["an optional call", "return formatter?.format(at, { locale: i18n.locale });"],
+		[
+			"a render-time map callback",
+			"return <div>{groups.map((group) => <p key={group[0]}>{formatList(group, { locale: i18n.locale })}</p>)}</div>;",
+		],
+		[
+			"a named render helper",
+			"function renderGroup(group: string[]) { return <p>{formatList(group, { locale: i18n.locale })}</p>; } return <div>{groups.map(renderGroup)}</div>;",
+		],
+		["an Array.from callback", "return Array.from(groups, (group) => formatList(group, { locale: i18n.locale }));"],
+		[
+			"a useCallback callback",
+			"const label = useCallback(() => format(at, { locale: i18n.locale }), [at, i18n.locale]); return label();",
+		],
+		["an if statement", 'let label = ""; if (at !== null) label = format(at, { locale: i18n.locale }); return label;'],
+		[
+			"a loop body",
+			"const labels: string[] = []; for (const group of groups) labels.push(formatList(group, { locale: i18n.locale })); return labels;",
+		],
+		[
+			"a branch inside useMemo",
+			"return useMemo(() => (at === null ? null : format(at, { locale: i18n.locale })), [at]);",
+		],
+	])("flags a locale read in %s", (_, body) => {
+		expect(findBranchOnlyLocaleReads(sampleComponent(body))).toHaveLength(1);
+	});
+
+	it.each([
+		[
+			"a local read before the branch",
+			"const locale = i18n.locale; return at === null ? null : format(at, { locale });",
+		],
+		["the condition of a conditional expression", 'return isRtlLocale(i18n.locale) ? "rtl" : "ltr";'],
+		[
+			"the iterable of a for-of loop",
+			"const labels: string[] = []; for (const group of sortGroups(groups, i18n.locale)) labels.push(group[0]); return labels;",
+		],
+		[
+			"an effect",
+			"useEffect(() => { if (at !== null) document.title = format(at, { locale: i18n.locale }); }, [at, i18n.locale]); return null;",
+		],
+		[
+			"a callback inside an effect",
+			"useEffect(() => { const timer = setTimeout(() => send(i18n.locale), 0); return () => clearTimeout(timer); }, [i18n.locale]); return null;",
+		],
+		[
+			"an event handler",
+			'return <button type="button" onClick={() => at !== null && send(format(at, { locale: i18n.locale }))} />;',
+		],
+		["a lazy state initializer", "const [initial] = useState(() => i18n.locale); return initial;"],
+		["a query function", "useQuery({ queryKey: [i18n.locale], queryFn: () => load(i18n.locale) }); return null;"],
+	])("allows a locale read in %s", (_, body) => {
+		expect(findBranchOnlyLocaleReads(sampleComponent(body))).toEqual([]);
+	});
+
+	it.each([
+		["a dependency the callback never reads", "return useMemo(() => format(at), [at, i18n.locale]);", ["i18n.locale"]],
+		[
+			"a dependency named only as an object key or a property",
+			"return useMemo(() => format(at, { locale: options.locale }), [at, locale, options.locale]);",
+			["locale"],
+		],
+		[
+			"a dependency of a generic useMemo",
+			"return useMemo<string>(() => format(at), [at, numberFormatRevision]);",
+			["numberFormatRevision"],
+		],
+		[
+			"no dependency when the callback reads every entry",
+			"const locale = i18n.locale; return useMemo(() => format(at, { locale }), [at, locale]);",
+			[],
+		],
+		["no dependency for a property of a read object", "return useMemo(() => groups.map(String), [groups.length]);", []],
+	])("reports %s", (_, body, expected) => {
+		expect(findUnreadMemoDependencies(sampleComponent(body)).map((violation) => violation.split(" ").at(-1))).toEqual(
+			expected,
+		);
+	});
+});
+
+function sampleComponent(body: string): string {
+	return `import { useLingui } from "@lingui/react/macro";
+function Sample({ at, groups }: { at: number | null; groups: string[][] }) {
+	const { i18n } = useLingui();
+	${body}
+}`;
+}
+
+function listSourceFiles(directory: string): string[] {
+	return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+		const entryPath = resolve(directory, entry.name);
+		if (entry.isDirectory()) {
+			return ["__tests__", "locales", "tests"].includes(entry.name) ? [] : listSourceFiles(entryPath);
+		}
+		return /\.tsx?$/.test(entry.name) && !/\.test\.tsx?$|\.d\.ts$|\.gen\.ts$/.test(entry.name) ? [entryPath] : [];
+	});
+}
+
+function parseSource(source: string, fileName: string): ts.SourceFile {
+	const scriptKind = fileName.endsWith(".ts") ? ts.ScriptKind.TS : ts.ScriptKind.TSX;
+	return ts.createSourceFile(fileName, source, ts.ScriptTarget.Latest, true, scriptKind);
+}
+
+function findBranchOnlyLocaleReads(source: string, fileName = "sample.tsx"): number[] {
+	const file = parseSource(source, fileName);
+	const lines: number[] = [];
+	const visit = (node: ts.Node) => {
+		if (isLocaleRead(node) && isBranchOnlyRenderRead(node)) {
+			lines.push(file.getLineAndCharacterOfPosition(node.getStart()).line + 1);
+		}
+		ts.forEachChild(node, visit);
+	};
+	visit(file);
+	return lines;
+}
+
+function isLocaleRead(node: ts.Node): node is ts.PropertyAccessExpression {
+	return (
+		ts.isPropertyAccessExpression(node) &&
+		ts.isIdentifier(node.expression) &&
+		node.expression.text === "i18n" &&
+		node.name.text === "locale"
+	);
+}
+
+function isBranchOnlyRenderRead(read: ts.Node): boolean {
+	let branched = false;
+	let child = read;
+	for (let parent = read.parent; parent; child = parent, parent = parent.parent) {
+		if (ts.isFunctionLike(parent)) {
+			if (isComponentOrHook(parent)) return branched;
+			if (isDeferredCallback(parent)) return false;
+			if (!isHookCallback(parent, "useMemo")) branched = true;
+			continue;
+		}
+		if (isBranch(parent, child)) branched = true;
+	}
+	return false;
+}
+
+function isBranch(parent: ts.Node, child: ts.Node): boolean {
+	if (ts.isConditionalExpression(parent)) return child !== parent.condition;
+	if (ts.isBinaryExpression(parent)) {
+		return SHORT_CIRCUIT_OPERATORS.has(parent.operatorToken.kind) && child === parent.right;
+	}
+	if (ts.isCallExpression(parent) || ts.isElementAccessExpression(parent)) {
+		return ts.isOptionalChain(parent) && child !== parent.expression;
+	}
+	if (ts.isIfStatement(parent)) return child !== parent.expression;
+	if (ts.isForOfStatement(parent) || ts.isForInStatement(parent)) return child === parent.statement;
+	if (ts.isForStatement(parent)) return child !== parent.initializer;
+	return (
+		ts.isWhileStatement(parent) ||
+		ts.isDoStatement(parent) ||
+		ts.isCaseClause(parent) ||
+		ts.isDefaultClause(parent) ||
+		ts.isCatchClause(parent)
+	);
+}
+
+function isDeferredCallback(node: ts.Node): boolean {
+	const parent = node.parent;
+	if (ts.isCallExpression(parent)) {
+		const hookName = calleeName(parent) ?? "";
+		if (EFFECT_HOOKS.has(hookName) || hookName === "useState") return parent.arguments[0] === node;
+		return hookName === "useReducer" && parent.arguments[2] === node;
+	}
+	if (ts.isJsxExpression(parent) && ts.isJsxAttribute(parent.parent)) {
+		const attributeName = parent.parent.name.getText();
+		return attributeName === "ref" || /^on[A-Z]/.test(attributeName);
+	}
+	if (ts.isPropertyAssignment(parent) && ts.isObjectLiteralExpression(parent.parent)) {
+		const call = parent.parent.parent;
+		const hookName = ts.isCallExpression(call) ? (calleeName(call) ?? "") : "";
+		return /^use[A-Z]/.test(hookName) && hookName !== "useMemo";
+	}
+	return false;
+}
+
+function isHookCallback(node: ts.Node, hookName: string): boolean {
+	const call = node.parent;
+	return ts.isCallExpression(call) && call.arguments[0] === node && calleeName(call) === hookName;
+}
+
+function calleeName(call: ts.CallExpression): string | undefined {
+	if (ts.isIdentifier(call.expression)) return call.expression.text;
+	if (ts.isPropertyAccessExpression(call.expression)) return call.expression.name.text;
+	return undefined;
+}
+
+function isComponentOrHook(node: ts.SignatureDeclaration): boolean {
+	const name = getDeclaredName(node);
+	return name !== undefined && /^(?:[A-Z]|use[A-Z0-9])/.test(name);
+}
+
+function getDeclaredName(node: ts.SignatureDeclaration): string | undefined {
+	if (node.name && ts.isIdentifier(node.name)) return node.name.text;
+	let parent = node.parent;
+	while (
+		ts.isParenthesizedExpression(parent) ||
+		ts.isAsExpression(parent) ||
+		ts.isSatisfiesExpression(parent) ||
+		(ts.isCallExpression(parent) && COMPONENT_WRAPPERS.has(calleeName(parent) ?? ""))
+	) {
+		parent = parent.parent;
+	}
+	if (ts.isVariableDeclaration(parent) && ts.isIdentifier(parent.name)) return parent.name.text;
+	return undefined;
+}
+
+function findUnreadMemoDependencies(source: string, fileName = "sample.tsx"): string[] {
+	const file = parseSource(source, fileName);
+	const violations: string[] = [];
+	const visit = (node: ts.Node) => {
+		const hookName = ts.isCallExpression(node) ? calleeName(node) : undefined;
+		if (
+			ts.isCallExpression(node) &&
+			(hookName === "useMemo" || hookName === "useCallback") &&
+			node.arguments.length === 2 &&
+			ts.isFunctionLike(node.arguments[0]) &&
+			ts.isArrayLiteralExpression(node.arguments[1])
+		) {
+			const reads = collectReadPaths(node.arguments[0]);
+			for (const dependency of node.arguments[1].elements) {
+				const path = getReadPath(dependency);
+				if (!path || isPathRead(path, reads)) continue;
+				const line = file.getLineAndCharacterOfPosition(dependency.getStart()).line + 1;
+				violations.push(`${line} ${hookName} ${path}`);
+			}
+		}
+		ts.forEachChild(node, visit);
+	};
+	visit(file);
+	return violations;
+}
+
+function collectReadPaths(callback: ts.Node): string[] {
+	const reads: string[] = [];
+	const visit = (node: ts.Node): void => {
+		if (ts.isIdentifier(node)) {
+			reads.push(node.text);
+			return;
+		}
+		if (ts.isPropertyAccessExpression(node)) {
+			const path = getReadPath(node);
+			if (path) reads.push(path);
+			visit(node.expression);
+			return;
+		}
+		if (ts.isShorthandPropertyAssignment(node)) {
+			reads.push(node.name.text);
+			return;
+		}
+		if (ts.isPropertyAssignment(node)) {
+			if (ts.isComputedPropertyName(node.name)) visit(node.name.expression);
+			visit(node.initializer);
+			return;
+		}
+		if (ts.isVariableDeclaration(node) || ts.isParameter(node) || ts.isBindingElement(node)) {
+			if (node.initializer) visit(node.initializer);
+			return;
+		}
+		if (ts.isJsxAttribute(node)) {
+			if (node.initializer) visit(node.initializer);
+			return;
+		}
+		ts.forEachChild(node, visit);
+	};
+	visit(callback);
+	return reads;
+}
+
+function getReadPath(node: ts.Node): string | undefined {
+	if (ts.isIdentifier(node)) return node.text;
+	if (ts.isPropertyAccessExpression(node)) {
+		const base = getReadPath(node.expression);
+		return base === undefined ? undefined : `${base}.${node.name.text}`;
+	}
+	return undefined;
+}
+
+function isPathRead(path: string, reads: readonly string[]): boolean {
+	return reads.some((read) => read === path || read.startsWith(`${path}.`) || path.startsWith(`${read}.`));
+}

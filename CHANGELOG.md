@@ -488,6 +488,11 @@ changes, not evidence that a build has been deployed or accepted on real devices
   even after a language switch; it now changes at the start of every minute, follows a language
   switch at once with Latin digits, and pauses while the page is hidden, catching up as soon as
   the page is visible again.
+- The Vaults page shows its fetched time in the new language's format right after a language
+  switch; it used to keep the previous format until the next refresh. The portfolio performance
+  chart likewise rewrites the selected point's date after a language switch, and its axis labels
+  and selected value after a number-format change, instead of keeping the previous format until
+  the history, period or chart size changed.
 - In the light theme, browsers that tint their toolbar or status bar from the page's theme color
   (Safari 15 and later, Chrome on Android) now use white like the page header instead of the dark
   terminal teal. The theme color follows the theme chosen in Settings from the first paint and on

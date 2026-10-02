@@ -1,6 +1,8 @@
 // @vitest-environment jsdom
 
 import { createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { i18n } from "@lingui/core";
 import { I18nProvider } from "@lingui/react";
 import { act } from "react";
@@ -342,7 +344,7 @@ describe("Vault views", () => {
 		act(() =>
 			i18n.loadAndActivate({
 				locale: "zh",
-				messages: { [createHash("sha256").update("Clear search\x1f").digest("base64").slice(0, 6)]: "清除搜索" },
+				messages: { [catalogId("Clear search")]: "清除搜索" },
 			}),
 		);
 
@@ -350,10 +352,49 @@ describe("Vault views", () => {
 		expect(input.value).toBe("alpha");
 	});
 
+	it("reformats the fetched time in the active language without remounting it", () => {
+		const zhCatalog = readFileSync(resolve(__dirname, "../../locales/zh/messages.po"), "utf8");
+		expect(zhCatalog).toContain('msgid "Fetched {fetchedLabel}"\nmsgstr "获取时间：{fetchedLabel}"');
+		render(
+			<VaultsList
+				state="normal"
+				rows={[createListRow()]}
+				account={{ status: "disconnected" }}
+				fetchedAt={new Date(2026, 9, 2, 14, 31).getTime()}
+				onRetry={vi.fn()}
+			/>,
+		);
+		const label = readFetchedLabel();
+		expect(label.textContent?.replace(/\s+/g, " ")).toBe("Fetched 02:31 PM");
+
+		act(() =>
+			i18n.loadAndActivate({
+				locale: "zh",
+				messages: { [catalogId("Fetched {fetchedLabel}")]: "获取时间：{fetchedLabel}" },
+			}),
+		);
+		expect(readFetchedLabel()).toBe(label);
+		expect(label.textContent).toBe("获取时间：14:31");
+
+		act(() => i18n.loadAndActivate({ locale: "en", messages: {} }));
+		expect(readFetchedLabel()).toBe(label);
+		expect(label.textContent?.replace(/\s+/g, " ")).toBe("Fetched 02:31 PM");
+	});
+
 	function render(element: React.ReactNode) {
 		act(() => root.render(<I18nProvider i18n={i18n}>{element}</I18nProvider>));
 	}
+
+	function readFetchedLabel(): HTMLElement {
+		const labels = container.querySelectorAll<HTMLElement>("header span.tabular-nums");
+		expect(labels).toHaveLength(1);
+		return labels[0];
+	}
 });
+
+function catalogId(message: string): string {
+	return createHash("sha256").update(`${message}\x1f`).digest("base64").slice(0, 6);
+}
 
 function createListRow(): VaultListItem {
 	return {
