@@ -484,6 +484,13 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Fixed
 
+- The chart now shows prices with the same precision as the order book and recent trades: at most
+  five significant figures and no more decimals than the market allows, so HYPE at $90 reads
+  `90.086` and BTC shows whole dollars. Each chart load or rebuild (first load, language or
+  number-format change, recovery) used to take its precision from whatever digits the mark price had
+  at that moment, so the same market could show 2, 3 or 4 decimals. When a price crosses a power of
+  ten, its precision changes without reloading the chart. See
+  [ADR 0035](docs/adr/0035-chart-price-precision-from-market-rules.md).
 - In the light theme, browsers that tint their toolbar or status bar from the page's theme color
   (Safari 15 and later, Chrome on Android) now use white like the page header instead of the dark
   terminal teal. The theme color follows the theme chosen in Settings from the first paint and on

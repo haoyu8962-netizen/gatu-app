@@ -36,5 +36,6 @@ ADR 记录采用某个方案的理由、备选方案和后果，完整实现契�
 | [0030](0030-pnl-share-card-brand-rendering.md) | 已接受并实施（2026-10-01，回溯记录）；未推送、未合入、未发布，真机分享未验证 | 盈亏分享卡画布用 `Path2D` 按生成几何绘制 24 px 横版组合，预览用 `BrandLogo`；卡面两种主题都是深色，Logo 固定深底配色（`--position-share-logo-*`）；文件名前缀取 `BRAND_FILE_STEM`，读屏名称取 `BRAND_NAME`；计划 4b 的完整重写不做 |
 | [0031](0031-domain-move-to-sairn-ai.md) | 代码部分已接受并实施（2026-10-01，回溯记录）；上线顺序与退役部分被 0032 取代 | 规范域名为 `domains.primary`（sairn.ai），`domains.legacy`（gatu.ai）过渡期继续按主机识别网络与推荐链接；转发主机名请求头新旧双写、Lambda 先读新头；上线按 `docs/brand-assets.md` 八步、DNS 最后切；不迁移本地数据，迁移闸门、kill-switch 与旧域名跳转未实现 |
 | [0032](0032-gatu-offline-cutover-to-sairn.md) | 已接受，执行中（2026-10-02 起）：证书已签发、源站请求策略已加新头，发布与切换未做 | gatu.ai 直接下线、不并存不 301；先断后接，每个分发一次 `aliases` 同时换别名与 4 名 sairn 证书；p24 双写双读转发头与路由标记作回滚保险，p25 清理；换新 Privy 应用（邮箱钱包地址改变）；gatu.ai 不永久续费、邮件推迟；不做告别 SW；另登记推荐码；主网赞助充值保持开启、切换当天带资金验证 |
+| [0035](0035-chart-price-precision-from-market-rules.md) | 已接受并实施（2026-10-02）；未推送、未合入、未发布；0033、0034 由其他未推送分支使用 | 图表价格精度由市场元数据按 Hyperliquid 规则决定：`variable_tick_size` 按五位有效数字与 `6/8 - szDecimals` 逐值取最小变动价位（每档上限为该档最大的五位有效数字价格），`pricescale` 取参考价数量级所在档、不看标记价尾数；价格跨过 10 的幂不重建 widget；删除按尾数推断的辅助函数与多余的 `getPriceScale` 选项 |
 
 新 ADR 至少包含：状态与日期、上下文、目标/约束、决策、备选方案及利弊、后果与边界、代码/测试/Reference 证据。验证命令与本次执行结果分别标明。文档维护要求见[文档体系](../documentation-system.md)。

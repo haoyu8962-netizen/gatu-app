@@ -450,6 +450,18 @@ mobile regressions.
   second creation-option change in the same commit is collapsed by the
   not-ready branch rather than merged into a pending save;
   `docs/number-format-setting.md` owns the rule.
+- Chart price precision is a function of the market, never of the digits a
+  price string happens to have. `getChartSymbolInfo` derives `pricescale` and
+  `variable_tick_size` from `szDecimals` and the market kind under
+  Hyperliquid's tick rules (`apps/terminal/src/lib/chart/price-format.ts`).
+  `variable_tick_size` sets every value's decimals at its own magnitude, so a
+  price crossing a power of ten never rebuilds the widget; `pricescale` is the
+  tick at the reference price's magnitude and only sets the finest price-axis
+  step. `docs/adr/0035-chart-price-precision-from-market-rules.md` owns the
+  band limits and the tradeoffs. The limits rely on the vendored library
+  giving a price equal to a band limit that band's tick, which unit tests can
+  only mirror: re-check after every library upgrade with
+  `node apps/terminal/tests/browser/chart-price-format-probe.mjs <origin>`.
 - Fonts are scoped to a document, so the `@font-face` rules in the application
   stylesheet do not reach the chart iframe. `CHART_CUSTOM_FONT_FAMILY` and the
   theme stylesheets use a system font stack and must not name an application
@@ -463,6 +475,7 @@ mobile regressions.
 - `apps/terminal/src/components/trade/chart/tradingview-chart.tsx`
 - `apps/terminal/src/components/trade/chart/chart-panel.tsx`
 - `apps/terminal/src/components/trade/chart/datafeed.ts`
+- `apps/terminal/src/lib/chart/price-format.ts`
 - `apps/terminal/src/config/chart.ts`
 - `apps/terminal/src/config/security-headers.ts`
 - `apps/terminal/vite.config.ts`

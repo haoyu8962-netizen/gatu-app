@@ -87,6 +87,7 @@ describe("TradingView datafeed", () => {
 		expect(symbol.ticker).toBe("@235");
 		expect(symbol.description).toBe("ETH/USDH");
 		expect(symbol.pricescale).toBe(100);
+		expect(symbol).not.toHaveProperty("variable_tick_size");
 
 		infoClient.candleSnapshot.mockResolvedValueOnce([]);
 		await new Promise<void>((resolve, reject) => {
@@ -261,6 +262,57 @@ describe("TradingView datafeed", () => {
 
 		await expect(resolveDatafeedSymbol(datafeed, "CXMT")).rejects.toBe("Unknown symbol: CXMT");
 		expect(infoClient.candleSnapshot).not.toHaveBeenCalled();
+	});
+
+	it("passes the market's price format to TradingView", async () => {
+		const market = {
+			kind: "perp",
+			name: "HYPE",
+			pairName: "HYPE-USDC",
+			szDecimals: 2,
+			markPx: "90.0865",
+		} as UnifiedMarketInfo;
+		const datafeed = createDatafeed({ getSymbolInfo: getMarketSymbolResolver(market) });
+
+		const symbol = await resolveDatafeedSymbol(datafeed, "HYPE");
+
+		expect(symbol).toMatchObject({
+			ticker: "HYPE",
+			minmov: 1,
+			pricescale: 1000,
+			variable_tick_size: "0.0001 9.9999 0.001 99.999 0.01 999.99 0.1 9999.9 1",
+		});
+		expect(infoClient.meta).not.toHaveBeenCalled();
+		expect(infoClient.allMids).not.toHaveBeenCalled();
+	});
+
+	it.each(["118234", "118234.0", "118234.5"])(
+		"derives a listed perp's price format from its metadata when the mid is %s",
+		async (mid) => {
+			vi.resetModules();
+			const { createDatafeed: createIsolatedDatafeed } = await import("@/components/trade/chart/datafeed");
+			infoClient.meta.mockResolvedValue({ universe: [{ name: "BTC", szDecimals: 5, maxLeverage: 40 }] });
+			infoClient.allMids.mockResolvedValue({ BTC: mid });
+
+			const symbol = await resolveDatafeedSymbol(createIsolatedDatafeed(), "BTC");
+
+			expect(symbol).toMatchObject({ ticker: "BTC", pricescale: 1, variable_tick_size: "0.1 9999.9 1" });
+		},
+	);
+
+	it("uses a listed perp's finest tick as the scale when mids are unavailable", async () => {
+		vi.resetModules();
+		const { createDatafeed: createIsolatedDatafeed } = await import("@/components/trade/chart/datafeed");
+		infoClient.meta.mockResolvedValue({ universe: [{ name: "HYPE", szDecimals: 2, maxLeverage: 10 }] });
+		infoClient.allMids.mockRejectedValue(new Error("mids unavailable"));
+
+		const symbol = await resolveDatafeedSymbol(createIsolatedDatafeed(), "HYPE");
+
+		expect(symbol).toMatchObject({
+			ticker: "HYPE",
+			pricescale: 10_000,
+			variable_tick_size: "0.0001 9.9999 0.001 99.999 0.01 999.99 0.1 9999.9 1",
+		});
 	});
 
 	it.each(["@CXMT", "xyz:UNKNOWN"])("rejects an unverified structured coin %s", async (symbolName) => {
