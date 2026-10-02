@@ -1,6 +1,7 @@
 /** @vitest-environment jsdom */
 
-import { i18n } from "@lingui/core";
+import { createHash } from "node:crypto";
+import { i18n, type Messages } from "@lingui/core";
 import { act, type ReactNode } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -168,6 +169,22 @@ vi.mock("@/stores/use-global-settings-store", () => ({
 	useIsTestnet: () => false,
 }));
 
+const ZH_CSV_LABELS: Record<string, string> = {
+	Asset: "资产",
+	"Close Long": "平多",
+	Direction: "方向",
+	"Open Long": "开多",
+	Time: "时间",
+	Trade: "交易",
+	Type: "类型",
+};
+const zhCsvMessages: Messages = Object.fromEntries(
+	Object.entries(ZH_CSV_LABELS).map(([english, chinese]) => [
+		createHash("sha256").update(`${english}\x1f`).digest("base64").slice(0, 6),
+		chinese,
+	]),
+);
+
 describe("desktop history exports", () => {
 	let container: HTMLDivElement;
 	let root: Root;
@@ -262,15 +279,17 @@ describe("desktop history exports", () => {
 		);
 	});
 
-	it("formats exported fill dates in the language active when the rows are built", () => {
+	it("writes exported fill headers, labels and dates in the language active when the rows are built", () => {
 		act(() => root.render(<HistoryTab />));
 		const buildRowsFromEnglishRender = mocks.fillsBuildRows;
 		expect(buildRowsFromEnglishRender).not.toBeNull();
 
-		act(() => i18n.loadAndActivate({ locale: "zh", messages: {} }));
+		act(() => i18n.loadAndActivate({ locale: "zh", messages: zhCsvMessages }));
 		const rows = buildRowsFromEnglishRender?.([mocks.fills[0]]) ?? [];
 
+		expect(rows[0]?.slice(0, 4)).toEqual(["时间", "资产", "方向", "类型"]);
 		expect(rows[1]?.[0]).toBe(formatDateTimeShort(1_754_350_400_000, { locale: "zh" }));
+		expect(rows[1]?.slice(1, 4)).toEqual(["BTC", "平多", "交易"]);
 		expect(formatDateTimeShort(1_754_350_400_000, { locale: "zh" })).not.toBe(
 			formatDateTimeShort(1_754_350_400_000, { locale: "en" }),
 		);

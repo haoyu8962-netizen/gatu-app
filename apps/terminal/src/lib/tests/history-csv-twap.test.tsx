@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 
-import { i18n } from "@lingui/core";
+import { createHash } from "node:crypto";
+import { i18n, type Messages } from "@lingui/core";
 import type { HistoricalOrdersResponse, UserFillsResponse, UserTwapSliceFillsResponse } from "@nktkas/hyperliquid";
 import { act } from "react";
 import type { Root } from "react-dom/client";
@@ -273,6 +274,22 @@ function serveTwapPages(entries: readonly UserTwapSliceFillsResponse[number][], 
 	);
 }
 
+const ZH_CSV_LABELS: Record<string, string> = {
+	Asset: "资产",
+	"Close Long": "平多",
+	Direction: "方向",
+	"Open Long": "开多",
+	Time: "时间",
+	Trade: "交易",
+	Type: "类型",
+};
+const zhCsvMessages: Messages = Object.fromEntries(
+	Object.entries(ZH_CSV_LABELS).map(([english, chinese]) => [
+		createHash("sha256").update(`${english}\x1f`).digest("base64").slice(0, 6),
+		chinese,
+	]),
+);
+
 describe("TWAP fill history CSV export", () => {
 	let container: HTMLDivElement;
 	let root: Root;
@@ -340,7 +357,7 @@ describe("TWAP fill history CSV export", () => {
 		expect(signal).toBeInstanceOf(AbortSignal);
 	});
 
-	it("formats dates in the language active when the rows are built, after a switch during the export", async () => {
+	it("writes headers, labels and dates in the language active when the rows are built, after a switch during the export", async () => {
 		const fill = createSliceFill({ time: 1_000 });
 		let releasePages: () => void = () => {};
 		const pagesReleased = new Promise<void>((resolve) => {
@@ -355,12 +372,14 @@ describe("TWAP fill history CSV export", () => {
 		const hook = renderProbe();
 
 		const pendingExport = startExport(hook);
-		act(() => i18n.loadAndActivate({ locale: "zh", messages: {} }));
+		act(() => i18n.loadAndActivate({ locale: "zh", messages: zhCsvMessages }));
 		releasePages();
 		await act(async () => pendingExport);
 
 		const [, rows] = mocks.downloadCsv.mock.calls[0] as [string, string[][]];
+		expect(rows[0]?.slice(0, 4)).toEqual(["时间", "资产", "方向", "类型"]);
 		expect(rows[1]?.[0]).toBe(formatDateTimeShort(1_000, { locale: "zh" }));
+		expect(rows[1]?.slice(1, 4)).toEqual(["BTC", "开多", "TWAP"]);
 		expect(formatDateTimeShort(1_000, { locale: "zh" })).not.toBe(formatDateTimeShort(1_000, { locale: "en" }));
 	});
 

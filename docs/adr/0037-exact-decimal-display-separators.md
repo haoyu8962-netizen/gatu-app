@@ -1,6 +1,6 @@
 # ADR 0037：精确小数串经 `formatDecimalString` 按数字格式设置显示
 
-- 状态：已接受并实施（2026-10-02，分支 `claude/angry-northcutt-d85ed7`，叠在未推送的 `claude/wonderful-goldberg-e47b19`（ADR 0036）上）；未推送、未合入、未发布。
+- 状态：已接受并实施（2026-10-02，分支 `claude/angry-northcutt-d85ed7`，叠在未推送的 `claude/wonderful-goldberg-e47b19`（ADR 0036）上）；未推送、未合入、未发布。2026-10-03 追记：已随集成分支 `claude/integrate-locale-number-format` 并入 [PR #71](https://github.com/zora4523-bot/gatu-app/pull/71)，PR 尚未合入 `dev`，也未发布。
 - 关联：[数字格式设置](../number-format-setting.md) 规则 10；[ADR 0036](0036-render-time-number-formatters.md)「后果与边界」登记的手写格式后续；[任务记录](../work-memory/sessions/2026-10-02-exact-decimal-number-format.md)（分类表、先失败的用例与验证）。
 
 ## 背景与约束
@@ -70,7 +70,7 @@
 - 契约只看名字与语法位置。已登记 helper（`floorToString`、`formatPriceForOrderWithRounding`、下单成交摘要、订单簿分组标签、提现金额）返回的协议串在别处显示时，契约跟不到。由登记的用途写明显示处如何格式化，新显示须遵守规则 10。
 - 资金类提示在弹出时格式化，已显示的提示不随设置变化，这一约定不变（质押成功通知现在用弹出时的设置）。资金恢复通知由宿主组件持续渲染，会随设置当场更新。
 - 没有改动：仅开发环境的排行榜夹具；没有生产调用方的 `bpsToPercentage` 等三个函数；组合收益图手写的日期刻度（属于日期规则）。
-- 构建体积：按固定输入成对构建，客户端总量 +1,216 字节、桌面运行时启动 +170、手机 +83；预算基线按惯例相应提高。基线提交本身超出总量上限，见任务记录「验证与限制」。
+- 构建体积：按固定输入成对构建，客户端总量 +1,216 字节、桌面运行时启动 +170、手机 +83；预算基线按惯例相应提高。基线提交本身超出总量上限，见任务记录「验证与限制」。（2026-10-03 追记：集成后在干净 worktree 里用同样的固定元数据重测，本 ADR 的改动为总量 +1,392、桌面运行时 +91、手机 +79。脚本里的上调注释已按此改写。同一基线提交在那里测得在预算内，与上面的说法相差 2,915 字节，原因未查。见[集成记录](../work-memory/sessions/2026-10-02-integrate-locale-number-format.md)「第二次集成」。）
 
 ## 证据
 

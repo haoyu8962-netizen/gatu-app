@@ -407,6 +407,38 @@ export function Sample({ at }: { at: number }) { return <p>{when(at)}</p>; }`,
 			["components/sample.tsx:2 Sample when"],
 		],
 		[
+			"a namespace alias of a formatter destructured inside a component",
+			{
+				"lib/labels.ts": `import { formatTime } from "@/lib/format";
+export const when = formatTime;`,
+				"components/sample.tsx": `import * as labels from "@/lib/labels";
+export function Sample({ at }: { at: number }) { const { when } = labels; return <p>{when(at)}</p>; }`,
+			},
+			["components/sample.tsx:2 Sample when"],
+		],
+		[
+			"an indirect date helper destructured inside a component",
+			{
+				"lib/labels.ts": `import { formatTime } from "@/lib/format";
+export function when(at: number) { return formatTime(at); }`,
+				"components/sample.tsx": `import * as labels from "@/lib/labels";
+export function Sample({ at }: { at: number }) { const { when } = labels; return <p>{when(at)}</p>; }`,
+			},
+			["components/sample.tsx:2 Sample when"],
+		],
+		[
+			"a module-level helper that destructures an indirect date helper",
+			{
+				"lib/labels.ts": `import { formatTime } from "@/lib/format";
+export function when(at: number) { return formatTime(at); }`,
+				"lib/caption.ts": `import * as labels from "./labels";
+export function caption(at: number) { const { when } = labels; return when(at); }`,
+				"components/sample.tsx": `import { caption } from "@/lib/caption";
+export function Sample({ at }: { at: number }) { return <p>{caption(at)}</p>; }`,
+			},
+			["components/sample.tsx:2 Sample caption"],
+		],
+		[
 			"a parenthesized or bracketed namespace member without a locale",
 			{
 				"components/sample.tsx": `import * as format from "@/lib/format";
@@ -519,6 +551,18 @@ export function Sample({ at, fmt }: { at: number; fmt: { formatDateTime: (at: nu
 			},
 		],
 		[
+			"a destructured helper that passes on the locale it receives",
+			{
+				"lib/labels.ts": `import { formatTime } from "@/lib/format";
+export function when(at: number, locale: string) { return formatTime(at, { locale }); }`,
+				"components/sample.tsx": `import * as labels from "@/lib/labels";
+export function Sample({ at, locale }: { at: number; locale: string }) {
+	const { when } = labels;
+	return <p>{when(at, locale)}</p>;
+}`,
+			},
+		],
+		[
 			"a parenthesized or bracketed namespace member called with a locale",
 			{
 				"components/sample.tsx": `import * as format from "@/lib/format";
@@ -592,8 +636,10 @@ function findLanguageFormatViolations(sources: Map<string, string>): string[] {
 				}
 			}
 			if (ts.isIdentifier(node) && currentOwner !== null) {
-				for (const formatter of destructuredLanguageFormatters(modules, module, node)) {
-					violations.push(`${module.path}:${line(node)} ${currentOwner} ${formatter.name}`);
+				for (const member of destructuredNamespaceExports(modules, module, node)) {
+					if (globalLocaleReaders.has(member.key)) {
+						violations.push(`${module.path}:${line(node)} ${currentOwner} ${member.name}`);
+					}
 				}
 			}
 			ts.forEachChild(node, (child) => visit(child, currentOwner));
@@ -644,10 +690,11 @@ function namesLanguageFormatter(modules: Map<string, SourceModule>, key: string)
 	return false;
 }
 
-// A namespace import destructured inside a function (`const { formatDateTime: when } = format`) takes the
-// formatter out as a value, like `const when = format.formatDateTime`, so it counts as a reference to it
-// even when every later call passes a locale. A destructuring at module scope is an import alias instead.
-function destructuredLanguageFormatters(
+// A namespace import destructured inside a function (`const { formatDateTime: when } = format`) takes each
+// named export out as a value, like `const when = format.formatDateTime`, so each counts as a reference to
+// that export: a formatter, an alias of one or a helper that reads the language is flagged even when every
+// later call passes a locale. A destructuring at module scope is an import alias instead.
+function destructuredNamespaceExports(
 	modules: Map<string, SourceModule>,
 	module: SourceModule,
 	identifier: ts.Identifier,
@@ -658,13 +705,13 @@ function destructuredLanguageFormatters(
 	const declaration = value.parent;
 	if (!ts.isVariableDeclaration(declaration) || declaration.initializer !== value) return [];
 	if (!ts.isObjectBindingPattern(declaration.name)) return [];
-	const formatters: { key: string; name: string }[] = [];
+	const members: { key: string; name: string }[] = [];
 	for (const element of declaration.name.elements) {
 		const name = getDestructuredKey(element);
 		const key = name === undefined ? null : resolveExport(modules, target, name, new Set());
-		if (name !== undefined && key !== null && isLanguageFormatter(key)) formatters.push({ key, name });
+		if (name !== undefined && key !== null) members.push({ key, name });
 	}
-	return formatters;
+	return members;
 }
 
 function isAliasInitializer(value: ts.Node, name: string): boolean {
@@ -713,7 +760,7 @@ function collectGlobalLocaleReferences(
 		const reference = ts.isIdentifier(node) ? readsGlobalLocale(modules, module, node) : null;
 		if (reference) keys.add(reference.key);
 		if (ts.isIdentifier(node) && isInsideFunction(node)) {
-			for (const formatter of destructuredLanguageFormatters(modules, module, node)) keys.add(formatter.key);
+			for (const member of destructuredNamespaceExports(modules, module, node)) keys.add(member.key);
 		}
 		ts.forEachChild(node, visit);
 	};
