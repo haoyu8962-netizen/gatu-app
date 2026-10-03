@@ -1,6 +1,6 @@
 # ADR 0036：渲染期数字格式化使用 `useNumberFormat()` 返回的格式化函数
 
-- 状态：已接受并实施（2026-10-02，分支 `claude/wonderful-goldberg-e47b19`，叠在未推送的 `claude/relaxed-roentgen-fd0316` 上）；未推送、未合入、未发布。取代[数字格式设置](../number-format-setting.md)中「组件订阅 `useNumberFormatRevision()`」的做法；资金费率图、组合收益图、杠杆仓位上限行与断开账户概览把修订号作为参数传入的做法也改为传格式化函数。
+- 状态：已接受并实施（2026-10-02，分支 `claude/wonderful-goldberg-e47b19`，叠在未推送的 `claude/relaxed-roentgen-fd0316` 上）；未推送、未合入、未发布。2026-10-03 追记：已随集成 [PR #71](https://github.com/zora4523-bot/gatu-app/pull/71) 以 merge commit 合入 `dev`（`2846a6f8`），未发布。取代[数字格式设置](../number-format-setting.md)中「组件订阅 `useNumberFormatRevision()`」的做法；资金费率图、组合收益图、杠杆仓位上限行与断开账户概览把修订号作为参数传入的做法也改为传格式化函数。
 - 关联：[任务记录](../work-memory/sessions/2026-10-02-number-format-reactive-formatters.md)（取证、计数方法与验证）；问题来源是[上一条记录](../work-memory/sessions/2026-10-02-vault-fetched-time-locale.md)的「范围外发现：数字格式订阅」；[运行时多语言](../i18n-presentation.md)。
 
 ## 背景与约束

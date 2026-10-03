@@ -1,6 +1,6 @@
 # ADR 0037：精确小数串经 `formatDecimalString` 按数字格式设置显示
 
-- 状态：已接受并实施（2026-10-02，分支 `claude/angry-northcutt-d85ed7`，叠在未推送的 `claude/wonderful-goldberg-e47b19`（ADR 0036）上）；未推送、未合入、未发布。2026-10-03 追记：已随集成分支 `claude/integrate-locale-number-format` 并入 [PR #71](https://github.com/zora4523-bot/gatu-app/pull/71)，PR 尚未合入 `dev`，也未发布。
+- 状态：已接受并实施（2026-10-02，分支 `claude/angry-northcutt-d85ed7`，叠在未推送的 `claude/wonderful-goldberg-e47b19`（ADR 0036）上）；未推送、未合入、未发布。2026-10-03 追记：已随集成分支 `claude/integrate-locale-number-format` 并入 [PR #71](https://github.com/zora4523-bot/gatu-app/pull/71)，PR 尚未合入 `dev`，也未发布。同日追记：PR #71 已以 merge commit 合入 `dev`（`2846a6f8`），未发布。
 - 关联：[数字格式设置](../number-format-setting.md) 规则 10；[ADR 0036](0036-render-time-number-formatters.md)「后果与边界」登记的手写格式后续；[任务记录](../work-memory/sessions/2026-10-02-exact-decimal-number-format.md)（分类表、先失败的用例与验证）。
 
 ## 背景与约束

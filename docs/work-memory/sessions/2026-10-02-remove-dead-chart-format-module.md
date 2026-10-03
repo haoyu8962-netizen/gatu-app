@@ -7,7 +7,7 @@
   "kind": "task",
   "status": "verified",
   "topics": ["i18n-runtime"],
-  "summary": "在 dev（682430ba）上复核：终端的 lib/chart/format.ts（formatShortDate、formatTime、formatTooltipDate，手写月日与时分，不跟随界面语言和数字格式设置）自 10952c74（2026-07-21）删除 KLineChart 后再没有导入方，静态与动态导入、vi.mock、lib/chart 桶文件、测试、脚本、官网和文档都没有；config/chart.ts 的 SHORT_MONTHS 只被它使用。两者一并删除，行为不变，现行文档不涉及。终端类型检查、Biome、「Number and date formatting」测试组与 17 个图表相关测试文件通过；在未推送的 claude/sleepy-archimedes-fbff3e 上叠加本次删除后，日期语言契约 40 项与类型检查通过；对领先 dev 的本地与远端分支预演合并，没有新增冲突。未跑完整测试、生产构建与浏览器检查。",
+  "summary": "在 dev（682430ba）上复核：终端的 lib/chart/format.ts（formatShortDate、formatTime、formatTooltipDate，手写月日与时分，不跟随界面语言和数字格式设置）自 10952c74（2026-07-21）删除 KLineChart 后再没有导入方，静态与动态导入、vi.mock、lib/chart 桶文件、测试、脚本、官网和文档都没有；config/chart.ts 的 SHORT_MONTHS 只被它使用。两者一并删除，行为不变，现行文档不涉及。终端类型检查、Biome、「Number and date formatting」测试组与 17 个图表相关测试文件通过；在未推送的 claude/sleepy-archimedes-fbff3e 上叠加本次删除后，日期语言契约 40 项与类型检查通过；对领先 dev 的本地与远端分支预演合并，没有新增冲突。未跑完整测试、生产构建与浏览器检查。（2026-10-03 补记：已随集成 PR #71 合入 dev，2846a6f8）",
   "thread": null,
   "baseCommit": "682430ba",
   "commits": [],
@@ -72,3 +72,4 @@
 - 没有必须跟进的事项。
 - 合并 `claude/sleepy-archimedes-fbff3e` 后，那份日期语言契约记录里「局部同名函数（例如 `lib/chart/format.ts` 自己的 `formatTime`）不算」一句会指向已删除的文件；它是历史记录，按惯例不改写，需要时在它的后续一节追加指向本记录。
 - 没有被替代的记录。
+- 2026-10-03 补记：`claude/wonderful-mccarthy-709acd` 已在集成分支 `claude/integrate-locale-number-format` 的第二次集成中以合并提交 `242db030` 并入 [PR #71](https://github.com/zora4523-bot/gatu-app/pull/71)，PR #71 于 2026-10-03 以 merge commit 合入 `dev`（`2846a6f8`），未发布。经过见[集成记录](2026-10-02-integrate-locale-number-format.md)。

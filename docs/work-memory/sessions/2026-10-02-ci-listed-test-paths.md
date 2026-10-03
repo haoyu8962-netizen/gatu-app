@@ -7,7 +7,7 @@
   "kind": "task",
   "status": "verified",
   "topics": ["pr-review"],
-  "summary": "terminal-tests.yml 的 geo 步骤一直列着 2026-09-13 被 5944465d 删除的 geo-server-functions.test.ts，vitest 把不匹配的参数当作空过滤器，该步骤实际少跑一个文件仍然通过；继任测试 geo-api.test.ts 从未进入 CI。参数已换成 geo-api.test.ts，ci-workflows.test.mjs 新增钉子：工作流传给 vitest、Playwright 与 node --test 的每个路径（文件名通配符展开后）都必须匹配到文件。本机验证通过，未推送，GitHub 上未运行。",
+  "summary": "terminal-tests.yml 的 geo 步骤一直列着 2026-09-13 被 5944465d 删除的 geo-server-functions.test.ts，vitest 把不匹配的参数当作空过滤器，该步骤实际少跑一个文件仍然通过；继任测试 geo-api.test.ts 从未进入 CI。参数已换成 geo-api.test.ts，ci-workflows.test.mjs 新增钉子：工作流传给 vitest、Playwright 与 node --test 的每个路径（文件名通配符展开后）都必须匹配到文件。本机验证通过，未推送，GitHub 上未运行。（2026-10-03 补记：已随集成 PR #71 合入 dev，2846a6f8）",
   "thread": null,
   "baseCommit": "682430ba",
   "commits": [],
@@ -78,3 +78,4 @@
 - 本记录不替代任何记录；它完成了 [2026-09-19 记录](2026-09-19-ci-tiers-dev-first-flow.md)后续里关于失效 `geo-server-functions` 参数的一项（换成继任测试，不是删除）。
 - `geo-prefetch.test.ts` 不在 CI 清单中，是否加入由维护者决定；ADR 0016 中用全量单测取代手选清单的计划不变。
 - 推送后在 PR 上核对 `Terminal Tests` 的 geo 步骤报告 23 个测试文件、“Test build and release validators” 通过。
+- 2026-10-03 补记：`claude/ci-listed-test-paths` 已在集成分支 `claude/integrate-locale-number-format` 的第二次集成中以合并提交 `62d7f26b` 并入 [PR #71](https://github.com/zora4523-bot/gatu-app/pull/71)，PR #71 于 2026-10-03 以 merge commit 合入 `dev`（`2846a6f8`），未发布。经过见[集成记录](2026-10-02-integrate-locale-number-format.md)。
