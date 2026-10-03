@@ -102,7 +102,7 @@
 3. 交付方式：两个 PR，升级先合（推荐）／一个 PR。
 4. 开关：主网与测试网分开（推荐，便于先在测试网暴露沙盒）／单一开关。
 5. viem：本次不动，接受 Privy 自带一份（推荐）／顺带把终端与 `hl-react` 升到 2.56.0 去重（触及签名路径，需要额外回归）。
-6. 控制台与商务（只能由用户操作；2026-10-02 只读核对的现状见[上线验收清单](privy-card-funding-launch-checklist.md)）：在新的 Sairn Privy 应用里开启 Account Funding 的卡与银行方式；是否完成 Meld KYB 以扩展币种；确认 Stripe / MoonPay 的服务地区与本项目地区限制叠加后的实际覆盖（受限地区包含美国，Stripe 实际只剩欧盟）。
+6. 控制台与商务（只能由用户操作；2026-10-02 只读核对的现状见[上线验收清单](privy-card-funding-launch-checklist.md)）：在新的 Sairn Privy 应用里开启 Account Funding 的卡与银行方式；是否完成 Meld KYB 以扩展币种；确认 Stripe / MoonPay 的服务地区与本项目地区限制叠加后的实际覆盖（受限地区包含美国，Stripe 实际只剩欧盟）。2026-10-03：卡入金已开启，Meld 已完成申请并开通正式环境（Sairn 应用 Prod enabled），币种不再需要收窄；地区覆盖与 development mode 仍待决定，见上线验收清单 CF-1、CF-10。
 
 ## 风险
 

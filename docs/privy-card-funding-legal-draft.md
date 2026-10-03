@@ -1,6 +1,6 @@
 # Card funding: draft legal text for review
 
-Status: draft written by engineering on 2026-10-02 for qualified legal review. It is not legal advice, it is not published, and none of it may be copied into `legal/` before that review ([legal/README.md](../legal/README.md)). Owner: launch prerequisite 2 of [ADR 0034](adr/0034-privy-card-funding.md) and row CF-8 of the [launch checklist](privy-card-funding-launch-checklist.md).
+Status: draft written by engineering on 2026-10-02 for qualified legal review; facts updated on 2026-10-03 after the Meld aggregator was enabled. It is not legal advice, it is not published, and none of it may be copied into `legal/` before that review ([legal/README.md](../legal/README.md)). Owner: launch prerequisite 2 of [ADR 0034](adr/0034-privy-card-funding.md) and row CF-8 of the [launch checklist](privy-card-funding-launch-checklist.md).
 
 The section and clause numbers below refer to the documents as last updated on October 1, 2026.
 
@@ -10,7 +10,7 @@ These are the facts the reviewer needs. They come from the application code and 
 
 - The Deposit dialog offers "Buy USDC with a card" next to "Transfer USDC". Choosing it closes the dialog and opens a purchase window that belongs to Privy, the wallet and authentication provider.
 - Sairn's code passes Privy four things: the destination wallet address (always the user's own Hyperliquid owner wallet), the destination asset (native USDC on Arbitrum One), a default currency and amount (USD 100, editable in the window) and whether to use the provider sandbox.
-- Privy routes the purchase to an independent payment provider. With the current Privy configuration these are Stripe (USD, EUR) and MoonPay (AUD, BRL). Stripe's flow runs inside the Privy window through Stripe's Link account; other providers open in a separate window.
+- Privy routes the purchase to an independent payment provider. With the Privy configuration of 2026-10-02 these were Stripe (USD, EUR) and MoonPay (AUD, BRL). Since 2026-10-03 the Meld aggregator is also enabled for production, so Privy may route a purchase to a provider in Meld's network (Privy's dashboard names Transak and Swapped as examples) in more than 50 currencies; which provider serves a purchase is chosen by Privy, not by Sairn. Stripe's flow runs inside the Privy window through Stripe's Link account; other providers open in a separate window. What Privy passes to the other providers when it opens their window (for example whether it includes the sign-in e-mail address) has not been checked.
 - For the Stripe flow, Privy passes the user's sign-in e-mail address (and phone number, if the Privy account has one) to Stripe. The window then asks the user for a phone number, legal name, date of birth, residential address, nationality and national identifiers such as a US Social Security number or an EU tax or identity number, and may require a document and selfie check. Those fields are drawn by Privy's software inside the Sairn page and sent to the provider. Card details are entered in elements supplied by Stripe.
 - Sairn's own code does not read, store or transmit those identity or payment details, and Sairn has no server that receives them. In the browser Sairn learns only how the flow ended: confirmed, submitted, failed, cancelled or unknown.
 - The provider delivers USDC to the user's wallet on Arbitrum. Sairn cannot cancel, refund or reverse a purchase. The USDC is not in the trading account until the user makes a separate deposit; an external wallet pays Arbitrum network fees for that deposit.
@@ -61,6 +61,7 @@ Under "Wallet & Account", once the feature is live: "**Buy USDC with a card** â€
 5. Which consumer rights for card purchases (refunds, chargebacks, withdrawal rights in the European Union) need to be addressed, and by whom?
 6. Is a statement needed about where the entry is offered, given Sairn's restricted-person rules and the narrower provider coverage?
 7. Do the camera and wallet-payment restrictions in the current browser permissions policy (document capture inside the page and Apple Pay or Google Pay are blocked) raise any disclosure point?
+8. Since Privy chooses the provider and the set of providers changes with Privy's configuration (Meld adds several), may the privacy policy describe them as a category, or must each provider be named?
 
 ## After approval
 
