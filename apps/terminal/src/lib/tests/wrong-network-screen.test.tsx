@@ -15,6 +15,17 @@ vi.mock("@sairn/ui", () => ({
 	AdaptiveModal: ({ children }: { children: ReactNode }) => createElement("div", { role: "dialog" }, children),
 	Button: ({ children, disabled, onClick }: { children: ReactNode; disabled?: boolean; onClick?: () => void }) =>
 		createElement("button", { disabled, onClick, type: "button" }, children),
+	ButtonIcon: ({
+		children,
+		disabled,
+		onClick,
+		"aria-label": label,
+	}: {
+		children: ReactNode;
+		disabled?: boolean;
+		onClick?: () => void;
+		"aria-label"?: string;
+	}) => createElement("button", { "aria-label": label, disabled, onClick, type: "button" }, children),
 	ModalContent: ({ children }: { children: ReactNode }) => createElement("div", null, children),
 	ModalHeader: ({ children }: { children: ReactNode }) => createElement("header", null, children),
 	ModalTitle: ({ children }: { children: ReactNode }) => createElement("h2", null, children),
@@ -37,18 +48,23 @@ describe("WrongNetworkScreen", () => {
 		i18n.loadAndActivate({ locale: "en", messages: {} });
 	});
 
-	function renderScreen(error: Error) {
+	function renderScreen(error: Error | null, options: { onBack?: () => void; isSwitching?: boolean } = {}) {
 		act(() =>
 			root.render(
 				createElement(WrongNetworkScreen, {
 					open: true,
 					onClose: vi.fn(),
+					onBack: options.onBack,
 					onSwitch: vi.fn(),
-					isSwitching: false,
+					isSwitching: options.isSwitching ?? false,
 					error,
 				}),
 			),
 		);
+	}
+
+	function backButton() {
+		return container.querySelector<HTMLButtonElement>('button[aria-label="Back"]');
 	}
 
 	it("renders a switch failure in the active language and follows a language switch", () => {
@@ -69,5 +85,29 @@ describe("WrongNetworkScreen", () => {
 		expect(container.querySelector('[role="alert"]')?.textContent).toBe(
 			"Unable to switch wallet to Arbitrum. Switch networks in your wallet and retry.",
 		);
+	});
+
+	it("offers no way back when the dialog has no method choice to return to", () => {
+		renderScreen(null);
+
+		expect(backButton()).toBeNull();
+	});
+
+	it("returns to the method choice through a named back control", () => {
+		const onBack = vi.fn();
+		renderScreen(null, { onBack });
+
+		act(() => backButton()?.click());
+
+		expect(onBack).toHaveBeenCalledTimes(1);
+	});
+
+	it("keeps the back control disabled while the wallet is switching networks", () => {
+		const onBack = vi.fn();
+		renderScreen(null, { onBack, isSwitching: true });
+
+		expect(backButton()?.disabled).toBe(true);
+		act(() => backButton()?.click());
+		expect(onBack).not.toHaveBeenCalled();
 	});
 });

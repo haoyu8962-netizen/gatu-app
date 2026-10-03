@@ -13,10 +13,10 @@ patchedDependencies:
     hash: 62816c06be8be0e27c24f434d3141630257dc1f416f67d886cc0b126e8e7cb29
     path: patches/@nktkas__hyperliquid.patch
   '@privy-io/react-auth@3.46.0':
-    hash: c61557d12b5589d5eaee4481cc5dadb4a6e9188eb618d837ed6fe5f7f69eae69
+    hash: 5caa2023939762fb8d9fdac7aa233182f6a3604885ba160a038efaec5df70e00
     path: patches/@privy-io__react-auth@3.46.0.patch
   sonner@2.0.7:
-    hash: 302cc0bb8375d398a5a1ec7edc210b82c0601fdfc3fb2a2917b44b23228281e5
+    hash: 32d6201a41ff8cd314a575c6c719f9c111ba0a6bbfbde30608f1c2a5b35f97a6
     path: patches/sonner@2.0.7.patch
 
 importers:
@@ -76,10 +76,10 @@ importers:
         version: 2.1.10(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
       '@privy-io/react-auth':
         specifier: 3.46.0
-        version: 3.46.0(patch_hash=c61557d12b5589d5eaee4481cc5dadb4a6e9188eb618d837ed6fe5f7f69eae69)(@solana-program/system@0.10.0(@solana/kit@5.5.1(bufferutil@4.1.0)(typescript@5.7.2)(utf-8-validate@6.0.6)))(@solana-program/token@0.9.0(@solana/kit@5.5.1(bufferutil@4.1.0)(typescript@5.7.2)(utf-8-validate@6.0.6)))(@solana/kit@5.5.1(bufferutil@4.1.0)(typescript@5.7.2)(utf-8-validate@6.0.6))(@solana/sysvars@5.5.1(typescript@5.7.2))(@stripe/stripe-js@1.54.2)(@tanstack/query-core@5.90.16)(@tanstack/react-query@5.90.16(react@19.2.0))(@types/react@19.2.7)(bufferutil@4.1.0)(db0@0.3.4)(permissionless@0.2.57(viem@2.42.1(bufferutil@4.1.0)(typescript@5.7.2)(utf-8-validate@6.0.6)(zod@4.3.4)))(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(typescript@5.7.2)(use-sync-external-store@1.4.0(react@19.2.0))(utf-8-validate@6.0.6)(zod@4.3.4)
+        version: 3.46.0(patch_hash=5caa2023939762fb8d9fdac7aa233182f6a3604885ba160a038efaec5df70e00)(@solana-program/system@0.10.0(@solana/kit@5.5.1(bufferutil@4.1.0)(typescript@5.7.2)(utf-8-validate@6.0.6)))(@solana-program/token@0.9.0(@solana/kit@5.5.1(bufferutil@4.1.0)(typescript@5.7.2)(utf-8-validate@6.0.6)))(@solana/kit@5.5.1(bufferutil@4.1.0)(typescript@5.7.2)(utf-8-validate@6.0.6))(@solana/sysvars@5.5.1(typescript@5.7.2))(@stripe/stripe-js@1.54.2)(@tanstack/query-core@5.90.16)(@tanstack/react-query@5.90.16(react@19.2.0))(@types/react@19.2.7)(bufferutil@4.1.0)(db0@0.3.4)(permissionless@0.2.57(viem@2.42.1(bufferutil@4.1.0)(typescript@5.7.2)(utf-8-validate@6.0.6)(zod@4.3.4)))(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(typescript@5.7.2)(use-sync-external-store@1.4.0(react@19.2.0))(utf-8-validate@6.0.6)(zod@4.3.4)
       '@privy-io/wagmi':
         specifier: 4.0.17
-        version: 4.0.17(@privy-io/react-auth@3.46.0(patch_hash=c61557d12b5589d5eaee4481cc5dadb4a6e9188eb618d837ed6fe5f7f69eae69)(@solana-program/system@0.10.0(@solana/kit@5.5.1(bufferutil@4.1.0)(typescript@5.7.2)(utf-8-validate@6.0.6)))(@solana-program/token@0.9.0(@solana/kit@5.5.1(bufferutil@4.1.0)(typescript@5.7.2)(utf-8-validate@6.0.6)))(@solana/kit@5.5.1(bufferutil@4.1.0)(typescript@5.7.2)(utf-8-validate@6.0.6))(@solana/sysvars@5.5.1(typescript@5.7.2))(@stripe/stripe-js@1.54.2)(@tanstack/query-core@5.90.16)(@tanstack/react-query@5.90.16(react@19.2.0))(@types/react@19.2.7)(bufferutil@4.1.0)(db0@0.3.4)(permissionless@0.2.57(viem@2.42.1(bufferutil@4.1.0)(typescript@5.7.2)(utf-8-validate@6.0.6)(zod@4.3.4)))(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(typescript@5.7.2)(use-sync-external-store@1.4.0(react@19.2.0))(utf-8-validate@6.0.6)(zod@4.3.4))(react@19.2.0)(viem@2.42.1(bufferutil@4.1.0)(typescript@5.7.2)(utf-8-validate@6.0.6)(zod@4.3.4))(wagmi@3.1.0)
+        version: 4.0.17(@privy-io/react-auth@3.46.0(patch_hash=5caa2023939762fb8d9fdac7aa233182f6a3604885ba160a038efaec5df70e00)(@solana-program/system@0.10.0(@solana/kit@5.5.1(bufferutil@4.1.0)(typescript@5.7.2)(utf-8-validate@6.0.6)))(@solana-program/token@0.9.0(@solana/kit@5.5.1(bufferutil@4.1.0)(typescript@5.7.2)(utf-8-validate@6.0.6)))(@solana/kit@5.5.1(bufferutil@4.1.0)(typescript@5.7.2)(utf-8-validate@6.0.6))(@solana/sysvars@5.5.1(typescript@5.7.2))(@stripe/stripe-js@1.54.2)(@tanstack/query-core@5.90.16)(@tanstack/react-query@5.90.16(react@19.2.0))(@types/react@19.2.7)(bufferutil@4.1.0)(db0@0.3.4)(permissionless@0.2.57(viem@2.42.1(bufferutil@4.1.0)(typescript@5.7.2)(utf-8-validate@6.0.6)(zod@4.3.4)))(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(typescript@5.7.2)(use-sync-external-store@1.4.0(react@19.2.0))(utf-8-validate@6.0.6)(zod@4.3.4))(react@19.2.0)(viem@2.42.1(bufferutil@4.1.0)(typescript@5.7.2)(utf-8-validate@6.0.6)(zod@4.3.4))(wagmi@3.1.0)
       '@sairn/hl-react':
         specifier: workspace:*
         version: link:../../packages/hl-react
@@ -154,7 +154,7 @@ importers:
         version: 2.2.3(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
       sonner:
         specifier: 2.0.7
-        version: 2.0.7(patch_hash=302cc0bb8375d398a5a1ec7edc210b82c0601fdfc3fb2a2917b44b23228281e5)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+        version: 2.0.7(patch_hash=32d6201a41ff8cd314a575c6c719f9c111ba0a6bbfbde30608f1c2a5b35f97a6)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
       tailwind-merge:
         specifier: 3.4.0
         version: 3.4.0
@@ -9902,7 +9902,7 @@ snapshots:
 
   '@privy-io/popup@0.0.6': {}
 
-  '@privy-io/react-auth@3.46.0(patch_hash=c61557d12b5589d5eaee4481cc5dadb4a6e9188eb618d837ed6fe5f7f69eae69)(@solana-program/system@0.10.0(@solana/kit@5.5.1(bufferutil@4.1.0)(typescript@5.7.2)(utf-8-validate@6.0.6)))(@solana-program/token@0.9.0(@solana/kit@5.5.1(bufferutil@4.1.0)(typescript@5.7.2)(utf-8-validate@6.0.6)))(@solana/kit@5.5.1(bufferutil@4.1.0)(typescript@5.7.2)(utf-8-validate@6.0.6))(@solana/sysvars@5.5.1(typescript@5.7.2))(@stripe/stripe-js@1.54.2)(@tanstack/query-core@5.90.16)(@tanstack/react-query@5.90.16(react@19.2.0))(@types/react@19.2.7)(bufferutil@4.1.0)(db0@0.3.4)(permissionless@0.2.57(viem@2.42.1(bufferutil@4.1.0)(typescript@5.7.2)(utf-8-validate@6.0.6)(zod@4.3.4)))(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(typescript@5.7.2)(use-sync-external-store@1.4.0(react@19.2.0))(utf-8-validate@6.0.6)(zod@4.3.4)':
+  '@privy-io/react-auth@3.46.0(patch_hash=5caa2023939762fb8d9fdac7aa233182f6a3604885ba160a038efaec5df70e00)(@solana-program/system@0.10.0(@solana/kit@5.5.1(bufferutil@4.1.0)(typescript@5.7.2)(utf-8-validate@6.0.6)))(@solana-program/token@0.9.0(@solana/kit@5.5.1(bufferutil@4.1.0)(typescript@5.7.2)(utf-8-validate@6.0.6)))(@solana/kit@5.5.1(bufferutil@4.1.0)(typescript@5.7.2)(utf-8-validate@6.0.6))(@solana/sysvars@5.5.1(typescript@5.7.2))(@stripe/stripe-js@1.54.2)(@tanstack/query-core@5.90.16)(@tanstack/react-query@5.90.16(react@19.2.0))(@types/react@19.2.7)(bufferutil@4.1.0)(db0@0.3.4)(permissionless@0.2.57(viem@2.42.1(bufferutil@4.1.0)(typescript@5.7.2)(utf-8-validate@6.0.6)(zod@4.3.4)))(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(typescript@5.7.2)(use-sync-external-store@1.4.0(react@19.2.0))(utf-8-validate@6.0.6)(zod@4.3.4)':
     dependencies:
       '@base-org/account': 1.1.1(@types/react@19.2.7)(bufferutil@4.1.0)(react@19.2.0)(typescript@5.7.2)(use-sync-external-store@1.4.0(react@19.2.0))(utf-8-validate@6.0.6)(zod@4.3.4)
       '@base-ui/react': 1.8.0(@types/react@19.2.7)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
@@ -10005,9 +10005,9 @@ snapshots:
 
   '@privy-io/urls@0.0.5': {}
 
-  '@privy-io/wagmi@4.0.17(@privy-io/react-auth@3.46.0(patch_hash=c61557d12b5589d5eaee4481cc5dadb4a6e9188eb618d837ed6fe5f7f69eae69)(@solana-program/system@0.10.0(@solana/kit@5.5.1(bufferutil@4.1.0)(typescript@5.7.2)(utf-8-validate@6.0.6)))(@solana-program/token@0.9.0(@solana/kit@5.5.1(bufferutil@4.1.0)(typescript@5.7.2)(utf-8-validate@6.0.6)))(@solana/kit@5.5.1(bufferutil@4.1.0)(typescript@5.7.2)(utf-8-validate@6.0.6))(@solana/sysvars@5.5.1(typescript@5.7.2))(@stripe/stripe-js@1.54.2)(@tanstack/query-core@5.90.16)(@tanstack/react-query@5.90.16(react@19.2.0))(@types/react@19.2.7)(bufferutil@4.1.0)(db0@0.3.4)(permissionless@0.2.57(viem@2.42.1(bufferutil@4.1.0)(typescript@5.7.2)(utf-8-validate@6.0.6)(zod@4.3.4)))(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(typescript@5.7.2)(use-sync-external-store@1.4.0(react@19.2.0))(utf-8-validate@6.0.6)(zod@4.3.4))(react@19.2.0)(viem@2.42.1(bufferutil@4.1.0)(typescript@5.7.2)(utf-8-validate@6.0.6)(zod@4.3.4))(wagmi@3.1.0)':
+  '@privy-io/wagmi@4.0.17(@privy-io/react-auth@3.46.0(patch_hash=5caa2023939762fb8d9fdac7aa233182f6a3604885ba160a038efaec5df70e00)(@solana-program/system@0.10.0(@solana/kit@5.5.1(bufferutil@4.1.0)(typescript@5.7.2)(utf-8-validate@6.0.6)))(@solana-program/token@0.9.0(@solana/kit@5.5.1(bufferutil@4.1.0)(typescript@5.7.2)(utf-8-validate@6.0.6)))(@solana/kit@5.5.1(bufferutil@4.1.0)(typescript@5.7.2)(utf-8-validate@6.0.6))(@solana/sysvars@5.5.1(typescript@5.7.2))(@stripe/stripe-js@1.54.2)(@tanstack/query-core@5.90.16)(@tanstack/react-query@5.90.16(react@19.2.0))(@types/react@19.2.7)(bufferutil@4.1.0)(db0@0.3.4)(permissionless@0.2.57(viem@2.42.1(bufferutil@4.1.0)(typescript@5.7.2)(utf-8-validate@6.0.6)(zod@4.3.4)))(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(typescript@5.7.2)(use-sync-external-store@1.4.0(react@19.2.0))(utf-8-validate@6.0.6)(zod@4.3.4))(react@19.2.0)(viem@2.42.1(bufferutil@4.1.0)(typescript@5.7.2)(utf-8-validate@6.0.6)(zod@4.3.4))(wagmi@3.1.0)':
     dependencies:
-      '@privy-io/react-auth': 3.46.0(patch_hash=c61557d12b5589d5eaee4481cc5dadb4a6e9188eb618d837ed6fe5f7f69eae69)(@solana-program/system@0.10.0(@solana/kit@5.5.1(bufferutil@4.1.0)(typescript@5.7.2)(utf-8-validate@6.0.6)))(@solana-program/token@0.9.0(@solana/kit@5.5.1(bufferutil@4.1.0)(typescript@5.7.2)(utf-8-validate@6.0.6)))(@solana/kit@5.5.1(bufferutil@4.1.0)(typescript@5.7.2)(utf-8-validate@6.0.6))(@solana/sysvars@5.5.1(typescript@5.7.2))(@stripe/stripe-js@1.54.2)(@tanstack/query-core@5.90.16)(@tanstack/react-query@5.90.16(react@19.2.0))(@types/react@19.2.7)(bufferutil@4.1.0)(db0@0.3.4)(permissionless@0.2.57(viem@2.42.1(bufferutil@4.1.0)(typescript@5.7.2)(utf-8-validate@6.0.6)(zod@4.3.4)))(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(typescript@5.7.2)(use-sync-external-store@1.4.0(react@19.2.0))(utf-8-validate@6.0.6)(zod@4.3.4)
+      '@privy-io/react-auth': 3.46.0(patch_hash=5caa2023939762fb8d9fdac7aa233182f6a3604885ba160a038efaec5df70e00)(@solana-program/system@0.10.0(@solana/kit@5.5.1(bufferutil@4.1.0)(typescript@5.7.2)(utf-8-validate@6.0.6)))(@solana-program/token@0.9.0(@solana/kit@5.5.1(bufferutil@4.1.0)(typescript@5.7.2)(utf-8-validate@6.0.6)))(@solana/kit@5.5.1(bufferutil@4.1.0)(typescript@5.7.2)(utf-8-validate@6.0.6))(@solana/sysvars@5.5.1(typescript@5.7.2))(@stripe/stripe-js@1.54.2)(@tanstack/query-core@5.90.16)(@tanstack/react-query@5.90.16(react@19.2.0))(@types/react@19.2.7)(bufferutil@4.1.0)(db0@0.3.4)(permissionless@0.2.57(viem@2.42.1(bufferutil@4.1.0)(typescript@5.7.2)(utf-8-validate@6.0.6)(zod@4.3.4)))(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(typescript@5.7.2)(use-sync-external-store@1.4.0(react@19.2.0))(utf-8-validate@6.0.6)(zod@4.3.4)
       react: 19.2.0
       viem: 2.42.1(bufferutil@4.1.0)(typescript@5.7.2)(utf-8-validate@6.0.6)(zod@4.3.4)
       wagmi: 3.1.0(995948f46ad2c19ef5e1181ac8df3de8)
@@ -18433,7 +18433,7 @@ snapshots:
     dependencies:
       atomic-sleep: 1.0.0
 
-  sonner@2.0.7(patch_hash=302cc0bb8375d398a5a1ec7edc210b82c0601fdfc3fb2a2917b44b23228281e5)(react-dom@19.2.0(react@19.2.0))(react@19.2.0):
+  sonner@2.0.7(patch_hash=32d6201a41ff8cd314a575c6c719f9c111ba0a6bbfbde30608f1c2a5b35f97a6)(react-dom@19.2.0(react@19.2.0))(react@19.2.0):
     dependencies:
       react: 19.2.0
       react-dom: 19.2.0(react@19.2.0)

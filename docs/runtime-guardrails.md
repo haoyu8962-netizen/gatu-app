@@ -76,6 +76,41 @@ Do not collapse these states into one boolean.
   directly.
 - Privy owns the managed external-wallet directory. Do not add a second
   Reown/AppKit chooser or reimplement the catalog in application components.
+- Card funding ([ADR 0034](adr/0034-privy-card-funding.md)) calls Privy's
+  `useFiatOnramp` with an explicit destination that
+  `resolvePrivyFiatFundingDestination` derives from the exact Hyperliquid owner
+  and Privy's connected-wallet list; never call a Privy funding hook without
+  that destination, because Privy then defaults to the first embedded wallet.
+  The deposit dialog closes before Privy's window opens, the page-level
+  `PrivyFiatFundingHost` owns the request, and both networks stay behind
+  their own fail-closed flags. The deposit dialog's chunk loads that host
+  (`launchPrivyFiatFunding`, and a warm-up while the purchase entry is on
+  screen); `PrivyFiatFundingHostGate` only renders it once loaded, so the
+  application's purchase host, its notice card and the import's chunk list
+  stay out of runtime startup. Privy's own funding module is part of Privy's
+  main chunk, which the static trade startup already loads with or without
+  the flag; Privy loads the purchase screen itself when the window opens. Right
+  before it opens Privy the host resolves the destination again from the
+  current session and refuses when it is no longer the wallet the purchase
+  was requested for. The purchase entry is released when `fund()` settles or
+  when Privy's window, once seen open for that attempt, has closed: `fund()`
+  itself waits for its first quote request, and a window that Privy closes
+  without ending the flow (a logout) never settles it. A result that arrives
+  later is still reported. `patches/@privy-io__react-auth@3.46.0.patch` also
+  gives the result promise inside `fund()` a rejection handler when it is
+  created, so that closing the window before the first quotes return does
+  not raise an unhandled rejection; `privy-fiat-funding.test.ts` runs the
+  installed hook and fails without that hunk, and must be re-derived on
+  every Privy upgrade. Each result is stored with the owner and network
+  that started it. A notice is
+  a custom Sonner card that checks its presentation, the current owner and
+  the current network every time it renders and translates in place, so it
+  never shows to another identity, not even when Sonner inserts it after it
+  was withdrawn, and a removal it asked for itself is never taken for the
+  owner closing the notice. Stripe's embedded onramp is the only provider that
+  runs inside the page; its documented script, frame and connect origins are
+  the only card-funding entries in the CSP, and `permissions-policy` keeps
+  `payment=()` and `camera=(self)` until a separate decision.
 - `PRIVY_WALLET_LIST` is the single source for recommended-wallet ordering.
   Keep named wallets ahead of detected/fallback entries and use
   `wallet_connect` for Privy's long-tail catalog; do not substitute
@@ -105,7 +140,9 @@ Do not collapse these states into one boolean.
   `patches/@privy-io__react-auth@3.46.0.patch` does the same for an empty
   embedded list (external-wallet and logged-out sessions). Before upgrading
   Privy, run `privy-theme-switch-wallet-stability.test.tsx` against the new
-  version and drop the patch only when the test passes without it.
+  version and drop that hunk only when the test passes without it. The same
+  file carries a second, unrelated hunk for card funding (`fund()`'s result
+  promise, below), so remove hunks, not the file.
 - The nonempty embedded-wallet path (ordinary email trading) has no behavioral
   test: no test can log in a real embedded owner. The same test file only
   checks that the SDK's field comparison (address, chain, connector type and

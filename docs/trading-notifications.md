@@ -14,7 +14,7 @@
 
 ## 唯一宿主与入口矩阵
 
-[AppToaster](../apps/terminal/src/components/app-toaster.tsx) 在应用运行时浮层中稳定挂载，组合一个 [Toaster](../apps/terminal/src/components/ui/sonner.tsx)、订单通知 gate、`CctpDepositTrackingNotifier` 与 `FundsActionRecoveryHost`。gate 只在当前 owner/env 存在未隐藏任务时按需加载 [OrderNotificationHost](../apps/terminal/src/components/trade/order-notification-host.tsx)。首次加载期间队列保留最新结果，宿主加载并发布通知后才开始成功展示计时。它不依赖交易页、选定市场就绪或桌面/移动交易布局。订单宿主及两个资金桥向同一个 Sonner 容器写内容，不各建固定定位容器。
+[AppToaster](../apps/terminal/src/components/app-toaster.tsx) 在应用运行时浮层中稳定挂载，组合一个 [Toaster](../apps/terminal/src/components/ui/sonner.tsx)、订单通知 gate、`CctpDepositTrackingNotifier`、`PrivyFiatFundingHostGate`（只渲染已经由充值弹层加载好的银行卡购买宿主，自己不发起加载）与 `FundsActionRecoveryHost`。gate 只在当前 owner/env 存在未隐藏任务时按需加载 [OrderNotificationHost](../apps/terminal/src/components/trade/order-notification-host.tsx)。首次加载期间队列保留最新结果，宿主加载并发布通知后才开始成功展示计时。它不依赖交易页、选定市场就绪或桌面/移动交易布局。订单宿主及两个资金桥向同一个 Sonner 容器写内容，不各建固定定位容器。
 
 | 入口 | 当前反馈 | 对账、刷新与保留边界 |
 | --- | --- | --- |
@@ -30,6 +30,7 @@
 | 推荐码录入、创建与奖励领取 | 同 ID pending、成功、未知或失败；成功保留既有较长时长 | 仅内存反馈；未知继续提示先刷新推荐数据再签名，不自动重试 |
 | 划转、发送、提现、充值弹窗 | 沿用标准 Sonner 结果通知；资金弹窗保持打开到请求结束，外部钱包保留 `Confirm in wallet`；划转、发送、提现结果不明为常驻警告 | 保留尝试对象身份、草稿与资金守卫；未统一改成 OrderQueue。广播前失败的充值可回到表单；提现没有新增本地持久待处理列表 |
 | CCTP 充值转发 | 标准 Sonner 同 ID loading → 转发已提交 / 明确失败；带区块浏览器链接 | ID 含 env、owner、source hash；从已有 CCTP 跟踪记录恢复。弹窗打开时让位给原转发页；转发提交不等于 HyperCore 已到账 |
+| 银行卡购买 USDC（Privy 入金，默认关闭，[ADR 0034](adr/0034-privy-card-funding.md)） | Sonner custom 卡片（`PrivyFiatFundingNoticeCard`）：服务商确认为成功但不声称到账；主网的已提交与状态未知带未知状态符号并常驻；确定没成交、购买窗口无法加载、会话已不能付给发起时的钱包（单独一条「钱包会话已变化」）为错误；SDK 报告已有流程为警告并提示刷新页面；购买入口的占用在 `fund` 结束或 Privy 的窗口关闭时释放；用户退出静默；测试网沙盒的结果只说明没有扣款、不会到账，不常驻 | 与订单通知同一套生命周期：结果按尝试保存发起时的 owner/网络、结果和钱包类型，记在 `use-privy-fiat-funding-store` 里，由 `PrivyFiatFundingHost` 展示，宿主重新挂载后仍在；自动关闭的通知只在排在最前时计时，计时中每次发布给 Sonner 的时长不变，所以 Sonner 因悬停或页面隐藏记下的剩余时间不会被切语言时的重新发布缩短；每次展示是带不可逆失效状态的展示实例，内容在渲染时核对展示实例、当前 owner 与网络并原位翻译，不符时不呈现、结束自己的展示实例并关闭自己的 Sonner ID（覆盖先撤下、后插入；Sonner 随后报告的移除不会被当成用户关闭）；别的身份为当前时结束展示，回到该身份用新实例再显示，迟到结果记在原 owner 名下；宿主卸载时结束全部展示。购买窗口无法加载的提示由发起一侧发布，同样在内容层核对身份，但不恢复。只在内存里：刷新后不恢复，也没有服务商之后退款或拒付的监听。真实 Sonner 的时序测试见 `privy-fiat-funding-host.test.tsx`、`privy-fiat-funding-host-gate.test.tsx` |
 | 邮箱钱包自动充值 | 原控制器与标准 Sonner 进度/结局，稳定 ID 包含 env/owner | 原自动充值重试、恢复及路由守卫不变；并未迁入 OrderQueue |
 | 金库、质押恢复 | `FundsActionRecoveryHost` 的待核验/损坏记录提醒使用 Sonner custom；`Review` 仍打开专用核验面板 | 资金 marker、账本/新状态核验、锁与两步清理确认保留；切身份只撤显示，不清 marker。合法 marker 按当前身份筛选；无法归属的损坏存储用通用锁定提醒，不猜 owner。提醒不能用普通关闭代替核验 |
 | 金库、质押执行；API 钱包 | 保留核验步骤及原结果通知；API 钱包保留一次性密钥展示/保存面板 | 不将私钥、签名核验或需要用户决策的恢复步骤改成短 toast |
@@ -80,6 +81,8 @@ Scale 的成功只代表全部子项已受理，与 `execution.completeness` 的
 | 提现/充值等已有资金结局 | 相关调用方显式配置的 10 秒保持；状态未知/已广播失败等原有常驻策略保持，划转与发送的状态未知自 2026-09-29 起同样常驻 |
 | CCTP | forwarding 和明确失败常驻；转发已提交 10 秒；切账户/环境撤掉原身份的展示 |
 | 资金恢复提醒 | 常驻且不允许划走关闭；通过 Review 与既有核验/清理路径处理 |
+
+「只在最前台启用有限计时」是把同一个 Sonner 通知的时长在有限值与 Infinity 之间切换来实现的（订单通知与银行卡购买的通知都这样做）。Sonner 2.0.7 在这种切换下的暂停记账有缺陷：通知在堆叠被悬停展开或页面隐藏期间回到最前时，会把它排在后面的时间从新的时长里扣掉，鼠标一离开就消失。`patches/sonner@2.0.7.patch` 在时长变化时对齐计时基准（2026-10-02，[ADR 0034](adr/0034-privy-card-funding.md) 决策 8；同一个补丁文件里还有恢复手机划动关闭的 `onPointerCancel`）。`toaster-config.test.tsx` 用真实 Sonner 钉住这个时序，`privy-fiat-funding.test.ts` 钉住补丁仍在安装的两个构建里。升级 Sonner 时先在不带这段补丁的新版本上跑这个用例，通过了才去掉补丁。
 
 状态图标（2026-10-01，[ADR 0029](adr/0029-brand-status-motion.md)）：订单通知按状态显示品牌状态符号——提交中 `submitting`（中性色）、确认中 `pending`、未确认 `unknown`、`partial` 状态中只有已核实的部分成交（交易所回包的 `execution.completeness: partial`，或 `countMode: filled` 且没有错误）用半实心的 `partial`，只是部分受理、或带拒绝、撤销、未知子项的批次用 `warning`；成功与已受理 `success`（受理与成交靠文案区分）、取消 `cancelled`、失败 `error`；标准通知的 success、info、warning、error、loading 分别是 `success`、`info`、`warning`、`error`、`pending`。资金、Earn 的「状态未知」通知和待核验的资金操作提醒由调用方传 `unknown` 图标，未知结果从不显示成失败。符号用 `--text-*` 语义令牌着色，标准通知里与该类型的文字同色；进行中的循环从不用成功色。符号是装饰性的、不单独播报；状态切换时符号重新挂载，一次性动画只在状态变化时播放，切换语言不重播；系统开启减少动态效果时直接显示终态。
 

@@ -5,6 +5,8 @@ import { dirname, join } from "node:path";
 import test from "node:test";
 import {
 	collectTradeStartupFiles,
+	describeLocalEnvFiles,
+	findLocalEnvFiles,
 	getBudgetIncreaseViolation,
 	TRADE_DESKTOP_RUNTIME_MODULE_IDS,
 } from "./check-client-bundle-budget.mjs";
@@ -386,6 +388,38 @@ test("applies budget tolerance", () => {
 			allowedIncreaseBytes: 10_000,
 		}),
 		"trade startup gzip increased by 10001 bytes from baseline 100000; allowed increase is 10000 bytes",
+	);
+});
+
+test("names developer-only env files that make a local build measure differently from CI", (context) => {
+	const appDirectory = mkdtempSync(join(tmpdir(), "sairn-budget-env-"));
+	context.after(() => rmSync(appDirectory, { recursive: true, force: true }));
+	for (const file of [".env", ".env.example", ".env.production", ".env.production.local", ".env.local", "notes.local"]) {
+		writeFileSync(join(appDirectory, file), "");
+	}
+
+	assert.deepEqual(findLocalEnvFiles(appDirectory), [".env.local", ".env.production.local"]);
+	assert.deepEqual(findLocalEnvFiles(join(appDirectory, "missing")), []);
+});
+
+test("notes a local env file next to the application whose built assets are measured", (context) => {
+	const appDirectory = mkdtempSync(join(tmpdir(), "sairn-budget-app-"));
+	context.after(() => rmSync(appDirectory, { recursive: true, force: true }));
+	const assetsDirectory = join(appDirectory, ".output", "public", "assets");
+	mkdirSync(assetsDirectory, { recursive: true });
+
+	assert.equal(describeLocalEnvFiles(assetsDirectory), null);
+
+	writeFileSync(join(appDirectory, ".env.local"), "");
+	assert.match(describeLocalEnvFiles(assetsDirectory) ?? "", /^Note: \.env\.local sits next to this build\. CI has no local env file/);
+});
+
+test("prints the local env note with every budget report", () => {
+	const source = readFileSync(new URL("./check-client-bundle-budget.mjs", import.meta.url), "utf8");
+	const report = source.slice(source.indexOf("export async function checkClientBundleBudget"));
+	assert.match(
+		report,
+		/const localEnvNote = describeLocalEnvFiles\(assetsDirectory\);\n\tif \(localEnvNote\) console\.log\(localEnvNote\);/,
 	);
 });
 

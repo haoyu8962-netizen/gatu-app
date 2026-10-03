@@ -85,6 +85,8 @@ jobs:
           src/lib/tests/wallet-modal.test.tsx
           src/lib/tests/mobile-agent-sync-modal.test.tsx
           src/lib/tests/modal-surface-contract.test.ts
+          src/lib/tests/dialog-notice-radius-contract.test.ts
+          src/lib/tests/i18n-reactivity-contract.test.ts
           src/lib/tests/trades.test.ts
           src/lib/tests/orderbook-panel-safety.test.tsx
           src/lib/tests/mobile-bottom-nav.test.tsx
@@ -251,12 +253,16 @@ jobs:
           src/lib/tests/deposit-empty-balances-entry.test.tsx
           src/lib/tests/deposit-execution-state.test.ts
           src/lib/tests/deposit-form-routing.test.tsx
+          src/lib/tests/deposit-method-chooser.test.tsx
           src/lib/tests/deposit-modal-withdrawal-routing-guard.test.tsx
           src/lib/tests/deposit-order-cta.test.tsx
           src/lib/tests/development-geo.test.ts
           src/lib/tests/embedded-deposit-auto-bridge.test.tsx
           src/lib/tests/funding-address-card.test.tsx
           src/lib/tests/geo-server-functions.test.ts
+          src/lib/tests/privy-fiat-funding.test.ts
+          src/lib/tests/privy-fiat-funding-host.test.tsx
+          src/lib/tests/privy-fiat-funding-host-gate.test.tsx
           src/lib/tests/referral-action-geo.test.ts
           src/lib/tests/trading-onboarding-gate.test.tsx
           src/lib/tests/usdc-routing.test.ts
@@ -264,8 +270,10 @@ jobs:
           src/lib/tests/use-deposit-routing-guard.test.tsx
           src/lib/tests/use-email-embedded-wallet.test.tsx
           src/lib/tests/use-geo-restriction.test.tsx
+          src/lib/tests/use-privy-fiat-funding-offer.test.tsx
           src/lib/tests/use-usdc-routing.test.ts
           src/lib/tests/unit-deposit-info.test.tsx
+          src/lib/tests/wrong-network-screen.test.tsx
 
       # `pnpm test:brand` in the Website and Brand workflow also runs these, but that workflow
       # only starts when the website or a brand asset changes. Terminal changes are covered here.
@@ -298,4 +306,6 @@ jobs:
         working-directory: apps/terminal
         run: >-
           pnpm exec vitest run --maxWorkers=1
+          src/lib/tests/build-meta.test.ts
+          src/lib/tests/security-policy-docs.test.ts
           src/lib/tests/vite-manual-chunks.test.ts

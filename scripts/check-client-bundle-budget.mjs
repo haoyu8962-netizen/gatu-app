@@ -43,7 +43,15 @@ const budgets = {
 	// Raised 2026-10-02 by +83,687 for the Privy React Auth 3.46.0 upgrade (docs/terminal-performance-baseline.md):
 	// fixed-metadata Node 22.15.0 builds, pairing off, 3,275,424 after minus 3,191,737 for 682430ba before (both
 	// sides read a developer .env.local; CI-equivalent builds read 3,274,893 minus 3,190,861 = +84,032).
-	totalGzipBaselineBytes: 3_269_608,
+	// Raised 2026-10-02 by +11,563 for card funding (ADR 0034): the deposit dialog chunk with the method chooser,
+	// the purchase launch and the identity-checked notice card (+4,800), the six catalogs (+2,409), the lazy host
+	// (1,705), the funding exports kept in Privy's main chunk (+1,522), the store chunk (750 against the 491-byte
+	// chunk it replaces), the router and icon vendor chunks (+870) and renamed imports. CI-equivalent builds of
+	// the commits (no .env.local): 3,286,456 for e257426d minus 3,274,893 for the upgrade commit c0e550c7. This
+	// replaces the +15,152 measured for 566713d3, when the host imported only useFiatOnramp and Rollup split
+	// Privy's funding module into a chunk of its own that 104 other chunks then had to import
+	// (docs/terminal-performance-baseline.md).
+	totalGzipBaselineBytes: 3_281_171,
 	totalGzipAllowedIncreaseBytes: 10_000,
 	tradeStartup: {
 		requiredRouteIds: ["__root__", "/trade/$symbol"],
@@ -102,6 +110,29 @@ export function collectTradeStartupFiles({
 		assetFiles,
 		entryFiles: [...routePreloadFiles, ...runtimeEntryFiles, ...semanticEntryFiles],
 	});
+}
+
+const LOCAL_ENV_FILE_PATTERN = /^\.env(?:\.[^.]+)?\.local$/;
+
+/**
+ * Developer-only Vite env files next to the built application. Vite inlines their `VITE_*` values, so a build that
+ * read one measures a few hundred bytes more than CI, which has none (docs/terminal-performance-baseline.md).
+ */
+export function findLocalEnvFiles(appDirectory) {
+	try {
+		return readdirSync(appDirectory)
+			.filter((file) => LOCAL_ENV_FILE_PATTERN.test(file))
+			.sort();
+	} catch {
+		return [];
+	}
+}
+
+/** The note printed after the budget lines when a local env file sits next to the measured build. */
+export function describeLocalEnvFiles(assetsDirectory) {
+	const files = findLocalEnvFiles(resolve(assetsDirectory, "../../.."));
+	if (files.length === 0) return null;
+	return `Note: ${files.join(", ")} sits next to this build. CI has no local env file, so a build that read it measures a few hundred bytes above CI; take re-baseline measurements in a checkout without it.`;
 }
 
 export function getBudgetIncreaseViolation({ label, actualBytes, baselineBytes, allowedIncreaseBytes }) {
@@ -245,6 +276,7 @@ export async function analyzeClientBundle(assetsDirectoryArgument) {
 
 export async function checkClientBundleBudget(assetsDirectoryArgument) {
 	const {
+		assetsDirectory,
 		largestChunk,
 		totalGzip,
 		violations,
@@ -320,6 +352,8 @@ export async function checkClientBundleBudget(assetsDirectoryArgument) {
 		const asset = surface.assets.length === 1 ? surface.assets[0] : undefined;
 		if (asset) console.log(`- ${asset.file}: ${asset.gzip} gzip bytes`);
 	}
+	const localEnvNote = describeLocalEnvFiles(assetsDirectory);
+	if (localEnvNote) console.log(localEnvNote);
 
 	if (violations.length > 0) {
 		console.error("Client bundle budget exceeded:");

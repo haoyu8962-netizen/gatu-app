@@ -50,3 +50,4 @@
 - `@privy-io/wagmi` 4.0.13 与 4.0.17 的发布文件除 `package.json` 的版本与 peer 版本外逐字节相同，`setActiveWalletForWagmi` / `reconnect` 行为没有变化。
 - 4.0.17 的 peer 精确要求 viem 2.56.0，终端仍为 2.42.1（与升级前 4.0.13 要求 2.52.0 时同样不满足）；Privy 自带的 viem 随之从 2.52.0 变为 2.56.0。本次按规划不去重。
 - 验证见 [升级与入金规划](../privy-upgrade-and-funding-plan.md) 的阶段一与对应任务记录；真实钱包验收仍未执行。
+- 补充（2026-10-02，随银行卡入金）：同一个补丁文件另有一段与主题无关的改动，给 `fund()` 内部的结果 Promise 接上拒绝处理（[ADR 0034](0034-privy-card-funding.md) 决策 7）。以后按本 ADR 去掉 `useWallets` 那一段时保留另一段，不要删掉整个文件。

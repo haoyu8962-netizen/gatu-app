@@ -21,6 +21,7 @@ import { type BuildMeta, createBuildMeta } from './src/config/build-meta'
 import { resolveCctpDepositFeatureFlags } from './src/config/cctp-deposit-flags'
 import { createHashedChartLibraryEntryPath } from './src/config/chart-library'
 import { resolveMobilePairingFeatureFlags } from './src/config/mobile-pairing-flags'
+import { resolvePrivyFiatFundingFeatureFlags } from './src/config/privy-fiat-funding-flags'
 import { chartingLibrarySecurityHeaders, referralJoinHeaders, securityHeaders } from './src/config/security-headers'
 import { hashCatalogMessageIds } from './src/lib/i18n-catalog'
 
@@ -154,6 +155,7 @@ export function createBuildMetaForMode(mode: string): BuildMeta {
     builtAt: buildTime,
     pairing: resolveMobilePairingFeatureFlags(env),
     cctpDeposits: resolveCctpDepositFeatureFlags(env),
+    privyFiatFunding: resolvePrivyFiatFundingFeatureFlags(env),
     chartLibraryHash,
   })
 }

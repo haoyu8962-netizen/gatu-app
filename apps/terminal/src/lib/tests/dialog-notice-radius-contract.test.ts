@@ -61,6 +61,8 @@ const PENDING_EXCEPTIONS = [
 
 const DIALOG_FILE_NAME = /modal|dialog|drawer|sheet/;
 const DIALOG_ELEMENT = /<(?:AdaptiveModal|Modal|ModalPopup|Drawer|DrawerContent)\b/;
+// Content components that only render inside a dialog but that neither their name nor a dialog primitive reveals.
+const DIALOG_CONTENT_SOURCES = ["components/trade/tradebox/deposit/deposit-method-chooser.tsx"];
 const STRING_LITERAL = /"([^"\n]*)"|'([^'\n]*)'|`([^`]*)`/g;
 
 function listDialogSources(dir: string): string[] {
@@ -108,7 +110,7 @@ function classLists(source: string): string[] {
 	return [...merged, ...standalone];
 }
 
-const DIALOG_SOURCES = listDialogSources(resolve(TERMINAL_SRC, "components")).sort();
+const DIALOG_SOURCES = [...listDialogSources(resolve(TERMINAL_SRC, "components")), ...DIALOG_CONTENT_SOURCES].sort();
 
 function radiusClasses(value: string): string[] {
 	return value.split(/\s+/).filter((token) => {
@@ -131,6 +133,12 @@ describe("dialog notice radius contract", () => {
 	it("rounds every notice inside a dialog to 8px unless it is a listed pending exception", () => {
 		expect(DIALOG_SOURCES.length).toBeGreaterThan(20);
 		expect(DIALOG_SOURCES).toContain("components/funds-action/funds-action-recovery-host.tsx");
+		for (const file of DIALOG_CONTENT_SOURCES) {
+			expect(
+				NOTICES.some((notice) => notice.file === file),
+				`${file} no longer renders a notice`,
+			).toBe(true);
+		}
 		for (const notice of NOTICES.filter((entry) => !isPendingException(entry))) {
 			expect(radiusClasses(notice.value), `${notice.file}: ${notice.value}`).toEqual(["rounded-16"]);
 		}

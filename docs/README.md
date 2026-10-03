@@ -23,7 +23,7 @@
 | 产品稳定约束与运行边界 | [AGENTS](../AGENTS.md)、[Runtime guardrails](runtime-guardrails.md) |
 | 钱包身份与首次交易 | [首次交易](trading-onboarding.md)、[邮箱签名](email-trading-signing.md)、[签名机制](hyperliquid-signing.md)、[签名 ADR](adr/0002-exact-owner-trading-signers.md) |
 | 钱包调试与桌面配对 | [初始化调试](wallet-initialization-debugging.md)、[Privy 主题与钱包稳定性](adr/0026-privy-follows-theme-after-upgrade.md)、[手机访问与扫码设计](mobile-phone-access-scanner-prd.md)、[设备验证清单](mobile-phone-access-device-validation.md) |
-| 充值、提现与资金 | [CCTP 充值](cctp-deposits.md)、[Privy 升级与法币入金规划](privy-upgrade-and-funding-plan.md)（未实施）、[提现路由](withdrawals.md)、[账户概要](account-overview.md)、[Portfolio 统计](portfolio-statistics.md) |
+| 充值、提现与资金 | [CCTP 充值](cctp-deposits.md)、[Privy 升级与法币入金规划](privy-upgrade-and-funding-plan.md)、[银行卡入金 ADR 0034](adr/0034-privy-card-funding.md)（默认关闭；[上线验收清单](privy-card-funding-launch-checklist.md)、[法律文本待审草案](privy-card-funding-legal-draft.md)）、[提现路由](withdrawals.md)、[账户概要](account-overview.md)、[Portfolio 统计](portfolio-statistics.md) |
 | Earn 借贷储备池 | [Earn](earn.md)、[ADR 0021](adr/0021-earn-borrow-lend-page.md)：数据来源、Max 与清算价公式、按钮门控、提交核验、与官方终端的偏差；未做真实钱包验收 |
 | 账户共享模型 | [账户 ADR](adr/0001-account-overview-cross-shell-model.md)；账户概要与 Portfolio 的就绪条件不同 |
 | 市场身份、路由与展示价格 | [单交易路由迁移](architecture/trade-single-route-migration.md)、[价格来源审查](price-source-audit.md)、[资产资料来源](spot-asset-information.md) |

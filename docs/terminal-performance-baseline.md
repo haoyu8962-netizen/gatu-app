@@ -317,7 +317,121 @@ both sides were measured again in isolated worktrees without it, with the same b
 
 The changes agree with the table above within the build-to-build variation of a few hundred bytes (345 more in total,
 198 more in static startup), so the baselines keep the smaller raises measured there. Take re-baseline measurements in
-a checkout without local env files.
+a checkout without local env files; `scripts/check-client-bundle-budget.mjs` now prints a note when one sits next to the
+build it measures.
+
+## Card funding total-client re-baseline (2026-10-02)
+
+Card funding ([ADR 0034](adr/0034-privy-card-funding.md)) first mounted its onramp host statically in `AppToaster`, which
+put the desktop runtime increment at 202,247 bytes (over the 201,988-byte limit) and the total client 14,438 bytes over
+its baseline. The host now loads lazily on the first purchase request (`PrivyFiatFundingHostGate`), which removed the
+runtime overage. A later build of the method-chooser version left the desktop increment only 196 bytes under its limit;
+the gate then stopped importing the notification copy for its single "could not open" message (the copy stays in the
+lazy host chunk), which returned about 420 bytes to both runtime increments.
+
+The remaining total growth was re-baselined, measured with the same fixed build identity, Node 22.15.0, pnpm 10.21.0 and
+pairing off as the section above, but in isolated worktrees without `.env.local` so both sides match CI: before = the
+upgrade commit `c0e550c7`, after = the card funding working tree with the method chooser and the review fixes.
+
+| Metric | Before (`c0e550c7`) | After | Change |
+| --- | ---: | ---: | ---: |
+| All client JS + CSS | 3,274,893 | 3,286,669 | +11,776 |
+| Static trade startup | 1,624,100 (101 assets) | 1,626,692 (102 assets) | +2,592 |
+| Mobile runtime increment | 117,422 | 117,794 | +372 |
+| Desktop runtime increment | 200,714 | 201,375 | +661 |
+
+Per-asset gzip comparison: using `useFiatOnramp` makes Rollup split Privy's funding module out of its main chunk (76,156
+new against 74,776 removed, +1,380 net; both chunks sit in the static trade startup closure); the six locale catalogs grow
+by 2,024; the deposit dialog grows by 1,922 for the method chooser; the lazy host chunk is 1,346 and the domain module
+chunk 676; the store joins the small shared chunk that held the deposit explorer link (601 against 492, which also renames
+that chunk); the toaster gains the gate (+236); the router vendor chunk grows by 505 because Vite's preload dependency
+lists name the new chunks; the shared icon chunk grows by 402; and 239 other chunks change by less than 60 bytes each
+(+3,001 in total, mostly renamed imports). The desktop runtime +661 is the store chunk (+109), the gate (+236) and about
+30 bytes in each of eleven desktop chunks that import the renamed shared chunk; the static startup +2,592 is the
+funding-module split, the preload lists, the icon chunk and the stylesheet.
+
+Only the total-client baseline moved: 3,269,608 + 11,776 = 3,281,384. This replaces the +9,725 raise of the first
+version (an entry card inside the deposit form), which had been measured with `.env.local` on both sides. The desktop
+runtime increment then sat 613 bytes under its 10,000-byte allowance (201,375 against 201,988). Builds of the same
+source differ by a few hundred bytes (renamed chunk imports), and a build that reads the developer `.env.local` is
+larger: 3,287,147 total and 1,627,062 static startup for the same after tree, while its runtime increments differ by
+1 to 2 bytes.
+
+The purchase-host warm-up added later the same day keeps the dynamic import in the gate and only adds a flag to the
+shared store, because a separate loader module moved the import's chunk list into the small shared chunk and cost about
+420 bytes in both runtime increments. A CI-equivalent build with the warm-up reads 3,287,254 total, 1,626,872 static
+startup, 117,887 mobile and 201,548 desktop: +93 mobile and +173 desktop against the table, with no baseline change.
+After the review fixes (the gate compares the attempt's owner and network with the current identity before it reports a
+load failure) the same kind of build reads 3,286,913 total, 1,626,723 static startup, 117,968 mobile and 201,590
+desktop. The desktop runtime increment then sat 398 bytes under its allowance.
+
+The second and third review rounds (2026-10-02) changed where this code lives. The standard Sonner notices became an
+identity-checked notice card; the host's dynamic import, with its "could not open" notice, moved from the gate to the
+side that starts the purchase (the deposit dialog's chunk), so the gate only renders the loaded host and the shared
+store no longer carries a warm-up flag; and the store now keeps the purchase results and the claim that an attempt was
+started, so a host that mounts again neither repeats the purchase nor loses a result. The earlier objection to a loader
+module does not apply to this arrangement: that module was shared by the gate, which pulled the import's chunk list
+into runtime startup, while the import now has no importer in runtime startup. CI-equivalent builds from isolated
+checkouts of the three commits:
+
+| Metric | Round one (`eec28ce2`) | Round two (`9f41ae9d`) | Round three (`566713d3`) |
+| --- | ---: | ---: | ---: |
+| All client JS + CSS | 3,286,913 | 3,289,266 | 3,290,045 |
+| Static trade startup | 1,626,723 | 1,626,847 | 1,626,771 |
+| Mobile runtime increment | 117,968 | 117,667 | 117,769 |
+| Desktop runtime increment | 201,590 | 201,301 | 201,405 |
+
+Per-asset gzip comparison, round one to round two: the deposit dialog chunk grows by 2,332 (the notice card, its
+publisher and presentation, the launch function and the card funding domain module); that domain module's own 669-byte
+chunk disappears; the toaster chunk shrinks by 257 because the gate lost its import, identity check and message; the six
+catalogs grow by 225 for the sandbox notice; the lazy host chunk grows by 165; and the router vendor chunk grows for the
+preload lists. Round two to round three: the deposit dialog chunk grows by 541 (the destination hook, the front-toast
+hook and the timing in the notice publisher), the store chunk by 105 (results and the started claim, in both runtime
+increments), and 251 other chunks change by less than 60 bytes each (+133 in total).
+
+Builds of the working tree just before each of the last two commits read 3,289,035 and 3,289,465, a few hundred bytes
+under the builds of the commits themselves, although the sources are identical; the per-asset difference is spread over
+the chunks that import a renamed chunk. Treat totals as reproducible to within about 600 bytes, and take re-baseline
+measurements from checkouts of commits.
+
+After round three the total-client baseline followed the feature's measured size against the upgrade commit:
+3,290,045 - 3,274,893 = 15,152, so it was 3,269,608 + 15,152 = 3,284,760, replacing the 3,281,384 above, and the
+desktop runtime increment sat 583 bytes under its allowance (201,405 against 201,988).
+
+The fourth review round (commit `e257426d`) made the host read Privy's window state (`useModalStatus`) next to
+`useFiatOnramp`, so that the purchase entry is released when the window closes. That changed the chunk graph: the lazy
+host now imports Privy's main chunk directly, and Rollup no longer splits Privy's funding module into a chunk of its
+own. CI-equivalent builds from isolated checkouts (the upgrade commit was built again and read the same as before):
+
+| Metric | Upgrade (`c0e550c7`) | Round three (`566713d3`) | Round four (`e257426d`) |
+| --- | ---: | ---: | ---: |
+| All client JS + CSS | 3,274,893 | 3,290,045 | 3,286,456 |
+| Static trade startup | 1,624,100 (101 assets) | 1,626,771 (102 assets) | 1,626,601 (101 assets) |
+| Mobile runtime increment | 117,422 | 117,769 | 117,722 |
+| Desktop runtime increment | 200,714 | 201,405 | 201,037 |
+
+Round three to round four, per asset: Privy's main chunk grows by 76,285 and the 76,156-byte funding chunk disappears
+(+129 net); the six catalogs grow by 160 and the lazy host chunk by 89 for the new notices and the window check; 254
+other chunks shrink by 3,967 in total, of which the 104 that imported the separate funding chunk no longer do. The
+whole feature against the upgrade, per asset (measured against `26a999aa`, the upgrade branch tip with the same client
+source, which reads 3,275,004; its 111-byte difference from `c0e550c7` is spread over 229 chunks, none by 60 bytes): the
+deposit dialog chunk +4,800, the six catalogs +2,409, the lazy host chunk 1,705, Privy's main chunk +1,522 (the funding
+exports the host uses are no longer dropped), the store chunk 750 against the 491-byte shared chunk it replaces, the
+router vendor chunk +468, the icon vendor chunk +402, and 232 other chunks -113 in total.
+
+The total-client baseline therefore becomes 3,269,608 + (3,286,456 - 3,274,893 = 11,563) = 3,281,171, replacing
+3,284,760. The other baselines are unchanged. The desktop runtime increment now sits 951 bytes under its allowance
+(201,037 against 201,988), so the next first-render addition on desktop still needs its own reduction or review.
+
+The fifth review round (commit `108dfe7f`) added one line to the Sonner patch, one statement to the Privy patch and a
+small function to the card funding store. Its CI-equivalent build reads 3,286,622 in total (+166), 1,626,753 for the
+static trade startup (+152), 117,766 for the mobile and 201,067 for the desktop runtime increment (+44 and +30); 261
+chunks change, none by 60 bytes. The baselines stay where they are: the total sits 5,451 bytes above its baseline
+against an allowance of 10,000, and the desktop runtime increment 921 bytes under its allowance.
+
+The sixth round (commit `4af147fd`) changed one classification function in the deposit dialog chunk. Its build reads
+3,286,638 in total (+16), 1,626,663 static trade startup, 117,769 mobile and 201,070 desktop, with the desktop runtime
+increment 918 bytes under its allowance. Later commits on the branch change tests and documents only.
 
 ## Functional acceptance gates
 

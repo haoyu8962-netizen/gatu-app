@@ -101,6 +101,29 @@ Hyperliquid mainnet account; Circle's published 1,000-USDC testnet policy may
 also apply beyond a single transfer, which the client cannot independently
 enforce.
 
+## Card Funding Before A Deposit
+
+When the per-network card funding flag is on and the session has an exact owner
+([ADR 0034](adr/0034-privy-card-funding.md)), the deposit dialog opens on a choice
+between two separate entries, as the official terminal's does: "Transfer USDC"
+leads to the paths below (with a back control to the choice), and "Buy USDC with a
+card" buys USDC by card or bank transfer through Privy's fiat onramp. With the flag
+off, or without an exact owner, the dialog opens directly on the transfer form. The purchase only delivers native USDC on Arbitrum One to
+the exact Hyperliquid owner (the embedded EOA of an email session, or the
+connected external wallet); it is not a deposit. The user then deposits that
+USDC through the paths above, so the sponsored or external-wallet gates, the
+routing guard and the geo check still decide whether it can reach HyperCore.
+An external wallet needs Arbitrum ETH for that second step. The entry closes
+the deposit dialog before Privy's window opens, and a provider's `confirmed` or
+`submitted` result is reported as a purchase, never as an arrival or a deposit.
+On Testnet the purchase runs the provider sandbox, which charges nothing and
+delivers nothing, and its notice says so instead of pointing to a deposit.
+While the purchase entry is on screen and can start, the dialog loads the
+page-level host ahead of the click; if the host cannot be loaded when the
+purchase is started, the attempt ends with a fixed notice. What has to be
+verified before the flag is turned on is listed in the
+[launch checklist](privy-card-funding-launch-checklist.md).
+
 ## Sponsored Wallet Boundary
 
 Circle does not operate the `CctpExtensionV2` source-chain relayer. In this

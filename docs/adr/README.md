@@ -36,5 +36,6 @@ ADR 记录采用某个方案的理由、备选方案和后果，完整实现契�
 | [0030](0030-pnl-share-card-brand-rendering.md) | 已接受并实施（2026-10-01，回溯记录）；未推送、未合入、未发布，真机分享未验证 | 盈亏分享卡画布用 `Path2D` 按生成几何绘制 24 px 横版组合，预览用 `BrandLogo`；卡面两种主题都是深色，Logo 固定深底配色（`--position-share-logo-*`）；文件名前缀取 `BRAND_FILE_STEM`，读屏名称取 `BRAND_NAME`；计划 4b 的完整重写不做 |
 | [0031](0031-domain-move-to-sairn-ai.md) | 代码部分已接受并实施（2026-10-01，回溯记录）；上线顺序与退役部分被 0032 取代 | 规范域名为 `domains.primary`（sairn.ai），`domains.legacy`（gatu.ai）过渡期继续按主机识别网络与推荐链接；转发主机名请求头新旧双写、Lambda 先读新头；上线按 `docs/brand-assets.md` 八步、DNS 最后切；不迁移本地数据，迁移闸门、kill-switch 与旧域名跳转未实现 |
 | [0032](0032-gatu-offline-cutover-to-sairn.md) | 已接受，执行中（2026-10-02 起）：证书已签发、源站请求策略已加新头，发布与切换未做 | gatu.ai 直接下线、不并存不 301；先断后接，每个分发一次 `aliases` 同时换别名与 4 名 sairn 证书；p24 双写双读转发头与路由标记作回滚保险，p25 清理；换新 Privy 应用（邮箱钱包地址改变）；gatu.ai 不永久续费、邮件推迟；不做告别 SW；另登记推荐码；主网赞助充值保持开启、切换当天带资金验证 |
+| [0034](0034-privy-card-funding.md) | 已接受并实施（2026-10-02），应用的两个构建开关默认关闭，未发布；Privy 控制台里线上应用的卡入金已开启（2026-10-02 只读核对），沙盒与真实购买未执行、法律文本待审阅 | 充值弹层用 Privy `useFiatOnramp` 买 Arbitrum USDC，收款地址只能是精确的 Hyperliquid owner（邮箱嵌入式或外部钱包，须在 Privy 已连接列表中），不用会退回第一个嵌入式钱包的 `useDepositFunds`；主网/测试网开关分开且主网发布需 `--allow-mainnet-card-funding`；先关弹层再由页面级宿主打开 Privy 窗口；确认/提交都不声称到账；CSP 静态放行 Stripe 公布的来源，`permissions-policy` 不变 |
 
 新 ADR 至少包含：状态与日期、上下文、目标/约束、决策、备选方案及利弊、后果与边界、代码/测试/Reference 证据。验证命令与本次执行结果分别标明。文档维护要求见[文档体系](../documentation-system.md)。

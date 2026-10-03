@@ -789,6 +789,10 @@ msgstr "किसी खाते को केवल तभी बाहर र
 msgid "An approved API wallet can sign delegated L1 actions such as placing and cancelling orders and adjusting leverage or margin mode. Approval is not scoped per action. Master-only actions, including external withdrawals, still require the master wallet."
 msgstr "स्वीकृत API वॉलेट ऑर्डर लगाने और रद्द करने तथा लेवरेज या मार्जिन मोड समायोजित करने जैसी डेलीगेट की गई L1 कार्रवाइयों पर हस्ताक्षर कर सकता है। स्वीकृति हर कार्रवाई के लिए अलग-अलग सीमित नहीं है। बाहरी निकासी सहित केवल मास्टर वाली कार्रवाइयों के लिए अब भी मास्टर वॉलेट आवश्यक है।"
 
+#: src/lib/trade/privy-fiat-funding-feedback.ts
+msgid "An earlier card purchase is still open on this page. Reload the page, then try again."
+msgstr "इस पेज पर पहले की एक कार्ड खरीदारी अभी भी खुली है। पेज रीलोड करें, फिर दोबारा कोशिश करें।"
+
 #: src/hooks/trade/use-asset-leverage.ts
 #: src/lib/trade/position-submit-feedback.ts
 msgid "Another action for this market is already in progress."
@@ -1131,6 +1135,8 @@ msgstr "औसत {price}"
 #: src/components/trade/tradebox/bridge/amount-entry-screen.tsx
 #: src/components/trade/tradebox/bridge/bridge-error-screen.tsx
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
+#: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
 #: src/components/vaults/vault-action-modal.tsx
 msgid "Back"
 msgstr "वापस"
@@ -1306,6 +1312,10 @@ msgstr "खरीदें / लॉन्ग"
 msgid "Buy Long"
 msgstr "लॉन्ग खरीदें"
 
+#: src/components/trade/tradebox/deposit/deposit-method-chooser.tsx
+msgid "Buy USDC with a card"
+msgstr "कार्ड से USDC खरीदें"
+
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "By default, TP/SL applies to the whole position and submits a market order when mark price reaches the trigger. Configure an amount to keep a fixed size, or select limit execution to submit at your limit price."
 msgstr "डिफ़ॉल्ट रूप से, TP/SL पूरी पोज़िशन पर लागू होता है और मार्क मूल्य ट्रिगर तक पहुँचने पर मार्केट ऑर्डर सबमिट करता है। निश्चित आकार रखने के लिए राशि कॉन्फ़िगर करें, या अपनी लिमिट प्राइस पर सबमिट करने के लिए लिमिट निष्पादन चुनें।"
@@ -1453,6 +1463,31 @@ msgstr "खुली पोज़िशन रहते हुए आइसो�
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Cannot switch to Isolated mode with an open position. Close your position first."
 msgstr "खुली पोज़िशन के साथ आइसोलेटेड मोड पर स्विच नहीं कर सकते। पहले अपनी पोज़िशन बंद करें।"
+
+#: src/components/trade/tradebox/deposit/deposit-method-chooser.tsx
+msgid "Card or bank transfer through a third-party payment provider. USDC arrives in your wallet on Arbitrum."
+msgstr "किसी तृतीय-पक्ष भुगतान प्रदाता के ज़रिए कार्ड या बैंक ट्रांसफ़र। USDC Arbitrum पर आपके वॉलेट में आते हैं।"
+
+#: src/lib/tests/privy-fiat-funding-host.test.tsx
+#: src/lib/trade/privy-fiat-funding-feedback.ts
+msgid "Card purchase confirmed"
+msgstr "कार्ड खरीदारी की पुष्टि हुई"
+
+#: src/lib/trade/privy-fiat-funding-feedback.ts
+msgid "Card purchase could not open. Check your connection and try again."
+msgstr "कार्ड खरीदारी नहीं खुल सकी। अपना कनेक्शन जांचें और फिर से कोशिश करें।"
+
+#: src/lib/trade/privy-fiat-funding-feedback.ts
+msgid "Card purchase did not complete"
+msgstr "कार्ड खरीदारी पूरी नहीं हुई"
+
+#: src/lib/trade/privy-fiat-funding-feedback.ts
+msgid "Card purchase status unknown"
+msgstr "कार्ड खरीदारी की स्थिति अज्ञात"
+
+#: src/lib/trade/privy-fiat-funding-feedback.ts
+msgid "Card purchase submitted"
+msgstr "कार्ड खरीदारी सबमिट की गई"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
@@ -2567,6 +2602,7 @@ msgstr "डिप्लॉयर"
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/amount-input.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
+#: src/components/trade/tradebox/deposit/deposit-method-chooser.tsx
 #: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
 #: src/components/vaults/vault-detail-view.tsx
 #: src/components/vaults/vault-detail-view.tsx
@@ -2600,6 +2636,10 @@ msgstr "राशि"
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Deposit failed"
 msgstr "डिपॉज़िट विफल"
+
+#: src/components/trade/tradebox/deposit/deposit-method-chooser.tsx
+msgid "Deposit native USDC on Arbitrum from your connected wallet."
+msgstr "अपने कनेक्ट किए गए वॉलेट से Arbitrum पर नेटिव USDC जमा करें।"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Deposit status unknown"
@@ -2659,6 +2699,11 @@ msgstr "जमा किया गया"
 #: src/components/vaults/vaults-list.tsx
 msgid "Deposited and Leading filters fail closed until both account snapshots are available."
 msgstr "दोनों खाता स्नैपशॉट उपलब्ध होने तक जमा और लीडिंग फ़िल्टर सुरक्षित रूप से अक्षम रहते हैं।"
+
+#: src/components/trade/tradebox/deposit/deposit-method-chooser.tsx
+#: src/lib/trade/privy-fiat-funding-feedback.ts
+msgid "Depositing it needs a little ETH on Arbitrum for network fees."
+msgstr "इसे जमा करने के लिए नेटवर्क शुल्क हेतु Arbitrum पर थोड़ा ETH चाहिए।"
 
 #: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
 msgid "Depositing USDC to Hyperliquid..."
@@ -2819,6 +2864,7 @@ msgstr "डिस्कनेक्ट करने के लिए Web Locks �
 
 #: src/components/trade/mobile/offline-banner.tsx
 #: src/components/trade/tradebox/order-toast.tsx
+#: src/components/trade/tradebox/privy-fiat-funding-notice-card.tsx
 #: src/components/ui/sonner.tsx
 msgid "Dismiss"
 msgstr "खारिज करें"
@@ -4067,6 +4113,14 @@ msgstr "पहचान epoch"
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "If you did not import this yourself, revoke phone access from the master wallet on desktop now."
 #~ msgstr ""
+
+#: src/lib/trade/privy-fiat-funding-feedback.ts
+msgid "If you paid, USDC arrives in your wallet on Arbitrum once the provider completes the purchase. Check the payment provider's email before trying again."
+msgstr "अगर आपने भुगतान किया है, तो प्रदाता के खरीदारी पूरी करते ही USDC Arbitrum पर आपके वॉलेट में आ जाएंगे। दोबारा कोशिश करने से पहले भुगतान प्रदाता का ईमेल देखें।"
+
+#: src/lib/trade/privy-fiat-funding-feedback.ts
+msgid "If you were charged, check the payment provider's email before trying again."
+msgstr "अगर आपसे शुल्क लिया गया है, तो दोबारा कोशिश करने से पहले भुगतान प्रदाता का ईमेल देखें।"
 
 #: src/components/trade/positions/position-pnl-share-modal.tsx
 msgid "Image saved"
@@ -7729,6 +7783,10 @@ msgstr "भेजें"
 msgid "Send failed"
 msgstr "भेजना विफल रहा"
 
+#: src/components/trade/tradebox/deposit/deposit-method-chooser.tsx
+msgid "Send native USDC on Arbitrum from an exchange or wallet."
+msgstr "किसी एक्सचेंज या वॉलेट से Arbitrum पर नेटिव USDC भेजें।"
+
 #: src/components/trade/positions/send-modal.tsx
 msgid "Send status unknown"
 msgstr "भेजने की स्थिति अज्ञात है"
@@ -9007,6 +9065,10 @@ msgstr "पेज हाल के फ़िल का एक स्नैपश
 msgid "The page you are looking for does not exist."
 msgstr "आप जो पृष्ठ ढूंढ रहे हैं वह मौजूद नहीं है।"
 
+#: src/lib/trade/privy-fiat-funding-feedback.ts
+msgid "The payment provider is still processing it. USDC arrives in your wallet on Arbitrum when it completes; then open Deposit."
+msgstr "भुगतान प्रदाता अभी इसे प्रोसेस कर रहा है। पूरा होने पर USDC Arbitrum पर आपके वॉलेट में आएंगे; फिर जमा करें खोलें।"
+
 #: src/lib/trade/position-submit-feedback.ts
 msgid "The position grew after you confirmed, so nothing was closed. Reopen Market Close to review the new size."
 msgstr "आपकी पुष्टि के बाद पोज़िशन बढ़ गई, इसलिए कुछ भी क्लोज़ नहीं किया गया। नया आकार देखने के लिए Market क्लोज़ फिर से खोलें।"
@@ -9587,6 +9649,10 @@ msgstr "यह वॉल्ट अब जमा स्वीकार नही�
 msgid "This Vault uses proportional position closing on withdrawal."
 msgstr "यह वॉल्ट निकासी पर अनुपातिक पोज़िशन क्लोज़िंग का उपयोग करता है।"
 
+#: src/lib/trade/privy-fiat-funding-feedback.ts
+msgid "This was a sandbox test: no card was charged and no USDC will arrive."
+msgstr "यह एक सैंडबॉक्स परीक्षण था: किसी कार्ड से शुल्क नहीं लिया गया और कोई USDC नहीं आएगा।"
+
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 msgid "This will close the current position and open an equal position in the opposite direction at market price."
 msgstr "इससे वर्तमान पोज़िशन बंद हो जाएगी और बाज़ार मूल्य पर विपरीत दिशा में उतनी ही पोज़िशन खुल जाएगी।"
@@ -9992,6 +10058,11 @@ msgstr "ट्रांसफ़र की स्थिति अज्ञात
 #: src/components/trade/positions/transfer-modal.tsx
 msgid "Transfer USDC"
 msgstr "USDC ट्रांसफ़र करें"
+
+#: src/components/trade/tradebox/deposit/deposit-method-chooser.tsx
+msgctxt "Deposit method"
+msgid "Transfer USDC"
+msgstr "USDC भेजें"
 
 #: src/components/trade/positions/transfer-modal.tsx
 #~ msgid "Transferring..."
@@ -10512,6 +10583,10 @@ msgstr "USDC जमा की Arbitrum पर पुष्टि हो गई"
 #: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
 #~ msgid "USDC deposit submitted to Hyperliquid"
 #~ msgstr "USDC जमा Hyperliquid को भेज दिया गया"
+
+#: src/lib/trade/privy-fiat-funding-feedback.ts
+msgid "USDC is on its way to your wallet on Arbitrum. Open Deposit once it arrives."
+msgstr "USDC Arbitrum पर आपके वॉलेट में आ रहे हैं। पहुंचने के बाद जमा करें खोलें।"
 
 #: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
 msgid "USDC on HyperCore"
@@ -11321,3 +11396,7 @@ msgstr "आपका लेन-देन प्रोसेस हो रहा 
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Your Vault balance could not be verified. Account values and withdrawal remain unavailable."
 msgstr "आपका वॉल्ट बैलेंस सत्यापित नहीं किया जा सका। खाता मूल्य और निकासी उपलब्ध नहीं रहेंगे।"
+
+#: src/lib/trade/privy-fiat-funding-feedback.ts
+msgid "Your wallet session changed, so the card purchase did not open. Reconnect your wallet and try again."
+msgstr "आपका वॉलेट सत्र बदल गया, इसलिए कार्ड खरीदारी नहीं खुली। अपना वॉलेट दोबारा कनेक्ट करें और फिर से कोशिश करें।"

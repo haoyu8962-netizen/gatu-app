@@ -102,7 +102,11 @@ The terminal must preserve this ordering:
    snapshot and the spot-state snapshot. Any positive perpetual account value
    or spot balance means funded. Missing or failed snapshots never mean empty.
 7. **Guide an empty account to deposit.** Open the deposit dialog only after
-   both snapshots definitively establish that the account is empty. Enabling
+   both snapshots definitively establish that the account is empty. When the
+   card funding flag is on for the network and the session has an exact
+   owner, the dialog's first screen is the choice between transferring USDC
+   and buying it with a card ([ADR 0034](adr/0034-privy-card-funding.md));
+   the conditions for opening the dialog do not change. Enabling
    a deposit first requires the shared capability decision to classify the
    authenticated owner's exact wallet path as external-wallet or sponsored
    embedded-wallet. It then requires that exact path's independent environment

@@ -789,6 +789,10 @@ msgstr "仅当账户价值低于 $100,000 且历史总交易量低于 $10,000,00
 msgid "An approved API wallet can sign delegated L1 actions such as placing and cancelling orders and adjusting leverage or margin mode. Approval is not scoped per action. Master-only actions, including external withdrawals, still require the master wallet."
 msgstr "已授权的 API 钱包可签署委托的 L1 操作，例如下单、撤单，以及调整杠杆或保证金模式。授权无法按操作细分。包括外部提款在内的仅限主钱包操作仍需由主钱包执行。"
 
+#: src/lib/trade/privy-fiat-funding-feedback.ts
+msgid "An earlier card purchase is still open on this page. Reload the page, then try again."
+msgstr "此页面上还有一笔较早的银行卡购买没有结束。请刷新页面后重试。"
+
 #: src/hooks/trade/use-asset-leverage.ts
 #: src/lib/trade/position-submit-feedback.ts
 msgid "Another action for this market is already in progress."
@@ -1131,6 +1135,8 @@ msgstr "均价 {price}"
 #: src/components/trade/tradebox/bridge/amount-entry-screen.tsx
 #: src/components/trade/tradebox/bridge/bridge-error-screen.tsx
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
+#: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
 #: src/components/vaults/vault-action-modal.tsx
 msgid "Back"
 msgstr "返回"
@@ -1306,6 +1312,10 @@ msgstr "买入 / 做多"
 msgid "Buy Long"
 msgstr "买入做多"
 
+#: src/components/trade/tradebox/deposit/deposit-method-chooser.tsx
+msgid "Buy USDC with a card"
+msgstr "用银行卡购买 USDC"
+
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "By default, TP/SL applies to the whole position and submits a market order when mark price reaches the trigger. Configure an amount to keep a fixed size, or select limit execution to submit at your limit price."
 msgstr "默认情况下，止盈止损应用于全部仓位，并在标记价格达到触发价时提交市价单。可设置固定数量，或选择限价执行并按指定限价提交。"
@@ -1453,6 +1463,31 @@ msgstr "持有仓位时无法切换到逐仓模式"
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Cannot switch to Isolated mode with an open position. Close your position first."
 msgstr "持有仓位时无法切换到逐仓模式。请先平仓。"
+
+#: src/components/trade/tradebox/deposit/deposit-method-chooser.tsx
+msgid "Card or bank transfer through a third-party payment provider. USDC arrives in your wallet on Arbitrum."
+msgstr "通过第三方支付服务商以银行卡或银行转账付款，USDC 会到达您在 Arbitrum 上的钱包。"
+
+#: src/lib/tests/privy-fiat-funding-host.test.tsx
+#: src/lib/trade/privy-fiat-funding-feedback.ts
+msgid "Card purchase confirmed"
+msgstr "银行卡购买已确认"
+
+#: src/lib/trade/privy-fiat-funding-feedback.ts
+msgid "Card purchase could not open. Check your connection and try again."
+msgstr "银行卡购买无法打开。请检查网络连接后重试。"
+
+#: src/lib/trade/privy-fiat-funding-feedback.ts
+msgid "Card purchase did not complete"
+msgstr "银行卡购买未完成"
+
+#: src/lib/trade/privy-fiat-funding-feedback.ts
+msgid "Card purchase status unknown"
+msgstr "银行卡购买状态未知"
+
+#: src/lib/trade/privy-fiat-funding-feedback.ts
+msgid "Card purchase submitted"
+msgstr "银行卡购买已提交"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
@@ -2567,6 +2602,7 @@ msgstr "部署者"
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/amount-input.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
+#: src/components/trade/tradebox/deposit/deposit-method-chooser.tsx
 #: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
 #: src/components/vaults/vault-detail-view.tsx
 #: src/components/vaults/vault-detail-view.tsx
@@ -2600,6 +2636,10 @@ msgstr "金额"
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Deposit failed"
 msgstr "存款失败"
+
+#: src/components/trade/tradebox/deposit/deposit-method-chooser.tsx
+msgid "Deposit native USDC on Arbitrum from your connected wallet."
+msgstr "从已连接的钱包存入 Arbitrum 上的原生 USDC。"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Deposit status unknown"
@@ -2659,6 +2699,11 @@ msgstr "已存入"
 #: src/components/vaults/vaults-list.tsx
 msgid "Deposited and Leading filters fail closed until both account snapshots are available."
 msgstr "在两个账户快照均可用前，“已存入”和“管理中”筛选会保持关闭。"
+
+#: src/components/trade/tradebox/deposit/deposit-method-chooser.tsx
+#: src/lib/trade/privy-fiat-funding-feedback.ts
+msgid "Depositing it needs a little ETH on Arbitrum for network fees."
+msgstr "将其存入交易账户需要钱包在 Arbitrum 上有少量 ETH 支付网络费。"
 
 #: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
 msgid "Depositing USDC to Hyperliquid..."
@@ -2819,6 +2864,7 @@ msgstr "断开连接需要浏览器支持 Web Locks。请升级浏览器后重�
 
 #: src/components/trade/mobile/offline-banner.tsx
 #: src/components/trade/tradebox/order-toast.tsx
+#: src/components/trade/tradebox/privy-fiat-funding-notice-card.tsx
 #: src/components/ui/sonner.tsx
 msgid "Dismiss"
 msgstr "关闭"
@@ -4067,6 +4113,14 @@ msgstr "身份版本"
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "If you did not import this yourself, revoke phone access from the master wallet on desktop now."
 #~ msgstr "如果这不是你本人导入的，请立即在电脑端用主钱包撤销手机访问权限。"
+
+#: src/lib/trade/privy-fiat-funding-feedback.ts
+msgid "If you paid, USDC arrives in your wallet on Arbitrum once the provider completes the purchase. Check the payment provider's email before trying again."
+msgstr "如已付款，服务商完成购买后 USDC 会到达您在 Arbitrum 上的钱包。重试前请先查看支付服务商发来的邮件。"
+
+#: src/lib/trade/privy-fiat-funding-feedback.ts
+msgid "If you were charged, check the payment provider's email before trying again."
+msgstr "如已扣款，请先查看支付服务商发来的邮件，再重试。"
 
 #: src/components/trade/positions/position-pnl-share-modal.tsx
 msgid "Image saved"
@@ -7729,6 +7783,10 @@ msgstr "发送"
 msgid "Send failed"
 msgstr "发送失败"
 
+#: src/components/trade/tradebox/deposit/deposit-method-chooser.tsx
+msgid "Send native USDC on Arbitrum from an exchange or wallet."
+msgstr "从交易所或钱包转入 Arbitrum 上的原生 USDC。"
+
 #: src/components/trade/positions/send-modal.tsx
 msgid "Send status unknown"
 msgstr "发送状态未知"
@@ -9007,6 +9065,10 @@ msgstr "本页面加载一份近期成交快照。可导出 CSV 以请求范围�
 msgid "The page you are looking for does not exist."
 msgstr "您查找的页面不存在。"
 
+#: src/lib/trade/privy-fiat-funding-feedback.ts
+msgid "The payment provider is still processing it. USDC arrives in your wallet on Arbitrum when it completes; then open Deposit."
+msgstr "支付服务商仍在处理。完成后 USDC 会到达您在 Arbitrum 上的钱包，届时请打开“存款”。"
+
 #: src/lib/trade/position-submit-feedback.ts
 msgid "The position grew after you confirmed, so nothing was closed. Reopen Market Close to review the new size."
 msgstr "确认后仓位数量增加，本次未平仓。请重新打开市价平仓核对新的数量。"
@@ -9587,6 +9649,10 @@ msgstr "该金库已不再接受存款。"
 msgid "This Vault uses proportional position closing on withdrawal."
 msgstr "此金库在提款时采用按比例平仓。"
 
+#: src/lib/trade/privy-fiat-funding-feedback.ts
+msgid "This was a sandbox test: no card was charged and no USDC will arrive."
+msgstr "这是一次沙盒测试：没有扣款，也不会有 USDC 到账。"
+
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 msgid "This will close the current position and open an equal position in the opposite direction at market price."
 msgstr "这将按市价平掉当前仓位，并建立等量的反向仓位。"
@@ -9992,6 +10058,11 @@ msgstr "划转状态未知"
 #: src/components/trade/positions/transfer-modal.tsx
 msgid "Transfer USDC"
 msgstr "划转 USDC"
+
+#: src/components/trade/tradebox/deposit/deposit-method-chooser.tsx
+msgctxt "Deposit method"
+msgid "Transfer USDC"
+msgstr "转入 USDC"
 
 #: src/components/trade/positions/transfer-modal.tsx
 #~ msgid "Transferring..."
@@ -10512,6 +10583,10 @@ msgstr "USDC 存款已在 Arbitrum 确认"
 #: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
 #~ msgid "USDC deposit submitted to Hyperliquid"
 #~ msgstr "USDC 存款已提交到 Hyperliquid"
+
+#: src/lib/trade/privy-fiat-funding-feedback.ts
+msgid "USDC is on its way to your wallet on Arbitrum. Open Deposit once it arrives."
+msgstr "USDC 正在转入您在 Arbitrum 上的钱包。到账后请打开“存款”。"
 
 #: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
 msgid "USDC on HyperCore"
@@ -11321,3 +11396,7 @@ msgstr "您的交易正在处理中"
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Your Vault balance could not be verified. Account values and withdrawal remain unavailable."
 msgstr "无法验证您的金库余额。账户价值和提款功能仍不可用。"
+
+#: src/lib/trade/privy-fiat-funding-feedback.ts
+msgid "Your wallet session changed, so the card purchase did not open. Reconnect your wallet and try again."
+msgstr "钱包会话已变化，银行卡购买没有打开。请重新连接钱包后重试。"
