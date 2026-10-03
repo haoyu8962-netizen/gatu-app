@@ -22,14 +22,7 @@ import { useCopyToClipboard } from "@/hooks/ui/use-copy-to-clipboard";
 import { useFontsReady } from "@/hooks/ui/use-fonts-ready";
 import { cn } from "@/lib/cn";
 import { MARKET_CLOSE_FONT_SPECS } from "@/lib/fonts/font-readiness";
-import {
-	formatClockDuration,
-	formatNumber,
-	formatPercent,
-	formatQuoteAmount,
-	formatUSD,
-	shortenAddress,
-} from "@/lib/format";
+import { formatClockDuration, type NumberFormatters, shortenAddress, useNumberFormat } from "@/lib/format";
 import {
 	getExplorerTokenUrl,
 	getMarketApiCoin,
@@ -40,7 +33,6 @@ import {
 	useSelectedMarketInfo,
 	useSubscription,
 } from "@/lib/hyperliquid";
-import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { type Numeric, toBig } from "@/lib/trade/numbers";
 import { getTradePriceDecimals } from "@/lib/trade/trades";
 import { MarketOverviewView } from "./market-overview-view";
@@ -49,7 +41,7 @@ const HOUR_MS = 3_600_000;
 
 function FundingTooltipContent({ rates, remaining }: { rates: FundingPeriodRates; remaining: number }) {
 	const { t } = useLingui();
-	useNumberFormatRevision();
+	const { formatPercent } = useNumberFormat();
 	const rows = [
 		{ label: t`7 days`, rate: rates.sevenDays },
 		{ label: t`30 days`, rate: rates.thirtyDays },
@@ -78,7 +70,7 @@ function FundingTooltipContent({ rates, remaining }: { rates: FundingPeriodRates
 
 function useFundingStat(fundingRate: string | null) {
 	const { t } = useLingui();
-	useNumberFormatRevision();
+	const { formatPercent } = useNumberFormat();
 	const [remaining, setRemaining] = useState(() => HOUR_MS - (Date.now() % HOUR_MS));
 	const periodRates = getFundingPeriodRates(fundingRate);
 	const hasFunding = periodRates !== null;
@@ -136,8 +128,12 @@ function getSpotTokenAddress(market: UnifiedMarketInfo | undefined): string | nu
 	return tokenId;
 }
 
-function formatMarketHeaderPrice(value: string | number | null | undefined, decimals: number): string {
-	return formatNumber(value, {
+function formatMarketHeaderPrice(
+	value: string | number | null | undefined,
+	decimals: number,
+	numberFormat: NumberFormatters,
+): string {
+	return numberFormat.formatNumber(value, {
 		minimumFractionDigits: decimals,
 		maximumFractionDigits: decimals,
 	});
@@ -145,7 +141,8 @@ function formatMarketHeaderPrice(value: string | number | null | undefined, deci
 
 export function MarketOverview() {
 	const { t } = useLingui();
-	useNumberFormatRevision();
+	const numberFormat = useNumberFormat();
+	const { formatNumber, formatPercent, formatQuoteAmount, formatUSD } = numberFormat;
 	const { env } = useHyperliquid();
 	const { data: selectedMarketInfo } = useSelectedMarketInfo();
 	const { getMarketByName } = useMarketsInfo();
@@ -265,7 +262,7 @@ export function MarketOverview() {
 		selectedMarketInfo?.szDecimals ?? 2,
 		marketType,
 	);
-	const priceText = formatMarketHeaderPrice(displayPrice, priceDecimals);
+	const priceText = formatMarketHeaderPrice(displayPrice, priceDecimals, numberFormat);
 	const changePct = change24h !== null ? formatPercent(change24h / 100, { signDisplay: "exceptZero" }) : "—";
 	const priceChangeText =
 		priceChange24h !== null
@@ -316,7 +313,7 @@ export function MarketOverview() {
 					{
 						id: "oracle",
 						label: t(MARKET_HEADER_LABELS.oracle),
-						value: formatMarketHeaderPrice(oraclePx, priceDecimals),
+						value: formatMarketHeaderPrice(oraclePx, priceDecimals, numberFormat),
 					},
 				]
 			: []),

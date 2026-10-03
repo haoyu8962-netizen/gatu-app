@@ -5,10 +5,12 @@ import { getPositionDex } from "@/domain/market";
 import { useOnlineStatus } from "@/hooks/use-mobile";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { buildTradingViewOverlayLines } from "@/lib/chart/tradingview-overlays";
+import { useNumberFormat } from "@/lib/format";
 import { type UnifiedMarketInfo, useHyperliquid, useSubscription, useUserPositions } from "@/lib/hyperliquid";
 
 export function useTradingViewOverlayLines(market: UnifiedMarketInfo | undefined, fallbackSymbol: string) {
 	const { t } = useLingui();
+	const numberFormat = useNumberFormat();
 	const { address, isConnected } = useWalletSession();
 	const { clientKey } = useHyperliquid();
 	const isOnline = useOnlineStatus();
@@ -56,7 +58,8 @@ export function useTradingViewOverlayLines(market: UnifiedMarketInfo | undefined
 					roe: "ROE",
 					short: t`Short`,
 				},
+				numberFormat,
 			}),
-		[coin, openOrdersEvent, openOrdersReady, positionDex, positions, positionsReady, quoteSymbol, t],
+		[coin, numberFormat, openOrdersEvent, openOrdersReady, positionDex, positions, positionsReady, quoteSymbol, t],
 	);
 }

@@ -14,9 +14,8 @@ import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/cn";
 import { buildCsvRows } from "@/lib/csv";
-import { formatDateTimeShort, formatPercent, formatToken, shortenAddress } from "@/lib/format";
+import { formatDateTimeShort, shortenAddress, useNumberFormat } from "@/lib/format";
 import { useMarkets } from "@/lib/hyperliquid";
-import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import {
 	DEFAULT_FUNDING_HISTORY_PAGE_SIZE,
 	FUNDING_HISTORY_PAGE_SIZES,
@@ -42,8 +41,9 @@ interface Props {
 }
 
 export function FundingHistoryPage({ address }: Props) {
-	useNumberFormatRevision();
-	const { t } = useLingui();
+	const { formatPercent, formatToken } = useNumberFormat();
+	const { i18n, t } = useLingui();
+	const locale = i18n.locale;
 	const isMobile = useIsMobile();
 	const isTestnet = useIsTestnet();
 	const markets = useMarkets();
@@ -67,13 +67,13 @@ export function FundingHistoryPage({ address }: Props) {
 	const rangeLabel =
 		history.rangeStartTime === null || history.rangeEndTime === null
 			? null
-			: `${formatDateTimeShort(history.rangeStartTime)} – ${formatDateTimeShort(history.rangeEndTime)}`;
+			: `${formatDateTimeShort(history.rangeStartTime, { locale })} – ${formatDateTimeShort(history.rangeEndTime, { locale })}`;
 	const { exportCsv, isExporting } = useFundingHistoryCsvExport({
 		address: exportAddress,
 		filename: "funding_history.csv",
 		buildRows: (fundings) =>
 			buildCsvRows(fundings, [
-				{ header: t`Time`, getValue: (funding) => formatDateTimeShort(funding.time) },
+				{ header: t`Time`, getValue: (funding) => formatDateTimeShort(funding.time, { locale: i18n.locale }) },
 				{ header: t`Asset`, getValue: (funding) => funding.coin },
 				{
 					header: t`Position`,
@@ -251,7 +251,7 @@ export function FundingHistoryPage({ address }: Props) {
 												fit
 											/>
 											<time className="shrink-0 text-xs tabular-nums text-fg-muted">
-												{formatDateTimeShort(funding.time)}
+												{formatDateTimeShort(funding.time, { locale })}
 											</time>
 										</div>
 										<dl className="mt-3 grid grid-cols-3 gap-3">
@@ -377,7 +377,7 @@ export function FundingHistoryPage({ address }: Props) {
 													<bdi dir="ltr">{formatToken(funding.usdc, { symbol: "USDC" })}</bdi>
 												</TableCell>
 												<TableCell className="px-5 py-0 text-right text-xs text-fg-muted">
-													{formatDateTimeShort(funding.time)}
+													{formatDateTimeShort(funding.time, { locale })}
 												</TableCell>
 											</TableRow>
 										);

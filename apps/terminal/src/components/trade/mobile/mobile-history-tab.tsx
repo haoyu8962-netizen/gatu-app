@@ -15,9 +15,8 @@ import { useUserFills } from "@/hooks/trade/use-user-fills";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { buildCsvRows } from "@/lib/csv";
-import { formatDateTimeShort, formatNumber, formatToken, formatUSD } from "@/lib/format";
+import { formatDateTimeShort, useNumberFormat } from "@/lib/format";
 import { getExplorerTxUrl, useMarkets } from "@/lib/hyperliquid";
-import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { toNumber } from "@/lib/trade/numbers";
 import { getUserFillKey, hasUserFillExplorerTransaction } from "@/lib/trade/user-fills";
 import { getMarketCloseValueColorClass } from "@/lib/ui/value-color";
@@ -80,8 +79,9 @@ function MobileHistoryTabContent({
 	ownerKey,
 	scrollMode = "contained",
 }: MobileHistoryTabContentProps) {
-	useNumberFormatRevision();
-	const { t } = useLingui();
+	const { formatNumber, formatToken, formatUSD } = useNumberFormat();
+	const { i18n, t } = useLingui();
+	const locale = i18n.locale;
 	const { error, fills, isConnected, isOffline, isStale, status } = useUserFills();
 	const navigateToMarket = useMarketNavigation();
 	const { setActiveTab } = useMobileTerminalTab();
@@ -157,7 +157,7 @@ function MobileHistoryTabContent({
 						(roleFilter === "all" || (roleFilter === "taker") === fill.crossed),
 				),
 				[
-					{ header: t`Time`, getValue: (fill) => formatDateTimeShort(fill.time) },
+					{ header: t`Time`, getValue: (fill) => formatDateTimeShort(fill.time, { locale: i18n.locale }) },
 					{ header: t`Asset`, getValue: (fill) => fill.coin },
 					{
 						header: t`Direction`,
@@ -342,7 +342,7 @@ function MobileHistoryTabContent({
 											<div className="min-w-0">
 												<div className="truncate text-3xs leading-[14px] text-market-close-subtle">{t`Time`}</div>
 												<div className="truncate whitespace-nowrap text-xs font-semibold leading-[17px] text-market-close-fg tabular-nums">
-													{formatDateTimeShort(fill.time)}
+													{formatDateTimeShort(fill.time, { locale })}
 												</div>
 											</div>
 											<div className="min-w-0">

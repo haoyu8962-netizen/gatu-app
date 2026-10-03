@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 
+import { createHash } from "node:crypto";
 import { i18n } from "@lingui/core";
 import { act, createElement, type ReactNode } from "react";
 import type { Root } from "react-dom/client";
@@ -14,6 +15,7 @@ import {
 	parseEarnUserState,
 } from "@/domain/earn";
 import type { EarnData, EarnFreshState } from "@/hooks/earn/use-earn-data";
+import { notifyNumberFormatChange } from "@/lib/number-format-reactivity";
 import { createI18nRoot } from "./harness/react";
 import { unknownStatusToastIcon } from "./harness/status-glyph";
 
@@ -21,6 +23,12 @@ const OWNER = "0x1111111111111111111111111111111111111111";
 
 const toastMocks = vi.hoisted(() => ({ dismiss: vi.fn(), error: vi.fn(), success: vi.fn(), warning: vi.fn() }));
 vi.mock("sonner", () => ({ toast: toastMocks }));
+
+const numberFormatSetting = vi.hoisted(() => ({ locale: "en-US" }));
+vi.mock("@/stores/use-global-settings-store", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/stores/use-global-settings-store")>()),
+	getResolvedFormatLocale: () => numberFormatSetting.locale,
+}));
 
 const testState = vi.hoisted(() => ({
 	exchangeIdentity: {
@@ -315,6 +323,7 @@ describe("earn action modal", () => {
 	let root: Root;
 
 	beforeEach(() => {
+		numberFormatSetting.locale = "en-US";
 		i18n.loadAndActivate({ locale: "en", messages: {} });
 		testState.exchangeIdentity.exchangeLifecycle = { active: true, id: Symbol("exchange-lifecycle") };
 		testState.pending = false;
@@ -374,6 +383,34 @@ describe("earn action modal", () => {
 		expect(toastText(title)).toBe("Borrowed \u20685,029.4 USDC\u2069");
 		expect(options.description).toBeUndefined();
 		expect(onOpenChange).toHaveBeenCalledWith(false);
+	});
+
+	it("rewrites a shown success notice when the number format and the language change", async () => {
+		render("borrow", 0, createData());
+		act(() => container.querySelector<HTMLButtonElement>('[data-testid="max"]')?.click());
+		act(() => getSubmit(container).click());
+		await flush();
+		const [title] = toastMocks.success.mock.calls[0] as [ReactNode];
+		const host = document.createElement("div");
+		document.body.appendChild(host);
+		const toastRoot = createI18nRoot(host);
+		act(() => toastRoot.render(title));
+		const notice = host.firstChild;
+		expect(host.textContent).toBe("Borrowed \u20685,029.4 USDC\u2069");
+
+		numberFormatSetting.locale = "de-DE";
+		act(() => notifyNumberFormatChange());
+
+		expect(host.firstChild).toBe(notice);
+		expect(host.textContent).toBe("Borrowed \u20685.029,4 USDC\u2069");
+
+		const borrowedId = createHash("sha256").update("Borrowed {quantity}\x1f").digest("base64").slice(0, 6);
+		act(() => i18n.loadAndActivate({ locale: "zh", messages: { [borrowedId]: "已借入 {quantity}" } }));
+
+		expect(host.firstChild).toBe(notice);
+		expect(host.textContent).toBe("已借入 \u20685.029,4 USDC\u2069");
+		act(() => toastRoot.unmount());
+		host.remove();
 	});
 
 	it("never sends more than the fresh state allows at submission", async () => {

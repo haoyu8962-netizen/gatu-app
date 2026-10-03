@@ -36,8 +36,18 @@
 ## 证据
 
 - 代码：`apps/terminal/src/providers/client-root.tsx`、`apps/terminal/src/config/privy.ts`（`PRIVY_CONFIG_BY_THEME`）。
-- 补丁与版本：`patches/@privy-io__react-auth@3.32.2.patch`、`pnpm-workspace.yaml`（`patchedDependencies`）、`apps/terminal/package.json`。
+- 补丁与版本：`patches/@privy-io__react-auth@3.32.2.patch`（2026-10-02 起由 `@3.46.0.patch` 取代，见下方更正）、`pnpm-workspace.yaml`（`patchedDependencies`）、`apps/terminal/package.json`。
 - 测试：`apps/terminal/src/lib/tests/privy-theme-switch-wallet-stability.test.tsx`、`apps/terminal/src/lib/tests/client-root-theme-lifecycle.test.tsx`。
 - 参考：[运行约束 §1](../runtime-guardrails.md#privy-authentication-and-connection-ui)。
 
 本次实际执行结果见[任务记录](../work-memory/sessions/2026-09-30-privy-theme-upgrade.md)。
+
+## 更正：升级到 3.46.0（2026-10-02）
+
+本段追加，不改写上文。`@privy-io/react-auth` 升到 3.46.0、`@privy-io/wagmi` 升到 4.0.17，仍精确锁定；3.36.0 起必需的 `@stripe/crypto` 以 1.1.3 精确声明。决策本身不变，变化如下：
+
+- 3.46.0 的空列表分支仍是 `setState({ethereumEmbedded:[]})`。不带补丁运行 `privy-theme-switch-wallet-stability` 时，未登录与外部钱包两项失败（钱包数组 5 对 2、6 对 3），因此补丁按新产物重做为 `patches/@privy-io__react-auth@3.46.0.patch`，语义与原补丁相同，ESM 与 CJS 各一处；加补丁后 4 项通过。非空列表的字段比较仍在两个产物中各出现一次。
+- `@privy-io/wagmi` 4.0.13 与 4.0.17 的发布文件除 `package.json` 的版本与 peer 版本外逐字节相同，`setActiveWalletForWagmi` / `reconnect` 行为没有变化。
+- 4.0.17 的 peer 精确要求 viem 2.56.0，终端仍为 2.42.1（与升级前 4.0.13 要求 2.52.0 时同样不满足）；Privy 自带的 viem 随之从 2.52.0 变为 2.56.0。本次按规划不去重。
+- 验证见 [升级与入金规划](../privy-upgrade-and-funding-plan.md) 的阶段一与对应任务记录；真实钱包验收仍未执行。
+- 补充（2026-10-02，随银行卡入金）：同一个补丁文件另有一段与主题无关的改动，给 `fund()` 内部的结果 Promise 接上拒绝处理（[ADR 0034](0034-privy-card-funding.md) 决策 7）。以后按本 ADR 去掉 `useWallets` 那一段时保留另一段，不要删掉整个文件。

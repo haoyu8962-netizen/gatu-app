@@ -2,10 +2,13 @@
 
 import { createHash } from "node:crypto";
 import { i18n, type Messages } from "@lingui/core";
+import { I18nProvider } from "@lingui/react";
 import { act, type ReactNode } from "react";
 import type { Root } from "react-dom/client";
+import { renderToString } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { FooterBar, type FooterBarMode } from "@/components/trade/footer/footer-bar";
+import { formatTime } from "@/lib/format";
 import { LOADING_INDICATOR_SELECTOR } from "./harness/loading-indicator";
 import { createI18nRoot } from "./harness/react";
 
@@ -38,6 +41,11 @@ vi.mock("@tanstack/react-router", () => ({
 		</a>
 	),
 }));
+
+vi.mock("@/lib/format", async (importOriginal) => {
+	const actual = await importOriginal<typeof import("@/lib/format")>();
+	return { ...actual, formatTime: vi.fn(actual.formatTime) };
+});
 
 vi.mock("@/lib/hyperliquid", () => ({
 	useApiStatus: () => ({ status: "connecting", error: undefined }),
@@ -125,6 +133,157 @@ describe("FooterBar", () => {
 		const clock = container.querySelector("footer .tabular-nums");
 		expect(clock?.classList.contains("invisible")).toBe(false);
 		expect(clock?.textContent).toMatch(/\d/);
+	});
+
+	describe("clock", () => {
+		let pageVisibility: DocumentVisibilityState;
+
+		beforeEach(() => {
+			pageVisibility = "visible";
+			vi.spyOn(document, "visibilityState", "get").mockImplementation(() => pageVisibility);
+			vi.useFakeTimers({ now: new Date(2026, 9, 2, 14, 31, 30) });
+		});
+
+		afterEach(() => {
+			act(() => root.unmount());
+			vi.useRealTimers();
+			vi.restoreAllMocks();
+		});
+
+		function readClock(): string {
+			const clock = container.querySelector("footer .tabular-nums");
+			if (!clock) throw new Error("Expected the footer clock");
+			return clock.textContent?.replace(/\s+/g, " ") ?? "";
+		}
+
+		function setPageVisibility(visibility: DocumentVisibilityState) {
+			pageVisibility = visibility;
+			act(() => document.dispatchEvent(new Event("visibilitychange")));
+		}
+
+		it("advances when each minute begins", () => {
+			renderFooter("default");
+			expect(readClock()).toBe("2:31 PM");
+
+			act(() => vi.advanceTimersByTime(29_999));
+			expect(readClock()).toBe("2:31 PM");
+
+			act(() => vi.advanceTimersByTime(1));
+			expect(readClock()).toBe("2:32 PM");
+
+			act(() => vi.advanceTimersByTime(60_000));
+			expect(readClock()).toBe("2:33 PM");
+			expect(vi.getTimerCount()).toBe(1);
+		});
+
+		it("keeps one snapshot for the whole minute, so a notification inside it renders nothing", () => {
+			act(() => vi.setSystemTime(new Date(2026, 9, 2, 14, 31, 5)));
+			renderFooter("default");
+			const formattedTimes = vi.mocked(formatTime).mock.calls.length;
+
+			act(() => vi.advanceTimersByTime(50_000));
+			setPageVisibility("visible");
+
+			expect(vi.mocked(formatTime).mock.calls.length).toBe(formattedTimes);
+			expect(readClock()).toBe("2:31 PM");
+		});
+
+		it("waits for the minute boundary on the wall clock when the clock is set back", () => {
+			renderFooter("default");
+			act(() => vi.advanceTimersByTime(10_000));
+			act(() => vi.setSystemTime(new Date(2026, 9, 2, 14, 31, 20)));
+
+			act(() => vi.advanceTimersByTime(20_000));
+			expect(readClock()).toBe("2:31 PM");
+
+			act(() => vi.advanceTimersByTime(19_999));
+			expect(readClock()).toBe("2:31 PM");
+
+			act(() => vi.advanceTimersByTime(1));
+			expect(readClock()).toBe("2:32 PM");
+		});
+
+		it("reformats the current minute in the interface language with Latin digits", () => {
+			renderFooter("default");
+			expect(readClock()).toBe("2:31 PM");
+
+			act(() => i18n.loadAndActivate({ locale: "zh", messages: {} }));
+			expect(readClock()).toBe("14:31");
+
+			act(() => i18n.loadAndActivate({ locale: "ar", messages: {} }));
+			expect(readClock()).toBe("2:31 م");
+			expect(readClock()).not.toMatch(/[٠-٩]/);
+		});
+
+		it("keeps no timer while the page is hidden and catches up when it is shown again", () => {
+			renderFooter("default");
+			expect(vi.getTimerCount()).toBe(1);
+
+			setPageVisibility("hidden");
+			expect(vi.getTimerCount()).toBe(0);
+
+			act(() => vi.setSystemTime(new Date(2026, 9, 2, 14, 36, 10)));
+			expect(readClock()).toBe("2:31 PM");
+
+			setPageVisibility("visible");
+			expect(readClock()).toBe("2:36 PM");
+			expect(vi.getTimerCount()).toBe(1);
+
+			act(() => vi.advanceTimersByTime(50_000));
+			expect(readClock()).toBe("2:37 PM");
+		});
+
+		it("shows the current minute when mounted in a hidden page and releases its timer and listener on unmount", () => {
+			const addListener = vi.spyOn(document, "addEventListener");
+			const removeListener = vi.spyOn(document, "removeEventListener");
+			pageVisibility = "hidden";
+			act(() => vi.setSystemTime(new Date(2026, 9, 2, 9, 5, 0)));
+			renderFooter("default");
+			expect(readClock()).toBe("9:05 AM");
+			expect(vi.getTimerCount()).toBe(0);
+
+			setPageVisibility("visible");
+			expect(vi.getTimerCount()).toBe(1);
+
+			act(() => root.unmount());
+			expect(vi.getTimerCount()).toBe(0);
+			const added = addListener.mock.calls
+				.filter(([type]) => type === "visibilitychange")
+				.map(([, handler]) => handler);
+			const removed = removeListener.mock.calls
+				.filter(([type]) => type === "visibilitychange")
+				.map(([, handler]) => handler);
+			expect(added).toHaveLength(1);
+			expect(removed).toEqual(added);
+		});
+
+		it("keeps the shared timer for the footer that stays mounted when another one unmounts", () => {
+			const otherContainer = document.createElement("div");
+			document.body.appendChild(otherContainer);
+			const otherRoot = createI18nRoot(otherContainer);
+			renderFooter("default");
+			act(() => otherRoot.render(<FooterBar mode="default" />));
+			expect(vi.getTimerCount()).toBe(1);
+
+			act(() => otherRoot.unmount());
+			otherContainer.remove();
+			expect(vi.getTimerCount()).toBe(1);
+
+			act(() => vi.advanceTimersByTime(30_000));
+			expect(readClock()).toBe("2:32 PM");
+		});
+
+		it("renders no time on the server", () => {
+			const host = document.createElement("div");
+			host.innerHTML = renderToString(
+				<I18nProvider i18n={i18n}>
+					<FooterBar mode="default" />
+				</I18nProvider>,
+			);
+			const clock = host.querySelector("footer .tabular-nums");
+			expect(clock?.classList.contains("invisible")).toBe(true);
+			expect(clock?.textContent).toBe("00:00 AM");
+		});
 	});
 
 	it("retranslates the legal navigation landmark when the locale changes", () => {

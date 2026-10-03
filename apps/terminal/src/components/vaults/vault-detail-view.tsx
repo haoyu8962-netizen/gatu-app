@@ -4,7 +4,7 @@ import { Button, Table } from "@sairn/ui";
 import { Link } from "@tanstack/react-router";
 import { useId, useState } from "react";
 import { cn } from "@/lib/cn";
-import { formatDateTime, shortenAddress } from "@/lib/format";
+import { formatDateTime, shortenAddress, useNumberFormat } from "@/lib/format";
 import { getExplorerAddressUrl } from "@/lib/hyperliquid";
 import {
 	formatVaultCompactUsd,
@@ -43,6 +43,8 @@ export function VaultDetailView({
 	onRequestAction,
 }: VaultDetailViewProps) {
 	const { t, i18n } = useLingui();
+	const locale = i18n.locale;
+	const numberFormat = useNumberFormat();
 	const riskTitleId = useId();
 	const depositReasonId = useId();
 	const withdrawReasonId = useId();
@@ -156,12 +158,12 @@ export function VaultDetailView({
 			</header>
 
 			<div className="grid grid-cols-2 gap-2 px-4 py-3 min-[1001px]:grid-cols-4 min-[1001px]:px-5">
-				<SummaryMetric label={<Trans>Vault value</Trans>} value={formatVaultCompactUsd(totalValue)} />
-				<SummaryMetric label={<Trans>APR</Trans>} value={formatVaultRatio(detail.apr, 2, true)} />
-				<SummaryMetric label={<Trans>Your equity</Trans>} value={formatVaultUsd(ownerEquity)} />
+				<SummaryMetric label={<Trans>Vault value</Trans>} value={formatVaultCompactUsd(totalValue, numberFormat)} />
+				<SummaryMetric label={<Trans>APR</Trans>} value={formatVaultRatio(detail.apr, numberFormat, 2, true)} />
+				<SummaryMetric label={<Trans>Your equity</Trans>} value={formatVaultUsd(ownerEquity, numberFormat)} />
 				<SummaryMetric
 					label={<Trans>Your all-time PNL</Trans>}
-					value={formatVaultSignedUsd(ownerPnl)}
+					value={formatVaultSignedUsd(ownerPnl, numberFormat)}
 					tone={ownerPnlTone}
 				/>
 			</div>
@@ -185,7 +187,7 @@ export function VaultDetailView({
 									{owner.lockedUntil === null ? (
 										<Trans>No lock timestamp was returned</Trans>
 									) : (
-										<Trans>Server unlock time: {formatTimestamp(owner.lockedUntil, i18n.locale)}</Trans>
+										<Trans>Server unlock time: {formatTimestamp(owner.lockedUntil, locale)}</Trans>
 									)}
 								</p>
 							</div>
@@ -194,7 +196,9 @@ export function VaultDetailView({
 							<p className="text-2xs text-fg-muted">
 								<Trans>Maximum withdrawable</Trans>
 							</p>
-							<p className="mt-0.5 text-sm font-bold tabular-nums text-fg">{formatVaultUsd(owner.maxWithdrawable)}</p>
+							<p className="mt-0.5 text-sm font-bold tabular-nums text-fg">
+								{formatVaultUsd(owner.maxWithdrawable, numberFormat)}
+							</p>
 						</div>
 					</div>
 					{owner.lockProgress === null ? null : (
@@ -257,7 +261,7 @@ export function VaultDetailView({
 								pnlTone === "positive" ? "text-market-up" : pnlTone === "negative" ? "text-market-down" : "text-fg",
 							)}
 						>
-							<bdi dir="ltr">{formatVaultSignedUsd(periodPnl)}</bdi>
+							<bdi dir="ltr">{formatVaultSignedUsd(periodPnl, numberFormat)}</bdi>
 						</span>
 					</div>
 				</section>
@@ -279,7 +283,10 @@ export function VaultDetailView({
 						{detail.description || <Trans>No description was provided by the Vault.</Trans>}
 					</p>
 					<dl className="mt-4 divide-y divide-stroke-weak border-t border-stroke-weak text-xs">
-						<AboutRow label={<Trans>Leader commission</Trans>} value={formatVaultRatio(detail.leaderCommission)} />
+						<AboutRow
+							label={<Trans>Leader commission</Trans>}
+							value={formatVaultRatio(detail.leaderCommission, numberFormat)}
+						/>
 						<AboutRow
 							label={<Trans>Deposits</Trans>}
 							value={detail.allowDeposits && !detail.isClosed ? t`Deposits open` : t`Unavailable`}
@@ -392,6 +399,7 @@ function VaultFollowers({ followers }: { followers: VaultDetail["followers"] }) 
 }
 
 function FollowerDesktopRow({ follower }: { follower: VaultDetail["followers"][number] }) {
+	const numberFormat = useNumberFormat();
 	const pnlTone = getVaultValueTone(follower.pnl);
 	const allTone = getVaultValueTone(follower.allTimePnl);
 	return (
@@ -400,13 +408,13 @@ function FollowerDesktopRow({ follower }: { follower: VaultDetail["followers"][n
 				{follower.user === "Leader" ? <Trans>Leader</Trans> : <bdi dir="ltr">{shortenAddress(follower.user)}</bdi>}
 			</td>
 			<td className="px-3 py-2.5 text-right text-xs font-semibold tabular-nums text-fg">
-				<bdi dir="ltr">{formatVaultUsd(follower.vaultEquity)}</bdi>
+				<bdi dir="ltr">{formatVaultUsd(follower.vaultEquity, numberFormat)}</bdi>
 			</td>
 			<td className={cn("px-3 py-2.5 text-right text-xs font-semibold tabular-nums", toneClass(pnlTone))}>
-				<bdi dir="ltr">{formatVaultSignedUsd(follower.pnl)}</bdi>
+				<bdi dir="ltr">{formatVaultSignedUsd(follower.pnl, numberFormat)}</bdi>
 			</td>
 			<td className={cn("px-3 py-2.5 text-right text-xs tabular-nums", toneClass(allTone))}>
-				<bdi dir="ltr">{formatVaultSignedUsd(follower.allTimePnl)}</bdi>
+				<bdi dir="ltr">{formatVaultSignedUsd(follower.allTimePnl, numberFormat)}</bdi>
 			</td>
 			<td className="px-5 py-2.5 text-right text-xs tabular-nums text-fg">{follower.daysFollowing}</td>
 		</tr>
@@ -414,6 +422,7 @@ function FollowerDesktopRow({ follower }: { follower: VaultDetail["followers"][n
 }
 
 function FollowerMobileRow({ follower }: { follower: VaultDetail["followers"][number] }) {
+	const numberFormat = useNumberFormat();
 	const currentPnlTone = getVaultValueTone(follower.pnl);
 	const allTimePnlTone = getVaultValueTone(follower.allTimePnl);
 	return (
@@ -427,15 +436,18 @@ function FollowerMobileRow({ follower }: { follower: VaultDetail["followers"][nu
 				</p>
 			</div>
 			<dl className="mt-2 grid gap-1.5 text-2xs">
-				<FollowerMobileMetric label={<Trans>Equity</Trans>} value={formatVaultUsd(follower.vaultEquity)} />
+				<FollowerMobileMetric
+					label={<Trans>Equity</Trans>}
+					value={formatVaultUsd(follower.vaultEquity, numberFormat)}
+				/>
 				<FollowerMobileMetric
 					label={<Trans>Current PNL</Trans>}
-					value={formatVaultSignedUsd(follower.pnl)}
+					value={formatVaultSignedUsd(follower.pnl, numberFormat)}
 					tone={currentPnlTone}
 				/>
 				<FollowerMobileMetric
 					label={<Trans>All-time PNL</Trans>}
-					value={formatVaultSignedUsd(follower.allTimePnl)}
+					value={formatVaultSignedUsd(follower.allTimePnl, numberFormat)}
 					tone={allTimePnlTone}
 				/>
 			</dl>

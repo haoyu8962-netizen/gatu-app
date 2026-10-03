@@ -2,6 +2,7 @@ import { i18n } from "@lingui/core";
 import { describe, expect, it } from "vitest";
 import { ARBITRUM_CCTP_DOMAIN, CCTP_NETWORKS } from "@/config/cctp";
 import { getCctpWithdrawalFeeRequest } from "@/hooks/trade/use-cctp-withdrawal-fee";
+import { getNumberFormatters } from "@/lib/format";
 import {
 	buildCctpWithdrawalParameters,
 	getMaximumWithdrawal,
@@ -82,6 +83,7 @@ describe("withdrawal amounts", () => {
 					activationFee: "0",
 				},
 				(descriptor) => i18n._(descriptor),
+				getNumberFormatters(),
 			),
 		).toEqual({ valid: false, error: "Minimum withdrawal is $0.4" });
 		expect(
@@ -94,6 +96,7 @@ describe("withdrawal amounts", () => {
 					activationFee: "0",
 				},
 				(descriptor) => i18n._(descriptor),
+				getNumberFormatters(),
 			),
 		).toEqual({ valid: true, error: null });
 	});
@@ -110,6 +113,7 @@ describe("withdrawal amounts", () => {
 					activationFee: "1",
 				},
 				(descriptor) => i18n._(descriptor),
+				getNumberFormatters(),
 			),
 		).toEqual({ valid: false, error: "Insufficient balance" });
 		expect(
@@ -122,6 +126,7 @@ describe("withdrawal amounts", () => {
 					activationFee: "1",
 				},
 				(descriptor) => i18n._(descriptor),
+				getNumberFormatters(),
 			),
 		).toEqual({ valid: true, error: null });
 	});
@@ -142,6 +147,7 @@ describe("withdrawal amounts", () => {
 					activationFee: "0",
 				},
 				(descriptor) => i18n._(descriptor),
+				getNumberFormatters(),
 			),
 		).toEqual({ valid: false, error: null });
 	});

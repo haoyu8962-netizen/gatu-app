@@ -7,7 +7,7 @@ import { zeroAddress } from "viem";
 import { StatusGlyph } from "@/components/brand/status-glyph";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { STATUS_GLYPH_UNKNOWN } from "@/lib/brand/status-glyph.gen";
-import { formatDateTime } from "@/lib/format";
+import { formatDateTime, useNumberFormat } from "@/lib/format";
 import { useActiveAgentOwner, useHyperliquid, useInfo } from "@/lib/hyperliquid";
 import {
 	clearCorruptFundsActionMarkerStorageSafely,
@@ -25,7 +25,9 @@ import {
 import { FundsRecoveryNotification } from "./funds-recovery-notification";
 
 export function FundsActionRecoveryHost() {
-	const { t } = useLingui();
+	const { i18n, t } = useLingui();
+	const locale = i18n.locale;
+	const { formatDecimalString } = useNumberFormat();
 	const isMobile = useIsMobile();
 	const { clientKey, env, sessionMode } = useHyperliquid();
 	const activeAgentOwner = useActiveAgentOwner();
@@ -89,7 +91,8 @@ export function FundsActionRecoveryHost() {
 							<Trans>Pending funds operation</Trans>
 						</p>
 						<p className="truncate text-2xs text-fg-muted">
-							<FundsActionLabel marker={activeMarker} /> · {activeMarker.displayAmount} {activeMarker.asset}
+							<FundsActionLabel marker={activeMarker} /> · {formatDecimalString(activeMarker.displayAmount)}{" "}
+							{activeMarker.asset}
 						</p>
 					</div>
 					<Button size="xs" variant="outline" intent="neutral" onClick={() => setDetailsOpen(true)}>
@@ -141,10 +144,13 @@ export function FundsActionRecoveryHost() {
 						<RecoveryRow label={t`SDK method`} value={activeMarker.method} />
 						<RecoveryRow label={t`Direction`} value={<FundsDirectionLabel direction={activeMarker.direction} />} />
 						<RecoveryRow label={t`Target`} value={activeMarker.target} />
-						<RecoveryRow label={t`Amount`} value={`${activeMarker.displayAmount} ${activeMarker.asset}`} />
+						<RecoveryRow
+							label={t`Amount`}
+							value={`${formatDecimalString(activeMarker.displayAmount)} ${activeMarker.asset}`}
+						/>
 						<RecoveryRow label={t`Atomic amount`} value={activeMarker.atomicAmount} />
 						<RecoveryRow label={t`Atomic decimals`} value={String(activeMarker.atomicDecimals)} />
-						<RecoveryRow label={t`Started`} value={formatDateTime(activeMarker.startedAt)} />
+						<RecoveryRow label={t`Started`} value={formatDateTime(activeMarker.startedAt, { locale })} />
 						<RecoveryRow label={t`Identity epoch`} value={activeMarker.identityEpoch} />
 					</dl>
 					{confirmClear ? (

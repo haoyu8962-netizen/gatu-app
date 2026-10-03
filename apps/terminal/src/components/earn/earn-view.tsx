@@ -28,8 +28,7 @@ import {
 } from "@/domain/earn";
 import type { EarnData } from "@/hooks/earn/use-earn-data";
 import { cn } from "@/lib/cn";
-import { formatDateTime, formatNumber, formatPercent, formatUSD } from "@/lib/format";
-import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
+import { formatDateTime, type NumberFormatters, useNumberFormat } from "@/lib/format";
 import type { AccountLedgerRow } from "@/lib/trade/account-ledger";
 
 type EarnTab = "supplyBorrow" | "interest" | "history";
@@ -48,7 +47,8 @@ const PLACEHOLDER = "-";
 
 export function EarnView({ data, isMobile, actionsAllowed, notice, onOpenAction }: Props) {
 	const { t } = useLingui();
-	useNumberFormatRevision();
+	const numberFormat = useNumberFormat();
+	const { formatPercent } = numberFormat;
 	const translate = (descriptor: MessageDescriptor) => t(descriptor);
 	const titleId = useId();
 	const [tab, setTab] = useState<EarnTab>("supplyBorrow");
@@ -133,8 +133,14 @@ export function EarnView({ data, isMobile, actionsAllowed, notice, onOpenAction 
 					}
 					value={healthRatio === null ? "--" : formatPercent(healthRatio, { signDisplay: "auto" })}
 				/>
-				<StatCard label={t`Your Total Supplied`} value={formatStatUsd(summary?.totalSuppliedUsd ?? "0", isMobile)} />
-				<StatCard label={t`Your Total Borrowed`} value={formatStatUsd(summary?.totalBorrowedUsd ?? "0", isMobile)} />
+				<StatCard
+					label={t`Your Total Supplied`}
+					value={formatStatUsd(summary?.totalSuppliedUsd ?? "0", isMobile, numberFormat)}
+				/>
+				<StatCard
+					label={t`Your Total Borrowed`}
+					value={formatStatUsd(summary?.totalBorrowedUsd ?? "0", isMobile, numberFormat)}
+				/>
 			</div>
 
 			<section className="overflow-hidden rounded-24 bg-surface shadow-raised" aria-label={t`Earn details`}>
@@ -245,7 +251,7 @@ interface RowAction {
 
 function AssetSection({ title, kind, rows, data, isMobile, blocks, onOpenAction }: AssetSectionProps) {
 	const { t } = useLingui();
-	useNumberFormatRevision();
+	const numberFormat = useNumberFormat();
 	const translate = (descriptor: MessageDescriptor) => t(descriptor);
 	const accountReady = data.accountStatus === "ready";
 	const showInterest = !data.portfolioMargin;
@@ -301,7 +307,7 @@ function AssetSection({ title, kind, rows, data, isMobile, blocks, onOpenAction 
 					<div key={row.token} className="rounded-16 border border-stroke-weak p-3">
 						<span className="text-sm font-semibold text-fg">{row.displayName}</span>
 						<dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs">
-							{getCells(row, kind, accountReady, showInterest, translate).map((cell) => (
+							{getCells(row, kind, accountReady, showInterest, translate, numberFormat).map((cell) => (
 								<div key={cell.key} className="flex flex-col">
 									<dt className="text-fg-muted">{cell.label}</dt>
 									<dd className="text-fg tabular-nums">{cell.value}</dd>
@@ -326,7 +332,7 @@ function AssetSection({ title, kind, rows, data, isMobile, blocks, onOpenAction 
 		);
 	}
 
-	const headerCells = getCells(sortedRows[0] ?? null, kind, accountReady, showInterest, translate);
+	const headerCells = getCells(sortedRows[0] ?? null, kind, accountReady, showInterest, translate, numberFormat);
 	return (
 		<div className="space-y-2">
 			<h2 className="text-sm font-semibold text-fg">{title}</h2>
@@ -349,7 +355,7 @@ function AssetSection({ title, kind, rows, data, isMobile, blocks, onOpenAction 
 								<TableCell size="dense" className="font-semibold text-fg">
 									{row.displayName}
 								</TableCell>
-								{getCells(row, kind, accountReady, showInterest, translate).map((cell) => (
+								{getCells(row, kind, accountReady, showInterest, translate, numberFormat).map((cell) => (
 									<TableCell key={cell.key} size="dense" className="text-fg tabular-nums">
 										{cell.value}
 									</TableCell>
@@ -416,21 +422,22 @@ function getCells(
 	accountReady: boolean,
 	showInterest: boolean,
 	translate: Translate,
+	numberFormat: NumberFormatters,
 ): Cell[] {
 	const amount = (value: string | undefined) =>
-		row ? formatAssetAmount(accountReady && value !== undefined ? value : "0", row) : PLACEHOLDER;
+		row ? formatAssetAmount(accountReady && value !== undefined ? value : "0", row, numberFormat) : PLACEHOLDER;
 	const cells: Cell[] = [];
 	cells.push({
 		key: "ltv",
 		label: translate(msg`LTV`),
-		value: kind === "supply" && row?.isCollateral ? formatRate(row.ltv) : translate(msg`N/A`),
+		value: kind === "supply" && row?.isCollateral ? formatRate(row.ltv, numberFormat) : translate(msg`N/A`),
 	});
 	cells.push({
 		key: "apy",
 		label: translate(msg`APY`),
 		value: row ? (
 			<span className="text-success">
-				{formatRate(kind === "supply" ? row.supplyYearlyRate : row.borrowYearlyRate)}
+				{formatRate(kind === "supply" ? row.supplyYearlyRate : row.borrowYearlyRate, numberFormat)}
 			</span>
 		) : (
 			PLACEHOLDER
@@ -439,7 +446,7 @@ function getCells(
 	cells.push({
 		key: "oraclePrice",
 		label: translate(msg`Oracle Price`),
-		value: row ? <bdi dir="ltr">{formatUSD(row.oraclePx, { compact: false })}</bdi> : PLACEHOLDER,
+		value: row ? <bdi dir="ltr">{numberFormat.formatUSD(row.oraclePx, { compact: false })}</bdi> : PLACEHOLDER,
 	});
 	if (kind === "supply") {
 		cells.push({
@@ -447,7 +454,7 @@ function getCells(
 			label: translate(msg`Liquidation Price`),
 			value:
 				row?.liquidationPx && accountReady ? (
-					<bdi dir="ltr">{formatUSD(row.liquidationPx, { compact: false })}</bdi>
+					<bdi dir="ltr">{numberFormat.formatUSD(row.liquidationPx, { compact: false })}</bdi>
 				) : (
 					translate(msg`N/A`)
 				),
@@ -463,7 +470,7 @@ function getCells(
 		cells.push({
 			key: "total",
 			label: translate(msg`Total Supplied`),
-			value: row ? formatAssetAmount(row.totalSupplied, row) : PLACEHOLDER,
+			value: row ? formatAssetAmount(row.totalSupplied, row, numberFormat) : PLACEHOLDER,
 		});
 		return cells;
 	}
@@ -474,27 +481,27 @@ function getCells(
 	cells.push({
 		key: "total",
 		label: translate(msg`Total Borrowed`),
-		value: row ? formatAssetAmount(row.totalBorrowed, row) : PLACEHOLDER,
+		value: row ? formatAssetAmount(row.totalBorrowed, row, numberFormat) : PLACEHOLDER,
 	});
 	return cells;
 }
 
-function formatAssetAmount(value: string, row: EarnAssetRow) {
+function formatAssetAmount(value: string, row: EarnAssetRow, numberFormat: NumberFormatters) {
 	return (
 		<bdi dir="ltr">
-			{formatNumber(value, row.amountDecimals)} {row.displayName}
+			{numberFormat.formatNumber(value, row.amountDecimals)} {row.displayName}
 		</bdi>
 	);
 }
 
-function formatStatUsd(value: string, isMobile: boolean) {
+function formatStatUsd(value: string, isMobile: boolean, numberFormat: NumberFormatters) {
 	return isMobile
-		? formatUSD(value, { compact: true, minimumFractionDigits: 0, maximumFractionDigits: 1 })
-		: formatUSD(value, { compact: false });
+		? numberFormat.formatUSD(value, { compact: true, minimumFractionDigits: 0, maximumFractionDigits: 1 })
+		: numberFormat.formatUSD(value, { compact: false });
 }
 
-function formatRate(value: string) {
-	return <bdi dir="ltr">{formatPercent(value, { signDisplay: "auto" })}</bdi>;
+function formatRate(value: string, numberFormat: NumberFormatters) {
+	return <bdi dir="ltr">{numberFormat.formatPercent(value, { signDisplay: "auto" })}</bdi>;
 }
 
 function getBlockReason(
@@ -520,8 +527,9 @@ interface InterestTableProps {
 }
 
 function InterestTable({ data }: InterestTableProps) {
-	const { t } = useLingui();
-	useNumberFormatRevision();
+	const { i18n, t } = useLingui();
+	const locale = i18n.locale;
+	const { formatNumber } = useNumberFormat();
 	const ready = data.interestStatus === "ready";
 	return (
 		<div className="overflow-x-auto" aria-busy={data.interestStatus === "loading" || undefined}>
@@ -539,7 +547,7 @@ function InterestTable({ data }: InterestTableProps) {
 						? data.interest.map((entry) => (
 								<TableRow key={`${entry.time}:${entry.token}`}>
 									<TableCell size="dense" className="text-fg-muted tabular-nums">
-										<bdi dir="ltr">{formatDateTime(entry.time)}</bdi>
+										<bdi dir="ltr">{formatDateTime(entry.time, { locale })}</bdi>
 									</TableCell>
 									<TableCell size="dense" className="font-semibold text-fg">
 										{entry.token}
@@ -568,8 +576,9 @@ interface HistoryTableProps {
 }
 
 function HistoryTable({ rows, ready }: HistoryTableProps) {
-	const { t } = useLingui();
-	useNumberFormatRevision();
+	const { i18n, t } = useLingui();
+	const locale = i18n.locale;
+	const { formatNumber } = useNumberFormat();
 	const translate = (descriptor: MessageDescriptor) => t(descriptor);
 	return (
 		<div className="overflow-x-auto">
@@ -586,7 +595,7 @@ function HistoryTable({ rows, ready }: HistoryTableProps) {
 						? rows.map((row) => (
 								<TableRow key={row.id}>
 									<TableCell size="dense" className="text-fg-muted tabular-nums">
-										<bdi dir="ltr">{formatDateTime(row.time)}</bdi>
+										<bdi dir="ltr">{formatDateTime(row.time, { locale })}</bdi>
 									</TableCell>
 									<TableCell size="dense" className="text-fg">
 										{getHistoryActionLabel(row.action, translate)}

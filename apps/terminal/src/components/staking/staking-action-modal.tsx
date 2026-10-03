@@ -3,7 +3,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { AdaptiveModal, Alert, Button, ModalContent, ModalFooter, ModalHeader, ModalTitle, TextInput } from "@sairn/ui";
 import { type ReactNode, useState } from "react";
 import { normalizeDecimalInputEvent } from "@/components/ui/decimal-input-event";
-import { formatDateTime, shortenAddress } from "@/lib/format";
+import { formatDateTime, shortenAddress, useNumberFormat } from "@/lib/format";
 import type { Translate } from "@/lib/translate";
 import type { FundsActionReference } from "../funds-action/funds-action-marker";
 import { type FundsActionState, getFundsActionSteps } from "../funds-action/funds-action-state";
@@ -53,6 +53,7 @@ export function StakingActionModal({
 	onVerify,
 }: StakingActionModalProps) {
 	const { t } = useLingui();
+	const numberFormat = useNumberFormat();
 	const [amount, setAmount] = useState("");
 	const [stage, setStage] = useState<"input" | "review">("input");
 	const [showError, setShowError] = useState(false);
@@ -121,7 +122,8 @@ export function StakingActionModal({
 						/>
 						<div className="flex items-center justify-between gap-3 text-xs text-fg-muted">
 							<span>
-								<Trans>Available</Trans>: <bdi dir="ltr">{formatStakingAmount(action.maxAmount)} HYPE</bdi>
+								<Trans>Available</Trans>:{" "}
+								<bdi dir="ltr">{formatStakingAmount(action.maxAmount, numberFormat)} HYPE</bdi>
 							</span>
 							<Button variant="ghost" intent="brand" size="xs" onClick={() => setAmount(action.maxAmount)}>
 								<Trans>Max</Trans>
@@ -140,7 +142,11 @@ export function StakingActionModal({
 									ltr={!action.validatorName}
 								/>
 							) : null}
-							<ReviewRow label={t`Amount`} value={`${formatStakingAmount(submission?.amount ?? "0", 8)} HYPE`} ltr />
+							<ReviewRow
+								label={t`Amount`}
+								value={`${formatStakingAmount(submission?.amount ?? "0", numberFormat, 8)} HYPE`}
+								ltr
+							/>
 						</div>
 						<ActionRisk action={action} isTestnet={isTestnet} />
 						<Alert
@@ -255,6 +261,9 @@ function ActionStatus({
 }
 
 function StakingOperationReference({ reference }: { reference: FundsActionReference }) {
+	const { i18n } = useLingui();
+	const locale = i18n.locale;
+	const { formatDecimalString } = useNumberFormat();
 	return (
 		<dl className="divide-y divide-stroke-weak rounded-16 border border-stroke-weak px-3 text-xs">
 			<ReferenceRow label={<Trans>Network</Trans>} value={reference.env} />
@@ -262,9 +271,13 @@ function StakingOperationReference({ reference }: { reference: FundsActionRefere
 			<ReferenceRow label={<Trans>SDK method</Trans>} value={reference.method} mono />
 			<ReferenceRow label={<Trans>Target</Trans>} value={reference.target} mono />
 			<ReferenceRow label={<Trans>Direction</Trans>} value={<DirectionLabel direction={reference.direction} />} />
-			<ReferenceRow label={<Trans>Amount</Trans>} value={`${reference.displayAmount} ${reference.asset}`} ltr />
+			<ReferenceRow
+				label={<Trans>Amount</Trans>}
+				value={`${formatDecimalString(reference.displayAmount)} ${reference.asset}`}
+				ltr
+			/>
 			<ReferenceRow label={<Trans>Atomic amount</Trans>} value={reference.atomicAmount} mono />
-			<ReferenceRow label={<Trans>Started</Trans>} value={formatDateTime(reference.startedAt)} ltr />
+			<ReferenceRow label={<Trans>Started</Trans>} value={formatDateTime(reference.startedAt, { locale })} ltr />
 			<ReferenceRow label={<Trans>Identity epoch</Trans>} value={reference.identityEpoch} mono />
 		</dl>
 	);

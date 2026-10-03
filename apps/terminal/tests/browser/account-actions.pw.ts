@@ -226,6 +226,54 @@ for (const width of [375, 393, 1363]) {
 	}
 }
 
+for (const width of [375, 1363]) {
+	for (const theme of ["light", "dark"] as const) {
+		test(`offers ${theme} card funding as its own deposit method at ${width}px`, async ({ page }) => {
+			await page.setViewportSize({ width, height: width === 375 ? 666 : 852 });
+			await page.goto("/account-actions.html?surface=funds");
+			await page.getByRole("button", { name: `Theme ${theme}`, exact: true }).click();
+			await page.getByRole("button", { name: "Toggle card funding", exact: true }).click();
+			const dialog = page.getByRole("dialog");
+			for (const walletKind of ["embedded", "external"] as const) {
+				if (walletKind === "external") await page.getByRole("button", { name: "Toggle email", exact: true }).click();
+				await page.getByRole("button", { name: "Open deposit", exact: true }).click();
+				const methods = dialog.locator('[data-deposit-layout="methods"]');
+				await expect(methods.getByRole("heading", { name: "Deposit", exact: true })).toBeVisible();
+				const transfer = methods.locator('[data-deposit-method="transfer"]');
+				const fiat = methods.locator('[data-deposit-method="fiat"]');
+				await expect(transfer).toContainText("Transfer USDC");
+				await expect(fiat).toContainText("Buy USDC with a card");
+				await expect(fiat.getByText("ETH on Arbitrum", { exact: false })).toHaveCount(walletKind === "external" ? 1 : 0);
+				await expect(dialog.getByRole("heading", { name: "Deposit USDC from Arbitrum" })).toHaveCount(0);
+				expect(await dialog.evaluate((node) => node.scrollWidth <= node.clientWidth + 1)).toBe(true);
+				await expect(fiat).toBeInViewport({ ratio: 1 });
+				await page.screenshot({ path: test.info().outputPath(`deposit-methods-${walletKind}-${width}-${theme}.png`) });
+
+				await transfer.click();
+				await expect(dialog.getByRole("heading", { name: "Deposit USDC from Arbitrum" })).toBeVisible();
+				await expect(dialog.locator('[data-deposit-layout="methods"]')).toHaveCount(0);
+				await dialog.getByRole("button", { name: "Close", exact: true }).click();
+				await expect(dialog).toHaveCount(0);
+
+				await page.getByRole("button", { name: "Open deposit", exact: true }).click();
+				await methods.locator('[data-deposit-method="fiat"]').click();
+				await expect(dialog).toHaveCount(0);
+			}
+			await expect(page.getByRole("status", { name: "Fixture card purchases" })).toHaveText("2");
+
+			await page.getByRole("button", { name: "Toggle data", exact: true }).click();
+			await page.getByRole("button", { name: "Open deposit", exact: true }).click();
+			await expect(dialog.locator('[data-deposit-method="fiat"]')).toBeDisabled();
+			await expect(dialog.locator('[data-deposit-method="transfer"]')).toBeEnabled();
+			const notice = dialog.getByRole("alert");
+			await expect(notice).toHaveText("Deposits are not available in your region.");
+			await expect(notice).toBeInViewport({ ratio: 1 });
+			expect(await dialog.evaluate((node) => node.scrollWidth <= node.clientWidth + 1)).toBe(true);
+			await page.screenshot({ path: test.info().outputPath(`deposit-methods-unavailable-${width}-${theme}.png`) });
+		});
+	}
+}
+
 for (const width of [375, 393, 1001, 1363]) {
 	test(`keeps mode summaries and funding controls consistent at ${width}px`, async ({ page }) => {
 		await page.setViewportSize({ width, height: width === 375 ? 666 : 852 });

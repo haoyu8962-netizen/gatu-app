@@ -6,6 +6,7 @@ import { act, type ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AccountPanel } from "@/components/trade/tradebox/account-panel";
+import { notifyNumberFormatChange } from "@/lib/number-format-reactivity";
 
 vi.mock("boneyard-js/react", () => ({
 	Skeleton: ({ children, fallback, loading }: { children: ReactNode; fallback?: ReactNode; loading?: boolean }) =>
@@ -79,7 +80,43 @@ const modalActions = vi.hoisted(() => ({
 	openTransfer: vi.fn(),
 }));
 
+const numberFormatSetting = vi.hoisted(() => ({ locale: "en-US" }));
+
+vi.mock("@/stores/use-global-settings-store", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/stores/use-global-settings-store")>()),
+	getResolvedFormatLocale: () => numberFormatSetting.locale,
+}));
+
+let balancesCache: { key: string; value: ReturnType<typeof buildBalances> } | null = null;
+let marketsCache: { key: string; value: ReturnType<typeof buildMarkets> } | null = null;
+
+// Stable identities while the test state is unchanged, as a real subscription snapshot would be, so a
+// cached formatting result can actually be reused across renders.
 function getBalances() {
+	const key = JSON.stringify(testState);
+	if (balancesCache?.key !== key) balancesCache = { key, value: buildBalances() };
+	return balancesCache.value;
+}
+
+function getMarkets() {
+	const key = testState.builderCollateral;
+	if (marketsCache?.key !== key) marketsCache = { key, value: buildMarkets() };
+	return marketsCache.value;
+}
+
+function buildMarkets() {
+	return {
+		builderPerp: [
+			{
+				dex: "xyz",
+				quoteToken: { index: testState.builderCollateral === "USDC" ? 0 : 150, name: testState.builderCollateral },
+			},
+		],
+		getToken: () => ({ index: 0 }),
+	};
+}
+
+function buildBalances() {
 	return {
 		...balanceSnapshot,
 		accountAbstraction: testState.accountAbstraction,
@@ -111,15 +148,7 @@ vi.mock("@/hooks/trade/use-spot-token-usd-prices", () => ({
 
 vi.mock("@/lib/hyperliquid", () => ({
 	useInfo: () => ({ dataUpdatedAt: 0, isSuccess: false }),
-	useMarkets: () => ({
-		builderPerp: [
-			{
-				dex: "xyz",
-				quoteToken: { index: testState.builderCollateral === "USDC" ? 0 : 150, name: testState.builderCollateral },
-			},
-		],
-		getToken: () => ({ index: 0 }),
-	}),
+	useMarkets: () => getMarkets(),
 }));
 
 vi.mock("@/hooks/use-geo-restriction", () => ({
@@ -236,6 +265,9 @@ describe("desktop account panel", () => {
 		testState.snapshotsReady = true;
 		testState.spotBalances = [{ coin: "USDC", token: 0, total: "353.5", hold: "353.5", entryNtl: "0" }];
 		testState.spotStateStatus = "success";
+		balancesCache = null;
+		marketsCache = null;
+		numberFormatSetting.locale = "en-US";
 		modalActions.openDeposit.mockReset();
 		modalActions.openTransfer.mockReset();
 		Object.defineProperty(window, "matchMedia", {
@@ -358,6 +390,31 @@ describe("desktop account panel", () => {
 		expect(modalActions.openDeposit).toHaveBeenNthCalledWith(1, "deposit");
 		expect(modalActions.openTransfer).toHaveBeenCalledWith("toPerp");
 		expect(modalActions.openDeposit).toHaveBeenNthCalledWith(2, "withdraw");
+	});
+
+	it("rewrites every connected figure in place when the number format changes", () => {
+		renderPanel();
+		const overview = container.querySelector("section[aria-labelledby]");
+
+		numberFormatSetting.locale = "de-DE";
+		act(() => notifyNumberFormatChange());
+
+		expect(container.querySelector("section[aria-labelledby]")).toBe(overview);
+		expect(
+			[
+				"Account Value",
+				"Unrealized PNL",
+				"Cross Maintenance Margin",
+				"Account Margin Ratio",
+				"Cross Account Leverage",
+			].map((label) => getMetricRowText(container, label)),
+		).toEqual([
+			"Account Value$115,75",
+			"Unrealized PNL-$64,50",
+			"Cross Maintenance Margin$85,13",
+			"Account Margin Ratio73,54%",
+			"Cross Account Leverage14,71x",
+		]);
 	});
 
 	it("places one funding action group before the overview and keeps the Account heading accessible only", () => {

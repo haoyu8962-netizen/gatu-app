@@ -789,6 +789,10 @@ msgstr "يُستبعد الحساب فقط عندما تقل قيمة حسابه
 msgid "An approved API wallet can sign delegated L1 actions such as placing and cancelling orders and adjusting leverage or margin mode. Approval is not scoped per action. Master-only actions, including external withdrawals, still require the master wallet."
 msgstr "يمكن لمحفظة API المعتمدة توقيع إجراءات L1 المفوّضة، مثل إنشاء الأوامر وإلغائها وتعديل الرافعة المالية أو وضع الهامش. لا يقتصر التفويض على إجراء بعينه. وتظل الإجراءات المخصصة للمحفظة الرئيسية، بما فيها عمليات السحب الخارجية، بحاجة إلى المحفظة الرئيسية."
 
+#: src/lib/trade/privy-fiat-funding-feedback.ts
+msgid "An earlier card purchase is still open on this page. Reload the page, then try again."
+msgstr "ما زالت عملية شراء سابقة بالبطاقة مفتوحة في هذه الصفحة. أعد تحميل الصفحة ثم حاول مرة أخرى."
+
 #: src/hooks/trade/use-asset-leverage.ts
 #: src/lib/trade/position-submit-feedback.ts
 msgid "Another action for this market is already in progress."
@@ -1131,6 +1135,8 @@ msgstr "المتوسط {price}"
 #: src/components/trade/tradebox/bridge/amount-entry-screen.tsx
 #: src/components/trade/tradebox/bridge/bridge-error-screen.tsx
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
+#: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
 #: src/components/vaults/vault-action-modal.tsx
 msgid "Back"
 msgstr "رجوع"
@@ -1306,6 +1312,10 @@ msgstr "شراء / طويل"
 msgid "Buy Long"
 msgstr "شراء طويل"
 
+#: src/components/trade/tradebox/deposit/deposit-method-chooser.tsx
+msgid "Buy USDC with a card"
+msgstr "شراء USDC بالبطاقة"
+
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "By default, TP/SL applies to the whole position and submits a market order when mark price reaches the trigger. Configure an amount to keep a fixed size, or select limit execution to submit at your limit price."
 msgstr "افتراضياً، ينطبق TP/SL على المركز بأكمله ويرسل أمراً بسعر السوق عندما يصل سعر العلامة إلى سعر التفعيل. حدد مبلغاً للاحتفاظ بحجم ثابت، أو اختر التنفيذ بسعر محدد ليتم الإرسال بسعرك المحدد."
@@ -1453,6 +1463,31 @@ msgstr "لا يمكن التبديل إلى الوضع المعزول مع وج�
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Cannot switch to Isolated mode with an open position. Close your position first."
 msgstr "لا يمكن التبديل إلى وضع الهامش المعزول مع وجود مركز مفتوح. أغلق مركزك أولاً."
+
+#: src/components/trade/tradebox/deposit/deposit-method-chooser.tsx
+msgid "Card or bank transfer through a third-party payment provider. USDC arrives in your wallet on Arbitrum."
+msgstr "بطاقة أو تحويل مصرفي عبر مزوّد دفع خارجي. تصل USDC إلى محفظتك على Arbitrum."
+
+#: src/lib/tests/privy-fiat-funding-host.test.tsx
+#: src/lib/trade/privy-fiat-funding-feedback.ts
+msgid "Card purchase confirmed"
+msgstr "تم تأكيد الشراء بالبطاقة"
+
+#: src/lib/trade/privy-fiat-funding-feedback.ts
+msgid "Card purchase could not open. Check your connection and try again."
+msgstr "تعذّر فتح الشراء بالبطاقة. تحقّق من اتصالك وحاول مرة أخرى."
+
+#: src/lib/trade/privy-fiat-funding-feedback.ts
+msgid "Card purchase did not complete"
+msgstr "لم تكتمل عملية الشراء بالبطاقة"
+
+#: src/lib/trade/privy-fiat-funding-feedback.ts
+msgid "Card purchase status unknown"
+msgstr "حالة الشراء بالبطاقة غير معروفة"
+
+#: src/lib/trade/privy-fiat-funding-feedback.ts
+msgid "Card purchase submitted"
+msgstr "تم إرسال الشراء بالبطاقة"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
@@ -2567,6 +2602,7 @@ msgstr "جهة النشر"
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/amount-input.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
+#: src/components/trade/tradebox/deposit/deposit-method-chooser.tsx
 #: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
 #: src/components/vaults/vault-detail-view.tsx
 #: src/components/vaults/vault-detail-view.tsx
@@ -2600,6 +2636,10 @@ msgstr "المبلغ"
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Deposit failed"
 msgstr "فشل الإيداع"
+
+#: src/components/trade/tradebox/deposit/deposit-method-chooser.tsx
+msgid "Deposit native USDC on Arbitrum from your connected wallet."
+msgstr "أودِع USDC الأصلية على Arbitrum من محفظتك المتصلة."
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Deposit status unknown"
@@ -2659,6 +2699,11 @@ msgstr "تم الإيداع"
 #: src/components/vaults/vaults-list.tsx
 msgid "Deposited and Leading filters fail closed until both account snapshots are available."
 msgstr "تظل عوامل تصفية «تم الإيداع» و«القيادة» غير متاحة احترازيًا حتى تتوفر لقطتا الحساب."
+
+#: src/components/trade/tradebox/deposit/deposit-method-chooser.tsx
+#: src/lib/trade/privy-fiat-funding-feedback.ts
+msgid "Depositing it needs a little ETH on Arbitrum for network fees."
+msgstr "يتطلب إيداعه قليلًا من ETH على Arbitrum لرسوم الشبكة."
 
 #: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
 msgid "Depositing USDC to Hyperliquid..."
@@ -2819,6 +2864,7 @@ msgstr "يتطلب قطع الاتصال دعم Web Locks. حدّث متصفحك
 
 #: src/components/trade/mobile/offline-banner.tsx
 #: src/components/trade/tradebox/order-toast.tsx
+#: src/components/trade/tradebox/privy-fiat-funding-notice-card.tsx
 #: src/components/ui/sonner.tsx
 msgid "Dismiss"
 msgstr "تجاهل"
@@ -3159,7 +3205,7 @@ msgstr "الانزلاق المقدر"
 msgid "Establish Connection"
 msgstr "إنشاء اتصال"
 
-#. placeholder {0}: formatStakingRatio(props.weightedApr)
+#. placeholder {0}: formatStakingRatio(props.weightedApr, numberFormat)
 #: src/components/staking/staking-view.tsx
 msgid "Estimated APR {0}"
 msgstr "معدل العائد السنوي التقديري {0}"
@@ -4068,6 +4114,14 @@ msgstr "حقبة الهوية"
 #~ msgid "If you did not import this yourself, revoke phone access from the master wallet on desktop now."
 #~ msgstr ""
 
+#: src/lib/trade/privy-fiat-funding-feedback.ts
+msgid "If you paid, USDC arrives in your wallet on Arbitrum once the provider completes the purchase. Check the payment provider's email before trying again."
+msgstr "إذا دفعت، فستصل USDC إلى محفظتك على Arbitrum بعد أن يكمل المزوّد عملية الشراء. راجع البريد الإلكتروني من مزوّد الدفع قبل إعادة المحاولة."
+
+#: src/lib/trade/privy-fiat-funding-feedback.ts
+msgid "If you were charged, check the payment provider's email before trying again."
+msgstr "إذا تم خصم المبلغ منك، فراجع البريد الإلكتروني من مزوّد الدفع قبل إعادة المحاولة."
+
 #: src/components/trade/positions/position-pnl-share-modal.tsx
 msgid "Image saved"
 msgstr "تم حفظ الصورة"
@@ -4661,7 +4715,7 @@ msgstr "تعذّر التحقق من الأهلية حسب الموقع."
 msgid "Lock period progress"
 msgstr "تقدم فترة القفل"
 
-#. placeholder {0}: formatDateTime(validator.lockedUntilTimestamp)
+#. placeholder {0}: formatDateTime(validator.lockedUntilTimestamp, { locale })
 #: src/components/staking/staking-view.tsx
 msgid "Locked until {0}"
 msgstr "مقفل حتى {0}"
@@ -4985,7 +5039,7 @@ msgstr "الحد الأقصى للمعروض"
 msgid "Maximum withdrawable"
 msgstr "الحد الأقصى القابل للسحب"
 
-#. placeholder {0}: formatVaultUsd(availableAmount)
+#. placeholder {0}: formatVaultUsd(availableAmount, numberFormat)
 #: src/components/vaults/vault-action-modal.tsx
 msgid "Maximum withdrawable: {0}"
 msgstr "الحد الأقصى القابل للسحب: {0}"
@@ -5656,7 +5710,7 @@ msgid "On your phone, open {BRAND_NAME}, tap Connect, then Link Desktop Wallet a
 msgstr ""
 
 #. placeholder {0}: payload.env
-#. placeholder {1}: formatDateTime(payload.agentValidUntilMs, { locale: i18n.locale })
+#. placeholder {1}: formatDateTime(payload.agentValidUntilMs, { locale })
 #: src/routes/mobile-agent-sync.tsx
 msgid "Once imported, this phone trades on {0} with the desktop-approved key until {1}. It cannot withdraw."
 msgstr ""
@@ -7729,6 +7783,10 @@ msgstr "إرسال"
 msgid "Send failed"
 msgstr "فشل الإرسال"
 
+#: src/components/trade/tradebox/deposit/deposit-method-chooser.tsx
+msgid "Send native USDC on Arbitrum from an exchange or wallet."
+msgstr "أرسل USDC الأصلية على Arbitrum من منصة تداول أو محفظة."
+
 #: src/components/trade/positions/send-modal.tsx
 msgid "Send status unknown"
 msgstr "حالة الإرسال غير معروفة"
@@ -7757,7 +7815,7 @@ msgstr "أرسل USDC إلى عنوان محفظتك أدناه."
 msgid "Sent {sentAmount} {sentToken}"
 msgstr "تم إرسال {sentAmount} {sentToken}"
 
-#. placeholder {0}: formatTimestamp(owner.lockedUntil, i18n.locale)
+#. placeholder {0}: formatTimestamp(owner.lockedUntil, locale)
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Server unlock time: {0}"
 msgstr "وقت إلغاء القفل حسب الخادم: {0}"
@@ -9007,6 +9065,10 @@ msgstr "تحمّل الصفحة لقطة واحدة لعمليات التنفي�
 msgid "The page you are looking for does not exist."
 msgstr "الصفحة التي تبحث عنها غير موجودة."
 
+#: src/lib/trade/privy-fiat-funding-feedback.ts
+msgid "The payment provider is still processing it. USDC arrives in your wallet on Arbitrum when it completes; then open Deposit."
+msgstr "لا يزال مزوّد الدفع يعالجها. ستصل USDC إلى محفظتك على Arbitrum عند اكتمالها، ثم افتح «إيداع»."
+
 #: src/lib/trade/position-submit-feedback.ts
 msgid "The position grew after you confirmed, so nothing was closed. Reopen Market Close to review the new size."
 msgstr "زاد حجم المركز بعد تأكيدك، لذلك لم يتم إغلاق أي شيء. أعد فتح إغلاق بسعر السوق لمراجعة الحجم الجديد."
@@ -9587,6 +9649,10 @@ msgstr "لم تعد هذه الخزنة تقبل الإيداعات."
 msgid "This Vault uses proportional position closing on withdrawal."
 msgstr "تستخدم هذه الخزنة إغلاق المراكز بالتناسب عند السحب."
 
+#: src/lib/trade/privy-fiat-funding-feedback.ts
+msgid "This was a sandbox test: no card was charged and no USDC will arrive."
+msgstr "كان هذا اختبارًا في البيئة التجريبية: لم يُخصم أي مبلغ من أي بطاقة ولن تصل أي USDC."
+
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 msgid "This will close the current position and open an equal position in the opposite direction at market price."
 msgstr "سيؤدي هذا إلى إغلاق المركز الحالي وفتح مركز مساوٍ له في الاتجاه المعاكس بسعر السوق."
@@ -9992,6 +10058,11 @@ msgstr "حالة التحويل غير معروفة"
 #: src/components/trade/positions/transfer-modal.tsx
 msgid "Transfer USDC"
 msgstr "تحويل USDC"
+
+#: src/components/trade/tradebox/deposit/deposit-method-chooser.tsx
+msgctxt "Deposit method"
+msgid "Transfer USDC"
+msgstr "إرسال USDC"
 
 #: src/components/trade/positions/transfer-modal.tsx
 #~ msgid "Transferring..."
@@ -10513,6 +10584,10 @@ msgstr "تم تأكيد إيداع USDC على Arbitrum"
 #~ msgid "USDC deposit submitted to Hyperliquid"
 #~ msgstr "تم إرسال إيداع USDC إلى Hyperliquid"
 
+#: src/lib/trade/privy-fiat-funding-feedback.ts
+msgid "USDC is on its way to your wallet on Arbitrum. Open Deposit once it arrives."
+msgstr "USDC في طريقها إلى محفظتك على Arbitrum. افتح «إيداع» عند وصولها."
+
 #: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
 msgid "USDC on HyperCore"
 msgstr "USDC على HyperCore"
@@ -10741,7 +10816,7 @@ msgstr "مرجع التحقق"
 msgid "Verified Vault details are unavailable."
 msgstr "تفاصيل الخزنة المتحقق منها غير متاحة."
 
-#. placeholder {0}: formatVaultUsd(availableAmount)
+#. placeholder {0}: formatVaultUsd(availableAmount, numberFormat)
 #: src/components/vaults/vault-action-modal.tsx
 msgid "Verified wallet balance: {0}"
 msgstr "رصيد المحفظة المتحقق منه: {0}"
@@ -11321,3 +11396,7 @@ msgstr "جارٍ معالجة معاملتك"
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Your Vault balance could not be verified. Account values and withdrawal remain unavailable."
 msgstr "تعذر التحقق من رصيدك في الخزنة. تظل قيم الحساب والسحب غير متاحة."
+
+#: src/lib/trade/privy-fiat-funding-feedback.ts
+msgid "Your wallet session changed, so the card purchase did not open. Reconnect your wallet and try again."
+msgstr "تغيّرت جلسة محفظتك، لذلك لم يُفتح الشراء بالبطاقة. أعد ربط محفظتك وحاول مرة أخرى."

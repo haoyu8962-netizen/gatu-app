@@ -1,3 +1,4 @@
+import { realpathSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { build } from "vite";
 import { describe, expect, it } from "vitest";
@@ -5,6 +6,7 @@ import {
 	createManualChunks,
 	createOrderSummaryChunksPlugin,
 	createTerminalViewChunksPlugin,
+	isApplicationBaseUiModule,
 } from "../../../vite.config";
 
 describe("Vite manual chunks", () => {
@@ -23,6 +25,22 @@ describe("Vite manual chunks", () => {
 		["@tanstack/virtual-core", "vendor-tanstack-virtual"],
 	])("places %s in %s", (packageName, expectedChunk) => {
 		expect(createManualChunks(`/repo/node_modules/${packageName}/dist/index.js`)).toBe(expectedChunk);
+	});
+
+	it("groups only the application's own Base UI copy into the shared vendor chunk", () => {
+		const applicationBaseUi = realpathSync(
+			fileURLToPath(new URL("../../../node_modules/@base-ui/react", import.meta.url)),
+		);
+		const applicationBaseUiUtils = realpathSync(`${applicationBaseUi}/../utils`);
+
+		expect(createManualChunks(`${applicationBaseUi}/esm/dialog/index.js`)).toBe("vendor-base-ui");
+		expect(createManualChunks(`${applicationBaseUiUtils}/useControlled.mjs`)).toBe("vendor-base-ui");
+		expect(
+			createManualChunks(
+				"/repo/node_modules/.pnpm/@base-ui+react@9.9.9/node_modules/@base-ui/react/combobox/index.mjs",
+			),
+		).toBeUndefined();
+		expect(isApplicationBaseUiModule("/repo/node_modules/@base-ui/react/index.js", ["/elsewhere/"])).toBe(false);
 	});
 
 	it("does not classify application modules as vendor chunks", () => {

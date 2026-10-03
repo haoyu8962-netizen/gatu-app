@@ -8,6 +8,7 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { FundingHistoryPage } from "@/components/funding-history/funding-history-page";
+import { formatDateTimeShort } from "@/lib/format";
 import type { UserFunding } from "@/lib/trade/user-funding";
 
 const ADDRESS = "0x1111111111111111111111111111111111111111";
@@ -127,7 +128,6 @@ vi.mock("@/hooks/trade/use-market-navigation", () => ({ useMarketNavigation: () 
 vi.mock("@/hooks/use-mobile", () => ({ useIsMobile: () => false }));
 vi.mock("@/lib/hyperliquid", () => ({ useMarkets: () => ({ getMarket: () => undefined }) }));
 vi.mock("@/lib/lazy", () => ({ createLazyComponent: () => () => null }));
-vi.mock("@/lib/number-format-reactivity", () => ({ useNumberFormatRevision: () => undefined }));
 vi.mock("@/stores/use-global-settings-store", async (importOriginal) => ({
 	...(await importOriginal<typeof import("@/stores/use-global-settings-store")>()),
 	useIsTestnet: () => false,
@@ -210,6 +210,22 @@ describe("FundingHistoryPage", () => {
 		act(() => i18n.loadAndActivate({ locale: "zh", messages: ZH_PAGINATION_MESSAGES }));
 
 		expect(paginationLabels(container)).toEqual(["上一页", "下一页", "第 1 页"]);
+	});
+
+	it("rewrites the loaded range in the active language without remounting the page", () => {
+		const start = mocks.history.rangeStartTime ?? 0;
+		const end = mocks.history.rangeEndTime ?? 0;
+		const rangeIn = (locale: string) =>
+			`${formatDateTimeShort(start, { locale })} – ${formatDateTimeShort(end, { locale })}`;
+		renderPage();
+		const page = container.firstElementChild;
+		expect(container.textContent).toContain(rangeIn("en"));
+
+		act(() => i18n.loadAndActivate({ locale: "zh", messages: ZH_PAGINATION_MESSAGES }));
+
+		expect(container.firstElementChild).toBe(page);
+		expect(rangeIn("zh")).not.toBe(rangeIn("en"));
+		expect(container.textContent).toContain(rangeIn("zh"));
 	});
 
 	it("paginates 25 rows locally and resets to page one when filtering without refreshing", () => {

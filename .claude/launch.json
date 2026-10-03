@@ -25,6 +25,43 @@
       "port": 3005
     },
     {
+      "name": "terminal-card-funding",
+      "runtimeExecutable": "env",
+      "runtimeArgs": [
+        "VITE_PRIVY_FIAT_FUNDING_MAINNET_ENABLED=true",
+        "VITE_PRIVY_FIAT_FUNDING_TESTNET_ENABLED=true",
+        "pnpm",
+        "--filter",
+        "@sairn/terminal",
+        "exec",
+        "vite",
+        "dev",
+        "--port",
+        "3005",
+        "--strictPort"
+      ],
+      "port": 3005
+    },
+    {
+      "name": "funds-forms-fixture",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": [
+        "--dir",
+        "apps/terminal",
+        "exec",
+        "vite",
+        "--config",
+        "tests/browser/account-actions.vite.config.ts",
+        "--host",
+        "127.0.0.1",
+        "--port",
+        "4187",
+        "--strictPort"
+      ],
+      "port": 4187,
+      "url": "http://127.0.0.1:4187"
+    },
+    {
       "name": "terminal-inspect",
       "runtimeExecutable": "pnpm",
       "runtimeArgs": ["--filter", "@sairn/terminal", "exec", "vite", "dev", "--port", "3015", "--strictPort"],

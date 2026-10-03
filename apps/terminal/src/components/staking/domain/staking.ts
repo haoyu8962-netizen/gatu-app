@@ -1,4 +1,5 @@
 import Big from "big.js";
+import type { NumberFormatters } from "@/lib/format";
 
 const ADDRESS_PATTERN = /^0x[0-9a-fA-F]{40}$/u;
 const HASH_PATTERN = /^0x[0-9a-fA-F]{64}$/u;
@@ -354,19 +355,21 @@ export function canUndelegate(
 	return Boolean(delegation && Big(delegation.amount).gt(0) && delegation.lockedUntilTimestamp <= nowMs);
 }
 
-export function formatStakingAmount(value: string, maximumFractionDigits = 4): string {
-	if (!isUnsignedDecimal(value) || !Number.isSafeInteger(maximumFractionDigits) || maximumFractionDigits < 0)
-		return "—";
-	const rounded = Big(value).toFixed(maximumFractionDigits, Big.roundDown);
-	const [integer = "0", fraction = ""] = rounded.split(".");
-	const grouped = integer.replace(/\B(?=(\d{3})+(?!\d))/gu, ",");
-	const trimmedFraction = fraction.replace(/0+$/u, "");
-	return trimmedFraction ? `${grouped}.${trimmedFraction}` : grouped;
+export function formatStakingAmount(value: string, numberFormat: NumberFormatters, maximumFractionDigits = 4): string {
+	if (!isUnsignedDecimal(value)) return "—";
+	return formatTruncatedDecimal(Big(value), numberFormat, maximumFractionDigits);
 }
 
-export function formatStakingRatio(value: string, maximumFractionDigits = 2): string {
+export function formatStakingRatio(value: string, numberFormat: NumberFormatters, maximumFractionDigits = 2): string {
 	if (!isUnsignedDecimal(value)) return "—";
-	return `${formatStakingAmount(Big(value).times(100).toString(), maximumFractionDigits)}%`;
+	return `${formatTruncatedDecimal(Big(value).times(100), numberFormat, maximumFractionDigits)}%`;
+}
+
+function formatTruncatedDecimal(value: Big, numberFormat: NumberFormatters, maximumFractionDigits: number): string {
+	if (!Number.isSafeInteger(maximumFractionDigits) || maximumFractionDigits < 0) return "—";
+	return numberFormat.formatDecimalString(value.toFixed(maximumFractionDigits, Big.roundDown), {
+		trimTrailingZeros: true,
+	});
 }
 
 function parseValidatorStats(value: unknown): Record<StakingPeriod, StakingValidatorStats> | null {

@@ -5,8 +5,7 @@ import { normalizeDecimalInputEvent } from "@/components/ui/decimal-input-event"
 import { FieldLabel } from "@/components/ui/field-label";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/cn";
-import { formatUSD } from "@/lib/format";
-import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
+import { useNumberFormat } from "@/lib/format";
 import { isPositive } from "@/lib/trade/numbers";
 import { getValueColorClass } from "@/lib/ui/value-color";
 
@@ -55,10 +54,10 @@ export function PriceInputWithPercent({
 	referencePrice,
 	mobileTouchSafe = false,
 	linkedReturnInput,
-	formatPnlValue = (pnl) => formatUSD(pnl, { signDisplay: "exceptZero" }),
+	formatPnlValue,
 }: Props) {
 	const { t } = useLingui();
-	useNumberFormatRevision();
+	const { formatUSD } = useNumberFormat();
 	const priceInputId = useId();
 	const errorId = `${priceInputId}-error`;
 	const inputFrameClassName = cn(
@@ -120,7 +119,7 @@ export function PriceInputWithPercent({
 					<span
 						className={cn("shrink-0 whitespace-nowrap text-right text-xs tabular-nums", getValueColorClass(pnlValue))}
 					>
-						{formatPnlValue(pnlValue)}
+						{formatPnlValue ? formatPnlValue(pnlValue) : formatUSD(pnlValue, { signDisplay: "exceptZero" })}
 					</span>
 				)}
 			</div>

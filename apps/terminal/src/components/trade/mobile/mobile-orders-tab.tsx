@@ -42,7 +42,7 @@ import { useOrderDisplayLabels } from "@/hooks/trade/use-order-display-labels";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { type ActionFailure, formatActionFailure } from "@/lib/errors/action-error";
-import { formatDateTime, formatNumber, formatPercent, formatPrice, formatToken } from "@/lib/format";
+import { formatDateTime, useNumberFormat } from "@/lib/format";
 import {
 	type ExchangeParams,
 	type SubscriptionStatus,
@@ -52,7 +52,6 @@ import {
 	useMarketsInfo,
 	useSubscription,
 } from "@/lib/hyperliquid";
-import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { isClosePositionOrder, isMarketTriggerOrder, type OpenOrder } from "@/lib/trade/open-orders";
 import {
 	ensurePendingTradingActionFeedback,
@@ -1260,8 +1259,9 @@ function MobileOrderCard({
 	onSelectMarket,
 	onExpandedChange,
 }: MobileOrderCardProps) {
-	useNumberFormatRevision();
-	const { t } = useLingui();
+	const { formatNumber, formatPercent, formatPrice, formatToken } = useNumberFormat();
+	const { i18n, t } = useLingui();
+	const locale = i18n.locale;
 	const detailsId = useId();
 	const { getOrderSideLabel, getOrderTypeLabel, getTriggerConditionLabel } = useOrderDisplayLabels();
 	const sideLabel = getOrderSideLabel(order.side, order.reduceOnly);
@@ -1326,7 +1326,7 @@ function MobileOrderCard({
 					<div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)_minmax(0,1fr)] gap-x-2.5 gap-y-3">
 						<OrderMetric
 							label={t`Time`}
-							value={formatDateTime(order.timestamp, { dateStyle: "short", timeStyle: "short" })}
+							value={formatDateTime(order.timestamp, { locale, dateStyle: "short", timeStyle: "short" })}
 						/>
 						<OrderMetric
 							label={t`Direction`}

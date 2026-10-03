@@ -1,7 +1,13 @@
 import assert from "node:assert/strict";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { basename, dirname, join } from "node:path";
 import test from "node:test";
+import { fileURLToPath } from "node:url";
 
+const REPOSITORY_ROOT = fileURLToPath(new URL("..", import.meta.url));
+const TEST_RUNNER = /^(?:vitest run|playwright test|node --test)$/;
+const TEST_RUNNER_IN_TEXT = /(?<!\S)(?:vitest\s+run|playwright\s+test|node\s+--test)(?!\S)/g;
+const SHELL_OPERATOR = /^(?:&&|\|\|?|;)$/;
 const CONCURRENCY_GROUP = "group: ${{ github.workflow }}-${{ github.ref }}";
 const SHARD_FLAGS = "--fully-parallel --shard=${{ matrix.shard }}/2";
 const PULL_REQUEST_WORKFLOWS = [
@@ -19,6 +25,78 @@ function readWorkflow(name) {
 
 function countOccurrences(source, needle) {
 	return source.split(needle).length - 1;
+}
+
+function workflowListItems(source) {
+	const items = [];
+	let item;
+	for (const line of source.split("\n")) {
+		const indent = line.search(/\S/);
+		if (item && (indent < 0 || indent > item.indent)) {
+			item.lines.push(line);
+			continue;
+		}
+		const start = /^( *)- (.*)$/.exec(line);
+		item = start ? { indent: start[1].length, lines: [`${start[1]}  ${start[2]}`] } : undefined;
+		if (item) items.push(item);
+	}
+	return items;
+}
+
+function stepCommands(step) {
+	const keyIndent = step.indent + 2;
+	let directory = ".";
+	let commands = [];
+	for (const [index, line] of step.lines.entries()) {
+		if (line.search(/\S/) !== keyIndent) continue;
+		const [, key, value] = /^\s*([\w-]+):\s*(.*)$/.exec(line) ?? [];
+		if (key === "working-directory") directory = value;
+		if (key !== "run") continue;
+		const block = /^([>|])[+-]?$/.exec(value);
+		if (!block) {
+			commands = [value];
+			continue;
+		}
+		const end = step.lines.findIndex(
+			(next, nextIndex) => nextIndex > index && next.trim() !== "" && next.search(/\S/) <= keyIndent,
+		);
+		const body = step.lines.slice(index + 1, end < 0 ? undefined : end).map((next) => next.trim());
+		commands = block[1] === ">" ? [body.join(" ")] : body.join("\n").replaceAll("\\\n", " ").split("\n");
+	}
+	return { directory, commands: commands.filter((command) => !command.startsWith("#")) };
+}
+
+function testRunnerCalls(directory, command) {
+	const tokens = command
+		.replace(/\$\{\{.*?\}\}/g, "expression")
+		.split(/\s+/)
+		.filter(Boolean);
+	return tokens.flatMap((token, index) => {
+		const runner = `${token} ${tokens[index + 1]}`;
+		if (!TEST_RUNNER.test(runner)) return [];
+		const commandStart = tokens.slice(0, index).findLastIndex((other) => SHELL_OPERATOR.test(other)) + 1;
+		const prefix = tokens.slice(commandStart, index);
+		const directoryFlag = prefix.findLastIndex((other) => other === "--dir" || other === "-C");
+		const rest = tokens.slice(index + 2);
+		const end = rest.findIndex((other) => SHELL_OPERATOR.test(other));
+		return [
+			{
+				directory: directoryFlag < 0 ? directory : join(directory, prefix[directoryFlag + 1]),
+				paths: rest.slice(0, end < 0 ? undefined : end).filter((argument) => !argument.startsWith("-")),
+			},
+		];
+	});
+}
+
+function matchesAnyFile(directory, listed) {
+	const path = join(REPOSITORY_ROOT, directory, listed);
+	if (!listed.includes("*")) return existsSync(path);
+	const pattern = basename(listed)
+		.replace(/[.+?^${}()|[\]\\]/g, "\\$&")
+		.replaceAll("*", ".*");
+	const name = new RegExp(`^${pattern}$`);
+	const parent = dirname(path);
+	return existsSync(parent) && readdirSync(parent).some((entry) => !entry.startsWith(".") && name.test(entry));
 }
 
 test("cancels superseded runs in pull request workflows and never in the comment-driven one", () => {
@@ -182,5 +260,63 @@ test("re-runs the brand and legal guards whenever the brand source or legal text
 		"twap-order-summary.test.tsx",
 	]) {
 		assert.equal(terminalTests.includes(`src/lib/tests/${file}`), true, `${file} never runs in CI`);
+	}
+});
+
+test("never lists a test path that matches no file", () => {
+	const workflowNames = readdirSync(new URL("../.github/workflows/", import.meta.url));
+	const missing = [];
+	for (const name of workflowNames.filter((file) => file.endsWith(".yml"))) {
+		const workflow = readWorkflow(name);
+		const calls = workflowListItems(workflow)
+			.map(stepCommands)
+			.flatMap(({ directory, commands }) => commands.flatMap((command) => testRunnerCalls(directory, command)));
+		const callsInText = workflow
+			.split("\n")
+			.filter((line) => !line.trim().startsWith("#"))
+			.join("\n")
+			.match(TEST_RUNNER_IN_TEXT);
+		assert.equal(calls.length, callsInText?.length ?? 0, `${name} has a test runner call whose paths are not read`);
+		for (const { directory, paths } of calls) {
+			for (const listed of paths) {
+				assert.equal(dirname(listed).includes("*"), false, `${name}: ${listed} has a wildcard outside the file name`);
+				if (!matchesAnyFile(directory, listed)) missing.push(`${name}: ${join(directory, listed)}`);
+			}
+		}
+	}
+	assert.deepEqual(
+		missing,
+		[],
+		"vitest and Playwright read a path that matches no file as a filter that selects nothing, and the step still passes",
+	);
+});
+
+test("rebuilds and re-checks chunking when a dependency patch changes", () => {
+	for (const name of ["terminal-tests.yml", "production-build.yml"]) {
+		assert.equal(readWorkflow(name).includes('- "patches/**"'), true, `${name} does not start for patches/**`);
+	}
+	assert.equal(
+		readWorkflow("terminal-tests.yml").includes("src/lib/tests/vite-manual-chunks.test.ts"),
+		true,
+		"the manual chunk guard never runs in CI",
+	);
+});
+
+test("runs the release metadata, CSP and card funding guards on pull requests", () => {
+	const terminalTests = readWorkflow("terminal-tests.yml");
+	for (const file of [
+		"src/lib/tests/build-meta.test.ts",
+		"src/lib/tests/security-policy-docs.test.ts",
+		"src/lib/tests/privy-fiat-funding.test.ts",
+		"src/lib/tests/privy-fiat-funding-host.test.tsx",
+		"src/lib/tests/privy-fiat-funding-host-gate.test.tsx",
+		"src/lib/tests/use-privy-fiat-funding-offer.test.tsx",
+		"src/lib/tests/deposit-method-chooser.test.tsx",
+		"src/lib/tests/deposit-modal-withdrawal-routing-guard.test.tsx",
+		"src/lib/tests/wrong-network-screen.test.tsx",
+		"src/lib/tests/dialog-notice-radius-contract.test.ts",
+		"src/lib/tests/i18n-reactivity-contract.test.ts",
+	]) {
+		assert.equal(terminalTests.includes(file), true, `${file} never runs in CI`);
 	}
 });

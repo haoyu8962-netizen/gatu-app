@@ -16,9 +16,8 @@ import { useTradeHistory } from "@/hooks/trade/use-trade-history";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/cn";
 import { buildCsvRows } from "@/lib/csv";
-import { formatDateTimeShort, formatNumber, formatToken, formatUSD, shortenAddress } from "@/lib/format";
+import { formatDateTimeShort, shortenAddress, useNumberFormat } from "@/lib/format";
 import { getExplorerTxUrl, useMarkets } from "@/lib/hyperliquid";
-import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import {
 	ACCOUNT_HISTORY_PAGE_SIZES,
 	type AccountHistoryPageSize,
@@ -59,8 +58,9 @@ function getDirectionColorClass(fill: UserFill) {
 }
 
 export function TradeHistoryPage({ address }: Props) {
-	useNumberFormatRevision();
-	const { t } = useLingui();
+	const { formatNumber, formatToken, formatUSD } = useNumberFormat();
+	const { i18n, t } = useLingui();
+	const locale = i18n.locale;
 	const isMobile = useIsMobile();
 	const isTestnet = useIsTestnet();
 	const markets = useMarkets();
@@ -125,7 +125,7 @@ export function TradeHistoryPage({ address }: Props) {
 					(coin) => markets.getMarket(coin)?.kind,
 				),
 				[
-					{ header: t`Time`, getValue: (fill) => formatDateTimeShort(fill.time) },
+					{ header: t`Time`, getValue: (fill) => formatDateTimeShort(fill.time, { locale: i18n.locale }) },
 					{ header: t`Asset`, getValue: (fill) => fill.coin },
 					{ header: t`Direction`, getValue: (fill) => getDirectionLabel(fill.dir) },
 					{ header: t`Type`, getValue: getTypeLabel },
@@ -335,7 +335,7 @@ export function TradeHistoryPage({ address }: Props) {
 												fit
 											/>
 											<time className="shrink-0 text-xs tabular-nums text-fg-muted">
-												{formatDateTimeShort(fill.time)}
+												{formatDateTimeShort(fill.time, { locale })}
 											</time>
 										</div>
 										<div className="mt-2 flex items-center gap-2 text-2xs font-semibold">
@@ -485,11 +485,11 @@ export function TradeHistoryPage({ address }: Props) {
 															target="_blank"
 															rel="noopener noreferrer"
 														>
-															<span>{formatDateTimeShort(fill.time)}</span>
+															<span>{formatDateTimeShort(fill.time, { locale })}</span>
 															<ArrowSquareOutIcon className="size-3" aria-hidden="true" />
 														</a>
 													) : (
-														formatDateTimeShort(fill.time)
+														formatDateTimeShort(fill.time, { locale })
 													)}
 												</TableCell>
 											</TableRow>

@@ -28,10 +28,9 @@ import { isSupportedAccountAbstraction, useDefaultDexBalances } from "@/hooks/tr
 import { useFeeRates } from "@/hooks/trade/use-fee-rates";
 import { useTrackedOrder } from "@/hooks/trade/use-tracked-order";
 import { cn } from "@/lib/cn";
-import { formatToken } from "@/lib/format";
+import { useNumberFormat } from "@/lib/format";
 import { type ExchangeParams, useHyperliquid, useSubscription } from "@/lib/hyperliquid";
 import { useMarketsInfo } from "@/lib/hyperliquid/hooks/useMarketsInfo";
-import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { deriveOrderOutcome } from "@/lib/trade/extract-order-status";
 import { toBig } from "@/lib/trade/numbers";
 import { orderSubmissionFeedback } from "@/lib/trade/order-submission-feedback";
@@ -80,7 +79,7 @@ interface Props {
 
 function SpotSwapModalContent({ initialFromToken, initialToToken, mode, onClose }: Props) {
 	const { t } = useLingui();
-	useNumberFormatRevision();
+	const { formatToken } = useNumberFormat();
 	const { spotMarkets } = useMarketsInfo();
 	const {
 		accountAbstraction,
@@ -657,7 +656,7 @@ function TokenBalance({
 	onMaxClick?: () => void;
 	disabled?: boolean;
 }) {
-	useNumberFormatRevision();
+	const { formatToken } = useNumberFormat();
 	if (!show) return null;
 
 	const formattedBalance = formatToken(balance, { decimals: 4, symbol: balanceToken });

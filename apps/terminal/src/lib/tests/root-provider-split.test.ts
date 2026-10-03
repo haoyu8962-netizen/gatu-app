@@ -51,7 +51,7 @@ describe("root provider startup split", () => {
 	it("selects the same empty application fallback before mounting any route content", () => {
 		expect(rootRouteSource).not.toContain("routeSurface");
 		expect(rootRouteSource).not.toContain("DocumentOverlays");
-		expect(rootRouteSource).toContain("<AppRuntimeOverlays />");
+		expect(rootRouteSource).toMatch(/<Outlet \/>\n\s*<AppRuntimeOverlays \/>\n/);
 		expect(rootRouteSource).toContain("const fallback = <StartupFallback />");
 		expect(rootRouteSource).not.toContain("getHydrationRouteSurface");
 

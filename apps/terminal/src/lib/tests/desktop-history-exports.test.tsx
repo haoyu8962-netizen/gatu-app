@@ -1,10 +1,13 @@
 /** @vitest-environment jsdom */
 
+import { createHash } from "node:crypto";
+import { i18n, type Messages } from "@lingui/core";
 import { act, type ReactNode } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { FundingTab } from "@/components/trade/positions/funding-tab";
 import { HistoryTab } from "@/components/trade/positions/history-tab";
+import { formatDateTimeShort } from "@/lib/format";
 import { createI18nRoot } from "./harness/react";
 
 const mocks = vi.hoisted(() => ({
@@ -34,6 +37,7 @@ const mocks = vi.hoisted(() => ({
 	historyStatus: "ready" as "error" | "idle" | "loading" | "offline" | "ready",
 	historyStale: false,
 	fundingStatus: "ready" as "error" | "idle" | "loading" | "offline" | "ready",
+	fillsBuildRows: null as ((items: unknown[]) => string[][]) | null,
 }));
 
 vi.mock("@/components/trade/components/asset-badge", () => ({
@@ -105,29 +109,32 @@ vi.mock("@/hooks/trade/use-history-csv-export", () => ({
 	}: {
 		buildRows: (items: unknown[]) => string[][];
 		filename: string;
-	}) => ({
-		exportCsv: async () =>
-			mocks.downloadCsv(
-				filename,
-				buildRows([
-					{
-						coin: "BTC",
-						closedPnl: "12.5",
-						dir: "Close Long",
-						fee: "0.12",
-						feeToken: "USDC",
-						hash: "0xaaa",
-						liquidation: null,
-						px: "100000",
-						side: "A",
-						sz: "0.01",
-						tid: 1,
-						time: 1_754_350_400_000,
-					},
-				]),
-			),
-		isExporting: false,
-	}),
+	}) => {
+		mocks.fillsBuildRows = buildRows;
+		return {
+			exportCsv: async () =>
+				mocks.downloadCsv(
+					filename,
+					buildRows([
+						{
+							coin: "BTC",
+							closedPnl: "12.5",
+							dir: "Close Long",
+							fee: "0.12",
+							feeToken: "USDC",
+							hash: "0xaaa",
+							liquidation: null,
+							px: "100000",
+							side: "A",
+							sz: "0.01",
+							tid: 1,
+							time: 1_754_350_400_000,
+						},
+					]),
+				),
+			isExporting: false,
+		};
+	},
 }));
 
 vi.mock("@/hooks/wallet/use-wallet-session", () => ({
@@ -161,6 +168,22 @@ vi.mock("@/stores/use-global-settings-store", () => ({
 	getResolvedFormatLocale: () => "en-US",
 	useIsTestnet: () => false,
 }));
+
+const ZH_CSV_LABELS: Record<string, string> = {
+	Asset: "资产",
+	"Close Long": "平多",
+	Direction: "方向",
+	"Open Long": "开多",
+	Time: "时间",
+	Trade: "交易",
+	Type: "类型",
+};
+const zhCsvMessages: Messages = Object.fromEntries(
+	Object.entries(ZH_CSV_LABELS).map(([english, chinese]) => [
+		createHash("sha256").update(`${english}\x1f`).digest("base64").slice(0, 6),
+		chinese,
+	]),
+);
 
 describe("desktop history exports", () => {
 	let container: HTMLDivElement;
@@ -201,6 +224,8 @@ describe("desktop history exports", () => {
 		act(() => root.unmount());
 		container.remove();
 		mocks.downloadCsv.mockReset();
+		mocks.fillsBuildRows = null;
+		act(() => i18n.loadAndActivate({ locale: "en", messages: {} }));
 		vi.useRealTimers();
 	});
 
@@ -251,6 +276,22 @@ describe("desktop history exports", () => {
 		expect(mocks.downloadCsv).toHaveBeenCalledWith(
 			"trade_history.csv",
 			expect.arrayContaining([expect.arrayContaining(["Time", "Asset", "Direction", "Transaction"])]),
+		);
+	});
+
+	it("writes exported fill headers, labels and dates in the language active when the rows are built", () => {
+		act(() => root.render(<HistoryTab />));
+		const buildRowsFromEnglishRender = mocks.fillsBuildRows;
+		expect(buildRowsFromEnglishRender).not.toBeNull();
+
+		act(() => i18n.loadAndActivate({ locale: "zh", messages: zhCsvMessages }));
+		const rows = buildRowsFromEnglishRender?.([mocks.fills[0]]) ?? [];
+
+		expect(rows[0]?.slice(0, 4)).toEqual(["时间", "资产", "方向", "类型"]);
+		expect(rows[1]?.[0]).toBe(formatDateTimeShort(1_754_350_400_000, { locale: "zh" }));
+		expect(rows[1]?.slice(1, 4)).toEqual(["BTC", "平多", "交易"]);
+		expect(formatDateTimeShort(1_754_350_400_000, { locale: "zh" })).not.toBe(
+			formatDateTimeShort(1_754_350_400_000, { locale: "en" }),
 		);
 	});
 

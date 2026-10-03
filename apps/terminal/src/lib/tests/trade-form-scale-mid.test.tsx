@@ -4,13 +4,20 @@ import { act } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { TradeFormScale } from "@/components/trade/tradebox/trade-form-scale";
+import { notifyNumberFormatChange } from "@/lib/number-format-reactivity";
 import { createI18nRoot } from "./harness/react";
 
 const mocks = vi.hoisted(() => ({
+	formatLocale: "en-US",
 	setScaleEnd: vi.fn(),
 	setScaleLevels: vi.fn(),
 	setScaleSkew: vi.fn(),
 	setScaleStart: vi.fn(),
+}));
+
+vi.mock("@/stores/use-global-settings-store", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/stores/use-global-settings-store")>()),
+	getResolvedFormatLocale: () => mocks.formatLocale,
 }));
 
 vi.mock("@/stores/use-order-entry-store", () => ({
@@ -28,6 +35,7 @@ describe("TradeFormScale Mid controls", () => {
 	let root: Root;
 
 	beforeEach(() => {
+		mocks.formatLocale = "en-US";
 		container = document.createElement("div");
 		document.body.appendChild(container);
 		root = createI18nRoot(container);
@@ -40,6 +48,28 @@ describe("TradeFormScale Mid controls", () => {
 	afterEach(() => {
 		act(() => root.unmount());
 		container.remove();
+	});
+
+	it("names both Mid actions with the number-format separators and fills the protocol price", () => {
+		act(() =>
+			root.render(<TradeFormScale midPrice="1234.56789" szDecimals={2} marketType="perp" disabled={false} desktop />),
+		);
+		const midButtons = () =>
+			[...container.querySelectorAll<HTMLButtonElement>("button")].filter((button) => button.textContent === "Mid");
+		expect(midButtons().map((button) => button.getAttribute("aria-label"))).toEqual([
+			"Use mid price 1,234.5679",
+			"Use mid price 1,234.5679",
+		]);
+
+		mocks.formatLocale = "fr-FR";
+		act(() => notifyNumberFormatChange());
+		expect(midButtons().map((button) => button.getAttribute("aria-label"))).toEqual([
+			"Use mid price 1 234,5679",
+			"Use mid price 1 234,5679",
+		]);
+		expect(container.textContent).toContain("0,01–100");
+		act(() => midButtons()[0]?.click());
+		expect(mocks.setScaleStart).toHaveBeenCalledExactlyOnceWith("1234.5679");
 	});
 
 	it("fills both scale boundaries from the provided market reference", () => {

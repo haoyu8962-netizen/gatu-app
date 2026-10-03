@@ -1,9 +1,11 @@
 // @vitest-environment jsdom
 
+import { i18n } from "@lingui/core";
 import { act } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { shortenAddress } from "@/lib/format";
+import { formatDateTime, shortenAddress } from "@/lib/format";
+import { notifyNumberFormatChange } from "@/lib/number-format-reactivity";
 import { createI18nRoot } from "@/lib/tests/harness/react";
 import type { StakingValidatorView } from "../domain/staking";
 import { StakingView, type StakingViewProps } from "../staking-view";
@@ -16,7 +18,12 @@ const HASH = `0x${"ab".repeat(32)}` as const;
 const SYSTEM_FINALIZATION_HASH = `0x${"0".repeat(64)}` as const;
 
 const toastMocks = vi.hoisted(() => ({ error: vi.fn(), success: vi.fn() }));
+const numberFormatSetting = vi.hoisted(() => ({ locale: "en-US" }));
 vi.mock("sonner", () => ({ toast: toastMocks }));
+vi.mock("@/stores/use-global-settings-store", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/stores/use-global-settings-store")>()),
+	getResolvedFormatLocale: () => numberFormatSetting.locale,
+}));
 vi.mock("@/hooks/use-mobile", () => ({ useIsMobile: () => false }));
 
 function validator(
@@ -131,6 +138,7 @@ describe("StakingView", () => {
 	let root: Root;
 
 	beforeEach(() => {
+		numberFormatSetting.locale = "en-US";
 		Object.defineProperty(window, "matchMedia", {
 			configurable: true,
 			value: vi.fn().mockReturnValue({
@@ -147,6 +155,7 @@ describe("StakingView", () => {
 	afterEach(() => {
 		act(() => root.unmount());
 		container.remove();
+		act(() => i18n.loadAndActivate({ locale: "en", messages: {} }));
 		vi.restoreAllMocks();
 		toastMocks.error.mockReset();
 		toastMocks.success.mockReset();
@@ -254,6 +263,62 @@ describe("StakingView", () => {
 		expect(ltrValues(container)).toEqual(expect.arrayContaining(["1 HYPE", shortenAddress(HASH, 6, 6)]));
 	});
 
+	it("writes HYPE amounts and ratios with the number-format separators, keeping their truncation", () => {
+		const active = {
+			...validator(ACTIVE, "Active Validator", "active"),
+			stakeApproximateHype: "1234567.89",
+			delegatedAmount: "12345.67891234",
+			commission: "0.035",
+			selectedStats: { uptimeFraction: "0.99", predictedApr: "0.0312345", nSamples: 70 },
+		};
+		const base = props();
+		const viewProps = props({
+			validators: [active],
+			validatorViews: [active],
+			networkStakeApproximate: "1234567.89",
+			weightedApr: "0.12345",
+			account: base.account
+				? {
+						...base.account,
+						summary: { ...base.account.summary, delegated: "12345.67891234", totalPendingWithdrawal: "1500.5" },
+						rewards: [{ time: 1_700_000_000_000, source: "delegation", totalAmount: "1234.12345678" }],
+					}
+				: null,
+		});
+		act(() => root.render(<StakingView {...viewProps} />));
+		const table = container.querySelector("table");
+		expect(ltrValues(container)).toEqual(
+			expect.arrayContaining(["≈ 1,234,567 HYPE", "12,345.6789 HYPE", "1,500.5 HYPE · 2/5", "99%", "3.12%", "3.5%"]),
+		);
+		expect(container.textContent).toContain("Estimated APR 12.34%");
+
+		numberFormatSetting.locale = "de-DE";
+		act(() => notifyNumberFormatChange());
+
+		expect(container.querySelector("table")).toBe(table);
+		expect(ltrValues(container)).toEqual(
+			expect.arrayContaining(["≈ 1.234.567 HYPE", "12.345,6789 HYPE", "1.500,5 HYPE · 2/5", "99%", "3,12%", "3,5%"]),
+		);
+		expect(container.textContent).toContain("Estimated APR 12,34%");
+		expect(container.textContent).toContain("12.345,6789 HYPE");
+
+		act(() => button(container, "Staking rewards").click());
+		expect(ltrValues(container)).toContain("+1.234,12345678 HYPE");
+
+		numberFormatSetting.locale = "fr-FR";
+		act(() => notifyNumberFormatChange());
+		expect(ltrValues(container)).toContain("+1 234,12345678 HYPE");
+	});
+
+	it("formats the staking success notification with the number format active when it opens", () => {
+		numberFormatSetting.locale = "de-DE";
+		const session = settledSession("success");
+		if (session) session.submission = { ...session.submission, amount: "1234.5" };
+		act(() => root.render(<StakingView {...props({ actionSession: session, onActionClose: vi.fn() })} />));
+
+		expect(toastMocks.success).toHaveBeenCalledExactlyOnceWith("Moved 1.234,5 HYPE to staking", expect.anything());
+	});
+
 	it("names and makes the validator table scroll region keyboard reachable only when it overflows", () => {
 		mockValidatorTableWidths({ clientWidth: 320, scrollWidth: 960 });
 		act(() => root.render(<StakingView {...props()} />));
@@ -295,6 +360,23 @@ describe("StakingView", () => {
 		expect(container.textContent).toContain("Delegation");
 		expect(container.textContent).not.toContain(ACTIVE);
 	});
+
+	it.each(["Staking rewards", "Staking actions"])(
+		"rewrites the %s times in the active language without remounting the table",
+		(tabLabel) => {
+			act(() => i18n.loadAndActivate({ locale: "en", messages: {} }));
+			act(() => root.render(<StakingView {...props()} />));
+			act(() => button(container, tabLabel).click());
+			const table = activeTableScrollRegion(container);
+			expect(container.textContent).toContain(formatDateTime(1_700_000_000_000, { locale: "en" }));
+
+			act(() => i18n.loadAndActivate({ locale: "zh", messages: {} }));
+
+			expect(activeTableScrollRegion(container)).toBe(table);
+			expect(container.textContent).toContain(formatDateTime(1_700_000_000_000, { locale: "zh" }));
+			expect(container.textContent).not.toContain(formatDateTime(1_700_000_000_000, { locale: "en" }));
+		},
+	);
 
 	it("keeps undelegation and the Mainnet Spot transfer as separate history semantics", () => {
 		act(() => root.render(<StakingView {...props()} />));

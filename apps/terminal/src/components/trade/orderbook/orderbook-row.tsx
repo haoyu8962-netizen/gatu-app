@@ -1,8 +1,7 @@
 import { useLingui } from "@lingui/react/macro";
 import { memo } from "react";
 import { cn } from "@/lib/cn";
-import { formatNumber } from "@/lib/format";
-import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
+import { useNumberFormat } from "@/lib/format";
 import { type BookLevel, getDepthPercentage, getOrderbookQuoteDecimals } from "@/lib/trade/orderbook";
 import type { OrderbookLevelPulseEvent } from "@/lib/ui/orderbook-level-pulses";
 import { useOrderbookActions } from "@/stores/use-orderbook-actions-store";
@@ -45,7 +44,7 @@ function OrderbookRowComponent({
 	onPulseEnd,
 }: Props) {
 	const { t } = useLingui();
-	useNumberFormatRevision();
+	const { formatNumber } = useNumberFormat();
 	const { setSelectedPrice } = useOrderbookActions();
 	const isAsk = side === "ask";
 

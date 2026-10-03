@@ -1035,7 +1035,7 @@
    - **只删除卡片画布专用的令牌**：profit、loss、long、short、divider、muted，以及只给画布用的 card。弹窗里的操作按钮（保存、复制、关闭，`position-pnl-share-modal.tsx:300-322`）还在用 `position-share-fg`、`-card`、`-button-hover`、`-hover`、`-outline`。这些按钮改用 `trading-panel` 或 `market-close` 的共享令牌，或者保留这几个令牌。
    - `apps/terminal/tests/browser/font-migration-pairs.ts:64-69` 里引用的旧类名是历史对照数据，要么标为历史，要么删除对应条目。
    - 按实际删除的个数下调 `design-token-ratchet` 的基线。
-4. **必须保留的**：`capturedAtMs`、`useNumberFormatRevision`、测试网不生成链接、`createPositionPnlShareData` 只在数据完整时返回、二维码 URL 的生成方式。
+4. **必须保留的**：`capturedAtMs`、`useNumberFormatRevision`（2026-10-02 起由 `useNumberFormat()` 取代，见 [ADR 0036](adr/0036-render-time-number-formatters.md)）、测试网不生成链接、`createPositionPnlShareData` 只在数据完整时返回、二维码 URL 的生成方式。
 
 **不改的**：其余五种模板；Studio 的 localStorage 草稿机制；`APP_NAME`。没有批准就不加营销标题文案。
 

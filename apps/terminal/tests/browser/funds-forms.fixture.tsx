@@ -2,6 +2,7 @@ import { Button, ModalContent, ModalHeader, ModalTitle } from "@sairn/ui";
 import { useState } from "react";
 import { PendingActionModal } from "@/components/trade/components/pending-action-modal";
 import { DepositForm } from "@/components/trade/tradebox/deposit/deposit-form";
+import { DepositMethodChooser } from "@/components/trade/tradebox/deposit/deposit-method-chooser";
 import { WithdrawForm } from "@/components/trade/tradebox/deposit/withdraw-form";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -12,19 +13,32 @@ export function FundsFormsFixture() {
 	const mobile = useIsMobile();
 	const [form, setForm] = useState<"deposit" | "withdraw" | null>(null);
 	const [email, setEmail] = useState(true);
+	const [cardFunding, setCardFunding] = useState(false);
+	const [depositStep, setDepositStep] = useState<"methods" | "transfer">("methods");
+	const [purchases, setPurchases] = useState(0);
 	const [status, setStatus] = useState<"success" | "loading" | "error">("success");
 	const [amount, setAmount] = useState("");
 	const [destination, setDestination] = useState("");
 	const [submitted, setSubmitted] = useState(0);
 	const ready = status === "success";
+	const showsDepositMethods = form === "deposit" && cardFunding && depositStep === "methods";
 	return (
 		<>
 			<div className="flex flex-wrap gap-3 p-2">
-				<Button onClick={() => setForm("deposit")}>Open deposit</Button>
+				<Button
+					onClick={() => {
+						setDepositStep("methods");
+						setForm("deposit");
+					}}
+				>
+					Open deposit
+				</Button>
 				<Button onClick={() => setForm("withdraw")}>Open withdraw</Button>
 				<Button onClick={() => setEmail(!email)}>Toggle email</Button>
 				<Button onClick={() => setStatus(status === "success" ? "error" : "success")}>Toggle data</Button>
+				<Button onClick={() => setCardFunding(!cardFunding)}>Toggle card funding</Button>
 				<output aria-label="Fixture submissions">{submitted}</output>
+				<output aria-label="Fixture card purchases">{purchases}</output>
 			</div>
 			<PendingActionModal
 				open={form !== null}
@@ -39,7 +53,19 @@ export function FundsFormsFixture() {
 					<ModalTitle className="sr-only">Funding fixture</ModalTitle>
 				</ModalHeader>
 				<ModalContent className="px-4 pt-3.5 pb-5 min-[1001px]:px-6">
-					{form === "deposit" ? (
+					{showsDepositMethods ? (
+						<DepositMethodChooser
+							fiat={{ walletKind: email ? "embedded" : "external", disabled: !ready }}
+							notice={ready ? null : "Deposits are not available in your region."}
+							onTransfer={() => setDepositStep("transfer")}
+							onBuy={() => {
+								setPurchases(purchases + 1);
+								setForm(null);
+							}}
+							onBuyAvailable={() => undefined}
+						/>
+					) : null}
+					{!showsDepositMethods && form === "deposit" ? (
 						<DepositForm
 							amount={amount}
 							onAmountChange={setAmount}
@@ -67,7 +93,8 @@ export function FundsFormsFixture() {
 							fundingAddress={address}
 							onDone={() => setForm(null)}
 						/>
-					) : (
+					) : null}
+					{form !== "deposit" ? (
 						<WithdrawForm
 							amount={amount}
 							onAmountChange={setAmount}
@@ -92,7 +119,7 @@ export function FundsFormsFixture() {
 							isPending={false}
 							onSubmit={() => setSubmitted(submitted + 1)}
 						/>
-					)}
+					) : null}
 				</ModalContent>
 			</PendingActionModal>
 		</>

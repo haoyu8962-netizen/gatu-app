@@ -12,7 +12,7 @@ Dependency versions are maintained in [package.json](package.json) and the works
 | Runtime and bundler | React `19.2.0`, React Compiler `1.0.0`, Vite `7.3.0` |
 | Server/client state | TanStack Query `5.90.16`, Zustand `5.0.9` |
 | UI | Tailwind `4.0.6`, Base UI `1.3.0`, `@sairn/ui`, react-grid-layout `2.2.3` |
-| Wallets | Privy React Auth `3.32.2` (with a patch in `patches/`), Privy wagmi `4.0.13`, wagmi `3.1.0`, viem `2.42.1` |
+| Wallets | Privy React Auth `3.46.0` (with a patch in `patches/`), Privy wagmi `4.0.17`, wagmi `3.1.0`, viem `2.42.1` |
 | Exchange and funding | Hyperliquid SDK `0.33.3`, LiFi SDK `3.16.3`, CCTP application flows |
 | Charts | Vendored TradingView Charting Library and application datafeed |
 | Numbers and validation | Big.js `7.0.1`, Zod `4.3.4` |

@@ -1,7 +1,12 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { chartingLibrarySecurityHeaders, cspDirectives, securityHeaders } from "@/config/security-headers";
+import {
+	chartingLibrarySecurityHeaders,
+	cspDirectives,
+	cspReportOnlyDirectives,
+	securityHeaders,
+} from "@/config/security-headers";
 
 const REPOSITORY_ROOT = resolve(__dirname, "../../../../..");
 
@@ -33,6 +38,41 @@ describe("security policy documentation", () => {
 
 	it("allows the network-scoped public stats datasets used by Vaults and Leaderboard", () => {
 		expect(cspDirectives["connect-src"]).toContain("https://stats-data.hyperliquid.xyz");
+	});
+
+	it("allows exactly Stripe's documented embedded onramp hosts for card funding", () => {
+		const stripeSources = (directives: Record<string, string>, directive: string) =>
+			directives[directive].split(" ").filter((source) => /(?:stripe|link)\.com$/.test(source));
+		const frames = [
+			"https://js.stripe.com",
+			"https://*.js.stripe.com",
+			"https://hooks.stripe.com",
+			"https://link.com",
+			"https://*.link.com",
+		];
+		const scripts = ["https://js.stripe.com", "https://*.js.stripe.com", "https://crypto-js.stripe.com"];
+
+		expect(stripeSources(cspDirectives, "script-src")).toEqual(scripts);
+		expect(stripeSources(cspDirectives, "frame-src")).toEqual(frames);
+		expect(stripeSources(cspDirectives, "child-src")).toEqual(frames);
+		expect(stripeSources(cspDirectives, "connect-src")).toEqual([
+			"https://api.stripe.com",
+			"https://link.com",
+			"https://*.link.com",
+		]);
+		expect(stripeSources(cspReportOnlyDirectives, "script-src")).toEqual(scripts);
+		expect(stripeSources(cspReportOnlyDirectives, "img-src")).toEqual(["https://*.stripe.com", "https://*.link.com"]);
+		for (const directive of ["frame-src", "child-src", "connect-src"]) {
+			expect(cspReportOnlyDirectives[directive], directive).toBe(cspDirectives[directive]);
+		}
+		for (const directive of ["script-src", "frame-src", "child-src", "connect-src"]) {
+			for (const directives of [cspDirectives, cspReportOnlyDirectives]) {
+				const openSources = (directives[directive] ?? "")
+					.split(" ")
+					.filter((source) => /^(?:\*|[a-z][a-z0-9+.-]*:(?:\/\/\*)?)$/.test(source) && source !== "blob:");
+				expect(openSources, directive).toEqual([]);
+			}
+		}
 	});
 
 	it("allows only Circle production and sandbox APIs used for CCTP deposit fees and recovery", () => {

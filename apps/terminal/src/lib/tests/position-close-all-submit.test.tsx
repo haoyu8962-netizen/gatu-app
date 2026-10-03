@@ -7,6 +7,7 @@ import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { PositionCloseAllSnapshot } from "@/domain/trade/position-close-all";
 import { usePositionCloseAllSubmit } from "@/hooks/trade/use-position-close-all-submit";
+import { getNumberFormatters } from "@/lib/format";
 import { getOrderNotificationCopy } from "@/lib/trade/order-notification-copy";
 import {
 	getOrderQueueItem,
@@ -474,7 +475,9 @@ describe("usePositionCloseAllSubmit", () => {
 		});
 		const failed = queueItems[0];
 		if (!failed) throw new Error("Expected the close-all notification");
-		expect(getOrderNotificationCopy(failed, (descriptor) => i18n._(descriptor)).error).toBeUndefined();
+		expect(
+			getOrderNotificationCopy(failed, (descriptor) => i18n._(descriptor), getNumberFormatters()).error,
+		).toBeUndefined();
 		expect(currentHook().error).toBe(
 			"Order 1: No liquidity is available for this market order.; Order 2: A rejection nobody documented",
 		);

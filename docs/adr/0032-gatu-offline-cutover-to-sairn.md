@@ -1,6 +1,6 @@
 # ADR 0032：gatu.ai 直接下线，先断后接切换到 sairn.ai
 
-- 状态：已接受，执行中。用户 2026-10-01 决定，2026-10-02 开始执行。已执行的有三项：sairn 证书 `b04a51c6…` 已签发；API 源站请求策略已加入 `X-Sairn-Forwarded-Host`；用户已在控制台给 `gatu-edge` 挂上临时策略 `gatu-edge-domain-cutover`。p24 发布、别名与 DNS 切换、Privy 与 Hyperliquid 侧的操作都还没有做。步骤、命令与每一步的结果以 [切换方案](../sairn-domain-cutover-plan.md) 为准。
+- 状态：已接受并实施，2026-10-02 上线（p24 `cloudfront-2026-10-02-p24`，main `3ced842e`），gatu.ai 网页已下线；真实钱包冒烟、主网小额赞助充值与 p25 清理未完成。以下为执行前写的状态：已接受，执行中。用户 2026-10-01 决定，2026-10-02 开始执行。已执行的有三项：sairn 证书 `b04a51c6…` 已签发；API 源站请求策略已加入 `X-Sairn-Forwarded-Host`；用户已在控制台给 `gatu-edge` 挂上临时策略 `gatu-edge-domain-cutover`。p24 发布、别名与 DNS 切换、Privy 与 Hyperliquid 侧的操作都还没有做。步骤、命令与每一步的结果以 [切换方案](../sairn-domain-cutover-plan.md) 为准。
 - 关联：取代 [ADR 0031](0031-domain-move-to-sairn-ai.md) 决策 5 的上线顺序（长期并存、301 跳转），以及决策 7 中「旧域名必须一直续费」的部分；决策 2 的双组识别降为切换版本的回滚保险。另见 [ADR 0027](0027-brand-single-source-and-identifier-rename.md)、[ADR 0005](0005-spa-static-shell.md)、[任务记录](../work-memory/sessions/2026-10-01-sairn-domain-cutover-plan.md)、[CCTP 充值](../cctp-deposits.md)。
 
 ## 背景与约束
@@ -30,7 +30,7 @@
 7. **另登记一个 sairn 推荐码。** 旧码 `gatuappweb3` 在链上继续有效，只是不再对外分享。
 8. **主网赞助充值保持开启**（用户 2026-10-02 决定）。
    - 赞助充值就是邮箱用户的 CCTP 充值：内嵌钱包签 EIP-3009 授权，Privy 智能钱包提交交易，ZeroDev paymaster 代付 Arbitrum gas。关掉这个开关，邮箱用户就无法在应用里充值。
-   - 换了 Privy 应用后这条链路还没验证过；能显示充值地址只说明就绪检查通过。所以切换当天用团队邮箱账户在测试网与主网各做一笔带资金验证。
+   - 换了 Privy 应用后这条链路还没验证过；能显示充值地址只说明就绪检查通过。所以切换当天用团队邮箱账户在测试网与主网各做一笔带资金验证。（2026-10-03 更正：测试网那一笔不做。用户 2026-10-02 说明测试网此前已在 gatu 上测过，p24 关闭了测试网赞助充值，切换当天只做主网小额验证，见[切换方案](../sairn-domain-cutover-plan.md)第 7 节第 9 项与步骤 2.6。）
    - 配置有误时充值会安全失败，资金留在内嵌钱包里，改后台即可，不用重新构建。
 
 ## 备选方案与代价

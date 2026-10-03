@@ -15,7 +15,7 @@
     { "path": "docs/adr/0026-privy-follows-theme-after-upgrade.md" },
     { "path": "apps/terminal/src/providers/client-root.tsx" },
     { "path": "apps/terminal/src/lib/tests/privy-theme-switch-wallet-stability.test.tsx" },
-    { "path": "patches/@privy-io__react-auth@3.32.2.patch" },
+    { "url": "https://github.com/zora4523-bot/gatu-app/blob/682430baffdc50cf62538795866ca5c70b9d16e0/patches/@privy-io__react-auth@3.32.2.patch" },
     { "path": ".github/workflows/terminal-tests.yml" },
     { "url": "https://docs.privy.io/recipes/system-theme" }
   ],

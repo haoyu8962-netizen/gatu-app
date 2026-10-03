@@ -7,17 +7,9 @@ import { getPerpMarginConstraint } from "@/domain/trade/isolated-margin";
 import type { MarkPriceStatus } from "@/domain/trade/market-price";
 import { getPositionFundingPayment, isLiquidationPriceNear } from "@/domain/trade/position-toolbar";
 import { cn } from "@/lib/cn";
-import {
-	formatLiquidationPrice,
-	formatPercent,
-	formatPrice,
-	formatQuoteAmount,
-	formatToken,
-	formatUSD,
-} from "@/lib/format";
+import { useNumberFormat } from "@/lib/format";
 import type { Position } from "@/lib/hyperliquid";
 import type { Markets } from "@/lib/hyperliquid/markets";
-import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { toBig } from "@/lib/trade/numbers";
 import type { TpSlOrderInfo } from "@/lib/trade/open-orders";
 import type { Side } from "@/lib/trade/types";
@@ -106,7 +98,8 @@ export function MobilePositionCard({
 	onAdjustMargin,
 	onSelectMarket,
 }: Props) {
-	useNumberFormatRevision();
+	const { formatLiquidationPrice, formatPercent, formatPrice, formatQuoteAmount, formatToken, formatUSD } =
+		useNumberFormat();
 	const { t } = useLingui();
 	const [internalExpanded, setInternalExpanded] = useState(false);
 	const detailsId = useId();

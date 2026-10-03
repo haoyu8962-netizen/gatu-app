@@ -18,10 +18,9 @@ import {
 } from "@/domain/market/spot-asset-info";
 import { getPerpDexCoinOpenInterestCap } from "@/domain/trade/open-interest-cap";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { formatNumber, formatUSD, shortenAddress } from "@/lib/format";
+import { shortenAddress, useNumberFormat } from "@/lib/format";
 import { getExplorerTokenUrl, type UnifiedMarketInfo, useInfo } from "@/lib/hyperliquid";
 import { isTestnet } from "@/lib/network";
-import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { AssetDisplay } from "./asset-display";
 import { AssetIconSlotView } from "./asset-icon-slot-view";
 
@@ -101,7 +100,7 @@ function createProviderDescription(reference: MarketAssetReference | null): Reac
 }
 
 export function MarketAssetInfo({ market }: Props) {
-	useNumberFormatRevision();
+	const { formatNumber, formatUSD } = useNumberFormat();
 	const { i18n, t } = useLingui();
 	const isMobile = useIsMobile();
 	const [open, setOpen] = useState(false);

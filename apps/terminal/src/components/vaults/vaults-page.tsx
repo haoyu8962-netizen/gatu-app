@@ -11,9 +11,8 @@ import { DASHBOARD_FRAMES } from "@/config/dashboard-frames";
 import { FUNDS_OUTCOME_TOAST_DURATION_MS } from "@/config/time";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { type ActionFailure, describeActionFailure } from "@/lib/errors/action-error";
-import { formatNumber, shortenAddress } from "@/lib/format";
+import { shortenAddress, useNumberFormat } from "@/lib/format";
 import { getExplorerTxUrl } from "@/lib/hyperliquid";
-import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import type { Translate } from "@/lib/translate";
 import { useIsTestnet } from "@/stores/use-global-settings-store";
 import { getVaultValueTone } from "./domain/vaults";
@@ -72,7 +71,7 @@ export function VaultDetailPage({ vaultAddress, onRequestAction }: VaultDetailPa
 
 function VaultDetailLive({ vaultAddress, onRequestAction }: VaultDetailPageProps) {
 	const { t } = useLingui();
-	useNumberFormatRevision();
+	const { formatNumber } = useNumberFormat();
 	const isTestnet = useIsTestnet();
 	const controller = useVaultDetailController(vaultAddress);
 	const vaultAction = useVaultActionController({

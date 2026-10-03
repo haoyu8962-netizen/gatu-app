@@ -3,9 +3,8 @@ import { useHip3DisclaimerRequirement } from "@/hooks/trade/use-hip3-disclaimer"
 import { useHip3DisclaimerPresentation } from "@/hooks/trade/use-hip3-disclaimer-presentation";
 import { type PositionReverseTarget, usePositionReverseSubmit } from "@/hooks/trade/use-position-reverse-submit";
 import { useLingeringValue } from "@/hooks/use-lingering-value";
-import { formatToken } from "@/lib/format";
+import { useNumberFormat } from "@/lib/format";
 import { useMarkets } from "@/lib/hyperliquid";
-import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { toBig } from "@/lib/trade/numbers";
 import type { PositionReverseSession } from "@/stores/use-position-dialog-store";
 import { Hip3DeployerDisclaimer } from "../components/hip3-deployer-disclaimer";
@@ -59,7 +58,7 @@ function PositionReverseDisclaimerGate({ target, open, onOpenChange }: ContentPr
 }
 
 function PositionReverseConfirmationContent({ target, open, onOpenChange }: ContentProps) {
-	useNumberFormatRevision();
+	const { formatToken } = useNumberFormat();
 	const markets = useMarkets();
 	const submission = usePositionReverseSubmit(target);
 	const submittedRef = useRef(false);

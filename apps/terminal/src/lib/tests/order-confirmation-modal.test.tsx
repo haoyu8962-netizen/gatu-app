@@ -7,7 +7,15 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { OrderConfirmationModal } from "@/components/trade/tradebox/order-confirmation-modal";
 import type { OrderConfirmationDraft } from "@/domain/trade/order-confirmation";
 import { buildOrderFeeQuote } from "@/domain/trade/order-fee-quote";
+import { notifyNumberFormatChange } from "@/lib/number-format-reactivity";
 import { createI18nRoot } from "./harness/react";
+
+const numberFormatSetting = vi.hoisted(() => ({ locale: "en-US" }));
+
+vi.mock("@/stores/use-global-settings-store", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/stores/use-global-settings-store")>()),
+	getResolvedFormatLocale: () => numberFormatSetting.locale,
+}));
 
 vi.mock("@/components/trade/components/trading-action-button", () => ({
 	TradingActionButton: ({
@@ -74,6 +82,7 @@ describe("order confirmation modal", () => {
 	const onOpenChange = vi.fn();
 
 	beforeEach(() => {
+		numberFormatSetting.locale = "en-US";
 		i18n.loadAndActivate({ locale: "en", messages: {} });
 		vi.stubGlobal("matchMedia", () => ({ matches: false, addEventListener() {}, removeEventListener() {} }));
 		container = document.createElement("div");
@@ -89,12 +98,12 @@ describe("order confirmation modal", () => {
 		vi.unstubAllGlobals();
 	});
 
-	function render(open: boolean) {
+	function render(open: boolean, renderedDraft: OrderConfirmationDraft = draft) {
 		act(() =>
 			root.render(
 				<OrderConfirmationModal
 					open={open}
-					draft={draft}
+					draft={renderedDraft}
 					dontShowAgain={false}
 					onDontShowAgainChange={() => {}}
 					onConfirm={onConfirm}
@@ -129,5 +138,27 @@ describe("order confirmation modal", () => {
 		expect(confirm.disabled).toBe(true);
 		act(() => confirm.click());
 		expect(onConfirm).not.toHaveBeenCalled();
+	});
+
+	it("rewrites the reviewed values in place when the number format changes", () => {
+		const limitDraft: OrderConfirmationDraft = {
+			...draft,
+			orderType: "limit",
+			limitPrice: 1234.5,
+			sizeValue: 1234.5,
+			orderValue: 1_523_948.25,
+		};
+		render(true, limitDraft);
+		const rows = document.querySelector('[data-testid="order-confirmation-rows"]');
+		expect(rows?.textContent).toContain("$1,234.5");
+		expect(rows?.textContent).toContain("1,234.50 HYPE");
+
+		numberFormatSetting.locale = "de-DE";
+		act(() => notifyNumberFormatChange());
+
+		expect(document.querySelector('[data-testid="order-confirmation-rows"]')).toBe(rows);
+		expect(rows?.textContent).toContain("$1.234,5");
+		expect(rows?.textContent).toContain("1.234,50 HYPE");
+		expect(rows?.textContent).not.toContain("1,234.50");
 	});
 });

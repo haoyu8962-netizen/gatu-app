@@ -6,9 +6,12 @@ import {
 	type TradingViewOverlayLine,
 	type TradingViewOverlayPalette,
 } from "@/lib/chart/tradingview-overlays";
+import { getNumberFormatters } from "@/lib/format";
 import type { Position } from "@/lib/hyperliquid";
 import type { OpenOrder } from "@/lib/trade/open-orders";
 import type { EntityId } from "@/types/charting_library";
+
+const numberFormat = getNumberFormatters();
 
 const labels = {
 	limitBuy: "Limit Buy",
@@ -76,6 +79,7 @@ describe("buildTradingViewOverlayLines", () => {
 				}),
 			],
 			labels,
+			numberFormat,
 		});
 
 		expect(lines).toEqual([
@@ -104,6 +108,7 @@ describe("buildTradingViewOverlayLines", () => {
 				createPosition({ dex: "xyz", coin: "GOLD", entryPx: "2100", liquidationPx: null }),
 			],
 			labels,
+			numberFormat,
 		});
 
 		expect(lines).toEqual([
@@ -135,6 +140,7 @@ describe("buildTradingViewOverlayLines", () => {
 			orders: [parent],
 			positions: [],
 			labels,
+			numberFormat,
 		});
 
 		expect(lines).toEqual([{ key: "order:BTC:1", kind: "order", price: 100, label: "Limit Buy", side: "buy" }]);
@@ -148,6 +154,7 @@ describe("buildTradingViewOverlayLines", () => {
 			orders: [],
 			positions: [createPosition({ szi: "-0.004300", unrealizedPnl: "invalid", returnOnEquity: "-0.015" })],
 			labels: { ...labels, roe: "Return" },
+			numberFormat,
 		});
 
 		expect(lines[0]).toMatchObject({ label: "Short · Return -1.5% · 0.0043", tone: -1 });
@@ -161,6 +168,7 @@ describe("buildTradingViewOverlayLines", () => {
 			orders: [],
 			positions: [createPosition({ coin: "@107" })],
 			labels,
+			numberFormat,
 		});
 
 		expect(lines).toEqual([]);

@@ -45,9 +45,8 @@ import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { STATUS_GLYPH_UNKNOWN } from "@/lib/brand/status-glyph.gen";
 import { cn } from "@/lib/cn";
 import { formatExchangeActionError, isAmbiguousExchangeActionError } from "@/lib/errors/format";
-import { formatNumber } from "@/lib/format";
+import { type NumberFormatters, useNumberFormat } from "@/lib/format";
 import { type ExchangeParams, useExchange, useHyperliquid } from "@/lib/hyperliquid";
-import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import {
 	FundsActionFeedbackCause,
 	formatFundsActionFeedback,
@@ -92,7 +91,7 @@ export function EarnActionModal({ open, sessionId, operation, initialToken, data
 
 function EarnActionModalBody({ open, operation, initialToken, data, onOpenChange }: Props) {
 	const { t } = useLingui();
-	useNumberFormatRevision();
+	const { formatNumber } = useNumberFormat();
 	const translate = (descriptor: MessageDescriptor) => t(descriptor);
 	const isMobile = useIsMobile();
 	const { hasWalletAccess, walletAddress } = useWalletSession();
@@ -327,9 +326,13 @@ function EarnActionModalBody({ open, operation, initialToken, data, onOpenChange
 				toast.success(
 					<EarnOutcomeToastContent
 						{...toastIdentity}
-						render={(translateMessage) =>
+						render={(translateMessage, numberFormat) =>
 							translateMessage(
-								getSuccessMessage(operation, tokenLabel, request.full ? null : formatNumber(request.amount)),
+								getSuccessMessage(
+									operation,
+									tokenLabel,
+									request.full ? null : numberFormat.formatNumber(request.amount),
+								),
 							)
 						}
 					/>,
@@ -508,11 +511,11 @@ interface SummaryProps {
 
 function EarnActionSummary({ operation, row, maxAmount }: SummaryProps) {
 	const { t } = useLingui();
-	useNumberFormatRevision();
+	const numberFormat = useNumberFormat();
 	if (operation === "repay") {
 		return (
 			<InfoRowGroup>
-				<InfoRow label={t`Total Borrowed`} value={formatAssetAmount(row.borrowed, row)} />
+				<InfoRow label={t`Total Borrowed`} value={formatAssetAmount(row.borrowed, row, numberFormat)} />
 			</InfoRowGroup>
 		);
 	}
@@ -520,10 +523,10 @@ function EarnActionSummary({ operation, row, maxAmount }: SummaryProps) {
 		return (
 			<div className="space-y-1.5">
 				<InfoRowGroup>
-					<InfoRow label={t`Total Supplied`} value={formatAssetAmount(row.supplied, row)} />
+					<InfoRow label={t`Total Supplied`} value={formatAssetAmount(row.supplied, row, numberFormat)} />
 					<InfoRow
 						label={t`Available to Withdraw`}
-						value={maxAmount === null ? "-" : formatAssetAmount(maxAmount, row)}
+						value={maxAmount === null ? "-" : formatAssetAmount(maxAmount, row, numberFormat)}
 					/>
 				</InfoRowGroup>
 				{row.isCollateral ? (
@@ -535,10 +538,10 @@ function EarnActionSummary({ operation, row, maxAmount }: SummaryProps) {
 	return null;
 }
 
-function formatAssetAmount(value: string, row: EarnAssetRow) {
+function formatAssetAmount(value: string, row: EarnAssetRow, numberFormat: NumberFormatters) {
 	return (
 		<bdi dir="ltr">
-			{formatNumber(value, row.amountDecimals)} {row.displayName}
+			{numberFormat.formatNumber(value, row.amountDecimals)} {row.displayName}
 		</bdi>
 	);
 }

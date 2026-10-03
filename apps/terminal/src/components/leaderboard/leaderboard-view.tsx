@@ -27,9 +27,8 @@ import {
 import type { ReactNode } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/cn";
-import { formatPercent, formatUSD, shortenAddress } from "@/lib/format";
+import { shortenAddress, useNumberFormat } from "@/lib/format";
 import { LEADERBOARD_API_MAX_QUERY_LENGTH } from "@/lib/leaderboard/leaderboard-api";
-import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import type { LeaderboardPeriod, LeaderboardSortKey, LeaderboardValueTone } from "./leaderboard-domain";
 import type { LeaderboardController, LeaderboardDataNotice } from "./use-leaderboard-controller";
 
@@ -226,7 +225,7 @@ interface CommonLeaderboardProps extends LeaderboardViewProps {
 }
 
 function DesktopLeaderboard(props: CommonLeaderboardProps) {
-	useNumberFormatRevision();
+	const { formatPercent, formatUSD } = useNumberFormat();
 	return (
 		<div className="flex flex-1 flex-col">
 			<Table containerClassName="overflow-visible">
@@ -314,7 +313,7 @@ function NumericCell({ children, tone = "neutral" }: NumericCellProps) {
 }
 
 function MobileLeaderboard(props: CommonLeaderboardProps) {
-	useNumberFormatRevision();
+	const { formatPercent, formatUSD } = useNumberFormat();
 	const { t } = useLingui();
 	const sortOptions = [
 		{ value: "accountValue", label: t`Account Value` },

@@ -1,14 +1,15 @@
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReferralClaimHistoryRow } from "@/hooks/trade/use-referrals";
-import { formatDateTime, formatToken, shortenAddress } from "@/lib/format";
-import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
+import { formatDateTime, shortenAddress, useNumberFormat } from "@/lib/format";
 
 interface Props {
 	rows: ReferralClaimHistoryRow[];
 }
 
 export function ReferralClaimHistory({ rows }: Props) {
-	useNumberFormatRevision();
+	const { formatToken } = useNumberFormat();
+	const { i18n } = useLingui();
+	const locale = i18n.locale;
 	return (
 		<div className="divide-y divide-stroke-weak">
 			{rows.map((row) => (
@@ -18,7 +19,8 @@ export function ReferralClaimHistory({ rows }: Props) {
 							<Trans>Rewards claimed</Trans>
 						</p>
 						<p className="mt-0.5 text-2xs text-fg-muted">
-							<bdi dir="ltr">{formatDateTime(row.time)}</bdi> · <bdi dir="ltr">{shortenAddress(row.hash, 6, 6)}</bdi>
+							<bdi dir="ltr">{formatDateTime(row.time, { locale })}</bdi> ·{" "}
+							<bdi dir="ltr">{shortenAddress(row.hash, 6, 6)}</bdi>
 						</p>
 					</div>
 					<p className="text-xs font-semibold tabular-nums text-success min-[1001px]:text-2sm">

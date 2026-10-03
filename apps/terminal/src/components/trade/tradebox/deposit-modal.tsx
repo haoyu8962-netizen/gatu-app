@@ -1,5 +1,6 @@
 import { Trans, useLingui } from "@lingui/react/macro";
-import { Button, ModalContent, ModalHeader, ModalTitle } from "@sairn/ui";
+import { CaretLeftIcon } from "@phosphor-icons/react";
+import { Button, ButtonIcon, ModalContent, ModalHeader, ModalTitle } from "@sairn/ui";
 import { useQueryClient } from "@tanstack/react-query";
 import { Suspense, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -14,6 +15,7 @@ import {
 	isCctpSponsoredDepositEnabled,
 } from "@/config/cctp-deposit";
 import { LIFI_BRIDGE_FEATURES, shouldShowLiFiBridgeTab } from "@/config/lifi-bridge";
+import { isPrivyFiatFundingEnabled } from "@/config/privy-fiat-funding";
 import { DEPOSIT_BALANCE_REFRESH_MS, FUNDS_OUTCOME_TOAST_DURATION_MS } from "@/config/time";
 import {
 	getAccountBalanceSummary,
@@ -40,6 +42,7 @@ import { useCctpDepositTracking } from "@/hooks/trade/use-cctp-deposit-tracking"
 import { useCctpWithdrawalFee } from "@/hooks/trade/use-cctp-withdrawal-fee";
 import { useDepositAvailability } from "@/hooks/trade/use-deposit-availability";
 import { FundsActionGeoExecutionError, useFundsActionAvailability } from "@/hooks/trade/use-funds-action-availability";
+import { usePrivyFiatFundingOffer } from "@/hooks/trade/use-privy-fiat-funding-offer";
 import {
 	executeWithFreshWithdrawalRoute,
 	UsdcDepositRouteError,
@@ -51,13 +54,12 @@ import { useEmailEmbeddedWallet } from "@/hooks/wallet/use-email-embedded-wallet
 import { useReconnectWallet, useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { STATUS_GLYPH_UNKNOWN } from "@/lib/brand/status-glyph.gen";
 import { formatExchangeActionError, formatTransferError, isAmbiguousExchangeActionError } from "@/lib/errors/format";
-import { formatNumber } from "@/lib/format";
+import { useNumberFormat } from "@/lib/format";
 import { infoQueryOptions, useExchange, useHyperliquid, useInfo } from "@/lib/hyperliquid";
 import { isDefinitiveDepositSourceFailure } from "@/lib/hyperliquid/deposit-source-error";
 import { useDeposit } from "@/lib/hyperliquid/use-deposit";
 import { createLazyComponent } from "@/lib/lazy";
 import { useHasExistingBridgeExecution } from "@/lib/lifi/bridge-execution-state";
-import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { calculateCctpDepositFee, getAmountIndependentCctpMaxFeeRaw } from "@/lib/trade/cctp-deposit";
 import { removeCctpDepositTrackingRecord } from "@/lib/trade/cctp-deposit-tracking";
 import {
@@ -66,7 +68,8 @@ import {
 	formatFundsActionFeedback,
 	fundsActionFeedbackCause,
 } from "@/lib/trade/funds-action-feedback";
-import { toBig } from "@/lib/trade/numbers";
+import { toBig, toPlainDecimal } from "@/lib/trade/numbers";
+import { warmPrivyFiatFundingHost } from "@/lib/trade/privy-fiat-funding-launch";
 import {
 	buildCctpWithdrawalParameters,
 	getMaximumWithdrawal,
@@ -87,6 +90,7 @@ import {
 import { useIsTestnet } from "@/stores/use-global-settings-store";
 import { PendingActionModal } from "../components/pending-action-modal";
 import { DepositForm } from "./deposit/deposit-form";
+import { DepositMethodChooser } from "./deposit/deposit-method-chooser";
 import { StatusScreen, WalletNotConnected } from "./deposit/shared-ui";
 import { WithdrawForm } from "./deposit/withdraw-form";
 import { WrongNetworkScreen } from "./deposit/wrong-network-screen";
@@ -121,7 +125,8 @@ function normalizeError(error: unknown, fallbackMessage: string): Error {
 
 export function DepositModal() {
 	const { t } = useLingui();
-	useNumberFormatRevision();
+	const numberFormat = useNumberFormat();
+	const { formatNumber } = numberFormat;
 	const open = useDepositModalOpen();
 	const activeTab = useDepositModalTab();
 	const { close } = useDepositModalActions();
@@ -161,6 +166,9 @@ export function DepositModal() {
 		code: FundsActionFeedbackCode;
 	} | null>(null);
 	const [isDepositPreflighting, setIsDepositPreflighting] = useState(false);
+	const [depositStep, setDepositStep] = useState<"methods" | "transfer">("transfer");
+	const [depositStepOpen, setDepositStepOpen] = useState(false);
+	const [depositMethodsOffered, setDepositMethodsOffered] = useState(false);
 	const [isDepositDataRetrying, setIsDepositDataRetrying] = useState(false);
 	const [isWithdrawalPreflighting, setIsWithdrawalPreflighting] = useState(false);
 	const depositPreflightIdRef = useRef(0);
@@ -504,8 +512,29 @@ export function DepositModal() {
 			activationFee: withdrawalActivationFee,
 		},
 		(descriptor) => t(descriptor),
+		numberFormat,
 	);
 	const isDepositPending = isDepositPreflighting || depositStatus === "pending" || depositStatus === "confirming";
+	const fiatFundingOffer = usePrivyFiatFundingOffer({
+		enabled: isPrivyFiatFundingEnabled(isTestnet),
+		available: open && depositAvailability.available && !isDepositPending && !isWithdrawPending,
+		onBeforeStart: handleClose,
+	});
+	if (depositStepOpen !== open) {
+		setDepositStepOpen(open);
+		if (open) {
+			setDepositMethodsOffered(fiatFundingOffer !== null);
+			setDepositStep(fiatFundingOffer !== null ? "methods" : "transfer");
+		}
+	}
+	const showsDepositMethods = visibleTab === "deposit" && depositMethodsOffered && depositStep === "methods";
+	const canReturnToDepositMethods =
+		visibleTab === "deposit" && canUseDeposit && depositMethodsOffered && depositStep === "transfer";
+	const depositMethodChoice = fiatFundingOffer ?? {
+		walletKind: walletIntent === "external" ? ("external" as const) : ("embedded" as const),
+		disabled: true,
+		start: () => undefined,
+	};
 	const displayedDepositAmount = depositExecutionAmount ?? depositAmount;
 	const walletDepositProviderUnavailable =
 		canUseFundsActions && depositMode === "wallet" && visibleTab === "deposit" && walletProviderStatus === "error";
@@ -970,6 +999,7 @@ export function DepositModal() {
 					activationFee: cctpPreTransferReview?.fee ?? "0",
 				},
 				(descriptor) => t(descriptor),
+				numberFormat,
 			);
 			if (!freshValidation.valid) {
 				reportPreflightFailure("withdrawal-conditions-changed");
@@ -1329,7 +1359,9 @@ export function DepositModal() {
 				heading={depositPendingHeading}
 				description={
 					<span className="flex flex-col gap-1">
-						<span className="tabular-nums">{displayedDepositAmount} USDC → Hyperliquid</span>
+						<span className="tabular-nums">
+							{numberFormat.formatDecimalString(toPlainDecimal(displayedDepositAmount))} USDC → Hyperliquid
+						</span>
 						{walletResponseDelayed ? (
 							<span className="flex flex-col gap-1">
 								<Trans>
@@ -1384,6 +1416,7 @@ export function DepositModal() {
 		canUseFundsActions &&
 		depositMode === "wallet" &&
 		visibleTab === "deposit" &&
+		!showsDepositMethods &&
 		walletProviderStatus === "ready" &&
 		!isArbitrum
 	) {
@@ -1392,9 +1425,81 @@ export function DepositModal() {
 				open={open}
 				presentation={presentation}
 				onClose={handleClose}
+				onBack={depositMethodsOffered ? () => setDepositStep("methods") : undefined}
 				onSwitch={switchToArbitrum}
 				isSwitching={isSwitching}
 				error={switchError}
+			/>
+		);
+	}
+
+	function renderDepositContent() {
+		if (!canUseDeposit) {
+			return <WalletNotConnected onConnect={handleReconnectWallet} isConnecting={!walletsReady || isReconnecting} />;
+		}
+		if (showsDepositMethods) {
+			return (
+				<DepositMethodChooser
+					fiat={{ walletKind: depositMethodChoice.walletKind, disabled: depositMethodChoice.disabled }}
+					notice={getFundsAvailabilityNotice(depositAvailability)}
+					onTransfer={() => setDepositStep("transfer")}
+					onBuy={depositMethodChoice.start}
+					onBuyAvailable={warmPrivyFiatFundingHost}
+				/>
+			);
+		}
+		return (
+			<DepositForm
+				amount={depositAmount}
+				onAmountChange={handleDepositAmountChange}
+				balance={depositBalance}
+				maxAmount={maxDepositAmount}
+				maxDepositRaw={maxDepositRaw}
+				balanceStatus={isDepositDataRetrying ? "loading" : depositBalanceStatus}
+				validation={depositValidation}
+				preflightError={depositCctpPreflightError}
+				onRetryData={handleDepositDataRetry}
+				amountError={cctpDepositAmountLimitError ?? baseDepositValidation.error}
+				isPending={isDepositPending}
+				onSubmit={handleDepositSubmit}
+				routingStatus={depositRoutingStatus}
+				routingPreflightError={depositRoutingPreflightError}
+				depositRoute={usdcRoutingQuery.data?.depositRoute ?? null}
+				onRetryRouting={handleDepositRoutingRetry}
+				networkName={depositNetworkName}
+				sponsoredCctpEnabled={sponsoredCctpEnabled}
+				sponsoredCctpReadiness={sponsoredCctpReadiness}
+				depositUnavailableReason={
+					getFundsAvailabilityNotice(depositAvailability) ??
+					(depositRouteReady && selectedDepositRoute === "cctp" && !isEmbeddedDeposit && !cctpExternalDepositEnabled
+						? t`CCTP deposits are awaiting funded end-to-end verification for this network.`
+						: null)
+				}
+				requiresExplicitFundingDeposit={isEmbeddedDeposit && !isTestnet}
+				cctpFee={cctpDepositFee}
+				cctpFeeLoading={
+					isDepositDataRetrying || (selectedDepositRoute === "cctp" && displayedCctpDepositFeeQuery.isLoading)
+				}
+				cctpFeeError={selectedDepositRoute === "cctp" && displayedCctpDepositFeeQuery.isError}
+				pendingCctpRecovery={
+					!depositHash &&
+					!!cctpDepositTracking.recoveryRecord &&
+					cctpDepositTracking.data?.status !== "forward-submitted"
+				}
+				usesFundingAddressFlow={isEmbeddedDeposit}
+				fundingAddressPending={
+					depositAvailability.available && isEmbeddedDeposit && !embeddedWalletError && !depositEmbeddedWalletAddress
+				}
+				fundingAddressError={embeddedWalletError ? embeddedWalletValidationError : null}
+				fundingAddress={
+					depositAvailability.available && isEmbeddedDeposit && sponsoredCctpReadiness.status === "ready"
+						? depositEmbeddedWalletAddress
+						: undefined
+				}
+				onRetryFundingAddress={() => {
+					void ensureEmailEmbeddedWallet().catch(() => {});
+				}}
+				onDone={handleClose}
 			/>
 		);
 	}
@@ -1421,6 +1526,20 @@ export function DepositModal() {
 						: undefined
 				}
 			>
+				{canReturnToDepositMethods ? (
+					<ButtonIcon
+						type="button"
+						variant="ghost"
+						intent="neutral"
+						size="sm"
+						onClick={() => setDepositStep("methods")}
+						disabled={isDepositPending}
+						aria-label={t`Back`}
+						className="absolute top-5 left-4 rounded-16 text-trading-panel-muted hover:bg-transparent not-data-disabled:hover:bg-trading-panel-hover not-data-disabled:hover:text-trading-panel-fg min-[1001px]:top-6 min-[1001px]:left-6"
+					>
+						<CaretLeftIcon className="size-4 rtl:rotate-180" aria-hidden="true" />
+					</ButtonIcon>
+				) : null}
 				<ModalTitle className={usesFundsRedesign ? "sr-only" : undefined}>
 					{visibleTab === "deposit" ? (
 						<Trans>Deposit</Trans>
@@ -1438,69 +1557,7 @@ export function DepositModal() {
 				}
 			>
 				<div className={usesFundsRedesign ? "flex flex-col" : "flex min-h-72 flex-col"}>
-					{visibleTab === "deposit" &&
-						(canUseDeposit ? (
-							<DepositForm
-								amount={depositAmount}
-								onAmountChange={handleDepositAmountChange}
-								balance={depositBalance}
-								maxAmount={maxDepositAmount}
-								maxDepositRaw={maxDepositRaw}
-								balanceStatus={isDepositDataRetrying ? "loading" : depositBalanceStatus}
-								validation={depositValidation}
-								preflightError={depositCctpPreflightError}
-								onRetryData={handleDepositDataRetry}
-								amountError={cctpDepositAmountLimitError ?? baseDepositValidation.error}
-								isPending={isDepositPending}
-								onSubmit={handleDepositSubmit}
-								routingStatus={depositRoutingStatus}
-								routingPreflightError={depositRoutingPreflightError}
-								depositRoute={usdcRoutingQuery.data?.depositRoute ?? null}
-								onRetryRouting={handleDepositRoutingRetry}
-								networkName={depositNetworkName}
-								sponsoredCctpEnabled={sponsoredCctpEnabled}
-								sponsoredCctpReadiness={sponsoredCctpReadiness}
-								depositUnavailableReason={
-									getFundsAvailabilityNotice(depositAvailability) ??
-									(depositRouteReady &&
-									selectedDepositRoute === "cctp" &&
-									!isEmbeddedDeposit &&
-									!cctpExternalDepositEnabled
-										? t`CCTP deposits are awaiting funded end-to-end verification for this network.`
-										: null)
-								}
-								requiresExplicitFundingDeposit={isEmbeddedDeposit && !isTestnet}
-								cctpFee={cctpDepositFee}
-								cctpFeeLoading={
-									isDepositDataRetrying || (selectedDepositRoute === "cctp" && displayedCctpDepositFeeQuery.isLoading)
-								}
-								cctpFeeError={selectedDepositRoute === "cctp" && displayedCctpDepositFeeQuery.isError}
-								pendingCctpRecovery={
-									!depositHash &&
-									!!cctpDepositTracking.recoveryRecord &&
-									cctpDepositTracking.data?.status !== "forward-submitted"
-								}
-								usesFundingAddressFlow={isEmbeddedDeposit}
-								fundingAddressPending={
-									depositAvailability.available &&
-									isEmbeddedDeposit &&
-									!embeddedWalletError &&
-									!depositEmbeddedWalletAddress
-								}
-								fundingAddressError={embeddedWalletError ? embeddedWalletValidationError : null}
-								fundingAddress={
-									depositAvailability.available && isEmbeddedDeposit && sponsoredCctpReadiness.status === "ready"
-										? depositEmbeddedWalletAddress
-										: undefined
-								}
-								onRetryFundingAddress={() => {
-									void ensureEmailEmbeddedWallet().catch(() => {});
-								}}
-								onDone={handleClose}
-							/>
-						) : (
-							<WalletNotConnected onConnect={handleReconnectWallet} isConnecting={!walletsReady || isReconnecting} />
-						))}
+					{visibleTab === "deposit" && renderDepositContent()}
 
 					{visibleTab === "withdraw" &&
 						(!canUseFundsActions ? (

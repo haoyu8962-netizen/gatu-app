@@ -15,6 +15,8 @@ const testState = vi.hoisted(() => ({
 	kind: "perp" as "perp" | "spot",
 	limitPrice: "",
 	markPx: "100",
+	prevDayPx: undefined as string | undefined,
+	formatLocale: "en-US",
 	markPriceStatus: "success" as "success" | "loading" | "stale" | "error",
 	maxSize: 10,
 	openInterestCapped: false,
@@ -225,7 +227,7 @@ vi.mock("@/lib/hyperliquid", () => ({
 			midPx: testState.markPx,
 			name: testState.kind === "spot" ? "BTC/USDC" : "BTC",
 			pairName: "BTC/USDC",
-			prevDayPx: testState.markPx,
+			prevDayPx: testState.prevDayPx ?? testState.markPx,
 			szDecimals: 3,
 		},
 	}),
@@ -244,7 +246,6 @@ vi.mock("@/lib/lazy", () => ({
 	createRetryableLazyComponent: () => () => null,
 	preloadLazyComponents: () => Promise.resolve(),
 }));
-vi.mock("@/lib/number-format-reactivity", () => ({ useNumberFormatRevision: () => 0 }));
 
 vi.mock("@/stores/use-global-modal-store", () => ({
 	useDepositModalActions: () => ({ open: vi.fn() }),
@@ -254,6 +255,7 @@ vi.mock("@/stores/use-global-modal-store", () => ({
 
 vi.mock("@/stores/use-global-settings-store", async (importOriginal) => ({
 	...(await importOriginal<typeof import("@/stores/use-global-settings-store")>()),
+	getResolvedFormatLocale: () => testState.formatLocale,
 	useMarketOrderSlippageBps: () => 50,
 	useMarketOrderSlippagePercent: () => 0.5,
 }));
@@ -291,6 +293,7 @@ vi.mock("@/stores/use-orderbook-actions-store", () => ({
 
 import { MobileTradeView } from "@/components/trade/mobile/mobile-trade-view";
 import { EntryExecutionError } from "@/domain/trade/order/entry-execution-guard";
+import { notifyNumberFormatChange } from "@/lib/number-format-reactivity";
 import { LOADING_INDICATOR_SELECTOR } from "@/lib/tests/harness/loading-indicator";
 
 const LOCALES = ["en", "zh", "hi", "es", "fr", "ar"] as const;
@@ -708,6 +711,56 @@ function activateLocale(locale: Locale) {
 	i18n.loadAndActivate({ locale, messages: getLocaleMessages(locale) });
 }
 
+describe("MobileTradeView header number format", () => {
+	let container: HTMLDivElement;
+	let root: Root;
+
+	beforeEach(() => {
+		vi.useFakeTimers();
+		setValidPerpScenario();
+		activateLocale("en");
+		container = document.createElement("div");
+		document.body.appendChild(container);
+		root = createRoot(container);
+	});
+
+	afterEach(async () => {
+		await act(async () => root.unmount());
+		container.remove();
+		vi.useRealTimers();
+		vi.clearAllMocks();
+	});
+
+	function getChangePercent(): string | null | undefined {
+		return container.querySelector(".text-right > div:nth-child(2)")?.textContent;
+	}
+
+	it("writes the 24h change percent with the number-format decimal sign", async () => {
+		testState.markPx = "112.5";
+		testState.prevDayPx = "100";
+		await renderView(root);
+		expect(getChangePercent()).toBe("+12.50%");
+
+		testState.formatLocale = "de-DE";
+		await act(async () => notifyNumberFormatChange());
+		expect(getChangePercent()).toBe("+12,50%");
+
+		testState.markPx = "87.65";
+		await renderView(root);
+		expect(getChangePercent()).toBe("-12,35%");
+
+		testState.formatLocale = "fr-FR";
+		await act(async () => notifyNumberFormatChange());
+		expect(getChangePercent()).toBe("-12,35%");
+	});
+
+	it("writes the editable maximum slippage with the number-format decimal sign", async () => {
+		testState.formatLocale = "de-DE";
+		await renderView(root);
+		expect(container.querySelector('button[aria-label="Slippage"]')?.textContent).toContain("0,5%");
+	});
+});
+
 async function renderView(root: Root) {
 	await act(async () => {
 		root.render(
@@ -784,6 +837,8 @@ function setValidPerpScenario() {
 	testState.kind = "perp";
 	testState.limitPrice = "";
 	testState.markPx = "100";
+	testState.prevDayPx = undefined;
+	testState.formatLocale = "en-US";
 	testState.markPriceStatus = "success";
 	testState.maxSize = 10;
 	testState.openInterestCapped = false;

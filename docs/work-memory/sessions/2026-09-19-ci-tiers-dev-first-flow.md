@@ -89,3 +89,4 @@
 - `origin/claude/ci-concurrency` 的 `d76b12f9` 已由 `99434d36` 覆盖，该远端分支可以删除。
 - 本记录不替代任何既有记录；分钟额度背景见 [CI 分钟耗尽记录](2026-09-15-ci-minutes-concurrency.md)。
 - 2026-09-19 同日补记：本记录中“`production-build`、`slider-browser` 只对进 `main` 的 PR 触发”（ADR 0016 原 D2）在推送之前已由产品负责人改为 D2′（每个 PR 构建默认组合并跑两片浏览器回归，其余三组只在晋升、发版标签和手动运行时构建），并发分组表达式改为 `${{ github.workflow }}-${{ github.ref }}`，见[按四条方案的改造](2026-09-19-ci-restructure.md)。本记录的其余结论（分支流向、测试移出矩阵、`claude.yml` 不加并发）仍然有效；上面的验证结果对应的是 `cdc4d3d2` 的工作流内容，不是改造后的内容。
+- 2026-10-02 补记：第一条后续里的失效 `geo-server-functions` 参数已换成取代它的 `geo-api.test.ts`（不是删除），并新增“工作流列出的测试路径必须匹配到文件”的钉子，见 [CI 测试清单路径记录](2026-10-02-ci-listed-test-paths.md)。用全量单测替换手选清单的事项仍未完成。

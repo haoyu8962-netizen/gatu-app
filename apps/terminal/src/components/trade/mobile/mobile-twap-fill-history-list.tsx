@@ -6,9 +6,8 @@ import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { useTwapFillHistoryCsv } from "@/hooks/trade/use-twap-fill-history-csv";
 import { useTwapSliceFills } from "@/hooks/trade/use-twap-slice-fills";
 import { cn } from "@/lib/cn";
-import { formatDateTimeShort, formatNumber, formatPrice, formatToken } from "@/lib/format";
+import { formatDateTimeShort, useNumberFormat } from "@/lib/format";
 import { useMarkets } from "@/lib/hyperliquid";
-import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { getUserFillNotional } from "@/lib/trade/user-fills";
 import { getMarketCloseValueColorClass } from "@/lib/ui/value-color";
 import type { MobileDataScrollMode } from "./mobile-positions-view";
@@ -23,8 +22,9 @@ interface Props {
 }
 
 export function MobileTwapFillHistoryList({ className, scrollMode = "contained" }: Props) {
-	useNumberFormatRevision();
-	const { t } = useLingui();
+	const { formatNumber, formatPrice, formatToken } = useNumberFormat();
+	const { i18n, t } = useLingui();
+	const locale = i18n.locale;
 	const { fills, hasMore, isConnected, isRealtimeDegraded, loadMore, status } = useTwapSliceFills();
 	const { exportCsv, isExporting } = useTwapFillHistoryCsv();
 	const navigateToMarket = useMarketNavigation();
@@ -119,7 +119,7 @@ export function MobileTwapFillHistoryList({ className, scrollMode = "contained" 
 										{getDirectionLabel(fill.dir)}
 									</span>
 									<span className="text-[10px] text-market-close-subtle tabular-nums">
-										{formatDateTimeShort(fill.time)}
+										{formatDateTimeShort(fill.time, { locale })}
 									</span>
 								</div>
 							</div>

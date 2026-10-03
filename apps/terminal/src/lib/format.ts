@@ -1,4 +1,5 @@
 import { i18n } from "@lingui/core";
+import { useSyncExternalStore } from "react";
 import { FALLBACK_VALUE_PLACEHOLDER, FORMAT_COMPACT_DEFAULT, FORMAT_COMPACT_THRESHOLD } from "@/config/app";
 import {
 	defaultLocale,
@@ -10,6 +11,7 @@ import {
 	numberSeparatorsByFormatLocale,
 } from "@/config/i18n";
 import { HL_PERP_PRICE_MAX_DECIMALS, HL_PRICE_MAX_DECIMALS } from "@/config/trade";
+import { getNumberFormatRevision, subscribeNumberFormatChange } from "@/lib/number-format-reactivity";
 import { toNumber } from "@/lib/trade/numbers";
 import { getResolvedFormatLocale } from "@/stores/use-global-settings-store";
 
@@ -503,6 +505,85 @@ function getSlippagePercentDecimals(percent: number): number {
 	if (percent >= 0.1) return 2;
 	if (percent >= 0.01) return 3;
 	return 4;
+}
+
+const PLAIN_DECIMAL_PATTERN = /^([+-]?)(\d+)(?:\.(\d+))?$/u;
+const THOUSANDS_BOUNDARY_PATTERN = /\B(?=(\d{3})+(?!\d))/gu;
+
+export interface FormatDecimalStringOptions {
+	/** Drop trailing fraction zeros, and the decimal sign once no fraction digit is left. */
+	trimTrailingZeros?: boolean;
+}
+
+/**
+ * Write an exact decimal string with the grouping and decimal signs of the number-format setting.
+ * The caller keeps the digits: round or truncate first (for example `Big#toFixed(4, Big.roundDown)`)
+ * and pass the plain decimal string; only the separators change, so values beyond double precision
+ * and the caller's rounding direction survive. Redundant leading zeros are dropped, because grouping
+ * "0005" would read as 0,005. Anything that is not a plain decimal string returns the fallback
+ * placeholder.
+ * @example formatDecimalString("-1234.50") -> "-1,234.50" with 1,234.56, "-1.234,50" with 1.234,56
+ * @example formatDecimalString("12.3400", { trimTrailingZeros: true }) -> "12.34"
+ */
+export function formatDecimalString(value: string | null | undefined, opts?: FormatDecimalStringOptions): string {
+	const match = typeof value === "string" ? PLAIN_DECIMAL_PATTERN.exec(value) : null;
+	if (!match) return FALLBACK_VALUE_PLACEHOLDER;
+	const [, sign, integer, fraction = ""] = match;
+	const separators = getActiveNumberSeparators();
+	const digits = opts?.trimTrailingZeros ? fraction.replace(/0+$/u, "") : fraction;
+	const grouped = integer.replace(/^0+(?=\d)/u, "").replace(THOUSANDS_BOUNDARY_PATTERN, separators.group);
+	return digits ? `${sign}${grouped}${separators.decimal}${digits}` : `${sign}${grouped}`;
+}
+
+/**
+ * The number formatters for components, hooks and the presentation helpers they call during render.
+ * Every number-format change produces a new object with new function identities, so React Compiler
+ * recomputes each cached value that calls one of them; like the module-level functions, they read the
+ * active setting when called. Helpers receive this object as an argument instead of importing the
+ * module-level functions (ADR 0036).
+ */
+export interface NumberFormatters {
+	formatDecimalString: typeof formatDecimalString;
+	formatLiquidationPrice: typeof formatLiquidationPrice;
+	formatNumber: typeof formatNumber;
+	formatPercent: typeof formatPercent;
+	formatPrice: typeof formatPrice;
+	formatQuoteAmount: typeof formatQuoteAmount;
+	formatSlippageBps: typeof formatSlippageBps;
+	formatToken: typeof formatToken;
+	formatUSD: typeof formatUSD;
+}
+
+function createNumberFormatters(): NumberFormatters {
+	return {
+		formatDecimalString: (...args) => formatDecimalString(...args),
+		formatLiquidationPrice: (...args) => formatLiquidationPrice(...args),
+		formatNumber: (...args) => formatNumber(...args),
+		formatPercent: (...args) => formatPercent(...args),
+		formatPrice: (...args) => formatPrice(...args),
+		formatQuoteAmount: (...args) => formatQuoteAmount(...args),
+		formatSlippageBps: (...args) => formatSlippageBps(...args),
+		formatToken: (...args) => formatToken(...args),
+		formatUSD: (...args) => formatUSD(...args),
+	};
+}
+
+let numberFormatters = createNumberFormatters();
+let numberFormattersRevision = getNumberFormatRevision();
+
+/** The current formatters, for code that runs outside render (event handlers, effects, exports). */
+export function getNumberFormatters(): NumberFormatters {
+	const revision = getNumberFormatRevision();
+	if (revision !== numberFormattersRevision) {
+		numberFormattersRevision = revision;
+		numberFormatters = createNumberFormatters();
+	}
+	return numberFormatters;
+}
+
+/** Subscribes the caller to the number-format setting and returns the formatters for this render. */
+export function useNumberFormat(): NumberFormatters {
+	return useSyncExternalStore(subscribeNumberFormatChange, getNumberFormatters, getNumberFormatters);
 }
 
 /**

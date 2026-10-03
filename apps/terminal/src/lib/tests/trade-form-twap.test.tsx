@@ -4,15 +4,22 @@ import { act } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { TradeFormTwap } from "@/components/trade/tradebox/trade-form-twap";
+import { notifyNumberFormatChange } from "@/lib/number-format-reactivity";
 import { createI18nRoot } from "./harness/react";
 
 const mocks = vi.hoisted(() => ({
+	formatLocale: "en-US",
 	setTwapMinutes: vi.fn(),
 	setTwapRandomize: vi.fn(),
 	setTwapTriggerPrice: vi.fn(),
 	setTwapStopPrice: vi.fn(),
 	twapTriggerPrice: "",
 	twapStopPrice: "",
+}));
+
+vi.mock("@/stores/use-global-settings-store", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/stores/use-global-settings-store")>()),
+	getResolvedFormatLocale: () => mocks.formatLocale,
 }));
 
 vi.mock("@/stores/use-order-entry-store", () => ({
@@ -60,6 +67,7 @@ describe("TradeFormTwap trigger and stop prices", () => {
 	let root: Root;
 
 	beforeEach(() => {
+		mocks.formatLocale = "en-US";
 		container = document.createElement("div");
 		document.body.appendChild(container);
 		root = createI18nRoot(container);
@@ -132,8 +140,19 @@ describe("TradeFormTwap trigger and stop prices", () => {
 
 		mocks.twapTriggerPrice = "117312.6";
 		act(() => root.render(<TradeFormTwap {...defaultProps} markPx={117312} szDecimals={5} />));
-		expect(container.textContent).toContain("Activates when mark ≥ 117313");
+		expect(container.textContent).toContain("Activates when mark ≥ 117,313");
 		expect(container.textContent).not.toContain("117312.6");
+	});
+
+	it("writes the activation price with the number-format separators while the input keeps the protocol string", () => {
+		mocks.twapTriggerPrice = "1234.5";
+		act(() => root.render(<TradeFormTwap {...defaultProps} markPx={1000} szDecimals={2} />));
+		expect(container.textContent).toContain("Activates when mark ≥ 1,234.5");
+
+		mocks.formatLocale = "de-DE";
+		act(() => notifyNumberFormatChange());
+		expect(container.textContent).toContain("Activates when mark ≥ 1.234,5");
+		expect(getInputByLabel(container, "Trigger Price").value).toBe("1234.5");
 	});
 
 	it("disables both price inputs with the rest of the form", () => {

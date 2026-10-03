@@ -48,7 +48,7 @@
   - 其他计价币 → `formatQuoteAmount(truncated, symbol, { compact: false, decimals: 0 })`，例如 `150,000,000 USDH`。
 - 计价币的取舍：下单面板的「订单价值」（`order-summary.tsx`）对所有市场都用 `formatUSD`，这是既有的简化；同一表单的止盈止损收益（`tp-sl-section.tsx`，经 `getTpSlCollateralSymbol(market)`）与持仓价值（`position-row.tsx`、`mobile-position-card.tsx`）按计价币区分。分档下界是该 dex 抵押币计的名义价值，所以这一行沿用后者：宿主传 `getTpSlCollateralSymbol(market)`（永续为 `USDC`，builder 永续为其 `quoteToken` 的显示名，缺失为 `null`）。缺少符号时不猜测为美元，显示占位符；「无档位上限」与单位无关，照常显示。
 - 行固定为单行：容器 `min-h-4 gap-3 whitespace-nowrap p-0 text-xs`，标签 `min-w-0 truncate`，数值 `shrink-0 font-medium`，颜色沿用编辑器的 `text-trading-panel-muted` / `text-trading-panel-fg`。文字变长（如阿拉伯语、印地语标签）时截断标签，数值始终完整，行高不变。纯文本行，没有背景块，没有 `aria-live`，拖动预览不会被读屏播报。
-- 组件体内先调用 `useNumberFormatRevision()`，并把版本号显式传给格式化函数，React Compiler 因此不会在数字格式切换后保留旧字符串；`number-format-reactivity-contract` 把该组件登记为格式化辅助函数的所有者，`i18n-reactivity-contract` 登记为响应式渲染文件。
+- 组件体内取 `useNumberFormat()` 返回的格式化函数，作为参数传给 `formatLeveragePositionLimit`；数字格式切换后函数身份改变，React Compiler 因此不会保留旧字符串（[数字格式规则 9](number-format-setting.md)、[ADR 0036](adr/0036-render-time-number-formatters.md)）。`i18n-reactivity-contract` 把该组件登记为响应式渲染文件。
 
 ### 4.3 挂载位置与宿主
 

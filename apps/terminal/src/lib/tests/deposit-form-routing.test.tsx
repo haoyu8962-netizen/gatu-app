@@ -33,6 +33,13 @@ vi.mock("@/components/trade/tradebox/deposit/funding-address-card", () => ({
 		),
 }));
 
+const numberFormatSetting = vi.hoisted(() => ({ locale: "en-US" }));
+
+vi.mock("@/stores/use-global-settings-store", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/stores/use-global-settings-store")>()),
+	getResolvedFormatLocale: () => numberFormatSetting.locale,
+}));
+
 vi.mock("@/components/trade/tradebox/deposit/unit-deposit-info", () => ({
 	UnitDepositInfo: ({
 		cctpFee,
@@ -97,6 +104,7 @@ describe("DepositForm routing gate", () => {
 	let root: Root;
 
 	beforeEach(() => {
+		numberFormatSetting.locale = "en-US";
 		container = document.createElement("div");
 		document.body.appendChild(container);
 		root = createRoot(container);
@@ -126,6 +134,45 @@ describe("DepositForm routing gate", () => {
 		expect(container.textContent).toContain("You send");
 		expect(container.textContent).toContain("Minimum 5 USDC");
 		expect(container.querySelector('img[src="/coins/USDC.svg"]')).toBeNull();
+	});
+
+	it("writes the wallet balance, minimum and Circle fee with the number-format separators", async () => {
+		numberFormatSetting.locale = "de-DE";
+		await act(async () => {
+			root.render(
+				createElement(
+					I18nProvider,
+					{ i18n },
+					createElement(DepositForm, {
+						...createProps("ready", "cctp"),
+						cctpFee: "1234.5",
+						usesFundingAddressFlow: false,
+					}),
+				),
+			);
+		});
+		expect(container.textContent).toContain("Up to 1.234,5 USDC in fees will be deducted from your deposit.");
+
+		await act(async () => {
+			root.render(
+				createElement(
+					I18nProvider,
+					{ i18n },
+					createElement(DepositForm, {
+						...createProps("ready", "cctp"),
+						cctpFee: "1234.5",
+						balance: "4.5",
+						maxDepositRaw: 4_500_000n,
+						requiresExplicitFundingDeposit: true,
+					}),
+				),
+			);
+		});
+		expect(container.textContent).toContain("Available 4,5 USDC is below the minimum deposit. Send at least 5 USDC.");
+		expect(container.textContent).toContain("Deposit 4,5 USDC");
+		expect(container.querySelector('[data-testid="deposit-instructions"]')?.getAttribute("data-cctp-fee")).toBe(
+			"1234.5",
+		);
 	});
 
 	it("shows the external wallet header with a decorative USDC icon and current Circle fee", async () => {

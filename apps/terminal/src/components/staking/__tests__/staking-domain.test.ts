@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { getNumberFormatters } from "@/lib/format";
 import {
 	calculateDelegationWeightedApr,
 	canUndelegate,
@@ -6,6 +7,7 @@ import {
 	createValidatorViews,
 	deriveStakingPageState,
 	formatStakingAmount,
+	formatStakingRatio,
 	isSystemFinalizedWithdrawal,
 	parseSpotHypeAvailable,
 	parseStakingDelegations,
@@ -233,6 +235,15 @@ describe("staking domain", () => {
 	it("keeps validator lock checks separate from the seven-day withdrawal queue", () => {
 		expect(canUndelegate({ amount: "1", lockedUntilTimestamp: 999 }, 1_000)).toBe(true);
 		expect(canUndelegate({ amount: "1", lockedUntilTimestamp: 1_001 }, 1_000)).toBe(false);
-		expect(formatStakingAmount("1234567.89000000", 8)).toBe("1,234,567.89");
+		expect(formatStakingAmount("1234567.89000000", getNumberFormatters(), 8)).toBe("1,234,567.89");
+	});
+
+	it("truncates HYPE amounts and ratios toward zero and keeps tiny ratios out of exponent notation", () => {
+		const numberFormat = getNumberFormatters();
+		expect(formatStakingAmount("9.99999", numberFormat)).toBe("9.9999");
+		expect(formatStakingRatio("0.12345", numberFormat)).toBe("12.34%");
+		expect(formatStakingRatio("0.0000000001", numberFormat)).toBe("0%");
+		expect(formatStakingAmount("not-a-number", numberFormat)).toBe("—");
+		expect(formatStakingAmount("1", numberFormat, -1)).toBe("—");
 	});
 });

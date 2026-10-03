@@ -4,6 +4,7 @@ import {
 	formatOrderFeeRatePercent,
 	resolveEstimatedProtocolRate,
 } from "@/domain/trade/order-fee-quote";
+import { getNumberFormatters } from "@/lib/format";
 
 const BASE_INPUT = {
 	orderValue: "10000",
@@ -59,7 +60,7 @@ describe("order fee quote", () => {
 		expect(quote.protocolAmount).toBe("7.000007");
 		expect(quote.builderAmount).toBe("1.000001");
 		expect(quote.totalAmount).toBe("8.000008");
-		expect(formatOrderFeeRatePercent(quote.totalRate)).toBe("0.0800%");
+		expect(formatOrderFeeRatePercent(quote.totalRate, getNumberFormatters())).toBe("0.0800%");
 	});
 
 	it("fails closed to zero for invalid order values and builder fee settings", () => {

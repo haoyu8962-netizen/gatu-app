@@ -57,6 +57,21 @@ const bridgeConnectSources = [
 	"https://zkevm-rpc.com",
 ] as const;
 
+/**
+ * Stripe's embedded crypto onramp, which Privy's card funding flow loads into the page (ADR 0034).
+ * The hosts follow Stripe's published CSP for Stripe.js, Link and the embedded crypto onramp. Other
+ * card providers open in a separate window and need no entry here.
+ */
+const stripeOnrampConnectSources = ["https://api.stripe.com", "https://link.com", "https://*.link.com"] as const;
+
+const stripeOnrampFrameSources = [
+	"https://js.stripe.com",
+	"https://*.js.stripe.com",
+	"https://hooks.stripe.com",
+	"https://link.com",
+	"https://*.link.com",
+] as const;
+
 const privyFrameSources = [
 	"https://auth.privy.io",
 	"https://verify.walletconnect.com",
@@ -64,8 +79,13 @@ const privyFrameSources = [
 	"https://challenges.cloudflare.com",
 ] as const;
 
-/** Hosts besides the application that may serve scripts (Turnstile). */
-const scriptHosts = ["https://challenges.cloudflare.com"] as const;
+/** Hosts besides the application that may serve scripts (Turnstile, Stripe's embedded onramp). */
+const scriptHosts = [
+	"https://challenges.cloudflare.com",
+	"https://js.stripe.com",
+	"https://*.js.stripe.com",
+	"https://crypto-js.stripe.com",
+] as const;
 
 const knownImageSources = [
 	"'self'",
@@ -76,6 +96,8 @@ const knownImageSources = [
 	"https://explorer-api.walletconnect.com",
 	"https://*.walletconnect.com",
 	"https://*.coinbase.com",
+	"https://*.stripe.com",
+	"https://*.link.com",
 ] as const;
 
 export const cspDirectives: Record<string, string> = {
@@ -95,11 +117,18 @@ export const cspDirectives: Record<string, string> = {
 		...walletConnectConnectSources,
 		...smartWalletConnectSources,
 		...circleCctpConnectSources,
+		...stripeOnrampConnectSources,
 		...bridgeConnectSources,
 	].join(" "),
 	"worker-src": "'self' blob:",
-	"child-src": ["'self'", "blob:", ...privyFrameSources].join(" "),
-	"frame-src": ["'self'", "blob:", ...privyFrameSources, "https://secure.walletconnect.com"].join(" "),
+	"child-src": ["'self'", "blob:", ...privyFrameSources, ...stripeOnrampFrameSources].join(" "),
+	"frame-src": [
+		"'self'",
+		"blob:",
+		...privyFrameSources,
+		"https://secure.walletconnect.com",
+		...stripeOnrampFrameSources,
+	].join(" "),
 	"manifest-src": "'self'",
 };
 

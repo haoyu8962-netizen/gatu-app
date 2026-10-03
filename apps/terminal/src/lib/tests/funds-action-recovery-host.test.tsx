@@ -17,6 +17,7 @@ import {
 import { getFundsActionHistoryStartTime } from "@/components/funds-action/funds-action-reconciliation";
 import { FundsActionRecoveryHost } from "@/components/funds-action/funds-action-recovery-host";
 import { formatDateTime } from "@/lib/format";
+import { notifyNumberFormatChange } from "@/lib/number-format-reactivity";
 
 const WALLET_OWNER = "0x1111111111111111111111111111111111111111" as const;
 const AGENT_OWNER = "0x2222222222222222222222222222222222222222" as const;
@@ -25,6 +26,7 @@ const OLD_HASH = `0x${"aa".repeat(32)}`;
 const NEW_HASH = `0x${"bb".repeat(32)}`;
 
 const mocks = vi.hoisted(() => ({
+	formatLocale: "en-US",
 	clientKey: "0x1111111111111111111111111111111111111111" as string,
 	env: "Mainnet" as "Mainnet" | "Testnet",
 	sessionMode: "wallet" as "wallet" | "agent-only" | "disconnected",
@@ -51,6 +53,11 @@ vi.mock("@sairn/ui", () => ({
 	ModalFooter: ({ children }: { children: ReactNode }) => <footer>{children}</footer>,
 	ModalHeader: ({ children }: { children: ReactNode }) => <header>{children}</header>,
 	ModalTitle: ({ children }: { children: ReactNode }) => <h2>{children}</h2>,
+}));
+
+vi.mock("@/stores/use-global-settings-store", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/stores/use-global-settings-store")>()),
+	getResolvedFormatLocale: () => mocks.formatLocale,
 }));
 
 vi.mock("@/hooks/use-mobile", () => ({
@@ -83,6 +90,7 @@ describe("FundsActionRecoveryHost", async () => {
 	beforeEach(() => {
 		vi.useFakeTimers();
 		i18n.loadAndActivate({ locale: "en", messages: {} });
+		mocks.formatLocale = "en-US";
 		mocks.clientKey = WALLET_OWNER;
 		mocks.env = "Mainnet";
 		mocks.sessionMode = "wallet";
@@ -338,6 +346,37 @@ describe("FundsActionRecoveryHost", async () => {
 		expect(text).not.toContain("Transaction hash");
 		expect(text).not.toContain(NEW_HASH);
 		expect(container.querySelector('a[href*="/tx/"]')).toBeNull();
+	});
+
+	it("writes the pending amount with the number-format separators and keeps the atomic amount raw", async () => {
+		const marker = createVaultMarker({ owner: WALLET_OWNER, displayAmount: "1234.5", atomicAmount: "1234500000" });
+		expect(persistFundsActionMarker(marker)).toBe(true);
+		await renderHost();
+		expect(container.textContent).toContain("1,234.5 USDC");
+
+		mocks.formatLocale = "de-DE";
+		act(() => notifyNumberFormatChange());
+		await act(() => vi.advanceTimersByTimeAsync(0));
+		expect(container.textContent).toContain("1.234,5 USDC");
+		openDetails();
+		const text = container.textContent ?? "";
+		expect(text).toContain("Amount1.234,5 USDC");
+		expect(text).toContain("Atomic amount1234500000");
+		expect(text).not.toContain("1234.5 USDC");
+	});
+
+	it("rewrites the start time in the active language while the details stay open", async () => {
+		const marker = createVaultMarker({ owner: WALLET_OWNER });
+		expect(persistFundsActionMarker(marker)).toBe(true);
+		await renderHost();
+		openDetails();
+		const modal = container.querySelector('[data-testid="recovery-modal"]');
+		expect(container.textContent).toContain(`Started${formatDateTime(marker.startedAt, { locale: "en" })}`);
+
+		act(() => i18n.loadAndActivate({ locale: "zh", messages: {} }));
+
+		expect(container.querySelector('[data-testid="recovery-modal"]')).toBe(modal);
+		expect(container.textContent).toContain(`Started${formatDateTime(marker.startedAt, { locale: "zh" })}`);
 	});
 
 	it("uses the shared Sonner host and hides the old account notification without clearing its marker", async () => {

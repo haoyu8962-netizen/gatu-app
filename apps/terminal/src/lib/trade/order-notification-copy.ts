@@ -4,7 +4,7 @@ import Big from "big.js";
 import { isValidOrderExecutionSummary } from "@/domain/trade/order-execution-summary";
 import { formatActionFailure } from "@/lib/errors/action-error";
 import { type ExchangeErrorEntry, formatExchangeErrorText } from "@/lib/errors/exchange-error-text";
-import { formatPrice, formatToken } from "@/lib/format";
+import type { NumberFormatters } from "@/lib/format";
 import { formatOrderReconciliationError } from "@/lib/trade/order-reconciliation-feedback";
 import { formatOrderSubmissionFeedback } from "@/lib/trade/order-submission-feedback";
 import { formatPositionSubmitFeedback } from "@/lib/trade/position-submit-feedback";
@@ -31,7 +31,11 @@ export interface OrderNotificationCopy {
 	error?: string;
 }
 
-export function getOrderNotificationCopy(order: OrderQueueItem, translate: Translate): OrderNotificationCopy {
+export function getOrderNotificationCopy(
+	order: OrderQueueItem,
+	translate: Translate,
+	numberFormat: NumberFormatters,
+): OrderNotificationCopy {
 	const label = getActionLabel(order, translate);
 	const market = order.market || "";
 	const ordinary = !order.title && (!order.operation || order.operation === "order") && order.orderType !== "twap";
@@ -47,9 +51,11 @@ export function getOrderNotificationCopy(order: OrderQueueItem, translate: Trans
 	} else if (order.positionsClosed && order.status === "success") {
 		summary = translate(msg`All positions closed`);
 	} else if (showExecution) {
-		const quantity = isolate(`${execution.filledSize} ${market}`);
+		const filledSize = numberFormat.formatDecimalString(execution.filledSize);
+		const quantity = isolate(`${filledSize} ${market}`);
 		if (execution.completeness === "partial") {
-			const progress = isolate(`${execution.filledSize} / ${execution.requestedSize} ${market}`);
+			const requestedSize = numberFormat.formatDecimalString(execution.requestedSize);
+			const progress = isolate(`${filledSize} / ${requestedSize} ${market}`);
 			summary = translate(msg`Partially filled ${progress}`);
 			if (order.tpPrice || order.slPrice) {
 				notice = translate(
@@ -60,7 +66,7 @@ export function getOrderNotificationCopy(order: OrderQueueItem, translate: Trans
 			summary = order.side === "buy" ? translate(msg`Bought ${quantity}`) : translate(msg`Sold ${quantity}`);
 		}
 		if (order.quoteToken) {
-			const price = isolate(formatExecutionPrice(execution.averagePrice, order.quoteToken));
+			const price = isolate(formatExecutionPrice(execution.averagePrice, order.quoteToken, numberFormat));
 			detail = translate(msg`Avg. ${price}`);
 		}
 	} else {
@@ -201,11 +207,13 @@ function isGenericFailure(error: NonNullable<OrderQueueItem["error"]>): boolean 
 	return false;
 }
 
-function formatExecutionPrice(value: string, quoteToken: string): string {
+function formatExecutionPrice(value: string, quoteToken: string, numberFormat: NumberFormatters): string {
 	const price = Big(value).prec(8).toFixed();
 	const options = { compact: false, maximumSignificantDigits: 8 };
-	if (quoteToken === "USDC" || quoteToken === "USDT" || quoteToken === "USD") return formatPrice(price, options);
-	return formatToken(price, { ...options, symbol: quoteToken });
+	if (quoteToken === "USDC" || quoteToken === "USDT" || quoteToken === "USD") {
+		return numberFormat.formatPrice(price, options);
+	}
+	return numberFormat.formatToken(price, { ...options, symbol: quoteToken });
 }
 
 function isolate(value: string): string {

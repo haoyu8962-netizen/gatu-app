@@ -32,6 +32,7 @@ This file contains durable project instructions for coding agents. Read `agent.m
 - Treat the active wallet account as the signing identity. Before creating a user-signed Hyperliquid client, require its address to match the selected Hyperliquid user address exactly, case-insensitively; fail closed on missing or mismatched accounts.
 - For Privy email sessions, activate only the exact embedded wallet belonging to that user. Never fall back to the first connected or first embedded wallet when the expected address is unavailable.
 - Hyperliquid Agent/API Wallet keys may be stored locally, but Agent approval must always be signed by the matching master wallet. Missing local Agent state may trigger re-registration; it must never trigger a different browser wallet.
+- Card funding pays out only to the exact Hyperliquid owner: pass the destination resolved by `resolvePrivyFiatFundingDestination` to Privy's `useFiatOnramp`, never a Privy funding hook without an explicit destination (it defaults to the first embedded wallet). Each network keeps its own fail-closed flag, and a Mainnet release needs `--allow-mainnet-card-funding` (`docs/adr/0034-privy-card-funding.md`).
 
 ## First-use trading onboarding contract
 
@@ -93,7 +94,9 @@ This file contains durable project instructions for coding agents. Read `agent.m
 
 - `docs/number-format-setting.md` owns the number-format options, their storage and which surfaces follow them.
 - Numbers follow the number-format setting, never the interface language; dates and times follow the interface language with Latin digits. Components and business code format both through `lib/format.ts` and never call `toLocale*` or construct `Intl.*` formatters directly.
+- Components and hooks take their number formatters from `useNumberFormat()` and pass them to any helper that formats during render; they never reference the module-level number formatters, because React Compiler caches those calls by their arguments only (`docs/adr/0036-render-time-number-formatters.md`, enforced by `number-format-reactivity-contract`). For the same reason every date and list formatter call in them passes a `locale` option, effects, event handlers and export columns included: `const locale = i18n.locale;` read during render, or `i18n.locale` read when an effect, an inline event handler or a CSV row builder (`buildRows`) runs; a helper they reach passes on the locale it receives (`docs/i18n-presentation.md`, enforced by `date-locale-reactivity-contract`).
 - Typed decimal input stays a `.` protocol string; when the setting displays `,` as the decimal sign, a typed `,` is normalized to `.` before validation (`normalizeDecimalInput` / `normalizeDecimalInputEvent`), and every bare `<input inputMode="decimal">` must use that helper; `locale-format-contract` scans both rules.
+- A decimal string that is already rounded or truncated for display (a Big.js `toFixed` result, a protocol price or size shown as is, a viem amount) goes through `formatDecimalString` from `useNumberFormat()`, which keeps the caller's digits and swaps the separators; values that still need rounding keep the rounding formatters. Never build display text from `toFixed`/`toPrecision` or group thousands by hand (`docs/number-format-setting.md` rule 10, `docs/adr/0037-exact-decimal-display-separators.md`); `decimal-display-contract` requires every other `toFixed`/`toPrecision` call to be registered by file with its use and count.
 - The chart receives `numeric_formatting` at creation and follows a setting change through the same state-preserving rebuild as a locale change; a number-format change never reloads the page.
 
 ## Desktop trading layout contract
@@ -179,6 +182,11 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/legal-gate.test.ts \
   src/lib/tests/privy-config.test.ts \
   src/lib/tests/privy-theme-switch-wallet-stability.test.tsx \
+  src/lib/tests/privy-fiat-funding.test.ts \
+  src/lib/tests/privy-fiat-funding-host.test.tsx \
+  src/lib/tests/privy-fiat-funding-host-gate.test.tsx \
+  src/lib/tests/use-privy-fiat-funding-offer.test.tsx \
+  src/lib/tests/deposit-method-chooser.test.tsx \
   src/lib/tests/client-root-theme-lifecycle.test.tsx \
   src/lib/tests/wallet-modal.test.tsx \
   src/lib/tests/wallet-session.test.tsx \
@@ -226,7 +234,9 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/format.test.ts \
   src/lib/tests/number-format-settings.test.ts \
   src/lib/tests/number-format-reactivity-contract.test.ts \
+  src/lib/tests/date-locale-reactivity-contract.test.ts \
   src/lib/tests/locale-format-contract.test.ts \
+  src/lib/tests/decimal-display-contract.test.ts \
   src/lib/tests/decimal-input-normalization.test.tsx \
   src/lib/tests/tradingview-chart.test.tsx
 
