@@ -1,6 +1,6 @@
 # ADR 0033：邮箱钱包在登录后静默创建，协议弹窗等 Privy 窗口关闭后再出现
 
-- 状态：已接受并实施（2026-10-02）；同日经 Codex 三轮只读对抗审查后修订。真实邮箱注册的端到端验收还没有做；「待用户决定」一节有一项没有定。
+- 状态：已接受并实施（2026-10-02）；同日经 Codex 三轮只读对抗审查后修订。真实邮箱注册的端到端验收还没有做；「待用户决定」一节有一项没有定。2026-10-04 追记：随集成 PR #77 提交到 `dev`（与 ADR 0035 的分支一起），未合入、未发布。
 - 关联：[邮箱交易签名](../email-trading-signing.md)、[首次交易引导](../trading-onboarding.md)、[运行时约束](../runtime-guardrails.md) §1、[移动端数据提示](../mobile-data-presentation.md)、[ADR 0002](0002-exact-owner-trading-signers.md)、[任务记录](../work-memory/sessions/2026-10-02-silent-email-wallet-creation.md)。
 
 ## 背景与约束

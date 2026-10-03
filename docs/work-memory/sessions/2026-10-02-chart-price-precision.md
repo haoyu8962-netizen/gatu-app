@@ -158,3 +158,4 @@
 - 若以后要求跨档后价格轴刻度也立即跟上，需要不重建 widget 就让 TradingView 重新解析同一符号的办法，目前没有，未排期。
 - 已对修复提交 `3d6a8000` 做窄范围复审（见上）；之后只改了探针与文档，未再复审。
 - 没有被替代的记录。
+- 2026-10-04 补记：本分支已与邮箱静默建钱包（ADR 0033）一起合进集成分支 `claude/integrate-chart-precision-silent-wallet`（合并提交 `15538d88`），提交为 PR #77 → `dev`，未合入、未发布。`dev` 后来加的小数显示契约要求登记每处 `toFixed`，`getTickSize` 已在合并提交里登记。这次集成也是本分支的改动第一次进生产构建。经过见[集成记录](2026-10-04-integrate-chart-precision-silent-wallet.md)。
