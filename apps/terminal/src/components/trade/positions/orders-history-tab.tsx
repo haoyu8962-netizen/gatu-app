@@ -12,9 +12,8 @@ import { useOrderDisplayLabels } from "@/hooks/trade/use-order-display-labels";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { buildCsvRows } from "@/lib/csv";
-import { formatDateTime, formatToken, formatUSD } from "@/lib/format";
+import { formatDateTime, useNumberFormat } from "@/lib/format";
 import { useHyperliquid, useMarkets } from "@/lib/hyperliquid";
-import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import {
 	getOrderHistoryStatusCategory,
 	getOrderHistoryTriggerPrice,
@@ -90,8 +89,9 @@ interface OrdersHistoryTabContentProps extends Props {
 }
 
 function OrdersHistoryTabContent({ address, toolbarTarget }: OrdersHistoryTabContentProps) {
-	useNumberFormatRevision();
-	const { t } = useLingui();
+	const { formatToken, formatUSD } = useNumberFormat();
+	const { i18n, t } = useLingui();
+	const locale = i18n.locale;
 	const { getHistoricalOrderStatusLabel, getOrderSideLabel, getOrderTypeLabel } = useOrderDisplayLabels();
 	const { entries, error, isConnected, isOffline, isStale, status } = useHistoricalOrders();
 	const navigateToMarket = useMarketNavigation();
@@ -155,7 +155,8 @@ function OrdersHistoryTabContent({ address, toolbarTarget }: OrdersHistoryTabCon
 				[
 					{
 						header: t`Time`,
-						getValue: (entry) => formatDateTime(entry.createdAt, { dateStyle: "short", timeStyle: "short" }),
+						getValue: (entry) =>
+							formatDateTime(entry.createdAt, { locale: i18n.locale, dateStyle: "short", timeStyle: "short" }),
 					},
 					{ header: t`Asset`, getValue: (entry) => entry.coin },
 					{
@@ -181,7 +182,8 @@ function OrdersHistoryTabContent({ address, toolbarTarget }: OrdersHistoryTabCon
 					{ header: t`Status`, getValue: getEntryStatusLabel },
 					{
 						header: t`Updated`,
-						getValue: (entry) => formatDateTime(entry.updatedAt, { dateStyle: "short", timeStyle: "short" }),
+						getValue: (entry) =>
+							formatDateTime(entry.updatedAt, { locale: i18n.locale, dateStyle: "short", timeStyle: "short" }),
 					},
 				],
 			),
@@ -300,7 +302,7 @@ function OrdersHistoryTabContent({ address, toolbarTarget }: OrdersHistoryTabCon
 													"whitespace-nowrap ps-5 text-xs text-market-close-muted",
 												)}
 											>
-												{formatDateTime(entry.createdAt, { dateStyle: "short", timeStyle: "short" })}
+												{formatDateTime(entry.createdAt, { locale, dateStyle: "short", timeStyle: "short" })}
 											</TableCell>
 											<TableCell
 												size="dense"
@@ -364,7 +366,7 @@ function OrdersHistoryTabContent({ address, toolbarTarget }: OrdersHistoryTabCon
 													"whitespace-nowrap pe-5 text-right text-xs text-market-close-muted",
 												)}
 											>
-												{formatDateTime(entry.updatedAt, { dateStyle: "short", timeStyle: "short" })}
+												{formatDateTime(entry.updatedAt, { locale, dateStyle: "short", timeStyle: "short" })}
 											</TableCell>
 										</TableRow>
 									);

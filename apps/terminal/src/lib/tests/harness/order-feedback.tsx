@@ -1,4 +1,5 @@
 import { i18n } from "@lingui/core";
+import { getNumberFormatters } from "@/lib/format";
 import { getOrderNotificationCopy } from "@/lib/trade/order-notification-copy";
 import { getOrderQueueItems, type OrderQueueItem, removeOrderQueueItem } from "@/stores/use-order-queue-store";
 
@@ -13,7 +14,9 @@ export function clearFeedback() {
 }
 
 export function feedbackErrorText(order: OrderQueueItem | undefined): string {
-	return order ? (getOrderNotificationCopy(order, (descriptor) => i18n._(descriptor)).error ?? "") : "";
+	return order
+		? (getOrderNotificationCopy(order, (descriptor) => i18n._(descriptor), getNumberFormatters()).error ?? "")
+		: "";
 }
 
 export function feedbackText(status: OrderQueueItem["status"], field: "title" | "message" = "message") {

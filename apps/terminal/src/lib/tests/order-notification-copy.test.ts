@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { setupI18n } from "@lingui/core";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { getNumberFormatters } from "@/lib/format";
 import { getOrderNotificationCopy } from "@/lib/trade/order-notification-copy";
 import type { OrderQueueItem } from "@/stores/use-order-queue-store";
 
@@ -37,7 +38,11 @@ const execution = {
 	completeness: "full" as const,
 };
 function copy(update: Partial<OrderQueueItem> = {}) {
-	const result = getOrderNotificationCopy({ ...base, ...update }, (descriptor) => i18n._(descriptor));
+	const result = getOrderNotificationCopy(
+		{ ...base, ...update },
+		(descriptor) => i18n._(descriptor),
+		getNumberFormatters(),
+	);
 	return Object.fromEntries(
 		Object.entries(result).map(([key, value]) => [key, value?.replace(/[\u2066-\u2069]/g, "")]),
 	);
@@ -66,6 +71,19 @@ describe("compact order notification copy", () => {
 		expect(copy({ execution: { ...execution, averagePrice: "1234567.89" } }).detail).toBe("Avg. $1,234,567.9");
 		expect(copy({ execution: { ...execution, averagePrice: "101.123456789" } }).detail).toBe("Avg. $101.12346");
 	});
+	it.each([
+		["en-US", "Bought 1,234.5 HYPE", "Partially filled 1,234.5 / 2,000.25 HYPE"],
+		["de-DE", "Bought 1.234,5 HYPE", "Partially filled 1.234,5 / 2.000,25 HYPE"],
+		["fr-FR", "Bought 1 234,5 HYPE", "Partially filled 1 234,5 / 2 000,25 HYPE"],
+	])("writes filled and requested sizes with the %s separators", (locale, full, partial) => {
+		formatSettings.numberFormatLocale = locale;
+		const fill = { ...execution, filledSize: "1234.5", requestedSize: "1234.5" };
+		expect(copy({ execution: fill }).summary).toBe(full);
+		expect(
+			copy({ status: "partial", execution: { ...fill, requestedSize: "2000.25", completeness: "partial" } }).summary,
+		).toBe(partial);
+		expect(fill.filledSize).toBe("1234.5");
+	});
 	it("keeps number preferences independent of translation language", () => {
 		formatSettings.numberFormatLocale = "de-DE";
 		i18n.loadAndActivate({ locale: "ar", messages: {} });
@@ -76,9 +94,10 @@ describe("compact order notification copy", () => {
 		expect(JSON.stringify(copy({ execution }))).not.toContain("111");
 	});
 	it("isolates amounts for bidirectional translations", () => {
-		expect(getOrderNotificationCopy({ ...base, execution }, (descriptor) => i18n._(descriptor)).summary).toContain(
-			"\u20681.25 HYPE\u2069",
-		);
+		expect(
+			getOrderNotificationCopy({ ...base, execution }, (descriptor) => i18n._(descriptor), getNumberFormatters())
+				.summary,
+		).toContain("\u20681.25 HYPE\u2069");
 	});
 	it("supports sells and non-dollar quotes", () => {
 		expect(copy({ execution, side: "sell", quoteToken: "BTC" })).toMatchObject({

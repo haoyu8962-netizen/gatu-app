@@ -5,7 +5,7 @@ import {
 	hasLeveragePositionLimits,
 	type MarginTierInput,
 } from "@/domain/trade/order/liquidation";
-import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
+import { useNumberFormat } from "@/lib/format";
 import { formatLeveragePositionLimit } from "@/lib/trade/leverage-position-limit-presentation";
 
 interface Props {
@@ -15,14 +15,14 @@ interface Props {
 }
 
 export function LeveragePositionLimitRow({ marginTiers, quoteSymbol, leverage }: Props) {
-	const numberFormatRevision = useNumberFormatRevision();
+	const numberFormat = useNumberFormat();
 	const { t } = useLingui();
 
 	if (!hasLeveragePositionLimits(marginTiers)) return null;
 
 	const value = formatLeveragePositionLimit(
 		{ limit: getLeveragePositionLimit(marginTiers, leverage), quoteSymbol, noTierLimitLabel: t`No tier limit` },
-		numberFormatRevision,
+		numberFormat,
 	);
 
 	return (

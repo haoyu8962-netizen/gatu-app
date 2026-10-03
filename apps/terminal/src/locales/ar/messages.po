@@ -3205,7 +3205,7 @@ msgstr "الانزلاق المقدر"
 msgid "Establish Connection"
 msgstr "إنشاء اتصال"
 
-#. placeholder {0}: formatStakingRatio(props.weightedApr)
+#. placeholder {0}: formatStakingRatio(props.weightedApr, numberFormat)
 #: src/components/staking/staking-view.tsx
 msgid "Estimated APR {0}"
 msgstr "معدل العائد السنوي التقديري {0}"
@@ -4715,7 +4715,7 @@ msgstr "تعذّر التحقق من الأهلية حسب الموقع."
 msgid "Lock period progress"
 msgstr "تقدم فترة القفل"
 
-#. placeholder {0}: formatDateTime(validator.lockedUntilTimestamp)
+#. placeholder {0}: formatDateTime(validator.lockedUntilTimestamp, { locale })
 #: src/components/staking/staking-view.tsx
 msgid "Locked until {0}"
 msgstr "مقفل حتى {0}"
@@ -5039,7 +5039,7 @@ msgstr "الحد الأقصى للمعروض"
 msgid "Maximum withdrawable"
 msgstr "الحد الأقصى القابل للسحب"
 
-#. placeholder {0}: formatVaultUsd(availableAmount)
+#. placeholder {0}: formatVaultUsd(availableAmount, numberFormat)
 #: src/components/vaults/vault-action-modal.tsx
 msgid "Maximum withdrawable: {0}"
 msgstr "الحد الأقصى القابل للسحب: {0}"
@@ -5710,7 +5710,7 @@ msgid "On your phone, open {BRAND_NAME}, tap Connect, then Link Desktop Wallet a
 msgstr ""
 
 #. placeholder {0}: payload.env
-#. placeholder {1}: formatDateTime(payload.agentValidUntilMs, { locale: i18n.locale })
+#. placeholder {1}: formatDateTime(payload.agentValidUntilMs, { locale })
 #: src/routes/mobile-agent-sync.tsx
 msgid "Once imported, this phone trades on {0} with the desktop-approved key until {1}. It cannot withdraw."
 msgstr ""
@@ -7815,7 +7815,7 @@ msgstr "أرسل USDC إلى عنوان محفظتك أدناه."
 msgid "Sent {sentAmount} {sentToken}"
 msgstr "تم إرسال {sentAmount} {sentToken}"
 
-#. placeholder {0}: formatTimestamp(owner.lockedUntil, i18n.locale)
+#. placeholder {0}: formatTimestamp(owner.lockedUntil, locale)
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Server unlock time: {0}"
 msgstr "وقت إلغاء القفل حسب الخادم: {0}"
@@ -10816,7 +10816,7 @@ msgstr "مرجع التحقق"
 msgid "Verified Vault details are unavailable."
 msgstr "تفاصيل الخزنة المتحقق منها غير متاحة."
 
-#. placeholder {0}: formatVaultUsd(availableAmount)
+#. placeholder {0}: formatVaultUsd(availableAmount, numberFormat)
 #: src/components/vaults/vault-action-modal.tsx
 msgid "Verified wallet balance: {0}"
 msgstr "رصيد المحفظة المتحقق منه: {0}"

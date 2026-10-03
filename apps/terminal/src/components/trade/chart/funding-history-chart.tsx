@@ -18,7 +18,7 @@ import {
 	getFundingTooltipLeft,
 } from "@/lib/chart/funding-history-chart-model";
 import { cn } from "@/lib/cn";
-import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
+import { useNumberFormat } from "@/lib/format";
 
 interface Props {
 	buckets: readonly FundingRateBucket[];
@@ -37,23 +37,22 @@ const TOOLTIP_WIDTH = 208;
 const TONE_CLASS = { down: "text-market-down", neutral: "text-fg", up: "text-market-up" } as const;
 
 export function FundingHistoryChart({ buckets, range }: Props) {
-	const numberFormatRevision = useNumberFormatRevision();
+	const numberFormat = useNumberFormat();
 	const { i18n, t } = useLingui();
+	const locale = i18n.locale;
 	const plotRef = useRef<HTMLDivElement>(null);
 	const gradientId = `funding-rate-${useId().replace(/[^\w-]/g, "")}`;
 	const summaryId = useId();
 	const [size, setSize] = useState<FundingChartSize>(DEFAULT_CHART_SIZE);
 	const [hover, setHover] = useState<HoverState | null>(null);
 	const model = buildFundingHistoryChartModel(buckets, size);
-	const axisLabels = formatFundingChartAxisLabels(model, range, i18n.locale, numberFormatRevision);
+	const axisLabels = formatFundingChartAxisLabels(model, range, locale, numberFormat);
 	const summary = summarizeFundingRateBuckets(buckets);
-	const summaryLabels = summary ? formatFundingSummaryLabels(summary, range, i18n.locale, numberFormatRevision) : null;
+	const summaryLabels = summary ? formatFundingSummaryLabels(summary, range, locale, numberFormat) : null;
 	const activeIndex = hover?.buckets === buckets ? hover.index : -1;
 	const activeBucket = buckets[activeIndex];
 	const activePoint = model.points[activeIndex];
-	const activeLabels = activeBucket
-		? formatFundingBucketLabels(activeBucket, range, i18n.locale, numberFormatRevision)
-		: null;
+	const activeLabels = activeBucket ? formatFundingBucketLabels(activeBucket, range, locale, numberFormat) : null;
 	const activeTone = activeBucket ? TONE_CLASS[getFundingRateTone(activeBucket.rate)] : TONE_CLASS.neutral;
 	const lastTimeTickIndex = axisLabels.timeTicks.length - 1;
 

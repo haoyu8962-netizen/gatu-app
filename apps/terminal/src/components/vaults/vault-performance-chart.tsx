@@ -2,6 +2,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import Big from "big.js";
 import { useId } from "react";
 import { cn } from "@/lib/cn";
+import { type NumberFormatters, useNumberFormat } from "@/lib/format";
 import {
 	formatVaultSignedUsd,
 	formatVaultUsd,
@@ -20,6 +21,7 @@ interface VaultPerformanceChartProps {
 
 export function VaultPerformanceChart({ snapshot, kind, period, compact = false }: VaultPerformanceChartProps) {
 	const { t } = useLingui();
+	const numberFormat = useNumberFormat();
 	const accessibleNameId = useId();
 	const accessibleDescriptionId = useId();
 	const history = kind === "accountValue" ? snapshot.accountValueHistory : snapshot.pnlHistory;
@@ -31,7 +33,8 @@ export function VaultPerformanceChart({ snapshot, kind, period, compact = false 
 	const periodLabel =
 		period === "day" ? t`24 hours` : period === "week" ? t`7 days` : period === "month" ? t`30 days` : t`all time`;
 	const direction = tone === "positive" ? t`Positive PNL` : tone === "negative" ? t`Negative PNL` : t`PNL is zero`;
-	const latestValue = kind === "pnl" ? formatVaultSignedUsd(latest) : formatVaultUsd(latest);
+	const latestValue =
+		kind === "pnl" ? formatVaultSignedUsd(latest, numberFormat) : formatVaultUsd(latest, numberFormat);
 	const compactSummary = path ? (
 		kind === "pnl" ? (
 			<Trans>
@@ -47,7 +50,7 @@ export function VaultPerformanceChart({ snapshot, kind, period, compact = false 
 			{label} over {periodLabel}. No performance history.
 		</Trans>
 	);
-	const formattedHistorySummary = historySummary ? formatChartHistorySummary(historySummary, kind) : null;
+	const formattedHistorySummary = historySummary ? formatChartHistorySummary(historySummary, kind, numberFormat) : null;
 	const trendDescription =
 		historySummary?.trend === "increased"
 			? t`The value increased overall.`
@@ -182,13 +185,17 @@ function summarizeChartHistory(points: readonly { timestamp: number; value: stri
 	};
 }
 
-function formatChartHistorySummary(summary: ChartHistorySummary, kind: "accountValue" | "pnl") {
+function formatChartHistorySummary(
+	summary: ChartHistorySummary,
+	kind: "accountValue" | "pnl",
+	numberFormat: NumberFormatters,
+) {
 	const formatValue = kind === "pnl" ? formatVaultSignedUsd : formatVaultUsd;
 	return {
-		start: formatValue(summary.start),
-		end: formatValue(summary.end),
-		minimum: formatValue(summary.minimum),
-		maximum: formatValue(summary.maximum),
+		start: formatValue(summary.start, numberFormat),
+		end: formatValue(summary.end, numberFormat),
+		minimum: formatValue(summary.minimum, numberFormat),
+		maximum: formatValue(summary.maximum, numberFormat),
 	};
 }
 

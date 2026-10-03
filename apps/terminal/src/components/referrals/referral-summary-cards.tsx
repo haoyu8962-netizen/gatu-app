@@ -1,6 +1,5 @@
 import { Trans, useLingui } from "@lingui/react/macro";
-import { formatNumber, formatToken } from "@/lib/format";
-import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
+import { useNumberFormat } from "@/lib/format";
 import type { ReferralData } from "@/lib/trade/referral";
 
 interface Props {
@@ -10,7 +9,7 @@ interface Props {
 }
 
 export function ReferralSummaryCards({ data, discountPercent, usdcRewardsEarned }: Props) {
-	useNumberFormatRevision();
+	const { formatNumber, formatToken } = useNumberFormat();
 	const { t } = useLingui();
 	const referrals = data.referrerState.stage === "ready" ? data.referrerState.data.nReferrals : 0;
 

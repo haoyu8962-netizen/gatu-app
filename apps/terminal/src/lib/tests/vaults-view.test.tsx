@@ -1,6 +1,8 @@
 // @vitest-environment jsdom
 
 import { createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { i18n } from "@lingui/core";
 import { I18nProvider } from "@lingui/react";
 import { act } from "react";
@@ -10,6 +12,7 @@ import type { VaultActionsAvailability, VaultDetail, VaultListItem } from "@/com
 import { VaultDetailView } from "@/components/vaults/vault-detail-view";
 import { VaultPerformanceChart } from "@/components/vaults/vault-performance-chart";
 import { VaultsList } from "@/components/vaults/vaults-list";
+import { notifyNumberFormatChange } from "@/lib/number-format-reactivity";
 
 const VAULT = "0x0000000000000000000000000000000000000001" as const;
 const LEADER = "0x0000000000000000000000000000000000000002" as const;
@@ -20,6 +23,13 @@ const AVAILABLE_ACTIONS = {
 } satisfies VaultActionsAvailability;
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
+
+const numberFormatSetting = vi.hoisted(() => ({ locale: "en-US" }));
+
+vi.mock("@/stores/use-global-settings-store", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/stores/use-global-settings-store")>()),
+	getResolvedFormatLocale: () => numberFormatSetting.locale,
+}));
 
 vi.mock("@tanstack/react-router", () => ({
 	Link: ({ children, className }: { children: React.ReactNode; className?: string }) => (
@@ -34,6 +44,7 @@ describe("Vault views", () => {
 	let root: Root;
 
 	beforeEach(() => {
+		numberFormatSetting.locale = "en-US";
 		i18n.loadAndActivate({ locale: "en", messages: {} });
 		container = document.createElement("div");
 		document.body.appendChild(container);
@@ -342,7 +353,7 @@ describe("Vault views", () => {
 		act(() =>
 			i18n.loadAndActivate({
 				locale: "zh",
-				messages: { [createHash("sha256").update("Clear search\x1f").digest("base64").slice(0, 6)]: "清除搜索" },
+				messages: { [catalogId("Clear search")]: "清除搜索" },
 			}),
 		);
 
@@ -350,10 +361,144 @@ describe("Vault views", () => {
 		expect(input.value).toBe("alpha");
 	});
 
+	it("reformats the fetched time in the active language without remounting it", () => {
+		const zhCatalog = readFileSync(resolve(__dirname, "../../locales/zh/messages.po"), "utf8");
+		expect(zhCatalog).toContain('msgid "Fetched {fetchedLabel}"\nmsgstr "获取时间：{fetchedLabel}"');
+		render(
+			<VaultsList
+				state="normal"
+				rows={[createListRow()]}
+				account={{ status: "disconnected" }}
+				fetchedAt={new Date(2026, 9, 2, 14, 31).getTime()}
+				onRetry={vi.fn()}
+			/>,
+		);
+		const label = readFetchedLabel();
+		expect(label.textContent?.replace(/\s+/g, " ")).toBe("Fetched 02:31 PM");
+
+		act(() =>
+			i18n.loadAndActivate({
+				locale: "zh",
+				messages: { [catalogId("Fetched {fetchedLabel}")]: "获取时间：{fetchedLabel}" },
+			}),
+		);
+		expect(readFetchedLabel()).toBe(label);
+		expect(label.textContent).toBe("获取时间：14:31");
+
+		act(() => i18n.loadAndActivate({ locale: "en", messages: {} }));
+		expect(readFetchedLabel()).toBe(label);
+		expect(label.textContent?.replace(/\s+/g, " ")).toBe("Fetched 02:31 PM");
+	});
+
+	it("writes list TVL, APR and PNL with the number-format separators, keeping exact rounding", () => {
+		const row = {
+			...createListRow(),
+			tvl: "1234567.89",
+			apr: "0.12345",
+			pnlByPeriod: { day: ["0", "1"], week: ["0", "1"], month: ["0", "1234.5"], allTime: ["0", "1"] },
+		} satisfies VaultListItem;
+		render(<VaultsList state="normal" rows={[row]} account={{ status: "disconnected" }} onRetry={vi.fn()} />);
+		const table = container.querySelector("table");
+		expect(container.textContent).toContain("$1.23M");
+		expect(container.textContent).toContain("+12.35%");
+		expect(container.querySelector("[data-vault-chart-summary]")?.textContent).toContain("+$1,234.50");
+
+		numberFormatSetting.locale = "de-DE";
+		act(() => notifyNumberFormatChange());
+
+		expect(container.querySelector("table")).toBe(table);
+		expect(container.textContent).toContain("$1,23M");
+		expect(container.textContent).toContain("+12,35%");
+		expect(container.textContent).not.toContain("+12.35%");
+		expect(container.querySelector("[data-vault-chart-summary]")?.textContent).toContain("+$1.234,50");
+	});
+
+	it("writes detail equity, commission, depositor amounts and chart extrema with the number-format separators", () => {
+		const detail = createDetail({
+			apr: "0.12345",
+			followers: [
+				{
+					user: FOLLOWER,
+					vaultEquity: "1234.5",
+					pnl: "5",
+					allTimePnl: "-2000.25",
+					daysFollowing: 4,
+					vaultEntryTime: 1,
+					lockupUntil: 2,
+				},
+			],
+		});
+		render(
+			<VaultDetailView
+				detail={detail}
+				owner={{
+					status: "ready",
+					equity: "12345.678",
+					pnl: "1",
+					allTimePnl: "2",
+					entryTime: 1,
+					lockedUntil: 3,
+					isLocked: false,
+					lockProgress: "1",
+					maxWithdrawable: "12345.678",
+					canWithdraw: true,
+				}}
+				actionAvailability={AVAILABLE_ACTIONS}
+				isTestnet={false}
+			/>,
+		);
+		expect(container.textContent).toContain("Leader commission10.00%");
+		expect(container.textContent).toContain("$12,345.68");
+		expect(container.textContent).toContain("$1,234.50");
+		expect(container.textContent).toContain("-$2,000.25");
+
+		numberFormatSetting.locale = "fr-FR";
+		act(() => notifyNumberFormatChange());
+
+		expect(container.textContent).toContain("Leader commission10,00%");
+		expect(container.textContent).toContain("+12,35%");
+		expect(container.textContent).toContain("$12 345,68");
+		expect(container.textContent).toContain("$1 234,50");
+		expect(container.textContent).toContain("+$5,00");
+		expect(container.textContent).toContain("-$2 000,25");
+		expect(container.textContent).not.toContain("$12,345.68");
+
+		render(
+			<VaultPerformanceChart
+				snapshot={{
+					accountValueHistory: [],
+					pnlHistory: [
+						{ timestamp: 1, value: "0" },
+						{ timestamp: 2, value: "1234.5" },
+						{ timestamp: 3, value: "0" },
+					],
+					volume: "0",
+				}}
+				kind="pnl"
+				period="month"
+			/>,
+		);
+		const chart = container.querySelector<HTMLElement>('[data-vault-performance-chart][role="img"]');
+		const descriptionId = chart?.getAttribute("aria-describedby");
+		expect(descriptionId ? document.getElementById(descriptionId)?.textContent : null).toBe(
+			"Starts at $0,00 and ends at $0,00. The start and end values are unchanged. Minimum $0,00; maximum +$1 234,50.",
+		);
+	});
+
 	function render(element: React.ReactNode) {
 		act(() => root.render(<I18nProvider i18n={i18n}>{element}</I18nProvider>));
 	}
+
+	function readFetchedLabel(): HTMLElement {
+		const labels = container.querySelectorAll<HTMLElement>("header span.tabular-nums");
+		expect(labels).toHaveLength(1);
+		return labels[0];
+	}
 });
+
+function catalogId(message: string): string {
+	return createHash("sha256").update(`${message}\x1f`).digest("base64").slice(0, 6);
+}
 
 function createListRow(): VaultListItem {
 	return {

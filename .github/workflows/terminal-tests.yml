@@ -86,7 +86,6 @@ jobs:
           src/lib/tests/mobile-agent-sync-modal.test.tsx
           src/lib/tests/modal-surface-contract.test.ts
           src/lib/tests/dialog-notice-radius-contract.test.ts
-          src/lib/tests/i18n-reactivity-contract.test.ts
           src/lib/tests/trades.test.ts
           src/lib/tests/orderbook-panel-safety.test.tsx
           src/lib/tests/mobile-bottom-nav.test.tsx
@@ -241,6 +240,62 @@ jobs:
           src/lib/tests/trade-row.test.tsx
           src/lib/tests/trades-panel.test.tsx
 
+      - name: Test number format and runtime locale contracts
+        working-directory: apps/terminal
+        run: >-
+          pnpm exec vitest run --maxWorkers=1
+          src/lib/tests/format.test.ts
+          src/lib/tests/number-format-settings.test.ts
+          src/lib/tests/locale-format-contract.test.ts
+          src/lib/tests/decimal-input-normalization.test.tsx
+          src/lib/tests/global-settings-store.test.ts
+          src/lib/tests/i18n-reactivity-contract.test.ts
+          src/lib/tests/date-locale-reactivity-contract.test.ts
+          src/lib/tests/i18n-hot-switch.test.tsx
+          src/lib/tests/action-error.test.ts
+          src/lib/tests/errors.test.ts
+          src/lib/tests/lingui-helper-translator-contract.test.ts
+          src/lib/tests/footer-bar.test.tsx
+          src/lib/tests/vaults-view.test.tsx
+          src/lib/tests/portfolio-performance-chart.test.tsx
+          src/lib/tests/funding-history-panel.test.tsx
+          src/lib/tests/funding-history-page.test.tsx
+          src/lib/tests/leverage-position-limit-row.test.tsx
+          src/lib/tests/referral-summary-cards.test.tsx
+          src/lib/tests/referral-history-locale.test.tsx
+          src/lib/tests/account-panel.test.tsx
+          src/lib/tests/account-ledger-number-format.test.tsx
+          src/lib/tests/tp-sl-section.test.tsx
+          src/lib/tests/order-confirmation-rows.test.ts
+          src/lib/tests/order-notification-copy.test.ts
+          src/lib/tests/orderbook-row-tooltip.test.tsx
+          src/lib/tests/use-tradingview-overlay-lines.test.tsx
+          src/lib/tests/funds-action-recovery-host.test.tsx
+          src/lib/tests/historical-orders-page.test.tsx
+          src/lib/tests/trade-history-page.test.tsx
+          src/lib/tests/position-close-all-submit.test.tsx
+          src/lib/tests/trade-form-fields-order-entry-data.test.tsx
+          src/lib/tests/history-csv-twap.test.tsx
+          src/lib/tests/bridge-success-screen-locale.test.tsx
+          src/components/staking/__tests__/staking-action-modal.test.tsx
+          src/lib/tests/react-source-harness.test.ts
+          src/lib/tests/decimal-display-contract.test.ts
+          src/components/staking/__tests__/staking-domain.test.ts
+          src/lib/tests/vaults-domain.test.ts
+          src/lib/tests/bridge-amount-number-format.test.tsx
+          src/lib/tests/deposit-amount-input.test.tsx
+          src/lib/tests/withdrawal.test.ts
+          src/lib/tests/global-settings-modal.test.tsx
+          src/lib/tests/mobile-market-bar.test.tsx
+          src/lib/tests/mobile-orderbook-mode.test.tsx
+          src/lib/tests/mobile-trade-price-field.test.tsx
+          src/lib/tests/order-fee-quote.test.ts
+          src/lib/tests/order-toast-number-format.test.tsx
+          src/lib/tests/trade-form-scale-mid.test.tsx
+          src/lib/tests/trade-form-twap.test.tsx
+          src/lib/tests/rtl-financial-ui-contract.test.ts
+          src/lib/tests/desktop-history-exports.test.tsx
+
       - name: Test Deposit, CCTP, routing, and geo guards
         working-directory: apps/terminal
         run: >-
@@ -259,7 +314,7 @@ jobs:
           src/lib/tests/development-geo.test.ts
           src/lib/tests/embedded-deposit-auto-bridge.test.tsx
           src/lib/tests/funding-address-card.test.tsx
-          src/lib/tests/geo-server-functions.test.ts
+          src/lib/tests/geo-api.test.ts
           src/lib/tests/privy-fiat-funding.test.ts
           src/lib/tests/privy-fiat-funding-host.test.tsx
           src/lib/tests/privy-fiat-funding-host-gate.test.tsx

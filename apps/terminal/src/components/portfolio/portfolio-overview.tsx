@@ -12,14 +12,13 @@ import {
 import { applyReferralDiscountToFeeRate } from "@/domain/trade/fees";
 import { usePortfolioData } from "@/hooks/portfolio/use-portfolio-data";
 import { cn } from "@/lib/cn";
-import { formatPercent, formatUSD } from "@/lib/format";
-import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
+import { useNumberFormat } from "@/lib/format";
 import { PortfolioPerformanceChart } from "./portfolio-performance-chart";
 
 type FeeMarket = "perps" | "spot";
 
 export function PortfolioOverview() {
-	useNumberFormatRevision();
+	const { formatPercent, formatUSD } = useNumberFormat();
 	const { t } = useLingui();
 	const data = usePortfolioData();
 	const [scope, setScope] = useState<PortfolioScope>("combined");

@@ -8,8 +8,7 @@ import { USDC_TRANSFER_DECIMALS } from "@/config/app";
 import { USDC_DECIMALS } from "@/config/contracts";
 import type { UsdcRoutingQueryStatus } from "@/domain/trade/usdc-routing";
 import { cn } from "@/lib/cn";
-import { formatNumber } from "@/lib/format";
-import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
+import { useNumberFormat } from "@/lib/format";
 import { floorToString, limitDecimalInput } from "@/lib/trade/numbers";
 import { getMinimumWithdrawal, getWithdrawalNetReceived, type WithdrawalRoute } from "@/lib/trade/withdrawal";
 import { FundsRouteDetails } from "./funds-route-details";
@@ -70,7 +69,7 @@ export function WithdrawForm({
 	showSpotFundsNotice = false,
 	onTransferClick,
 }: Props) {
-	useNumberFormatRevision();
+	const { formatNumber } = useNumberFormat();
 	const { t: translate } = useLingui();
 	const amountInputId = useId();
 	const amountErrorId = useId();

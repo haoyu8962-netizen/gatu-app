@@ -1,5 +1,6 @@
 import Big from "big.js";
 import type { LimitTif, OrderType } from "@/config/trade";
+import type { NumberFormatters } from "@/lib/format";
 import type { Numeric } from "@/lib/trade/numbers";
 import { toBig } from "@/lib/trade/numbers";
 import type { Side } from "@/lib/trade/types";
@@ -80,8 +81,8 @@ export function builderFeeTenthsBpsToRate(builderFeeTenthsBps: Numeric): Big {
 	return getNonNegative(builderFeeTenthsBps).div(TENTHS_OF_BASIS_POINT_DIVISOR);
 }
 
-export function formatOrderFeeRatePercent(rate: Numeric): string {
-	return `${(toBig(rate) ?? Big(0)).times(100).toFixed(4)}%`;
+export function formatOrderFeeRatePercent(rate: Numeric, numberFormat: NumberFormatters): string {
+	return `${numberFormat.formatDecimalString((toBig(rate) ?? Big(0)).times(100).toFixed(4))}%`;
 }
 
 function getNonNegative(value: Numeric): Big {

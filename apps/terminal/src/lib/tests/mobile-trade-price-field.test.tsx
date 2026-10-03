@@ -4,15 +4,24 @@ import { act } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MobileTradePriceField } from "@/components/trade/mobile/mobile-trade-price-field";
+import { notifyNumberFormatChange } from "@/lib/number-format-reactivity";
 import { createI18nRoot } from "./harness/react";
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
+
+const numberFormatSetting = vi.hoisted(() => ({ locale: "en-US" }));
+
+vi.mock("@/stores/use-global-settings-store", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/stores/use-global-settings-store")>()),
+	getResolvedFormatLocale: () => numberFormatSetting.locale,
+}));
 
 describe("MobileTradePriceField", () => {
 	let container: HTMLDivElement;
 	let root: Root;
 
 	beforeEach(() => {
+		numberFormatSetting.locale = "en-US";
 		container = document.createElement("div");
 		document.body.appendChild(container);
 		root = createI18nRoot(container);
@@ -21,6 +30,31 @@ describe("MobileTradePriceField", () => {
 	afterEach(() => {
 		act(() => root.unmount());
 		container.remove();
+	});
+
+	it("names the Mid action with the number-format separators and still forwards the protocol price", () => {
+		const onMidClick = vi.fn();
+		act(() => {
+			root.render(
+				<MobileTradePriceField
+					label="Limit Price"
+					marketType="perp"
+					midPrice="1234.56789"
+					onChange={vi.fn()}
+					onMidClick={onMidClick}
+					szDecimals={2}
+					value=""
+				/>,
+			);
+		});
+		const button = container.querySelector<HTMLButtonElement>("button");
+		expect(button?.getAttribute("aria-label")).toBe("Use mid price 1,234.5679");
+
+		numberFormatSetting.locale = "de-DE";
+		act(() => notifyNumberFormatChange());
+		expect(button?.getAttribute("aria-label")).toBe("Use mid price 1.234,5679");
+		act(() => button?.click());
+		expect(onMidClick).toHaveBeenCalledExactlyOnceWith("1234.5679");
 	});
 
 	it("keeps an explicit accessible name and forwards the exact formatted midpoint", () => {

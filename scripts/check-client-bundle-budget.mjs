@@ -51,7 +51,26 @@ const budgets = {
 	// replaces the +15,152 measured for 566713d3, when the host imported only useFiatOnramp and Rollup split
 	// Privy's funding module into a chunk of its own that 104 other chunks then had to import
 	// (docs/terminal-performance-baseline.md).
-	totalGzipBaselineBytes: 3_281_171,
+	// Raised 2026-10-03 by +4,671 for the locale and number-format refresh (footer clock, vault labels, ADR 0036):
+	// components take their formatters from useNumberFormat() and read the locale before formatting, which adds
+	// React Compiler cache-guard dependencies (trade startup +2,410, desktop runtime startup +829, mobile +142).
+	// Measured as the local Node 22.15.0 build of 2d6f4676 (3,195,752) minus the local build of dev 682430ba
+	// (3,191,081), both with the fixed metadata of docs/terminal-performance-baseline.md; the +5,160 dev had already
+	// used stays counted. With CI metadata the same head measured 3,196,075, 154 bytes over the previous allowance.
+	// Raised 2026-10-03 by +417 for the date and list locale contract (docs/i18n-presentation.md): 38 date calls in
+	// 18 components and one hook (histories, funding, TWAP, transfers, orders, the PnL card and Earn) pass the active
+	// locale, which adds it to their React Compiler cache guards (trade startup +203, desktop runtime startup +114,
+	// mobile +11). Measured as the local Node 22.15.0 build of c110dc80 (3,196,169) minus that of 2d6f4676
+	// (3,195,752), both with the fixed metadata of docs/terminal-performance-baseline.md; the date branch's own build
+	// against 04469b52 had measured +475.
+	// Raised 2026-10-03 by +1,392 for ADR 0037 (exact decimal strings through formatDecimalString): the helper in
+	// lib/format.ts and the number-format hook in about thirty components (staking +201, vaults +309, trade startup
+	// +440, desktop runtime startup +91). Measured as the local Node 22.15.0 build of 1cb73bcf (3,197,561) minus that
+	// of c110dc80 (3,196,169), both with the fixed metadata of docs/terminal-performance-baseline.md; the ADR 0037
+	// branch's own build against 04469b52 had measured +1,216.
+	// Merged with dev a0c05740 on 2026-10-03: the three raises above were measured before dev's Privy upgrade and card
+	// funding and are added to its 3,281,171. The fixed-metadata build of the merge 0944584d measured 3,293,592 (+5,941).
+	totalGzipBaselineBytes: 3_287_651,
 	totalGzipAllowedIncreaseBytes: 10_000,
 	tradeStartup: {
 		requiredRouteIds: ["__root__", "/trade/$symbol"],
@@ -77,7 +96,17 @@ const budgets = {
 			{
 				name: "desktop",
 				moduleIds: TRADE_DESKTOP_RUNTIME_MODULE_IDS,
-				baselineGzipBytes: 191_988,
+				// Raised 2026-10-03 by +205: the date and list locale contract passes the locale in the positions panels
+				// and their history tabs (+114), and ADR 0037 adds formatDecimalString and the number-format hook to the
+				// order form, order book and funds recovery host (+91). Measured with the fixed metadata of
+				// docs/terminal-performance-baseline.md as the local Node 22.15.0 builds of 2d6f4676 (201,842), c110dc80
+				// (201,956) and 1cb73bcf (202,047). After merging dev a0c05740, the fixed-metadata build of 0944584d measured
+				// 202,173, 20 bytes under this allowance, and the CI-metadata build 202,193, exactly at it.
+				// Re-baselined 2026-10-03 to dev's 191,988 plus PR #71's measured desktop increment (+1,141, so +936 over
+				// the +205 above): CI read 202,249 for fc5e10cd, 56 bytes over the previous allowance. Fixed-metadata Node
+				// 22.15.0 builds in clean worktrees read 201,032 for dev a0c05740 and 202,173 for fc5e10cd
+				// (docs/terminal-performance-baseline.md, locale and number-format re-baseline).
+				baselineGzipBytes: 193_129,
 				allowedIncreaseBytes: 10_000,
 			},
 		],

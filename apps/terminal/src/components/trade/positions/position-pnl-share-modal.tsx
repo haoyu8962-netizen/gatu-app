@@ -9,8 +9,7 @@ import { useCopyToClipboard } from "@/hooks/ui/use-copy-to-clipboard";
 import { useLingeringValue } from "@/hooks/use-lingering-value";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/cn";
-import { formatDateTime, formatPercent, formatQuoteAmount, szDecimalsToPriceDecimals } from "@/lib/format";
-import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
+import { formatDateTime, szDecimalsToPriceDecimals, useNumberFormat } from "@/lib/format";
 import { toBig } from "@/lib/trade/numbers";
 import {
 	buildPositionPnlShareUrl,
@@ -47,8 +46,9 @@ export function PositionPnlShareModal({ position, onOpenChange }: PositionPnlSha
 }
 
 function PositionPnlShareDialog({ position, open, onOpenChange }: PositionPnlShareDialogProps) {
-	useNumberFormatRevision();
-	const { t } = useLingui();
+	const { formatPercent, formatQuoteAmount } = useNumberFormat();
+	const { i18n, t } = useLingui();
+	const locale = i18n.locale;
 	const isMobile = useIsMobile();
 	const { copied, copy } = useCopyToClipboard(1500);
 	const [qrState, setQrState] = useState<QrState | null>(null);
@@ -68,6 +68,7 @@ function PositionPnlShareDialog({ position, open, onOpenChange }: PositionPnlSha
 	const isProfit = pnl?.gte(0) ?? true;
 	const directionLabel = isLong ? t`Long` : t`Short`;
 	const timestamp = formatDateTime(position.capturedAtMs, {
+		locale,
 		year: "numeric",
 		month: "2-digit",
 		day: "2-digit",

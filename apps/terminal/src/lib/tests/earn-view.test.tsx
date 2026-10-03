@@ -7,7 +7,16 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { EarnView } from "@/components/earn/earn-view";
 import { buildEarnSnapshot, type EarnTokenMeta, parseEarnReserves, parseEarnUserState } from "@/domain/earn";
 import type { EarnData } from "@/hooks/earn/use-earn-data";
+import { formatDateTime } from "@/lib/format";
+import { notifyNumberFormatChange } from "@/lib/number-format-reactivity";
 import { createI18nRoot } from "./harness/react";
+
+const numberFormatSetting = vi.hoisted(() => ({ locale: "en-US" }));
+
+vi.mock("@/stores/use-global-settings-store", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/stores/use-global-settings-store")>()),
+	getResolvedFormatLocale: () => numberFormatSetting.locale,
+}));
 
 function passthrough(tag: string) {
 	return ({ children }: { children?: ReactNode }) => createElement(tag, null, children);
@@ -108,6 +117,7 @@ describe("earn view", () => {
 	let root: Root;
 
 	beforeEach(() => {
+		numberFormatSetting.locale = "en-US";
 		i18n.loadAndActivate({ locale: "en", messages: {} });
 		container = document.createElement("div");
 		document.body.appendChild(container);
@@ -162,4 +172,59 @@ describe("earn view", () => {
 		expect(rowActions.length).toBeGreaterThan(0);
 		expect(rowActions.every((button) => button.getAttribute("aria-disabled") === "true")).toBe(true);
 	});
+
+	it("rewrites reserve and summary figures in place when the number format changes", () => {
+		render(createData("ready"));
+		const table = container.querySelector("table");
+		for (const figure of ["$92.76", "1.00 HYPE", "2.85%", "65.00%", "100.00 USDC"]) {
+			expect(container.textContent).toContain(figure);
+		}
+
+		numberFormatSetting.locale = "de-DE";
+		act(() => notifyNumberFormatChange());
+
+		expect(container.querySelector("table")).toBe(table);
+		for (const figure of ["$92,76", "1,00 HYPE", "2,85%", "65,00%", "100,00 USDC"]) {
+			expect(container.textContent).toContain(figure);
+		}
+		expect(container.textContent).not.toContain("$92.76");
+	});
+
+	it.each(["interest", "action history"] as const)(
+		"rewrites the %s time in the active language without remounting the table",
+		(table) => {
+			const time = new Date(2026, 9, 2, 14, 31).getTime();
+			const data: EarnData = {
+				...createData("ready"),
+				interestStatus: table === "interest" ? "ready" : "loading",
+				interest: [{ time, token: "USDC", supply: "0.5", borrow: "0" }],
+				historyStatus: table === "action history" ? "ready" : "loading",
+				history: [
+					{
+						action: "supply",
+						amount: "12.5",
+						destination: { kind: "earn" },
+						explorer: "hyperliquid",
+						fee: null,
+						hash: `0x${"c".repeat(64)}`,
+						id: "supply-1",
+						rawType: "supply",
+						source: { kind: "spot" },
+						time,
+						token: "USDC",
+					},
+				],
+			};
+			render(data);
+			const cell = [...container.querySelectorAll("tbody tr td:first-child bdi")].find(
+				(element) => element.textContent === formatDateTime(time, { locale: "en" }),
+			);
+			expect(cell).toBeDefined();
+
+			act(() => i18n.loadAndActivate({ locale: "zh", messages: {} }));
+
+			expect(cell?.isConnected).toBe(true);
+			expect(cell?.textContent).toBe(formatDateTime(time, { locale: "zh" }));
+		},
+	);
 });

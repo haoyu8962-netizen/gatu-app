@@ -1,14 +1,13 @@
 import { useLingui } from "@lingui/react/macro";
 import { getPositionCloseAllTargetDetails, type PositionCloseAllTarget } from "@/domain/trade/position-close-all";
-import { formatToken } from "@/lib/format";
-import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
+import { useNumberFormat } from "@/lib/format";
 
 interface Props {
 	targets: readonly PositionCloseAllTarget[];
 }
 
 export function PositionCloseAllTargets({ targets }: Props) {
-	useNumberFormatRevision();
+	const { formatToken } = useNumberFormat();
 	const { t } = useLingui();
 	return (
 		<ul aria-label={t`Positions to close`} className="max-h-44 space-y-2 overflow-y-auto text-xs">

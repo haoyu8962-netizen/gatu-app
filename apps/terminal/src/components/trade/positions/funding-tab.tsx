@@ -12,9 +12,8 @@ import { useUserFunding } from "@/hooks/trade/use-user-funding";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { buildCsvRows } from "@/lib/csv";
-import { formatDateTimeShort, formatPercent, formatToken, formatUSD } from "@/lib/format";
+import { formatDateTimeShort, useNumberFormat } from "@/lib/format";
 import { useMarkets } from "@/lib/hyperliquid";
-import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { toBig } from "@/lib/trade/numbers";
 import { getMarketCloseValueColorClass } from "@/lib/ui/value-color";
 import { AssetBadge } from "../components/asset-badge";
@@ -66,8 +65,9 @@ function FundingLoadingPlaceholder() {
 }
 
 export function FundingTab({ toolbarTarget }: Props = {}) {
-	const { t } = useLingui();
-	useNumberFormatRevision();
+	const { i18n, t } = useLingui();
+	const locale = i18n.locale;
+	const { formatPercent, formatToken, formatUSD } = useNumberFormat();
 	const navigateToMarket = useMarketNavigation();
 	const { error, fundings: updates, isConnected, isOffline, isStale, status } = useUserFunding();
 	const { address } = useWalletSession();
@@ -81,7 +81,7 @@ export function FundingTab({ toolbarTarget }: Props = {}) {
 		filename: "funding_history.csv",
 		buildRows: (fundings) =>
 			buildCsvRows(fundings, [
-				{ header: t`Time`, getValue: (update) => formatDateTimeShort(update.time) },
+				{ header: t`Time`, getValue: (update) => formatDateTimeShort(update.time, { locale: i18n.locale }) },
 				{ header: t`Asset`, getValue: (update) => update.coin },
 				{
 					header: t`Position`,
@@ -217,7 +217,7 @@ export function FundingTab({ toolbarTarget }: Props = {}) {
 												)}
 											>
 												<div className="flex flex-col items-end">
-													<span>{formatDateTimeShort(update.time)}</span>
+													<span>{formatDateTimeShort(update.time, { locale })}</span>
 												</div>
 											</TableCell>
 										</TableRow>

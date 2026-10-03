@@ -9,6 +9,7 @@ import {
 	SCALE_SKEW_MIN,
 } from "@/config/trade";
 import { cn } from "@/lib/cn";
+import { useNumberFormat } from "@/lib/format";
 import type { Numeric } from "@/lib/trade/numbers";
 import {
 	useOrderEntryActions,
@@ -47,6 +48,9 @@ export function TradeFormScale({
 	mobileSafe,
 }: Props) {
 	const { t } = useLingui();
+	const { formatNumber } = useNumberFormat();
+	const levelsRange = `${formatNumber(SCALE_LEVELS_MIN)}–${formatNumber(SCALE_LEVELS_MAX)}`;
+	const skewRange = `${formatNumber(SCALE_SKEW_MIN)}–${formatNumber(SCALE_SKEW_MAX)}`;
 	const scaleStartPriceInput = useScaleStart();
 	const scaleEndPriceInput = useScaleEnd();
 	const scaleLevelsNum = useScaleLevels();
@@ -115,12 +119,12 @@ export function TradeFormScale({
 					desktop={desktop}
 					disabled={disabled}
 					label={levelsLabel}
-					range={inline ? `${SCALE_LEVELS_MIN}–${SCALE_LEVELS_MAX}` : undefined}
+					range={inline ? levelsRange : undefined}
 				>
 					<NumberInput
 						label={inline ? undefined : levelsLabel}
 						aria-label={levelsLabel}
-						labelValue={`${SCALE_LEVELS_MIN}–${SCALE_LEVELS_MAX}`}
+						labelValue={levelsRange}
 						placeholder="4"
 						value={String(scaleLevelsNum)}
 						onChange={(e) => setScaleLevels(Number(e.target.value) || 4)}
@@ -137,12 +141,12 @@ export function TradeFormScale({
 					desktop={desktop}
 					disabled={disabled}
 					label={skewLabel}
-					range={inline ? `${SCALE_SKEW_MIN}–${SCALE_SKEW_MAX}` : undefined}
+					range={inline ? skewRange : undefined}
 				>
 					<NumberInput
 						label={inline ? undefined : skewLabel}
 						aria-label={skewLabel}
-						labelValue={`${SCALE_SKEW_MIN}–${SCALE_SKEW_MAX}`}
+						labelValue={skewRange}
 						placeholder="1"
 						value={scaleSkewInput}
 						onChange={(e) => setScaleSkew(e.target.value)}

@@ -37,6 +37,7 @@ const PositionsPanel = createLazyComponent(() => import("../trade/positions/posi
 
 export function PortfolioPage() {
 	const { i18n, t } = useLingui();
+	const locale = i18n.locale;
 	const isMobile = useIsMobile();
 	const unavailableActionsId = useId();
 	const isTestnet = useIsTestnet();
@@ -220,8 +221,7 @@ export function PortfolioPage() {
 										</p>
 										{unavailableActionGroups.map((group, index) => (
 											<p id={`${unavailableActionsId}-${index}`} key={group.reason}>
-												<span className="font-semibold">{formatList(group.actions, { locale: i18n.locale })}:</span>{" "}
-												{group.reason}
+												<span className="font-semibold">{formatList(group.actions, { locale })}:</span> {group.reason}
 											</p>
 										))}
 									</div>

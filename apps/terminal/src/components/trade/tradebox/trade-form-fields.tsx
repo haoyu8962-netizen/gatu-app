@@ -12,9 +12,8 @@ import { useSizeSliderInteraction } from "@/hooks/trade/use-size-slider-interact
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import type { ValidationError } from "@/lib/errors/types";
-import { formatToken } from "@/lib/format";
+import { useNumberFormat } from "@/lib/format";
 import { useSelectedMarketInfo } from "@/lib/hyperliquid";
-import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { formatDecimalFloor, toNumberOrZero } from "@/lib/trade/numbers";
 import {
 	canUseTpSl as canUseTpSlForOrder,
@@ -97,7 +96,7 @@ export function TradeFormFields({
 	onSizeInteractionChange,
 	onSwapClick,
 }: Props) {
-	useNumberFormatRevision();
+	const { formatDecimalString, formatToken } = useNumberFormat();
 	const { t } = useLingui();
 	const sizeFieldId = useId();
 	const sizeErrorId = useId();
@@ -262,7 +261,7 @@ export function TradeFormFields({
 					positionValue={
 						<span className={cn("whitespace-nowrap font-semibold tabular-nums", getValueColorClass(positionSize))}>
 							{positionSize > 0 ? "+" : ""}
-							{formatDecimalFloor(positionSize, szDecimals)} {baseToken}
+							{formatDecimalString(formatDecimalFloor(positionSize, szDecimals))} {baseToken}
 						</span>
 					}
 				/>

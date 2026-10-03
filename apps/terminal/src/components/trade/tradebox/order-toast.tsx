@@ -4,7 +4,7 @@ import { Button } from "@sairn/ui";
 import { useEffect, useRef, useState } from "react";
 import { StatusGlyph } from "@/components/brand/status-glyph";
 import { cn } from "@/lib/cn";
-import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
+import { useNumberFormat } from "@/lib/format";
 import { getOrderNotificationCopy } from "@/lib/trade/order-notification-copy";
 import { getOrderNotificationGlyph } from "@/lib/trade/order-notification-glyph";
 import { formatOrderChildError } from "@/lib/trade/order-status-reasons";
@@ -41,8 +41,8 @@ interface Props {
 
 export function OrderToast({ order, onDismiss }: Props) {
 	const { t } = useLingui();
-	useNumberFormatRevision();
-	const copy = getOrderNotificationCopy(order, (descriptor) => t(descriptor));
+	const numberFormat = useNumberFormat();
+	const copy = getOrderNotificationCopy(order, (descriptor) => t(descriptor), numberFormat);
 	const glyph = getOrderNotificationGlyph(order);
 	const successful = order.status === "success";
 	const failed = order.status === "failed";
@@ -130,14 +130,14 @@ export function OrderToast({ order, onDismiss }: Props) {
 									<p>
 										{t`Filled`}:{" "}
 										<bdi>
-											{child.filledSize}
-											{child.size && ` / ${child.size}`}
+											{numberFormat.formatDecimalString(child.filledSize)}
+											{child.size && ` / ${numberFormat.formatDecimalString(child.size)}`}
 										</bdi>
 									</p>
 								)}
 								{child.filledSize === undefined && child.size && (
 									<p>
-										{t`Size`}: <bdi>{child.size}</bdi>
+										{t`Size`}: <bdi>{numberFormat.formatDecimalString(child.size)}</bdi>
 									</p>
 								)}
 								{child.error && (

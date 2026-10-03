@@ -1,7 +1,6 @@
 import { Trans } from "@lingui/react/macro";
 import { ArrowSquareOutIcon, CaretDownIcon, InfoIcon } from "@phosphor-icons/react";
-import { formatToken } from "@/lib/format";
-import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
+import { useNumberFormat } from "@/lib/format";
 import type { ReferralRewardRow } from "@/lib/trade/referral";
 
 interface Props {
@@ -9,7 +8,7 @@ interface Props {
 }
 
 export function ReferralRewardsCard({ rewards }: Props) {
-	useNumberFormatRevision();
+	const { formatToken } = useNumberFormat();
 	return (
 		<article className="h-full rounded-16 border border-stroke-weak bg-surface px-3 py-3 min-[1001px]:px-4 min-[1001px]:py-3.5">
 			<div className="flex items-start justify-between gap-3">

@@ -4,13 +4,22 @@ import { act, createElement } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { TpSlSection } from "@/components/trade/tradebox/tp-sl-section";
+import { notifyNumberFormatChange } from "@/lib/number-format-reactivity";
 import { createI18nRoot } from "./harness/react";
+
+const numberFormatSetting = vi.hoisted(() => ({ locale: "en-US" }));
+
+vi.mock("@/stores/use-global-settings-store", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/stores/use-global-settings-store")>()),
+	getResolvedFormatLocale: () => numberFormatSetting.locale,
+}));
 
 describe("TpSlSection position ROE shortcuts", () => {
 	let container: HTMLDivElement;
 	let root: Root;
 
 	beforeEach(() => {
+		numberFormatSetting.locale = "en-US";
 		container = document.createElement("div");
 		document.body.appendChild(container);
 		root = createI18nRoot(container);
@@ -226,5 +235,74 @@ describe("TpSlSection position ROE shortcuts", () => {
 		expect(container.textContent).toContain("+20.00 USDT0");
 		expect(container.textContent).toContain("-10.00 USDT0");
 		expect(container.textContent).not.toContain("$");
+	});
+
+	it("rewrites the estimated TP/SL PnL in place when the number format changes", () => {
+		act(() => {
+			root.render(
+				createElement(TpSlSection, {
+					onSlPriceChange: vi.fn(),
+					onTpPriceChange: vi.fn(),
+					preserveFinancialPrecision: true,
+					quoteSymbol: "USDC",
+					referencePrice: "100",
+					side: "buy",
+					size: "200",
+					slPrice: "95",
+					tpPrice: "110",
+				}),
+			);
+		});
+		expect(container.textContent).toContain("+$2,000.00");
+		expect(container.textContent).toContain("-$1,000.00");
+		const tpPriceInput = container.querySelector<HTMLInputElement>('input[placeholder="Price"]');
+
+		numberFormatSetting.locale = "de-DE";
+		act(() => notifyNumberFormatChange());
+
+		expect(container.querySelector<HTMLInputElement>('input[placeholder="Price"]')).toBe(tpPriceInput);
+		expect(tpPriceInput?.value).toBe("110");
+		expect(container.textContent).toContain("+$2.000,00");
+		expect(container.textContent).toContain("-$1.000,00");
+		expect(container.textContent).not.toContain("2,000.00");
+	});
+
+	it("writes the risk/reward ratio with the number-format decimal sign", () => {
+		function renderSection(tpPrice: string) {
+			root.render(
+				createElement(TpSlSection, {
+					onSlPriceChange: vi.fn(),
+					onTpPriceChange: vi.fn(),
+					preserveFinancialPrecision: true,
+					quoteSymbol: "USDC",
+					referencePrice: "100",
+					side: "buy",
+					size: "200",
+					slPrice: "90",
+					tpPrice,
+				}),
+			);
+		}
+		function getRiskRewardLabel(): string | null | undefined {
+			const label = Array.from(container.querySelectorAll("span")).find((span) => span.textContent === "Risk/Reward");
+			return label?.nextElementSibling?.textContent;
+		}
+
+		act(() => renderSection("115"));
+		expect(getRiskRewardLabel()).toBe("1:1.5");
+
+		numberFormatSetting.locale = "de-DE";
+		act(() => notifyNumberFormatChange());
+		expect(getRiskRewardLabel()).toBe("1:1,5");
+
+		act(() => renderSection("104"));
+		expect(getRiskRewardLabel()).toBe("2,5:1");
+
+		numberFormatSetting.locale = "fr-FR";
+		act(() => notifyNumberFormatChange());
+		expect(getRiskRewardLabel()).toBe("2,5:1");
+
+		act(() => renderSection("120"));
+		expect(getRiskRewardLabel()).toBe("1:2");
 	});
 });

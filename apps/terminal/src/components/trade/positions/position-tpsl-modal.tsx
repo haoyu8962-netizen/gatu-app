@@ -32,14 +32,7 @@ import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { type ActionFailure, type ExchangeActionFailure, exchangeActionFailure } from "@/lib/errors/action-error";
 import type { ExchangeErrorEntry } from "@/lib/errors/exchange-error-text";
-import {
-	formatPercent,
-	formatPrice,
-	formatQuoteAmount,
-	formatToken,
-	formatUSD,
-	szDecimalsToPriceDecimals,
-} from "@/lib/format";
+import { szDecimalsToPriceDecimals, useNumberFormat } from "@/lib/format";
 import {
 	type ExchangeParams,
 	type Position,
@@ -50,7 +43,6 @@ import {
 	useSubscription,
 	useUserPositions,
 } from "@/lib/hyperliquid";
-import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { toBig } from "@/lib/trade/numbers";
 import {
 	areTpSlOrderInfosEqual,
@@ -470,7 +462,7 @@ function PositionTpSlForm({
 	onOpenChange,
 }: FormProps) {
 	const { t } = useLingui();
-	useNumberFormatRevision();
+	const { formatPercent, formatPrice, formatQuoteAmount, formatToken, formatUSD } = useNumberFormat();
 	const decimals = szDecimalsToPriceDecimals(positionRef.szDecimals);
 	const liveSignedSize = toBig(position.szi);
 	const [signedSize] = useState(() => toBig(position.szi));

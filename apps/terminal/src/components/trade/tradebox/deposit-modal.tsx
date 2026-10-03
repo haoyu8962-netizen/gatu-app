@@ -54,13 +54,12 @@ import { useEmailEmbeddedWallet } from "@/hooks/wallet/use-email-embedded-wallet
 import { useReconnectWallet, useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { STATUS_GLYPH_UNKNOWN } from "@/lib/brand/status-glyph.gen";
 import { formatExchangeActionError, formatTransferError, isAmbiguousExchangeActionError } from "@/lib/errors/format";
-import { formatNumber } from "@/lib/format";
+import { useNumberFormat } from "@/lib/format";
 import { infoQueryOptions, useExchange, useHyperliquid, useInfo } from "@/lib/hyperliquid";
 import { isDefinitiveDepositSourceFailure } from "@/lib/hyperliquid/deposit-source-error";
 import { useDeposit } from "@/lib/hyperliquid/use-deposit";
 import { createLazyComponent } from "@/lib/lazy";
 import { useHasExistingBridgeExecution } from "@/lib/lifi/bridge-execution-state";
-import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { calculateCctpDepositFee, getAmountIndependentCctpMaxFeeRaw } from "@/lib/trade/cctp-deposit";
 import { removeCctpDepositTrackingRecord } from "@/lib/trade/cctp-deposit-tracking";
 import {
@@ -69,7 +68,7 @@ import {
 	formatFundsActionFeedback,
 	fundsActionFeedbackCause,
 } from "@/lib/trade/funds-action-feedback";
-import { toBig } from "@/lib/trade/numbers";
+import { toBig, toPlainDecimal } from "@/lib/trade/numbers";
 import { warmPrivyFiatFundingHost } from "@/lib/trade/privy-fiat-funding-launch";
 import {
 	buildCctpWithdrawalParameters,
@@ -126,7 +125,8 @@ function normalizeError(error: unknown, fallbackMessage: string): Error {
 
 export function DepositModal() {
 	const { t } = useLingui();
-	useNumberFormatRevision();
+	const numberFormat = useNumberFormat();
+	const { formatNumber } = numberFormat;
 	const open = useDepositModalOpen();
 	const activeTab = useDepositModalTab();
 	const { close } = useDepositModalActions();
@@ -512,6 +512,7 @@ export function DepositModal() {
 			activationFee: withdrawalActivationFee,
 		},
 		(descriptor) => t(descriptor),
+		numberFormat,
 	);
 	const isDepositPending = isDepositPreflighting || depositStatus === "pending" || depositStatus === "confirming";
 	const fiatFundingOffer = usePrivyFiatFundingOffer({
@@ -998,6 +999,7 @@ export function DepositModal() {
 					activationFee: cctpPreTransferReview?.fee ?? "0",
 				},
 				(descriptor) => t(descriptor),
+				numberFormat,
 			);
 			if (!freshValidation.valid) {
 				reportPreflightFailure("withdrawal-conditions-changed");
@@ -1357,7 +1359,9 @@ export function DepositModal() {
 				heading={depositPendingHeading}
 				description={
 					<span className="flex flex-col gap-1">
-						<span className="tabular-nums">{displayedDepositAmount} USDC → Hyperliquid</span>
+						<span className="tabular-nums">
+							{numberFormat.formatDecimalString(toPlainDecimal(displayedDepositAmount))} USDC → Hyperliquid
+						</span>
 						{walletResponseDelayed ? (
 							<span className="flex flex-col gap-1">
 								<Trans>

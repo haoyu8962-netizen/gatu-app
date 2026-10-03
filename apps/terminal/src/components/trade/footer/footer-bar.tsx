@@ -3,6 +3,7 @@ import { SpinnerGapIcon, WifiHighIcon, WifiSlashIcon } from "@phosphor-icons/rea
 import { ClientOnly, Link } from "@tanstack/react-router";
 import { APP_VERSION } from "@/config/app";
 import { FOOTER_LABELS, FOOTER_LINKS } from "@/config/footer-links";
+import { useMinuteClock } from "@/hooks/ui/use-minute-clock";
 import { formatTime } from "@/lib/format";
 import { type ApiStatus, useApiStatus } from "@/lib/hyperliquid";
 import { useCommandMenuActions } from "@/stores/use-global-modal-store";
@@ -46,8 +47,9 @@ function useStatusDisplay(status: ApiStatus) {
 }
 
 export function FooterBar({ mode = "default" }: Props) {
-	const { t } = useLingui();
+	const { t, i18n } = useLingui();
 	const { status } = useApiStatus();
+	const minute = useMinuteClock();
 	const { icon, text, className } = useStatusDisplay(status);
 	const { open } = useCommandMenuActions();
 	const isMarketLoading = mode === "market-loading";
@@ -73,9 +75,11 @@ export function FooterBar({ mode = "default" }: Props) {
 			);
 		},
 	};
+	const locale = i18n.locale;
+	const clock = minute === null ? null : formatTime(minute, { locale });
 	return (
 		<ClientOnly fallback={<FooterBarView {...props} clock={null} />}>
-			<FooterBarView {...props} clock={formatTime(new Date())} />
+			<FooterBarView {...props} clock={clock} />
 		</ClientOnly>
 	);
 }

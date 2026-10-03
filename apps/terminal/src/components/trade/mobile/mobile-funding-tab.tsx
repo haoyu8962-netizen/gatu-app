@@ -12,9 +12,8 @@ import { useUserFunding } from "@/hooks/trade/use-user-funding";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { buildCsvRows } from "@/lib/csv";
-import { formatDateTimeShort, formatPercent, formatToken, formatUSD } from "@/lib/format";
+import { formatDateTimeShort, useNumberFormat } from "@/lib/format";
 import { useHyperliquid, useMarkets } from "@/lib/hyperliquid";
-import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import {
 	type FundingHistorySideFilter,
 	getFundingHistorySide,
@@ -69,8 +68,9 @@ function MobileFundingTabContent({
 	isConnected,
 	scrollMode = "contained",
 }: MobileFundingTabContentProps) {
-	useNumberFormatRevision();
-	const { t } = useLingui();
+	const { formatPercent, formatToken, formatUSD } = useNumberFormat();
+	const { i18n, t } = useLingui();
+	const locale = i18n.locale;
 	const navigateToMarket = useMarketNavigation();
 	const { setActiveTab } = useMobileTerminalTab();
 	const { error, fundings: updates, isOffline, isStale, status } = useUserFunding();
@@ -100,7 +100,7 @@ function MobileFundingTabContent({
 		filename: "funding_history.csv",
 		buildRows: (fundings) =>
 			buildCsvRows(fundings, [
-				{ header: t`Time`, getValue: (update) => formatDateTimeShort(update.time) },
+				{ header: t`Time`, getValue: (update) => formatDateTimeShort(update.time, { locale: i18n.locale }) },
 				{ header: t`Asset`, getValue: (update) => update.coin },
 				{
 					header: t`Position`,
@@ -255,7 +255,7 @@ function MobileFundingTabContent({
 											<div className="min-w-0">
 												<div className="truncate text-3xs leading-[14px] text-market-close-subtle">{t`Time`}</div>
 												<div className="truncate whitespace-nowrap text-xs font-semibold leading-[17px] text-market-close-fg tabular-nums">
-													{formatDateTimeShort(update.time)}
+													{formatDateTimeShort(update.time, { locale })}
 												</div>
 											</div>
 											<div className="min-w-0">

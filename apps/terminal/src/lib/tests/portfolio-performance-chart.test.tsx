@@ -7,8 +7,16 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { PortfolioPerformanceChart } from "@/components/portfolio/portfolio-performance-chart";
 import type { PortfolioPeriod, PortfolioSnapshot } from "@/domain/portfolio";
+import { notifyNumberFormatChange } from "@/lib/number-format-reactivity";
 
 type History = PortfolioSnapshot["pnlHistory"];
+
+const mocks = vi.hoisted(() => ({ formatLocale: "en-US" }));
+
+vi.mock("@/stores/use-global-settings-store", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/stores/use-global-settings-store")>()),
+	getResolvedFormatLocale: () => mocks.formatLocale,
+}));
 
 const LOCAL_DATE_TIMESTAMP = new Date(2026, 7, 9, 0, 30).getTime();
 const PLOT_LEFT = 100;
@@ -41,6 +49,7 @@ describe("PortfolioPerformanceChart", () => {
 	let root: Root;
 
 	beforeEach(() => {
+		mocks.formatLocale = "en-US";
 		plotWidth = 600;
 		plotHeight = 180;
 		resizeObservers.length = 0;
@@ -114,6 +123,39 @@ describe("PortfolioPerformanceChart", () => {
 		act(() => plot.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true })));
 
 		expect(getTooltip(container)?.textContent).toBe("2026年8月9日 · -$7.00");
+	});
+
+	it("rewrites the selected point's date when the language changes", () => {
+		renderChart(root, { history: [[LOCAL_DATE_TIMESTAMP, "-7"]], period: "day" });
+		const plot = getPlot(container);
+		act(() => plot.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true })));
+		expect(plot.getAttribute("aria-valuetext")).toBe("August 9, 2026 · -$7.00");
+
+		act(() => i18n.loadAndActivate({ locale: "zh", messages: {} }));
+
+		expect(getPlot(container)).toBe(plot);
+		expect(getTooltip(container)?.textContent).toBe("2026年8月9日 · -$7.00");
+		expect(plot.getAttribute("aria-valuetext")).toBe("2026年8月9日 · -$7.00");
+	});
+
+	it("rewrites the axis and the selected point when the number format changes", () => {
+		renderChart(root, {
+			history: [
+				[LOCAL_DATE_TIMESTAMP, "-0.4"],
+				[LOCAL_DATE_TIMESTAMP + 60 * 60 * 1000, "0.4"],
+			],
+		});
+		const plot = getPlot(container);
+		act(() => plot.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true })));
+		expect(container.querySelector("[data-y-tick='0.25'] text")?.textContent).toBe("$0.25");
+		expect(getTooltip(container)?.textContent).toBe("August 9, 2026 · -$0.40");
+
+		mocks.formatLocale = "de-DE";
+		act(() => notifyNumberFormatChange());
+
+		expect(getPlot(container)).toBe(plot);
+		expect(container.querySelector("[data-y-tick='0.25'] text")?.textContent).toBe("$0,25");
+		expect(getTooltip(container)?.textContent).toBe("August 9, 2026 · -$0,40");
 	});
 
 	it("creates finite adaptive ticks for an all-zero series", () => {

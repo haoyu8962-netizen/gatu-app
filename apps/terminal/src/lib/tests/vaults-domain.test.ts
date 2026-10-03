@@ -21,6 +21,7 @@ import {
 	type VaultDetail,
 	type VaultListItem,
 } from "@/components/vaults/domain/vaults";
+import { getNumberFormatters } from "@/lib/format";
 
 const VAULT_A = "0x0000000000000000000000000000000000000001" as const;
 const VAULT_B = "0x0000000000000000000000000000000000000002" as const;
@@ -148,13 +149,17 @@ describe("Vault list domain", () => {
 			account: EMPTY_ACCOUNT,
 		});
 		expect(visible.status === "ready" ? visible.rows.some((row) => row.isClosed) : true).toBe(false);
-		expect(formatVaultUsd("9007199254740993.01")).toBe("$9,007,199,254,740,993.01");
-		expect(formatVaultSignedUsd("1250.75")).toBe("+$1,250.75");
-		expect(formatVaultSignedUsd("-1250.75")).toBe("-$1,250.75");
-		expect(formatVaultSignedUsd("0")).toBe("$0.00");
-		expect(formatVaultCompactUsd("125000000.25")).toBe("$125M");
-		expect(formatVaultRatio("0.098", 1, true)).toBe("+9.8%");
-		expect(formatVaultUsd("not-a-number")).toBe("—");
+		const numberFormat = getNumberFormatters();
+		expect(formatVaultUsd("9007199254740993.01", numberFormat)).toBe("$9,007,199,254,740,993.01");
+		expect(formatVaultUsd("0.005", numberFormat)).toBe("$0.01");
+		expect(formatVaultSignedUsd("1250.75", numberFormat)).toBe("+$1,250.75");
+		expect(formatVaultSignedUsd("-1250.75", numberFormat)).toBe("-$1,250.75");
+		expect(formatVaultSignedUsd("0", numberFormat)).toBe("$0.00");
+		expect(formatVaultCompactUsd("125000000.25", numberFormat)).toBe("$125M");
+		expect(formatVaultCompactUsd("1500", numberFormat)).toBe("$1.5K");
+		expect(formatVaultRatio("0.098", numberFormat, 1, true)).toBe("+9.8%");
+		expect(formatVaultRatio("-0.12345", numberFormat)).toBe("-12.35%");
+		expect(formatVaultUsd("not-a-number", numberFormat)).toBe("—");
 	});
 
 	it("marks a Vault with its first two letters or digits, skipping punctuation and emoji", () => {

@@ -8,8 +8,7 @@ import { usePositionCloseAllSnapshotResolver } from "@/hooks/trade/use-position-
 import { usePositionCloseAllSubmit } from "@/hooks/trade/use-position-close-all-submit";
 import { useLingeringValue } from "@/hooks/use-lingering-value";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { formatQuoteAmount } from "@/lib/format";
-import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
+import { useNumberFormat } from "@/lib/format";
 import { getMarketCloseValueColorClass } from "@/lib/ui/value-color";
 import { type PositionCloseAllSession, usePositionDialogActions } from "@/stores/use-position-dialog-store";
 import { Hip3DeployerDisclaimer } from "../components/hip3-deployer-disclaimer";
@@ -83,7 +82,7 @@ function PositionCloseAllDisclaimerGate({ sessionId, snapshot, open, onOpenChang
 }
 
 function PositionCloseAllContent({ snapshot, open, onOpenChange }: ContentProps) {
-	useNumberFormatRevision();
+	const { formatQuoteAmount } = useNumberFormat();
 	const { t } = useLingui();
 	const isMobile = useIsMobile();
 	const submission = usePositionCloseAllSubmit(snapshot);

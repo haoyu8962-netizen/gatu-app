@@ -1,8 +1,7 @@
 import { useLingui } from "@lingui/react/macro";
 import type { HistoricalOrdersResponse } from "@nktkas/hyperliquid";
 import { cn } from "@/lib/cn";
-import { formatUSD } from "@/lib/format";
-import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
+import { useNumberFormat } from "@/lib/format";
 import { getHistoricalOrderPriceDisplay } from "@/lib/trade/historical-orders";
 
 interface Props {
@@ -11,7 +10,7 @@ interface Props {
 }
 
 export function HistoricalOrderPrice({ align = "end", order }: Props) {
-	useNumberFormatRevision();
+	const { formatUSD } = useNumberFormat();
 	const { t } = useLingui();
 	const display = getHistoricalOrderPriceDisplay(order);
 

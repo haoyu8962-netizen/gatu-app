@@ -4,9 +4,18 @@ import { act, type ComponentProps, useState } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CompactOrderbook, type CompactOrderbookMode } from "@/components/trade/mobile/mobile-book-view";
+import { notifyNumberFormatChange } from "@/lib/number-format-reactivity";
+import { getPriceGroupingOptions, type L2BookPriceGroupOption } from "@/lib/trade/orderbook";
 import { getOrderbookActionsStore } from "@/stores/use-orderbook-actions-store";
 import { stubReducedMotion } from "./harness/media-query";
 import { createI18nRoot } from "./harness/react";
+
+const numberFormatSetting = vi.hoisted(() => ({ locale: "en-US" }));
+
+vi.mock("@/stores/use-global-settings-store", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/stores/use-global-settings-store")>()),
+	getResolvedFormatLocale: () => numberFormatSetting.locale,
+}));
 
 vi.mock("@/components/trade/orderbook/orderbook-hover-tooltip", () => ({
 	OrderbookHoverTooltip: ({
@@ -55,12 +64,14 @@ function CompactOrderbookHarness({
 	bids = BIDS,
 	hasSnapshot = true,
 	isInteractive = true,
+	priceGroupingOptions = [],
 	showOrderbookInQuote = false,
 }: {
 	asks?: typeof ASKS;
 	bids?: typeof BIDS;
 	hasSnapshot?: boolean;
 	isInteractive?: boolean;
+	priceGroupingOptions?: L2BookPriceGroupOption[];
 	showOrderbookInQuote?: boolean;
 }) {
 	const [mode, setMode] = useState<CompactOrderbookMode>("both");
@@ -81,7 +92,7 @@ function CompactOrderbookHarness({
 			mid="100"
 			midDirection="up"
 			selectedOptionLabel="0.1"
-			priceGroupingOptions={[]}
+			priceGroupingOptions={priceGroupingOptions}
 			setSelectedOptionKey={() => undefined}
 			mode={mode}
 			onModeChange={setMode}
@@ -103,6 +114,7 @@ describe("compact mobile orderbook modes", () => {
 	let motion: ReturnType<typeof stubReducedMotion>;
 
 	beforeEach(() => {
+		numberFormatSetting.locale = "en-US";
 		motion = stubReducedMotion();
 		getOrderbookActionsStore().actions.clearSelectedPrice();
 		measuredHeight = 304;
@@ -396,6 +408,16 @@ describe("compact mobile orderbook modes", () => {
 		resizeBook(331.5);
 		expect(getLadder("asks").children).toHaveLength(11);
 		expect(getLadder("asks").querySelectorAll("button:disabled")).toHaveLength(0);
+	});
+
+	it("writes the price-precision options with the number-format separators", async () => {
+		act(() => root.render(<CompactOrderbookHarness priceGroupingOptions={getPriceGroupingOptions(123456, 0)} />));
+		numberFormatSetting.locale = "de-DE";
+		act(() => notifyNumberFormatChange());
+		const trigger = container.querySelector<HTMLButtonElement>('button[aria-label="Price precision"]');
+		await act(async () => trigger?.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true })));
+		const options = [...document.querySelectorAll('[role="menuitem"]')].map((item) => item.textContent);
+		expect(options).toEqual(expect.arrayContaining(["1.000", "10.000"]));
 	});
 
 	it("shows only an accessibly named dollar-prefixed directional mid price", () => {

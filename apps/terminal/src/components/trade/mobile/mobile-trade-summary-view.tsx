@@ -47,7 +47,7 @@ export function MobileSlippageRowView({
 }: {
 	labels: { slippage: string; estimatedSlippage: string; max: string };
 	value: string;
-	slippagePercent: number;
+	slippagePercent: string;
 	onClick?: () => void;
 	embedded?: boolean;
 }) {

@@ -14,9 +14,8 @@ import { useOrderDisplayLabels } from "@/hooks/trade/use-order-display-labels";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { buildCsvRows } from "@/lib/csv";
-import { formatDateTime, formatToken, formatUSD } from "@/lib/format";
+import { formatDateTime, useNumberFormat } from "@/lib/format";
 import { useHyperliquid, useMarkets } from "@/lib/hyperliquid";
-import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import {
 	getOrderHistoryStatusCategory,
 	getOrderHistoryTriggerPrice,
@@ -99,8 +98,9 @@ function MobileOrdersHistoryTabContent({
 	disclosureState,
 	scrollMode = "contained",
 }: MobileOrdersHistoryTabContentProps) {
-	useNumberFormatRevision();
-	const { t } = useLingui();
+	const { formatToken, formatUSD } = useNumberFormat();
+	const { i18n, t } = useLingui();
+	const locale = i18n.locale;
 	const { getHistoricalOrderStatusLabel, getOrderSideLabel, getOrderTypeLabel } = useOrderDisplayLabels();
 	const { entries, error, isConnected, isOffline, isStale, status } = useHistoricalOrders();
 	const navigateToMarket = useMarketNavigation();
@@ -181,7 +181,8 @@ function MobileOrdersHistoryTabContent({
 				[
 					{
 						header: t`Time`,
-						getValue: (entry) => formatDateTime(entry.createdAt, { dateStyle: "short", timeStyle: "short" }),
+						getValue: (entry) =>
+							formatDateTime(entry.createdAt, { locale: i18n.locale, dateStyle: "short", timeStyle: "short" }),
 					},
 					{ header: t`Asset`, getValue: (entry) => entry.coin },
 					{
@@ -207,7 +208,8 @@ function MobileOrdersHistoryTabContent({
 					{ header: t`Status`, getValue: getEntryStatusLabel },
 					{
 						header: t`Updated`,
-						getValue: (entry) => formatDateTime(entry.updatedAt, { dateStyle: "short", timeStyle: "short" }),
+						getValue: (entry) =>
+							formatDateTime(entry.updatedAt, { locale: i18n.locale, dateStyle: "short", timeStyle: "short" }),
 					},
 				],
 			),
@@ -370,7 +372,7 @@ function MobileOrdersHistoryTabContent({
 											<div className="min-w-0">
 												<div className="truncate text-3xs leading-[14px] text-market-close-subtle">{t`Time`}</div>
 												<div className="truncate whitespace-nowrap text-xs font-semibold leading-[17px] text-market-close-fg tabular-nums">
-													{formatDateTime(entry.createdAt, { dateStyle: "short", timeStyle: "short" })}
+													{formatDateTime(entry.createdAt, { locale, dateStyle: "short", timeStyle: "short" })}
 												</div>
 											</div>
 											<div className="min-w-0">
@@ -427,7 +429,7 @@ function MobileOrdersHistoryTabContent({
 													<div className="col-span-2 min-w-0">
 														<div className="truncate text-3xs leading-[14px] text-market-close-subtle">{t`Updated`}</div>
 														<div className="truncate whitespace-nowrap text-xs font-semibold leading-[17px] text-market-close-fg tabular-nums">
-															{formatDateTime(entry.updatedAt, { dateStyle: "short", timeStyle: "short" })}
+															{formatDateTime(entry.updatedAt, { locale, dateStyle: "short", timeStyle: "short" })}
 														</div>
 													</div>
 												</div>

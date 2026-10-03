@@ -1,5 +1,7 @@
 // @vitest-environment jsdom
 
+import { createHash } from "node:crypto";
+import { i18n, type Messages } from "@lingui/core";
 import type { HistoricalOrdersResponse, UserFillsResponse, UserTwapSliceFillsResponse } from "@nktkas/hyperliquid";
 import { act } from "react";
 import type { Root } from "react-dom/client";
@@ -272,6 +274,22 @@ function serveTwapPages(entries: readonly UserTwapSliceFillsResponse[number][], 
 	);
 }
 
+const ZH_CSV_LABELS: Record<string, string> = {
+	Asset: "资产",
+	"Close Long": "平多",
+	Direction: "方向",
+	"Open Long": "开多",
+	Time: "时间",
+	Trade: "交易",
+	Type: "类型",
+};
+const zhCsvMessages: Messages = Object.fromEntries(
+	Object.entries(ZH_CSV_LABELS).map(([english, chinese]) => [
+		createHash("sha256").update(`${english}\x1f`).digest("base64").slice(0, 6),
+		chinese,
+	]),
+);
+
 describe("TWAP fill history CSV export", () => {
 	let container: HTMLDivElement;
 	let root: Root;
@@ -303,6 +321,7 @@ describe("TWAP fill history CSV export", () => {
 	afterEach(() => {
 		act(() => root.unmount());
 		container.remove();
+		act(() => i18n.loadAndActivate({ locale: "en", messages: {} }));
 		vi.useRealTimers();
 		vi.clearAllMocks();
 	});
@@ -336,6 +355,32 @@ describe("TWAP fill history CSV export", () => {
 			user: "0x1111111111111111111111111111111111111111",
 		});
 		expect(signal).toBeInstanceOf(AbortSignal);
+	});
+
+	it("writes headers, labels and dates in the language active when the rows are built, after a switch during the export", async () => {
+		const fill = createSliceFill({ time: 1_000 });
+		let releasePages: () => void = () => {};
+		const pagesReleased = new Promise<void>((resolve) => {
+			releasePages = resolve;
+		});
+		mocks.userTwapSliceFillsByTime.mockImplementation(
+			async ({ endTime, startTime }: { endTime: number; startTime: number }) => {
+				await pagesReleased;
+				return [fill].filter((entry) => entry.fill.time >= startTime && entry.fill.time <= endTime);
+			},
+		);
+		const hook = renderProbe();
+
+		const pendingExport = startExport(hook);
+		act(() => i18n.loadAndActivate({ locale: "zh", messages: zhCsvMessages }));
+		releasePages();
+		await act(async () => pendingExport);
+
+		const [, rows] = mocks.downloadCsv.mock.calls[0] as [string, string[][]];
+		expect(rows[0]?.slice(0, 4)).toEqual(["时间", "资产", "方向", "类型"]);
+		expect(rows[1]?.[0]).toBe(formatDateTimeShort(1_000, { locale: "zh" }));
+		expect(rows[1]?.slice(1, 4)).toEqual(["BTC", "开多", "TWAP"]);
+		expect(formatDateTimeShort(1_000, { locale: "zh" })).not.toBe(formatDateTimeShort(1_000, { locale: "en" }));
 	});
 
 	it("downloads every slice fill in ascending order with the trade history columns", async () => {

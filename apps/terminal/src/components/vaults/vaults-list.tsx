@@ -4,7 +4,7 @@ import { Button, Pagination, SearchInput, Select, Table } from "@sairn/ui";
 import { Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { cn } from "@/lib/cn";
-import { formatTime, shortenAddress } from "@/lib/format";
+import { formatTime, shortenAddress, useNumberFormat } from "@/lib/format";
 import {
 	formatVaultCompactUsd,
 	formatVaultRatio,
@@ -40,6 +40,7 @@ export interface VaultsListProps {
 
 export function VaultsList({ state, rows, account, isRefreshing = false, fetchedAt = null, onRetry }: VaultsListProps) {
 	const { t, i18n } = useLingui();
+	const numberFormat = useNumberFormat();
 	const [filter, setFilter] = useState<VaultFilter>("all");
 	const [period, setPeriod] = useState<VaultPeriod>("month");
 	const [query, setQuery] = useState("");
@@ -53,8 +54,9 @@ export function VaultsList({ state, rows, account, isRefreshing = false, fetched
 	const pageRows = selectedRows.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 	const groups = getVisibleGroups(pageRows, filter, selection.status === "ready" && selection.classificationAvailable);
 	const ageReferenceTime = fetchedAt ?? Date.now();
+	const locale = i18n.locale;
 	const fetchedLabel =
-		fetchedAt === null ? null : formatTime(fetchedAt, { locale: i18n.locale, hour: "2-digit", minute: "2-digit" });
+		fetchedAt === null ? null : formatTime(fetchedAt, { locale, hour: "2-digit", minute: "2-digit" });
 
 	function changeFilter(nextFilter: VaultFilter) {
 		setFilter(nextFilter);
@@ -104,7 +106,7 @@ export function VaultsList({ state, rows, account, isRefreshing = false, fetched
 							<Trans>Total value locked</Trans>
 						</p>
 						<p className="mt-0.5 text-lg font-bold tabular-nums text-fg">
-							{totalTvl === null ? "—" : formatVaultCompactUsd(totalTvl)}
+							{totalTvl === null ? "—" : formatVaultCompactUsd(totalTvl, numberFormat)}
 						</p>
 					</div>
 					<Select
@@ -290,6 +292,7 @@ function VaultDesktopRow({
 	account: VaultAccountFactsState;
 	now: number;
 }) {
+	const numberFormat = useNumberFormat();
 	const deposit = getVaultDeposit(account, row.vaultAddress);
 	const leading = isLeadingVault(account, row.vaultAddress);
 	const age = getVaultAgeDays(row.createdAt, now);
@@ -321,13 +324,13 @@ function VaultDesktopRow({
 				<bdi dir="ltr">{shortenAddress(row.leader)}</bdi>
 			</td>
 			<td className="px-3 py-2.5 text-right text-xs font-semibold tabular-nums text-fg">
-				<bdi dir="ltr">{formatVaultRatio(row.apr, 2, true)}</bdi>
+				<bdi dir="ltr">{formatVaultRatio(row.apr, numberFormat, 2, true)}</bdi>
 			</td>
 			<td className="px-3 py-2.5 text-right text-xs tabular-nums text-fg">
-				<bdi dir="ltr">{formatVaultCompactUsd(row.tvl)}</bdi>
+				<bdi dir="ltr">{formatVaultCompactUsd(row.tvl, numberFormat)}</bdi>
 			</td>
 			<td className="px-3 py-2.5 text-right text-xs tabular-nums text-fg">
-				<bdi dir="ltr">{formatVaultUsd(deposit)}</bdi>
+				<bdi dir="ltr">{formatVaultUsd(deposit, numberFormat)}</bdi>
 			</td>
 			<td className="w-28 px-3 py-2.5">
 				<VaultPerformanceChart snapshot={performance} kind="pnl" period={period} compact />
@@ -350,6 +353,7 @@ function VaultMobileCard({
 	account: VaultAccountFactsState;
 	now: number;
 }) {
+	const numberFormat = useNumberFormat();
 	const deposit = getVaultDeposit(account, row.vaultAddress);
 	const leading = isLeadingVault(account, row.vaultAddress);
 	const age = getVaultAgeDays(row.createdAt, now);
@@ -376,12 +380,18 @@ function VaultMobileCard({
 					</div>
 				</div>
 				<p className="shrink-0 text-sm font-bold tabular-nums text-fg">
-					<bdi dir="ltr">{formatVaultRatio(row.apr, 2, true)}</bdi>
+					<bdi dir="ltr">{formatVaultRatio(row.apr, numberFormat, 2, true)}</bdi>
 				</p>
 			</div>
 			<dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 text-xs">
-				<MobileMetric label={<Trans>TVL</Trans>} value={<bdi dir="ltr">{formatVaultCompactUsd(row.tvl)}</bdi>} />
-				<MobileMetric label={<Trans>Your equity</Trans>} value={<bdi dir="ltr">{formatVaultUsd(deposit)}</bdi>} />
+				<MobileMetric
+					label={<Trans>TVL</Trans>}
+					value={<bdi dir="ltr">{formatVaultCompactUsd(row.tvl, numberFormat)}</bdi>}
+				/>
+				<MobileMetric
+					label={<Trans>Your equity</Trans>}
+					value={<bdi dir="ltr">{formatVaultUsd(deposit, numberFormat)}</bdi>}
+				/>
 				<MobileMetric label={<Trans>Leader</Trans>} value={<bdi dir="ltr">{shortenAddress(row.leader)}</bdi>} mono />
 				<MobileMetric
 					label={<Trans>Age</Trans>}

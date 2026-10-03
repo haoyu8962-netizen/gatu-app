@@ -10,9 +10,8 @@ import {
 } from "@/domain/trade/position-market-close";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/cn";
-import { formatPrice, formatToken, formatUSD } from "@/lib/format";
+import { useNumberFormat } from "@/lib/format";
 import { useHyperliquid, useMarketsInfo, useUserPositions } from "@/lib/hyperliquid";
-import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { toBig } from "@/lib/trade/numbers";
 import { createPositionCloseSizingViewModel } from "@/lib/trade/position-close-sizing-presentation";
 import { readPositionMarketCloseConfirmationPreference } from "@/lib/trade/position-market-close-confirmation-preference";
@@ -37,7 +36,7 @@ interface Props {
 }
 
 export function PositionMarketCloseModal({ showPnl = true }: Props) {
-	useNumberFormatRevision();
+	const { formatPrice, formatToken, formatUSD } = useNumberFormat();
 	const { t } = useLingui();
 	const isMobile = useIsMobile();
 	const [dismissFutureConfirmation, setDismissFutureConfirmation] = useState(false);

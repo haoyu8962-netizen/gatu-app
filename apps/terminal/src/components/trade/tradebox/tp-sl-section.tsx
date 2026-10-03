@@ -7,8 +7,7 @@ import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import { SL_QUICK_PERCENT_OPTIONS, TP_QUICK_PERCENT_OPTIONS } from "@/config/trade";
 import { getRiskRewardRatio } from "@/domain/market";
 import { cn } from "@/lib/cn";
-import { formatQuoteAmount, formatUSD, szDecimalsToPriceDecimals } from "@/lib/format";
-import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
+import { szDecimalsToPriceDecimals, useNumberFormat } from "@/lib/format";
 import { isPositive, toBig, toNumber } from "@/lib/trade/numbers";
 import {
 	calculateEstimatedPnl,
@@ -90,7 +89,8 @@ export function TpSlSection({
 	linkedReturnInputs,
 }: Props) {
 	const { t } = useLingui();
-	useNumberFormatRevision();
+	const numberFormat = useNumberFormat();
+	const { formatQuoteAmount, formatUSD } = numberFormat;
 	const normalizedQuoteSymbol = quoteSymbol?.trim() || null;
 	function formatPnlValue(value: string | number): string {
 		if (!normalizedQuoteSymbol) return "";
@@ -133,7 +133,7 @@ export function TpSlSection({
 		slPnl: string | number;
 	} | null = null;
 	if (riskRewardRatio !== null && tpPnl !== null && slPnl !== null) {
-		const rrDisplay = formatRiskRewardRatio(riskRewardRatio);
+		const rrDisplay = formatRiskRewardRatio(riskRewardRatio, numberFormat);
 		if (rrDisplay) riskRewardDisplay = { rrDisplay, tpPnl, slPnl };
 	}
 

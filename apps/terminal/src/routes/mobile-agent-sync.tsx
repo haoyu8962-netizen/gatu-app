@@ -70,6 +70,7 @@ function takeLocationFragment(): string {
 
 function MobileAgentSyncRoute() {
 	const { i18n, t } = useLingui();
+	const locale = i18n.locale;
 	const { env, info } = useHyperliquid();
 	const [loadState, setLoadState] = useState<LoadState>({ state: "empty" });
 	const [status, setStatus] = useState<ImportStatus>({ state: "idle", error: null });
@@ -158,7 +159,7 @@ function MobileAgentSyncRoute() {
 							{payload ? (
 								<Trans>
 									Once imported, this phone trades on {payload.env} with the desktop-approved key until{" "}
-									{formatDateTime(payload.agentValidUntilMs, { locale: i18n.locale })}. It cannot withdraw.
+									{formatDateTime(payload.agentValidUntilMs, { locale })}. It cannot withdraw.
 								</Trans>
 							) : (
 								<Trans>Scan the QR from Link mobile device on your desktop to load a trading key.</Trans>

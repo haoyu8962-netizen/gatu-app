@@ -20,6 +20,7 @@ import { resetDesktopGridLayouts } from "@/config/desktop-grid-layout";
 import { MARKET_ORDER_SLIPPAGE_MAX_PERCENT, MARKET_ORDER_SLIPPAGE_MIN_PERCENT } from "@/config/trade";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useEmailWalletExport } from "@/hooks/wallet/use-email-wallet-export";
+import { useNumberFormat } from "@/lib/format";
 import { useHyperliquid } from "@/lib/hyperliquid";
 import {
 	type PositionMarketCloseConfirmationPreferenceStatus,
@@ -46,6 +47,7 @@ export function GlobalSettingsModal() {
 	const open = useSettingsDialogOpen();
 	const { close } = useSettingsDialogActions();
 	const { t } = useLingui();
+	const { formatNumber } = useNumberFormat();
 	const walletExport = useEmailWalletExport();
 	const slippagePercent = useMarketOrderSlippagePercent();
 	const { showOrderbookInQuote } = useGlobalSettings();
@@ -142,7 +144,8 @@ export function GlobalSettingsModal() {
 							</div>
 							<div className="flex items-center justify-between gap-3">
 								<span id={slippageRangeId} className="text-2xs tabular-nums text-fg-muted">
-									{MARKET_ORDER_SLIPPAGE_MIN_PERCENT}% – {MARKET_ORDER_SLIPPAGE_MAX_PERCENT}%
+									{formatNumber(MARKET_ORDER_SLIPPAGE_MIN_PERCENT)}% – {formatNumber(MARKET_ORDER_SLIPPAGE_MAX_PERCENT)}
+									%
 								</span>
 								<div className="flex gap-2">
 									<Button

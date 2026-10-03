@@ -2,8 +2,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { Button, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@sairn/ui";
 import { useState } from "react";
 import { MobileProgressiveList } from "@/components/trade/mobile/mobile-progressive-list";
-import { formatDateTime, formatToken, formatUSD, shortenAddress } from "@/lib/format";
-import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
+import { formatDateTime, shortenAddress, useNumberFormat } from "@/lib/format";
 import type { ReferralTokenMetadata, ReferredTrader } from "@/lib/trade/referral";
 
 interface Props {
@@ -14,8 +13,9 @@ interface Props {
 const DESKTOP_PAGE_SIZE = 25;
 
 export function ReferredTraders({ traders, tokenMetadata }: Props) {
-	useNumberFormatRevision();
-	const { t } = useLingui();
+	const { formatToken, formatUSD } = useNumberFormat();
+	const { i18n, t } = useLingui();
+	const locale = i18n.locale;
 	const [currentPage, setCurrentPage] = useState(1);
 	const totalPages = Math.max(1, Math.ceil(traders.length / DESKTOP_PAGE_SIZE));
 	const visiblePage = Math.min(currentPage, totalPages);
@@ -54,7 +54,7 @@ export function ReferredTraders({ traders, tokenMetadata }: Props) {
 								<bdi dir="ltr">{shortenAddress(trader.user, 6, 4)}</bdi>
 							</TableCell>
 							<TableCell size="dense" className="text-2sm">
-								{formatDateTime(trader.timeJoined)}
+								{formatDateTime(trader.timeJoined, { locale })}
 							</TableCell>
 							<TableCell size="dense" className="text-right text-2sm tabular-nums">
 								{formatUSD(trader.cumVlm)}
@@ -120,7 +120,7 @@ export function ReferredTraders({ traders, tokenMetadata }: Props) {
 											<bdi dir="ltr">{shortenAddress(trader.user, 6, 4)}</bdi>
 										</p>
 										<p className="mt-0.5 text-2xs tabular-nums text-fg-muted">
-											{formatDateTime(trader.timeJoined)} · <Trans>Volume</Trans> {formatUSD(trader.cumVlm)}
+											{formatDateTime(trader.timeJoined, { locale })} · <Trans>Volume</Trans> {formatUSD(trader.cumVlm)}
 										</p>
 									</div>
 									<p className="text-2sm font-semibold tabular-nums text-success">

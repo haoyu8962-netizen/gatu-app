@@ -3205,7 +3205,7 @@ msgstr "Deslizamiento est."
 msgid "Establish Connection"
 msgstr "Establecer conexión"
 
-#. placeholder {0}: formatStakingRatio(props.weightedApr)
+#. placeholder {0}: formatStakingRatio(props.weightedApr, numberFormat)
 #: src/components/staking/staking-view.tsx
 msgid "Estimated APR {0}"
 msgstr "APR estimado: {0}"
@@ -4715,7 +4715,7 @@ msgstr "No se pudo verificar la elegibilidad por ubicación."
 msgid "Lock period progress"
 msgstr "Progreso del período de bloqueo"
 
-#. placeholder {0}: formatDateTime(validator.lockedUntilTimestamp)
+#. placeholder {0}: formatDateTime(validator.lockedUntilTimestamp, { locale })
 #: src/components/staking/staking-view.tsx
 msgid "Locked until {0}"
 msgstr "Bloqueado hasta {0}"
@@ -5039,7 +5039,7 @@ msgstr "Suministro máximo"
 msgid "Maximum withdrawable"
 msgstr "Máximo disponible para retirar"
 
-#. placeholder {0}: formatVaultUsd(availableAmount)
+#. placeholder {0}: formatVaultUsd(availableAmount, numberFormat)
 #: src/components/vaults/vault-action-modal.tsx
 msgid "Maximum withdrawable: {0}"
 msgstr "Máximo disponible para retirar: {0}"
@@ -5710,7 +5710,7 @@ msgid "On your phone, open {BRAND_NAME}, tap Connect, then Link Desktop Wallet a
 msgstr ""
 
 #. placeholder {0}: payload.env
-#. placeholder {1}: formatDateTime(payload.agentValidUntilMs, { locale: i18n.locale })
+#. placeholder {1}: formatDateTime(payload.agentValidUntilMs, { locale })
 #: src/routes/mobile-agent-sync.tsx
 msgid "Once imported, this phone trades on {0} with the desktop-approved key until {1}. It cannot withdraw."
 msgstr ""
@@ -7815,7 +7815,7 @@ msgstr "Envía USDC a la dirección de tu billetera que aparece abajo."
 msgid "Sent {sentAmount} {sentToken}"
 msgstr "Enviado: {sentAmount} {sentToken}"
 
-#. placeholder {0}: formatTimestamp(owner.lockedUntil, i18n.locale)
+#. placeholder {0}: formatTimestamp(owner.lockedUntil, locale)
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Server unlock time: {0}"
 msgstr "Hora de desbloqueo del servidor: {0}"
@@ -10816,7 +10816,7 @@ msgstr "Referencia de verificación"
 msgid "Verified Vault details are unavailable."
 msgstr "Los detalles verificados de la bóveda no están disponibles."
 
-#. placeholder {0}: formatVaultUsd(availableAmount)
+#. placeholder {0}: formatVaultUsd(availableAmount, numberFormat)
 #: src/components/vaults/vault-action-modal.tsx
 msgid "Verified wallet balance: {0}"
 msgstr "Saldo verificado del monedero: {0}"

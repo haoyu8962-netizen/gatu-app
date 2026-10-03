@@ -6,9 +6,8 @@ import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { useOrderDisplayLabels } from "@/hooks/trade/use-order-display-labels";
 import { useTwapHistory } from "@/hooks/trade/use-twap-history";
 import { cn } from "@/lib/cn";
-import { formatClockDuration, formatDateTimeShort, formatNumber, formatPrice } from "@/lib/format";
+import { formatClockDuration, formatDateTimeShort, useNumberFormat } from "@/lib/format";
 import { useMarkets } from "@/lib/hyperliquid";
-import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { getTwapAverageFillPrice, getTwapHistoryDurationMs, getTwapHistoryTimeMs } from "@/lib/trade/order-history";
 import { PassiveDataPlaceholder } from "./passive-data-placeholder";
 import { Placeholder } from "./placeholder";
@@ -18,8 +17,9 @@ const twapHistoryGridClass =
 	"grid min-w-[1570px] grid-cols-[150px_120px_140px_140px_130px_120px_130px_150px_90px_90px_110px] gap-x-4 px-5";
 
 export function TwapHistoryTable() {
-	useNumberFormatRevision();
-	const { t } = useLingui();
+	const { formatNumber, formatPrice } = useNumberFormat();
+	const { i18n, t } = useLingui();
+	const locale = i18n.locale;
 	const { hasMore, history, isConnected, isRealtimeDegraded, loadMore, retryRealtime, status } = useTwapHistory();
 	const { getTwapHistoryStatusLabel } = useOrderDisplayLabels();
 	const navigateToMarket = useMarketNavigation();
@@ -84,7 +84,7 @@ export function TwapHistoryTable() {
 										)}
 									>
 										<td className="p-0 whitespace-nowrap text-market-close-muted tabular-nums">
-											{formatDateTimeShort(getTwapHistoryTimeMs(entry))}
+											{formatDateTimeShort(getTwapHistoryTimeMs(entry), { locale })}
 										</td>
 										<td className="p-0">
 											<button

@@ -6,7 +6,7 @@ import { useAccountLedger } from "@/hooks/trade/use-account-ledger";
 import { useAccountLedgerCsv } from "@/hooks/trade/use-account-ledger-csv";
 import { useAccountLedgerLabels } from "@/hooks/trade/use-account-ledger-labels";
 import { cn } from "@/lib/cn";
-import { formatDateTimeShort } from "@/lib/format";
+import { formatDateTimeShort, useNumberFormat } from "@/lib/format";
 import { formatAccountLedgerAmount, formatAccountLedgerFee } from "@/lib/trade/account-ledger-format";
 import { getAccountLedgerExplorerUrl } from "@/lib/trade/account-ledger-links";
 import { toNumber } from "@/lib/trade/numbers";
@@ -21,7 +21,9 @@ interface Props {
 }
 
 export function MobileAccountTransfersTab({ className, scrollMode = "contained" }: Props) {
-	const { t } = useLingui();
+	const { i18n, t } = useLingui();
+	const locale = i18n.locale;
+	const numberFormat = useNumberFormat();
 	const { isConnected, rows, status } = useAccountLedger();
 	const { getActionLabel, getLocationLabel } = useAccountLedgerLabels();
 	const { exportCsv, isExporting } = useAccountLedgerCsv();
@@ -100,7 +102,7 @@ export function MobileAccountTransfersTab({ className, scrollMode = "contained" 
 										amount !== null && getValueColorClass(amount),
 									)}
 								>
-									{formatAccountLedgerAmount(row)}
+									{formatAccountLedgerAmount(row, numberFormat)}
 								</span>
 							</div>
 							<div className="grid grid-cols-3 divide-x divide-stroke-weak">
@@ -108,12 +110,12 @@ export function MobileAccountTransfersTab({ className, scrollMode = "contained" 
 								<MetricCell label={t`Destination`} value={getLocationLabel(row.destination)} />
 								<MetricCell
 									label={t`Fee`}
-									value={formatAccountLedgerFee(row)}
+									value={formatAccountLedgerFee(row, numberFormat)}
 									valueClass={row.fee ? "text-error" : undefined}
 								/>
 							</div>
 							<div className="flex items-center justify-between px-3 py-1.5">
-								<span className="text-xs tabular-nums text-fg-muted">{formatDateTimeShort(row.time)}</span>
+								<span className="text-xs tabular-nums text-fg-muted">{formatDateTimeShort(row.time, { locale })}</span>
 								{explorerUrl ? (
 									<a
 										href={explorerUrl}

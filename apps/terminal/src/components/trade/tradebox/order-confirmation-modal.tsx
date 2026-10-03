@@ -17,7 +17,7 @@ import {
 } from "@/domain/trade/order-confirmation";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/cn";
-import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
+import { useNumberFormat } from "@/lib/format";
 import { isTwapOrderType } from "@/lib/trade/order-types";
 import { getTradingCtaClass, getTradingCtaIntent } from "@/lib/ui/trading-cta";
 import { TradingActionButton } from "../components/trading-action-button";
@@ -39,10 +39,10 @@ export function OrderConfirmationModal({
 	onConfirm,
 	onOpenChange,
 }: Props) {
-	useNumberFormatRevision();
+	const numberFormat = useNumberFormat();
 	const { _ } = useLingui();
 	const isMobile = useIsMobile();
-	const rows = buildOrderConfirmationRows(draft, _);
+	const rows = buildOrderConfirmationRows(draft, numberFormat, _);
 	const submitLabel = getOrderConfirmationSubmitLabel(draft, _);
 
 	function handleConfirm() {

@@ -433,6 +433,55 @@ The sixth round (commit `4af147fd`) changed one classification function in the d
 3,286,638 in total (+16), 1,626,663 static trade startup, 117,769 mobile and 201,070 desktop, with the desktop runtime
 increment 918 bytes under its allowance. Later commits on the branch change tests and documents only.
 
+## Locale and number-format desktop runtime re-baseline (2026-10-03)
+
+PR #71 makes the desktop footer clock keep time and rendered numbers and dates follow the number-format setting and the
+interface language: components take their number formatters from `useNumberFormat()`
+([ADR 0036](adr/0036-render-time-number-formatters.md)), pass exact decimal strings through `formatDecimalString`
+([ADR 0037](adr/0037-exact-decimal-display-separators.md)) and pass the active locale to every date and list formatter
+([i18n presentation](i18n-presentation.md)). React Compiler adds those formatters and the locale to the cache guards of
+each affected component, so the cost is spread over many compiled components, including the positions panels, history
+tabs, order form and order book in the desktop runtime profile. Before merging the current `dev`, the PR had raised the
+total-client baseline by its measured increments (+4,671, +417 and +1,392) and the desktop runtime baseline by +205; the
+comments in `scripts/check-client-bundle-budget.mjs` and the
+[integration record](work-memory/sessions/2026-10-02-integrate-locale-number-format.md) describe those raises.
+
+After `dev` gained the Privy 3.46.0 upgrade and card funding (`a0c05740`), the CI build of the merged PR head
+`fc5e10cd` (Production Builds run 37098384469, pairing off) read a desktop runtime increment of 202,249 bytes, 56 over
+its 202,193-byte limit. A local build of the same code with CI-style metadata had read 202,193, exactly at the limit;
+for the previous head the local reading had been 37 bytes above CI, so local readings within about 100 bytes of a limit
+do not predict CI.
+
+Per asset, the desktop runtime growth below is spread over 23 of its 29 assets and no asset was added or removed: the
+footer bar, whose clock now ticks every minute and pauses while hidden (+348), the toaster (+134), the token selector
+(+111), the positions, funding, history and order history tabs (+100, +80, +59, +47), the trade panel (+91), the order
+book (+76), the account panel (+39), the chart (+29) and 12 assets by 5 bytes or less. That is the intended cost of
+these changes rather than an accidental import, so it was re-baselined instead of removed.
+
+Measurement: Node 22.15.0, pnpm 10.21.0, an isolated worktree per side with `pnpm install --frozen-lockfile
+--prefer-offline` and no `.env.local`, pairing off and the fixed build identity of the reproduction protocol
+(`SAIRN_BUILD_SHA=e4e09966b175679ac7e13ea192246ce27fae15b5 SAIRN_RELEASE_ID=startup-guardrail-baseline
+SAIRN_BUILD_TIME=2026-08-27T00:00:00.000Z NODE_ENV=production NITRO_PRESET=node-server VITE_MOBILE_PAIRING_ENABLED=false
+pnpm --filter @sairn/terminal build`, then `perf:startup`); before = `origin/dev` at `a0c05740`, after = `fc5e10cd`.
+
+| Metric | Before (`a0c05740`) | After (`fc5e10cd`) | Change |
+| --- | ---: | ---: | ---: |
+| Client assets (graph inventory) | 443 | 443 | 0 |
+| All client JS + CSS | 3,286,211 | 3,293,592 | +7,381 |
+| Route preloads only (diagnostic) | 516,785 | 516,777 | -8 |
+| Static trade startup | 1,626,618 (101 assets) | 1,629,887 (101 assets) | +3,269 |
+| Mobile runtime increment / combined | 117,763 / 1,744,381 | 118,017 / 1,747,904 | +254 / +3,523 |
+| Desktop runtime increment / combined | 201,032 / 1,827,650 | 202,173 / 1,832,060 | +1,141 / +4,410 |
+| Largest JS chunk (Privy main) | 411,540 gzip / 1,414,905 raw | 411,532 gzip / 1,414,905 raw | -8 gzip |
+
+The desktop runtime increment baseline becomes dev's 191,988 plus the measured change, 193,129, replacing 192,193 (which
+already contained +205 of the same change). As for the total client, the allowance dev had already used stays counted, so
+the PR head now sits where dev sat: 956 bytes under the allowance in the fixed-metadata build and 880 bytes under it for
+the CI reading of 202,249. The other baselines are unchanged: CI read 3,294,239 in total (+6,588 against an allowance of
+10,000), 1,629,984 for the static trade startup (below its baseline) and 118,021 for the mobile runtime increment
+(+7,441). Both builds passed the circular-import check and `perf:startup`, and the graph inventory is unchanged at 443
+assets (441 JavaScript, 2 CSS). This is a byte measurement, not a browser timing.
+
 ## Functional acceptance gates
 
 Every terminal optimization must preserve all of the following:

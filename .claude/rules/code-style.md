@@ -32,9 +32,9 @@ Only create helpers when logic is reused, complex, or significantly improves rea
 
 ## React Hooks
 
-- **React 19 Compiler**: Project uses React 19 with the compiler enabled. Don't add manual `useMemo`/`useCallback` for performance - the compiler handles memoization automatically.
+- **React 19 Compiler**: Project uses React 19 with the compiler enabled. Don't add manual `useMemo`/`useCallback` for performance - the compiler handles memoization automatically (one documented exception under useMemo below).
 - **useEffect**: Only for side effects (subscriptions, DOM, external APIs). Never for derived state.
-- **useMemo**: Only for semantic purposes (e.g., referential equality for context values). Not needed for performance.
+- **useMemo**: Only for semantic purposes (e.g., referential equality for context values). Not needed for performance. The one documented exception is the `useMemo` around `buildChart` in `PortfolioPerformanceChart`: without it the compiled output stops caching the chart model (cache slots 118 → 43) and every pointer move rebuilds it (`docs/i18n-presentation.md`). Add another exception only with the same compiled-output evidence.
 - **useState**: Prefer primitives/indices over complex objects.
 - **useCallback**: Only when semantically required. Not needed for performance.
 
@@ -51,6 +51,8 @@ Only create helpers when logic is reused, complex, or significantly improves rea
 ## Format Functions
 
 Pass API values directly to formatters - they accept `string | number | null | undefined`:
+
+In components and hooks, take the number formatters from `useNumberFormat()` (`const { formatUSD } = useNumberFormat()`) and pass them to presentation helpers; never reference the module-level number formatters anywhere in a component or hook, including its event handlers and effects (ADR 0036). Likewise every `formatDateTime`, `formatDateTimeShort`, `formatTime` and `formatList` call in a component or hook passes a `locale` option: `const locale = i18n.locale;` read during render, or `i18n.locale` read inside an effect, an inline event handler or a CSV row builder (`buildRows`), which runs when the export generates its rows, so its dates match the headers `t` translates then (`docs/i18n-presentation.md`, `date-locale-reactivity-contract`).
 
 
 ## Icons

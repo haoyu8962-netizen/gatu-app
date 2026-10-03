@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useTradingViewOverlayLines } from "@/components/trade/chart/use-tradingview-overlay-lines";
 import type { TradingViewOverlayLine } from "@/lib/chart/tradingview-overlays";
 import type { Position, UnifiedMarketInfo } from "@/lib/hyperliquid";
+import { notifyNumberFormatChange } from "@/lib/number-format-reactivity";
 import type { OpenOrder } from "@/lib/trade/open-orders";
 import { createI18nRoot } from "./harness/react";
 
@@ -27,6 +28,13 @@ const mocks = vi.hoisted(() => ({
 		isStale: false,
 		positions: [] as Position[],
 	},
+}));
+
+const numberFormatSetting = vi.hoisted(() => ({ locale: "en-US" }));
+
+vi.mock("@/stores/use-global-settings-store", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/stores/use-global-settings-store")>()),
+	getResolvedFormatLocale: () => numberFormatSetting.locale,
 }));
 
 vi.mock("@/hooks/use-mobile", () => ({
@@ -97,6 +105,7 @@ describe("TradingView account overlay readiness", () => {
 	let root: Root;
 
 	beforeEach(() => {
+		numberFormatSetting.locale = "en-US";
 		mocks.clientKey = OWNER;
 		mocks.isConnected = true;
 		mocks.isOnline = true;
@@ -122,6 +131,16 @@ describe("TradingView account overlay readiness", () => {
 	it("renders fresh order, position, and liquidation snapshots for the matching owner", () => {
 		expect(renderHook().map((line) => line.kind)).toEqual(["order", "position", "liquidation"]);
 		expect(hookValue.find((line) => line.kind === "position")?.label).toBe("Long · PNL +12.50 USDC (+12.5%) · 1");
+	});
+
+	it("rewrites the position label when the number format changes", () => {
+		renderHook();
+		expect(hookValue.find((line) => line.kind === "position")?.label).toBe("Long · PNL +12.50 USDC (+12.5%) · 1");
+
+		numberFormatSetting.locale = "de-DE";
+		act(() => notifyNumberFormatChange());
+
+		expect(hookValue.find((line) => line.kind === "position")?.label).toBe("Long · PNL +12,50 USDC (+12,5%) · 1");
 	});
 
 	it("fails each account stream closed without hiding the other fresh stream", () => {
