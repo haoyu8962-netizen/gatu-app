@@ -102,7 +102,11 @@ const budgets = {
 				// docs/terminal-performance-baseline.md as the local Node 22.15.0 builds of 2d6f4676 (201,842), c110dc80
 				// (201,956) and 1cb73bcf (202,047). After merging dev a0c05740, the fixed-metadata build of 0944584d measured
 				// 202,173, 20 bytes under this allowance, and the CI-metadata build 202,193, exactly at it.
-				baselineGzipBytes: 192_193,
+				// Re-baselined 2026-10-03 to dev's 191,988 plus PR #71's measured desktop increment (+1,141, so +936 over
+				// the +205 above): CI read 202,249 for fc5e10cd, 56 bytes over the previous allowance. Fixed-metadata Node
+				// 22.15.0 builds in clean worktrees read 201,032 for dev a0c05740 and 202,173 for fc5e10cd
+				// (docs/terminal-performance-baseline.md, locale and number-format re-baseline).
+				baselineGzipBytes: 193_129,
 				allowedIncreaseBytes: 10_000,
 			},
 		],
