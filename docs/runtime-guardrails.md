@@ -40,11 +40,20 @@ Do not collapse these states into one boolean.
   keyed by environment and exact owner identity.
 - Do not classify an account as empty until both complete all-DEX perpetual
   and spot snapshots have loaded successfully.
-- Normal wallet disconnect must clear only the active agent-only owner
-  (`hyperliquid_active_agent_owner`). It must not delete
-  `hyperliquid_agent_{env}_{owner}`.
-- Delete a local agent key only for explicit reset/revoke/rotation flows, not
-  for ordinary disconnect.
+- An explicit wallet disconnect closes the owner's Agent registration session,
+  removes that owner's local Agent key (`hyperliquid_agent_{env}_{owner}`) and
+  clears the matching active agent-only owner (`hyperliquid_active_agent_owner`)
+  before logging out of Privy (`use-wallet-session.ts`,
+  `closeAgentRegistrationSessionAndRemove`). If the key cannot be removed, the
+  disconnect fails and does not log out. The next connection generates and
+  approves a new Agent, which follows Hyperliquid's advice never to reuse API
+  wallet addresses; a same-name approval deregisters the previous one. Ordinary
+  email trading keeps no local Agent, so this affects external-wallet and
+  Agent-only sessions. (Decided 2026-10-04: the code is authoritative; this
+  section used to say the opposite.)
+- Apart from explicit disconnect, delete a local Agent key only for explicit
+  reset, revocation or rotation, never during transient signer restoration
+  (`docs/trading-onboarding.md`).
 - Connected wallet sessions always win over agent-only sessions. Agent-only is
   only for imported mobile access or explicitly active local-agent sessions.
 - L1 trading actions (`order`, `cancel`, `updateLeverage`, etc.) must use the
@@ -1119,7 +1128,7 @@ Before merging any change that touches the areas above:
 
 ## Known Anti-Patterns
 
-- Deleting local agent keys on normal disconnect.
+- Deleting a local Agent key during transient signer restoration instead of on explicit disconnect, reset, revocation or rotation.
 - Falling back from trading actions to wallet signatures.
 - Passing display symbols directly to Hyperliquid candle/orderbook APIs.
 - Recreating TradingView because of theme, locale, tab, or small layout changes.

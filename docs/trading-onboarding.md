@@ -186,8 +186,8 @@ permissions.
 
 | Choice | Agent key storage | Lifetime |
 |---|---|---|
-| Unchecked (default) | `sessionStorage` | Current browser tab/session |
-| Checked | `localStorage` | Across restarts of this browser and origin until reset/revocation |
+| Unchecked (default) | `sessionStorage` | Current browser tab/session, or until an explicit disconnect |
+| Checked | `localStorage` | Across restarts of this browser and origin until an explicit disconnect, reset or revocation |
 
 The preference is stored under
 `hyperliquid.persist_trading_connection`. Agent records remain keyed by

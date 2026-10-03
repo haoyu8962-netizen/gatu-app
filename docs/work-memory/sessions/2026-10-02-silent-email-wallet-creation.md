@@ -263,3 +263,4 @@
 - 协议弹窗的 `required` 状态在 Privy 窗口打开时会丢失勾选。现在没有触发路径；以后如果加了会在这时打开 Privy 窗口的操作，要把勾选状态提到弹窗之外。
 - 发布编号：上线方案里 p25 留给旧域名清理。本修复如果先发，要按当时的序号命名，并同步更新切换方案中的引用。
 - 2026-10-04 补记：本分支已与图表价格精度（ADR 0035）一起合进集成分支 `claude/integrate-chart-precision-silent-wallet`（合并提交 `f285d3bd`），提交为 PR #77 → `dev`，未合入、未发布。上面两项「需要用户决定」的事仍未决定。经过见[集成记录](2026-10-04-integrate-chart-precision-silent-wallet.md)。
+- 2026-10-04 用户决定：断开连接是否删除本地 Agent 密钥，以代码为准，断开即删。依据是 Hyperliquid 官方文档《Nonces and API wallets》建议不复用 API 钱包地址、以后使用时生成新的。`docs/runtime-guardrails.md` 的规则和反模式条目、`docs/trading-onboarding.md` 的「Stay Connected」存储表已据此改写（PR #77）。智能钱包关联签名那一项仍未决定。

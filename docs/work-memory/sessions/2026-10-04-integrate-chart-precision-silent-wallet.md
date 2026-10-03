@@ -92,3 +92,18 @@
   - `docs/runtime-guardrails.md` 说普通断开不删本地 Agent 密钥，代码一直在删，以哪边为准。
 - 发布编号：p25 留给旧域名清理（PR #73）。本 PR 如果先发布，要按当时的序号命名。
 - 本记录不替代任何记录。
+
+## 补记：用户决定（2026-10-04）
+
+- **断开是否删除本地 Agent 密钥**：用户决定以代码为准，断开即删。核对过的依据：
+  - 代码 `use-wallet-session.ts` 断开时调用 `closeAgentRegistrationSessionAndRemove`，删除该 owner 的本地 Agent 密钥并清掉对应的 Agent-only owner；删除失败则断开失败，不登出 Privy。
+  - Hyperliquid 官方文档《Nonces and API wallets》强烈建议不要复用 API 钱包地址，以后使用时生成新的 Agent；同名授权会注销旧的。
+  - `docs/trading-onboarding.md` 原本就写「Agent 清理属于经核实的显式登出」，与代码一致；只有 `docs/runtime-guardrails.md` 写反了。
+
+  已改写 `runtime-guardrails.md` 的规则与反模式条目，以及 `trading-onboarding.md`「Stay Connected」表里的寿命说明。行为没有变，所以不改 CHANGELOG。
+- **智能钱包关联签名**：尚未决定。用户问邮箱用户是否都是静默签名，核对结果：
+  - `config/privy.ts` 全局设了 `showWalletUIs: false`（Privy 官方《Configuring wallet confirmation modals》说明了这个开关）；
+  - 下单、接受条款、赞助充值授权都按调用再设 `showWalletUIs: false`；
+  - 只有用内嵌钱包显式批准 Agent（链接手机、API 钱包）且应用内还没确认时会弹 Privy 确认框；
+  - 智能钱包关联由 Privy SDK 内部完成，也是静默的。区别在于它在登录后自动发生，不是用户点了按钮。
+  - Privy 官方《Configure smart wallets in the SDK》建议把 `SmartWalletsProvider` 挂在根部附近，用户有内嵌钱包后自动生成智能钱包，没有提供单独推迟的设置。
