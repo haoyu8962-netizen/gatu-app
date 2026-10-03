@@ -7,10 +7,10 @@
   "kind": "task",
   "status": "verified",
   "topics": ["i18n-runtime", "pr-review"],
-  "summary": "把页脚时钟、Vault 与组合收益图语言依赖、数字格式刷新（ADR 0036）三条叠放分支以 --no-ff 合进从 origin/dev 建的 claude/integrate-locale-number-format（PR #71），按 19 轮 Codex 只读对抗审查补测试、加强契约并重定总量预算基线。PR 开出后按用户要求再并入四条后续分支：删除未用的 lib/chart/format.ts、CI 失效测试路径修复、日期与列表 locale 契约、精确小数串跟随数字格式（ADR 0037）；日期契约改用从数字契约抽出的共用模块图，15 个测试补进 CI，总量与桌面运行时基线按集成后的固定元数据实测改写；第 20–27 轮审查修了日期契约的多处漏报、小数契约的绕过与 CSV 导出切换语言时的混用，第 27 轮三路 9.5/9.3/9.2、无 P0–P2。类型检查、全量单测（8,383 项通过）、Biome、CI 式与固定元数据构建通过；没有浏览器验收。之后为解决冲突合并了 dev 的 a0c05740（Privy 3.46.0 升级与卡入金），两边内容都保留，总量基线叠加为 3,287,651；推送后真实 CI 的桌面运行时超出 56 字节，按 dev a0c05740 与 PR 头 fc5e10cd 的成对固定元数据构建（+1,141）把桌面运行时基线改为 193,129，余量回到 956 字节。",
+  "summary": "把页脚时钟、Vault 与组合收益图语言依赖、数字格式刷新（ADR 0036）三条叠放分支以 --no-ff 合进从 origin/dev 建的 claude/integrate-locale-number-format（PR #71），按 19 轮 Codex 只读对抗审查补测试、加强契约并重定总量预算基线。PR 开出后按用户要求再并入四条后续分支：删除未用的 lib/chart/format.ts、CI 失效测试路径修复、日期与列表 locale 契约、精确小数串跟随数字格式（ADR 0037）；日期契约改用从数字契约抽出的共用模块图，15 个测试补进 CI，总量与桌面运行时基线按集成后的固定元数据实测改写；第 20–27 轮审查修了日期契约的多处漏报、小数契约的绕过与 CSV 导出切换语言时的混用，第 27 轮三路 9.5/9.3/9.2、无 P0–P2。类型检查、全量单测（8,383 项通过）、Biome、CI 式与固定元数据构建通过；没有浏览器验收。之后为解决冲突合并了 dev 的 a0c05740（Privy 3.46.0 升级与卡入金），两边内容都保留，总量基线叠加为 3,287,651；推送后真实 CI 的桌面运行时超出 56 字节，按 dev a0c05740 与 PR 头 fc5e10cd 的成对固定元数据构建（+1,141）把桌面运行时基线改为 193,129，余量回到 956 字节。之后 6 项 CI 全绿，PR #71 于 2026-10-03 以 merge commit 合入 dev（2846a6f8），未发布。",
   "thread": null,
   "baseCommit": "682430ba",
-  "commits": ["b99a1190", "2b7973b4", "5425b7c1", "04469b52", "41c585cb", "089747f5", "18cc35b1", "90dc70ef", "1419edb8", "6ed51e97", "c51cb05c", "8b0dde85", "cb15f488", "1bee47ea", "deff2eba", "5ea0d370", "f1956c10", "a8a4fed1", "236c998d", "1dba0675", "446cbfc6", "2d6f4676", "00169c24", "162a1501", "229d9683", "bc6c206d", "56fd6d61", "242db030", "62d7f26b", "f25be9a3", "c110dc80", "1cb73bcf", "f1f769c5", "fb1cf874", "a7ed27d5", "2e00be19", "1b850f0d", "437831d0", "d1f7acb7", "e82a8af3", "dce11315", "efbcf49f", "21f8d726", "692bb364", "64de9f4d", "eb2882f7", "fac41a1b", "9fa93b0d", "f1551d76", "e2e81be0", "0944584d", "fc5e10cd"],
+  "commits": ["b99a1190", "2b7973b4", "5425b7c1", "04469b52", "41c585cb", "089747f5", "18cc35b1", "90dc70ef", "1419edb8", "6ed51e97", "c51cb05c", "8b0dde85", "cb15f488", "1bee47ea", "deff2eba", "5ea0d370", "f1956c10", "a8a4fed1", "236c998d", "1dba0675", "446cbfc6", "2d6f4676", "00169c24", "162a1501", "229d9683", "bc6c206d", "56fd6d61", "242db030", "62d7f26b", "f25be9a3", "c110dc80", "1cb73bcf", "f1f769c5", "fb1cf874", "a7ed27d5", "2e00be19", "1b850f0d", "437831d0", "d1f7acb7", "e82a8af3", "dce11315", "efbcf49f", "21f8d726", "692bb364", "64de9f4d", "eb2882f7", "fac41a1b", "9fa93b0d", "f1551d76", "e2e81be0", "0944584d", "fc5e10cd", "11092097"],
   "sources": [
     { "path": "docs/work-memory/sessions/2026-10-02-footer-clock-live-minute.md" },
     { "path": "docs/work-memory/sessions/2026-10-02-vault-fetched-time-locale.md" },
@@ -918,6 +918,7 @@ PR #69（Privy React Auth 3.46.0 升级）与 #70（卡入金，ADR 0034）合�
   - 总量、交易页静态启动和手机运行时都没有超出，基线不变。
   - 预算脚本的注释写明了这次重定基线的依据；`docs/terminal-performance-baseline.md` 新增一节「Locale and number-format desktop runtime re-baseline (2026-10-03)」，按规则记录了提交、命令、产物清单、路由诊断、静态启动、两个运行时增量与合计。
 - 验证：用改好的预算脚本检查 PR 头的固定元数据产物，通过（桌面 +9,044）；预算脚本自测 19 项通过。CI 的结果以这次推送后的 Production Builds 为准。
+  - 补记：推送 `11092097` 后 6 项 CI 全绿。Production Builds（run 37100990166）量到桌面运行时 202,177（新基线下余 952）、总量 3,293,570、手机运行时 118,008。同一份产品代码，前一次 CI 量到 202,249，可见 CI 两次运行之间也会相差几十字节。
 - 证据：CI 失败日志摘录、两次构建与安装日志、路由诊断和逐资产比较，已脱敏存进 `.worklog/2026-10-02/integrate-locale-number-format/ci-rebaseline/`。
 
 ## 验证与限制
@@ -966,6 +967,7 @@ PR #69（Privy React Auth 3.46.0 升级）与 #70（卡入金，ADR 0034）合�
 
 - 已推送并开 [PR #71](https://github.com/zora4523-bot/gatu-app/pull/71) 到 `dev`，未合入。合入后，七条源分支的提交随之进入 `dev`。
   - 2026-10-03：PR #69、#70 合入 `dev` 后本 PR 出现冲突，已合并 `dev` 的 `a0c05740` 并推送，见「合并 `dev`」。
+  - 2026-10-03 06:06Z：6 项 CI 全绿后，PR #71 以 merge commit 合入 `dev`（`2846a6f8`，父提交为 `a0c05740` 与 PR 头 `11092097`，树与 PR 头相同）。七条源分支的提交都已进入 `dev`；没有晋升 `main`，也没有发布。
 - 已完成（2026-10-03「第二次集成」）：下面三条分支已并入本 PR，原写的合并注意事项保留作历史。有三条未推送的分支与本 PR 有关，本 PR 合入后都要先合并 `dev`（2026-10-03 用 `git log`/`git diff` 核对）：
   - `claude/angry-northcutt-d85ed7`（`f7ae69a2`，ADR 0037，叠在 `04469b52` 上）处理了上面「手写数字」清单的大部分，会和本 PR 在 `docs/number-format-setting.md` 的「未完成」清单处冲突。它没有改图表仓位线里的仓位数量（`lib/chart/tradingview-overlays.ts`），合并时这一条要保留。
   - `claude/sleepy-archimedes-fbff3e`（`cae7c133`、`6b18c20b`，叠在 `04469b52` 上）加了日期 `locale` 契约。它的组件识别代码复制自 `04469b52`/`089747f5`，没有用共用模块 `harness/react-source.ts`，所以第 4–16 轮对识别规则的修补都没有带过去。合并时要改用共用模块，并把 CI 条目移到本 PR 新增的步骤。
