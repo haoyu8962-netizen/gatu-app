@@ -9,6 +9,7 @@ export interface BuildMetaInput {
 	builtAt: string;
 	pairing: { enabled: boolean };
 	cctpDeposits: { mainnetSponsoredWallet: boolean; testnetExternalWallet: boolean; testnetSponsoredWallet: boolean };
+	privyFiatFunding: { mainnet: boolean; testnet: boolean };
 	/** Content hash of the TradingView loader the build emitted under a hashed name; empty in development. */
 	chartLibraryHash?: string;
 }
@@ -30,6 +31,11 @@ export interface BuildMeta {
 		mainnetSponsoredWallet: boolean;
 		testnetExternalWallet: boolean;
 		testnetSponsoredWallet: boolean;
+	};
+	/** Whether this build offers card funding per network; the release tooling refuses an unacknowledged Mainnet path. */
+	privyFiatFunding: {
+		mainnet: boolean;
+		testnet: boolean;
 	};
 }
 
@@ -53,6 +59,10 @@ export function createBuildMeta(input: BuildMetaInput): BuildMeta {
 			mainnetSponsoredWallet: input.cctpDeposits.mainnetSponsoredWallet,
 			testnetExternalWallet: input.cctpDeposits.testnetExternalWallet,
 			testnetSponsoredWallet: input.cctpDeposits.testnetSponsoredWallet,
+		},
+		privyFiatFunding: {
+			mainnet: input.privyFiatFunding.mainnet,
+			testnet: input.privyFiatFunding.testnet,
 		},
 	};
 }

@@ -40,6 +40,17 @@ const budgets = {
 	// illustration data (about 2.3 kB), their keyframes in the stylesheet (0.8 kB) and the three components, split
 	// so the illustrations load only with their dialogs (desktop runtime startup +769, mobile +151). Measured as the
 	// local Node 22.15.0 build (3,193,087) minus the local build of f440fa1b before the change (3,186,543).
+	// Raised 2026-10-02 by +83,687 for the Privy React Auth 3.46.0 upgrade (docs/terminal-performance-baseline.md):
+	// fixed-metadata Node 22.15.0 builds, pairing off, 3,275,424 after minus 3,191,737 for 682430ba before (both
+	// sides read a developer .env.local; CI-equivalent builds read 3,274,893 minus 3,190,861 = +84,032).
+	// Raised 2026-10-02 by +11,563 for card funding (ADR 0034): the deposit dialog chunk with the method chooser,
+	// the purchase launch and the identity-checked notice card (+4,800), the six catalogs (+2,409), the lazy host
+	// (1,705), the funding exports kept in Privy's main chunk (+1,522), the store chunk (750 against the 491-byte
+	// chunk it replaces), the router and icon vendor chunks (+870) and renamed imports. CI-equivalent builds of
+	// the commits (no .env.local): 3,286,456 for e257426d minus 3,274,893 for the upgrade commit c0e550c7. This
+	// replaces the +15,152 measured for 566713d3, when the host imported only useFiatOnramp and Rollup split
+	// Privy's funding module into a chunk of its own that 104 other chunks then had to import
+	// (docs/terminal-performance-baseline.md).
 	// Raised 2026-10-03 by +4,671 for the locale and number-format refresh (footer clock, vault labels, ADR 0036):
 	// components take their formatters from useNumberFormat() and read the locale before formatting, which adds
 	// React Compiler cache-guard dependencies (trade startup +2,410, desktop runtime startup +829, mobile +142).
@@ -57,14 +68,16 @@ const budgets = {
 	// +440, desktop runtime startup +91). Measured as the local Node 22.15.0 build of 1cb73bcf (3,197,561) minus that
 	// of c110dc80 (3,196,169), both with the fixed metadata of docs/terminal-performance-baseline.md; the ADR 0037
 	// branch's own build against 04469b52 had measured +1,216.
-	totalGzipBaselineBytes: 3_192_401,
+	totalGzipBaselineBytes: 3_287_651,
 	totalGzipAllowedIncreaseBytes: 10_000,
 	tradeStartup: {
 		requiredRouteIds: ["__root__", "/trade/$symbol"],
 		optionalRouteIds: ["/trade"],
 		staticClosureChunkPrefixes: ["client-root", "trade-terminal-page", "early-prefetch", "preload-trade-terminal-surface"],
 		// Re-baselined 2026-09-16 after ADR 0009 moved the startup placeholders onto shared views (+10,995 gzip bytes over surfaces 1-6).
-		baselineGzipBytes: 1_581_216,
+		// Raised 2026-10-02 by +62,713 for the Privy React Auth 3.46.0 upgrade: its core SDK now imports libphonenumber-js
+		// statically and its bundled viem grew (1,624,427 after minus 1,561,714 before; docs/terminal-performance-baseline.md).
+		baselineGzipBytes: 1_643_929,
 		allowedIncreaseBytes: 10_000,
 	},
 	tradeRuntimeStartup: {
@@ -119,6 +132,29 @@ export function collectTradeStartupFiles({
 		assetFiles,
 		entryFiles: [...routePreloadFiles, ...runtimeEntryFiles, ...semanticEntryFiles],
 	});
+}
+
+const LOCAL_ENV_FILE_PATTERN = /^\.env(?:\.[^.]+)?\.local$/;
+
+/**
+ * Developer-only Vite env files next to the built application. Vite inlines their `VITE_*` values, so a build that
+ * read one measures a few hundred bytes more than CI, which has none (docs/terminal-performance-baseline.md).
+ */
+export function findLocalEnvFiles(appDirectory) {
+	try {
+		return readdirSync(appDirectory)
+			.filter((file) => LOCAL_ENV_FILE_PATTERN.test(file))
+			.sort();
+	} catch {
+		return [];
+	}
+}
+
+/** The note printed after the budget lines when a local env file sits next to the measured build. */
+export function describeLocalEnvFiles(assetsDirectory) {
+	const files = findLocalEnvFiles(resolve(assetsDirectory, "../../.."));
+	if (files.length === 0) return null;
+	return `Note: ${files.join(", ")} sits next to this build. CI has no local env file, so a build that read it measures a few hundred bytes above CI; take re-baseline measurements in a checkout without it.`;
 }
 
 export function getBudgetIncreaseViolation({ label, actualBytes, baselineBytes, allowedIncreaseBytes }) {
@@ -262,6 +298,7 @@ export async function analyzeClientBundle(assetsDirectoryArgument) {
 
 export async function checkClientBundleBudget(assetsDirectoryArgument) {
 	const {
+		assetsDirectory,
 		largestChunk,
 		totalGzip,
 		violations,
@@ -337,6 +374,8 @@ export async function checkClientBundleBudget(assetsDirectoryArgument) {
 		const asset = surface.assets.length === 1 ? surface.assets[0] : undefined;
 		if (asset) console.log(`- ${asset.file}: ${asset.gzip} gzip bytes`);
 	}
+	const localEnvNote = describeLocalEnvFiles(assetsDirectory);
+	if (localEnvNote) console.log(localEnvNote);
 
 	if (violations.length > 0) {
 		console.error("Client bundle budget exceeded:");

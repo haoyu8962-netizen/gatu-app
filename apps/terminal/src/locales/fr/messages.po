@@ -789,6 +789,10 @@ msgstr "Un compte n’est exclu que si sa valeur est inférieure à 100 000 $ et
 msgid "An approved API wallet can sign delegated L1 actions such as placing and cancelling orders and adjusting leverage or margin mode. Approval is not scoped per action. Master-only actions, including external withdrawals, still require the master wallet."
 msgstr "Un portefeuille API approuvé peut signer des actions L1 déléguées, telles que placer et annuler des ordres ou ajuster le levier et le mode de marge. L’autorisation n’est pas limitée à une action. Les actions réservées au portefeuille principal, notamment les retraits externes, exigent toujours ce dernier."
 
+#: src/lib/trade/privy-fiat-funding-feedback.ts
+msgid "An earlier card purchase is still open on this page. Reload the page, then try again."
+msgstr "Un achat par carte précédent est encore ouvert sur cette page. Rechargez la page, puis réessayez."
+
 #: src/hooks/trade/use-asset-leverage.ts
 #: src/lib/trade/position-submit-feedback.ts
 msgid "Another action for this market is already in progress."
@@ -1131,6 +1135,8 @@ msgstr "Prix moyen {price}"
 #: src/components/trade/tradebox/bridge/amount-entry-screen.tsx
 #: src/components/trade/tradebox/bridge/bridge-error-screen.tsx
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
+#: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
 #: src/components/vaults/vault-action-modal.tsx
 msgid "Back"
 msgstr "Retour"
@@ -1306,6 +1312,10 @@ msgstr "Achat / Long"
 msgid "Buy Long"
 msgstr "Acheter long"
 
+#: src/components/trade/tradebox/deposit/deposit-method-chooser.tsx
+msgid "Buy USDC with a card"
+msgstr "Acheter des USDC par carte"
+
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "By default, TP/SL applies to the whole position and submits a market order when mark price reaches the trigger. Configure an amount to keep a fixed size, or select limit execution to submit at your limit price."
 msgstr "Par défaut, le TP/SL s'applique à toute la position et envoie un ordre au marché lorsque le prix mark atteint le déclencheur. Configurez un montant pour conserver une taille fixe, ou sélectionnez l'exécution limite pour soumettre à votre prix limite."
@@ -1453,6 +1463,31 @@ msgstr "Impossible de passer en mode isolé avec une position ouverte"
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Cannot switch to Isolated mode with an open position. Close your position first."
 msgstr "Impossible de passer en mode Isolé avec une position ouverte. Fermez d'abord votre position."
+
+#: src/components/trade/tradebox/deposit/deposit-method-chooser.tsx
+msgid "Card or bank transfer through a third-party payment provider. USDC arrives in your wallet on Arbitrum."
+msgstr "Carte ou virement bancaire via un prestataire de paiement tiers. Les USDC arrivent dans votre portefeuille sur Arbitrum."
+
+#: src/lib/tests/privy-fiat-funding-host.test.tsx
+#: src/lib/trade/privy-fiat-funding-feedback.ts
+msgid "Card purchase confirmed"
+msgstr "Achat par carte confirmé"
+
+#: src/lib/trade/privy-fiat-funding-feedback.ts
+msgid "Card purchase could not open. Check your connection and try again."
+msgstr "Impossible d’ouvrir l’achat par carte. Vérifiez votre connexion et réessayez."
+
+#: src/lib/trade/privy-fiat-funding-feedback.ts
+msgid "Card purchase did not complete"
+msgstr "L’achat par carte n’a pas abouti"
+
+#: src/lib/trade/privy-fiat-funding-feedback.ts
+msgid "Card purchase status unknown"
+msgstr "Statut de l’achat par carte inconnu"
+
+#: src/lib/trade/privy-fiat-funding-feedback.ts
+msgid "Card purchase submitted"
+msgstr "Achat par carte soumis"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
@@ -2567,6 +2602,7 @@ msgstr "Déployeur"
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/amount-input.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
+#: src/components/trade/tradebox/deposit/deposit-method-chooser.tsx
 #: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
 #: src/components/vaults/vault-detail-view.tsx
 #: src/components/vaults/vault-detail-view.tsx
@@ -2600,6 +2636,10 @@ msgstr "Montant"
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Deposit failed"
 msgstr "Échec du dépôt"
+
+#: src/components/trade/tradebox/deposit/deposit-method-chooser.tsx
+msgid "Deposit native USDC on Arbitrum from your connected wallet."
+msgstr "Déposez des USDC natifs sur Arbitrum depuis votre portefeuille connecté."
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Deposit status unknown"
@@ -2659,6 +2699,11 @@ msgstr "Déposé"
 #: src/components/vaults/vaults-list.tsx
 msgid "Deposited and Leading filters fail closed until both account snapshots are available."
 msgstr "Les filtres « Déposé » et « En tête » restent indisponibles tant que les deux instantanés du compte ne sont pas disponibles."
+
+#: src/components/trade/tradebox/deposit/deposit-method-chooser.tsx
+#: src/lib/trade/privy-fiat-funding-feedback.ts
+msgid "Depositing it needs a little ETH on Arbitrum for network fees."
+msgstr "Pour le déposer, il faut un peu d’ETH sur Arbitrum pour les frais de réseau."
 
 #: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
 msgid "Depositing USDC to Hyperliquid..."
@@ -2819,6 +2864,7 @@ msgstr "La déconnexion nécessite la prise en charge des Web Locks. Mettez à j
 
 #: src/components/trade/mobile/offline-banner.tsx
 #: src/components/trade/tradebox/order-toast.tsx
+#: src/components/trade/tradebox/privy-fiat-funding-notice-card.tsx
 #: src/components/ui/sonner.tsx
 msgid "Dismiss"
 msgstr "Fermer"
@@ -4067,6 +4113,14 @@ msgstr "Époque de l’identité"
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "If you did not import this yourself, revoke phone access from the master wallet on desktop now."
 #~ msgstr ""
+
+#: src/lib/trade/privy-fiat-funding-feedback.ts
+msgid "If you paid, USDC arrives in your wallet on Arbitrum once the provider completes the purchase. Check the payment provider's email before trying again."
+msgstr "Si vous avez payé, les USDC arriveront dans votre portefeuille sur Arbitrum une fois l’achat finalisé par le prestataire. Consultez l’e-mail du prestataire de paiement avant de réessayer."
+
+#: src/lib/trade/privy-fiat-funding-feedback.ts
+msgid "If you were charged, check the payment provider's email before trying again."
+msgstr "Si vous avez été débité, consultez l’e-mail du prestataire de paiement avant de réessayer."
 
 #: src/components/trade/positions/position-pnl-share-modal.tsx
 msgid "Image saved"
@@ -7729,6 +7783,10 @@ msgstr "Envoyer"
 msgid "Send failed"
 msgstr "Échec de l'envoi"
 
+#: src/components/trade/tradebox/deposit/deposit-method-chooser.tsx
+msgid "Send native USDC on Arbitrum from an exchange or wallet."
+msgstr "Envoyez des USDC natifs sur Arbitrum depuis une plateforme d’échange ou un portefeuille."
+
 #: src/components/trade/positions/send-modal.tsx
 msgid "Send status unknown"
 msgstr "État de l'envoi inconnu"
@@ -9007,6 +9065,10 @@ msgstr "La page charge un instantané des exécutions récentes. Exportez un fic
 msgid "The page you are looking for does not exist."
 msgstr "La page que vous recherchez n'existe pas."
 
+#: src/lib/trade/privy-fiat-funding-feedback.ts
+msgid "The payment provider is still processing it. USDC arrives in your wallet on Arbitrum when it completes; then open Deposit."
+msgstr "Le prestataire de paiement la traite encore. Les USDC arriveront dans votre portefeuille sur Arbitrum une fois terminée ; ouvrez ensuite Déposer."
+
 #: src/lib/trade/position-submit-feedback.ts
 msgid "The position grew after you confirmed, so nothing was closed. Reopen Market Close to review the new size."
 msgstr "La position a augmenté après votre confirmation, rien n’a donc été clôturé. Rouvrez Clôture au marché pour vérifier la nouvelle taille."
@@ -9587,6 +9649,10 @@ msgstr "Ce coffre n'accepte plus de dépôts."
 msgid "This Vault uses proportional position closing on withdrawal."
 msgstr "Ce coffre utilise la clôture proportionnelle des positions lors d’un retrait."
 
+#: src/lib/trade/privy-fiat-funding-feedback.ts
+msgid "This was a sandbox test: no card was charged and no USDC will arrive."
+msgstr "Il s’agissait d’un test en environnement de test : aucune carte n’a été débitée et aucun USDC n’arrivera."
+
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 msgid "This will close the current position and open an equal position in the opposite direction at market price."
 msgstr "Cela fermera la position actuelle et ouvrira une position équivalente dans la direction opposée au prix du marché."
@@ -9992,6 +10058,11 @@ msgstr "État du transfert inconnu"
 #: src/components/trade/positions/transfer-modal.tsx
 msgid "Transfer USDC"
 msgstr "Transférer des USDC"
+
+#: src/components/trade/tradebox/deposit/deposit-method-chooser.tsx
+msgctxt "Deposit method"
+msgid "Transfer USDC"
+msgstr "Envoyer des USDC"
 
 #: src/components/trade/positions/transfer-modal.tsx
 #~ msgid "Transferring..."
@@ -10512,6 +10583,10 @@ msgstr "Dépôt d’USDC confirmé sur Arbitrum"
 #: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
 #~ msgid "USDC deposit submitted to Hyperliquid"
 #~ msgstr "Dépôt d'USDC envoyé à Hyperliquid"
+
+#: src/lib/trade/privy-fiat-funding-feedback.ts
+msgid "USDC is on its way to your wallet on Arbitrum. Open Deposit once it arrives."
+msgstr "Les USDC sont en route vers votre portefeuille sur Arbitrum. Ouvrez Déposer dès leur arrivée."
 
 #: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
 msgid "USDC on HyperCore"
@@ -11321,3 +11396,7 @@ msgstr "Votre transaction est en cours de traitement"
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Your Vault balance could not be verified. Account values and withdrawal remain unavailable."
 msgstr "Le solde de votre coffre n’a pas pu être vérifié. Les valeurs du compte et le retrait restent indisponibles."
+
+#: src/lib/trade/privy-fiat-funding-feedback.ts
+msgid "Your wallet session changed, so the card purchase did not open. Reconnect your wallet and try again."
+msgstr "Votre session de portefeuille a changé, l’achat par carte ne s’est donc pas ouvert. Reconnectez votre portefeuille et réessayez."

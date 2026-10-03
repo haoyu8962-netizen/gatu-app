@@ -32,6 +32,7 @@ This file contains durable project instructions for coding agents. Read `agent.m
 - Treat the active wallet account as the signing identity. Before creating a user-signed Hyperliquid client, require its address to match the selected Hyperliquid user address exactly, case-insensitively; fail closed on missing or mismatched accounts.
 - For Privy email sessions, activate only the exact embedded wallet belonging to that user. Never fall back to the first connected or first embedded wallet when the expected address is unavailable.
 - Hyperliquid Agent/API Wallet keys may be stored locally, but Agent approval must always be signed by the matching master wallet. Missing local Agent state may trigger re-registration; it must never trigger a different browser wallet.
+- Card funding pays out only to the exact Hyperliquid owner: pass the destination resolved by `resolvePrivyFiatFundingDestination` to Privy's `useFiatOnramp`, never a Privy funding hook without an explicit destination (it defaults to the first embedded wallet). Each network keeps its own fail-closed flag, and a Mainnet release needs `--allow-mainnet-card-funding` (`docs/adr/0034-privy-card-funding.md`).
 
 ## First-use trading onboarding contract
 
@@ -181,6 +182,11 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/legal-gate.test.ts \
   src/lib/tests/privy-config.test.ts \
   src/lib/tests/privy-theme-switch-wallet-stability.test.tsx \
+  src/lib/tests/privy-fiat-funding.test.ts \
+  src/lib/tests/privy-fiat-funding-host.test.tsx \
+  src/lib/tests/privy-fiat-funding-host-gate.test.tsx \
+  src/lib/tests/use-privy-fiat-funding-offer.test.tsx \
+  src/lib/tests/deposit-method-chooser.test.tsx \
   src/lib/tests/client-root-theme-lifecycle.test.tsx \
   src/lib/tests/wallet-modal.test.tsx \
   src/lib/tests/wallet-session.test.tsx \

@@ -9,6 +9,7 @@ on:
       - "deploy/**"
       - "legal/**"
       - "packages/**"
+      - "patches/**"
       - "scripts/check-client-bundle-budget.mjs"
       - "scripts/check-client-bundle-budget.test.mjs"
       - "scripts/inject-shell-preloads.mjs"

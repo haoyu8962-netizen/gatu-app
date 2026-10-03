@@ -8,5 +8,5 @@ overrides:
 
 patchedDependencies:
   '@nktkas/hyperliquid': patches/@nktkas__hyperliquid.patch
-  '@privy-io/react-auth@3.32.2': patches/@privy-io__react-auth@3.32.2.patch
+  '@privy-io/react-auth@3.46.0': patches/@privy-io__react-auth@3.46.0.patch
   sonner@2.0.7: patches/sonner@2.0.7.patch

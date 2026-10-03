@@ -8,6 +8,17 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Added
 
+- Card funding, off by default: when a network's flag is on, the Deposit dialog opens on two
+  separate choices, as on the official terminal: transfer USDC on Arbitrum, or buy USDC by card or
+  bank transfer through Privy's payment providers (the amount is prefilled with 100 US dollars and
+  can be changed). The USDC goes only to your own trading wallet on Arbitrum (your email wallet, or
+  the external wallet you are connected with), and you then deposit it as usual; external wallets
+  need a little Arbitrum ETH for that step. Notifications say a purchase was confirmed, is still
+  processing or has an unknown status (the last two stay until you dismiss them), never that USDC
+  has arrived; they are shown only to the account and network that made the purchase and follow
+  the interface language. On Testnet the purchase is a provider sandbox test, and its notification
+  says that nothing was charged and no USDC will arrive. Releasing it on Mainnet needs the Privy
+  funding setup, reviewed legal text and an explicit release option (ADR 0034).
 - Earn is live. The new `/earn` page lists Hyperliquid's borrow and lend reserves with their LTV,
   APY, oracle price and totals, your supplied and borrowed amounts, interest and liquidation
   prices, plus your health factor, and lets you supply, withdraw, borrow and repay. Max follows the
@@ -47,6 +58,9 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Changed
 
+- The Privy wallet SDK is updated to React Auth 3.46.0 and Privy wagmi 4.0.17. Login, wallet
+  ordering, signing and the theme-following login window behave as before; the patch that keeps a
+  wallet session from reconnecting on a theme toggle is carried over to the new version.
 - The product is now Sairn. The terminal and the website show the Sairn name, the logo kit v1.3
   (lockup, mark and its two-colour signal and choice panels), new favicons, PWA and Apple touch
   icons, the Sairn logo in the Privy login window and on the position PNL share image, and new link preview
@@ -529,6 +543,9 @@ changes, not evidence that a build has been deployed or accepted on real devices
   which vitest reads as a filter that selects nothing, so the step passed with one test file fewer
   than it listed. `scripts/ci-workflows.test.mjs` now fails when a workflow passes vitest,
   Playwright or `node --test` a path that matches no file.
+- A notification that waited behind others and came back to the front while the pointer was
+  holding the stack open (or while the page was hidden) no longer disappears the moment the
+  pointer leaves; it now gets its full time on screen. This affected order results as well.
 - In the light theme, browsers that tint their toolbar or status bar from the page's theme color
   (Safari 15 and later, Chrome on Android) now use white like the page header instead of the dark
   terminal teal. The theme color follows the theme chosen in Settings from the first paint and on

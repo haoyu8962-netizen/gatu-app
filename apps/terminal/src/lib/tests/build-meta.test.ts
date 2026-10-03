@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { BUILD_META_PATH } from "@/config/api-paths";
 import { APP_NAME } from "@/config/app";
 import { createBuildMeta } from "@/config/build-meta";
@@ -14,7 +14,11 @@ const terminalPackage = JSON.parse(
 };
 
 describe("build metadata", () => {
-	it("describes the build identity with the fail-closed pairing and deposit gates", () => {
+	afterEach(() => {
+		vi.unstubAllEnvs();
+	});
+
+	it("describes the build identity with the fail-closed pairing, deposit and card funding gates", () => {
 		expect(
 			createBuildMeta({
 				version: "1.2.3",
@@ -23,6 +27,7 @@ describe("build metadata", () => {
 				builtAt: "2026-09-13T00:00:00.000Z",
 				pairing: { enabled: true },
 				cctpDeposits: { mainnetSponsoredWallet: true, testnetExternalWallet: false, testnetSponsoredWallet: true },
+				privyFiatFunding: { mainnet: false, testnet: true },
 			}),
 		).toEqual({
 			name: APP_NAME,
@@ -39,6 +44,10 @@ describe("build metadata", () => {
 				testnetExternalWallet: false,
 				testnetSponsoredWallet: true,
 			},
+			privyFiatFunding: {
+				mainnet: false,
+				testnet: true,
+			},
 		});
 	});
 
@@ -54,7 +63,23 @@ describe("build metadata", () => {
 			"testnetExternalWallet",
 			"testnetSponsoredWallet",
 		]);
+		expect(Object.keys(meta.privyFiatFunding).sort()).toEqual(["mainnet", "testnet"]);
+		expect(typeof meta.privyFiatFunding.mainnet).toBe("boolean");
 	});
+
+	it.each([
+		["true", "false", { mainnet: true, testnet: false }],
+		["false", "true", { mainnet: false, testnet: true }],
+		["TRUE", "1", { mainnet: false, testnet: false }],
+	])(
+		"records the card funding flags of the build environment, mainnet %s and testnet %s",
+		(mainnet, testnet, expected) => {
+			vi.stubEnv("VITE_PRIVY_FIAT_FUNDING_MAINNET_ENABLED", mainnet);
+			vi.stubEnv("VITE_PRIVY_FIAT_FUNDING_TESTNET_ENABLED", testnet);
+
+			expect(createBuildMetaForMode("production").privyFiatFunding).toEqual(expected);
+		},
+	);
 
 	it("emits build-meta.json into the client output only", () => {
 		const meta = createBuildMetaForMode("production");
