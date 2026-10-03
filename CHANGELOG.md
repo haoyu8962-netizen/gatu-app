@@ -47,6 +47,9 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Changed
 
+- The Privy wallet SDK is updated to React Auth 3.46.0 and Privy wagmi 4.0.17. Login, wallet
+  ordering, signing and the theme-following login window behave as before; the patch that keeps a
+  wallet session from reconnecting on a theme toggle is carried over to the new version.
 - The product is now Sairn. The terminal and the website show the Sairn name, the logo kit v1.3
   (lockup, mark and its two-colour signal and choice panels), new favicons, PWA and Apple touch
   icons, the Sairn logo in the Privy login window and on the position PNL share image, and new link preview

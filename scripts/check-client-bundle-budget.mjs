@@ -40,14 +40,19 @@ const budgets = {
 	// illustration data (about 2.3 kB), their keyframes in the stylesheet (0.8 kB) and the three components, split
 	// so the illustrations load only with their dialogs (desktop runtime startup +769, mobile +151). Measured as the
 	// local Node 22.15.0 build (3,193,087) minus the local build of f440fa1b before the change (3,186,543).
-	totalGzipBaselineBytes: 3_185_921,
+	// Raised 2026-10-02 by +83,687 for the Privy React Auth 3.46.0 upgrade (docs/terminal-performance-baseline.md):
+	// fixed-metadata Node 22.15.0 builds, pairing off, 3,275,424 after minus 3,191,737 for 682430ba before (both
+	// sides read a developer .env.local; CI-equivalent builds read 3,274,893 minus 3,190,861 = +84,032).
+	totalGzipBaselineBytes: 3_269_608,
 	totalGzipAllowedIncreaseBytes: 10_000,
 	tradeStartup: {
 		requiredRouteIds: ["__root__", "/trade/$symbol"],
 		optionalRouteIds: ["/trade"],
 		staticClosureChunkPrefixes: ["client-root", "trade-terminal-page", "early-prefetch", "preload-trade-terminal-surface"],
 		// Re-baselined 2026-09-16 after ADR 0009 moved the startup placeholders onto shared views (+10,995 gzip bytes over surfaces 1-6).
-		baselineGzipBytes: 1_581_216,
+		// Raised 2026-10-02 by +62,713 for the Privy React Auth 3.46.0 upgrade: its core SDK now imports libphonenumber-js
+		// statically and its bundled viem grew (1,624,427 after minus 1,561,714 before; docs/terminal-performance-baseline.md).
+		baselineGzipBytes: 1_643_929,
 		allowedIncreaseBytes: 10_000,
 	},
 	tradeRuntimeStartup: {

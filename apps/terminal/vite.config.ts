@@ -1,6 +1,6 @@
 import { execFileSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync, readFileSync, realpathSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import tailwindcss from '@tailwindcss/vite'
 import { tanstackStart } from '@tanstack/react-start/plugin/vite'
@@ -251,9 +251,23 @@ function resolveTanstackChunk(id: string) {
   return tanstackChunkByPackage.get(packageName) ?? 'vendor-tanstack-router'
 }
 
+// Only the application's own Base UI copy joins the shared startup chunk. Privy ships a newer copy for its lazily
+// loaded fiat onramp screen; grouping it here would pull that copy into trade startup.
+const applicationBaseUiRoots = resolveApplicationBaseUiRoots()
+
+function resolveApplicationBaseUiRoots() {
+  const reactRoot = realpathSync(fileURLToPath(new URL('./node_modules/@base-ui/react', import.meta.url)))
+  return [reactRoot, realpathSync(`${reactRoot}/../utils`)].map((root) => `${root.replaceAll('\\', '/')}/`)
+}
+
+export function isApplicationBaseUiModule(id: string, roots: readonly string[] = applicationBaseUiRoots) {
+  const pathname = id.replace(/\?.*$/, '').replaceAll('\\', '/')
+  return roots.some((root) => pathname.startsWith(root))
+}
+
 export function createManualChunks(id: string) {
   if (id.includes('node_modules')) {
-    if (id.includes('@base-ui')) return 'vendor-base-ui'
+    if (isApplicationBaseUiModule(id)) return 'vendor-base-ui'
     if (id.includes('@phosphor-icons/react')) return 'vendor-icons'
     if (id.includes('@radix-ui')) return 'vendor-radix'
     if (id.includes('@tanstack')) return resolveTanstackChunk(id)
