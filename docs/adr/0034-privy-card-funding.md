@@ -1,6 +1,6 @@
 # ADR 0034：通过 Privy 法币入金购买 USDC
 
-状态：已接受并实施（2026-10-02），默认关闭，未发布。Privy 控制台里线上应用的卡入金已是开启状态（2026-10-02 只读核对），沙盒与真实购买均未执行，法律文本未修改（见「上线前提」与[上线验收清单](../privy-card-funding-launch-checklist.md)）。0033 已由另一工作区的邮箱钱包静默创建占用，本决策使用 0034。规划与用户决定见 [Privy 升级与法币入金规划](../privy-upgrade-and-funding-plan.md)。
+状态：已接受并实施（2026-10-02），默认关闭，未发布。Privy 控制台里线上应用的卡入金已是开启状态（2026-10-02 只读核对），沙盒与真实购买均未执行，法律文本未修改（见「上线前提」与[上线验收清单](../privy-card-funding-launch-checklist.md)）。0033 已由另一工作区的邮箱钱包静默创建占用，本决策使用 0034。2026-10-03 经 PR #69、#70 合入 dev（`a0c05740`）；同日 Sairn 应用的 Meld 已开通正式环境（见上线前提第 1 条）。**2026-10-03 已随 p24b 发布（main `6da4c15a`），主网与测试网开关都已打开**：这是运营方知情后的决定，上线前提里的法律审阅、沙盒验收与本地最低金额真实购买都还没有完成，线上真实购买（验收清单 CF-11）也还没有做，见[发布记录](../work-memory/sessions/2026-10-03-cloudfront-release-p24b.md)。规划与用户决定见 [Privy 升级与法币入金规划](../privy-upgrade-and-funding-plan.md)。
 
 ## 背景、目标与约束
 
@@ -48,7 +48,7 @@
 
 ## 上线前提（打开主网开关前）
 
-1. 线上使用的 Privy 应用（控制台里名为 Sairn，与本地 `.env.local` 是同一个应用）在 Funding 页开启 Card onramps。2026-10-02 只读核对：已开启，Stripe 与 MoonPay 为 Enabled，Meld 未配置，Bank transfer 关闭；控制台提示该应用处于 development mode。是否完成 Meld KYB、是否升级到 production 由业务决定。
+1. 线上使用的 Privy 应用（控制台里名为 Sairn，与本地 `.env.local` 是同一个应用）在 Funding 页开启 Card onramps。2026-10-02 只读核对：已开启，Stripe 与 MoonPay 为 Enabled，Meld 未配置，Bank transfer 关闭；控制台提示该应用处于 development mode。是否完成 Meld KYB、是否升级到 production 由业务决定。2026-10-03 更正：用户完成了 Meld 的申请，Sairn 应用的 Meld aggregator 为 Prod enabled，按 Privy 文档可用币种扩到 50 多种，币种列表不需要收窄，代码不改；development mode 是否升级仍待业务决定。同一 Privy 账号下另有 Veyra 等应用，Veyra 的 Meld 仍是已申请状态，与线上无关，改设置前要确认选中的是 Sairn。
 2. 以下法律文本经合格法律审阅后发布到 `legal/` 与两个路由面，并更新 Last Updated（逐条款的草案与给律师的问题见[法律文本草案](../privy-card-funding-legal-draft.md)）：服务条款与风险披露说明入金由第三方服务商提供、费用与到账时间由其决定、KYC 与付款数据由其处理；隐私政策列出入金服务商为独立处理方。拟议措辞（英文，待审阅）：*"Card and bank purchases of USDC are provided by independent third-party payment providers through our wallet provider. They collect and verify your identity and payment details under their own terms and privacy policies, set their own fees, limits and processing times, and deliver USDC to your wallet on Arbitrum. Sairn does not receive your card details, cannot reverse a purchase and is not responsible for a provider's decision to decline, delay or refund it."*
 3. 发布分两次，逐行要求见[上线验收清单](../privy-card-funding-launch-checklist.md)：先用 `deploy.mjs functions --execute` 发布新的响应函数（CSP），再发布只打开测试网开关的构建，在测试网站点的发布产物与线上响应头下完成沙盒验收（三种关闭时机、CSP 与权限、外部钱包、手机与 PWA、异常与恢复）；然后才发布主网开关打开的构建（`--allow-mainnet-card-funding`），并立即在线上用最低金额真实购买一次。
 4. 发布之前在本地完成邮箱钱包的沙盒购买，并用最低金额真实购买一次，确认 USDC 到 owner 地址后完成一次 CCTP 存款。地区限制与服务商覆盖叠加后的实际可用地区（Stripe 只有美国（不含纽约州）与欧盟，而美国在本终端的地区限制里）需业务确认；真实购买的测试人必须身在两者都允许的地区。
@@ -62,6 +62,7 @@
 - 浏览器（夹具）：375/1363 px、深浅主题、邮箱与外部钱包的选择页完整可见、无横向溢出，选「转入」进入表单，选「购买」关闭弹层。
 - 通知卡片的渲染读数（2026-10-02，无头 Chromium 经 Playwright 访问开发服务器，未连接钱包，通过页面内动态导入直接发布八条通知，不是购买流程；第四轮修复后加入「钱包会话已变化」重新读过一次）：1440 与 375 px、深浅主题、英文/中文/阿拉伯文；七种通知各渲染一张卡片，按当前网络不属于当前身份的那条不渲染；卡片宽 320 px（手机 343 px，两侧各 16 px），无横向溢出；深色背景 `#212d33`、浅色白底，标题与说明对背景的对比度不低于 5:1；错误类为 `role="alert"`，其余为 `role="status"`；阿拉伯文下方向为 RTL。这是脚本读数，不是人工视觉验收。
 - 通知的测量与计时读数（同一种脚本，第三轮修复后的代码）：两条常驻通知并存时切到中文、再切到法文，排在最前那条 Sonner 记录的高度与卡片实际高度相等（130/130 px、146/146 px）；排在后面那条记录的是缩小后的高度（法文 169.1 px，排到最前后实际为 178 px，即上面说的约 5% 误差）。一条 10 秒的结果被常驻通知挡住 13 秒后仍在；关掉前面的通知后它排到最前，6 秒时还在，12 秒时已自行关闭。
+- 新窗口：Stripe 以外的服务商（MoonPay 与 Meld 网络里的服务商）在新的浏览器窗口里打开支付页。拦截新窗口的环境里，Privy 显示「Something went wrong」「Unable to open payment window」，关窗后我们的通知为「银行卡购买未完成」（这条错误属于确定没成交，见决策 8）。2026-10-03 在 Claude 桌面应用的内置浏览器面板里遇到过，同一操作在 Chrome 里正常（用户报告）；钱包内置浏览器与社交应用内嵌网页的表现按验收清单 CF-6 核对。
 - 自动化不能证明：Privy 窗口与 Stripe 组件的真实渲染与 CSP 覆盖、移动端与 PWA 的弹窗行为、外部钱包所有权签名的交互、服务商的地区与 KYC 行为、到账与后续存款。以上都需要上线前提第 3、4 条的实测，逐行要求见[上线验收清单](../privy-card-funding-launch-checklist.md)。
 - 生产构建实测（2026-10-02，提交 `789d3202` 的构建，本地 Nitro 预览、强制 CSP、邮箱会话、主网，购买窗口只打开到金额页；之后宿主的加载改由发起一侧负责，没有重测）：选择页出现时宿主块已下载；点击「购买」到 Privy 发出第一个请求 22–29 ms（两次）；USD 100 有可用报价；关闭后无通知；没有 CSP 违规。Privy 自己用 15 ms 的定时器打开窗口。操作的窗口处于 `hidden`，定时器被对齐到 1 秒且不出帧，所以窗口出现与消失的观感没有验证；此前记录的「点击后 8–14 秒才出现」是同一状态叠加开发服务器与负载的结果，不是产品行为。
 
