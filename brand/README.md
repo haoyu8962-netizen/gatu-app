@@ -6,7 +6,7 @@
 
 | 路径 | 内容 | 来源 |
 |---|---|---|
-| `brand.json` | 名称、域名（主域名与仍需识别的旧域名）、邮箱、界面品牌色、Logo 颜色、PWA 主题色 | 仓库维护；应用与脚本只读这里 |
+| `brand.json` | 名称、域名（规范域名组）、邮箱、界面品牌色、Logo 颜色、PWA 主题色 | 仓库维护；应用与脚本只读这里 |
 | `LOGO-KIT.md` | Logo 与图标套件 v1.3 的说明：尺寸规则、安全空间、颜色、各平台接入方式 | 设计方原文 |
 | `svg/`、`png/` | 标志、简化标志、横版组合、字标；SVG 五种配色（on-light、on-dark、black、white、mono） | 设计方原件 |
 | `web/` | favicon、apple-touch、PWA 图标、`site.webmanifest`、`head.html` | 设计方原件；`icon.svg`、`icon-maskable-192.png` 与 Privy 登录邮件用的 `email-logo.png`（360×180、白底横版组合）由 `pnpm brand:derive-icons` 按套件几何派生 |

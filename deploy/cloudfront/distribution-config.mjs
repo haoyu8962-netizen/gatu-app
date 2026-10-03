@@ -187,9 +187,7 @@ export function createApiOriginRequestPolicyConfig() {
 		Comment: "Same-origin API on a Lambda function URL: every viewer header except Host, plus the viewer address",
 		HeadersConfig: {
 			HeaderBehavior: "whitelist",
-			// CloudFront allows at most ten whitelisted headers per origin request policy. X-Gatu-Forwarded-Host stays
-			// until the release that drops the gatu.ai group (docs/sairn-domain-cutover-plan.md, PR-B): the release
-			// still serving gatu hosts only writes that header, and the API cannot restore its origin without it.
+			// CloudFront allows at most ten whitelisted headers per origin request policy.
 			Headers: list([
 				"Accept",
 				"Content-Type",
@@ -198,7 +196,6 @@ export function createApiOriginRequestPolicyConfig() {
 				"Sec-Fetch-Site",
 				"User-Agent",
 				"X-Sairn-Forwarded-Host",
-				"X-Gatu-Forwarded-Host",
 				"CloudFront-Viewer-Address",
 				"CloudFront-Viewer-Country",
 			]),
