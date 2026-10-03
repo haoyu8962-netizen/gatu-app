@@ -7,7 +7,7 @@
 
 > **Sairn 改名与旧域名组退役**：转发主机名的请求头是 `x-sairn-forwarded-host`，路由标记是 `x-sairn-route`，Lambda 环境变量是 `SAIRN_*`。代码不再读写改名前的 `x-gatu-forwarded-host` 与 `x-gatu-route`（[切换方案](../../docs/sairn-domain-cutover-plan.md) PR-B，对应发布 p25）。
 > - 线上的 API 源站请求策略（`gatu-terminal-api`）白名单里仍有 `X-Gatu-Forwarded-Host`：2026-10-02 按方案 0.6 加入 `X-Sairn-Forwarded-Host` 后共 10 个头，正好是 CloudFront 的上限。`node deploy/cloudfront/distribution-config.mjs --api-origin-request-policy-config` 现在输出退役后的 9 个头。**p25 发布并验证之后**，再按方案 5.2 把线上策略更新成这 9 个头。
-> - 线上还是 p24 时不要提前删除白名单里的旧头，也不要退回 p23：p23 只写、只读旧头，缺了它 Lambda 还原不出公网 origin，同源 POST 会返回 403。p24 同时写新旧两个头、Lambda 先读新头，所以从 p25 回滚到 p24 不依赖旧头。
+> - p25 发布并验证之前，不要从白名单删除旧头，也不要退回 p23：p23 只写、只读旧头，缺了它 Lambda 还原不出公网 origin，同源 POST 会返回 403。2026-10-03 起线上是 p24b，它和 p24 一样同时写新旧两个头、Lambda 先读新头，所以从 p25 回滚到 p24b 不依赖旧头。回滚目标是 p24b，不是 p24：重新发布 p24 会关掉银行卡入金。
 > - Lambda 当前设置的 `GATU_TRUST_VIEWER_ADDRESS=true` 与留空的 `GATU_PUBLIC_ORIGIN` 都等于新代码的默认值，改名后行为不变；下次在控制台调整配置时把变量名改成 `SAIRN_*`。
 > - 构建环境变量 `GATU_BUILD_SHA`、`GATU_RELEASE_ID`、`GATU_BUILD_TIME` 改为 `SAIRN_*`；生产 Agent 槽位改为 `VITE_HYPERLIQUID_AGENT_NAME=sairn`（现有外部钱包用户需要重新授权）。
 > - AWS 资源名（S3 桶、分发、CloudFront 函数与策略、Lambda、IAM 用户 `gatu-edge`）保持不变，它们只是现有资源的标识。

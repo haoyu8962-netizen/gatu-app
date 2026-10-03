@@ -13,7 +13,7 @@
   "summary": "用户要求扫描并移除旧 gatu 的代码与文档记录。扫描 origin/dev（2846a6f8）后把命中分成四类，用户选择做前两类：按切换方案 4.2（PR-B）删除 brand.json 的 domains.legacy、公共 origin 的双组识别、Lambda 的旧转发头回退、CloudFront 请求与响应函数的旧头双写和旧路由标记、源站请求策略白名单里的 X-Gatu-Forwarded-Host，并给 scripts/brand.mjs 加退役名单；同时把 brand-assets、两份部署说明、AGENTS.md 等现行文档里过时的 gatu 内容改成现状。AWS 资源名、仓库名和历史记录按 ADR 0027 保留。分支 claude/retire-gatu-domain-group，PR #73，未合入、未发布；用户决定 2026-10-09 之后再合入。类型检查、全量单测、CloudFront 与品牌测试通过，九组变异都被检查拦下；线上只做了只读核对，没有改动任何 AWS、DNS 或 Privy 配置。",
   "thread": null,
   "baseCommit": "2846a6f8",
-  "commits": ["560158ab", "5708107a"],
+  "commits": ["560158ab", "5708107a", "f96c4dd9", "e481bffb"],
   "sources": [
     { "path": "docs/sairn-domain-cutover-plan.md" },
     { "path": "docs/adr/0032-gatu-offline-cutover-to-sairn.md" },
@@ -154,6 +154,20 @@
 - 线上源站请求策略的白名单没有读取；「仍含 `X-Gatu-Forwarded-Host`」来自 2026-10-02 的上线记录。
 - 没有做浏览器或真机验收。本次不改界面；`gatu.ai` 主机上的行为变化只有单元测试覆盖，那些主机已不提供网页。
 - 官网发布手册里关于 2026-10-02 那次发布的说法，来自[上线记录](2026-10-01-sairn-domain-cutover-plan.md)「上线执行」，本次没有重新核对桶里的对象。
+
+### 合并 `dev` 与 p24b（2026-10-04，Auto-fix）
+
+PR #73 开出后，`dev` 合入了 PR #74（银行卡入金 Meld 后续）和 PR #76（p24b 发布记录），GitHub 报告 #73 冲突。按 Auto-fix 的授权，`git fetch origin dev` 后合并 `498ea17a`，得到 `e481bffb`：
+
+- 唯一的文本冲突是生成的 `docs/work-memory/INDEX.md`，用 `pnpm memory:index` 重新生成。
+- ADR 0032 与切换方案自动合并。用排序后的 `git diff -U0` 增删行核对过：`dev` 的改动（#72 的 `bfff4ab3` 更正）和 #73 的改动都完整保留。
+
+[p24b 发布记录](2026-10-03-cloudfront-release-p24b.md)改变了本记录写下时的两个事实：
+
+- 2026-10-03 16:57Z 起，线上是 p24b（main `6da4c15a`，`cloudfront-2026-10-03-p24b`）。它的 CloudFront 函数与 Lambda 代码和 p24 相同，只多了两个银行卡入金开关。所以上文「线上是 p24」「p24 的回滚保险」的论证对 p24b 同样成立；「验证与限制」里的线上核对结果（p24、`3ced842e`）是 p24b 发布之前的读数。
+- p25 的回滚目标变成 p24b：重新发布 p24 会同时关掉银行卡入金。p24b 的产物在仓库外的工作树 `gatu-release-p25` 里，构建 p25 要用另一个工作树，不能覆盖它。
+
+已据此更正：ADR 0032 补充里的发布间隙与回滚两条、`deploy/cloudfront/README.md` 顶部说明，以及切换方案「按阶段回滚」里 5.1 那一行（追加更正，原文保留）。p24b 记录也写明旧域名清理发布仍叫 p25，与本记录一致。
 
 ## 后续与替代关系
 

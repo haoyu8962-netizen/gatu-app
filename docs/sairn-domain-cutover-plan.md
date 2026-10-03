@@ -178,7 +178,7 @@ p24 发布到窗口之间，站内推荐链接、法律页链接、站点地图�
 |---|---|
 | 阶段 2、3（4.1 之前） | 只恢复别名、证书与 DNS；p24 内容不动 |
 | 4.1 之后（新 Privy 应用已删 gatu origin） | 在**新** Privy 应用里重新加入 `https://app.gatu.ai`、`https://testnet.gatu.ai`，自建 Reown 项目同理。不要换回旧 App ID：那会再次改变邮箱用户的内嵌钱包地址 |
-| 5.1 之后（线上是 p25，不再识别 gatu 主机） | 先用 1.1 保留的 p24 产物按 functions → lambda → sync → invalidate 重新发布 p24，再做上面两行 |
+| 5.1 之后（线上是 p25，不再识别 gatu 主机） | 先用 1.1 保留的 p24 产物按 functions → lambda → sync → invalidate 重新发布 p24，再做上面两行。2026-10-04 更正：2026-10-03 起线上是 p24b（银行卡入金主网、测试网打开），回滚应重新发布 p24b 的产物；重新发布 p24 会同时关掉卡入金。p24b 的产物在工作树 `gatu-release-p25` 里（见 [p24b 发布记录](work-memory/sessions/2026-10-03-cloudfront-release-p24b.md)），构建 p25 要用另一个工作树，不能覆盖它 |
 | 5.2 之后（白名单已删 `X-Gatu-Forwarded-Host`） | p24 同时写新旧头、Lambda 先读新头，不受影响；只有退回 p23 时才要先把旧头加回白名单 |
 | 5.4 之后（gatu 证书与验证记录已删） | 先为 gatu 名字重新申请证书，在 gatu.ai 区加回验证 CNAME，签发后才能挂回别名 |
 
