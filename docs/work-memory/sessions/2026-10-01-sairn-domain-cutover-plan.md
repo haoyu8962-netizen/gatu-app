@@ -193,7 +193,7 @@
 用户随后在 Cloudflare 添加了 4 条网页记录，权威应答核对无误：`app` → `d2i25dhfjwco8b.cloudfront.net`、`testnet` → `dg9o2gpw3mt8q.cloudfront.net`、`www` → `d1bgo95x2hobvu.cloudfront.net`、根域名经 CNAME 拉平。
 
 1. **合并与晋升**：PR #68 在 CI 全绿（`e2e873f2`）后以 merge commit 合入 `dev`（`682430ba`）。晋升 PR #67 改名为「Promote dev to main: PR 66 and PR 68」，7 项 CI 全绿后合入 `main`（`3ced842e`），树与 `682430ba` 相同。浏览器回归分片 1 用时 22 分 24 秒，接近 25 分钟上限。
-2. **构建**：在仓库外的工作树 `/Users/zhixing/我的项目/gatu-release-p24` 用 Node 22.15 构建 p24，`.env.local` 只软链、不读取，开关全部在命令行显式给出。
+2. **构建**：在仓库外的工作树 `gatu-release-p24`（2026-10-03 更正：原文写的是带本机用户名的绝对路径，记录里不放个人数据，改为目录名）用 Node 22.15 构建 p24，`.env.local` 只软链、不读取，开关全部在命令行显式给出。
    - `build-meta.json`：`3ced842e`、`cloudfront-2026-10-02-p24`；主网赞助 `true`、测试网外部 `true`、测试网赞助 `false`；配对 `false`。
    - 包体总量 3,191,607 gzip 字节，比基线多 5,686；Lambda 225.92 kB。
    - 产物核对：新 Privy App ID 出现在 5 个文件，旧 ID 0 个，无开发用 Agent 槽位。
