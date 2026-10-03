@@ -68,6 +68,8 @@ const budgets = {
 	// +440, desktop runtime startup +91). Measured as the local Node 22.15.0 build of 1cb73bcf (3,197,561) minus that
 	// of c110dc80 (3,196,169), both with the fixed metadata of docs/terminal-performance-baseline.md; the ADR 0037
 	// branch's own build against 04469b52 had measured +1,216.
+	// Merged with dev a0c05740 on 2026-10-03: the three raises above were measured before dev's Privy upgrade and card
+	// funding and are added to its 3,281,171. The fixed-metadata build of the merge 0944584d measured 3,293,592 (+5,941).
 	totalGzipBaselineBytes: 3_287_651,
 	totalGzipAllowedIncreaseBytes: 10_000,
 	tradeStartup: {
@@ -98,7 +100,8 @@ const budgets = {
 				// and their history tabs (+114), and ADR 0037 adds formatDecimalString and the number-format hook to the
 				// order form, order book and funds recovery host (+91). Measured with the fixed metadata of
 				// docs/terminal-performance-baseline.md as the local Node 22.15.0 builds of 2d6f4676 (201,842), c110dc80
-				// (201,956) and 1cb73bcf (202,047).
+				// (201,956) and 1cb73bcf (202,047). After merging dev a0c05740, the fixed-metadata build of 0944584d measured
+				// 202,173, 20 bytes under this allowance, and the CI-metadata build 202,193, exactly at it.
 				baselineGzipBytes: 192_193,
 				allowedIncreaseBytes: 10_000,
 			},

@@ -7,10 +7,10 @@
   "kind": "task",
   "status": "verified",
   "topics": ["i18n-runtime", "pr-review"],
-  "summary": "把页脚时钟、Vault 与组合收益图语言依赖、数字格式刷新（ADR 0036）三条叠放分支以 --no-ff 合进从 origin/dev 建的 claude/integrate-locale-number-format（PR #71），按 19 轮 Codex 只读对抗审查补测试、加强契约并重定总量预算基线。PR 开出后按用户要求再并入四条后续分支：删除未用的 lib/chart/format.ts、CI 失效测试路径修复、日期与列表 locale 契约、精确小数串跟随数字格式（ADR 0037）；日期契约改用从数字契约抽出的共用模块图，15 个测试补进 CI，总量与桌面运行时基线按集成后的固定元数据实测改写；第 20–27 轮审查修了日期契约的多处漏报、小数契约的绕过与 CSV 导出切换语言时的混用，第 27 轮三路 9.5/9.3/9.2、无 P0–P2。类型检查、全量单测（8,383 项通过）、Biome、CI 式与固定元数据构建通过；没有浏览器验收，桌面运行时余量只剩 28 字节。",
+  "summary": "把页脚时钟、Vault 与组合收益图语言依赖、数字格式刷新（ADR 0036）三条叠放分支以 --no-ff 合进从 origin/dev 建的 claude/integrate-locale-number-format（PR #71），按 19 轮 Codex 只读对抗审查补测试、加强契约并重定总量预算基线。PR 开出后按用户要求再并入四条后续分支：删除未用的 lib/chart/format.ts、CI 失效测试路径修复、日期与列表 locale 契约、精确小数串跟随数字格式（ADR 0037）；日期契约改用从数字契约抽出的共用模块图，15 个测试补进 CI，总量与桌面运行时基线按集成后的固定元数据实测改写；第 20–27 轮审查修了日期契约的多处漏报、小数契约的绕过与 CSV 导出切换语言时的混用，第 27 轮三路 9.5/9.3/9.2、无 P0–P2。类型检查、全量单测（8,383 项通过）、Biome、CI 式与固定元数据构建通过；没有浏览器验收。之后为解决冲突合并了 dev 的 a0c05740（Privy 3.46.0 升级与卡入金），两边内容都保留，总量基线叠加为 3,287,651；合并后桌面运行时按固定元数据余 20 字节，按 CI 式元数据正好等于上限。",
   "thread": null,
   "baseCommit": "682430ba",
-  "commits": ["b99a1190", "2b7973b4", "5425b7c1", "04469b52", "41c585cb", "089747f5", "18cc35b1", "90dc70ef", "1419edb8", "6ed51e97", "c51cb05c", "8b0dde85", "cb15f488", "1bee47ea", "deff2eba", "5ea0d370", "f1956c10", "a8a4fed1", "236c998d", "1dba0675", "446cbfc6", "2d6f4676", "00169c24", "162a1501", "229d9683", "bc6c206d", "56fd6d61", "242db030", "62d7f26b", "f25be9a3", "c110dc80", "1cb73bcf", "f1f769c5", "fb1cf874", "a7ed27d5", "2e00be19", "1b850f0d", "437831d0", "d1f7acb7", "e82a8af3", "dce11315", "efbcf49f", "21f8d726", "692bb364", "64de9f4d", "eb2882f7", "fac41a1b", "9fa93b0d", "f1551d76"],
+  "commits": ["b99a1190", "2b7973b4", "5425b7c1", "04469b52", "41c585cb", "089747f5", "18cc35b1", "90dc70ef", "1419edb8", "6ed51e97", "c51cb05c", "8b0dde85", "cb15f488", "1bee47ea", "deff2eba", "5ea0d370", "f1956c10", "a8a4fed1", "236c998d", "1dba0675", "446cbfc6", "2d6f4676", "00169c24", "162a1501", "229d9683", "bc6c206d", "56fd6d61", "242db030", "62d7f26b", "f25be9a3", "c110dc80", "1cb73bcf", "f1f769c5", "fb1cf874", "a7ed27d5", "2e00be19", "1b850f0d", "437831d0", "d1f7acb7", "e82a8af3", "dce11315", "efbcf49f", "21f8d726", "692bb364", "64de9f4d", "eb2882f7", "fac41a1b", "9fa93b0d", "f1551d76", "e2e81be0", "0944584d"],
   "sources": [
     { "path": "docs/work-memory/sessions/2026-10-02-footer-clock-live-minute.md" },
     { "path": "docs/work-memory/sessions/2026-10-02-vault-fetched-time-locale.md" },
@@ -830,6 +830,62 @@ B、C 两路没有 P0–P2。发现与处理：
 - C 路只剩已登记的 P3：质押与金库的测试没有走完「显示 → 确认 → 提交参数」的链路，记为后续。
 - 已经过线，按约定不再加轮。第 27 轮之后的改动只有上面三处措辞更正和本小节，没有再送审。
 
+### 合并 `dev`（2026-10-03，Auto-fix）
+
+PR #69（Privy React Auth 3.46.0 升级）与 #70（卡入金，ADR 0034）合入 `dev`（`a0c05740`）后，PR #71 与 `dev` 冲突。Auto-fix 的授权是：拉取 `dev` 并合并刚拉取的引用，不变基、不强推，保留两边的意图。本会话执行 `git fetch origin dev` 与 `git merge --no-ff origin/dev`，得到合并提交 `0944584d`。共 8 个文件冲突：
+
+- `deposit-modal.tsx`：两边各加了一行导入，本 PR 的 `toPlainDecimal` 与 `dev` 的 `warmPrivyFiatFundingHost` 都保留。
+- `deposit-modal-withdrawal-routing-guard.test.tsx`：模块桩里本 PR 加了 `getResolvedFormatLocale`，`dev` 加了 `useIsTestnet`，两项都保留。`testState` 里两项都有初值，并在 `beforeEach` 里重置。
+- `terminal-tests.yml`：
+  - 地区步骤保留本 PR 的 `geo-api.test.ts`，`dev` 仍列着已删除的 `geo-server-functions.test.ts`；同时加上 `dev` 新增的三个卡入金测试。
+  - `dev` 在「Test terminal interaction and mounting contracts」里也加了 `i18n-reactivity-contract.test.ts`。这个文件已在本 PR 的「Test number format and runtime locale contracts」步骤里，所以去掉 `dev` 那一处，避免同一文件跑两次。`dev` 的结构测试只检查文件是否出现在 workflow 里，仍然通过。
+- `ci-workflows.test.mjs`：本 PR 的「列出的路径必须存在」与 `dev` 的两项新测试都保留，共 10 项。
+- `CHANGELOG.md`、`docs/adr/README.md`：两边的条目都保留，ADR 目录按编号排成 0034、0036、0037。
+- `docs/work-memory/INDEX.md`：用 `pnpm memory:index` 重新生成。
+- `check-client-bundle-budget.mjs`：
+  - 注释：保留 `dev` 的两段（Privy 升级 +83,687、卡入金 +11,563，基线到 3,281,171）和本 PR 的三段。
+  - 总量基线：3,281,171 + 4,671 + 417 + 1,392 = 3,287,651。
+  - 桌面运行时基线：`dev` 没改（191,988），自动合并取本 PR 的 192,193。
+  - 交易页静态启动基线：本 PR 没改，取 `dev` 的 1,643,929。
+
+合并后的核对：
+
+- 双方都改过的文件共 16 个，包括上面 8 个，以及自动合并的 `AGENTS.md`、`i18n-reactivity-contract.test.ts` 和六份 `messages.po`。比较方法是把 `git diff -U0` 的增删行排序后逐一对照。冲突文件里，除了预算脚本和重新生成的 `INDEX.md`，其余 6 个都满足两点：合并结果相对 `dev` 的改动等于本 PR 原来的改动，相对本 PR 的改动等于 `dev` 原来的改动。唯一的例外是上面去掉的那条重复 CI 条目。自动合并的 `AGENTS.md`、语言契约和六份 `messages.po` 也都满足这两点。
+- 合并后运行 `pnpm i18n:extract`，没有改动任何目录。五种语言里，合并结果的缺译条目与两边相同，没有丢失译文。
+- 本工作树的 `node_modules` 当时还是 Privy React Auth 3.32.2。按合并后的锁文件执行 `pnpm install --frozen-lockfile`，装上 Privy React Auth 3.46.0、Privy wagmi 4.0.17 和 sonner 的新补丁后，才运行下面的检查。
+
+合并提交 `0944584d` 的验证：
+
+- `pnpm typecheck`（hl-react、ui、terminal）：通过。
+- 契约：数字、语言、日期、小数显示四份契约，加上 `locale-format-contract`、`format.test.ts`、`lingui-helper-translator-contract`，共 7 个文件、490 项通过。语言契约有 259 项，包含 `dev` 新登记的 3 个组件；四份契约在合并后的源码上都是 0 处违规，`dev` 新增的卡入金组件也在它们的扫描范围内。
+- 充值、卡入金、通知与构建配置相关的 18 个测试文件，共 457 项通过。
+- `node --test scripts/ci-workflows.test.mjs` 10 项、预算脚本自测 19 项、`memory:check`、`memory:test` 8 项都通过；`git diff --check origin/dev...HEAD` 通过。
+- Biome：本 PR 相对新 `dev` 改动了 190 个脚本文件，在 Biome 范围内的 185 个没有问题。
+- 全量 `pnpm --filter @sairn/terminal test -- --maxWorkers=4`（12:55:26 起，150 秒，构建都已结束）：659 个文件中 658 个通过、1 个跳过；8,549 项中 8,548 项通过、1 项跳过（`websocket-soak.test.ts`）。开始运行时，工作区只有本记录未提交；预算脚本的两行注释是运行期间加的，终端测试不读这个脚本。
+- 包体：在草稿目录里建了两个隔离 worktree，都切到 `0944584d`，各自执行 `pnpm install --frozen-lockfile --prefer-offline`，只有仓库跟踪的 `.env.example`，没有 `.env.local`。两边用 Node 22.15.0、pnpm 10.21.0 并行构建，配对关闭，`NODE_ENV=production`、`NITRO_PRESET=node-server`：
+  - 固定元数据：`docs/terminal-performance-baseline.md` 的 `e4e09966…` / `startup-guardrail-baseline` / `2026-08-27T00:00:00.000Z`，构建后运行 `perf:startup`；
+  - CI 式元数据：`SAIRN_BUILD_SHA` 取提交本身，`SAIRN_RELEASE_ID=ci-18000000000-1`，不固定构建时间。
+
+  两次 `pnpm --filter @sairn/terminal build` 都成功退出，其中包括 chunk 循环检查与预算检查；固定元数据那次之后的 `perf:startup` 也通过。
+
+  | 项（gzip 字节） | 固定元数据 | CI 式元数据 | 基线 + 容差 |
+  |---|---:|---:|---:|
+  | 客户端总量 | 3,293,592 | 3,293,997 | 3,287,651 + 10,000 |
+  | 路由预加载本身（6 个，诊断项） | 516,777 | 516,785 | — |
+  | 运行时入口脚本（1 个） | 2,047 | 2,046 | — |
+  | 语义入口（4 个） | 138,552 | 138,561 | — |
+  | 交易页静态启动（101 个资产） | 1,629,887 | 1,629,974 | 1,643,929 + 10,000 |
+  | 手机运行时增量（14 个资产） | 118,017 | 118,028 | 110,580 + 10,000 |
+  | 桌面运行时增量（29 个资产） | 202,173 | 202,193 | 192,193 + 10,000 |
+
+  两份产物都是 443 个资产，其中 JS 441 个、CSS 2 个；路由诊断沿用前文的 `route-diagnostic.mjs`。
+  - 桌面运行时增量按固定元数据余 20 字节，按 CI 式元数据正好等于上限（`increase <= allowance`，所以通过）。
+  - 与本 PR 合并前的固定元数据构建（`a7ed27d5`，202,159）相比，合并 `dev` 只多 14 字节。
+  - 上一次推送 `e2e81be0` 的真实 CI（Production Builds，run 37059478368）量到 202,128，比本地 CI 式构建 `a7ed27d5` 的 202,165 低 37 字节。
+  - `docs/terminal-performance-baseline.md` 只在超出容差时要求去掉增量或重定基线，并且不允许只为让 CI 变绿改数字。两种元数据都没有超出，所以基线没有调整，只在预算脚本注释里记下了叠加方式和这次的实测。
+  - 真实 CI 的结果以这次推送后的 Production Builds 为准；如果超限，按规则处理。
+- 上面各项的输出（构建、路由诊断、全量单测、CI 结构与预算脚本测试、记录检查）已脱敏存进 `.worklog/2026-10-02/integrate-locale-number-format/merge-dev/`。契约与充值相关的两次定向运行没有单独存档，它们的文件都包含在全量单测里。
+
 ## 验证与限制
 
 版本：`2d6f4676`，加上本节与上面第 16 轮那条更正（只改本记录）；预算基线调整 `00169c24` 只改了一个数和注释，之后只重跑了预算检查和它的测试。产品代码与 `04469b52`、`5d3ff8e7` 相同，之后的提交只改测试、CI、规则与文档。检查在 2026-10-03 00:47 之后、全部 Codex 进程结束后进行，没有和审查同时运行。
@@ -875,6 +931,7 @@ B、C 两路没有 P0–P2。发现与处理：
 ## 后续与替代关系
 
 - 已推送并开 [PR #71](https://github.com/zora4523-bot/gatu-app/pull/71) 到 `dev`，未合入。合入后，七条源分支的提交随之进入 `dev`。
+  - 2026-10-03：PR #69、#70 合入 `dev` 后本 PR 出现冲突，已合并 `dev` 的 `a0c05740` 并推送，见「合并 `dev`」。
 - 已完成（2026-10-03「第二次集成」）：下面三条分支已并入本 PR，原写的合并注意事项保留作历史。有三条未推送的分支与本 PR 有关，本 PR 合入后都要先合并 `dev`（2026-10-03 用 `git log`/`git diff` 核对）：
   - `claude/angry-northcutt-d85ed7`（`f7ae69a2`，ADR 0037，叠在 `04469b52` 上）处理了上面「手写数字」清单的大部分，会和本 PR 在 `docs/number-format-setting.md` 的「未完成」清单处冲突。它没有改图表仓位线里的仓位数量（`lib/chart/tradingview-overlays.ts`），合并时这一条要保留。
   - `claude/sleepy-archimedes-fbff3e`（`cae7c133`、`6b18c20b`，叠在 `04469b52` 上）加了日期 `locale` 契约。它的组件识别代码复制自 `04469b52`/`089747f5`，没有用共用模块 `harness/react-source.ts`，所以第 4–16 轮对识别规则的修补都没有带过去。合并时要改用共用模块，并把 CI 条目移到本 PR 新增的步骤。
@@ -891,4 +948,5 @@ B、C 两路没有 P0–P2。发现与处理：
 - 如果要处理语言契约剩余的两项 P3，做法是区分「尚未解析」和「已知的普通值」，或者按需重算受影响的绑定，避免把迭代中的临时结果永久并入。
 - 图表仓位线的仓位数量仍不跟随数字格式设置（`lib/chart/tradingview-overlays.ts` 第 335 行 `size.abs().toString()`），可按规则 10 改经 `formatDecimalString`。
 - 桌面运行时启动按 CI 元数据只剩 28 字节余量（第 20 轮修复后；之前为 78）；之后的增长很可能超限，超限时要么去掉增量，要么按规则说明理由后重定基线。
+  - 更新（2026-10-03 合并 `dev` 之后）：固定元数据余 20 字节，本地 CI 式元数据余 0 字节（202,193，正好等于上限）。上一次推送的真实 CI 比本地 CI 式构建低 37 字节。按本地测量，任何让桌面运行时变大的改动都会超限。
 - 两条后续分支自己记下的后续事项（如 `bpsToPercentage`、`close-order-feedback.ts` 的指数写法、LiFi 只有 jsdom 证据、`processTrades` 的可选 `locale`）仍以各自记录为准。
