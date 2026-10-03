@@ -107,3 +107,4 @@
   - 只有用内嵌钱包显式批准 Agent（链接手机、API 钱包）且应用内还没确认时会弹 Privy 确认框；
   - 智能钱包关联由 Privy SDK 内部完成，也是静默的。区别在于它在登录后自动发生，不是用户点了按钮。
   - Privy 官方《Configure smart wallets in the SDK》建议把 `SmartWalletsProvider` 挂在根部附近，用户有内嵌钱包后自动生成智能钱包，没有提供单独推迟的设置。
+- **智能钱包关联签名**（续）：用户随后决定按建议接受为有界例外。`AGENTS.md`「登录、刷新和状态检查绝不签名」后面加了唯一例外：Privy `SmartWalletsProvider` 自动创建智能钱包时那一次不显示界面的 SIWE 关联签名，其他签名仍不允许。同步了 `docs/trading-onboarding.md` 的「已知偏差」段、ADR 0033「待用户决定」一节与目录行。

@@ -563,12 +563,14 @@ account, then verify legal status before allowing actions. Do not add a second
 registration form, create wallets for external-wallet users, or imitate the
 official site's signing prewarm. Page load and session restoration never sign.
 
-Known deviation, not yet decided: Privy's `SmartWalletsProvider` signs a SIWE
-message without UI and links a smart wallet the first time an embedded wallet
-appears for a user without one. This SDK behaviour predates ADR 0033 and is
-not a terms, Agent, builder-fee or trading signature, but it is a signature
-during login. ADR 0033 records it as an open decision; until that is made,
-do not treat it as an accepted exception to the rule above.
+Accepted exception (user decision, 2026-10-04): Privy's `SmartWalletsProvider`
+signs a SIWE message without UI and links a smart wallet the first time an
+embedded wallet appears for a user without one. Privy documents this as its
+automatic smart-wallet creation (`SmartWalletsProvider` near the root, smart
+wallets created once a user has an embedded wallet). It predates ADR 0033,
+moves no funds and is not a terms, Agent, builder-fee or trading signature;
+sponsored deposits depend on it. It is the only signature allowed during login
+or session restoration; no other signature may be added to those paths.
 
 A fresh successful email login creates an in-memory, user-bound onboarding
 intent. Once its exact owner and environment resolve, legal and funding checks
