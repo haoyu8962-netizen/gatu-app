@@ -89,6 +89,9 @@ vi.mock("@/providers/base-ui-direction", () => ({
 vi.mock("@/providers/client-runtime", () => ({
 	ClientRuntimeProvider: ({ children }: { children: React.ReactNode }) => children,
 }));
+vi.mock("@/providers/email-embedded-wallet-provider", () => ({
+	EmailEmbeddedWalletProvider: ({ children }: { children: React.ReactNode }) => children,
+}));
 vi.mock("@/providers/privy-login-method-observer", () => ({ PrivyLoginMethodObserver: () => null }));
 vi.mock("@/providers/pwa-install", () => ({
 	PwaInstallProvider: ({ children }: { children: React.ReactNode }) => children,

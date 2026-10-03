@@ -62,5 +62,10 @@
 		"id": "brand-identity",
 		"title": "品牌标识与改名迁移",
 		"documents": ["docs/brand-migration-plan.md"]
+	},
+	{
+		"id": "wallet-onboarding",
+		"title": "钱包身份与首次交易引导",
+		"documents": ["docs/trading-onboarding.md", "docs/email-trading-signing.md"]
 	}
 ]

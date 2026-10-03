@@ -39,7 +39,7 @@ describe("Privy wallet catalog", () => {
 			expect(config.loginMethods).toEqual(["wallet", "email"]);
 			expect(config.globalDisablePasskeys).toBe(true);
 			expect(config.embeddedWallets).toEqual({
-				ethereum: { createOnLogin: "users-without-wallets" },
+				ethereum: { createOnLogin: "off" },
 				showWalletUIs: false,
 			});
 			expect(config.appearance?.walletList).toEqual(PRIVY_WALLET_LIST);

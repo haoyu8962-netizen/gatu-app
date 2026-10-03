@@ -2837,10 +2837,12 @@ msgid "Discard local key"
 msgstr "स्थानीय कुंजी हटाएँ"
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
+#: src/components/trade/components/legal-acceptance-modal.tsx
 #: src/components/trade/header/user-menu.tsx
 msgid "Disconnect"
 msgstr "डिस्कनेक्ट करें"
 
+#: src/hooks/wallet/use-wallet-session.ts
 #: src/hooks/wallet/use-wallet-session.ts
 msgid "Disconnect failed: the active trading account could not be verified. Please retry."
 msgstr "डिस्कनेक्ट विफल: सक्रिय ट्रेडिंग खाता सत्यापित नहीं किया जा सका। कृपया फिर से प्रयास करें।"
@@ -7248,6 +7250,7 @@ msgstr "ट्रैकिंग फिर से शुरू करें"
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/chart/tradingview-chart.tsx
 #: src/components/trade/components/legal-acceptance-modal.tsx
+#: src/components/trade/components/legal-acceptance-modal.tsx
 #: src/components/trade/components/market-asset-info.tsx
 #: src/components/trade/components/market-asset-info.tsx
 #: src/components/trade/layout/terminal-boot-error.tsx
@@ -10992,6 +10995,10 @@ msgstr "खाता मोड अपडेट करने के लिए व
 msgid "Wallet not connected"
 msgstr "वॉलेट कनेक्ट नहीं है"
 
+#: src/components/trade/components/legal-acceptance-modal.tsx
+msgid "Wallet not ready"
+msgstr "वॉलेट तैयार नहीं है"
+
 #: src/components/trade/components/establish-connection-modal.tsx
 msgid "Wallet or network changed before the connection completed. Reopen the action for the current account."
 msgstr "कनेक्शन पूरा होने से पहले वॉलेट या नेटवर्क बदल गया। वर्तमान खाते के लिए कार्रवाई दोबारा खोलें।"
@@ -11004,6 +11011,10 @@ msgstr "रेफ़रल अनुरोध की पुष्टि से �
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Wallet returned a transaction hash, but it is not visible on Arbitrum yet. Check your wallet activity or Arbiscan before retrying to avoid sending the deposit twice."
 msgstr "वॉलेट ने लेनदेन हैश लौटाया है, लेकिन वह अभी Arbitrum पर दिखाई नहीं दे रहा है। जमा दो बार भेजने से बचने के लिए दोबारा प्रयास करने से पहले वॉलेट गतिविधि या Arbiscan जांचें."
+
+#: src/components/trade/components/legal-acceptance-modal.tsx
+msgid "We could not finish setting up your wallet. Check your connection and try again, or disconnect and log in again."
+msgstr "हम आपके वॉलेट का सेटअप पूरा नहीं कर सके। अपना कनेक्शन जाँचें और फिर प्रयास करें, या डिस्कनेक्ट करके दोबारा लॉग इन करें।"
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
 msgid "We could not verify the legal status for this wallet. Check your connection and try again."
