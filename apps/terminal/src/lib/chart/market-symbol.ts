@@ -1,18 +1,13 @@
 import { CHART_EXCHANGE, CHART_QUOTE_ASSET } from "@/config/chart";
 import type { UnifiedMarketInfo } from "@/lib/hyperliquid";
-import { normalizeChartSymbolKey, priceScaleFromMid } from "./symbol";
+import { type ChartPriceFormat, getChartPriceFormat } from "./price-format";
+import { normalizeChartSymbolKey } from "./symbol";
 
-export type ChartSymbolInfo = {
+export type ChartSymbolInfo = ChartPriceFormat & {
 	name: string;
 	ticker: string;
 	description: string;
-	pricescale?: number;
 };
-
-function priceScaleFromSzDecimals(szDecimals: number): number {
-	const decimals = Math.min(Math.max(6 - szDecimals, 2), 8);
-	return 10 ** decimals;
-}
 
 export function getChartApiSymbol(market: UnifiedMarketInfo): string {
 	return market.name;
@@ -49,17 +44,12 @@ export function isChartMarketSymbol(market: UnifiedMarketInfo, symbolName: strin
 	return getChartMarketKeys(market).some((key) => getChartMarketLookupKey(key) === lookupKey);
 }
 
-export function getChartPriceScale(market: UnifiedMarketInfo): number {
-	if (market.markPx) return priceScaleFromMid(market.markPx);
-	return priceScaleFromSzDecimals(market.szDecimals);
-}
-
 export function getChartSymbolInfo(market: UnifiedMarketInfo): ChartSymbolInfo {
 	const displayName = getChartDisplayName(market);
 	return {
 		name: displayName,
 		ticker: getChartApiSymbol(market),
 		description: displayName,
-		pricescale: getChartPriceScale(market),
+		...getChartPriceFormat(market.szDecimals, market.kind === "spot" ? "spot" : "perp", market.markPx),
 	};
 }
