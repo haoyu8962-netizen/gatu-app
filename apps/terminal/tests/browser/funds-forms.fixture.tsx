@@ -1,5 +1,6 @@
 import { Button } from "@sairn/ui";
 import { useState } from "react";
+import { FundsModalBackButton } from "@/components/trade/components/funds-modal-back-button";
 import { FundsModalShell } from "@/components/trade/components/funds-modal-shell";
 import { DepositForm } from "@/components/trade/tradebox/deposit/deposit-form";
 import { DepositMethodChooser } from "@/components/trade/tradebox/deposit/deposit-method-chooser";
@@ -55,6 +56,11 @@ export function FundsFormsFixture() {
 				}}
 				presentation={mobile ? "drawer" : "modal"}
 				tab={form ?? "deposit"}
+				headerStart={
+					form === "deposit" && cardFunding && depositStep === "transfer" ? (
+						<FundsModalBackButton onClick={() => setDepositStep("methods")} />
+					) : null
+				}
 			>
 					{showsDepositMethods ? (
 						<DepositMethodChooser

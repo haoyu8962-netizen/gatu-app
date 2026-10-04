@@ -253,9 +253,11 @@ async function expectFundsDialogScroll(
 }
 
 /**
- * The close and back buttons reach below the header, so at every scroll offset the only body
- * content allowed under them is the form's sticky heading band, which must be painted in the
- * dialog's own surface colour. Returns each offender as `offset: element`.
+ * The close and back buttons reach below the header. At every scroll offset each of them must be
+ * the topmost element across its own box, and the only body content allowed under it is the form's
+ * sticky heading band, painted fully opaque in the dialog's own surface colour. This samples nine
+ * points per control at each offset through hit testing: it is not a pixel proof, and it does not
+ * see content painted with `pointer-events: none`. Returns each offender as `offset: description`.
  */
 async function readContentUnderFixedControls(body: Locator, controls: Locator[], offsets: number[]) {
 	const handles = await Promise.all(controls.map((control) => control.elementHandle()));
@@ -265,8 +267,14 @@ async function readContentUnderFixedControls(body: Locator, controls: Locator[],
 			const heading = node.querySelector('[data-slot="funds-modal-heading"]');
 			const surface = getComputedStyle(popup).backgroundColor;
 			const offenders: string[] = [];
-			if (heading && (getComputedStyle(heading).backgroundColor !== surface || surface === "rgba(0, 0, 0, 0)")) {
-				offenders.push(`heading band is ${getComputedStyle(heading).backgroundColor} on ${surface}`);
+			if (heading) {
+				const band = getComputedStyle(heading).backgroundColor;
+				if (band !== surface || !/^rgb\(/.test(surface)) offenders.push(`heading band is ${band} on ${surface}`);
+				let opacity = 1;
+				for (let element: Element | null = heading; element; element = element === popup ? null : element.parentElement) {
+					opacity *= Number(getComputedStyle(element).opacity);
+				}
+				if (opacity !== 1) offenders.push(`heading band has opacity ${opacity}`);
 			}
 			for (const offset of scrollOffsets) {
 				node.scrollTop = offset;
@@ -274,10 +282,19 @@ async function readContentUnderFixedControls(body: Locator, controls: Locator[],
 				for (const control of controlNodes) {
 					if (!control) continue;
 					const box = control.getBoundingClientRect();
+					const label = control.getAttribute("aria-label") ?? control.textContent?.trim();
+					for (const fraction of [0.25, 0.5, 0.75]) {
+						for (const y of [box.top + box.height * 0.25, box.top + box.height / 2, box.top + box.height * 0.75]) {
+							const top = document.elementFromPoint(box.left + box.width * fraction, y);
+							if (!top || !control.contains(top)) offenders.push(`${offset}: ${label} is covered by ${top?.tagName}`);
+						}
+					}
 					for (const x of [box.left + 1, (box.left + box.right) / 2, box.right - 1]) {
 						for (const y of [box.top + 1, (box.top + box.bottom) / 2, box.bottom - 1]) {
 							if (y < bodyBox.top || y > bodyBox.bottom) continue;
-							const content = document.elementsFromPoint(x, y).find((element) => element !== node && node.contains(element));
+							const content = document
+								.elementsFromPoint(x, y)
+								.find((element) => element !== node && node.contains(element));
 							if (!content || heading?.contains(content) || (heading && content.contains(heading))) continue;
 							offenders.push(`${offset}: ${content.tagName.toLowerCase()} ${content.textContent?.trim().slice(0, 40)}`);
 						}
@@ -419,19 +436,55 @@ for (const viewport of [
 		const overflow = viewport.height < 300 ? "required" : "any";
 		const forms = [
 			{ open: "Open deposit", heading: "Deposit USDC from Arbitrum", layout: "funding-address", overflow },
-			{ open: "Open withdraw", heading: "Withdraw USDC to Arbitrum", layout: null, overflow },
-			{ before: "Toggle email", open: "Open deposit", heading: "Deposit USDC from Arbitrum", layout: null, overflow },
+			{ open: "Open withdraw", heading: "Withdraw USDC to Arbitrum", focus: "Amount", overflow },
+			{ before: "Toggle email", open: "Open deposit", heading: "Deposit USDC from Arbitrum", focus: "Amount", overflow },
 			{ before: "Toggle card funding", open: "Open deposit", heading: "Deposit", layout: "methods", overflow: "any" },
+			{ open: "Open deposit", transfer: true, heading: "Deposit USDC from Arbitrum", overflow },
+			{ before: "Toggle email", open: "Open deposit", transfer: true, heading: "Deposit USDC from Arbitrum", overflow },
 		] as const;
 
 		for (const form of forms) {
 			if ("before" in form) await page.getByRole("button", { name: form.before, exact: true }).click();
 			await page.getByRole("button", { name: form.open, exact: true }).click();
+			const methods = dialog.locator('[data-deposit-layout="methods"]');
+			const back = dialog.getByRole("button", { name: "Back", exact: true });
+			if ("transfer" in form) {
+				await waitForDialogTransition(page);
+				await methods.locator('[data-deposit-method="transfer"]').click();
+				await expect(methods).toHaveCount(0);
+			}
 			const heading = dialog.locator('[data-slot="funds-modal-heading"]');
 			await expect(heading).toHaveCount(1);
 			await expect(heading).toContainText(form.heading);
-			if (form.layout) await expect(dialog.locator(`[data-deposit-layout="${form.layout}"]`)).toBeVisible();
-			await expectFundsDialogScroll(page, "Close", form.overflow);
+			if ("layout" in form) await expect(dialog.locator(`[data-deposit-layout="${form.layout}"]`)).toBeVisible();
+			await expect(back).toHaveCount("transfer" in form ? 1 : 0);
+			await expectFundsDialogScroll(page, "Close", form.overflow, "transfer" in form ? ["Back"] : []);
+
+			if ("focus" in form && viewport.height < 300) {
+				const body = dialog.locator('[data-slot="funds-modal-body"]');
+				const input = dialog.getByLabel(form.focus, { exact: true });
+				await input.evaluate((node) => (node as HTMLElement).blur());
+				await body.evaluate((node) => {
+					node.scrollTop = node.scrollHeight;
+				});
+				const bodyTop = await body.evaluate((node) => node.getBoundingClientRect().top);
+				const hidden = (await input.evaluate((node) => node.getBoundingClientRect().bottom)) < bodyTop;
+				await input.evaluate((node) => (node as HTMLElement).focus());
+				const bandBottom = await heading.evaluate((node) => node.getBoundingClientRect().bottom);
+				// A field revealed from out of view lands below the band in every engine. A field already
+				// inside the scrollport but partly under the band is moved only where focus honours
+				// `scroll-padding`; WebKit leaves it where the user scrolled it.
+				if (hidden || page.context().browser()?.browserType().name() === "chromium") {
+					await expect
+						.poll(() => input.evaluate((node) => node.getBoundingClientRect().top))
+						.toBeGreaterThanOrEqual(bandBottom - 0.5);
+				}
+			}
+
+			if ("transfer" in form) {
+				await back.click();
+				await expect(methods).toBeVisible();
+			}
 			await dialog.getByRole("button", { name: "Close", exact: true }).click();
 			await expect(dialog).toHaveCount(0);
 		}

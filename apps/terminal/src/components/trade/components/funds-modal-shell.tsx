@@ -62,7 +62,7 @@ export function FundsModalShell({ children, headerStart, isPending, onOpenChange
 				className={cn(
 					FUNDS_MODAL_BODY_CLASS,
 					usesFundsRedesign
-						? cn(FUNDS_MODAL_BODY_TOP_PADDING_CLASS, "px-4 pb-5 min-[1001px]:px-6 min-[1001px]:pb-6")
+						? cn(FUNDS_MODAL_BODY_TOP_PADDING_CLASS, "scroll-pt-14 px-4 pb-5 min-[1001px]:px-6 min-[1001px]:pb-6")
 						: "space-y-4",
 				)}
 			>
