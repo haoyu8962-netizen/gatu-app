@@ -171,6 +171,30 @@ for (const width of [375, 393]) {
 	});
 }
 
+async function expectFundsDialogScroll(page: Page, closeName: string, fitsViewport: boolean) {
+	const dialog = page.getByRole("dialog");
+	const body = dialog.locator('[data-slot="funds-modal-body"]');
+	const metrics = await body.evaluate((element) => {
+		const node = element as HTMLElement;
+		const popup = node.closest('[role="dialog"]') as HTMLElement;
+		return {
+			scrollbar: getComputedStyle(node).scrollbarWidth,
+			gutter: node.offsetWidth - node.clientWidth,
+			bodyOverflows: node.scrollHeight > node.clientHeight + 1,
+			popupScrolls: popup.scrollHeight > popup.clientHeight + 1,
+			popupOverflow: getComputedStyle(popup).overflowY,
+		};
+	});
+	expect(metrics.scrollbar).toBe("none");
+	expect(metrics.gutter).toBe(0);
+	expect(metrics.popupScrolls).toBe(false);
+	expect(metrics.popupOverflow).toBe("hidden");
+	if (fitsViewport) expect(metrics.bodyOverflows).toBe(false);
+	await body.evaluate((node) => node.scrollTo(0, node.scrollHeight));
+	await expect(dialog.getByRole("button", { name: closeName, exact: true })).toBeInViewport({ ratio: 1 });
+	await body.evaluate((node) => node.scrollTo(0, 0));
+}
+
 for (const width of [375, 393, 1363]) {
 	for (const theme of ["light", "dark"] as const) {
 		test(`keeps ${theme} funding forms readable and drafts stable at ${width}px`, async ({ page }) => {
@@ -187,6 +211,7 @@ for (const width of [375, 393, 1363]) {
 			await dialog.getByLabel("Destination address", { exact: true }).fill(address);
 			await expect(dialog.getByText("$2.30", { exact: true })).toBeVisible();
 			expect(await dialog.evaluate((node) => node.scrollWidth <= node.clientWidth + 1)).toBe(true);
+			await expectFundsDialogScroll(page, "Close", width !== 375);
 			await dialog.getByRole("button", { name: "Withdraw to Arbitrum", exact: true }).scrollIntoViewIfNeeded();
 			await expect(dialog.getByRole("button", { name: "Withdraw to Arbitrum", exact: true })).toBeInViewport();
 			await page.screenshot({ path: test.info().outputPath(`withdraw-${width}-${theme}.png`) });
@@ -208,6 +233,16 @@ for (const width of [375, 393, 1363]) {
 				.toBe(true);
 			await expect(dialog.getByRole("combobox")).toHaveCount(0);
 			expect(await dialog.evaluate((node) => node.scrollWidth <= node.clientWidth + 1)).toBe(true);
+			await expect(dialog.locator('[data-slot="qr-token-logo"]')).toBeVisible();
+			const route = dialog.locator('[data-slot="funds-route-details"]');
+			await expect(route.locator("img")).toHaveCount(2);
+			expect(
+				await route.evaluate((node) => {
+					const [asset, network] = [...node.children].map((child) => child.getBoundingClientRect());
+					return Math.abs(asset.y - network.y) <= 1 && Math.abs(asset.height - network.height) <= 1;
+				}),
+			).toBe(true);
+			await expectFundsDialogScroll(page, "关闭", width !== 375);
 			await dialog.getByRole("button", { name: "完成", exact: true }).scrollIntoViewIfNeeded();
 			await expect(dialog.getByRole("button", { name: "完成", exact: true })).toBeInViewport();
 			await page.screenshot({ path: test.info().outputPath(`deposit-${width}-${theme}.png`) });

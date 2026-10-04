@@ -58,6 +58,12 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Changed
 
+- The deposit dialog is tidier and no longer shows a scrollbar. The close and back buttons stay in
+  place while the content scrolls underneath on short screens, and nothing scrolls on common desktop
+  and phone sizes. Asset and network sit on one row with their icons, the QR code carries the USDC
+  mark in its centre, and the address and its copy button share one field. Withdraw and Bridge use
+  the same frame, and the phone sheet and the desktop dialog are the same layout.
+
 - Deposits follow the CCTP rules instead of the retired bridge's. The fixed 5 USDC minimum is gone:
   a deposit now has to be at least twice the current Circle fee (0.40 USDC while the fee is 0.20),
   and the dialog shows that minimum once the fee is known. The notice under the deposit address no

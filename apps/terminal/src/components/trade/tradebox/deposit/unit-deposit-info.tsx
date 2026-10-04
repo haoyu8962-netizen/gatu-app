@@ -2,7 +2,7 @@ import { Trans } from "@lingui/react/macro";
 import { useNumberFormat } from "@/lib/format";
 import { HyperCoreUsdcIcon } from "../hypercore-usdc-icon";
 
-export const UNIT_DEPOSIT_INFO_LIST_CLASS = "space-y-2 py-3 text-xs";
+export const UNIT_DEPOSIT_INFO_LIST_CLASS = "space-y-2 py-1 text-xs";
 
 interface Props {
 	cctpFee?: string | null;

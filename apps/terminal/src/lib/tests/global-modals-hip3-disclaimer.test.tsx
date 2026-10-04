@@ -411,6 +411,10 @@ describe("GlobalModals HIP-3 disclaimer priority", () => {
 		expect(fallback).not.toBeNull();
 		expect(fallback?.getAttribute("aria-busy")).toBe("true");
 		expect([...(fallback?.children ?? [])].map((child) => child.tagName.toLowerCase())).toEqual(["span", "svg"]);
+		const fundsBody = fallback?.closest('[data-slot="funds-modal-body"]');
+		expect(fundsBody?.className).toContain("overflow-y-auto");
+		expect(fundsBody?.className).toContain("[scrollbar-width:none]");
+		expect(fundsBody?.closest('[role="dialog"]')?.className).toContain("!overflow-hidden");
 		expect(fallback?.querySelector("span")?.childElementCount).toBe(0);
 		expect(fallback?.className).not.toMatch(/\bh-\[/);
 		const depositTitle = document.body.querySelector("h2");

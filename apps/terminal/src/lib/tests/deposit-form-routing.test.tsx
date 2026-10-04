@@ -138,7 +138,17 @@ describe("DepositForm routing gate", () => {
 		expect(container.textContent).toContain("You send");
 		expect(container.textContent).toContain("Minimum 0.4 USDC");
 		expect(container.textContent).not.toContain("5 USDC");
-		expect(container.querySelector('img[src="/coins/USDC.svg"]')).toBeNull();
+		const route = container.querySelector('[data-slot="funds-route-details"]');
+		expect(route?.textContent).toBe("AssetUSDCNetworkArbitrum");
+		expect(route?.querySelectorAll("dt.sr-only")).toHaveLength(2);
+		expect(route?.querySelector('img[src="/coins/USDC.svg"]')?.getAttribute("aria-hidden")).toBe("true");
+		const networkIcon = route?.querySelector<HTMLImageElement>('img[src$="/coins/ARB.svg"]');
+		expect(networkIcon?.hidden).toBe(false);
+		act(() => {
+			networkIcon?.dispatchEvent(new Event("error"));
+		});
+		expect(networkIcon?.hidden).toBe(true);
+		expect(route?.textContent).toBe("AssetUSDCNetworkArbitrum");
 	});
 
 	it("writes the wallet balance, minimum and Circle fee with the number-format separators", async () => {

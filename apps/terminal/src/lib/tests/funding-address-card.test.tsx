@@ -47,11 +47,15 @@ describe("FundingAddressCard", () => {
 		expect(mocks.toCanvas).toHaveBeenCalledWith(
 			expect.any(HTMLCanvasElement),
 			address,
-			expect.objectContaining({ errorCorrectionLevel: "M", margin: 1 }),
+			expect.objectContaining({ errorCorrectionLevel: "H", margin: 1 }),
 		);
 		expect(container.textContent).toContain(address);
 		const qrCanvas = container.querySelector('canvas[aria-label="Deposit address QR code"]');
-		expect(qrCanvas?.parentElement?.className).toContain("size-[140px]");
+		expect(qrCanvas?.closest('[class*="size-[140px]"]')).not.toBeNull();
+		const logo = qrCanvas?.parentElement?.querySelector<HTMLImageElement>('img[data-slot="qr-token-logo"]');
+		expect(logo?.getAttribute("src")).toBe("/coins/USDC.svg");
+		expect(logo?.getAttribute("aria-hidden")).toBe("true");
+		expect(logo?.className).toContain("size-7");
 		const addressText = Array.from(container.querySelectorAll("span")).find(
 			(element) => element.textContent === address,
 		);
@@ -92,6 +96,47 @@ describe("FundingAddressCard", () => {
 			}
 		},
 	);
+
+	it("gives the placeholder the same QR frame and address field classes as the ready card", async () => {
+		function shared(className: string | undefined, extras: string[]) {
+			return (className ?? "")
+				.split(" ")
+				.filter((token) => !extras.includes(token))
+				.sort()
+				.join(" ");
+		}
+		function geometry() {
+			const frame = container.querySelector<HTMLElement>('[class*="size-[140px]"]');
+			const field = container.querySelector<HTMLElement>('[class*="min-h-11"]');
+			return {
+				frame: shared(frame?.className, ["flex-col", "gap-2", "px-4", "text-center"]),
+				field: shared(field?.className, ["justify-center", "gap-2"]),
+				card: container.querySelector<HTMLElement>("[data-address-state]")?.className,
+			};
+		}
+
+		await act(async () => {
+			root.render(
+				<I18nProvider i18n={i18n}>
+					<FundingAddressCard state="loading" />
+				</I18nProvider>,
+			);
+		});
+		const loading = geometry();
+
+		await act(async () => {
+			root.render(
+				<I18nProvider i18n={i18n}>
+					<FundingAddressCard address="0x1111111111111111111111111111111111111111" state="ready" />
+				</I18nProvider>,
+			);
+		});
+		const ready = geometry();
+
+		expect(loading.frame).not.toBe("");
+		expect(loading.field).not.toBe("");
+		expect(loading).toEqual(ready);
+	});
 
 	it("renders a silent loading skeleton when no readiness message is provided", async () => {
 		await act(async () => {

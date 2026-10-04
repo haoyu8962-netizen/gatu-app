@@ -112,7 +112,7 @@ export function DepositForm({
 		return (
 			<div
 				role="alert"
-				className="rounded-[10px] border border-stroke-error-weak bg-error-soft px-3 py-2.5 text-center text-xs leading-relaxed text-market-close-danger"
+				className="rounded-16 border border-stroke-error-weak bg-error-soft px-3 py-2.5 text-center text-xs leading-relaxed text-market-close-danger"
 			>
 				<p>
 					{routingPreflightError ? (
@@ -145,7 +145,7 @@ export function DepositForm({
 		!routingNotice && actionNotice ? (
 			<div
 				role="alert"
-				className="rounded-8 border border-stroke-error-weak bg-error-soft px-3 py-2.5 text-xs text-market-close-danger"
+				className="rounded-16 border border-stroke-error-weak bg-error-soft px-3 py-2.5 text-xs text-market-close-danger"
 			>
 				{actionNotice}
 			</div>
@@ -325,7 +325,7 @@ export function DepositForm({
 
 		return (
 			<div
-				className="flex flex-1 flex-col gap-3.5 font-market-close text-market-close-fg"
+				className="flex flex-1 flex-col gap-3 font-market-close text-market-close-fg"
 				data-deposit-layout="funding-address"
 				data-deposit-readiness={sponsoredCctpReadiness.status}
 				aria-busy={
@@ -344,7 +344,7 @@ export function DepositForm({
 
 				{requiresExplicitFundingDeposit && fundingAddressState.state !== "unavailable" ? (
 					<ol
-						className="list-decimal space-y-1 pl-4 text-xs leading-5 text-market-close-muted"
+						className="list-decimal space-y-0.5 pl-4 text-xs leading-[18px] text-market-close-muted"
 						data-slot="funding-steps"
 					>
 						<li>
@@ -366,7 +366,7 @@ export function DepositForm({
 						{fundingAddressReady && embeddedDepositStatus ? (
 							<div
 								role="alert"
-								className="rounded-8 border border-stroke-error-weak bg-error-soft px-3 py-2.5 text-center text-xs leading-relaxed text-market-close-danger"
+								className="rounded-16 border border-stroke-error-weak bg-error-soft px-3 py-2.5 text-center text-xs leading-relaxed text-market-close-danger"
 							>
 								{embeddedDepositStatus}
 							</div>
@@ -399,7 +399,7 @@ export function DepositForm({
 
 				{showFundingDestinationDetails ? (
 					<div
-						className="rounded-[10px] border border-stroke-error-weak bg-error-soft px-3 py-2.5 text-center text-xs leading-relaxed text-market-close-danger"
+						className="rounded-16 border border-stroke-error-weak bg-error-soft px-3 py-2.5 text-center text-xs leading-relaxed text-market-close-danger"
 						data-deposit-notice="funding-network"
 						data-deposit-slot="funding-network-notice"
 					>
@@ -408,7 +408,7 @@ export function DepositForm({
 				) : showFundingDestinationPlaceholders ? (
 					<div
 						aria-hidden="true"
-						className="relative overflow-hidden rounded-[10px] border border-market-close-stroke-card bg-market-close-card px-3 py-2.5 text-center text-xs leading-relaxed text-market-close-muted"
+						className="relative overflow-hidden rounded-16 border border-market-close-stroke-card bg-market-close-card px-3 py-2.5 text-center text-xs leading-relaxed text-market-close-muted"
 						data-deposit-placeholder="funding-network-notice"
 						data-deposit-slot="funding-network-notice"
 					>
@@ -454,7 +454,7 @@ export function DepositForm({
 
 	return (
 		<div
-			className="flex flex-1 flex-col gap-3.5 font-market-close text-market-close-fg"
+			className="flex flex-1 flex-col gap-3 font-market-close text-market-close-fg"
 			aria-busy={routingStatus === "loading" || balanceStatus === "loading" || cctpFeeLoading || isPending}
 		>
 			<div className="flex flex-col items-center gap-2 text-center">
@@ -486,7 +486,7 @@ export function DepositForm({
 				</Button>
 			) : null}
 			{pendingCctpRecovery ? (
-				<div className="rounded-[10px] border border-stroke-info-weak bg-info-soft px-3 py-2.5 text-center text-xs leading-relaxed text-info">
+				<div className="rounded-16 border border-stroke-info-weak bg-info-soft px-3 py-2.5 text-center text-xs leading-relaxed text-info">
 					<Trans>A previous CCTP deposit is still being tracked. Do not resubmit the same transfer.</Trans>
 				</div>
 			) : null}

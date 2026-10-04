@@ -220,6 +220,7 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/dashboard-surface-radius-contract.test.ts \
   src/lib/tests/dialog-notice-radius-contract.test.ts \
   src/lib/tests/loading-placeholder-contract.test.ts \
+  src/lib/tests/funds-modal-scroll-contract.test.ts \
   src/lib/tests/global-modals-hip3-disclaimer.test.tsx \
   src/lib/tests/deposit-modal-warm.test.ts
 

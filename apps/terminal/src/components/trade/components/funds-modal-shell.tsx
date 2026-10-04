@@ -1,6 +1,7 @@
 import { Trans } from "@lingui/react/macro";
 import { ModalContent, ModalHeader, ModalTitle } from "@sairn/ui";
 import type { ReactNode } from "react";
+import { cn } from "@/lib/cn";
 import { PendingActionModal } from "./pending-action-modal";
 
 interface Props {
@@ -12,6 +13,9 @@ interface Props {
 	presentation: "modal" | "drawer";
 	tab: "deposit" | "withdraw" | "bridge";
 }
+
+const FUNDS_MODAL_BODY_SCROLL_CLASS =
+	"min-h-0 flex-1 overflow-y-auto overscroll-y-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden";
 
 function FundsModalTitle({ tab }: Pick<Props, "tab">) {
 	if (tab === "deposit") return <Trans>Deposit</Trans>;
@@ -30,19 +34,18 @@ export function FundsModalShell({ children, headerStart, isPending, onOpenChange
 			presentation={presentation}
 			handleClassName={usesFundsRedesign ? "top-2.5 !rounded-[2px] bg-market-close-stroke-input" : undefined}
 			overlayClassName={usesFundsRedesign ? "!bg-scrim/60 !backdrop-blur-none" : undefined}
-			className={
-				usesFundsRedesign
-					? "font-market-close max-[1000px]:!border-0 !bg-modal !shadow-none max-[1000px]:!rounded-t-[20px] [&>button]:!top-5 [&>button]:!right-4 [&>button]:!rounded-[8px] [&>button]:text-market-close-muted [&>button:hover]:bg-market-close-hover [&>button:hover]:text-market-close-fg [&>button:active]:bg-market-close-hover min-[1001px]:!max-w-[28rem] min-[1001px]:!rounded-[16px] min-[1001px]:!shadow-overlay min-[1001px]:[&>button]:!top-6 min-[1001px]:[&>button]:!right-6 min-[1001px]:[&>button>svg]:size-[18px]"
-					: undefined
-			}
+			className={cn(
+				"!overflow-hidden",
+				usesFundsRedesign &&
+					"font-market-close max-[1000px]:!border-0 !bg-modal !shadow-none max-[1000px]:!rounded-t-[20px] [&>button]:!top-5 [&>button]:!right-4 [&>button]:!rounded-[8px] [&>button]:text-market-close-muted [&>button:hover]:bg-market-close-hover [&>button:hover]:text-market-close-fg [&>button:active]:bg-market-close-hover min-[1001px]:!max-w-[28rem] min-[1001px]:!rounded-[16px] min-[1001px]:!shadow-overlay min-[1001px]:[&>button]:!top-6 min-[1001px]:[&>button]:!right-6 min-[1001px]:[&>button>svg]:size-[18px]",
+			)}
 		>
 			<ModalHeader
 				divider={!usesFundsRedesign}
-				className={
-					usesFundsRedesign
-						? "px-4 pt-7 pr-14 pb-0 text-start min-[1001px]:px-6 min-[1001px]:pr-14 min-[1001px]:pt-6"
-						: undefined
-				}
+				className={cn(
+					"shrink-0",
+					usesFundsRedesign && "px-4 pt-7 pr-14 pb-0 text-start min-[1001px]:px-6 min-[1001px]:pr-14 min-[1001px]:pt-6",
+				)}
 			>
 				{headerStart}
 				<ModalTitle className={usesFundsRedesign ? "sr-only" : undefined}>
@@ -51,9 +54,11 @@ export function FundsModalShell({ children, headerStart, isPending, onOpenChange
 			</ModalHeader>
 
 			<ModalContent
-				className={
-					usesFundsRedesign ? "px-4 pt-3.5 pb-5 min-[1001px]:px-6 min-[1001px]:pt-3.5 min-[1001px]:pb-6" : "space-y-4"
-				}
+				data-slot="funds-modal-body"
+				className={cn(
+					FUNDS_MODAL_BODY_SCROLL_CLASS,
+					usesFundsRedesign ? "px-4 pt-3 pb-5 min-[1001px]:px-6 min-[1001px]:pb-6" : "space-y-4",
+				)}
 			>
 				{children}
 			</ModalContent>

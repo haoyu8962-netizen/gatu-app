@@ -178,7 +178,15 @@ funded end-to-end release check.
 The mainnet email form explains the two steps before exposing the QR: send USDC
 to the exact wallet, then return and explicitly deposit into the trading account.
 The testnet automatic path does not display these mainnet instructions. Asset and
-network are fixed route details, not selectable dropdowns.
+network are fixed route details, not selectable dropdowns; each shows its icon
+beside the value, and the same row is used by the withdrawal form. The QR code
+carries the USDC mark in its centre and is generated at error-correction level H
+so the covered modules stay recoverable; it keeps dark modules on a white field in
+both themes. The address sits in one field with its copy control. The layout
+follows the official terminal's deposit dialog (fixed header, body that scrolls
+without a visible scrollbar, one component for the desktop modal and the phone
+sheet); the two-step instructions, the explicit Deposit action and the Done exit
+are this application's own and stay.
 
 Passive balance, fee, wallet-readiness and route failures render numeric placeholders
 or the address skeleton, with neutral retry controls where recovery is available.

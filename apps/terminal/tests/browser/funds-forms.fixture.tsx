@@ -1,6 +1,6 @@
-import { Button, ModalContent, ModalHeader, ModalTitle } from "@sairn/ui";
+import { Button } from "@sairn/ui";
 import { useState } from "react";
-import { PendingActionModal } from "@/components/trade/components/pending-action-modal";
+import { FundsModalShell } from "@/components/trade/components/funds-modal-shell";
 import { DepositForm } from "@/components/trade/tradebox/deposit/deposit-form";
 import { DepositMethodChooser } from "@/components/trade/tradebox/deposit/deposit-method-chooser";
 import { WithdrawForm } from "@/components/trade/tradebox/deposit/withdraw-form";
@@ -40,19 +40,15 @@ export function FundsFormsFixture() {
 				<output aria-label="Fixture submissions">{submitted}</output>
 				<output aria-label="Fixture card purchases">{purchases}</output>
 			</div>
-			<PendingActionModal
+			<FundsModalShell
 				open={form !== null}
 				isPending={false}
 				onOpenChange={(open) => {
 					if (!open) setForm(null);
 				}}
 				presentation={mobile ? "drawer" : "modal"}
-				className="font-market-close !border-0 !bg-modal min-[1001px]:!max-w-[28rem]"
+				tab={form ?? "deposit"}
 			>
-				<ModalHeader divider={false} className="px-4 pt-7 pb-0 min-[1001px]:px-6">
-					<ModalTitle className="sr-only">Funding fixture</ModalTitle>
-				</ModalHeader>
-				<ModalContent className="px-4 pt-3.5 pb-5 min-[1001px]:px-6">
 					{showsDepositMethods ? (
 						<DepositMethodChooser
 							fiat={{ walletKind: email ? "embedded" : "external", disabled: !ready }}
@@ -121,8 +117,7 @@ export function FundsFormsFixture() {
 							onSubmit={() => setSubmitted(submitted + 1)}
 						/>
 					) : null}
-				</ModalContent>
-			</PendingActionModal>
+			</FundsModalShell>
 		</>
 	);
 }
