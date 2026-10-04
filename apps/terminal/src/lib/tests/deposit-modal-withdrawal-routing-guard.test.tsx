@@ -7,7 +7,6 @@ import { ApiRequestError, HttpRequestError } from "@nktkas/hyperliquid";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, type ButtonHTMLAttributes, createElement, type ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
-import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { renderFundsModalBackButton } from "@/components/trade/components/funds-modal-back-button";
 import { DepositModal } from "@/components/trade/tradebox/deposit-modal";
@@ -167,21 +166,10 @@ const testState = vi.hoisted(() => ({
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 
-vi.mock("@sairn/ui", () => ({
+vi.mock("@sairn/ui", async (importOriginal) => ({
 	Button: ({ children, disabled, onClick }: ButtonHTMLAttributes<HTMLButtonElement>) =>
 		createElement("button", { disabled, onClick, type: "button" }, children),
-	ButtonIcon: ({
-		children,
-		intent,
-		size,
-		variant,
-		...rest
-	}: ButtonHTMLAttributes<HTMLButtonElement> & { intent?: string; size?: string; variant?: string }) =>
-		createElement(
-			"button",
-			{ type: "button", "data-intent": intent, "data-size": size, "data-variant": variant, ...rest },
-			children,
-		),
+	ButtonIcon: (await importOriginal<typeof import("@sairn/ui")>()).ButtonIcon,
 	ModalContent: ({ children }: { children?: ReactNode }) => createElement("div", null, children),
 	ModalHeader: ({ children }: { children?: ReactNode }) =>
 		createElement(
@@ -2399,20 +2387,24 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 			await rerender();
 			chooseMethod("transfer");
 
-			const shared = renderToStaticMarkup(
-				renderFundsModalBackButton({ disabled: false, label: "Back", onClick: () => undefined }),
-			);
+			const reference = document.createElement("div");
+			const referenceRoot = createRoot(reference);
+			await act(async () => {
+				referenceRoot.render(renderFundsModalBackButton({ disabled: false, label: "Back", onClick: () => undefined }));
+			});
+			const shared = reference.firstElementChild;
 			const buttons = container.querySelectorAll<HTMLButtonElement>('button[aria-label="Back"]');
-
 			const header = testState.modalHeader;
-			if (!header) throw new Error("The dialog header was not rendered");
+			if (!header || !shared) throw new Error("The dialog header or the reference button was not rendered");
 
-			expect(/class="([^"]+)"/.exec(shared)?.[1].split(" ")).toContain("z-10");
-			expect(shared).toContain('data-size="sm"');
+			expect(reference.children).toHaveLength(1);
+			expect(shared.tagName).toBe("BUTTON");
+			expect(shared.className.split(" ")).toContain("z-10");
 			expect(buttons).toHaveLength(1);
-			expect(buttons[0].outerHTML).toBe(shared);
+			expect(buttons[0].outerHTML).toBe(shared.outerHTML);
 			expect(buttons[0].parentElement).toBe(header);
 			expect([...header.children]).toEqual([buttons[0], header.querySelector("h2")]);
+			await act(async () => referenceRoot.unmount());
 		});
 
 		it("starts the card purchase from its own entry", async () => {
