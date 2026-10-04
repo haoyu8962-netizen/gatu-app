@@ -386,7 +386,8 @@ describe("GlobalModals HIP-3 disclaimer priority", () => {
 		const fallback = document.body.querySelector('[data-testid="deposit-modal-loading-fallback"]');
 		expect(fallback).not.toBeNull();
 		expect(fallback?.getAttribute("aria-busy")).toBe("true");
-		expect(fallback?.querySelector("[data-skeleton-slot]")).toBeNull();
+		expect([...(fallback?.children ?? [])].map((child) => child.tagName.toLowerCase())).toEqual(["span", "svg"]);
+		expect(fallback?.querySelector("span")?.childElementCount).toBe(0);
 		expect(fallback?.className).not.toMatch(/\bh-\[/);
 		const depositTitle = document.body.querySelector("h2");
 		expect(depositTitle?.textContent).toBe("Deposit");

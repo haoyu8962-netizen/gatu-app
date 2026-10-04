@@ -74,7 +74,6 @@ const DEPOSIT_ACTIONS_BINDING = /const\s+(\{[^}]*\}|\w+)\s*=\s*useDepositModalAc
 const DEPOSIT_ACTIONS_USE = /(?<!function )useDepositModalActions\(\)/g;
 const DEPOSIT_WARM_SPREAD = /\{\.\.\.[^{}]*\bdepositModalIntentProps\b/g;
 const FUNDS_MODAL_CHROME_MARKER = "min-[1001px]:!max-w-[28rem]";
-const FALLBACK_ELEMENTS = ["FundsModalShell", "output", "span", "Trans", "SpinnerGapIcon"];
 const FALLBACK_CLASS_NAMES = [
 	"flex min-h-72 items-center justify-center",
 	"sr-only",
@@ -165,7 +164,6 @@ describe("loading placeholder contract", () => {
 		expect(classNames).toEqual(FALLBACK_CLASS_NAMES);
 		expect(fallback.split("className=").length - 1).toBe(FALLBACK_CLASS_NAMES.length);
 		expect(fallback).not.toMatch(/\bstyle=|\{\s*\.\.\./);
-		expect([...fallback.matchAll(/<([A-Za-z][\w.]*)/g)].map((match) => match[1])).toEqual(FALLBACK_ELEMENTS);
 	});
 
 	it("warms the deposit dialog from every control that opens it", () => {
