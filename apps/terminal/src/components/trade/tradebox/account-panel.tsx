@@ -2,6 +2,7 @@ import { useLingui } from "@lingui/react/macro";
 import { ArrowsLeftRightIcon } from "@phosphor-icons/react";
 import { Button, Tooltip } from "@sairn/ui";
 import { type ReactNode, useId } from "react";
+import { depositModalIntentProps } from "@/components/trade/components/lazy-global-modals";
 import { InfoRow, InfoRowGroup } from "@/components/ui/info-row";
 import { Skeleton, SkeletonValue } from "@/components/ui/skeleton";
 import { ACCOUNT_LABELS } from "@/config/account-labels";
@@ -191,7 +192,7 @@ export function AccountPanel() {
 						) : !showsFundsActions ? (
 							<p className="text-center text-xs text-fg-muted">{t`Deposits and withdrawals are not allowed.`}</p>
 						) : (
-							<div data-slot="account-panel-actions" className="space-y-2">
+							<div data-slot="account-panel-actions" className="space-y-2" {...depositModalIntentProps}>
 								{depositAvailability.unavailableReason ? (
 									<output className="block text-center text-xs text-fg-muted">
 										{depositAvailability.unavailableReason}

@@ -2,6 +2,7 @@ import { useLingui } from "@lingui/react/macro";
 import { ArrowsLeftRightIcon } from "@phosphor-icons/react";
 import { Button, Tooltip } from "@sairn/ui";
 import { useId } from "react";
+import { depositModalIntentProps } from "@/components/trade/components/lazy-global-modals";
 import { LIFI_BRIDGE_FEATURES, shouldShowLiFiBridgeTab } from "@/config/lifi-bridge";
 import { getFundsAvailabilityNotice } from "@/domain/trade/data-presentation";
 import { useAccountOverview } from "@/hooks/trade/use-account-overview";
@@ -183,7 +184,7 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 							{disconnectedDepositNotice ? (
 								<output className="block text-center text-xs text-fg-muted">{disconnectedDepositNotice}</output>
 							) : null}
-							<div className="grid grid-cols-2 gap-2">
+							<div className="grid grid-cols-2 gap-2" {...depositModalIntentProps}>
 								<Button
 									variant="filled"
 									intent="brand"
@@ -217,7 +218,7 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 					{showsSecondaryFundsActions ? (
 						<div className="space-y-2">
 							{depositNotice ? <output className="text-center text-xs text-fg-muted">{depositNotice}</output> : null}
-							<div className="grid grid-cols-2 gap-2">
+							<div className="grid grid-cols-2 gap-2" {...depositModalIntentProps}>
 								<Tooltip content={depositNotice} side="top">
 									<span className="inline-flex w-full">
 										<Button
@@ -285,6 +286,7 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 									intent="neutral"
 									size="md"
 									onClick={() => openDepositModal("bridge")}
+									{...depositModalIntentProps}
 									aria-label={t`Bridge`}
 									iconLeft={<ArrowsLeftRightIcon className="size-4" />}
 									className="min-h-11 w-full"

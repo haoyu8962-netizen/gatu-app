@@ -160,27 +160,11 @@ export function ReferralDashboard({ initialReferralCode }: Props) {
 		);
 	} else if (referrals.status === "loading") {
 		content = (
-			// biome-ignore lint/a11y/useSemanticElements: output cannot contain this block skeleton.
-			<div role="status" aria-label={t`Loading referrals`} className="block px-4 pb-4 min-[1001px]:px-5">
+			<output aria-busy="true" className="block min-h-80">
 				<span className="sr-only">
 					<Trans>Loading referrals</Trans>
 				</span>
-				<div aria-hidden="true" className="space-y-3 min-[1001px]:space-y-4">
-					<div className="grid grid-cols-2 gap-2 min-[1001px]:grid-cols-4">
-						{[0, 1, 2, 3].map((item) => (
-							<div
-								key={item}
-								className="h-[62px] animate-pulse rounded-16 bg-fill-weak motion-reduce:animate-none min-[1001px]:h-[74px]"
-							/>
-						))}
-					</div>
-					<div className="grid gap-3 min-[1001px]:grid-cols-[minmax(0,560px)_minmax(0,1fr)] min-[1001px]:gap-4">
-						<div className="h-72 animate-pulse rounded-16 bg-fill-weak motion-reduce:animate-none" />
-						<div className="h-72 animate-pulse rounded-16 bg-fill-weak motion-reduce:animate-none" />
-						<div className="h-36 animate-pulse bg-fill-weak motion-reduce:animate-none min-[1001px]:col-span-2" />
-					</div>
-				</div>
-			</div>
+			</output>
 		);
 	} else if (!readyData) {
 		content = (

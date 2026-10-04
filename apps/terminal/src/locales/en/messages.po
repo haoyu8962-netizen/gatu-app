@@ -1238,12 +1238,11 @@ msgstr "Borrowing is automated in Portfolio Margin mode."
 msgid "Bought {quantity}"
 msgstr "Bought {quantity}"
 
-#: src/components/trade/components/deposit-modal-loading-fallback.tsx
+#: src/components/trade/components/funds-modal-shell.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/account-panel.tsx
-#: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Bridge"
 msgstr "Bridge"
 
@@ -2582,7 +2581,7 @@ msgstr "Deployer"
 #: src/components/portfolio/portfolio-page.tsx
 #: src/components/portfolio/portfolio-page.tsx
 #: src/components/staking/staking-action-modal.tsx
-#: src/components/trade/components/deposit-modal-loading-fallback.tsx
+#: src/components/trade/components/funds-modal-shell.tsx
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
@@ -2596,7 +2595,6 @@ msgstr "Deployer"
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/account-panel.tsx
-#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
@@ -4634,7 +4632,6 @@ msgstr "Loading QR code"
 msgid "Loading recent reward claims…"
 msgstr "Loading recent reward claims…"
 
-#: src/components/referrals/referral-dashboard.tsx
 #: src/components/referrals/referral-dashboard.tsx
 msgid "Loading referrals"
 msgstr "Loading referrals"
@@ -11044,7 +11041,7 @@ msgstr "Whole position"
 #: src/components/portfolio/portfolio-page.tsx
 #: src/components/portfolio/portfolio-page.tsx
 #: src/components/staking/staking-action-modal.tsx
-#: src/components/trade/components/deposit-modal-loading-fallback.tsx
+#: src/components/trade/components/funds-modal-shell.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
@@ -11052,7 +11049,6 @@ msgstr "Whole position"
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/account-panel.tsx
-#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #: src/components/vaults/vault-detail-view.tsx
 #: src/components/vaults/vault-detail-view.tsx

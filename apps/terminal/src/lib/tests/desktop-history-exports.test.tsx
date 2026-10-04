@@ -442,11 +442,9 @@ describe("desktop history exports", () => {
 		act(() => root.render(<FundingTab />));
 		expect(container.querySelector('[data-slot="passive-data-placeholder"]')).not.toBeNull();
 		expect(container.textContent).not.toContain("No funding payments found.");
-		expect(container.querySelector('[data-testid="funding-loading-skeleton"]')).toBeNull();
 	});
 
-	it("delays the visible funding skeleton while announcing loading accessibly", () => {
-		vi.useFakeTimers();
+	it("announces funding loading accessibly over a blank busy placeholder", () => {
 		mocks.fundings = [];
 		mocks.fundingStatus = "loading";
 		act(() => root.render(<FundingTab />));
@@ -454,12 +452,8 @@ describe("desktop history exports", () => {
 		const status = container.querySelector("output");
 		expect(status?.className).toContain("sr-only");
 		expect(status?.textContent).toContain("Loading funding payments.");
-		expect(container.querySelector('[data-testid="funding-loading-skeleton"]')).toBeNull();
-
-		act(() => vi.advanceTimersByTime(249));
-		expect(container.querySelector('[data-testid="funding-loading-skeleton"]')).toBeNull();
-
-		act(() => vi.advanceTimersByTime(1));
-		expect(container.querySelector('[data-testid="funding-loading-skeleton"]')).not.toBeNull();
+		const placeholder = container.querySelector('[data-slot="passive-data-placeholder"]');
+		expect(placeholder?.getAttribute("aria-busy")).toBe("true");
+		expect(placeholder?.childElementCount).toBe(0);
 	});
 });

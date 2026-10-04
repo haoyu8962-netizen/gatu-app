@@ -1238,12 +1238,11 @@ msgstr "पोर्टफोलियो मार्जिन मोड मे
 msgid "Bought {quantity}"
 msgstr "{quantity} खरीदा"
 
-#: src/components/trade/components/deposit-modal-loading-fallback.tsx
+#: src/components/trade/components/funds-modal-shell.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/account-panel.tsx
-#: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Bridge"
 msgstr "ब्रिज"
 
@@ -2582,7 +2581,7 @@ msgstr "डिप्लॉयर"
 #: src/components/portfolio/portfolio-page.tsx
 #: src/components/portfolio/portfolio-page.tsx
 #: src/components/staking/staking-action-modal.tsx
-#: src/components/trade/components/deposit-modal-loading-fallback.tsx
+#: src/components/trade/components/funds-modal-shell.tsx
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
@@ -2596,7 +2595,6 @@ msgstr "डिप्लॉयर"
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/account-panel.tsx
-#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
@@ -4634,7 +4632,6 @@ msgstr "QR कोड लोड हो रहा है"
 msgid "Loading recent reward claims…"
 msgstr "हाल के पुरस्कार प्राप्ति रिकॉर्ड लोड हो रहे हैं…"
 
-#: src/components/referrals/referral-dashboard.tsx
 #: src/components/referrals/referral-dashboard.tsx
 msgid "Loading referrals"
 msgstr "रेफ़रल लोड हो रहे हैं"
@@ -11044,7 +11041,7 @@ msgstr "पूरी पोज़िशन"
 #: src/components/portfolio/portfolio-page.tsx
 #: src/components/portfolio/portfolio-page.tsx
 #: src/components/staking/staking-action-modal.tsx
-#: src/components/trade/components/deposit-modal-loading-fallback.tsx
+#: src/components/trade/components/funds-modal-shell.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
@@ -11052,7 +11049,6 @@ msgstr "पूरी पोज़िशन"
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/account-panel.tsx
-#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #: src/components/vaults/vault-detail-view.tsx
 #: src/components/vaults/vault-detail-view.tsx

@@ -1,5 +1,6 @@
 import { useLingui } from "@lingui/react/macro";
 import { useId } from "react";
+import { depositModalIntentProps } from "@/components/trade/components/lazy-global-modals";
 import { ACCOUNT_LABELS } from "@/config/account-labels";
 import { useAccountModeLabels } from "@/hooks/trade/use-account-mode-labels";
 import { useNumberFormat } from "@/lib/format";
@@ -34,6 +35,7 @@ export function DisconnectedAccountOverview({ depositEnabled, depositDisabledRea
 					focusableWhenDisabled
 					aria-describedby={depositDisabledReason ? depositDescriptionId : undefined}
 					onClick={depositEnabled ? onDeposit : undefined}
+					{...(depositEnabled ? depositModalIntentProps : undefined)}
 					title={depositDisabledReason ?? undefined}
 				/>
 			}

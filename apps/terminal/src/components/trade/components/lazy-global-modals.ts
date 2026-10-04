@@ -28,10 +28,30 @@ export async function preloadGlobalModal(modal: PreloadableGlobalModal): Promise
 	await preloaders[modal]();
 }
 
+let depositModalWarmed = false;
+
+/**
+ * The deposit dialog is the largest global modal chunk, so it is not downloaded on a timer. It is
+ * warmed on intent instead, when the pointer, a press or focus first reaches a control that opens it,
+ * so the click normally mounts the dialog directly and the chunk fallback stays a rare case.
+ */
+export function warmDepositModal(): void {
+	if (depositModalWarmed) return;
+	depositModalWarmed = true;
+	void preloaders.deposit().catch(() => undefined);
+}
+
+/** Spread onto every control that opens the deposit dialog (`deposit-modal-intent-contract`). */
+export const depositModalIntentProps = {
+	onPointerEnter: warmDepositModal,
+	onPointerDown: warmDepositModal,
+	onFocus: warmDepositModal,
+} as const;
+
 /**
  * Warms the lazy modal chunks after the surface has settled, so the first open of a global modal
  * mounts its content directly instead of showing the shared Suspense fallback for React's minimum
- * 300 ms. Deposit keeps its dedicated fallback and is not warmed here.
+ * 300 ms. Deposit is warmed on intent by `warmDepositModal` instead.
  */
 export function useIdleGlobalModalPreload(includePositionMarketClose: boolean): void {
 	useEffect(() => {

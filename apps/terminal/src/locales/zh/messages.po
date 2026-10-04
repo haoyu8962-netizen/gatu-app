@@ -1238,12 +1238,11 @@ msgstr "组合保证金模式下借入自动进行。"
 msgid "Bought {quantity}"
 msgstr "已买入 {quantity}"
 
-#: src/components/trade/components/deposit-modal-loading-fallback.tsx
+#: src/components/trade/components/funds-modal-shell.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/account-panel.tsx
-#: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Bridge"
 msgstr "跨链"
 
@@ -2582,7 +2581,7 @@ msgstr "部署者"
 #: src/components/portfolio/portfolio-page.tsx
 #: src/components/portfolio/portfolio-page.tsx
 #: src/components/staking/staking-action-modal.tsx
-#: src/components/trade/components/deposit-modal-loading-fallback.tsx
+#: src/components/trade/components/funds-modal-shell.tsx
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
@@ -2596,7 +2595,6 @@ msgstr "部署者"
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/account-panel.tsx
-#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
@@ -4634,7 +4632,6 @@ msgstr "正在加载二维码"
 msgid "Loading recent reward claims…"
 msgstr "正在加载最近的奖励领取记录…"
 
-#: src/components/referrals/referral-dashboard.tsx
 #: src/components/referrals/referral-dashboard.tsx
 msgid "Loading referrals"
 msgstr "正在加载推荐信息"
@@ -11044,7 +11041,7 @@ msgstr "全部仓位"
 #: src/components/portfolio/portfolio-page.tsx
 #: src/components/portfolio/portfolio-page.tsx
 #: src/components/staking/staking-action-modal.tsx
-#: src/components/trade/components/deposit-modal-loading-fallback.tsx
+#: src/components/trade/components/funds-modal-shell.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
@@ -11052,7 +11049,6 @@ msgstr "全部仓位"
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/account-panel.tsx
-#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #: src/components/vaults/vault-detail-view.tsx
 #: src/components/vaults/vault-detail-view.tsx

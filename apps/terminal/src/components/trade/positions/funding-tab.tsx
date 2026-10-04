@@ -1,10 +1,7 @@
 import { useLingui } from "@lingui/react/macro";
 import { Button, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@sairn/ui";
 import { Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Skeleton } from "@/components/ui/skeleton";
-import { FUNDING_SKELETON_DELAY_MS } from "@/config/trade";
 import { getToolbarAbsoluteSize, getToolbarFundingTotal } from "@/domain/trade/trading-toolbar-metrics";
 import { useFundingHistoryCsvExport } from "@/hooks/trade/use-history-csv-export";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
@@ -41,25 +38,13 @@ interface Props {
 
 function FundingLoadingPlaceholder() {
 	const { t } = useLingui();
-	const [showSkeleton, setShowSkeleton] = useState(false);
-
-	useEffect(() => {
-		const timeoutId = window.setTimeout(() => setShowSkeleton(true), FUNDING_SKELETON_DELAY_MS);
-		return () => window.clearTimeout(timeoutId);
-	}, []);
 
 	return (
-		<div className="h-full w-full">
+		<div className="flex h-full w-full flex-col">
 			<output aria-live="polite" className="sr-only">
 				{t`Loading funding payments.`}
 			</output>
-			{showSkeleton ? (
-				<div data-testid="funding-loading-skeleton" className="h-full">
-					<Skeleton name="funding-tab" loading>
-						<div className="h-full w-full" />
-					</Skeleton>
-				</div>
-			) : null}
+			<PassiveDataPlaceholder busy />
 		</div>
 	);
 }

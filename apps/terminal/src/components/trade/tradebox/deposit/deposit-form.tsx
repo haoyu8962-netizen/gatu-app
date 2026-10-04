@@ -9,7 +9,7 @@ import type { SponsoredCctpReadiness } from "@/lib/hyperliquid/use-deposit";
 import { AmountInput } from "./amount-input";
 import { FundingAddressCard } from "./funding-address-card";
 import { FundsRouteDetails } from "./funds-route-details";
-import { UnitDepositInfo } from "./unit-deposit-info";
+import { UNIT_DEPOSIT_INFO_LIST_CLASS, UnitDepositInfo } from "./unit-deposit-info";
 
 interface Props {
 	amount: string;
@@ -372,7 +372,7 @@ export function DepositForm({
 				) : showFundingDestinationPlaceholders ? (
 					<div
 						aria-hidden="true"
-						className="space-y-2 rounded-[10px] border border-market-close-stroke-card bg-market-close-card px-3.5 py-3"
+						className={UNIT_DEPOSIT_INFO_LIST_CLASS}
 						data-deposit-placeholder="funding-details"
 						data-deposit-slot="funding-details"
 					>

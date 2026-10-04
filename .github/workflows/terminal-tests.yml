@@ -86,6 +86,8 @@ jobs:
           src/lib/tests/mobile-agent-sync-modal.test.tsx
           src/lib/tests/modal-surface-contract.test.ts
           src/lib/tests/dialog-notice-radius-contract.test.ts
+          src/lib/tests/loading-placeholder-contract.test.ts
+          src/lib/tests/global-modals-hip3-disclaimer.test.tsx
           src/lib/tests/trades.test.ts
           src/lib/tests/orderbook-panel-safety.test.tsx
           src/lib/tests/mobile-bottom-nav.test.tsx

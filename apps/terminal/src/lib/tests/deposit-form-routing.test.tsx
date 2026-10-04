@@ -6,6 +6,7 @@ import { act, createElement, type ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { DepositForm } from "@/components/trade/tradebox/deposit/deposit-form";
+import { UNIT_DEPOSIT_INFO_LIST_CLASS } from "@/components/trade/tradebox/deposit/unit-deposit-info";
 import type { UsdcRoutingQueryStatus, UsdcTransferRoute } from "@/domain/trade/usdc-routing";
 
 vi.mock("@/components/trade/tradebox/deposit/funding-address-card", () => ({
@@ -40,7 +41,8 @@ vi.mock("@/stores/use-global-settings-store", async (importOriginal) => ({
 	getResolvedFormatLocale: () => numberFormatSetting.locale,
 }));
 
-vi.mock("@/components/trade/tradebox/deposit/unit-deposit-info", () => ({
+vi.mock("@/components/trade/tradebox/deposit/unit-deposit-info", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/components/trade/tradebox/deposit/unit-deposit-info")>()),
 	UnitDepositInfo: ({
 		cctpFee,
 		cctpFeeError,
@@ -663,6 +665,7 @@ describe("DepositForm routing gate", () => {
 		);
 		expect(detailsPlaceholder?.getAttribute("aria-hidden")).toBe("true");
 		expect(detailsPlaceholder?.getAttribute("data-deposit-slot")).toBe("funding-details");
+		expect(detailsPlaceholder?.className).toBe(UNIT_DEPOSIT_INFO_LIST_CLASS);
 		expect(noticePlaceholder?.getAttribute("aria-hidden")).toBe("true");
 		expect(noticePlaceholder?.getAttribute("data-deposit-slot")).toBe("funding-network-notice");
 		expect(noticePlaceholder?.querySelector("span")?.className).toContain("invisible");

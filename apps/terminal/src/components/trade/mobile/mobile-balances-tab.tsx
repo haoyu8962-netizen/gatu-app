@@ -2,6 +2,7 @@ import { useLingui } from "@lingui/react/macro";
 import { WalletIcon } from "@phosphor-icons/react";
 import { Button } from "@sairn/ui";
 import { useState } from "react";
+import { depositModalIntentProps } from "@/components/trade/components/lazy-global-modals";
 import { DataPendingState } from "@/components/ui/data-pending-state";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import { isTradingToolbarBalancePositive } from "@/domain/trade/balance-toolbar";
@@ -170,6 +171,7 @@ function MobileBalancesState({
 					intent="neutral"
 					size="sm"
 					onClick={onAction}
+					{...depositModalIntentProps}
 					disabled={actionDisabled}
 					className="min-h-11 rounded-[8px] border-market-close-stroke-control px-4 text-xs font-semibold text-market-close-fg"
 				>

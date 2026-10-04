@@ -3,6 +3,7 @@ import { Button } from "@sairn/ui";
 import { type ChangeEvent, Suspense, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useSwitchChain, useWalletClient } from "wagmi";
 import { ButtonLoading } from "@/components/brand/button-loading";
+import { depositModalIntentProps } from "@/components/trade/components/lazy-global-modals";
 import { LazyDialogHost } from "@/components/ui/lazy-dialog-host";
 import { getFormattedMidPrice } from "@/components/ui/price-input";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
@@ -1140,6 +1141,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 						label={buttonContent.text}
 						variant={buttonContent.variant}
 						onClick={handleCtaClick}
+						{...(buttonContent.opensDeposit ? depositModalIntentProps : undefined)}
 						disabled={buttonContent.disabled}
 						iconLeft={isRegistering ? <ButtonLoading /> : undefined}
 					/>
@@ -1279,6 +1281,7 @@ export function getMobileOrderButtonContent(input: MobileButtonContentInput): Bu
 			action: input.canDeposit ? input.onDeposit : () => {},
 			disabled: !input.canDeposit,
 			disabledReason: input.canDeposit ? undefined : (input.depositUnavailableReason ?? undefined),
+			opensDeposit: input.canDeposit,
 			variant: "cyan",
 		};
 	}

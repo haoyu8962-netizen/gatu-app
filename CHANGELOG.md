@@ -58,6 +58,14 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Changed
 
+- Loading states no longer show an outdated outline of the page. Opening Deposit, Withdraw or Bridge
+  before its code has loaded shows the dialog frame with a small spinner instead of a grey sketch of
+  the deposit form that no longer matched it and made the dialog jump taller; the dialog's code is
+  now fetched as soon as the pointer or focus reaches a Deposit or Withdraw button, so it normally
+  opens straight away. The Funding tab of the account table, the Referrals page and a Vault's detail
+  page wait on a blank area like the other tabs and pages instead of grey blocks shaped like an
+  older layout, and the fee rows in the deposit dialog keep the same plain layout while they load.
+
 - The Privy wallet SDK is updated to React Auth 3.46.0 and Privy wagmi 4.0.17. Login, wallet
   ordering, signing and the theme-following login window behave as before; the patch that keeps a
   wallet session from reconnecting on a theme toggle is carried over to the new version.

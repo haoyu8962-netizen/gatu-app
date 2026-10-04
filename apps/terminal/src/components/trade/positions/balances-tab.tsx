@@ -1,6 +1,7 @@
 import { useLingui } from "@lingui/react/macro";
 import { Button, Checkbox, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Tooltip } from "@sairn/ui";
 import { useMemo, useState } from "react";
+import { depositModalIntentProps } from "@/components/trade/components/lazy-global-modals";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import { SMALL_BALANCE_THRESHOLD_USD } from "@/config/trade";
@@ -215,6 +216,7 @@ export function BalancesTab({ toolbarTarget }: Props) {
 								intent="neutral"
 								size="xxs"
 								onClick={() => openDepositModal("withdraw")}
+								{...depositModalIntentProps}
 								className={balancesTableActionClass}
 							>
 								{t`Withdraw`}
@@ -255,6 +257,7 @@ export function BalancesTab({ toolbarTarget }: Props) {
 						size="xs"
 						disabled={!depositAvailability.available}
 						onClick={depositAvailability.available ? () => openDepositModal("deposit") : undefined}
+						{...depositModalIntentProps}
 						aria-label={depositAvailability.available ? undefined : depositAvailability.unavailableLabel}
 						title={depositAvailability.unavailableReason ?? undefined}
 						className="rounded-[7px] border-market-close-stroke-control px-3 text-market-close-fg"

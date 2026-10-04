@@ -386,17 +386,14 @@ describe("GlobalModals HIP-3 disclaimer priority", () => {
 		const fallback = document.body.querySelector('[data-testid="deposit-modal-loading-fallback"]');
 		expect(fallback).not.toBeNull();
 		expect(fallback?.getAttribute("aria-busy")).toBe("true");
-		expect(fallback?.getAttribute("data-deposit-loading-layout")).toBe("funding-address");
-		expect(fallback?.getAttribute("data-desktop-content-height")).toBe("37.5rem");
-		expect(fallback?.className).toContain("min-[1001px]:h-[37.5rem]");
-		expect(fallback?.querySelectorAll("[data-skeleton-slot]")).toHaveLength(6);
-		expect(fallback?.querySelector('[aria-hidden="true"]')).not.toBeNull();
+		expect(fallback?.querySelector("[data-skeleton-slot]")).toBeNull();
+		expect(fallback?.className).not.toMatch(/\bh-\[/);
 		const depositTitle = document.body.querySelector("h2");
 		expect(depositTitle?.textContent).toBe("Deposit");
 		expect(depositTitle?.className).toContain("sr-only");
 		expect(document.body.querySelector('[role="dialog"]')?.getAttribute("aria-labelledby")).toBe(depositTitle?.id);
 		expect(fallback?.querySelector("span.sr-only")?.textContent).toContain("Loading");
-		expect(fallback?.querySelector(LOADING_INDICATOR_SELECTOR)).toBeNull();
+		expect(fallback?.querySelector(LOADING_INDICATOR_SELECTOR)).not.toBeNull();
 		expect(container.querySelector('[data-testid="global-modal-loading-fallback"]')).toBeNull();
 
 		const closeButton = document.body.querySelector<HTMLButtonElement>('button[aria-label="Close"]');
@@ -405,7 +402,7 @@ describe("GlobalModals HIP-3 disclaimer priority", () => {
 		expect(testState.closeDepositModal).toHaveBeenCalledOnce();
 	});
 
-	it("keeps the withdrawal title visible while its lazy chunk loads", async () => {
+	it("keeps the withdrawal title for assistive technology only, as the loaded dialog does", async () => {
 		testState.depositModalTab = "withdraw";
 		testState.suspendedLazyComponent = "DepositModal";
 		const { GlobalModals } = await import("@/components/trade/components/global-modals");
@@ -414,7 +411,7 @@ describe("GlobalModals HIP-3 disclaimer priority", () => {
 
 		const withdrawTitle = document.body.querySelector("h2");
 		expect(withdrawTitle?.textContent).toBe("Withdraw");
-		expect(withdrawTitle?.className).not.toContain("sr-only");
+		expect(withdrawTitle?.className).toContain("sr-only");
 	});
 
 	it("preserves the compact loading fallback for other lazy global modals", async () => {
