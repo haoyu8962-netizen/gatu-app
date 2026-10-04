@@ -61,9 +61,9 @@ import { useDeposit } from "@/lib/hyperliquid/use-deposit";
 import { createLazyComponent } from "@/lib/lazy";
 import { useHasExistingBridgeExecution } from "@/lib/lifi/bridge-execution-state";
 import {
-	calculateCctpDepositFee,
 	getAmountIndependentCctpDepositMinimumRaw,
 	getAmountIndependentCctpMaxFeeRaw,
+	reviewCctpDepositFee,
 } from "@/lib/trade/cctp-deposit";
 import { removeCctpDepositTrackingRecord } from "@/lib/trade/cctp-deposit-tracking";
 import {
@@ -380,12 +380,11 @@ export function DepositModal() {
 		selectedDepositRoute === "cctp" && displayedCctpDepositFeeQuery.data?.feeQuote
 			? getAmountIndependentCctpDepositMinimumRaw(displayedCctpDepositFeeQuery.data.feeQuote)
 			: null;
+	const cctpDepositBelowMinimumRaw =
+		selectedDepositRoute === "cctp" ? displayedCctpDepositFeeQuery.belowMinimumRaw : null;
 	const cctpDepositMinimumError =
-		cctpDepositMinimumRaw !== null &&
-		reviewedDepositAmountRaw !== undefined &&
-		reviewedDepositAmountRaw > 0n &&
-		reviewedDepositAmountRaw < cctpDepositMinimumRaw
-			? t`Minimum deposit is ${numberFormat.formatDecimalString(formatUnits(cctpDepositMinimumRaw, 6))} USDC`
+		cctpDepositBelowMinimumRaw !== null
+			? t`Minimum deposit is ${numberFormat.formatDecimalString(formatUnits(cctpDepositBelowMinimumRaw, 6))} USDC`
 			: null;
 	const cctpDepositAmountLimitError =
 		selectedDepositRoute === "cctp" &&
@@ -892,8 +891,14 @@ export function DepositModal() {
 					setDepositCctpPreflightErrorCode("capacity-unavailable");
 					return;
 				}
-				const freshCalculation = calculateCctpDepositFee(reviewedDepositAmountRaw, freshFeeResult.data.feeQuote);
-				if (freshCalculation.maxFeeRaw !== reviewedCalculation.maxFeeRaw) {
+				const freshReview = reviewCctpDepositFee(reviewedDepositAmountRaw, freshFeeResult.data.feeQuote);
+				if (!freshReview.calculation) {
+					setDepositCctpPreflightErrorCode(
+						freshReview.belowMinimumRaw !== null ? "fee-changed" : "verification-unavailable",
+					);
+					return;
+				}
+				if (freshReview.calculation.maxFeeRaw !== reviewedCalculation.maxFeeRaw) {
 					setDepositCctpPreflightErrorCode("fee-changed");
 					return;
 				}
@@ -1474,7 +1479,7 @@ export function DepositModal() {
 				validation={depositValidation}
 				preflightError={depositCctpPreflightError}
 				onRetryData={handleDepositDataRetry}
-				amountError={cctpDepositAmountLimitError ?? baseDepositValidation.error}
+				amountError={cctpDepositAmountLimitError ?? cctpDepositMinimumError ?? baseDepositValidation.error}
 				isPending={isDepositPending}
 				onSubmit={handleDepositSubmit}
 				routingStatus={depositRoutingStatus}
@@ -1493,6 +1498,7 @@ export function DepositModal() {
 				requiresExplicitFundingDeposit={isEmbeddedDeposit && !isTestnet}
 				cctpFee={cctpDepositFee}
 				minimumDepositRaw={cctpDepositMinimumRaw}
+				belowMinimumDepositRaw={cctpDepositBelowMinimumRaw}
 				cctpFeeLoading={
 					isDepositDataRetrying || (selectedDepositRoute === "cctp" && displayedCctpDepositFeeQuery.isLoading)
 				}

@@ -35,6 +35,7 @@ interface Props {
 	requiresExplicitFundingDeposit: boolean;
 	cctpFee: string | null;
 	minimumDepositRaw: bigint | null;
+	belowMinimumDepositRaw: bigint | null;
 	cctpFeeLoading: boolean;
 	cctpFeeError: boolean;
 	pendingCctpRecovery: boolean;
@@ -70,6 +71,7 @@ export function DepositForm({
 	requiresExplicitFundingDeposit,
 	cctpFee: cctpFeeAmount,
 	minimumDepositRaw,
+	belowMinimumDepositRaw,
 	cctpFeeLoading,
 	cctpFeeError,
 	pendingCctpRecovery,
@@ -171,7 +173,8 @@ export function DepositForm({
 		if (maxDepositRaw === undefined || maxDepositRaw === 0n) {
 			return null;
 		}
-		if (minimumDepositRaw !== null && maxDepositRaw < minimumDepositRaw) {
+		if (belowMinimumDepositRaw !== null) {
+			const minimumDeposit = `${formatDecimalString(formatUnits(belowMinimumDepositRaw, USDC_DECIMALS))} USDC`;
 			return (
 				<Trans>
 					Available {balance} USDC is below the minimum deposit. Send at least {minimumDeposit}.

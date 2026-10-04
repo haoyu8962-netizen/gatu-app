@@ -171,14 +171,23 @@ for (const width of [375, 393]) {
 	});
 }
 
-async function expectFundsDialogScroll(page: Page, closeName: string, fitsViewport: boolean) {
+async function waitForDialogTransition(page: Page) {
+	await page
+		.getByRole("dialog")
+		.evaluate((node) => Promise.all(node.getAnimations().map((animation) => animation.finished)));
+}
+
+async function expectFundsDialogScroll(page: Page, closeName: string, overflow: "none" | "required" | "any") {
 	const dialog = page.getByRole("dialog");
+	await waitForDialogTransition(page);
 	const body = dialog.locator('[data-slot="funds-modal-body"]');
+	const close = dialog.getByRole("button", { name: closeName, exact: true });
 	const metrics = await body.evaluate((element) => {
 		const node = element as HTMLElement;
 		const popup = node.closest('[role="dialog"]') as HTMLElement;
 		return {
 			scrollbar: getComputedStyle(node).scrollbarWidth,
+			bodyOverflow: getComputedStyle(node).overflowY,
 			gutter: node.offsetWidth - node.clientWidth,
 			bodyOverflows: node.scrollHeight > node.clientHeight + 1,
 			popupScrolls: popup.scrollHeight > popup.clientHeight + 1,
@@ -186,13 +195,43 @@ async function expectFundsDialogScroll(page: Page, closeName: string, fitsViewpo
 		};
 	});
 	expect(metrics.scrollbar).toBe("none");
+	expect(metrics.bodyOverflow).toBe("auto");
 	expect(metrics.gutter).toBe(0);
 	expect(metrics.popupScrolls).toBe(false);
 	expect(metrics.popupOverflow).toBe("hidden");
-	if (fitsViewport) expect(metrics.bodyOverflows).toBe(false);
-	await body.evaluate((node) => node.scrollTo(0, node.scrollHeight));
-	await expect(dialog.getByRole("button", { name: closeName, exact: true })).toBeInViewport({ ratio: 1 });
-	await body.evaluate((node) => node.scrollTo(0, 0));
+	if (overflow === "none") expect(metrics.bodyOverflows).toBe(false);
+	if (overflow === "required") expect(metrics.bodyOverflows).toBe(true);
+	if (!metrics.bodyOverflows) return;
+
+	const closeBefore = await close.boundingBox();
+	const bodyBox = await body.boundingBox();
+	if (!bodyBox || !closeBefore) throw new Error("Funds dialog geometry is unavailable");
+	await page.mouse.move(bodyBox.x + bodyBox.width / 2, bodyBox.y + bodyBox.height / 2);
+	await page.mouse.wheel(0, 2_000);
+	await expect.poll(() => body.evaluate((node) => node.scrollTop)).toBeGreaterThan(0);
+	expect(
+		await body.evaluate((node) => Math.abs(node.scrollTop + node.clientHeight - node.scrollHeight) <= 1),
+	).toBe(true);
+	expect(await close.boundingBox()).toEqual(closeBefore);
+	await expect(close).toBeInViewport({ ratio: 1 });
+	expect(await dialog.evaluate((node) => node.scrollTop)).toBe(0);
+	await page.mouse.wheel(0, -2_000);
+	await expect.poll(() => body.evaluate((node) => node.scrollTop)).toBe(0);
+}
+
+async function readFundingAddressGeometry(page: Page) {
+	return page
+		.getByRole("dialog")
+		.locator("[data-address-state]")
+		.evaluate((card) => {
+			const field = card.querySelector('[class*="min-h-11"]') as HTMLElement;
+			const frame = card.querySelector('[class*="size-[140px]"]') as HTMLElement;
+			return {
+				card: (card as HTMLElement).offsetHeight,
+				field: field.offsetHeight,
+				frame: frame.offsetHeight,
+			};
+		});
 }
 
 for (const width of [375, 393, 1363]) {
@@ -211,7 +250,7 @@ for (const width of [375, 393, 1363]) {
 			await dialog.getByLabel("Destination address", { exact: true }).fill(address);
 			await expect(dialog.getByText("$2.30", { exact: true })).toBeVisible();
 			expect(await dialog.evaluate((node) => node.scrollWidth <= node.clientWidth + 1)).toBe(true);
-			await expectFundsDialogScroll(page, "Close", width !== 375);
+			await expectFundsDialogScroll(page, "Close", width === 375 ? "any" : "none");
 			await dialog.getByRole("button", { name: "Withdraw to Arbitrum", exact: true }).scrollIntoViewIfNeeded();
 			await expect(dialog.getByRole("button", { name: "Withdraw to Arbitrum", exact: true })).toBeInViewport();
 			await page.screenshot({ path: test.info().outputPath(`withdraw-${width}-${theme}.png`) });
@@ -242,7 +281,17 @@ for (const width of [375, 393, 1363]) {
 					return Math.abs(asset.y - network.y) <= 1 && Math.abs(asset.height - network.height) <= 1;
 				}),
 			).toBe(true);
-			await expectFundsDialogScroll(page, "关闭", width !== 375);
+			await expectFundsDialogScroll(page, "关闭", width === 375 ? "required" : "none");
+			const readyAddress = await readFundingAddressGeometry(page);
+			await dialog.getByRole("button", { name: "关闭", exact: true }).click();
+			await page.getByRole("button", { name: "Toggle address", exact: true }).click();
+			await page.getByRole("button", { name: "Open deposit", exact: true }).click();
+			await expect(dialog.locator('[data-address-state="loading"]')).toBeVisible();
+			expect(await readFundingAddressGeometry(page)).toEqual(readyAddress);
+			await dialog.getByRole("button", { name: "关闭", exact: true }).click();
+			await page.getByRole("button", { name: "Toggle address", exact: true }).click();
+			await page.getByRole("button", { name: "Open deposit", exact: true }).click();
+			await expect(dialog.locator('[data-address-state="ready"]')).toBeVisible();
 			await dialog.getByRole("button", { name: "完成", exact: true }).scrollIntoViewIfNeeded();
 			await expect(dialog.getByRole("button", { name: "完成", exact: true })).toBeInViewport();
 			await page.screenshot({ path: test.info().outputPath(`deposit-${width}-${theme}.png`) });
@@ -282,6 +331,7 @@ for (const width of [375, 1363]) {
 				await expect(dialog.getByRole("heading", { name: "Deposit USDC from Arbitrum" })).toHaveCount(0);
 				expect(await dialog.evaluate((node) => node.scrollWidth <= node.clientWidth + 1)).toBe(true);
 				await expect(fiat).toBeInViewport({ ratio: 1 });
+				await expectFundsDialogScroll(page, "Close", "none");
 				await page.screenshot({ path: test.info().outputPath(`deposit-methods-${walletKind}-${width}-${theme}.png`) });
 
 				await transfer.click();

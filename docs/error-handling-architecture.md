@@ -76,7 +76,7 @@ useOrderValidation hook
 
 ### Constants
 - `src/config/constants.ts` - ORDER_MIN_NOTIONAL_USD, SCALE_LEVELS_*, TWAP_MINUTES_*
-- `src/config/contracts.ts` - MIN_DEPOSIT_USDC
+- `src/lib/trade/cctp-deposit.ts` - CCTP deposit minimum (twice the current fee; the fixed `MIN_DEPOSIT_USDC` was removed on 2026-10-04)
 - `src/config/cctp.ts` - CCTP route parameters and explicit Legacy withdrawal defaults
 - `src/lib/trade/withdrawal.ts` - Dynamic withdrawal fee, minimum, balance, and net-received validation
 
@@ -262,7 +262,7 @@ function DepositForm() {
     isWalletLoading: false,
     amount,
     walletBalance,
-    minDeposit: 5, // 5 USDC minimum
+    minDeposit: 5, // illustrative value from the original proposal; deposits no longer use a fixed minimum
   });
 
   return (

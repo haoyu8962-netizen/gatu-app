@@ -105,8 +105,15 @@ displays it (product decision, 2026-10-04). The contract only needs the amount t
 exceed the fee; the application requires at least twice the current maximum fee,
 the same guard as [CCTP withdrawals](withdrawals.md). `calculateCctpDepositFee`
 enforces it for the reviewed amount and again at execution with the fresh quote,
-the form shows the resulting minimum only while the fee is known and independent of
-the amount, and the Testnet automatic path waits for a balance that meets it. The
+throwing `CctpDepositBelowMinimumError` with the minimum the amount missed.
+`reviewCctpDepositFee` turns that into a result a surface can show: the amount
+field is marked invalid with "Minimum deposit is N USDC" (also when the fee
+depends on the amount and no fixed minimum can be displayed), the email form names
+the same minimum, and a fee that rises between review and click so that the amount
+no longer reaches it is reported as a fee change, never as a routing failure.
+The form shows the "Minimum N USDC" note only while the fee is known and
+independent of the amount, and the Testnet automatic path waits for a balance that
+meets the rule. The
 official terminal still applies 5 USDC to its Arbitrum routes; that is its own
 choice, not a CCTP rule. The funding-address notice tells the user to send only
 native USDC on Arbitrum and that other assets or networks are not credited; it

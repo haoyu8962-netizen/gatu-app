@@ -35,7 +35,11 @@ const QR_FRAME_CLASS =
 const ADDRESS_GROUP_CLASS = "w-full space-y-1.5";
 const ADDRESS_LABEL_CLASS = "text-2xs leading-4 text-market-close-subtle";
 const ADDRESS_FIELD_CLASS =
-	"flex min-h-11 items-center rounded-20 border border-market-close-stroke-card bg-market-close-card px-3 py-1.5";
+	"relative flex min-h-11 items-center gap-2 rounded-20 border border-market-close-stroke-card bg-market-close-card px-3 py-1.5";
+const ADDRESS_TEXT_CLASS =
+	"min-w-0 flex-1 break-all text-balance text-center font-mono text-xs leading-[18px] tabular-nums text-market-close-fg";
+const ADDRESS_ACTION_SIZE_CLASS = "size-8 shrink-0";
+const ADDRESS_SHAPE = `0x${"0".repeat(40)}`;
 
 export function FundingAddressCard(props: Props) {
 	const { t } = useLingui();
@@ -92,15 +96,19 @@ export function FundingAddressCard(props: Props) {
 					<p className={ADDRESS_LABEL_CLASS}>
 						<Trans>Deposit address</Trans>
 					</p>
-					<div className={cn(ADDRESS_FIELD_CLASS, "justify-center")} aria-hidden="true">
-						{!isUnavailable ? (
-							<div
-								className="h-2 w-3/4 rounded-full bg-market-close-stroke-input/50"
-								data-address-placeholder="skeleton"
-							/>
-						) : (
-							<span className="text-sm text-market-close-muted">—</span>
-						)}
+					<div className={ADDRESS_FIELD_CLASS} aria-hidden="true">
+						<span className={cn(ADDRESS_TEXT_CLASS, "invisible")}>{ADDRESS_SHAPE}</span>
+						<span className={ADDRESS_ACTION_SIZE_CLASS} />
+						<span className="absolute inset-0 flex items-center justify-center">
+							{!isUnavailable ? (
+								<span
+									className="h-2 w-3/4 rounded-full bg-market-close-stroke-input/50"
+									data-address-placeholder="skeleton"
+								/>
+							) : (
+								<span className="text-sm text-market-close-muted">—</span>
+							)}
+						</span>
 					</div>
 				</div>
 			</div>
@@ -131,11 +139,8 @@ export function FundingAddressCard(props: Props) {
 				<p className={ADDRESS_LABEL_CLASS}>
 					<Trans>Deposit address</Trans>
 				</p>
-				<div className={cn(ADDRESS_FIELD_CLASS, "gap-2")}>
-					<span
-						className="min-w-0 flex-1 break-all text-balance text-center font-mono text-xs leading-[18px] tabular-nums text-market-close-fg"
-						title={props.address}
-					>
+				<div className={ADDRESS_FIELD_CLASS}>
+					<span className={ADDRESS_TEXT_CLASS} title={props.address}>
 						{props.address}
 					</span>
 					<ButtonIcon
@@ -145,7 +150,10 @@ export function FundingAddressCard(props: Props) {
 						size="sm"
 						onClick={() => copy(props.address)}
 						aria-label={copied ? t`Copied` : t`Copy deposit address`}
-						className="shrink-0 rounded-16 text-market-close-muted shadow-none not-data-disabled:hover:bg-market-close-hover not-data-disabled:hover:text-market-close-fg"
+						className={cn(
+							ADDRESS_ACTION_SIZE_CLASS,
+							"rounded-16 text-market-close-muted shadow-none not-data-disabled:hover:bg-market-close-hover not-data-disabled:hover:text-market-close-fg",
+						)}
 					>
 						{copied ? (
 							<BrandMotion motion={BRAND_MOTION_COPY_FEEDBACK} size={16} />

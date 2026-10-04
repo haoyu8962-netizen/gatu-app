@@ -15,6 +15,12 @@ vi.mock("qrcode", () => ({
 	toCanvas: mocks.toCanvas,
 }));
 
+function visibleText(element: Element | null | undefined): string {
+	const clone = element?.cloneNode(true) as Element | undefined;
+	for (const hidden of clone?.querySelectorAll('[aria-hidden="true"]') ?? []) hidden.remove();
+	return clone?.textContent ?? "";
+}
+
 describe("FundingAddressCard", () => {
 	let container: HTMLDivElement;
 	let root: Root;
@@ -92,7 +98,7 @@ describe("FundingAddressCard", () => {
 				expect(stateContainer?.querySelector('[role="alert"]')?.textContent).toContain("Confirmed restriction");
 			} else {
 				expect(stateContainer?.querySelector('[role="alert"], [role="status"]')).toBeNull();
-				expect(stateContainer?.textContent).toBe("Deposit address");
+				expect(visibleText(stateContainer)).toBe("Deposit address");
 			}
 		},
 	);
@@ -110,7 +116,10 @@ describe("FundingAddressCard", () => {
 			const field = container.querySelector<HTMLElement>('[class*="min-h-11"]');
 			return {
 				frame: shared(frame?.className, ["flex-col", "gap-2", "px-4", "text-center"]),
-				field: shared(field?.className, ["justify-center", "gap-2"]),
+				field: field?.className,
+				text: shared(field?.firstElementChild?.className, ["invisible"]),
+				textLength: field?.firstElementChild?.textContent?.length,
+				action: [...(field?.children ?? [])].some((child) => child.className.split(" ").includes("size-8")),
 				card: container.querySelector<HTMLElement>("[data-address-state]")?.className,
 			};
 		}
@@ -134,7 +143,9 @@ describe("FundingAddressCard", () => {
 		const ready = geometry();
 
 		expect(loading.frame).not.toBe("");
-		expect(loading.field).not.toBe("");
+		expect(loading.field).toContain("min-h-11");
+		expect(loading.textLength).toBe(42);
+		expect(loading.action).toBe(true);
 		expect(loading).toEqual(ready);
 	});
 
@@ -152,6 +163,6 @@ describe("FundingAddressCard", () => {
 		expect(stateContainer?.querySelector('[role="status"]')).toBeNull();
 		expect(stateContainer?.firstElementChild?.querySelector("p")).toBeNull();
 		expect(stateContainer?.querySelector('[data-address-placeholder="skeleton"]')).not.toBeNull();
-		expect(stateContainer?.textContent).toBe("Deposit address");
+		expect(visibleText(stateContainer)).toBe("Deposit address");
 	});
 });

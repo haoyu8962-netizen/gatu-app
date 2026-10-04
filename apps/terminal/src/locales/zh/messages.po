@@ -5093,7 +5093,7 @@ msgid "Minimum <0>{0}</0>; maximum <1>{1}</1>."
 msgstr "最低值 <0>{0}</0>；最高值 <1>{1}</1>。"
 
 #. placeholder {0}: ctx.minDeposit
-#. placeholder {0}: numberFormat.formatDecimalString(formatUnits(cctpDepositMinimumRaw, 6))
+#. placeholder {0}: numberFormat.formatDecimalString(formatUnits(cctpDepositBelowMinimumRaw, 6))
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/lib/errors/definitions/deposit.ts
 msgid "Minimum deposit is {0} USDC"

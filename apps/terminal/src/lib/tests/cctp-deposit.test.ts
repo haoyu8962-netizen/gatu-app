@@ -22,6 +22,7 @@ import {
 	buildCctpSponsoredDepositContractArgs,
 	CCTP_EXTENSION_ABI,
 	CCTP_EXTENSION_V2_ABI,
+	CctpDepositBelowMinimumError,
 	calculateCctpDepositFee,
 	createCctpDepositParameters,
 	createCctpSponsoredDepositParameters,
@@ -37,6 +38,7 @@ import {
 	meetsCctpDepositMinimum,
 	normalizeCctpDepositFees,
 	normalizeCctpFastAllowance,
+	reviewCctpDepositFee,
 	splitCctpAuthorizationSignature,
 } from "@/lib/trade/cctp-deposit";
 import type { Translate } from "@/lib/translate";
@@ -292,10 +294,26 @@ describe("CCTP fee handling", () => {
 		});
 	});
 
-	it("fails closed when fees consume the transfer", () => {
-		expect(() => calculateCctpDepositFee(200_000n, normalizeCctpDepositFees(createFeePayload()))).toThrow(
-			"CCTP fees must be lower than the deposit amount",
-		);
+	it("fails closed with the missed minimum when fees consume the transfer", () => {
+		const quote = normalizeCctpDepositFees(createFeePayload());
+
+		expect(() => calculateCctpDepositFee(200_000n, quote)).toThrow(CctpDepositBelowMinimumError);
+		expect(reviewCctpDepositFee(200_000n, quote)).toEqual({ calculation: null, belowMinimumRaw: 400_000n });
+	});
+
+	it("reviews an amount without throwing and separates a missed minimum from an unusable quote", () => {
+		const fixed = normalizeCctpDepositFees(createFeePayload(0));
+		const proportional = normalizeCctpDepositFees(createFeePayload(1.3));
+
+		expect(reviewCctpDepositFee(399_999n, fixed)).toEqual({ calculation: null, belowMinimumRaw: 400_000n });
+		expect(reviewCctpDepositFee(400_000n, fixed).calculation?.maxFeeRaw).toBe(200_000n);
+		expect(reviewCctpDepositFee(400_000n, fixed).belowMinimumRaw).toBeNull();
+		expect(reviewCctpDepositFee(400_000n, proportional)).toEqual({ calculation: null, belowMinimumRaw: 400_126n });
+		expect(reviewCctpDepositFee(0n, fixed)).toEqual({ calculation: null, belowMinimumRaw: null });
+		expect(reviewCctpDepositFee(400_000n, { ...fixed, minimumFeeBps: "not-a-number" })).toEqual({
+			calculation: null,
+			belowMinimumRaw: null,
+		});
 	});
 
 	it("requires twice the current maximum fee instead of a fixed legacy-bridge minimum", () => {
@@ -303,9 +321,7 @@ describe("CCTP fee handling", () => {
 
 		expect(getCctpDepositMinimumRaw(200_000n)).toBe(400_000n);
 		expect(getAmountIndependentCctpDepositMinimumRaw(quote)).toBe(400_000n);
-		expect(() => calculateCctpDepositFee(399_999n, quote)).toThrow(
-			"CCTP deposit amount is below the minimum of twice the current fee",
-		);
+		expect(() => calculateCctpDepositFee(399_999n, quote)).toThrow(CctpDepositBelowMinimumError);
 		expect(calculateCctpDepositFee(400_000n, quote).netAmountRaw).toBe(200_000n);
 		expect(meetsCctpDepositMinimum(399_999n, quote)).toBe(false);
 		expect(meetsCctpDepositMinimum(400_000n, quote)).toBe(true);

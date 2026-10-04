@@ -14,6 +14,7 @@ export function FundsFormsFixture() {
 	const [form, setForm] = useState<"deposit" | "withdraw" | null>(null);
 	const [email, setEmail] = useState(true);
 	const [cardFunding, setCardFunding] = useState(false);
+	const [addressPending, setAddressPending] = useState(false);
 	const [depositStep, setDepositStep] = useState<"methods" | "transfer">("methods");
 	const [purchases, setPurchases] = useState(0);
 	const [status, setStatus] = useState<"success" | "loading" | "error">("success");
@@ -37,6 +38,7 @@ export function FundsFormsFixture() {
 				<Button onClick={() => setEmail(!email)}>Toggle email</Button>
 				<Button onClick={() => setStatus(status === "success" ? "error" : "success")}>Toggle data</Button>
 				<Button onClick={() => setCardFunding(!cardFunding)}>Toggle card funding</Button>
+				<Button onClick={() => setAddressPending(!addressPending)}>Toggle address</Button>
 				<output aria-label="Fixture submissions">{submitted}</output>
 				<output aria-label="Fixture card purchases">{purchases}</output>
 			</div>
@@ -82,11 +84,12 @@ export function FundsFormsFixture() {
 							requiresExplicitFundingDeposit={email}
 							cctpFee="0.2"
 							minimumDepositRaw={400_000n}
+							belowMinimumDepositRaw={null}
 							cctpFeeLoading={status === "loading"}
 							cctpFeeError={status === "error"}
 							pendingCctpRecovery={false}
 							usesFundingAddressFlow={email}
-							fundingAddressPending={false}
+							fundingAddressPending={addressPending}
 							fundingAddress={address}
 							onDone={() => setForm(null)}
 						/>

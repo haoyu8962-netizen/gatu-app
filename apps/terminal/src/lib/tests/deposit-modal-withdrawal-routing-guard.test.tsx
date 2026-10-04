@@ -72,6 +72,8 @@ const testState = vi.hoisted(() => ({
 		maxFeeRaw: bigint;
 		netAmountRaw: bigint;
 	} | null,
+	cctpDepositBelowMinimumRaw: null as bigint | null,
+	cctpDepositRefetchForwardFeeRaw: 200_000n,
 	cctpDepositFeeCalls: [] as Array<{ amountRaw: bigint | undefined; enabled: boolean; isTestnet: boolean }>,
 	cctpWithdrawalFee: "1",
 	cctpWithdrawalFeeError: false,
@@ -239,6 +241,7 @@ vi.mock("@/hooks/trade/use-cctp-deposit-fee", () => ({
 		};
 		return {
 			calculation: testState.cctpDepositFeeCalculation,
+			belowMinimumRaw: testState.cctpDepositBelowMinimumRaw,
 			data: { fastAllowanceRaw: 100_000_000n, feeQuote },
 			hasSufficientFastAllowance: true,
 			isError: false,
@@ -246,7 +249,10 @@ vi.mock("@/hooks/trade/use-cctp-deposit-fee", () => ({
 			refetch: vi.fn().mockResolvedValue({
 				data: {
 					fastAllowanceRaw: 100_000_000n,
-					feeQuote,
+					feeQuote: {
+						...feeQuote,
+						forwardFeeRaw: { ...feeQuote.forwardFeeRaw, med: testState.cctpDepositRefetchForwardFeeRaw },
+					},
 				},
 				isError: false,
 			}),
@@ -518,7 +524,15 @@ vi.mock("@/components/trade/tradebox/deposit/deposit-form", () => ({
 		fundingAddress,
 		cctpFee,
 		sponsoredCctpReadiness,
+		amountError,
+		minimumDepositRaw,
+		belowMinimumDepositRaw,
+		validation,
 	}: {
+		amountError?: string | null;
+		minimumDepositRaw: bigint | null;
+		belowMinimumDepositRaw: bigint | null;
+		validation: { valid: boolean; error: string | null };
 		cctpFee?: string | null;
 		fundingAddress?: string;
 		onRetryRouting: () => void;
@@ -537,6 +551,10 @@ vi.mock("@/components/trade/tradebox/deposit/deposit-form", () => ({
 			"div",
 			{
 				"data-cctp-fee": cctpFee,
+				"data-amount-error": amountError ?? undefined,
+				"data-minimum": minimumDepositRaw?.toString(),
+				"data-below-minimum": belowMinimumDepositRaw?.toString(),
+				"data-valid": validation.valid,
 				"data-is-pending": isPending,
 				"data-balance-status": balanceStatus,
 				"data-funding-address": fundingAddress,
@@ -702,6 +720,8 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 		testState.hyperliquidSessionMode = "wallet";
 		testState.emailAddress = null;
 		testState.cctpDepositFeeCalculation = { maxFeeRaw: 200_000n, netAmountRaw: 4_800_000n };
+		testState.cctpDepositBelowMinimumRaw = null;
+		testState.cctpDepositRefetchForwardFeeRaw = 200_000n;
 		testState.cctpDepositFeeCalls.length = 0;
 		testState.cctpWithdrawalFee = "1";
 		testState.cctpWithdrawalFeeError = false;
@@ -1809,6 +1829,64 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 			);
 			expect(form?.getAttribute("data-status")).toBe("error");
 		}
+	});
+
+	it("gives the amount field the minimum failure and the form both minimum values", async () => {
+		testState.modalOpen = true;
+		testState.activeTab = "deposit";
+		testState.routingResponse = { depositRoute: "cctp", withdrawalRoute: "cctp" };
+		testState.cctpDepositFeeCalculation = null;
+		testState.cctpDepositBelowMinimumRaw = 400_000n;
+
+		await rerender();
+
+		const depositForm = container.querySelector('[data-testid="deposit-routing-status"]');
+		expect(depositForm?.getAttribute("data-amount-error")).toBe("Minimum deposit is 0.4 USDC");
+		expect(depositForm?.getAttribute("data-minimum")).toBe("400000");
+		expect(depositForm?.getAttribute("data-below-minimum")).toBe("400000");
+		expect(depositForm?.getAttribute("data-valid")).toBe("false");
+
+		testState.formatLocale = "de-DE";
+		await rerender();
+		expect(container.querySelector('[data-testid="deposit-routing-status"]')?.getAttribute("data-amount-error")).toBe(
+			"Minimum deposit is 0,4 USDC",
+		);
+	});
+
+	it("leaves the amount field without a minimum failure once the amount meets it", async () => {
+		testState.modalOpen = true;
+		testState.activeTab = "deposit";
+		testState.routingResponse = { depositRoute: "cctp", withdrawalRoute: "cctp" };
+
+		await rerender();
+
+		const depositForm = container.querySelector('[data-testid="deposit-routing-status"]');
+		expect(depositForm?.hasAttribute("data-amount-error")).toBe(false);
+		expect(depositForm?.getAttribute("data-minimum")).toBe("400000");
+		expect(depositForm?.hasAttribute("data-below-minimum")).toBe(false);
+	});
+
+	it("reports a fee rise that pushes the reviewed amount below the minimum as a fee change, not a route failure", async () => {
+		testState.modalOpen = true;
+		testState.activeTab = "deposit";
+		testState.emailAddress = "trader@example.com";
+		testState.routingResponse = { depositRoute: "cctp", withdrawalRoute: "cctp" };
+		testState.freshRoutingResponse = { depositRoute: "cctp", withdrawalRoute: "cctp" };
+		testState.depositMaxRaw = 400_000n;
+		testState.cctpDepositFeeCalculation = { maxFeeRaw: 200_000n, netAmountRaw: 200_000n };
+		testState.cctpDepositRefetchForwardFeeRaw = 210_000n;
+
+		await rerender();
+		await act(async () => getButton("Deposit 10 USDC").click());
+
+		expect(testState.deposit).not.toHaveBeenCalled();
+		expect(container.querySelector('[data-testid="deposit-data-error"]')?.textContent).toBe(
+			"Circle fees changed. Review the updated fee, then submit again.",
+		);
+		expect(container.querySelector('[data-testid="deposit-routing-preflight-error"]')).toBeNull();
+		expect(container.querySelector('[data-testid="deposit-routing-status"]')?.getAttribute("data-status")).toBe(
+			"ready",
+		);
 	});
 
 	it("passes the amount-independent Circle forwarding fee to an empty external deposit form", async () => {

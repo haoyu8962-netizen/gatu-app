@@ -355,10 +355,8 @@ export function calculateCctpDepositFee(amountRaw: bigint, quote: CctpDepositFee
 	const protocolFeeRaw = toCeilingBigInt(new Big(amountRaw.toString()).times(minimumFeeBps).div(10_000));
 	const bufferedProtocolFeeRaw = toCeilingBigInt(new Big(protocolFeeRaw.toString()).times(120).div(100));
 	const maxFeeRaw = bufferedProtocolFeeRaw + quote.forwardFeeRaw.med;
-	if (maxFeeRaw >= amountRaw) throw new Error("CCTP fees must be lower than the deposit amount");
-	if (amountRaw < getCctpDepositMinimumRaw(maxFeeRaw)) {
-		throw new Error("CCTP deposit amount is below the minimum of twice the current fee");
-	}
+	const minimumRaw = getCctpDepositMinimumRaw(maxFeeRaw);
+	if (amountRaw < minimumRaw) throw new CctpDepositBelowMinimumError(minimumRaw);
 
 	return {
 		protocolFeeRaw,
@@ -393,13 +391,39 @@ export function getCctpDepositMinimumRaw(maxFeeRaw: bigint): bigint {
 	return maxFeeRaw * BigInt(CCTP_MINIMUM_FEE_MULTIPLIER);
 }
 
-export function meetsCctpDepositMinimum(amountRaw: bigint, quote: CctpDepositFeeQuote): boolean {
-	try {
-		calculateCctpDepositFee(amountRaw, quote);
-		return true;
-	} catch {
-		return false;
+export class CctpDepositBelowMinimumError extends Error {
+	readonly minimumRaw: bigint;
+
+	constructor(minimumRaw: bigint) {
+		super("CCTP deposit amount is below the minimum of twice the current fee");
+		this.name = "CctpDepositBelowMinimumError";
+		this.minimumRaw = minimumRaw;
 	}
+}
+
+export interface CctpDepositFeeReview {
+	calculation: CctpDepositFeeCalculation | null;
+	belowMinimumRaw: bigint | null;
+}
+
+/**
+ * Fee calculation for a surface that reviews an amount without throwing: `belowMinimumRaw` is the
+ * minimum the amount failed to reach, so the surface can say so instead of treating it as a quote
+ * that is not available.
+ */
+export function reviewCctpDepositFee(amountRaw: bigint, quote: CctpDepositFeeQuote): CctpDepositFeeReview {
+	try {
+		return { calculation: calculateCctpDepositFee(amountRaw, quote), belowMinimumRaw: null };
+	} catch (error) {
+		return {
+			calculation: null,
+			belowMinimumRaw: error instanceof CctpDepositBelowMinimumError ? error.minimumRaw : null,
+		};
+	}
+}
+
+export function meetsCctpDepositMinimum(amountRaw: bigint, quote: CctpDepositFeeQuote): boolean {
+	return reviewCctpDepositFee(amountRaw, quote).calculation !== null;
 }
 
 export function getAmountIndependentCctpDepositMinimumRaw(quote: CctpDepositFeeQuote): bigint | null {

@@ -62,11 +62,15 @@ changes, not evidence that a build has been deployed or accepted on real devices
   place while the content scrolls underneath on short screens, and nothing scrolls on common desktop
   and phone sizes. Asset and network sit on one row with their icons, the QR code carries the USDC
   mark in its centre, and the address and its copy button share one field. Withdraw and Bridge use
-  the same frame, and the phone sheet and the desktop dialog are the same layout.
+  the same frame, and the phone sheet and the desktop dialog are built from the same components,
+  with the paddings and corners each surface already had.
 
 - Deposits follow the CCTP rules instead of the retired bridge's. The fixed 5 USDC minimum is gone:
-  a deposit now has to be at least twice the current Circle fee (0.40 USDC while the fee is 0.20),
-  and the dialog shows that minimum once the fee is known. The notice under the deposit address no
+  a deposit now has to be at least twice the current Circle fee (0.40 USDC while the fee is 0.20).
+  The dialog shows that minimum once the fee is known and does not depend on the amount, and an
+  amount below it is marked on the amount field with the minimum it missed. If the fee rises between
+  the review and the click so that the amount no longer reaches the minimum, the dialog says the fee
+  changed instead of reporting a routing problem. The notice under the deposit address no
   longer repeats a minimum; it says to send only native USDC on Arbitrum and that other assets or
   networks are not credited to the trading account. A new HyperCore account still pays Hyperliquid's
   1 USDC activation fee on its first withdrawal or transfer out, so a very small first deposit cannot
