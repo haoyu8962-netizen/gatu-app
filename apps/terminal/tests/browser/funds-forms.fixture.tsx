@@ -1,6 +1,6 @@
-import { CaretLeftIcon } from "@phosphor-icons/react";
-import { Button, ButtonIcon } from "@sairn/ui";
+import { Button } from "@sairn/ui";
 import { useState } from "react";
+import { renderFundsModalBackButton } from "@/components/trade/components/funds-modal-back-button";
 import { FundsModalShell } from "@/components/trade/components/funds-modal-shell";
 import { DepositForm } from "@/components/trade/tradebox/deposit/deposit-form";
 import { DepositMethodChooser } from "@/components/trade/tradebox/deposit/deposit-method-chooser";
@@ -8,8 +8,6 @@ import { StatusScreen } from "@/components/trade/tradebox/deposit/shared-ui";
 import { WithdrawForm } from "@/components/trade/tradebox/deposit/withdraw-form";
 import { WrongNetworkScreen } from "@/components/trade/tradebox/deposit/wrong-network-screen";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { cn } from "@/lib/cn";
-import { FUNDS_MODAL_BACK_BUTTON_CLASS } from "@/lib/ui/funds-modal-scroll";
 
 const address = "0x1111111111111111111111111111111111111111" as const;
 const noop = () => {};
@@ -60,17 +58,7 @@ export function FundsFormsFixture() {
 				tab={form ?? "deposit"}
 				headerStart={
 					form === "deposit" && cardFunding && depositStep === "transfer" ? (
-						<ButtonIcon
-							type="button"
-							variant="ghost"
-							intent="neutral"
-							size="sm"
-							onClick={() => setDepositStep("methods")}
-							aria-label="Back"
-							className={cn(FUNDS_MODAL_BACK_BUTTON_CLASS, "rounded-16")}
-						>
-							<CaretLeftIcon className="size-4" aria-hidden="true" />
-						</ButtonIcon>
+						renderFundsModalBackButton({ label: "Back", onClick: () => setDepositStep("methods") })
 					) : null
 				}
 			>

@@ -4,7 +4,6 @@ import { fileURLToPath } from "node:url";
 import ts from "typescript";
 import { describe, expect, it } from "vitest";
 import {
-	FUNDS_MODAL_BACK_BUTTON_CLASS,
 	FUNDS_MODAL_BODY_CLASS,
 	FUNDS_MODAL_BODY_SLOT,
 	FUNDS_MODAL_BODY_TOP_PADDING_CLASS,
@@ -76,6 +75,11 @@ const SCROLL_CONSTANTS = [
 	"FUNDS_MODAL_POPUP_CLASS",
 ];
 const CLASS_MERGE_MODULE = "lib/cn.ts";
+// The shell's back button is one function: the dialog and the browser fixture both call it, so the
+// element the browser test measures is the element the dialog ships.
+const BACK_BUTTON_MODULE = "components/trade/components/funds-modal-back-button.tsx";
+const BACK_BUTTON_RENDERER = "renderFundsModalBackButton";
+const BACK_BUTTON_FIXTURE = "../tests/browser/funds-forms.fixture.tsx";
 const SELF_TEST_FILE = `${FUNDS_FLOW_DIRECTORY}/self-test.tsx`;
 
 type JsxTag = ts.JsxOpeningElement | ts.JsxSelfClosingElement;
@@ -525,6 +529,48 @@ function reexportsByNameOnly(text: string): boolean {
 	});
 }
 
+/** Parentheses and JSX expression containers do not change the value they wrap. */
+function unwrap(node: ts.Expression | undefined): ts.Expression | undefined {
+	let current = node;
+	while (current && ts.isParenthesizedExpression(current)) current = current.expression;
+	return current;
+}
+
+/**
+ * True when the file hands the shell its back button in the one accepted form: a single
+ * `headerStart` attribute whose value is the shared renderer called directly, or a conditional that
+ * yields that call or `null`. The renderer must be a plain import of its module that the file does
+ * not redeclare, and that call must be the file's only mention of it. A wrapper element around the
+ * call, `cloneElement`, a variable or a second use is rejected: each of them could put the shipped
+ * button on a layer the browser fixture does not render.
+ */
+function passesBackButtonUnchanged(text: string, fileName: string): boolean {
+	const source = parseSource(text, fileName);
+	if (!importsPlainly(source, BACK_BUTTON_MODULE, [BACK_BUTTON_RENDERER])) return false;
+	if (redeclares(source, [BACK_BUTTON_RENDERER])) return false;
+
+	const mentions: ts.Identifier[] = [];
+	const attributes: ts.JsxAttribute[] = [];
+	function visit(node: ts.Node) {
+		if (ts.isImportDeclaration(node)) return;
+		if (ts.isIdentifier(node) && node.text === BACK_BUTTON_RENDERER) mentions.push(node);
+		if (ts.isJsxAttribute(node) && node.name.getText() === "headerStart") attributes.push(node);
+		ts.forEachChild(node, visit);
+	}
+	visit(source);
+	if (mentions.length !== 1 || attributes.length !== 1) return false;
+
+	const initializer = attributes[0].initializer;
+	const value = unwrap(initializer && ts.isJsxExpression(initializer) ? initializer.expression : undefined);
+	const isRendererCall = (node: ts.Expression | undefined) =>
+		node !== undefined && ts.isCallExpression(node) && node.expression === mentions[0];
+	const isNull = (node: ts.Expression | undefined) => node?.kind === ts.SyntaxKind.NullKeyword;
+	if (isRendererCall(value)) return true;
+	if (!value || !ts.isConditionalExpression(value)) return false;
+	const branches = [unwrap(value.whenTrue), unwrap(value.whenFalse)];
+	return branches.some(isRendererCall) && branches.every((branch) => isRendererCall(branch) || isNull(branch));
+}
+
 function usesSharedNames(source: ts.SourceFile): boolean {
 	return (
 		importsPlainly(source, SCROLL_MODULE, SCROLL_CONSTANTS) &&
@@ -572,17 +618,75 @@ describe("funds modal scroll contract", () => {
 		expect(read(FUNDS_DIALOG_SOURCES[0])).toContain("cn(FUNDS_MODAL_BODY_TOP_PADDING_CLASS,");
 	});
 
-	it("keeps the back button on the close button's layer, above the heading band", () => {
-		const fixture = readFileSync(resolve(SOURCE_ROOT, "../tests/browser/funds-forms.fixture.tsx"), "utf8");
+	it("builds the back button of the dialog and of the browser fixture with one renderer", () => {
+		const renderer = read(BACK_BUTTON_MODULE);
 		const closeLayer = /absolute top-4 right-4 (z-\d+)/.exec(
 			readFileSync(resolve(UI_PACKAGE_ROOT, "modal.tsx"), "utf8"),
 		)?.[1];
+		const bandLayer = Number(/\bz-(\d+)\b/.exec(FUNDS_MODAL_HEADING_CLASS)?.[1]);
 
+		expect(passesBackButtonUnchanged(read(FUNDS_FLOW_ENTRIES[0]), FUNDS_FLOW_ENTRIES[0])).toBe(true);
+		expect(passesBackButtonUnchanged(read(BACK_BUTTON_FIXTURE), BACK_BUTTON_FIXTURE)).toBe(true);
 		expect(closeLayer).toBe("z-10");
-		expect(FUNDS_MODAL_BACK_BUTTON_CLASS.split(" ")).toContain(closeLayer);
-		expect(Number(closeLayer?.slice(2))).toBeGreaterThan(Number(/\bz-(\d+)\b/.exec(FUNDS_MODAL_HEADING_CLASS)?.[1]));
-		expect(read(FUNDS_FLOW_ENTRIES[0]).split("cn(\n\t\t\t\t\t\t\tFUNDS_MODAL_BACK_BUTTON_CLASS,")).toHaveLength(2);
-		expect(fixture.split("cn(FUNDS_MODAL_BACK_BUTTON_CLASS,")).toHaveLength(2);
+		expect(Number(closeLayer?.slice(2))).toBeGreaterThan(bandLayer);
+		expect(renderer.split(` ${closeLayer} `)).toHaveLength(2);
+	});
+
+	it.each([
+		{ name: "a direct call", value: "renderFundsModalBackButton({ label, onClick })" },
+		{ name: "a conditional call", value: "canReturn ? renderFundsModalBackButton({ label, onClick }) : null" },
+		{
+			name: "a parenthesised conditional call",
+			value: "canReturn ? (renderFundsModalBackButton({ label, onClick })) : (null)",
+		},
+	])("accepts a back button handed over as $name", ({ value }) => {
+		const text = `import { renderFundsModalBackButton } from "@/components/trade/components/funds-modal-back-button";\nconst a = <FundsModalShell headerStart={${value}} />;`;
+
+		expect(passesBackButtonUnchanged(text, SELF_TEST_FILE)).toBe(true);
+	});
+
+	it.each([
+		{
+			name: "a wrapper on a lower layer",
+			value: '<div className="relative z-0">{renderFundsModalBackButton({ label, onClick })}</div>',
+		},
+		{
+			name: "a cloned element",
+			value: 'cloneElement(renderFundsModalBackButton({ label, onClick }), { className: "z-0" })',
+		},
+		{
+			name: "another element in one branch",
+			value: "canReturn ? renderFundsModalBackButton({ label, onClick }) : <Other />",
+		},
+		{
+			name: "a variable",
+			value: "backButton",
+			prelude: "const backButton = renderFundsModalBackButton({ label, onClick });",
+		},
+		{
+			name: "a second use",
+			value: "renderFundsModalBackButton({ label, onClick })",
+			prelude: "const again = renderFundsModalBackButton({ label, onClick });",
+		},
+		{ name: "its own button", value: '<ButtonIcon aria-label="Back" className="absolute z-0" />' },
+		{ name: "no back button", value: "null" },
+		{
+			name: "a renderer of its own",
+			value: "renderFundsModalBackButton({ label, onClick })",
+			imports: 'import { renderFundsModalBackButton } from "./back-button";',
+		},
+		{
+			name: "an aliased renderer",
+			value: "render({ label, onClick })",
+			imports:
+				'import { renderFundsModalBackButton as render } from "@/components/trade/components/funds-modal-back-button";',
+		},
+	])("does not accept a back button handed over as $name", ({ value, prelude = "", imports }) => {
+		const header =
+			imports ?? 'import { renderFundsModalBackButton } from "@/components/trade/components/funds-modal-back-button";';
+		const text = `${header}\n${prelude}\nconst a = <FundsModalShell headerStart={${value}} />;`;
+
+		expect(passesBackButtonUnchanged(text, SELF_TEST_FILE)).toBe(false);
 	});
 
 	it.each(FUNDS_DIALOG_SOURCES)("gives the one dialog in %s the shared popup, header and body classes", (file) => {
