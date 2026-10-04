@@ -360,9 +360,18 @@ function readCctpDepositFeeRate(quote: CctpDepositFeeQuote): Big {
 	return minimumFeeBps;
 }
 
+const CCTP_BPS_TO_FRACTION = "0.0001";
+const CCTP_PROTOCOL_FEE_BUFFER = "1.2";
+
+/**
+ * Both products are exact: Big.js multiplies without rounding, whereas its division rounds to a
+ * fixed number of decimals, so the two ceilings below are those of the exact values.
+ */
 function calculateCctpDepositMaxFee(amountRaw: bigint, minimumFeeBps: Big, forwardFeeRaw: bigint) {
-	const protocolFeeRaw = toCeilingBigInt(new Big(amountRaw.toString()).times(minimumFeeBps).div(10_000));
-	const bufferedProtocolFeeRaw = toCeilingBigInt(new Big(protocolFeeRaw.toString()).times(120).div(100));
+	const protocolFeeRaw = toCeilingBigInt(
+		new Big(amountRaw.toString()).times(minimumFeeBps).times(CCTP_BPS_TO_FRACTION),
+	);
+	const bufferedProtocolFeeRaw = toCeilingBigInt(new Big(protocolFeeRaw.toString()).times(CCTP_PROTOCOL_FEE_BUFFER));
 	return { protocolFeeRaw, bufferedProtocolFeeRaw, maxFeeRaw: bufferedProtocolFeeRaw + forwardFeeRaw };
 }
 
@@ -373,7 +382,7 @@ function calculateCctpDepositMaxFee(amountRaw: bigint, minimumFeeBps: Big, forwa
  *
  * The search ends within the limit because `readCctpDepositFeeRate` caps the rate at
  * `CCTP_DEPOSIT_MAX_FEE_BPS`. Write `c` for the rate as a fraction (at most 0.1) and `F` for the
- * forward fee. An amount `a` requires `f(a)` with `2.4c·a + 2F ≤ f(a) ≤ 2.4c·a + 4.4 + 2F`, so
+ * forward fee. `calculateCctpDepositMaxFee` takes exact ceilings, so an amount `a` requires `f(a)` with `2.4c·a + 2F ≤ f(a) ≤ 2.4c·a + 4.4 + 2F`, so
  * every amount from `U = (4.4 + 2F) / (1 − 2.4c)` up passes, and while a candidate `a` fails, the
  * next one is at most `2.4c·(U − a) + 4.4 ≤ 0.24·(U − a) + 4.4` short of `U`. The distance to `U`
  * is therefore under 7 after 56 rounds whenever it starts below 4.17^56 (about 5 × 10^34; a

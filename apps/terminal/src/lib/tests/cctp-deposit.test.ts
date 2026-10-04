@@ -371,6 +371,23 @@ describe("CCTP fee handling", () => {
 		expect(rejectedAboveMinimum).toBeGreaterThan(0);
 	});
 
+	it("charges at least one unit for any positive rate instead of rounding a tiny product away", () => {
+		const fixed = normalizeCctpDepositFees(createFeePayload(0));
+		const tiny = { ...fixed, minimumFeeBps: "1e-20", forwardFeeRaw: createForwardFee(100) };
+
+		expect(reviewCctpDepositFee(204n, tiny).calculation).toMatchObject({
+			protocolFeeRaw: 1n,
+			bufferedProtocolFeeRaw: 2n,
+			maxFeeRaw: 102n,
+		});
+		expect(reviewCctpDepositFee(199n, tiny)).toEqual({ calculation: null, belowMinimumRaw: 204n });
+		expect(getCctpDepositMinimumRaw(tiny)).toBe(204n);
+		expect(calculateCctpDepositFee(10_000_000_000_000n, { ...fixed, minimumFeeBps: "1.3" })).toMatchObject({
+			protocolFeeRaw: 1_300_000_000n,
+			bufferedProtocolFeeRaw: 1_560_000_000n,
+		});
+	});
+
 	it("finds the minimum for the largest supported rate and a forwarding fee at the safe-integer limit", () => {
 		const forward = BigInt(Number.MAX_SAFE_INTEGER);
 		const quote = {
