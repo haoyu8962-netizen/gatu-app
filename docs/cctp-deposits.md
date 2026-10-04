@@ -109,15 +109,23 @@ throwing `CctpDepositBelowMinimumError` with the smallest amount at or above the
 rejected one that the same quote accepts. Because the fee is rounded up and may
 grow with the amount, that value is searched for (each candidate is raised to what
 it requires until one passes) rather than read off the rejected amount, so the
-amount a user is told to enter is itself accepted; a rate that outgrows every
-amount has no minimum and is treated as a quote that cannot be used.
+amount a user is told to enter is itself accepted. The search is bounded, and the
+bound is sufficient only because a Fast Transfer rate above
+`CCTP_DEPOSIT_MAX_FEE_BPS` (1,000 bps, 10% of the amount) is rejected as an
+unusable quote, both when Circle's response is normalized and when a fee is
+calculated: at or below that rate the search provably ends within its limit
+(`findCctpDepositMinimumRaw` states the argument). Circle's published Fast
+Transfer rates are far below it; the ceiling exists to fail closed on a quote the
+application cannot reason about, and a deposit is not offered while it applies.
+Running out of search rounds is treated as an unusable quote too, never as proof
+that no amount can be deposited.
 `reviewCctpDepositFee` turns the failure into a result a surface can show: the
 amount field is marked invalid with "Minimum deposit is N USDC", the email form
 names the same amount, and a fee that rises between review and click so that the
 amount no longer reaches it is reported as a fee change, never as a routing
 failure. The form's "Minimum N USDC" note is `getCctpDepositMinimumRaw` of the
-current quote, the smallest amount that quote accepts, shown whenever the quote is
-known, and the Testnet automatic path waits for a balance that meets the rule. The
+current quote, the smallest amount that quote accepts, shown whenever a usable
+quote is known, and the Testnet automatic path waits for a balance that meets the rule. The
 official terminal still applies 5 USDC to its Arbitrum routes; that is its own
 choice, not a CCTP rule. The funding-address notice tells the user to send only
 native USDC on Arbitrum and that other assets or networks are not credited; it

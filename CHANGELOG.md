@@ -70,7 +70,8 @@ changes, not evidence that a build has been deployed or accepted on real devices
   The dialog shows that minimum once the fee is known, and an amount below it is marked on the
   amount field with the smallest amount that would be accepted. If the fee rises between
   the review and the click so that the amount no longer reaches the minimum, the dialog says the fee
-  changed instead of reporting a routing problem. The notice under the deposit address no
+  changed instead of reporting a routing problem. A Circle quote whose rate exceeds 10% of the amount
+  is treated as unavailable, and no deposit is offered while it lasts. The notice under the deposit address no
   longer repeats a minimum; it says to send only native USDC on Arbitrum and that other assets or
   networks are not credited to the trading account. A new HyperCore account still pays Hyperliquid's
   1 USDC activation fee on its first withdrawal or transfer out, so a very small first deposit cannot

@@ -17,6 +17,7 @@ import {
 import { CCTP_MINIMUM_FEE_MULTIPLIER } from "@/config/cctp";
 import {
 	CCTP_AUTHORIZATION_WINDOW_SECONDS,
+	CCTP_DEPOSIT_MAX_FEE_BPS,
 	CCTP_FAST_FINALITY_THRESHOLD,
 	type CctpDepositConfig,
 } from "@/config/cctp-deposit";
@@ -280,6 +281,9 @@ export function normalizeCctpDepositFees(payload: unknown): CctpDepositFeeQuote 
 	const fastQuotes = quotes.filter(({ finalityThreshold }) => finalityThreshold === CCTP_FAST_FINALITY_THRESHOLD);
 	if (fastQuotes.length !== 1) throw new Error("Circle did not return one unambiguous Fast Transfer fee quote");
 	const fastQuote = fastQuotes[0];
+	if (fastQuote.minimumFee > CCTP_DEPOSIT_MAX_FEE_BPS) {
+		throw new Error("Circle returned a CCTP fee rate outside the supported range");
+	}
 
 	return {
 		finalityThreshold: CCTP_FAST_FINALITY_THRESHOLD,
@@ -352,6 +356,7 @@ function readCctpDepositFeeRate(quote: CctpDepositFeeQuote): Big {
 		throw new Error("CCTP minimum fee is invalid");
 	}
 	if (minimumFeeBps.lt(0) || quote.forwardFeeRaw.med < 0n) throw new Error("CCTP fee cannot be negative");
+	if (minimumFeeBps.gt(CCTP_DEPOSIT_MAX_FEE_BPS)) throw new Error("CCTP fee rate is outside the supported range");
 	return minimumFeeBps;
 }
 
@@ -363,8 +368,16 @@ function calculateCctpDepositMaxFee(amountRaw: bigint, minimumFeeBps: Big, forwa
 
 /**
  * The smallest amount at or above `fromRaw` that covers twice its own maximum fee. The required
- * amount never decreases as the amount grows, so raising the candidate to what it requires reaches
- * the smallest amount that passes; a rate that outgrows every amount has none.
+ * amount never decreases as the amount grows, so raising the candidate to what it requires cannot
+ * step over an amount that passes, and the first candidate that passes is the smallest.
+ *
+ * The search ends within the limit because `readCctpDepositFeeRate` caps the rate at
+ * `CCTP_DEPOSIT_MAX_FEE_BPS`. With the rate at most 10%, an amount `a` requires at most
+ * `0.24a + 4.4 + 2 × forward fee`, every amount from `(4.4 + 2 × forward fee) / 0.76` up passes,
+ * and each round leaves at most 24% of the remaining distance to that bound plus 4.4, so the
+ * distance is under 7 after 56 rounds for any forward fee below 10^34 and the remaining rounds each
+ * move by at least one unit. Running out of rounds is therefore not a proof that no amount passes;
+ * the caller treats it as a quote that cannot be used.
  */
 function findCctpDepositMinimumRaw(fromRaw: bigint, minimumFeeBps: Big, forwardFeeRaw: bigint): bigint | null {
 	let candidateRaw = fromRaw;
@@ -385,7 +398,7 @@ export function calculateCctpDepositFee(amountRaw: bigint, quote: CctpDepositFee
 	const fee = calculateCctpDepositMaxFee(amountRaw, minimumFeeBps, forwardFeeRaw);
 	if (amountRaw < fee.maxFeeRaw * BigInt(CCTP_MINIMUM_FEE_MULTIPLIER)) {
 		const minimumRaw = findCctpDepositMinimumRaw(amountRaw, minimumFeeBps, forwardFeeRaw);
-		if (minimumRaw === null) throw new Error("CCTP fees leave no depositable amount");
+		if (minimumRaw === null) throw new Error("CCTP deposit minimum could not be determined");
 		throw new CctpDepositBelowMinimumError(minimumRaw);
 	}
 
@@ -415,7 +428,7 @@ export function getAmountIndependentCctpMaxFeeRaw(quote: CctpDepositFeeQuote): b
  * Circle sets no minimum for a CCTP deposit to HyperCore; the contract only needs the amount to
  * exceed the fee. The application requires twice the current maximum fee, the same guard as CCTP
  * withdrawals (`docs/cctp-deposits.md`). Returns the smallest amount this quote accepts, or null
- * when the quote is unusable or no amount can satisfy it.
+ * when the quote is unusable (invalid, or a rate above `CCTP_DEPOSIT_MAX_FEE_BPS`).
  */
 export function getCctpDepositMinimumRaw(quote: CctpDepositFeeQuote): bigint | null {
 	try {
