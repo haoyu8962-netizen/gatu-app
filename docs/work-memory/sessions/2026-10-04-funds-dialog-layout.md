@@ -78,3 +78,4 @@ Codex 只读对抗审查（`gpt-6-astra`，medium，均为静态推演）：
 - 浏览器测试的夹具启动时，Vite 依赖扫描会打印 `account-actions.browser.ts` 缺少 `getPositionMarketCloseActions` 等导出的错误，测试仍通过；是否为本会话之前就存在没有核对。
 - 开发服务器默认配置不带银行卡入金开关，存款窗口第一屏直接是转账表单；带开关的配置是 `.claude/launch.json` 里的 `terminal-card-funding`。
 - 无被替代的记录。
+- 2026-10-05 追加：本节前两项（包体预算、状态屏与错误网络屏）以及「未做」里的 Safari（以 WebKit 代替）已在[后续记录](2026-10-05-funds-dialog-status-screens.md)里处理；真机、读屏、Firefox 与母语者审校仍未做。
