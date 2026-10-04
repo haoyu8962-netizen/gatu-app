@@ -61,8 +61,8 @@ changes, not evidence that a build has been deployed or accepted on real devices
 - The deposit dialog is tidier and no longer shows a scrollbar. The close and back buttons stay in
   place while the content scrolls underneath on short screens, and nothing scrolls on common desktop
   and phone sizes. Asset and network sit on one row with their icons, the QR code carries the USDC
-  mark in its centre, and the address and its copy button share one field. Withdraw and Bridge use
-  the same frame, and the phone sheet and the desktop dialog are built from the same components,
+  mark in its centre, and the address and its copy button share one field. Withdraw, Bridge and the
+  deposit status and switch-network screens use the same frame, and the phone sheet and the desktop dialog are built from the same components,
   with the paddings and corners each surface already had.
 
 - Deposits follow the CCTP rules instead of the retired bridge's. The fixed 5 USDC minimum is gone:

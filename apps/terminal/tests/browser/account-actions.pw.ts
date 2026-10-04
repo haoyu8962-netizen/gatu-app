@@ -172,9 +172,22 @@ for (const width of [375, 393]) {
 }
 
 async function waitForDialogTransition(page: Page) {
-	await page
-		.getByRole("dialog")
-		.evaluate((node) => Promise.all(node.getAnimations().map((animation) => animation.finished)));
+	const dialog = page.getByRole("dialog");
+	let previous = "";
+	await expect
+		.poll(
+			async () => {
+				const state = await dialog.evaluate((node) => {
+					const { x, y, width, height } = node.getBoundingClientRect();
+					return JSON.stringify([node.getAnimations().length, x, y, width, height]);
+				});
+				const settled = state === previous && state.startsWith("[0,");
+				previous = state;
+				return settled;
+			},
+			{ intervals: [120] },
+		)
+		.toBe(true);
 }
 
 async function expectFundsDialogScroll(page: Page, closeName: string, overflow: "none" | "required" | "any") {
@@ -308,6 +321,39 @@ for (const width of [375, 393, 1363]) {
 			await expect(dialog.getByRole("button", { name: "Deposit", exact: true })).toBeEnabled();
 		});
 	}
+}
+
+for (const viewport of [
+	{ width: 375, height: 320 },
+	{ width: 375, height: 666 },
+	{ width: 1363, height: 360 },
+	{ width: 1363, height: 852 },
+]) {
+	test(`keeps the deposit status and wrong-network screens on the funds scroll structure at ${viewport.width}x${viewport.height}`, async ({
+		page,
+	}) => {
+		await page.setViewportSize(viewport);
+		await page.goto("/account-actions.html?surface=funds");
+		const dialog = page.getByRole("dialog");
+		const overflow = viewport.height < 400 ? "required" : "none";
+
+		await page.getByRole("button", { name: "Open status", exact: true }).click();
+		await expect(dialog.getByText("Waiting for chain confirmation", { exact: true })).toBeVisible();
+		await expectFundsDialogScroll(page, "Close", overflow);
+		await dialog.getByRole("button", { name: "Dismiss status", exact: true }).scrollIntoViewIfNeeded();
+		await dialog.getByRole("button", { name: "Dismiss status", exact: true }).click();
+		await expect(dialog).toHaveCount(0);
+
+		await page.getByRole("button", { name: "Open wrong network", exact: true }).click();
+		await expect(dialog.getByRole("button", { name: "Switch to Arbitrum", exact: true })).toBeVisible();
+		const back = dialog.getByRole("button", { name: "Back", exact: true });
+		await waitForDialogTransition(page);
+		const backBefore = await back.boundingBox();
+		await expectFundsDialogScroll(page, "Close", overflow === "required" ? "any" : "none");
+		expect(await back.boundingBox()).toEqual(backBefore);
+		await dialog.getByRole("button", { name: "Close", exact: true }).click();
+		await expect(dialog).toHaveCount(0);
+	});
 }
 
 for (const width of [375, 1363]) {

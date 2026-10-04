@@ -2,7 +2,14 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { CaretLeftIcon, WarningCircleIcon } from "@phosphor-icons/react";
 import { AdaptiveModal, Button, ButtonIcon, ModalContent, ModalHeader, ModalTitle } from "@sairn/ui";
 import { ButtonLoading } from "@/components/brand/button-loading";
+import { cn } from "@/lib/cn";
 import { formatTransferError } from "@/lib/errors/format";
+import {
+	FUNDS_MODAL_BODY_CLASS,
+	FUNDS_MODAL_BODY_SLOT,
+	FUNDS_MODAL_HEADER_CLASS,
+	FUNDS_MODAL_POPUP_CLASS,
+} from "@/lib/ui/funds-modal-scroll";
 
 interface Props {
 	open: boolean;
@@ -34,9 +41,12 @@ export function WrongNetworkScreen({
 			closeLabel={t`Close`}
 			showHandle={presentation === "drawer"}
 			handleClassName="top-2 h-1 w-9 bg-fill/30"
-			className={presentation === "drawer" ? "max-h-[calc(100dvh-1rem)] overflow-y-auto !rounded-t-[18px]" : undefined}
+			className={cn(
+				FUNDS_MODAL_POPUP_CLASS,
+				presentation === "drawer" && "max-h-[calc(100dvh-1rem)] !rounded-t-[18px]",
+			)}
 		>
-			<ModalHeader className={onBack ? "flex-row items-center gap-2" : undefined}>
+			<ModalHeader className={cn(FUNDS_MODAL_HEADER_CLASS, onBack && "flex-row items-center gap-2")}>
 				{onBack ? (
 					<ButtonIcon
 						type="button"
@@ -55,7 +65,7 @@ export function WrongNetworkScreen({
 					<Trans>Deposit</Trans>
 				</ModalTitle>
 			</ModalHeader>
-			<ModalContent className="space-y-4">
+			<ModalContent data-slot={FUNDS_MODAL_BODY_SLOT} className={cn(FUNDS_MODAL_BODY_CLASS, "space-y-4")}>
 				<div className="flex items-start gap-3 rounded-8 border border-stroke-warning-strong/20 bg-warning-soft/10 p-4">
 					<div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-warning-soft/20">
 						<WarningCircleIcon className="size-4 text-warning" />

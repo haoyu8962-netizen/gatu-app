@@ -10,7 +10,14 @@ import {
 	BRAND_MOTION_SUCCESS,
 	BRAND_MOTION_WALLET_AWAITING,
 } from "@/lib/brand/brand-motion.gen";
+import { cn } from "@/lib/cn";
 import { getExplorerTxUrl } from "@/lib/explorer";
+import {
+	FUNDS_MODAL_BODY_CLASS,
+	FUNDS_MODAL_BODY_SLOT,
+	FUNDS_MODAL_HEADER_CLASS,
+	FUNDS_MODAL_POPUP_CLASS,
+} from "@/lib/ui/funds-modal-scroll";
 
 const STATUS_SCREEN_MOTIONS = {
 	wallet: BRAND_MOTION_WALLET_AWAITING,
@@ -60,12 +67,15 @@ export function StatusScreen({
 			closeLabel={t`Close`}
 			showHandle={presentation === "drawer" && closable}
 			handleClassName="top-2 h-1 w-9 bg-fill/30"
-			className={presentation === "drawer" ? "max-h-[calc(100dvh-1rem)] overflow-y-auto !rounded-t-[18px]" : undefined}
+			className={cn(
+				FUNDS_MODAL_POPUP_CLASS,
+				presentation === "drawer" && "max-h-[calc(100dvh-1rem)] !rounded-t-[18px]",
+			)}
 		>
-			<ModalHeader>
+			<ModalHeader className={FUNDS_MODAL_HEADER_CLASS}>
 				<ModalTitle>{title}</ModalTitle>
 			</ModalHeader>
-			<ModalContent>
+			<ModalContent data-slot={FUNDS_MODAL_BODY_SLOT} className={FUNDS_MODAL_BODY_CLASS}>
 				<div className="flex flex-col items-center gap-4 py-6">
 					<div
 						role={icon === "error" ? "alert" : "status"}
