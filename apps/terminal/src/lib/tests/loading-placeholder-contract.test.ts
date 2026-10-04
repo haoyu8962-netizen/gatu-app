@@ -70,9 +70,11 @@ const DEPOSIT_OPENERS: Record<string, { opens: number; warms: number; note?: str
 	},
 };
 
-const DEPOSIT_ACTIONS_BINDING = /const\s+(\{[^}]*\}|\w+)\s*=\s*useDepositModalActions\(\)/;
+const DEPOSIT_ACTIONS_BINDING = /const\s+(\{[^}]*\}|\w+)\s*=\s*useDepositModalActions\(\)/g;
+const DEPOSIT_ACTIONS_USE = /(?<!function )useDepositModalActions\(\)/g;
 const DEPOSIT_WARM_SPREAD = /\{\.\.\.[^{}]*\bdepositModalIntentProps\b/g;
 const FUNDS_MODAL_CHROME_MARKER = "min-[1001px]:!max-w-[28rem]";
+const FALLBACK_ELEMENTS = ["FundsModalShell", "output", "span", "Trans", "SpinnerGapIcon"];
 const FALLBACK_CLASS_NAMES = [
 	"flex min-h-72 items-center justify-center",
 	"sr-only",
@@ -80,13 +82,24 @@ const FALLBACK_CLASS_NAMES = [
 ];
 
 function countDepositOpens(text: string): number {
-	if (!/(?<!function )useDepositModalActions\(\)/.test(text)) return 0;
-	const binding = DEPOSIT_ACTIONS_BINDING.exec(text)?.[1];
-	if (!binding) return Number.NaN;
-	if (!binding.startsWith("{")) return text.split(`${binding}.open(`).length - 1;
-	const open = /\bopen\b(?:\s*:\s*(\w+))?/.exec(binding);
-	if (!open) return 0;
-	return text.match(new RegExp(`\\b${open[1] ?? "open"}\\(`, "g"))?.length ?? 0;
+	const uses = text.match(DEPOSIT_ACTIONS_USE)?.length ?? 0;
+	const bindings = [...text.matchAll(DEPOSIT_ACTIONS_BINDING)].map((match) => match[1]);
+	if (bindings.length !== uses) return Number.NaN;
+
+	const callees = new Set<string>();
+	for (const binding of bindings) {
+		if (!binding.startsWith("{")) {
+			callees.add(`${binding}.open`);
+			continue;
+		}
+		const open = /\bopen\b(?:\s*:\s*(\w+))?/.exec(binding);
+		if (open) callees.add(open[1] ?? "open");
+	}
+	let opens = 0;
+	for (const callee of callees) {
+		opens += text.match(new RegExp(`(?<![\\w.])${callee.replace(".", "\\.")}\\(`, "g"))?.length ?? 0;
+	}
+	return opens;
 }
 
 function listSources(directory: string): string[] {
@@ -151,7 +164,8 @@ describe("loading placeholder contract", () => {
 
 		expect(classNames).toEqual(FALLBACK_CLASS_NAMES);
 		expect(fallback.split("className=").length - 1).toBe(FALLBACK_CLASS_NAMES.length);
-		expect(fallback).not.toMatch(/\bstyle=/);
+		expect(fallback).not.toMatch(/\bstyle=|\{\s*\.\.\./);
+		expect([...fallback.matchAll(/<([A-Za-z][\w.]*)/g)].map((match) => match[1])).toEqual(FALLBACK_ELEMENTS);
 	});
 
 	it("warms the deposit dialog from every control that opens it", () => {

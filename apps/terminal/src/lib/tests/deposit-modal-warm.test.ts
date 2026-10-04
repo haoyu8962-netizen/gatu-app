@@ -3,58 +3,71 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const testState = vi.hoisted(() => ({
 	importFails: false,
 	imports: 0,
-	preload: vi.fn(() => Promise.resolve()),
 }));
 
-vi.mock("@/lib/lazy", () => ({
-	createLazyComponent: (_importer: unknown, exportName: string) =>
-		Object.assign(() => null, exportName === "DepositModal" ? { preload: testState.preload } : {}),
-	preloadLazyComponents: vi.fn(() => Promise.resolve()),
-}));
+function LoadedDepositModal() {
+	return null;
+}
 
-async function loadWarmDepositModal() {
+async function loadLazyGlobalModals() {
 	vi.resetModules();
 	vi.doMock("@/components/trade/tradebox/deposit-modal", () => {
 		testState.imports += 1;
 		if (testState.importFails) throw new Error("Failed to fetch dynamically imported module");
-		return { DepositModal: () => null };
+		return { DepositModal: LoadedDepositModal };
 	});
-	const { warmDepositModal } = await import("@/components/trade/components/lazy-global-modals");
-	return warmDepositModal;
+	return import("@/components/trade/components/lazy-global-modals");
+}
+
+function renderOutsideReact(component: (props: never) => unknown) {
+	return component({} as never) as { type?: unknown } | null;
+}
+
+function settle() {
+	return new Promise((resolve) => setTimeout(resolve, 0));
 }
 
 describe("deposit dialog warm-up", () => {
 	beforeEach(() => {
 		testState.importFails = false;
 		testState.imports = 0;
-		testState.preload.mockClear();
 	});
 
-	it("hands the module to the lazy component once and ignores later intents", async () => {
-		const warmDepositModal = await loadWarmDepositModal();
+	it("loads the real lazy component once, however many intents arrive", async () => {
+		const { DepositModal, warmDepositModal } = await loadLazyGlobalModals();
 
 		warmDepositModal();
 		warmDepositModal();
+		await vi.waitFor(() => expect(testState.imports).toBe(1));
+		await DepositModal.preload?.();
 
-		await vi.waitFor(() => expect(testState.preload).toHaveBeenCalledOnce());
+		expect(renderOutsideReact(DepositModal)?.type).toBe(LoadedDepositModal);
 		expect(testState.imports).toBe(1);
 	});
 
-	it("keeps a failed warm-up away from the lazy component and loads on a later intent", async () => {
+	it("keeps a failed warm-up away from the lazy component, so a later open still loads it", async () => {
 		testState.importFails = true;
-		const warmDepositModal = await loadWarmDepositModal();
+		const { DepositModal, warmDepositModal } = await loadLazyGlobalModals();
 
 		warmDepositModal();
 		await vi.waitFor(() => expect(testState.imports).toBe(1));
-		await Promise.resolve();
-		await Promise.resolve();
-		expect(testState.preload).not.toHaveBeenCalled();
+		await settle();
 
 		testState.importFails = false;
-		await vi.waitFor(() => {
-			warmDepositModal();
-			expect(testState.preload).toHaveBeenCalledOnce();
-		});
-		expect(testState.imports).toBe(2);
+		await DepositModal.preload?.();
+
+		expect(renderOutsideReact(DepositModal)?.type).toBe(LoadedDepositModal);
+	});
+
+	it("warms again after a failed warm-up", async () => {
+		testState.importFails = true;
+		const { warmDepositModal } = await loadLazyGlobalModals();
+
+		warmDepositModal();
+		await vi.waitFor(() => expect(testState.imports).toBe(1));
+		await settle();
+
+		warmDepositModal();
+		await vi.waitFor(() => expect(testState.imports).toBe(2));
 	});
 });

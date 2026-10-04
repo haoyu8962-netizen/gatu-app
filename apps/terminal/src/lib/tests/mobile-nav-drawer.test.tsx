@@ -413,6 +413,23 @@ describe("MobileNavDrawer", () => {
 		expect(testState.settingsOpen).not.toHaveBeenCalled();
 	});
 
+	it("does not warm Deposit while another modal is being prepared", async () => {
+		testState.hasWalletAccess = true;
+		testState.preloadGlobalModal.mockReturnValue(new Promise<void>(() => {}));
+		act(() => root.render(<MobileNavDrawer />));
+		act(() => container.querySelector<HTMLButtonElement>('button[aria-label="Open navigation"]')?.click());
+		await act(async () => container.querySelector<HTMLButtonElement>('button[aria-label="Settings"]')?.click());
+
+		const depositButton = [...container.querySelectorAll<HTMLButtonElement>("button")].find(
+			(button) => button.textContent?.trim() === "Deposit",
+		);
+		expect(depositButton?.disabled).toBe(true);
+		act(() => {
+			depositButton?.dispatchEvent(new MouseEvent("pointerdown", { bubbles: true }));
+		});
+		expect(testState.warmDepositModal).not.toHaveBeenCalled();
+	});
+
 	it("shows a disabled Deposit entry with the desktop reason in an agent-only session", async () => {
 		const reason =
 			"This phone uses a desktop-approved trading key. Deposits, withdrawals and transfers need the master wallet on desktop.";

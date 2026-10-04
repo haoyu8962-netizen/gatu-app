@@ -42,6 +42,7 @@ export function MobileNavDrawer() {
 	const tradeActive = isTradeRoutePath(pathname);
 	const vaultsActive = pathname === "/vaults" || pathname.startsWith("/vaults/");
 	const showsDepositEntry = hasWalletAccess || sessionMode === "agent-only" || depositAvailability.path === "sponsored";
+	const canOpenDeposit = pendingModal === null && depositAvailability.available;
 
 	function getNavLinkClass(active: boolean): string {
 		return cn(
@@ -302,8 +303,8 @@ export function MobileNavDrawer() {
 									intent="brand"
 									size="sm"
 									onClick={depositAvailability.available ? () => requestGlobalModal("deposit") : undefined}
-									{...(depositAvailability.available ? depositModalIntentProps : undefined)}
-									disabled={pendingModal !== null || !depositAvailability.available}
+									{...(canOpenDeposit ? depositModalIntentProps : undefined)}
+									disabled={!canOpenDeposit}
 									aria-busy={pendingModal === "deposit" || undefined}
 									iconLeft={
 										pendingModal === "deposit" ? (
