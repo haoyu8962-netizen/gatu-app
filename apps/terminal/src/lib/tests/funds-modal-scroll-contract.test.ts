@@ -43,10 +43,12 @@ type JsxTag = ts.JsxOpeningElement | ts.JsxSelfClosingElement;
 interface DialogUse {
 	/** Value imports of a dialog primitive, by the name the primitive was exported under. */
 	imported: string[];
-	/** JSX elements whose tag is an imported primitive or a member of a namespace import. */
-	dialogs: JsxTag[];
-	/** References to a primitive through a namespace import outside a JSX tag. */
+	/** Every identifier outside the imports that names an imported primitive. */
+	references: ts.Identifier[];
+	/** Every `namespace.Primitive` member access, in a JSX tag or anywhere else. */
 	namespaceReferences: number;
+	/** Elements with children whose tag is an imported primitive. */
+	dialogElements: ts.JsxElement[];
 	source: ts.SourceFile;
 }
 
@@ -86,32 +88,51 @@ function describeDialogUse(text: string, fileName = "source.tsx"): DialogUse {
 		}
 	}
 
-	const dialogs: JsxTag[] = [];
+	const references: ts.Identifier[] = [];
+	const dialogElements: ts.JsxElement[] = [];
 	let namespaceReferences = 0;
-	function isNamespacePrimitive(node: ts.Node): boolean {
-		return (
+	function visit(node: ts.Node) {
+		if (ts.isImportDeclaration(node)) return;
+		if (ts.isIdentifier(node) && localPrimitives.has(node.text)) references.push(node);
+		if (
 			ts.isPropertyAccessExpression(node) &&
 			ts.isIdentifier(node.expression) &&
 			namespaces.has(node.expression.text) &&
 			DIALOG_PRIMITIVES.has(node.name.text)
-		);
-	}
-	function visit(node: ts.Node) {
-		if (isJsxTag(node)) {
-			const tag = node.tagName;
-			if ((ts.isIdentifier(tag) && localPrimitives.has(tag.text)) || isNamespacePrimitive(tag)) dialogs.push(node);
-		} else if (isNamespacePrimitive(node) && !isJsxTag(node.parent) && !ts.isJsxClosingElement(node.parent)) {
+		) {
 			namespaceReferences += 1;
+		}
+		if (
+			ts.isJsxElement(node) &&
+			ts.isIdentifier(node.openingElement.tagName) &&
+			localPrimitives.has(node.openingElement.tagName.text)
+		) {
+			dialogElements.push(node);
 		}
 		ts.forEachChild(node, visit);
 	}
 	visit(source);
 
-	return { imported: [...localPrimitives.values()], dialogs, namespaceReferences, source };
+	return { imported: [...localPrimitives.values()], references, namespaceReferences, dialogElements, source };
 }
 
 function usesDialogPrimitive(use: DialogUse): boolean {
-	return use.imported.length > 0 || use.dialogs.length > 0 || use.namespaceReferences > 0;
+	return use.imported.length > 0 || use.namespaceReferences > 0;
+}
+
+/**
+ * The file's only dialog, or null unless it is written in the one accepted form: a single element
+ * with children whose opening and closing tags are the only places the file names a dialog
+ * primitive. A second element, a self-closing element, `createElement`, a namespace member, a
+ * `children` attribute or any other mention of a primitive is rejected rather than interpreted.
+ */
+function getOnlyDialog(use: DialogUse): ts.JsxElement | null {
+	if (use.dialogElements.length !== 1 || use.namespaceReferences !== 0 || use.references.length !== 2) return null;
+	const [dialog] = use.dialogElements;
+	const tags: ts.Node[] = [dialog.openingElement, dialog.closingElement];
+	if (!use.references.every((reference) => tags.includes(reference.parent))) return null;
+	if (getAttribute(dialog.openingElement, "children")) return null;
+	return dialog;
 }
 
 function findTags(root: ts.Node, name: string): JsxTag[] {
@@ -176,16 +197,15 @@ describe("funds modal scroll contract", () => {
 	it.each(FUNDS_DIALOG_SOURCES)("gives the one dialog in %s the shared popup, header and body classes", (file) => {
 		const text = read(file);
 		const use = describeDialogUse(text, file);
+		const dialog = getOnlyDialog(use);
+		if (!dialog) throw new Error(`${file} must render exactly one dialog element with children`);
 
-		expect(use.dialogs).toHaveLength(1);
-		expect(use.namespaceReferences).toBe(0);
 		expect(importsScrollConstants(use.source)).toBe(true);
 		expect(text).not.toMatch(/overflow-y-auto|overflow-hidden|scrollbar-none/);
 
-		const dialog = use.dialogs[0];
-		const headers = findTags(dialog.parent, "ModalHeader");
-		const contents = findTags(dialog.parent, "ModalContent");
-		expect(startsWithConstant(getAttribute(dialog, "className"), "FUNDS_MODAL_POPUP_CLASS")).toBe(true);
+		const headers = findTags(dialog, "ModalHeader");
+		const contents = findTags(dialog, "ModalContent");
+		expect(startsWithConstant(getAttribute(dialog.openingElement, "className"), "FUNDS_MODAL_POPUP_CLASS")).toBe(true);
 		expect(findTags(use.source, "ModalHeader")).toHaveLength(1);
 		expect(findTags(use.source, "ModalContent")).toHaveLength(1);
 		expect(headers).toHaveLength(1);
@@ -209,7 +229,7 @@ describe("funds modal scroll contract", () => {
 
 	it("recognises aliases and namespace members, and ignores type-only imports", () => {
 		const aliased = describeDialogUse(
-			'import { AdaptiveModal as DepositDialog } from "@sairn/ui";\nconst a = <DepositDialog open />;\nconst b = <DepositDialog open></DepositDialog>;',
+			'import { AdaptiveModal as DepositDialog } from "@sairn/ui";\nconst a = <DepositDialog open>x</DepositDialog>;',
 		);
 		const namespaced = describeDialogUse(
 			'import * as UI from "@sairn/ui";\nconst a = <UI.AdaptiveModal open>x</UI.AdaptiveModal>;\nconst b = createElement(UI.Drawer);',
@@ -217,28 +237,67 @@ describe("funds modal scroll contract", () => {
 		const typeOnly = describeDialogUse(
 			'import type { AdaptiveModal } from "@sairn/ui";\nimport { type Modal, Button } from "@sairn/ui";\nimport * as React from "react";\ntype Props = typeof AdaptiveModal | typeof Modal;\nconst a = <Button />;',
 		);
-		const unusedValueImport = describeDialogUse(
-			'import { Drawer } from "@sairn/ui";\nconst a = createElement(Drawer);',
-		);
+		const unusedValueImport = describeDialogUse('import { Drawer } from "@sairn/ui";');
 
 		expect(aliased.imported).toEqual(["AdaptiveModal"]);
-		expect(aliased.dialogs).toHaveLength(2);
+		expect(getOnlyDialog(aliased)).not.toBeNull();
 		expect(namespaced.imported).toEqual([]);
-		expect(namespaced.dialogs).toHaveLength(1);
-		expect(namespaced.namespaceReferences).toBe(1);
+		expect(namespaced.namespaceReferences).toBe(3);
 		expect(usesDialogPrimitive(namespaced)).toBe(true);
+		expect(getOnlyDialog(namespaced)).toBeNull();
 		expect(usesDialogPrimitive(typeOnly)).toBe(false);
 		expect(usesDialogPrimitive(unusedValueImport)).toBe(true);
 	});
 
-	it("reads the class from the dialog element itself", () => {
+	it.each([
+		{
+			name: "a second element",
+			body: "<><AdaptiveModal open>a</AdaptiveModal><AdaptiveModal open>b</AdaptiveModal></>",
+		},
+		{
+			name: "a second dialog built with createElement",
+			body: '<><AdaptiveModal open>a</AdaptiveModal>{createElement(AdaptiveModal, { open: true, children: "b" })}</>',
+		},
+		{
+			name: "a self-closing dialog beside its header and body",
+			body: "<><AdaptiveModal open className={FUNDS_MODAL_POPUP_CLASS} /><ModalHeader /><ModalContent /></>",
+		},
+		{
+			name: "a self-closing dialog with a children attribute",
+			body: "<AdaptiveModal open children={null} />",
+		},
+		{
+			name: "an element that also passes a children attribute",
+			body: "<AdaptiveModal open children={other}>a</AdaptiveModal>",
+		},
+		{
+			name: "a dialog stored in a variable as well",
+			body: "<AdaptiveModal open>a</AdaptiveModal>; const Other = AdaptiveModal",
+		},
+		{
+			name: "a second dialog through a namespace",
+			body: "<><AdaptiveModal open>a</AdaptiveModal><UI.Drawer open>b</UI.Drawer></>",
+		},
+	])("rejects $name instead of interpreting it", ({ body }) => {
 		const use = describeDialogUse(
-			'import { AdaptiveModal, ModalContent } from "@sairn/ui";\nconst a = <AdaptiveModal className={cn(FUNDS_MODAL_POPUP_CLASS, x)}><ModalContent className={cn("p-4", FUNDS_MODAL_BODY_CLASS)} /></AdaptiveModal>;',
+			`import * as UI from "@sairn/ui";\nimport { AdaptiveModal, ModalContent, ModalHeader } from "@sairn/ui";\nconst a = ${body};`,
 		);
-		const content = findTags(use.dialogs[0].parent, "ModalContent")[0];
 
-		expect(startsWithConstant(getAttribute(use.dialogs[0], "className"), "FUNDS_MODAL_POPUP_CLASS")).toBe(true);
+		expect(getOnlyDialog(use)).toBeNull();
+	});
+
+	it("reads the header and body from inside the dialog element only", () => {
+		const use = describeDialogUse(
+			'import { AdaptiveModal, ModalContent, ModalHeader } from "@sairn/ui";\nconst a = <><AdaptiveModal className={cn(FUNDS_MODAL_POPUP_CLASS, x)}><ModalContent className={cn("p-4", FUNDS_MODAL_BODY_CLASS)} /></AdaptiveModal><ModalHeader className={FUNDS_MODAL_HEADER_CLASS} /></>;',
+		);
+		const dialog = getOnlyDialog(use);
+		if (!dialog) throw new Error("Expected the accepted dialog form");
+		const content = findTags(dialog, "ModalContent")[0];
+
+		expect(startsWithConstant(getAttribute(dialog.openingElement, "className"), "FUNDS_MODAL_POPUP_CLASS")).toBe(true);
 		expect(startsWithConstant(getAttribute(content, "className"), "FUNDS_MODAL_BODY_CLASS")).toBe(false);
+		expect(findTags(dialog, "ModalHeader")).toHaveLength(0);
+		expect(findTags(use.source, "ModalHeader")).toHaveLength(1);
 		expect(importsScrollConstants(use.source)).toBe(false);
 	});
 
