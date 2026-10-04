@@ -37,7 +37,6 @@ export function EmbeddedDepositAutoBridge() {
 		needsEmbeddedWallet,
 		isCreatingEmbeddedWallet,
 		embeddedWalletError,
-		ensureEmailEmbeddedWallet,
 	} = useEmailEmbeddedWallet();
 	const emailAddress = getPrivyEmailAddress(user) ?? emailWalletAddress;
 	const depositEmbeddedWalletAddress = embeddedWalletAddress ?? ensuredEmbeddedWalletAddress;
@@ -97,11 +96,6 @@ export function EmbeddedDepositAutoBridge() {
 		mode: "smart",
 		walletAddress: isEmbeddedDeposit ? depositEmbeddedWalletAddress : undefined,
 	});
-
-	useEffect(() => {
-		if (!isEmbeddedDeposit || !needsEmbeddedWallet || isCreatingEmbeddedWallet) return;
-		void ensureEmailEmbeddedWallet().catch(() => {});
-	}, [ensureEmailEmbeddedWallet, isCreatingEmbeddedWallet, isEmbeddedDeposit, needsEmbeddedWallet]);
 
 	const balanceEligibleKey =
 		isEmbeddedDeposit &&

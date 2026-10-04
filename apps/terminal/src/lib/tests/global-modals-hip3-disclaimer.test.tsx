@@ -29,8 +29,10 @@ const testState = vi.hoisted(() => ({
 		acceptanceError: null,
 		resetAcceptance: vi.fn(),
 		retryStatus: vi.fn(),
+		retryWalletSetup: vi.fn(),
 	},
 	legalGateHook: vi.fn(),
+	legalModalProps: null as Record<string, unknown> | null,
 	navigateToMarket: vi.fn(),
 	openCommandMenu: vi.fn(),
 	closeSendModal: vi.fn(),
@@ -91,8 +93,10 @@ vi.mock("@/components/trade/components/hip3-deployer-disclaimer", () => ({
 }));
 
 vi.mock("@/components/trade/components/legal-acceptance-modal", () => ({
-	LegalAcceptanceModal: (props: Record<string, unknown>) =>
-		createElement("div", { "data-props": JSON.stringify(props), "data-testid": "LegalAcceptanceModal" }),
+	LegalAcceptanceModal: (props: Record<string, unknown>) => {
+		testState.legalModalProps = props;
+		return createElement("div", { "data-props": JSON.stringify(props), "data-testid": "LegalAcceptanceModal" });
+	},
 }));
 
 vi.mock("@/components/trade/components/trading-onboarding-gate", () => ({
@@ -190,7 +194,9 @@ describe("GlobalModals HIP-3 disclaimer priority", () => {
 			acceptanceError: null,
 			resetAcceptance: vi.fn(),
 			retryStatus: vi.fn(),
+			retryWalletSetup: vi.fn(),
 		};
+		testState.legalModalProps = null;
 		testState.legalGateHook.mockReset();
 		testState.navigateToMarket.mockReset();
 		testState.openCommandMenu.mockReset();
@@ -326,17 +332,35 @@ describe("GlobalModals HIP-3 disclaimer priority", () => {
 		expect(container.querySelector('[data-testid="DepositModal"]')).not.toBeNull();
 	});
 
-	it.each(["checking", "required", "submitting", "blocked", "wallet_required", "error", "accepted"])(
-		"keeps the position dialog host mounted while legal status is %s",
-		async (state) => {
-			testState.legalGate.state = state;
-			const { GlobalModals } = await import("@/components/trade/components/global-modals");
+	it("shows the wallet setup recovery in the blocking legal dialog and wires its retry", async () => {
+		testState.legalGate.state = "wallet_setup_failed";
+		const { GlobalModals } = await import("@/components/trade/components/global-modals");
 
-			act(() => root.render(createElement(GlobalModals, { enableLegalGate: true, enablePositionMarketClose: true })));
+		act(() => root.render(createElement(GlobalModals, { enableLegalGate: true })));
 
-			expect(container.querySelector('[data-testid="PositionDialogHostGate"]')).not.toBeNull();
-		},
-	);
+		const modal = container.querySelector('[data-testid="LegalAcceptanceModal"]');
+		expect(JSON.parse(modal?.getAttribute("data-props") ?? "{}").state).toBe("wallet_setup_failed");
+		expect(testState.legalModalProps?.onRetryWalletSetup).toBe(testState.legalGate.retryWalletSetup);
+		expect(container.querySelector('[data-testid="DepositModal"]')).toBeNull();
+	});
+
+	it.each([
+		"checking",
+		"required",
+		"submitting",
+		"blocked",
+		"wallet_required",
+		"wallet_setup_failed",
+		"error",
+		"accepted",
+	])("keeps the position dialog host mounted while legal status is %s", async (state) => {
+		testState.legalGate.state = state;
+		const { GlobalModals } = await import("@/components/trade/components/global-modals");
+
+		act(() => root.render(createElement(GlobalModals, { enableLegalGate: true, enablePositionMarketClose: true })));
+
+		expect(container.querySelector('[data-testid="PositionDialogHostGate"]')).not.toBeNull();
+	});
 
 	it("keeps an in-flight position dialog owner mounted when legal status leaves accepted", async () => {
 		const { GlobalModals } = await import("@/components/trade/components/global-modals");

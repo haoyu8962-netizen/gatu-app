@@ -24,6 +24,7 @@ interface Props {
 	blockedDescription?: ReactNode;
 	onAccept: () => Promise<unknown>;
 	onRetryStatus: () => Promise<unknown>;
+	onRetryWalletSetup: () => void;
 	onResetAcceptance: () => void;
 }
 
@@ -42,6 +43,7 @@ export function LegalAcceptanceModal({
 	blockedDescription,
 	onAccept,
 	onRetryStatus,
+	onRetryWalletSetup,
 	onResetAcceptance,
 }: Props) {
 	const isMobile = useIsMobile();
@@ -67,6 +69,12 @@ export function LegalAcceptanceModal({
 		void disconnectWallet();
 	}
 
+	const disconnectAction = {
+		label: <Trans>Disconnect</Trans>,
+		disabled: isDisconnecting,
+		onAction: handleDecline,
+	};
+
 	let content: ReactNode;
 	if (state === "wallet_required") {
 		content = (
@@ -78,6 +86,22 @@ export function LegalAcceptanceModal({
 				actionLabel={<Trans>Reconnect wallet</Trans>}
 				actionDisabled={isReconnecting}
 				onAction={() => void reconnectWallet()}
+				secondaryAction={disconnectAction}
+			/>
+		);
+	} else if (state === "wallet_setup_failed") {
+		content = (
+			<LegalStatusMessage
+				title={<Trans>Wallet not ready</Trans>}
+				description={
+					<Trans>
+						We could not finish setting up your wallet. Check your connection and try again, or disconnect and log in
+						again.
+					</Trans>
+				}
+				actionLabel={<Trans>Retry</Trans>}
+				onAction={onRetryWalletSetup}
+				secondaryAction={disconnectAction}
 			/>
 		);
 	} else if (state === "blocked") {
@@ -103,6 +127,7 @@ export function LegalAcceptanceModal({
 				}
 				actionLabel={<Trans>Retry</Trans>}
 				onAction={handleRetry}
+				secondaryAction={disconnectAction}
 			/>
 		);
 	} else {

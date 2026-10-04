@@ -3137,12 +3137,111 @@ describe("TradingViewChart", () => {
 		expect(options.getSymbolInfo("@235", "@235")).toMatchObject({
 			name: "ETH/USDH",
 			ticker: "@235",
-			pricescale: 100,
+			pricescale: 1000,
+			variable_tick_size: "0.001 99.99949999999998 0.01 999.9949999999999 0.1 9999.949999999999 1",
 		});
 		expect(options.getSymbolInfo("ETH/USDH", "ETH")).toMatchObject({
 			name: "ETH/USDH",
 			ticker: "@235",
+			pricescale: 1000,
+			variable_tick_size: "0.001 99.99949999999998 0.01 999.9949999999999 0.1 9999.949999999999 1",
+		});
+	});
+
+	it("keeps a market's price format across mark price updates and rebuilds without rebuilding for prices", async () => {
+		const market = {
+			kind: "perp",
+			name: "HYPE",
+			pairName: "HYPE-USDC",
+			markPx: "90.001",
+			szDecimals: 2,
+		} as unknown as UnifiedMarketInfo;
+		const variableTickSize =
+			"0.0001 9.999949999999998 0.001 99.99949999999998 0.01 999.9949999999999 0.1 9999.949999999999 1";
+		const renderChart = (
+			markPx: string,
+			locale: "en" | "zh" = "en",
+			numberFormatLocale: "en-US" | "de-DE" = "en-US",
+			chartMarket: UnifiedMarketInfo = market,
+		) => {
+			act(() => {
+				root.render(
+					createElement(TradingViewChart, {
+						symbol: chartMarket.name,
+						market: { ...chartMarket, markPx } as UnifiedMarketInfo,
+						interval: "60",
+						theme: "dark",
+						locale,
+						numberFormatLocale,
+					}),
+				);
+			});
+		};
+
+		renderChart("90.001");
+		await flushChartEffects();
+		const options = testState.datafeedOptions[0] as MockDatafeedOptions;
+		expect(options.getSymbolInfo?.("HYPE", "HYPE")).toMatchObject({
+			pricescale: 1000,
+			variable_tick_size: variableTickSize,
+		});
+
+		for (const markPx of ["90.0865", "90.10", "90", "90.000"]) {
+			renderChart(markPx);
+			await flushChartEffects();
+			expect(options.getSymbolInfo?.("HYPE", "HYPE")).toMatchObject({
+				pricescale: 1000,
+				variable_tick_size: variableTickSize,
+			});
+		}
+
+		renderChart("100.02");
+		await flushChartEffects();
+		expect(options.getSymbolInfo?.("HYPE", "HYPE")).toMatchObject({
 			pricescale: 100,
+			variable_tick_size: variableTickSize,
+		});
+		expect(widgetConstructor).toHaveBeenCalledOnce();
+		expect(widgets[0]?.remove).not.toHaveBeenCalled();
+
+		widgets[0]?.save.mockImplementation((callback: (state: object) => void) => callback({ charts: [] }));
+		renderChart("90.0865", "zh");
+		await flushChartEffects();
+
+		expect(widgetConstructor).toHaveBeenCalledTimes(2);
+		const localeRebuildOptions = testState.datafeedOptions[1] as MockDatafeedOptions;
+		expect(localeRebuildOptions.getSymbolInfo?.("HYPE", "HYPE")).toMatchObject({
+			pricescale: 1000,
+			variable_tick_size: variableTickSize,
+		});
+
+		widgets[1]?.save.mockImplementation((callback: (state: object) => void) => callback({ charts: [] }));
+		renderChart("90.0865", "zh", "de-DE");
+		await flushChartEffects();
+
+		expect(widgetConstructor).toHaveBeenCalledTimes(3);
+		expect(widgetConstructor).toHaveBeenLastCalledWith(
+			expect.objectContaining({ numeric_formatting: { decimal_sign: ",", grouping_separator: "." } }),
+		);
+		const numberFormatRebuildOptions = testState.datafeedOptions[2] as MockDatafeedOptions;
+		expect(numberFormatRebuildOptions.getSymbolInfo?.("HYPE", "HYPE")).toMatchObject({
+			pricescale: 1000,
+			variable_tick_size: variableTickSize,
+		});
+
+		const btc = { kind: "perp", name: "BTC", pairName: "BTC-USDC", szDecimals: 5 } as UnifiedMarketInfo;
+		renderChart("118234", "zh", "de-DE", btc);
+		await flushChartEffects();
+
+		expect(widgets[2]?.setSymbol).toHaveBeenCalledWith("BTC", "60", expect.any(Function));
+		expect(widgetConstructor).toHaveBeenCalledTimes(3);
+		expect(numberFormatRebuildOptions.getSymbolInfo?.("BTC", "BTC")).toMatchObject({
+			pricescale: 1,
+			variable_tick_size: "0.1 9999.949999999999 1",
+		});
+		expect(numberFormatRebuildOptions.getSymbolInfo?.("HYPE", "HYPE")).toMatchObject({
+			pricescale: 1000,
+			variable_tick_size: variableTickSize,
 		});
 	});
 

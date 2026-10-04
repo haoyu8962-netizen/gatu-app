@@ -45,7 +45,7 @@ function createPrivyConfig(theme: PrivyTheme): PrivyClientConfigWithPasskeysDisa
 		supportedChains: [...BRIDGE_CHAINS],
 		embeddedWallets: {
 			ethereum: {
-				createOnLogin: "users-without-wallets",
+				createOnLogin: "off",
 			},
 			showWalletUIs: false,
 		},

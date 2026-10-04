@@ -25,7 +25,6 @@ export const CHART_EXCHANGE = "Hyperliquid";
 export const CHART_QUOTE_ASSET = DEFAULT_QUOTE_TOKEN;
 export const CHART_SESSION = "24x7";
 export const CHART_TIMEZONE = "Etc/UTC";
-export const CHART_DEFAULT_PRICESCALE = 100;
 
 export const CHART_SUPPORTED_RESOLUTIONS = [
 	"1",
