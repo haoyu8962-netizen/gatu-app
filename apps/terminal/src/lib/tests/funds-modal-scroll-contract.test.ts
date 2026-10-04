@@ -20,7 +20,18 @@ const FUNDS_DIALOG_SOURCES = [
 	"components/trade/tradebox/deposit/shared-ui.tsx",
 	"components/trade/tradebox/deposit/wrong-network-screen.tsx",
 ];
-const DIALOG_ELEMENT = /<(?:AdaptiveModal|Modal|ModalPopup|Drawer|DrawerContent|PendingActionModal)\b/;
+const DIALOG_PRIMITIVES = ["AdaptiveModal", "Modal", "ModalPopup", "Drawer", "DrawerContent", "PendingActionModal"];
+const DIALOG_PRIMITIVE_NAME = new RegExp(`\\b(?:${DIALOG_PRIMITIVES.join("|")})\\b`);
+const DIALOG_ELEMENT = new RegExp(`<(?:${DIALOG_PRIMITIVES.join("|")})\\b`, "g");
+const IMPORT_STATEMENT = /import\s+(?:type\s+)?\{([^}]*)\}\s+from\s+"[^"]+";/g;
+
+/** The dialog primitives a file imports, by any name: an alias still names the primitive it renames. */
+function importedDialogPrimitives(source: string): string[] {
+	return [...source.matchAll(IMPORT_STATEMENT)]
+		.flatMap((match) => match[1].split(","))
+		.map((specifier) => specifier.trim())
+		.filter((specifier) => DIALOG_PRIMITIVE_NAME.test(specifier.split(/\s+as\s+/)[0]));
+}
 
 function read(file: string): string {
 	return readFileSync(resolve(SOURCE_ROOT, file), "utf8");
@@ -49,7 +60,7 @@ describe("funds modal scroll contract", () => {
 		expect(FUNDS_MODAL_BODY_SLOT).toBe("funds-modal-body");
 	});
 
-	it.each(FUNDS_DIALOG_SOURCES)("gives %s the shared popup, header and body classes", (file) => {
+	it.each(FUNDS_DIALOG_SOURCES)("gives the one dialog in %s the shared popup, header and body classes", (file) => {
 		const source = read(file);
 		const popup = /className=\{cn\(\s*FUNDS_MODAL_POPUP_CLASS,/.test(source);
 		const header =
@@ -58,19 +69,36 @@ describe("funds modal scroll contract", () => {
 		const body =
 			/data-slot=\{FUNDS_MODAL_BODY_SLOT\}\s+className=\{FUNDS_MODAL_BODY_CLASS\}/.test(source) ||
 			/data-slot=\{FUNDS_MODAL_BODY_SLOT\}\s+className=\{cn\(\s*FUNDS_MODAL_BODY_CLASS,/.test(source);
+		const imported = importedDialogPrimitives(source);
 
 		expect({ popup, header, body }).toEqual({ popup: true, header: true, body: true });
 		expect(source).not.toMatch(/overflow-y-auto|overflow-hidden|scrollbar-none/);
+		expect(imported).toHaveLength(1);
+		expect(imported[0]).not.toContain(" as ");
+		expect(source.match(DIALOG_ELEMENT)).toHaveLength(1);
+		expect(source.match(/<ModalHeader\b/g)).toHaveLength(1);
+		expect(source.match(/<ModalContent\b/g)).toHaveLength(1);
 	});
 
-	it("lists every dialog of the deposit flow", () => {
-		const dialogSources = listSources(resolve(SOURCE_ROOT, "components/trade/tradebox/deposit"))
-			.filter((file) => DIALOG_ELEMENT.test(read(file)))
-			.sort();
+	it("lists every file of the deposit flow that imports a dialog primitive", () => {
+		const depositFlow = [
+			...listSources(resolve(SOURCE_ROOT, "components/trade/tradebox/deposit")),
+			"components/trade/tradebox/deposit-modal.tsx",
+			"components/trade/components/deposit-modal-loading-fallback.tsx",
+			"components/trade/components/funds-modal-shell.tsx",
+		];
+		const dialogSources = depositFlow.filter((file) => importedDialogPrimitives(read(file)).length > 0).sort();
 
-		expect(dialogSources).toEqual(FUNDS_DIALOG_SOURCES.filter((file) => file.includes("/deposit/")).sort());
-		expect(read("components/trade/tradebox/deposit-modal.tsx")).not.toMatch(DIALOG_ELEMENT);
-		expect(read("components/trade/components/deposit-modal-loading-fallback.tsx")).not.toMatch(DIALOG_ELEMENT);
+		expect(dialogSources).toEqual([...FUNDS_DIALOG_SOURCES].sort());
+	});
+
+	it("recognises an aliased primitive and a second dialog in one file", () => {
+		const aliased = 'import { AdaptiveModal as DepositDialog, Button } from "@sairn/ui";';
+		const twoDialogs = "<AdaptiveModal open>\n</AdaptiveModal>\n<AdaptiveModal open>\n</AdaptiveModal>";
+
+		expect(importedDialogPrimitives(aliased)).toEqual(["AdaptiveModal as DepositDialog"]);
+		expect(importedDialogPrimitives('import { Button, ModalContent, ModalHeader } from "@sairn/ui";')).toEqual([]);
+		expect(twoDialogs.match(DIALOG_ELEMENT)).toHaveLength(2);
 	});
 
 	it("keeps the browser fixture on the real shell and screens", () => {

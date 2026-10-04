@@ -190,11 +190,21 @@ async function waitForDialogTransition(page: Page) {
 		.toBe(true);
 }
 
-async function expectFundsDialogScroll(page: Page, closeName: string, overflow: "none" | "required" | "any") {
+async function expectFundsDialogScroll(
+	page: Page,
+	closeName: string,
+	overflow: "none" | "required" | "any",
+	fixedControlNames: string[] = [],
+) {
 	const dialog = page.getByRole("dialog");
 	await waitForDialogTransition(page);
 	const body = dialog.locator('[data-slot="funds-modal-body"]');
-	const close = dialog.getByRole("button", { name: closeName, exact: true });
+	const fixedControls = [closeName, ...fixedControlNames].map((name) =>
+		dialog.getByRole("button", { name, exact: true }),
+	);
+	for (const control of fixedControls) {
+		expect(await control.evaluate((node) => node.closest('[data-slot="funds-modal-body"]'))).toBeNull();
+	}
 	const metrics = await body.evaluate((element) => {
 		const node = element as HTMLElement;
 		const popup = node.closest('[role="dialog"]') as HTMLElement;
@@ -216,17 +226,17 @@ async function expectFundsDialogScroll(page: Page, closeName: string, overflow: 
 	if (overflow === "required") expect(metrics.bodyOverflows).toBe(true);
 	if (!metrics.bodyOverflows) return;
 
-	const closeBefore = await close.boundingBox();
+	const controlsBefore = await Promise.all(fixedControls.map((control) => control.boundingBox()));
 	const bodyBox = await body.boundingBox();
-	if (!bodyBox || !closeBefore) throw new Error("Funds dialog geometry is unavailable");
+	if (!bodyBox || controlsBefore.some((box) => box === null)) throw new Error("Funds dialog geometry is unavailable");
 	await page.mouse.move(bodyBox.x + bodyBox.width / 2, bodyBox.y + bodyBox.height / 2);
 	await page.mouse.wheel(0, 2_000);
 	await expect.poll(() => body.evaluate((node) => node.scrollTop)).toBeGreaterThan(0);
-	expect(
-		await body.evaluate((node) => Math.abs(node.scrollTop + node.clientHeight - node.scrollHeight) <= 1),
-	).toBe(true);
-	expect(await close.boundingBox()).toEqual(closeBefore);
-	await expect(close).toBeInViewport({ ratio: 1 });
+	await expect
+		.poll(() => body.evaluate((node) => Math.abs(node.scrollTop + node.clientHeight - node.scrollHeight) <= 1))
+		.toBe(true);
+	expect(await Promise.all(fixedControls.map((control) => control.boundingBox()))).toEqual(controlsBefore);
+	for (const control of fixedControls) await expect(control).toBeInViewport({ ratio: 1 });
 	expect(await dialog.evaluate((node) => node.scrollTop)).toBe(0);
 	await page.mouse.wheel(0, -2_000);
 	await expect.poll(() => body.evaluate((node) => node.scrollTop)).toBe(0);
@@ -324,9 +334,9 @@ for (const width of [375, 393, 1363]) {
 }
 
 for (const viewport of [
-	{ width: 375, height: 320 },
+	{ width: 375, height: 260 },
 	{ width: 375, height: 666 },
-	{ width: 1363, height: 360 },
+	{ width: 1363, height: 260 },
 	{ width: 1363, height: 852 },
 ]) {
 	test(`keeps the deposit status and wrong-network screens on the funds scroll structure at ${viewport.width}x${viewport.height}`, async ({
@@ -335,7 +345,7 @@ for (const viewport of [
 		await page.setViewportSize(viewport);
 		await page.goto("/account-actions.html?surface=funds");
 		const dialog = page.getByRole("dialog");
-		const overflow = viewport.height < 400 ? "required" : "none";
+		const overflow = viewport.height < 300 ? "required" : "none";
 
 		await page.getByRole("button", { name: "Open status", exact: true }).click();
 		await expect(dialog.getByText("Waiting for chain confirmation", { exact: true })).toBeVisible();
@@ -346,11 +356,8 @@ for (const viewport of [
 
 		await page.getByRole("button", { name: "Open wrong network", exact: true }).click();
 		await expect(dialog.getByRole("button", { name: "Switch to Arbitrum", exact: true })).toBeVisible();
-		const back = dialog.getByRole("button", { name: "Back", exact: true });
-		await waitForDialogTransition(page);
-		const backBefore = await back.boundingBox();
-		await expectFundsDialogScroll(page, "Close", overflow === "required" ? "any" : "none");
-		expect(await back.boundingBox()).toEqual(backBefore);
+		await expect(dialog.getByRole("alert")).toContainText("Unable to switch wallet to Arbitrum");
+		await expectFundsDialogScroll(page, "Close", overflow, ["Back"]);
 		await dialog.getByRole("button", { name: "Close", exact: true }).click();
 		await expect(dialog).toHaveCount(0);
 	});

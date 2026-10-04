@@ -147,6 +147,7 @@ export function FundsFormsFixture() {
 				onBack={() => setScreen(null)}
 				onSwitch={noop}
 				isSwitching={false}
+				error={new Error("Fixture switch failure")}
 			/>
 		</>
 	);
