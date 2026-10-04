@@ -540,9 +540,11 @@ function unwrap(node: ts.Expression | undefined): ts.Expression | undefined {
  * True when the file hands the shell its back button in the one accepted form: a single
  * `headerStart` attribute whose value is the shared renderer called directly, or a conditional that
  * yields that call or `null`. The renderer must be a plain import of its module that the file does
- * not redeclare, and that call must be the file's only mention of it. A wrapper element around the
- * call, `cloneElement`, a variable or a second use is rejected: each of them could put the shipped
- * button on a layer the browser fixture does not render.
+ * not redeclare, that call must be the file's only mention of it, and the element that takes the
+ * attribute may not take a spread. A wrapper element around the call, `cloneElement`, a variable or
+ * a second use is rejected: each of them could put the shipped button on a layer the browser fixture
+ * does not render. This is a shape check; `deposit-modal-withdrawal-routing-guard` renders the real
+ * dialog and compares the button it ships with the renderer's.
  */
 function passesBackButtonUnchanged(text: string, fileName: string): boolean {
 	const source = parseSource(text, fileName);
@@ -562,8 +564,9 @@ function passesBackButtonUnchanged(text: string, fileName: string): boolean {
 
 	const initializer = attributes[0].initializer;
 	const value = unwrap(initializer && ts.isJsxExpression(initializer) ? initializer.expression : undefined);
+	if (attributes[0].parent.properties.some(ts.isJsxSpreadAttribute)) return false;
 	const isRendererCall = (node: ts.Expression | undefined) =>
-		node !== undefined && ts.isCallExpression(node) && node.expression === mentions[0];
+		node !== undefined && ts.isCallExpression(node) && unwrap(node.expression) === mentions[0];
 	const isNull = (node: ts.Expression | undefined) => node?.kind === ts.SyntaxKind.NullKeyword;
 	if (isRendererCall(value)) return true;
 	if (!value || !ts.isConditionalExpression(value)) return false;
@@ -639,6 +642,7 @@ describe("funds modal scroll contract", () => {
 			name: "a parenthesised conditional call",
 			value: "canReturn ? (renderFundsModalBackButton({ label, onClick })) : (null)",
 		},
+		{ name: "a call through a parenthesised name", value: "(renderFundsModalBackButton)({ label, onClick })" },
 	])("accepts a back button handed over as $name", ({ value }) => {
 		const text = `import { renderFundsModalBackButton } from "@/components/trade/components/funds-modal-back-button";\nconst a = <FundsModalShell headerStart={${value}} />;`;
 
@@ -669,6 +673,10 @@ describe("funds modal scroll contract", () => {
 			prelude: "const again = renderFundsModalBackButton({ label, onClick });",
 		},
 		{ name: "its own button", value: '<ButtonIcon aria-label="Back" className="absolute z-0" />' },
+		{
+			name: "a spread that can replace it",
+			value: "renderFundsModalBackButton({ label, onClick })} {...{ headerStart: <button /> }",
+		},
 		{ name: "no back button", value: "null" },
 		{
 			name: "a renderer of its own",

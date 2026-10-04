@@ -7,7 +7,9 @@ import { ApiRequestError, HttpRequestError } from "@nktkas/hyperliquid";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, type ButtonHTMLAttributes, createElement, type ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
+import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { renderFundsModalBackButton } from "@/components/trade/components/funds-modal-back-button";
 import { DepositModal } from "@/components/trade/tradebox/deposit-modal";
 import { AccountAbstractionExecutionError } from "@/hooks/trade/use-account-abstraction-guard";
 import { FundsActionGeoExecutionError } from "@/hooks/trade/use-funds-action-availability";
@@ -167,10 +169,17 @@ Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 vi.mock("@sairn/ui", () => ({
 	Button: ({ children, disabled, onClick }: ButtonHTMLAttributes<HTMLButtonElement>) =>
 		createElement("button", { disabled, onClick, type: "button" }, children),
-	ButtonIcon: ({ children, disabled, onClick, "aria-label": label }: ButtonHTMLAttributes<HTMLButtonElement>) =>
-		createElement("button", { "aria-label": label, disabled, onClick, type: "button" }, children),
+	ButtonIcon: ({
+		children,
+		intent: _intent,
+		size: _size,
+		variant: _variant,
+		...rest
+	}: ButtonHTMLAttributes<HTMLButtonElement> & { intent?: string; size?: string; variant?: string }) =>
+		createElement("button", { type: "button", ...rest }, children),
 	ModalContent: ({ children }: { children?: ReactNode }) => createElement("div", null, children),
-	ModalHeader: ({ children }: { children?: ReactNode }) => createElement("div", null, children),
+	ModalHeader: ({ children }: { children?: ReactNode }) =>
+		createElement("div", { "data-slot": "modal-header" }, children),
 	ModalTitle: ({ children, className }: { children?: ReactNode; className?: string }) =>
 		createElement("h2", { className }, children),
 }));
@@ -2368,6 +2377,23 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 			act(() => back?.click());
 			expect(methods()).not.toBeNull();
 			expect(depositForm()).toBeNull();
+		});
+
+		it("ships the back button the browser fixture renders, directly inside the header", async () => {
+			offerCardFunding();
+			testState.modalOpen = true;
+			await rerender();
+			chooseMethod("transfer");
+
+			const shared = renderToStaticMarkup(
+				renderFundsModalBackButton({ disabled: false, label: "Back", onClick: () => undefined }),
+			);
+			const buttons = container.querySelectorAll<HTMLButtonElement>('button[aria-label="Back"]');
+
+			expect(/class="([^"]+)"/.exec(shared)?.[1].split(" ")).toContain("z-10");
+			expect(buttons).toHaveLength(1);
+			expect(buttons[0].outerHTML).toBe(shared);
+			expect(buttons[0].parentElement?.getAttribute("data-slot")).toBe("modal-header");
 		});
 
 		it("starts the card purchase from its own entry", async () => {
