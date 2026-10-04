@@ -6,7 +6,11 @@ import { describe, expect, it } from "vitest";
 import {
 	FUNDS_MODAL_BODY_CLASS,
 	FUNDS_MODAL_BODY_SLOT,
+	FUNDS_MODAL_BODY_TOP_PADDING_CLASS,
 	FUNDS_MODAL_HEADER_CLASS,
+	FUNDS_MODAL_HEADING_CLASS,
+	FUNDS_MODAL_HEADING_SLOT,
+	FUNDS_MODAL_LEADING_HEADING_CLASS,
 	FUNDS_MODAL_POPUP_CLASS,
 } from "@/lib/ui/funds-modal-scroll";
 import { parseSource } from "./harness/react-source";
@@ -551,6 +555,20 @@ describe("funds modal scroll contract", () => {
 			"[&::-webkit-scrollbar]:hidden",
 		]);
 		expect(FUNDS_MODAL_BODY_SLOT).toBe("funds-modal-body");
+	});
+
+	it("sticks a form heading to the top edge of the body on the dialog surface", () => {
+		const padding = /^pt-(\d+)$/.exec(FUNDS_MODAL_BODY_TOP_PADDING_CLASS)?.[1];
+
+		expect(padding).toBeDefined();
+		expect(FUNDS_MODAL_HEADING_CLASS.split(" ")).toEqual(["sticky", `-top-${padding}`, "z-1", "bg-modal"]);
+		expect(FUNDS_MODAL_LEADING_HEADING_CLASS.split(" ")).toEqual([
+			...FUNDS_MODAL_HEADING_CLASS.split(" "),
+			`-mt-${padding}`,
+			`pt-${padding}`,
+		]);
+		expect(FUNDS_MODAL_HEADING_SLOT).toBe("funds-modal-heading");
+		expect(read(FUNDS_DIALOG_SOURCES[0])).toContain("cn(FUNDS_MODAL_BODY_TOP_PADDING_CLASS,");
 	});
 
 	it.each(FUNDS_DIALOG_SOURCES)("gives the one dialog in %s the shared popup, header and body classes", (file) => {

@@ -1,4 +1,4 @@
-import { expect, type Page, test } from "@playwright/test";
+import { expect, type Locator, type Page, test } from "@playwright/test";
 
 async function readGridGeometry(page: Page) {
 	return page.locator("[data-panel]").evaluateAll((panels) =>
@@ -207,6 +207,7 @@ async function expectFundsDialogScroll(
 		await expect(control).toBeVisible();
 		await expect(control).toBeInViewport({ ratio: 1 });
 	}
+	expect(await readContentUnderFixedControls(body, fixedControls, [0])).toEqual([]);
 	const metrics = await body.evaluate((element) => {
 		const node = element as HTMLElement;
 		const popup = node.closest('[role="dialog"]') as HTMLElement;
@@ -242,6 +243,51 @@ async function expectFundsDialogScroll(
 	expect(await dialog.evaluate((node) => node.scrollTop)).toBe(0);
 	await page.mouse.wheel(0, -2_000);
 	await expect.poll(() => body.evaluate((node) => node.scrollTop)).toBe(0);
+
+	const scrollRange = await body.evaluate((node) => node.scrollHeight - node.clientHeight);
+	const offsets = Array.from({ length: Math.ceil(scrollRange / 8) + 1 }, (_, step) => Math.min(step * 8, scrollRange));
+	expect(await readContentUnderFixedControls(body, fixedControls, offsets)).toEqual([]);
+	await body.evaluate((node) => {
+		node.scrollTop = 0;
+	});
+}
+
+/**
+ * The close and back buttons reach below the header, so at every scroll offset the only body
+ * content allowed under them is the form's sticky heading band, which must be painted in the
+ * dialog's own surface colour. Returns each offender as `offset: element`.
+ */
+async function readContentUnderFixedControls(body: Locator, controls: Locator[], offsets: number[]) {
+	const handles = await Promise.all(controls.map((control) => control.elementHandle()));
+	return body.evaluate(
+		(node, { controlNodes, scrollOffsets }) => {
+			const popup = node.closest('[role="dialog"]') as HTMLElement;
+			const heading = node.querySelector('[data-slot="funds-modal-heading"]');
+			const surface = getComputedStyle(popup).backgroundColor;
+			const offenders: string[] = [];
+			if (heading && (getComputedStyle(heading).backgroundColor !== surface || surface === "rgba(0, 0, 0, 0)")) {
+				offenders.push(`heading band is ${getComputedStyle(heading).backgroundColor} on ${surface}`);
+			}
+			for (const offset of scrollOffsets) {
+				node.scrollTop = offset;
+				const bodyBox = node.getBoundingClientRect();
+				for (const control of controlNodes) {
+					if (!control) continue;
+					const box = control.getBoundingClientRect();
+					for (const x of [box.left + 1, (box.left + box.right) / 2, box.right - 1]) {
+						for (const y of [box.top + 1, (box.top + box.bottom) / 2, box.bottom - 1]) {
+							if (y < bodyBox.top || y > bodyBox.bottom) continue;
+							const content = document.elementsFromPoint(x, y).find((element) => element !== node && node.contains(element));
+							if (!content || heading?.contains(content) || (heading && content.contains(heading))) continue;
+							offenders.push(`${offset}: ${content.tagName.toLowerCase()} ${content.textContent?.trim().slice(0, 40)}`);
+						}
+					}
+				}
+			}
+			return [...new Set(offenders)];
+		},
+		{ controlNodes: handles, scrollOffsets: offsets },
+	);
 }
 
 async function readFundingAddressGeometry(page: Page) {
@@ -362,6 +408,33 @@ for (const viewport of [
 		await expectFundsDialogScroll(page, "Close", overflow, ["Back"]);
 		await dialog.getByRole("button", { name: "Close", exact: true }).click();
 		await expect(dialog).toHaveCount(0);
+	});
+
+	test(`keeps content from scrolling under the close button of every funds form at ${viewport.width}x${viewport.height}`, async ({
+		page,
+	}) => {
+		await page.setViewportSize(viewport);
+		await page.goto("/account-actions.html?surface=funds");
+		const dialog = page.getByRole("dialog");
+		const overflow = viewport.height < 300 ? "required" : "any";
+		const forms = [
+			{ open: "Open deposit", heading: "Deposit USDC from Arbitrum", layout: "funding-address", overflow },
+			{ open: "Open withdraw", heading: "Withdraw USDC to Arbitrum", layout: null, overflow },
+			{ before: "Toggle email", open: "Open deposit", heading: "Deposit USDC from Arbitrum", layout: null, overflow },
+			{ before: "Toggle card funding", open: "Open deposit", heading: "Deposit", layout: "methods", overflow: "any" },
+		] as const;
+
+		for (const form of forms) {
+			if ("before" in form) await page.getByRole("button", { name: form.before, exact: true }).click();
+			await page.getByRole("button", { name: form.open, exact: true }).click();
+			const heading = dialog.locator('[data-slot="funds-modal-heading"]');
+			await expect(heading).toHaveCount(1);
+			await expect(heading).toContainText(form.heading);
+			if (form.layout) await expect(dialog.locator(`[data-deposit-layout="${form.layout}"]`)).toBeVisible();
+			await expectFundsDialogScroll(page, "Close", form.overflow);
+			await dialog.getByRole("button", { name: "Close", exact: true }).click();
+			await expect(dialog).toHaveCount(0);
+		}
 	});
 }
 

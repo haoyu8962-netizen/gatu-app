@@ -5,6 +5,7 @@ import { cn } from "@/lib/cn";
 import {
 	FUNDS_MODAL_BODY_CLASS,
 	FUNDS_MODAL_BODY_SLOT,
+	FUNDS_MODAL_BODY_TOP_PADDING_CLASS,
 	FUNDS_MODAL_HEADER_CLASS,
 	FUNDS_MODAL_POPUP_CLASS,
 } from "@/lib/ui/funds-modal-scroll";
@@ -60,7 +61,9 @@ export function FundsModalShell({ children, headerStart, isPending, onOpenChange
 				data-slot={FUNDS_MODAL_BODY_SLOT}
 				className={cn(
 					FUNDS_MODAL_BODY_CLASS,
-					usesFundsRedesign ? "px-4 pt-3 pb-5 min-[1001px]:px-6 min-[1001px]:pb-6" : "space-y-4",
+					usesFundsRedesign
+						? cn(FUNDS_MODAL_BODY_TOP_PADDING_CLASS, "px-4 pb-5 min-[1001px]:px-6 min-[1001px]:pb-6")
+						: "space-y-4",
 				)}
 			>
 				{children}

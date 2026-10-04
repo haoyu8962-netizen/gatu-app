@@ -4,8 +4,14 @@ import { formatUnits } from "viem";
 import { USDC_ICON_URL } from "@/config/bridge";
 import { USDC_DECIMALS } from "@/config/contracts";
 import type { UsdcRoutingQueryStatus, UsdcTransferRoute } from "@/domain/trade/usdc-routing";
+import { cn } from "@/lib/cn";
 import { useNumberFormat } from "@/lib/format";
 import type { SponsoredCctpReadiness } from "@/lib/hyperliquid/use-deposit";
+import {
+	FUNDS_MODAL_HEADING_CLASS,
+	FUNDS_MODAL_HEADING_SLOT,
+	FUNDS_MODAL_LEADING_HEADING_CLASS,
+} from "@/lib/ui/funds-modal-scroll";
 import { AmountInput } from "./amount-input";
 import { FundingAddressCard } from "./funding-address-card";
 import { FundsRouteDetails } from "./funds-route-details";
@@ -339,7 +345,10 @@ export function DepositForm({
 					isPending
 				}
 			>
-				<div className="pt-0.5 text-center">
+				<div
+					data-slot={FUNDS_MODAL_HEADING_SLOT}
+					className={cn(FUNDS_MODAL_LEADING_HEADING_CLASS, "-mb-3 pt-3.5 pb-3 text-center")}
+				>
 					<h3 className="text-[15px] leading-5 font-bold">
 						<Trans>Deposit USDC from Arbitrum</Trans>
 					</h3>
@@ -460,22 +469,23 @@ export function DepositForm({
 			className="flex flex-1 flex-col gap-3 font-market-close text-market-close-fg"
 			aria-busy={routingStatus === "loading" || balanceStatus === "loading" || cctpFeeLoading || isPending}
 		>
-			<div className="flex flex-col items-center gap-2 text-center">
-				<img src={USDC_ICON_URL} alt="" aria-hidden="true" className="size-10 rounded-full" />
-				<div className="space-y-0.5">
-					<h3 className="text-[15px] leading-[21px] font-bold text-market-close-fg">
-						<Trans>Deposit USDC from Arbitrum</Trans>
-					</h3>
-					<p className="min-h-[18px] text-2xs leading-[18px] text-market-close-subtle">
-						{cctpRoutingReady ? (
-							!cctpFeeError && !cctpFeeLoading && cctpFee ? (
-								<Trans>Up to {cctpFee} USDC in fees will be deducted from your deposit.</Trans>
-							) : (
-								<span aria-hidden="true">--</span>
-							)
-						) : null}
-					</p>
-				</div>
+			<img src={USDC_ICON_URL} alt="" aria-hidden="true" className="size-10 self-center rounded-full" />
+			<div
+				data-slot={FUNDS_MODAL_HEADING_SLOT}
+				className={cn(FUNDS_MODAL_HEADING_CLASS, "-mt-1 -mb-3 space-y-0.5 pb-3 text-center")}
+			>
+				<h3 className="text-[15px] leading-[21px] font-bold text-market-close-fg">
+					<Trans>Deposit USDC from Arbitrum</Trans>
+				</h3>
+				<p className="min-h-[18px] text-2xs leading-[18px] text-market-close-subtle">
+					{cctpRoutingReady ? (
+						!cctpFeeError && !cctpFeeLoading && cctpFee ? (
+							<Trans>Up to {cctpFee} USDC in fees will be deducted from your deposit.</Trans>
+						) : (
+							<span aria-hidden="true">--</span>
+						)
+					) : null}
+				</p>
 			</div>
 
 			{transferSelectors}

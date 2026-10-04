@@ -5,6 +5,7 @@ import { TOUCH_PRESS_CLASS } from "@/components/ui/touch-press";
 import { USDC_ICON_URL } from "@/config/bridge";
 import type { PrivyFiatFundingWalletKind } from "@/domain/trade/privy-fiat-funding";
 import { cn } from "@/lib/cn";
+import { FUNDS_MODAL_HEADING_SLOT, FUNDS_MODAL_LEADING_HEADING_CLASS } from "@/lib/ui/funds-modal-scroll";
 
 interface Props {
 	fiat: { walletKind: PrivyFiatFundingWalletKind; disabled: boolean };
@@ -23,7 +24,10 @@ export function DepositMethodChooser({ fiat, notice, onTransfer, onBuy, onBuyAva
 
 	return (
 		<div className="flex flex-col gap-3 font-market-close text-trading-panel-fg" data-deposit-layout="methods">
-			<h3 className="pb-1 text-center text-base font-bold">
+			<h3
+				data-slot={FUNDS_MODAL_HEADING_SLOT}
+				className={cn(FUNDS_MODAL_LEADING_HEADING_CLASS, "-mb-3 pb-4 text-center text-base font-bold")}
+			>
 				<Trans>Deposit</Trans>
 			</h3>
 			<MethodOption
