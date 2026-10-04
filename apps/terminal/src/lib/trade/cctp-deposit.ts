@@ -372,11 +372,14 @@ function calculateCctpDepositMaxFee(amountRaw: bigint, minimumFeeBps: Big, forwa
  * step over an amount that passes, and the first candidate that passes is the smallest.
  *
  * The search ends within the limit because `readCctpDepositFeeRate` caps the rate at
- * `CCTP_DEPOSIT_MAX_FEE_BPS`. With the rate at most 10%, an amount `a` requires at most
- * `0.24a + 4.4 + 2 × forward fee`, every amount from `(4.4 + 2 × forward fee) / 0.76` up passes,
- * and each round leaves at most 24% of the remaining distance to that bound plus 4.4, so the
- * distance is under 7 after 56 rounds for any forward fee below 10^34 and the remaining rounds each
- * move by at least one unit. Running out of rounds is therefore not a proof that no amount passes;
+ * `CCTP_DEPOSIT_MAX_FEE_BPS`. Write `c` for the rate as a fraction (at most 0.1) and `F` for the
+ * forward fee. An amount `a` requires `f(a)` with `2.4c·a + 2F ≤ f(a) ≤ 2.4c·a + 4.4 + 2F`, so
+ * every amount from `U = (4.4 + 2F) / (1 − 2.4c)` up passes, and while a candidate `a` fails, the
+ * next one is at most `2.4c·(U − a) + 4.4 ≤ 0.24·(U − a) + 4.4` short of `U`. The distance to `U`
+ * is therefore under 7 after 56 rounds whenever it starts below 4.17^56 (about 5 × 10^34; a
+ * normalized forward fee is a safe integer, far below that), and each later candidate moves by at
+ * least one unit, so the 64th check passes at the latest. Running out of rounds can then only
+ * happen for a hand-built quote outside that range, and it is not a proof that no amount passes:
  * the caller treats it as a quote that cannot be used.
  */
 function findCctpDepositMinimumRaw(fromRaw: bigint, minimumFeeBps: Big, forwardFeeRaw: bigint): bigint | null {
