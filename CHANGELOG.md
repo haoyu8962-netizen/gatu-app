@@ -67,8 +67,8 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 - Deposits follow the CCTP rules instead of the retired bridge's. The fixed 5 USDC minimum is gone:
   a deposit now has to be at least twice the current Circle fee (0.40 USDC while the fee is 0.20).
-  The dialog shows that minimum once the fee is known and does not depend on the amount, and an
-  amount below it is marked on the amount field with the minimum it missed. If the fee rises between
+  The dialog shows that minimum once the fee is known, and an amount below it is marked on the
+  amount field with the smallest amount that would be accepted. If the fee rises between
   the review and the click so that the amount no longer reaches the minimum, the dialog says the fee
   changed instead of reporting a routing problem. The notice under the deposit address no
   longer repeats a minimum; it says to send only native USDC on Arbitrum and that other assets or

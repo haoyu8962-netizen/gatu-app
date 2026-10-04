@@ -105,15 +105,19 @@ displays it (product decision, 2026-10-04). The contract only needs the amount t
 exceed the fee; the application requires at least twice the current maximum fee,
 the same guard as [CCTP withdrawals](withdrawals.md). `calculateCctpDepositFee`
 enforces it for the reviewed amount and again at execution with the fresh quote,
-throwing `CctpDepositBelowMinimumError` with the minimum the amount missed.
-`reviewCctpDepositFee` turns that into a result a surface can show: the amount
-field is marked invalid with "Minimum deposit is N USDC" (also when the fee
-depends on the amount and no fixed minimum can be displayed), the email form names
-the same minimum, and a fee that rises between review and click so that the amount
-no longer reaches it is reported as a fee change, never as a routing failure.
-The form shows the "Minimum N USDC" note only while the fee is known and
-independent of the amount, and the Testnet automatic path waits for a balance that
-meets the rule. The
+throwing `CctpDepositBelowMinimumError` with the smallest amount at or above the
+rejected one that the same quote accepts. Because the fee is rounded up and may
+grow with the amount, that value is searched for (each candidate is raised to what
+it requires until one passes) rather than read off the rejected amount, so the
+amount a user is told to enter is itself accepted; a rate that outgrows every
+amount has no minimum and is treated as a quote that cannot be used.
+`reviewCctpDepositFee` turns the failure into a result a surface can show: the
+amount field is marked invalid with "Minimum deposit is N USDC", the email form
+names the same amount, and a fee that rises between review and click so that the
+amount no longer reaches it is reported as a fee change, never as a routing
+failure. The form's "Minimum N USDC" note is `getCctpDepositMinimumRaw` of the
+current quote, the smallest amount that quote accepts, shown whenever the quote is
+known, and the Testnet automatic path waits for a balance that meets the rule. The
 official terminal still applies 5 USDC to its Arbitrum routes; that is its own
 choice, not a CCTP rule. The funding-address notice tells the user to send only
 native USDC on Arbitrum and that other assets or networks are not credited; it

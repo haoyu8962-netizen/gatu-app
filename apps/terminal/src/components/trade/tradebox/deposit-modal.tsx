@@ -61,8 +61,8 @@ import { useDeposit } from "@/lib/hyperliquid/use-deposit";
 import { createLazyComponent } from "@/lib/lazy";
 import { useHasExistingBridgeExecution } from "@/lib/lifi/bridge-execution-state";
 import {
-	getAmountIndependentCctpDepositMinimumRaw,
 	getAmountIndependentCctpMaxFeeRaw,
+	getCctpDepositMinimumRaw,
 	reviewCctpDepositFee,
 } from "@/lib/trade/cctp-deposit";
 import { removeCctpDepositTrackingRecord } from "@/lib/trade/cctp-deposit-tracking";
@@ -378,7 +378,7 @@ export function DepositModal() {
 	const cctpDepositFee = displayedCctpDepositFeeRaw !== null ? formatUnits(displayedCctpDepositFeeRaw, 6) : null;
 	const cctpDepositMinimumRaw =
 		selectedDepositRoute === "cctp" && displayedCctpDepositFeeQuery.data?.feeQuote
-			? getAmountIndependentCctpDepositMinimumRaw(displayedCctpDepositFeeQuery.data.feeQuote)
+			? getCctpDepositMinimumRaw(displayedCctpDepositFeeQuery.data.feeQuote)
 			: null;
 	const cctpDepositBelowMinimumRaw =
 		selectedDepositRoute === "cctp" ? displayedCctpDepositFeeQuery.belowMinimumRaw : null;
