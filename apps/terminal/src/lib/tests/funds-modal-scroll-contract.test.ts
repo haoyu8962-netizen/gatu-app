@@ -37,7 +37,8 @@ const UI_PACKAGE = "@sairn/ui";
 // The UI package builds dialogs in these two modules only, and its entry re-exports them by name.
 const UI_DIALOG_MODULES = ["modal.tsx", "drawer.tsx"];
 const UI_ENTRY = "index.ts";
-const UI_DIALOG_DEPENDENCY = /^@base-ui\/react(?:$|\/(?:dialog|alert-dialog|drawer)$)|^\.\/(?:modal|drawer)(?:\.tsx)?$/;
+const BASE_UI_COMPONENT = /^@base-ui\/react\/([a-z-]+)$/;
+const BASE_UI_DIALOGS = ["dialog", "alert-dialog", "drawer"];
 // Every value export of those two modules has one of three roles; a new export fails the
 // classification test until it is given one, and an export form the test cannot read fails as well.
 const UI_DIALOG_SURFACES = ["AdaptiveModal", "Modal", "ModalPopup", "Drawer", "DrawerContent"];
@@ -62,14 +63,14 @@ const UI_DIALOG_INERT = [
 const DIALOG_PRIMITIVES = new Set([...UI_DIALOG_SURFACES, "PendingActionModal"]);
 const DIALOG_PARTS = new Set(UI_DIALOG_PARTS);
 const ASSET_SPECIFIER = /\.(?:css|json|svg|png|webp)$/;
-const SCROLL_MODULE = "@/lib/ui/funds-modal-scroll";
+const SCROLL_MODULE = "lib/ui/funds-modal-scroll.ts";
 const SCROLL_CONSTANTS = [
 	"FUNDS_MODAL_BODY_CLASS",
 	"FUNDS_MODAL_BODY_SLOT",
 	"FUNDS_MODAL_HEADER_CLASS",
 	"FUNDS_MODAL_POPUP_CLASS",
 ];
-const CLASS_MERGE_MODULE = "@/lib/cn";
+const CLASS_MERGE_MODULE = "lib/cn.ts";
 const SELF_TEST_FILE = `${FUNDS_FLOW_DIRECTORY}/self-test.tsx`;
 
 type JsxTag = ts.JsxOpeningElement | ts.JsxSelfClosingElement;
@@ -388,22 +389,20 @@ function startsWithConstant(expression: ts.Expression | undefined, constant: str
 	);
 }
 
-/** True when every name is a plain, unaliased value import from the module. */
-function importsPlainly(source: ts.SourceFile, module: string, names: string[]): boolean {
-	const imported = source.statements
-		.filter(ts.isImportDeclaration)
-		.filter(
-			(statement) => ts.isStringLiteralLike(statement.moduleSpecifier) && statement.moduleSpecifier.text === module,
-		)
-		.flatMap((statement) => {
-			const clause = statement.importClause;
-			const bindings = clause && !clause.isTypeOnly ? clause.namedBindings : undefined;
-			return bindings && ts.isNamedImports(bindings)
-				? bindings.elements
-						.filter((element) => !element.propertyName && !element.isTypeOnly)
-						.map((element) => element.name.text)
-				: [];
-		});
+/** True when every name is a plain, unaliased value import from the module, however it is named. */
+function importsPlainly(source: ts.SourceFile, moduleFile: string, names: string[]): boolean {
+	const imported = source.statements.filter(ts.isImportDeclaration).flatMap((statement) => {
+		const specifier = readLiteral(statement.moduleSpecifier);
+		const resolution = specifier === null ? null : resolveSpecifier(source.fileName, specifier);
+		if (resolution?.kind !== "source" || resolution.file !== moduleFile) return [];
+		const clause = statement.importClause;
+		const bindings = clause && !clause.isTypeOnly ? clause.namedBindings : undefined;
+		return bindings && ts.isNamedImports(bindings)
+			? bindings.elements
+					.filter((element) => !element.propertyName && !element.isTypeOnly)
+					.map((element) => element.name.text)
+			: [];
+	});
 	return names.every((name) => imported.includes(name));
 }
 
@@ -472,28 +471,53 @@ function listValueExports(text: string, fileName: string): string[] {
 	});
 }
 
-/** Files of the UI package, other than the given ones, that import a dialog implementation. */
+/** The file of the UI package a relative module name stands for, or null when it names none. */
+function resolveUiSpecifier(from: string, specifier: string): string | null {
+	const base = resolve(UI_PACKAGE_ROOT, dirname(from), specifier);
+	const candidates = [base, `${base}.tsx`, `${base}.ts`, join(base, "index.tsx"), join(base, "index.ts")];
+	const found = candidates.find((candidate) => isSource(candidate) && existsSync(candidate));
+	const file = found ? relative(UI_PACKAGE_ROOT, found) : null;
+	return file && !file.startsWith("..") ? file : null;
+}
+
+/**
+ * True when a module name in a file of the UI package can hand that file a dialog implementation:
+ * the modal or drawer module or the entry, by whatever relative path; the package's own name; Base
+ * UI's dialog, alert-dialog or drawer; and every name this cannot read (a computed name, a relative
+ * name that resolves to no file, any `@base-ui` name that is not `@base-ui/react/<component>`).
+ */
+function reachesUiDialog(from: string, specifier: string | null): boolean {
+	if (specifier === null) return true;
+	if (specifier.startsWith(".")) {
+		const file = resolveUiSpecifier(from, specifier);
+		return file === null ? !ASSET_SPECIFIER.test(specifier) : [...UI_DIALOG_MODULES, UI_ENTRY].includes(file);
+	}
+	if (specifier === UI_PACKAGE || specifier.startsWith(`${UI_PACKAGE}/`)) return true;
+	if (!specifier.startsWith("@base-ui/")) return false;
+	const component = BASE_UI_COMPONENT.exec(specifier)?.[1];
+	return component === undefined || BASE_UI_DIALOGS.includes(component);
+}
+
+/** Files of the UI package, other than the given ones, that can reach a dialog implementation. */
 function listUiDialogDependents(except: string[]): string[] {
 	return readdirSync(UI_PACKAGE_ROOT)
 		.filter((file) => isSource(file) && !except.includes(file))
 		.filter((file) =>
-			listModuleReferences(parseSource(readFileSync(resolve(UI_PACKAGE_ROOT, file), "utf8"), file)).some(
-				(reference) => reference.specifier === null || UI_DIALOG_DEPENDENCY.test(reference.specifier),
+			listModuleReferences(parseSource(readFileSync(resolve(UI_PACKAGE_ROOT, file), "utf8"), file)).some((reference) =>
+				reachesUiDialog(file, reference.specifier),
 			),
 		);
 }
 
-/** True when the entry reaches the dialog modules only through unaliased `export { … } from` lists. */
-function reexportsDialogModulesByName(text: string): boolean {
-	return listModuleReferences(parseSource(text, UI_ENTRY))
-		.filter((reference) => reference.specifier === null || UI_DIALOG_DEPENDENCY.test(reference.specifier))
-		.every((reference) => {
-			if (reference.kind !== "re-export") return false;
-			const names = reference.node.exportClause;
-			return (
-				names !== undefined && ts.isNamedExports(names) && names.elements.every((element) => !element.propertyName)
-			);
-		});
+/** True when the entry is nothing but unaliased `export { … } from` lists of files of the package. */
+function reexportsByNameOnly(text: string): boolean {
+	return parseSource(text, UI_ENTRY).statements.every((statement) => {
+		if (!ts.isExportDeclaration(statement) || !statement.moduleSpecifier) return false;
+		const names = statement.exportClause;
+		const specifier = readLiteral(statement.moduleSpecifier);
+		if (!names || !ts.isNamedExports(names) || specifier === null || !specifier.startsWith(".")) return false;
+		return resolveUiSpecifier(UI_ENTRY, specifier) !== null && names.elements.every((element) => !element.propertyName);
+	});
 }
 
 function usesSharedNames(source: ts.SourceFile): boolean {
@@ -570,29 +594,69 @@ describe("funds modal scroll contract", () => {
 
 	it("finds the UI package's dialogs only in its modal and drawer modules, re-exported by name", () => {
 		const entry = readFileSync(resolve(UI_PACKAGE_ROOT, UI_ENTRY), "utf8");
-
 		const directories = readdirSync(UI_PACKAGE_ROOT, { withFileTypes: true }).filter((entry) => entry.isDirectory());
 
 		expect(directories).toEqual([]);
 		expect(listUiDialogDependents([...UI_DIALOG_MODULES, UI_ENTRY])).toEqual([]);
 		expect(listUiDialogDependents([])).toEqual([...UI_DIALOG_MODULES, UI_ENTRY].sort());
-		expect(reexportsDialogModulesByName(entry)).toBe(true);
-		expect(entry).toContain('from "./modal"');
-		expect(entry).toContain('from "./drawer"');
+		expect(reexportsByNameOnly(entry)).toBe(true);
 	});
 
 	it.each([
 		{ name: "an alias", entry: 'export { Modal as Sheet } from "./modal";' },
+		{ name: "an alias through an equivalent path", entry: 'export { AdaptiveModal as Sheet } from "././modal";' },
 		{ name: "a star", entry: 'export * from "./modal";' },
-		{ name: "a namespace", entry: 'export * as Dialogs from "./drawer";' },
+		{ name: "a namespace", entry: 'export * as Dialogs from "././drawer";' },
 		{
 			name: "an import it then exports itself",
 			entry: 'import { Modal } from "./modal";\nexport const Sheet = Modal;',
 		},
-		{ name: "a run-time load", entry: 'export const load = () => import("./modal");' },
-		{ name: "the file name with its extension", entry: 'export * from "./drawer.tsx";' },
-	])("does not accept a UI entry that reaches the dialog modules through $name", ({ entry }) => {
-		expect(reexportsDialogModulesByName(entry)).toBe(false);
+		{ name: "a declaration of its own", entry: "export const load = () => import(name);" },
+		{ name: "a list without a module", entry: "const Sheet = 1;\nexport { Sheet };" },
+		{ name: "a module outside the package", entry: 'export { Dialog } from "@base-ui/react/dialog";' },
+		{ name: "a module that does not exist", entry: 'export { Sheet } from "./sheet";' },
+	])("does not accept a UI entry with $name", ({ entry }) => {
+		expect(reexportsByNameOnly(entry)).toBe(false);
+	});
+
+	it("accepts a UI entry of unaliased lists, whichever way the files are named", () => {
+		expect(
+			reexportsByNameOnly(
+				'export { Modal, type ModalProps } from "./modal";\nexport type { ButtonProps } from "././button.tsx";\nexport { Button } from "./button";',
+			),
+		).toBe(true);
+	});
+
+	it.each([
+		"./modal",
+		"././modal",
+		"./modal.tsx",
+		"../src/drawer",
+		"./index",
+		".",
+		"./missing",
+		"@sairn/ui",
+		"@base-ui/react",
+		"@base-ui/react/dialog",
+		"@base-ui/react/alert-dialog",
+		"@base-ui/react/drawer",
+		"@base-ui/react/dialog/index.js",
+		"@base-ui/react/./dialog",
+		"@base-ui/utils",
+		null,
+	])("counts %s in a UI file as a way to a dialog implementation", (specifier) => {
+		expect(reachesUiDialog("tooltip.tsx", specifier)).toBe(true);
+	});
+
+	it.each([
+		"./utils",
+		"././button",
+		"./use-presented-open.ts",
+		"@base-ui/react/tooltip",
+		"@base-ui/react/menu",
+		"react",
+	])("does not count %s in a UI file as a way to a dialog implementation", (specifier) => {
+		expect(reachesUiDialog("tooltip.tsx", specifier)).toBe(false);
 	});
 
 	it("reads value exports and fails on the forms it cannot read", () => {
@@ -603,11 +667,6 @@ describe("funds modal scroll contract", () => {
 				'export const a = 1, b = 2;\nexport function c() {}\nexport class G {}\nexport type D = 1;\nexport interface H {}\nconst e = 3;\nexport { e, type D as F };\nexport { i, type J } from "./i";\nexport type { K } from "./k";',
 			),
 		).toEqual(["a", "b", "c", "G", "e", "i"]);
-		expect(
-			reexportsDialogModulesByName(
-				'export { Modal, type ModalProps } from "./modal";\nexport { Button } from "./button";',
-			),
-		).toBe(true);
 		for (const unsupported of [
 			"export default AdaptiveModal;",
 			"export default function Sheet() {}",
@@ -925,6 +984,14 @@ describe("funds modal scroll contract", () => {
 
 		expect(readDialogShape(use)).not.toBeNull();
 		expect(usesSharedNames(use.source)).toBe(false);
+	});
+
+	it("accepts the shared names under an equivalent module path", () => {
+		const use = describeDialogUse(
+			`${ACCEPTED_IMPORTS.replace("@/lib/cn", "../../../../lib/cn.ts").replace("@/lib/ui/funds-modal-scroll", "@/lib/ui/./funds-modal-scroll")}\nconst a = ${ACCEPTED_DIALOG};`,
+		);
+
+		expect(usesSharedNames(use.source)).toBe(true);
 	});
 
 	it("does not mistake a property, a key or a type member for a shadowing binding", () => {
