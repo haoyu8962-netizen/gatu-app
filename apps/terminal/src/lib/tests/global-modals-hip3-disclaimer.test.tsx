@@ -425,15 +425,16 @@ describe("GlobalModals HIP-3 disclaimer priority", () => {
 		expect(document.body.querySelector('[data-testid="deposit-modal-loading-fallback"]')).toBeNull();
 	});
 
-	it("preserves the compact loading fallback for external-wallet deposits", async () => {
+	it("uses the same deposit shell fallback for external-wallet deposits", async () => {
 		testState.depositPath = "external";
 		testState.suspendedLazyComponent = "DepositModal";
 		const { GlobalModals } = await import("@/components/trade/components/global-modals");
 
 		act(() => root.render(createElement(I18nProvider, { i18n }, createElement(GlobalModals))));
 
-		expect(container.querySelector('[data-testid="global-modal-loading-fallback"]')).not.toBeNull();
-		expect(document.body.querySelector('[data-testid="deposit-modal-loading-fallback"]')).toBeNull();
+		expect(container.querySelector('[data-testid="global-modal-loading-fallback"]')).toBeNull();
+		expect(document.body.querySelector('[data-testid="deposit-modal-loading-fallback"]')).not.toBeNull();
+		expect(document.body.querySelector('button[aria-label="Close"]')).not.toBeNull();
 	});
 
 	it("mounts the globally accessible Send modal with the requested account defaults", async () => {

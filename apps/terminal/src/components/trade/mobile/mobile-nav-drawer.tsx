@@ -14,7 +14,11 @@ import { useTradeHomePath } from "@/hooks/trade/use-trade-home-path";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { useDepositModalActions, useSettingsDialogActions } from "@/stores/use-global-modal-store";
-import { type PreloadableGlobalModal, preloadGlobalModal } from "../components/lazy-global-modals";
+import {
+	depositModalIntentProps,
+	type PreloadableGlobalModal,
+	preloadGlobalModal,
+} from "../components/lazy-global-modals";
 import { HeaderIconButtonView } from "../header/header-icon-button-view";
 import { ThemeToggle } from "../header/theme-toggle";
 
@@ -298,6 +302,7 @@ export function MobileNavDrawer() {
 									intent="brand"
 									size="sm"
 									onClick={depositAvailability.available ? () => requestGlobalModal("deposit") : undefined}
+									{...(depositAvailability.available ? depositModalIntentProps : undefined)}
 									disabled={pendingModal !== null || !depositAvailability.available}
 									aria-busy={pendingModal === "deposit" || undefined}
 									iconLeft={

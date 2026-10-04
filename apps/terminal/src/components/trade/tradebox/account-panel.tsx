@@ -192,7 +192,7 @@ export function AccountPanel() {
 						) : !showsFundsActions ? (
 							<p className="text-center text-xs text-fg-muted">{t`Deposits and withdrawals are not allowed.`}</p>
 						) : (
-							<div data-slot="account-panel-actions" className="space-y-2" {...depositModalIntentProps}>
+							<div data-slot="account-panel-actions" className="space-y-2">
 								{depositAvailability.unavailableReason ? (
 									<output className="block text-center text-xs text-fg-muted">
 										{depositAvailability.unavailableReason}
@@ -206,6 +206,7 @@ export function AccountPanel() {
 												intent="neutral"
 												disabled={!depositAvailability.available}
 												onClick={depositAvailability.available ? () => openDepositModal("deposit") : undefined}
+												{...(depositAvailability.available ? depositModalIntentProps : undefined)}
 												aria-label={t`Deposit`}
 												title={depositAvailability.unavailableReason ?? undefined}
 												className="min-h-8 w-full min-w-0 rounded-8 bg-trading-panel-control font-bold text-trading-panel-on-control shadow-none hover:bg-trading-panel-control/90"
@@ -224,6 +225,7 @@ export function AccountPanel() {
 												onClick={
 													fundsActionAvailability.withdrawal.available ? () => openDepositModal("withdraw") : undefined
 												}
+												{...(fundsActionAvailability.withdrawal.available ? depositModalIntentProps : undefined)}
 												aria-label={t`Withdraw`}
 												aria-describedby={withdrawDisabledReason ? withdrawUnavailableId : undefined}
 												className="min-h-8 w-full min-w-0 rounded-8 border-trading-panel-stroke-input font-semibold text-trading-panel-fg shadow-none hover:border-trading-panel-stroke-control"
@@ -260,6 +262,7 @@ export function AccountPanel() {
 										variant="outline"
 										intent="neutral"
 										onClick={() => openDepositModal("bridge")}
+										{...depositModalIntentProps}
 										aria-label={t`Bridge`}
 										iconLeft={<ArrowsLeftRightIcon className="size-4" />}
 										className="min-h-8 w-full min-w-0 rounded-8 border-trading-panel-stroke-input font-semibold text-trading-panel-fg shadow-none hover:border-trading-panel-stroke-control"

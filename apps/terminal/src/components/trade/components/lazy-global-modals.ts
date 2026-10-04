@@ -1,7 +1,11 @@
 import { useEffect } from "react";
 import { createLazyComponent, preloadLazyComponents } from "@/lib/lazy";
 
-export const DepositModal = createLazyComponent(() => import("../tradebox/deposit-modal"), "DepositModal");
+function importDepositModal() {
+	return import("../tradebox/deposit-modal");
+}
+
+export const DepositModal = createLazyComponent(importDepositModal, "DepositModal");
 export const GlobalSettingsModal = createLazyComponent(() => import("./global-settings-modal"), "GlobalSettingsModal");
 export const SpotSwapModal = createLazyComponent(() => import("./spot-swap-modal"), "SpotSwapModal");
 export const CommandMenu = createLazyComponent(() => import("./command-menu"), "CommandMenu");
@@ -34,14 +38,24 @@ let depositModalWarmed = false;
  * The deposit dialog is the largest global modal chunk, so it is not downloaded on a timer. It is
  * warmed on intent instead, when the pointer, a press or focus first reaches a control that opens it,
  * so the click normally mounts the dialog directly and the chunk fallback stays a rare case.
+ *
+ * The warm-up imports the module itself and hands it to the lazy component only once it has loaded.
+ * `createLazyComponent` keeps a failed load and answers the next render with an error or a page
+ * reload, so a failed warm-up must not reach it: it is forgotten, the next intent tries again, and a
+ * click behaves as if nothing had been warmed.
  */
 export function warmDepositModal(): void {
 	if (depositModalWarmed) return;
 	depositModalWarmed = true;
-	void preloaders.deposit().catch(() => undefined);
+	void importDepositModal().then(
+		() => DepositModal.preload?.(),
+		() => {
+			depositModalWarmed = false;
+		},
+	);
 }
 
-/** Spread onto every control that opens the deposit dialog (`deposit-modal-intent-contract`). */
+/** Spread onto every control that opens the deposit dialog, while it can open it (`loading-placeholder-contract`). */
 export const depositModalIntentProps = {
 	onPointerEnter: warmDepositModal,
 	onPointerDown: warmDepositModal,

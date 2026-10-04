@@ -12,31 +12,82 @@ const SOURCE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 // with the real rows. A new one needs a reason here.
 const PULSING_PLACEHOLDERS: Record<string, { count: number; reason: string }> = {
 	"components/ui/skeleton.tsx": { count: 2, reason: "inline value bar for the account panel and its generic fallback" },
-	"components/api-wallet/api-wallet-list.tsx": {
+	"components/funding-comparison/funding-comparison-view.tsx": {
 		count: 1,
-		reason: "rows share --api-wallet-row-min-height with the loaded rows",
+		reason: "generic rows on desktop, one blank card-sized block per row on phones",
 	},
-	"components/funding-comparison/funding-comparison-view.tsx": { count: 1, reason: "generic list rows" },
 	"components/funding-history/funding-history-page.tsx": { count: 1, reason: "generic list rows" },
 	"components/historical-orders/historical-orders-page.tsx": { count: 1, reason: "generic list rows" },
-	"components/leaderboard/leaderboard-view.tsx": { count: 1, reason: "generic list rows" },
+	"components/leaderboard/leaderboard-view.tsx": {
+		count: 1,
+		reason: "generic rows on desktop, one blank card-sized block per row on phones",
+	},
 	"components/portfolio/portfolio-page.tsx": { count: 1, reason: "blank panel-sized block, no inner layout" },
 	"components/staking/staking-view.tsx": { count: 5, reason: "generic bars inside the real cards" },
 	"components/trade-history/trade-history-page.tsx": { count: 1, reason: "generic list rows" },
-	"components/trade/mobile/mobile-account-transfers-tab.tsx": { count: 2, reason: "generic list rows" },
-	"components/trade/positions/account-transfers-tab.tsx": { count: 1, reason: "generic list rows" },
+	"components/trade/mobile/mobile-account-transfers-tab.tsx": {
+		count: 2,
+		reason: "export button icon while the export runs, not a placeholder",
+	},
+	"components/trade/positions/account-transfers-tab.tsx": {
+		count: 1,
+		reason: "export button icon while the export runs, not a placeholder",
+	},
 	"components/vaults/vaults-list.tsx": { count: 1, reason: "generic list rows" },
 };
 
-// Files that open the deposit dialog without warming its chunk on intent, with the reason.
-const DEPOSIT_OPENERS_WITHOUT_INTENT: Record<string, string> = {
-	"components/trade/components/trading-onboarding-gate.tsx":
-		"opens the dialog itself once the funding snapshot is classified; there is no control to reach first",
+// Every file that opens the deposit dialog or carries its intent warm-up: how many calls open it
+// and how many controls spread `depositModalIntentProps`. A control that opens the dialog without
+// warming it, or a file where the two numbers differ, needs the reason here.
+const DEPOSIT_OPENERS: Record<string, { opens: number; warms: number; note?: string }> = {
+	"components/portfolio/portfolio-page.tsx": { opens: 2, warms: 2 },
+	"components/trade/header/top-nav.tsx": { opens: 1, warms: 1 },
+	"components/trade/mobile/mobile-account-view.tsx": { opens: 4, warms: 4 },
+	"components/trade/mobile/mobile-balances-tab.tsx": {
+		opens: 2,
+		warms: 1,
+		note: "both empty states render the one MobileBalancesState button",
+	},
+	"components/trade/mobile/mobile-nav-drawer.tsx": { opens: 1, warms: 1 },
+	"components/trade/mobile/mobile-trade-view.tsx": { opens: 1, warms: 1 },
+	"components/trade/positions/balances-tab.tsx": { opens: 2, warms: 2 },
+	"components/trade/positions/positions-panel.tsx": { opens: 2, warms: 2 },
+	"components/trade/tradebox/account-panel.tsx": {
+		opens: 4,
+		warms: 3,
+		note: "the email deposit action is passed to DisconnectedAccountOverview, which warms on its button",
+	},
+	"components/trade/tradebox/disconnected-account-overview.tsx": {
+		opens: 0,
+		warms: 1,
+		note: "receives the deposit action from AccountPanel",
+	},
+	"components/trade/tradebox/trade-panel.tsx": { opens: 1, warms: 1 },
+	"components/trade/components/trading-onboarding-gate.tsx": {
+		opens: 2,
+		warms: 0,
+		note: "opens the dialog itself once the funding snapshot is classified; there is no control to reach first",
+	},
 };
 
-const DEPOSIT_OPENER_PATTERN = /open: openDepositModal\b|\bdeposit\.open\(/;
-const DEPOSIT_INTENT_PATTERN = /\bdepositModalIntentProps\b|\bwarmDepositModal\b|\bpreloadGlobalModal\b/;
+const DEPOSIT_ACTIONS_BINDING = /const\s+(\{[^}]*\}|\w+)\s*=\s*useDepositModalActions\(\)/;
+const DEPOSIT_WARM_SPREAD = /\{\.\.\.[^{}]*\bdepositModalIntentProps\b/g;
 const FUNDS_MODAL_CHROME_MARKER = "min-[1001px]:!max-w-[28rem]";
+const FALLBACK_CLASS_NAMES = [
+	"flex min-h-72 items-center justify-center",
+	"sr-only",
+	"size-5 animate-spin text-fg-muted motion-reduce:animate-none",
+];
+
+function countDepositOpens(text: string): number {
+	if (!/(?<!function )useDepositModalActions\(\)/.test(text)) return 0;
+	const binding = DEPOSIT_ACTIONS_BINDING.exec(text)?.[1];
+	if (!binding) return Number.NaN;
+	if (!binding.startsWith("{")) return text.split(`${binding}.open(`).length - 1;
+	const open = /\bopen\b(?:\s*:\s*(\w+))?/.exec(binding);
+	if (!open) return 0;
+	return text.match(new RegExp(`\\b${open[1] ?? "open"}\\(`, "g"))?.length ?? 0;
+}
 
 function listSources(directory: string): string[] {
 	return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
@@ -74,26 +125,52 @@ describe("loading placeholder contract", () => {
 	it("keeps the deposit dialog and its chunk fallback on one shell", () => {
 		const fallback = read("components/trade/components/deposit-modal-loading-fallback.tsx");
 		const dialog = read("components/trade/tradebox/deposit-modal.tsx");
+		const host = read("components/trade/components/global-modals.tsx");
 
 		expect(fallback).toContain("<FundsModalShell");
-		expect(dialog).toContain("<FundsModalShell");
 		expect(dialog).not.toContain("<PendingActionModal");
+		expect(dialog).toContain(
+			[
+				"<FundsModalShell",
+				"open={open}",
+				"onOpenChange={handleModalOpenChange}",
+				"isPending={isWithdrawPending || isDepositPreflighting}",
+				"presentation={presentation}",
+				"tab={visibleTab}",
+			].join("\n\t\t\t"),
+		);
+		expect(host).toContain('displayedModal === "deposit" ? <DepositModalLoadingFallback />');
 		expect(sources.filter(({ text }) => text.includes(FUNDS_MODAL_CHROME_MARKER)).map(({ file }) => file)).toEqual([
 			"components/trade/components/funds-modal-shell.tsx",
 		]);
 	});
 
-	it("keeps the deposit chunk fallback free of a drawn form", () => {
+	it("keeps the deposit chunk fallback to a spinner and its label", () => {
 		const fallback = read("components/trade/components/deposit-modal-loading-fallback.tsx");
+		const classNames = [...fallback.matchAll(/className="([^"]*)"/g)].map((match) => match[1]);
 
-		expect(fallback).not.toMatch(/data-skeleton-slot|animate-pulse|market-close-card|rounded-\[|\bh-\[/);
+		expect(classNames).toEqual(FALLBACK_CLASS_NAMES);
+		expect(fallback.split("className=").length - 1).toBe(FALLBACK_CLASS_NAMES.length);
+		expect(fallback).not.toMatch(/\bstyle=/);
 	});
 
 	it("warms the deposit dialog from every control that opens it", () => {
-		const openers = sources.filter(({ text }) => DEPOSIT_OPENER_PATTERN.test(text));
-		const withoutIntent = openers.filter(({ text }) => !DEPOSIT_INTENT_PATTERN.test(text)).map(({ file }) => file);
+		const found = Object.fromEntries(
+			sources
+				.map(({ file, text }) => {
+					const opens = countDepositOpens(text);
+					const warms = text.match(DEPOSIT_WARM_SPREAD)?.length ?? 0;
+					return [file, { opens, warms }] as const;
+				})
+				.filter(([, { opens, warms }]) => opens !== 0 || warms !== 0),
+		);
+		const registered = Object.fromEntries(
+			Object.entries(DEPOSIT_OPENERS).map(([file, { opens, warms }]) => [file, { opens, warms }]),
+		);
 
-		expect(openers.length).toBeGreaterThan(0);
-		expect(withoutIntent.sort()).toEqual(Object.keys(DEPOSIT_OPENERS_WITHOUT_INTENT).sort());
+		expect(found).toEqual(registered);
+		for (const [file, { opens, warms, note }] of Object.entries(DEPOSIT_OPENERS)) {
+			expect(opens === warms || Boolean(note), `${file} needs a note`).toBe(true);
+		}
 	});
 });

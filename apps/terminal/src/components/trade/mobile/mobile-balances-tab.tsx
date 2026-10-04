@@ -171,7 +171,7 @@ function MobileBalancesState({
 					intent="neutral"
 					size="sm"
 					onClick={onAction}
-					{...depositModalIntentProps}
+					{...(onAction ? depositModalIntentProps : undefined)}
 					disabled={actionDisabled}
 					className="min-h-11 rounded-[8px] border-market-close-stroke-control px-4 text-xs font-semibold text-market-close-fg"
 				>

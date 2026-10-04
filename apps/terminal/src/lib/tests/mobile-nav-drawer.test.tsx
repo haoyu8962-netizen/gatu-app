@@ -21,6 +21,7 @@ const testState = vi.hoisted(() => ({
 	hasWalletAccess: false,
 	pathname: "/api-wallet",
 	preloadGlobalModal: vi.fn(async (): Promise<void> => undefined),
+	warmDepositModal: vi.fn(),
 	sessionMode: "disconnected" as "wallet" | "agent-only" | "disconnected",
 	settingsOpen: vi.fn(),
 }));
@@ -34,6 +35,7 @@ vi.mock("@sairn/ui", () => ({
 		disabled,
 		iconLeft,
 		onClick,
+		onPointerDown,
 	}: {
 		"aria-label"?: string;
 		"aria-busy"?: boolean;
@@ -41,10 +43,11 @@ vi.mock("@sairn/ui", () => ({
 		disabled?: boolean;
 		iconLeft?: ReactNode;
 		onClick?: () => void;
+		onPointerDown?: () => void;
 	}) =>
 		createElement(
 			"button",
-			{ "aria-busy": ariaBusy, "aria-label": ariaLabel, disabled, onClick, type: "button" },
+			{ "aria-busy": ariaBusy, "aria-label": ariaLabel, disabled, onClick, onPointerDown, type: "button" },
 			iconLeft,
 			children,
 		),
@@ -154,6 +157,11 @@ vi.mock("@/stores/use-global-modal-store", () => ({
 }));
 
 vi.mock("@/components/trade/components/lazy-global-modals", () => ({
+	depositModalIntentProps: {
+		onPointerEnter: testState.warmDepositModal,
+		onPointerDown: testState.warmDepositModal,
+		onFocus: testState.warmDepositModal,
+	},
 	preloadGlobalModal: testState.preloadGlobalModal,
 }));
 
@@ -172,6 +180,7 @@ describe("MobileNavDrawer", () => {
 		testState.hasWalletAccess = false;
 		testState.pathname = "/api-wallet";
 		testState.preloadGlobalModal.mockReset();
+		testState.warmDepositModal.mockReset();
 		testState.preloadGlobalModal.mockResolvedValue(undefined);
 		testState.sessionMode = "disconnected";
 		testState.settingsOpen.mockReset();
@@ -390,6 +399,11 @@ describe("MobileNavDrawer", () => {
 		const depositButton = [...container.querySelectorAll<HTMLButtonElement>("button")].find(
 			(button) => button.textContent?.trim() === "Deposit",
 		);
+		expect(testState.warmDepositModal).not.toHaveBeenCalled();
+		act(() => {
+			depositButton?.dispatchEvent(new MouseEvent("pointerdown", { bubbles: true }));
+		});
+		expect(testState.warmDepositModal).toHaveBeenCalledOnce();
 		await act(async () => depositButton?.click());
 
 		expect(testState.preloadGlobalModal).toHaveBeenCalledWith("deposit");

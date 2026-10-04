@@ -2,7 +2,6 @@ import { Trans } from "@lingui/react/macro";
 import { SpinnerGapIcon } from "@phosphor-icons/react";
 import { Suspense, useEffect } from "react";
 import { DEFAULT_MARKET_NAME } from "@/config/app";
-import { useDepositAvailability } from "@/hooks/trade/use-deposit-availability";
 import { type Hip3DisclaimerRequirement, useHip3DisclaimerRequirement } from "@/hooks/trade/use-hip3-disclaimer";
 import {
 	type Hip3DisclaimerExit,
@@ -241,7 +240,7 @@ function SharedGlobalModals({
 
 	return (
 		<Suspense
-			fallback={displayedModal === "deposit" ? <DepositModalSuspenseFallback /> : <GlobalModalLoadingFallback />}
+			fallback={displayedModal === "deposit" ? <DepositModalLoadingFallback /> : <GlobalModalLoadingFallback />}
 		>
 			{displayedModal === "deposit" && <DepositModal key={`deposit:${fundsSessionKey}`} />}
 			{displayedModal === "internalTransfer" && (
@@ -282,11 +281,6 @@ function SelectedMarketHip3Disclaimer({ presentation }: { presentation: Hip3Disc
 			onExit={() => navigateToMarket(DEFAULT_MARKET_NAME)}
 		/>
 	);
-}
-
-function DepositModalSuspenseFallback() {
-	const { path } = useDepositAvailability();
-	return path === "sponsored" ? <DepositModalLoadingFallback /> : <GlobalModalLoadingFallback />;
 }
 
 function GlobalModalLoadingFallback() {

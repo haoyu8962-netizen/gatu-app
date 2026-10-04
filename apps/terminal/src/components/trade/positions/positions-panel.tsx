@@ -363,7 +363,7 @@ export function PositionsPanel({ includeTransfers = false, autoHeight = false }:
 												size="xxs"
 												disabled={!depositAvailability.available}
 												onClick={depositAvailability.available ? () => openDepositModal("deposit") : undefined}
-												{...depositModalIntentProps}
+												{...(depositAvailability.available ? depositModalIntentProps : undefined)}
 												aria-label={depositAvailability.available ? undefined : depositAvailability.unavailableLabel}
 												title={depositAvailability.unavailableReason ?? undefined}
 												className="h-[25px] rounded-[7px] bg-market-close-control px-3 text-xs font-semibold text-market-close-on-control shadow-none transition-colors duration-[120ms] hover:opacity-90 active:scale-100"
@@ -389,7 +389,7 @@ export function PositionsPanel({ includeTransfers = false, autoHeight = false }:
 												onClick={
 													fundsActionAvailability.withdrawal.available ? () => openDepositModal("withdraw") : undefined
 												}
-												{...depositModalIntentProps}
+												{...(fundsActionAvailability.withdrawal.available ? depositModalIntentProps : undefined)}
 												className="h-[27px] rounded-[7px] border-market-close-stroke-input bg-surface px-3 text-xs font-semibold text-market-close-fg shadow-none transition-colors duration-[120ms] hover:border-market-close-control active:scale-100"
 											>
 												<Trans context="Trading toolbar action">Withdraw</Trans>

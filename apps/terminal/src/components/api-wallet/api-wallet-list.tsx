@@ -15,8 +15,6 @@ import { shortenAddress } from "@/lib/format";
 import { ApiWalletCopyButton } from "./api-wallet-copy-button";
 import type { ApiWalletAgentStatus, ApiWalletAgentView, ApiWalletPageState } from "./api-wallet-view";
 
-const SKELETON_ROWS = ["first", "second", "third"] as const;
-
 interface Props {
 	pageState: ApiWalletPageState;
 	agents: ApiWalletAgentView[];
@@ -72,32 +70,11 @@ function ListMessage({ pageState, onRetry, isMobile }: Pick<Props, "pageState" |
 
 	if (pageState === "loading") {
 		return (
-			<div aria-live="polite" className={cn("flex flex-col gap-2.5", isMobile ? "px-4 pb-4" : "px-5 pb-5")}>
-				{SKELETON_ROWS.map((key) => (
-					<div
-						key={key}
-						className={cn(
-							"animate-pulse border-api-wallet-stroke-card",
-							isMobile
-								? "space-y-2 rounded-16 border p-3"
-								: "grid h-[var(--api-wallet-row-min-height)] grid-cols-5 items-center gap-4 border-b",
-						)}
-					>
-						<span className="block h-[var(--api-wallet-skeleton-line-height)] w-3/5 rounded-full bg-fill-weak" />
-						<span className="block h-[var(--api-wallet-skeleton-line-height)] w-4/5 rounded-full bg-fill-weak" />
-						<span className="block h-[var(--api-wallet-skeleton-line-height)] w-2/5 rounded-full bg-fill-weak" />
-						{isMobile ? null : (
-							<>
-								<span className="block h-[var(--api-wallet-skeleton-line-height)] w-3/5 rounded-full bg-fill-weak" />
-								<span className="block h-[var(--api-wallet-skeleton-line-height)] w-2/5 rounded-full bg-fill-weak" />
-							</>
-						)}
-					</div>
-				))}
+			<output aria-busy="true" className="block min-h-40">
 				<span className="sr-only">
 					<Trans>Loading authorized API wallets</Trans>
 				</span>
-			</div>
+			</output>
 		);
 	}
 

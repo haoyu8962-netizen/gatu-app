@@ -257,7 +257,7 @@ export function BalancesTab({ toolbarTarget }: Props) {
 						size="xs"
 						disabled={!depositAvailability.available}
 						onClick={depositAvailability.available ? () => openDepositModal("deposit") : undefined}
-						{...depositModalIntentProps}
+						{...(depositAvailability.available ? depositModalIntentProps : undefined)}
 						aria-label={depositAvailability.available ? undefined : depositAvailability.unavailableLabel}
 						title={depositAvailability.unavailableReason ?? undefined}
 						className="rounded-[7px] border-market-close-stroke-control px-3 text-market-close-fg"

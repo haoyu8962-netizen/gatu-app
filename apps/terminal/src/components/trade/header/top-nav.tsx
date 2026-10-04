@@ -172,7 +172,7 @@ export function TopNav({ mode = "default" }: Props) {
 						title={depositAvailability.unavailableReason ?? undefined}
 						iconLeft={depositAvailability.available ? <DownloadSimpleIcon className="size-[18px]" /> : undefined}
 						data-top-nav-deposit=""
-						{...depositModalIntentProps}
+						{...(!isMarketLoading && depositAvailability.available ? depositModalIntentProps : undefined)}
 						className={cn(
 							APP_BAR_BUTTON_HEIGHT_CLASS,
 							TOP_NAV_DEPOSIT_CLASS,

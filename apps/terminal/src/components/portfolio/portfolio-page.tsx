@@ -182,7 +182,7 @@ export function PortfolioPage() {
 												onClick={
 													fundsActionAvailability.withdrawal.available ? () => openDepositModal("withdraw") : undefined
 												}
-												{...depositModalIntentProps}
+												{...(fundsActionAvailability.withdrawal.available ? depositModalIntentProps : undefined)}
 												iconLeft={<UploadSimpleIcon className="size-3.5" />}
 											>
 												<Trans>Withdraw</Trans>
@@ -198,7 +198,7 @@ export function PortfolioPage() {
 												disabled={depositDisabled}
 												aria-describedby={getUnavailableReasonId(depositAvailability.unavailableReason)}
 												onClick={depositAvailability.available ? () => openDepositModal("deposit") : undefined}
-												{...depositModalIntentProps}
+												{...(depositAvailability.available ? depositModalIntentProps : undefined)}
 												aria-label={
 													depositAvailability.available || isMobile ? undefined : depositAvailability.unavailableLabel
 												}

@@ -184,7 +184,7 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 							{disconnectedDepositNotice ? (
 								<output className="block text-center text-xs text-fg-muted">{disconnectedDepositNotice}</output>
 							) : null}
-							<div className="grid grid-cols-2 gap-2" {...depositModalIntentProps}>
+							<div className="grid grid-cols-2 gap-2">
 								<Button
 									variant="filled"
 									intent="brand"
@@ -193,6 +193,7 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 									onClick={
 										showsEmailDeposit && depositAvailability.available ? () => openDepositModal("deposit") : undefined
 									}
+									{...(showsEmailDeposit && depositAvailability.available ? depositModalIntentProps : undefined)}
 									aria-label={t`Deposit`}
 									title={disconnectedDepositNotice ?? undefined}
 									className="min-h-11 w-full"
@@ -218,7 +219,7 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 					{showsSecondaryFundsActions ? (
 						<div className="space-y-2">
 							{depositNotice ? <output className="text-center text-xs text-fg-muted">{depositNotice}</output> : null}
-							<div className="grid grid-cols-2 gap-2" {...depositModalIntentProps}>
+							<div className="grid grid-cols-2 gap-2">
 								<Tooltip content={depositNotice} side="top">
 									<span className="inline-flex w-full">
 										<Button
@@ -229,6 +230,7 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 											focusableWhenDisabled
 											aria-describedby={depositNotice ? depositUnavailableId : undefined}
 											onClick={depositAvailability.available ? () => openDepositModal("deposit") : undefined}
+											{...(depositAvailability.available ? depositModalIntentProps : undefined)}
 											aria-label={t`Deposit`}
 											className="min-h-11 w-full"
 										>
@@ -248,6 +250,7 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 											onClick={
 												fundsActionAvailability.withdrawal.available ? () => openDepositModal("withdraw") : undefined
 											}
+											{...(fundsActionAvailability.withdrawal.available ? depositModalIntentProps : undefined)}
 											aria-label={t`Withdraw`}
 											className="min-h-11 w-full"
 										>
