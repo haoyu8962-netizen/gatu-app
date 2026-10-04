@@ -2403,7 +2403,9 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 			expect(buttons).toHaveLength(1);
 			expect(buttons[0].outerHTML).toBe(shared.outerHTML);
 			expect(buttons[0].parentElement).toBe(header);
-			expect([...header.children]).toEqual([buttons[0], header.querySelector("h2")]);
+			expect(header.childNodes).toHaveLength(2);
+			expect(header.childNodes[0]).toBe(buttons[0]);
+			expect(header.childNodes[1]).toBe(header.querySelector("h2"));
 			await act(async () => referenceRoot.unmount());
 		});
 
