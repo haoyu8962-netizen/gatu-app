@@ -125,6 +125,12 @@ Codex 只读对抗审查（`gpt-6-astra`，medium，静态推演，接上一条�
 - 处理：不再只靠源码形状。仓库里已有渲染真实 `DepositModal` 的单测 `deposit-modal-withdrawal-routing-guard`（外部依赖为模拟，`FundsModalShell` 与弹窗本身为真实代码）；新增一项：进入转账步骤后，弹窗里恰好一个返回按钮，其 `outerHTML` 必须与共用渲染函数的静态输出完全相同，且父元素就是头部。为此该文件里 `ButtonIcon` 的模拟改为透传除外观参数以外的全部属性。源码契约补上：接收 `headerStart` 的元素不得带展开属性；调用名带括号的等价写法被接受。规范写明夹具不是弹窗本身，`deposit-modal.tsx` 自己放进内容区的东西没有在浏览器里量过。
 - 验证（工作区，提交前）：typecheck 通过；`funds-modal-scroll-contract` 123 项与 `deposit-modal-withdrawal-routing-guard` 126 项通过；对真实弹窗做三个变异（用展开属性替换 `headerStart`、给调用套一层 `relative z-0` 容器、`cloneElement` 加 `zIndex: 0` 样式），两份测试各自都失败，还原后通过。这一步只改了两份测试与文档，没有重跑全量单测与浏览器测试；它们上一次通过是在 `144461e5` 提交前的工作区上（全量单测 8780 项、Chrome 36 项、WebKit 18 项）。
 
+### 第五次复审：真实弹窗头部的渲染断言收紧
+
+- Codex 第 19 轮（只审 `7d78d023`，静态推演，约 8.9 万 token）：8.2 分。确认上一轮三项已处理。新的 P2 两项，都是「先把整个外壳元素存进变量，再用 `cloneElement` 改写」：给返回按钮套一层同样带 `data-slot="modal-header"` 的 `relative z-0` 容器，父节点断言按属性比对所以放行；把返回按钮克隆成 `size: "lg"`，模拟的 `ButtonIcon` 丢弃 `size`，标记相同所以放行。两项核实后都成立。
+- 处理：真实弹窗单测改为按渲染结果的身份与完整属性比较。模拟的 `ModalHeader` 用 ref 记下真实头部节点，断言返回按钮的父节点就是它，且头部的子节点恰好是「返回按钮、标题」两个；模拟的 `ButtonIcon` 把 `variant` / `intent` / `size` 写成 `data-*` 属性，随 `outerHTML` 一起比较。规范改写为：对已发布弹窗的保证由这项渲染单测承担；源码契约只检查常规的源码写法，不跟踪之后对元素的加工。
+- 验证（工作区，提交前）：typecheck 通过；`deposit-modal-withdrawal-routing-guard` 126 项通过。对真实 `deposit-modal.tsx` 做六个变异：展开属性替换、套低层级容器、`cloneElement` 加样式、克隆外壳并给返回按钮套带同名属性的容器、克隆返回按钮改 `size`、克隆外壳并在返回按钮旁加一个覆盖层。真实弹窗单测在六个变异下全部失败；源码契约在前三个失败、后三个通过（它只看源码写法，符合规范现在的表述）。本步只改了一份测试与文档，没有重跑全量单测与浏览器测试。
+
 ## 后续与替代关系
 
 - 完成了上一条记录「未做」里的 Safari（以 WebKit 代替）、生产构建与包体预算、状态屏与错误网络屏三项，其余仍未做的见上。

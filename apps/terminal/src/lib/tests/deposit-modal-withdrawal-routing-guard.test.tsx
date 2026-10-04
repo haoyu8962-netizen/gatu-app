@@ -121,6 +121,7 @@ const testState = vi.hoisted(() => ({
 	infoQueryCalls: [] as Array<{ enabled: boolean; method: string; params: unknown }>,
 	modalOpen: false,
 	modalOnOpenChange: null as null | ((open: boolean) => void),
+	modalHeader: null as HTMLElement | null,
 	preTransferFresh: {
 		fee: "0",
 		isSanctioned: false,
@@ -171,15 +172,27 @@ vi.mock("@sairn/ui", () => ({
 		createElement("button", { disabled, onClick, type: "button" }, children),
 	ButtonIcon: ({
 		children,
-		intent: _intent,
-		size: _size,
-		variant: _variant,
+		intent,
+		size,
+		variant,
 		...rest
 	}: ButtonHTMLAttributes<HTMLButtonElement> & { intent?: string; size?: string; variant?: string }) =>
-		createElement("button", { type: "button", ...rest }, children),
+		createElement(
+			"button",
+			{ type: "button", "data-intent": intent, "data-size": size, "data-variant": variant, ...rest },
+			children,
+		),
 	ModalContent: ({ children }: { children?: ReactNode }) => createElement("div", null, children),
 	ModalHeader: ({ children }: { children?: ReactNode }) =>
-		createElement("div", { "data-slot": "modal-header" }, children),
+		createElement(
+			"div",
+			{
+				ref: (node: HTMLElement | null) => {
+					testState.modalHeader = node;
+				},
+			},
+			children,
+		),
 	ModalTitle: ({ children, className }: { children?: ReactNode; className?: string }) =>
 		createElement("h2", { className }, children),
 }));
@@ -715,6 +728,7 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 		testState.isArbitrum = true;
 		testState.modalOpen = false;
 		testState.modalOnOpenChange = null;
+		testState.modalHeader = null;
 		testState.deposit.mockReset();
 		testState.refreshDepositBalance.mockReset().mockResolvedValue(10_000_000n);
 		testState.depositAvailable = true;
@@ -2390,10 +2404,15 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 			);
 			const buttons = container.querySelectorAll<HTMLButtonElement>('button[aria-label="Back"]');
 
+			const header = testState.modalHeader;
+			if (!header) throw new Error("The dialog header was not rendered");
+
 			expect(/class="([^"]+)"/.exec(shared)?.[1].split(" ")).toContain("z-10");
+			expect(shared).toContain('data-size="sm"');
 			expect(buttons).toHaveLength(1);
 			expect(buttons[0].outerHTML).toBe(shared);
-			expect(buttons[0].parentElement?.getAttribute("data-slot")).toBe("modal-header");
+			expect(buttons[0].parentElement).toBe(header);
+			expect([...header.children]).toEqual([buttons[0], header.querySelector("h2")]);
 		});
 
 		it("starts the card purchase from its own entry", async () => {
