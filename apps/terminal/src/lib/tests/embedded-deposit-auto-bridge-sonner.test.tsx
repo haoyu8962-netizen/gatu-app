@@ -49,6 +49,24 @@ vi.mock("@/hooks/trade/use-usdc-routing", () => ({
 vi.mock("@/stores/use-global-modal-store", () => ({ useDepositModalOpen: () => false }));
 vi.mock("@/config/cctp-deposit", () => ({ isCctpSponsoredDepositEnabled: () => false }));
 vi.mock("@/stores/use-global-settings-store", () => ({ useIsTestnet: () => true }));
+vi.mock("@/hooks/trade/use-cctp-deposit-fee", () => {
+	const data = {
+		feeQuote: {
+			finalityThreshold: 1000,
+			minimumFeeBps: "0",
+			forwardFeeRaw: { low: 200_000n, med: 200_000n, high: 200_000n },
+		},
+	};
+	return {
+		useCctpDepositFee: ({ amountRaw }: { amountRaw: bigint | undefined }) => ({
+			data,
+			calculation: amountRaw !== undefined && amountRaw >= 400_000n ? { maxFeeRaw: 200_000n } : null,
+		}),
+	};
+});
+vi.mock("@/lib/trade/cctp-deposit", () => ({
+	meetsCctpDepositMinimum: (amountRaw: bigint) => amountRaw >= 400_000n,
+}));
 vi.mock("@/lib/hyperliquid/use-deposit", () => ({
 	useDeposit: () => ({
 		maxDepositRaw: 0n,

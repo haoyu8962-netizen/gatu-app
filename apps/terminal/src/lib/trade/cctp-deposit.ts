@@ -14,6 +14,7 @@ import {
 	size,
 	stringToHex,
 } from "viem";
+import { CCTP_MINIMUM_FEE_MULTIPLIER } from "@/config/cctp";
 import {
 	CCTP_AUTHORIZATION_WINDOW_SECONDS,
 	CCTP_FAST_FINALITY_THRESHOLD,
@@ -355,6 +356,9 @@ export function calculateCctpDepositFee(amountRaw: bigint, quote: CctpDepositFee
 	const bufferedProtocolFeeRaw = toCeilingBigInt(new Big(protocolFeeRaw.toString()).times(120).div(100));
 	const maxFeeRaw = bufferedProtocolFeeRaw + quote.forwardFeeRaw.med;
 	if (maxFeeRaw >= amountRaw) throw new Error("CCTP fees must be lower than the deposit amount");
+	if (amountRaw < getCctpDepositMinimumRaw(maxFeeRaw)) {
+		throw new Error("CCTP deposit amount is below the minimum of twice the current fee");
+	}
 
 	return {
 		protocolFeeRaw,
@@ -378,6 +382,29 @@ export function getAmountIndependentCctpMaxFeeRaw(quote: CctpDepositFeeQuote): b
 		return null;
 	}
 	return minimumFeeBps.eq(0) ? quote.forwardFeeRaw.med : null;
+}
+
+/**
+ * Circle sets no minimum for a CCTP deposit to HyperCore; the contract only needs the amount to
+ * exceed the fee. The application requires twice the current maximum fee, the same guard as CCTP
+ * withdrawals (`docs/cctp-deposits.md`).
+ */
+export function getCctpDepositMinimumRaw(maxFeeRaw: bigint): bigint {
+	return maxFeeRaw * BigInt(CCTP_MINIMUM_FEE_MULTIPLIER);
+}
+
+export function meetsCctpDepositMinimum(amountRaw: bigint, quote: CctpDepositFeeQuote): boolean {
+	try {
+		calculateCctpDepositFee(amountRaw, quote);
+		return true;
+	} catch {
+		return false;
+	}
+}
+
+export function getAmountIndependentCctpDepositMinimumRaw(quote: CctpDepositFeeQuote): bigint | null {
+	const maxFeeRaw = getAmountIndependentCctpMaxFeeRaw(quote);
+	return maxFeeRaw === null ? null : getCctpDepositMinimumRaw(maxFeeRaw);
 }
 
 export function addressToBytes32(address: Address): Hex {

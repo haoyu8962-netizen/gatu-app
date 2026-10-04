@@ -4135,8 +4135,12 @@ msgid "Import phone access"
 msgstr "Importar acceso del teléfono"
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
-msgid "Important: this address can only receive native USDC on Arbitrum. Do not send USDC.e or assets from other networks. Minimum deposit is {minimumDeposit}."
-msgstr "Importante: esta dirección solo puede recibir USDC nativo en Arbitrum. No envíes USDC.e ni activos de otras redes. El depósito mínimo es {minimumDeposit}."
+msgid "Important: send only native USDC on Arbitrum to this address. Other assets, including USDC.e, and transfers on other networks will not be credited to your trading account."
+msgstr "Importante: envía a esta dirección solo USDC nativo en Arbitrum. Otros activos, incluido USDC.e, y las transferencias en otras redes no se acreditarán en tu cuenta de trading."
+
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+#~ msgid "Important: this address can only receive native USDC on Arbitrum. Do not send USDC.e or assets from other networks. Minimum deposit is {minimumDeposit}."
+#~ msgstr "Importante: esta dirección solo puede recibir USDC nativo en Arbitrum. No envíes USDC.e ni activos de otras redes. El depósito mínimo es {minimumDeposit}."
 
 #: src/components/staking/staking-view.tsx
 #: src/components/staking/staking-view.tsx
@@ -5089,13 +5093,15 @@ msgid "Minimum <0>{0}</0>; maximum <1>{1}</1>."
 msgstr "Mínimo <0>{0}</0>; máximo <1>{1}</1>."
 
 #. placeholder {0}: ctx.minDeposit
+#. placeholder {0}: numberFormat.formatDecimalString(formatUnits(cctpDepositMinimumRaw, 6))
+#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/lib/errors/definitions/deposit.ts
 msgid "Minimum deposit is {0} USDC"
 msgstr "El depósito mínimo es {0} USDC"
 
 #: src/lib/hyperliquid/use-deposit.ts
-msgid "Minimum deposit is 5 USDC"
-msgstr "El depósito mínimo es 5 USDC"
+#~ msgid "Minimum deposit is 5 USDC"
+#~ msgstr "El depósito mínimo es 5 USDC"
 
 #: src/components/trade/components/spot-swap-modal.tsx
 msgid "Minimum order value is {ORDER_MIN_NOTIONAL_USD} USDC after size rounding."

@@ -85,6 +85,7 @@ export function FundsFormsFixture() {
 							sponsoredCctpReadiness={{ status: "ready", failure: null, retry: noop }}
 							requiresExplicitFundingDeposit={email}
 							cctpFee="0.2"
+							minimumDepositRaw={400_000n}
 							cctpFeeLoading={status === "loading"}
 							cctpFeeError={status === "error"}
 							pendingCctpRecovery={false}

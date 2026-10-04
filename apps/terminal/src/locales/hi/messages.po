@@ -4135,8 +4135,12 @@ msgid "Import phone access"
 msgstr "फ़ोन एक्सेस इम्पोर्ट करें"
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
-msgid "Important: this address can only receive native USDC on Arbitrum. Do not send USDC.e or assets from other networks. Minimum deposit is {minimumDeposit}."
-msgstr "महत्वपूर्ण: यह पता केवल Arbitrum पर नेटिव USDC प्राप्त कर सकता है। USDC.e या अन्य नेटवर्क की संपत्तियां न भेजें। न्यूनतम जमा {minimumDeposit} है।"
+msgid "Important: send only native USDC on Arbitrum to this address. Other assets, including USDC.e, and transfers on other networks will not be credited to your trading account."
+msgstr "महत्वपूर्ण: इस पते पर केवल Arbitrum पर नेटिव USDC भेजें। अन्य एसेट, जिनमें USDC.e शामिल है, और अन्य नेटवर्क पर किए गए ट्रांसफ़र आपके ट्रेडिंग खाते में जमा नहीं होंगे।"
+
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+#~ msgid "Important: this address can only receive native USDC on Arbitrum. Do not send USDC.e or assets from other networks. Minimum deposit is {minimumDeposit}."
+#~ msgstr "महत्वपूर्ण: यह पता केवल Arbitrum पर नेटिव USDC प्राप्त कर सकता है। USDC.e या अन्य नेटवर्क की संपत्तियां न भेजें। न्यूनतम जमा {minimumDeposit} है।"
 
 #: src/components/staking/staking-view.tsx
 #: src/components/staking/staking-view.tsx
@@ -5089,13 +5093,15 @@ msgid "Minimum <0>{0}</0>; maximum <1>{1}</1>."
 msgstr "न्यूनतम <0>{0}</0>; अधिकतम <1>{1}</1>।"
 
 #. placeholder {0}: ctx.minDeposit
+#. placeholder {0}: numberFormat.formatDecimalString(formatUnits(cctpDepositMinimumRaw, 6))
+#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/lib/errors/definitions/deposit.ts
 msgid "Minimum deposit is {0} USDC"
 msgstr "न्यूनतम जमा {0} USDC है"
 
 #: src/lib/hyperliquid/use-deposit.ts
-msgid "Minimum deposit is 5 USDC"
-msgstr "न्यूनतम जमा 5 USDC है"
+#~ msgid "Minimum deposit is 5 USDC"
+#~ msgstr "न्यूनतम जमा 5 USDC है"
 
 #: src/components/trade/components/spot-swap-modal.tsx
 msgid "Minimum order value is {ORDER_MIN_NOTIONAL_USD} USDC after size rounding."

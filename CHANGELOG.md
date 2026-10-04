@@ -58,6 +58,14 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Changed
 
+- Deposits follow the CCTP rules instead of the retired bridge's. The fixed 5 USDC minimum is gone:
+  a deposit now has to be at least twice the current Circle fee (0.40 USDC while the fee is 0.20),
+  and the dialog shows that minimum once the fee is known. The notice under the deposit address no
+  longer repeats a minimum; it says to send only native USDC on Arbitrum and that other assets or
+  networks are not credited to the trading account. A new HyperCore account still pays Hyperliquid's
+  1 USDC activation fee on its first withdrawal or transfer out, so a very small first deposit cannot
+  be moved out again until the balance covers it.
+
 - Loading states no longer show an outdated outline of the page. Opening Deposit, Withdraw or Bridge
   before its code has loaded shows the dialog frame with a small spinner instead of a grey sketch of
   the deposit form that no longer matched it and made the dialog jump taller. The dialog's code is

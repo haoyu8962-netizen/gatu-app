@@ -96,7 +96,22 @@ The implementation uses:
   deposits. A matching `SponsoredDepositForBurnSkipped` is a definitive
   failure even when the outer transaction itself succeeded.
 
-The application keeps a conservative 5 USDC product minimum. It also rejects
+Circle sets no minimum for a CCTP deposit to HyperCore: its documentation says a
+deposit of any size succeeds, the forwarding fee is deducted from the amount, and
+the 1 USDC HyperCore activation fee is charged on the account's first outbound
+action, not on the deposit. The 5 USDC minimum belongs to the retired Bridge2
+route, where a smaller deposit was lost, and the application no longer applies or
+displays it (product decision, 2026-10-04). The contract only needs the amount to
+exceed the fee; the application requires at least twice the current maximum fee,
+the same guard as [CCTP withdrawals](withdrawals.md). `calculateCctpDepositFee`
+enforces it for the reviewed amount and again at execution with the fresh quote,
+the form shows the resulting minimum only while the fee is known and independent of
+the amount, and the Testnet automatic path waits for a balance that meets it. The
+official terminal still applies 5 USDC to its Arbitrum routes; that is its own
+choice, not a CCTP rule. The funding-address notice tells the user to send only
+native USDC on Arbitrum and that other assets or networks are not credited; it
+does not claim that funds are lost, because the address is the user's own wallet.
+The application also rejects
 transfers above Circle's 10,000,000 USDC per-burn contract limit. On testnet it
 adds a 1,000 USDC per-transfer application cap and requires an existing
 Hyperliquid mainnet account; Circle's published 1,000-USDC testnet policy may

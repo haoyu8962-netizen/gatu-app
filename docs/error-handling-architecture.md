@@ -20,8 +20,8 @@ This document tracks our research and design for a more robust, configurable err
 | **Trigger Orders** | Stop trigger must be above mark | `use-order-validation.ts` |
 | **Scale Orders** | Enter price range, Scale levels must be 2-100 | `use-order-validation.ts` |
 | **TWAP** | TWAP minutes must be 5-10080 | `use-order-validation.ts` |
-| **Deposits** | Minimum deposit is 5 USDC | `use-deposit.ts` |
-| **Withdrawals** | Minimum withdrawal is $100 | `deposit-modal.tsx` |
+| **Deposits** | Minimum deposit is twice the current CCTP fee | `cctp-deposit.ts`, `deposit-modal.tsx` |
+| **Withdrawals** | Minimum withdrawal follows the route (`docs/withdrawals.md`) | `lib/trade/withdrawal.ts` |
 | **Transactions** | Transaction rejected, Insufficient gas | `transfer/errors.ts` |
 | **System** | Signer not ready, Something went wrong | Various |
 

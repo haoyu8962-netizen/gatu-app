@@ -29,9 +29,12 @@ import {
 	encodeCctpForwardHookData,
 	fetchCctpDepositFees,
 	fetchCctpFastAllowance,
+	getAmountIndependentCctpDepositMinimumRaw,
 	getAmountIndependentCctpMaxFeeRaw,
+	getCctpDepositMinimumRaw,
 	getHyperCoreRecipientState,
 	hasHyperCoreMainnetState,
+	meetsCctpDepositMinimum,
 	normalizeCctpDepositFees,
 	normalizeCctpFastAllowance,
 	splitCctpAuthorizationSignature,
@@ -293,6 +296,28 @@ describe("CCTP fee handling", () => {
 		expect(() => calculateCctpDepositFee(200_000n, normalizeCctpDepositFees(createFeePayload()))).toThrow(
 			"CCTP fees must be lower than the deposit amount",
 		);
+	});
+
+	it("requires twice the current maximum fee instead of a fixed legacy-bridge minimum", () => {
+		const quote = normalizeCctpDepositFees(createFeePayload(0));
+
+		expect(getCctpDepositMinimumRaw(200_000n)).toBe(400_000n);
+		expect(getAmountIndependentCctpDepositMinimumRaw(quote)).toBe(400_000n);
+		expect(() => calculateCctpDepositFee(399_999n, quote)).toThrow(
+			"CCTP deposit amount is below the minimum of twice the current fee",
+		);
+		expect(calculateCctpDepositFee(400_000n, quote).netAmountRaw).toBe(200_000n);
+		expect(meetsCctpDepositMinimum(399_999n, quote)).toBe(false);
+		expect(meetsCctpDepositMinimum(400_000n, quote)).toBe(true);
+		expect(meetsCctpDepositMinimum(4_999_999n, quote)).toBe(true);
+	});
+
+	it("has no amount-independent minimum while the protocol fee depends on the amount", () => {
+		const quote = normalizeCctpDepositFees(createFeePayload(1.3));
+
+		expect(getAmountIndependentCctpDepositMinimumRaw(quote)).toBeNull();
+		expect(meetsCctpDepositMinimum(400_000n, quote)).toBe(false);
+		expect(meetsCctpDepositMinimum(1_000_001n, quote)).toBe(true);
 	});
 
 	it("only exposes an amount-independent fee preview when the protocol fee is zero", () => {

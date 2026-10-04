@@ -2,7 +2,7 @@ import { Trans } from "@lingui/react/macro";
 import { Button } from "@sairn/ui";
 import { formatUnits } from "viem";
 import { USDC_ICON_URL } from "@/config/bridge";
-import { MIN_DEPOSIT_USDC, USDC_DECIMALS } from "@/config/contracts";
+import { USDC_DECIMALS } from "@/config/contracts";
 import type { UsdcRoutingQueryStatus, UsdcTransferRoute } from "@/domain/trade/usdc-routing";
 import { useNumberFormat } from "@/lib/format";
 import type { SponsoredCctpReadiness } from "@/lib/hyperliquid/use-deposit";
@@ -34,6 +34,7 @@ interface Props {
 	depositUnavailableReason?: string | null;
 	requiresExplicitFundingDeposit: boolean;
 	cctpFee: string | null;
+	minimumDepositRaw: bigint | null;
 	cctpFeeLoading: boolean;
 	cctpFeeError: boolean;
 	pendingCctpRecovery: boolean;
@@ -68,6 +69,7 @@ export function DepositForm({
 	depositUnavailableReason = null,
 	requiresExplicitFundingDeposit,
 	cctpFee: cctpFeeAmount,
+	minimumDepositRaw,
 	cctpFeeLoading,
 	cctpFeeError,
 	pendingCctpRecovery,
@@ -81,7 +83,8 @@ export function DepositForm({
 	const { formatDecimalString } = useNumberFormat();
 	const balance = formatDecimalString(walletBalance);
 	const cctpFee = cctpFeeAmount === null ? null : formatDecimalString(cctpFeeAmount);
-	const minimumDeposit = `${formatDecimalString(formatUnits(MIN_DEPOSIT_USDC, USDC_DECIMALS))} USDC`;
+	const minimumDeposit =
+		minimumDepositRaw === null ? null : `${formatDecimalString(formatUnits(minimumDepositRaw, USDC_DECIMALS))} USDC`;
 	const bridgeRoutingReady = routingStatus === "ready" && depositRoute === "bridge";
 	const cctpRoutingReady = routingStatus === "ready" && depositRoute === "cctp";
 	const explicitFundingDepositReady =
@@ -168,7 +171,7 @@ export function DepositForm({
 		if (maxDepositRaw === undefined || maxDepositRaw === 0n) {
 			return null;
 		}
-		if (maxDepositRaw < MIN_DEPOSIT_USDC) {
+		if (minimumDepositRaw !== null && maxDepositRaw < minimumDepositRaw) {
 			return (
 				<Trans>
 					Available {balance} USDC is below the minimum deposit. Send at least {minimumDeposit}.
@@ -183,9 +186,11 @@ export function DepositForm({
 				<span className="whitespace-nowrap">
 					<Trans>You send</Trans>
 				</span>
-				<span className="whitespace-nowrap tabular-nums">
-					<Trans>Minimum</Trans> {minimumDeposit}
-				</span>
+				{minimumDeposit ? (
+					<span className="whitespace-nowrap tabular-nums">
+						<Trans>Minimum</Trans> {minimumDeposit}
+					</span>
+				) : null}
 			</div>
 			<FundsRouteDetails network={networkName} />
 		</div>
@@ -313,8 +318,8 @@ export function DepositForm({
 			maxDepositRaw > 0n;
 		const fundingNetworkNotice = (
 			<Trans>
-				Important: this address can only receive native USDC on Arbitrum. Do not send USDC.e or assets from other
-				networks. Minimum deposit is {minimumDeposit}.
+				Important: send only native USDC on Arbitrum to this address. Other assets, including USDC.e, and transfers on
+				other networks will not be credited to your trading account.
 			</Trans>
 		);
 

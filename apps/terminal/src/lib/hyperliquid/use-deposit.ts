@@ -27,7 +27,7 @@ import {
 	isCctpExternalDepositEnabled,
 	isCctpSponsoredDepositEnabled,
 } from "@/config/cctp-deposit";
-import { MIN_DEPOSIT_USDC, USDC_DECIMALS } from "@/config/contracts";
+import { USDC_DECIMALS } from "@/config/contracts";
 import {
 	DEPOSIT_BROADCAST_TIMEOUT_MS,
 	DEPOSIT_CONFIRMATION_TIMEOUT_MS,
@@ -237,7 +237,6 @@ function validateAmount(amount: string, maxDepositRaw: bigint | undefined, trans
 	try {
 		const raw = parseUnits(trimmed, USDC_DECIMALS);
 		if (raw === 0n) return { valid: false, error: null };
-		if (raw < MIN_DEPOSIT_USDC) return { valid: false, error: translate(msg`Minimum deposit is 5 USDC`) };
 		if (raw > maxDepositRaw) return { valid: false, error: translate(msg`Insufficient balance`) };
 		return { valid: true, error: null };
 	} catch {

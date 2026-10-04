@@ -4135,8 +4135,12 @@ msgid "Import phone access"
 msgstr "导入手机访问权限"
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
-msgid "Important: this address can only receive native USDC on Arbitrum. Do not send USDC.e or assets from other networks. Minimum deposit is {minimumDeposit}."
-msgstr "重要：此地址只能接收 Arbitrum 网络的原生 USDC。请勿发送 USDC.e 或其他网络的资产。最低存款金额为 {minimumDeposit}。"
+msgid "Important: send only native USDC on Arbitrum to this address. Other assets, including USDC.e, and transfers on other networks will not be credited to your trading account."
+msgstr "重要：请仅通过 Arbitrum 网络向此地址发送原生 USDC。发送其他资产（包括 USDC.e）或使用其他网络，将不会存入你的交易账户。"
+
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+#~ msgid "Important: this address can only receive native USDC on Arbitrum. Do not send USDC.e or assets from other networks. Minimum deposit is {minimumDeposit}."
+#~ msgstr "重要：此地址只能接收 Arbitrum 网络的原生 USDC。请勿发送 USDC.e 或其他网络的资产。最低存款金额为 {minimumDeposit}。"
 
 #: src/components/staking/staking-view.tsx
 #: src/components/staking/staking-view.tsx
@@ -5089,13 +5093,15 @@ msgid "Minimum <0>{0}</0>; maximum <1>{1}</1>."
 msgstr "最低值 <0>{0}</0>；最高值 <1>{1}</1>。"
 
 #. placeholder {0}: ctx.minDeposit
+#. placeholder {0}: numberFormat.formatDecimalString(formatUnits(cctpDepositMinimumRaw, 6))
+#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/lib/errors/definitions/deposit.ts
 msgid "Minimum deposit is {0} USDC"
 msgstr "最低存款为 {0} USDC"
 
 #: src/lib/hyperliquid/use-deposit.ts
-msgid "Minimum deposit is 5 USDC"
-msgstr "最低存款为 5 USDC"
+#~ msgid "Minimum deposit is 5 USDC"
+#~ msgstr "最低存款为 5 USDC"
 
 #: src/components/trade/components/spot-swap-modal.tsx
 msgid "Minimum order value is {ORDER_MIN_NOTIONAL_USD} USDC after size rounding."

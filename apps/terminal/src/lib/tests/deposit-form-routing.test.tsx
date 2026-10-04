@@ -91,6 +91,7 @@ function createProps(routingStatus: UsdcRoutingQueryStatus, depositRoute: UsdcTr
 		},
 		requiresExplicitFundingDeposit: false,
 		cctpFee: null,
+		minimumDepositRaw: null,
 		cctpFeeLoading: false,
 		cctpFeeError: false,
 		pendingCctpRecovery: false,
@@ -121,6 +122,7 @@ describe("DepositForm routing gate", () => {
 		const props = {
 			...createProps("ready", "cctp"),
 			cctpFee: "0.2",
+			minimumDepositRaw: 400_000n,
 		};
 		await act(async () => {
 			root.render(createElement(I18nProvider, { i18n }, createElement(DepositForm, props)));
@@ -134,7 +136,8 @@ describe("DepositForm routing gate", () => {
 		expect(container.firstElementChild?.className).toContain("font-market-close");
 		expect(container.textContent).toContain("Deposit USDC from Arbitrum");
 		expect(container.textContent).toContain("You send");
-		expect(container.textContent).toContain("Minimum 5 USDC");
+		expect(container.textContent).toContain("Minimum 0.4 USDC");
+		expect(container.textContent).not.toContain("5 USDC");
 		expect(container.querySelector('img[src="/coins/USDC.svg"]')).toBeNull();
 	});
 
@@ -163,6 +166,7 @@ describe("DepositForm routing gate", () => {
 					createElement(DepositForm, {
 						...createProps("ready", "cctp"),
 						cctpFee: "1234.5",
+						minimumDepositRaw: 2_469_000_000n,
 						balance: "4.5",
 						maxDepositRaw: 4_500_000n,
 						requiresExplicitFundingDeposit: true,
@@ -170,7 +174,9 @@ describe("DepositForm routing gate", () => {
 				),
 			);
 		});
-		expect(container.textContent).toContain("Available 4,5 USDC is below the minimum deposit. Send at least 5 USDC.");
+		expect(container.textContent).toContain(
+			"Available 4,5 USDC is below the minimum deposit. Send at least 2.469 USDC.",
+		);
 		expect(container.textContent).toContain("Deposit 4,5 USDC");
 		expect(container.querySelector('[data-testid="deposit-instructions"]')?.getAttribute("data-cctp-fee")).toBe(
 			"1234.5",

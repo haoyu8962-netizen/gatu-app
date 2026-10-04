@@ -60,7 +60,11 @@ import { isDefinitiveDepositSourceFailure } from "@/lib/hyperliquid/deposit-sour
 import { useDeposit } from "@/lib/hyperliquid/use-deposit";
 import { createLazyComponent } from "@/lib/lazy";
 import { useHasExistingBridgeExecution } from "@/lib/lifi/bridge-execution-state";
-import { calculateCctpDepositFee, getAmountIndependentCctpMaxFeeRaw } from "@/lib/trade/cctp-deposit";
+import {
+	calculateCctpDepositFee,
+	getAmountIndependentCctpDepositMinimumRaw,
+	getAmountIndependentCctpMaxFeeRaw,
+} from "@/lib/trade/cctp-deposit";
 import { removeCctpDepositTrackingRecord } from "@/lib/trade/cctp-deposit-tracking";
 import {
 	FundsActionFeedbackCause,
@@ -372,6 +376,17 @@ export function DepositModal() {
 					: null))
 			: null;
 	const cctpDepositFee = displayedCctpDepositFeeRaw !== null ? formatUnits(displayedCctpDepositFeeRaw, 6) : null;
+	const cctpDepositMinimumRaw =
+		selectedDepositRoute === "cctp" && displayedCctpDepositFeeQuery.data?.feeQuote
+			? getAmountIndependentCctpDepositMinimumRaw(displayedCctpDepositFeeQuery.data.feeQuote)
+			: null;
+	const cctpDepositMinimumError =
+		cctpDepositMinimumRaw !== null &&
+		reviewedDepositAmountRaw !== undefined &&
+		reviewedDepositAmountRaw > 0n &&
+		reviewedDepositAmountRaw < cctpDepositMinimumRaw
+			? t`Minimum deposit is ${numberFormat.formatDecimalString(formatUnits(cctpDepositMinimumRaw, 6))} USDC`
+			: null;
 	const cctpDepositAmountLimitError =
 		selectedDepositRoute === "cctp" &&
 		reviewedDepositAmountRaw !== undefined &&
@@ -410,16 +425,21 @@ export function DepositModal() {
 									? { valid: false, error: null }
 									: cctpDepositAmountLimitError
 										? { valid: false, error: cctpDepositAmountLimitError }
-										: cctpDepositFeeUnavailable
-											? {
-													valid: false,
-													error: displayedCctpDepositFeeQuery.isError
-														? t`Unable to verify the current Circle CCTP fee and Fast Transfer capacity.`
-														: displayedCctpDepositFeeQuery.hasSufficientFastAllowance === false
-															? t`Circle Fast Transfer capacity is temporarily unavailable. Try again later.`
-															: null,
-												}
-											: { ...baseDepositValidation, error: depositCctpPreflightError ?? baseDepositValidation.error });
+										: cctpDepositMinimumError
+											? { valid: false, error: cctpDepositMinimumError }
+											: cctpDepositFeeUnavailable
+												? {
+														valid: false,
+														error: displayedCctpDepositFeeQuery.isError
+															? t`Unable to verify the current Circle CCTP fee and Fast Transfer capacity.`
+															: displayedCctpDepositFeeQuery.hasSufficientFastAllowance === false
+																? t`Circle Fast Transfer capacity is temporarily unavailable. Try again later.`
+																: null,
+													}
+												: {
+														...baseDepositValidation,
+														error: depositCctpPreflightError ?? baseDepositValidation.error,
+													});
 	const canUseFundsActions = walletIdentityResolved && hasWalletAccess && !!walletAddress;
 	const canUseDeposit = canUseFundsActions || isEmbeddedDeposit;
 	const hasExistingBridgeExecution = useHasExistingBridgeExecution(walletAddress);
@@ -1472,6 +1492,7 @@ export function DepositModal() {
 				}
 				requiresExplicitFundingDeposit={isEmbeddedDeposit && !isTestnet}
 				cctpFee={cctpDepositFee}
+				minimumDepositRaw={cctpDepositMinimumRaw}
 				cctpFeeLoading={
 					isDepositDataRetrying || (selectedDepositRoute === "cctp" && displayedCctpDepositFeeQuery.isLoading)
 				}
