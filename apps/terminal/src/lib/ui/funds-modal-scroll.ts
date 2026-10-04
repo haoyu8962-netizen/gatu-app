@@ -20,3 +20,8 @@ export const FUNDS_MODAL_BODY_TOP_PADDING_CLASS = "pt-3";
 export const FUNDS_MODAL_HEADING_CLASS = "sticky -top-3 z-1 bg-modal";
 export const FUNDS_MODAL_LEADING_HEADING_CLASS = `${FUNDS_MODAL_HEADING_CLASS} -mt-3 pt-3`;
 export const FUNDS_MODAL_HEADING_SLOT = "funds-modal-heading";
+/**
+ * The shell's back button sits in the same band as the close button of the primitive and takes the
+ * same layer, above the heading band.
+ */
+export const FUNDS_MODAL_BACK_BUTTON_CLASS = "absolute top-5 left-4 z-10 min-[1001px]:top-6 min-[1001px]:left-6";

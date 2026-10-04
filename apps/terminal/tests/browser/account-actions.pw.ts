@@ -437,7 +437,7 @@ for (const viewport of [
 		const forms = [
 			{ open: "Open deposit", heading: "Deposit USDC from Arbitrum", layout: "funding-address", overflow },
 			{ open: "Open withdraw", heading: "Withdraw USDC to Arbitrum", focus: "Amount", overflow },
-			{ before: "Toggle email", open: "Open deposit", heading: "Deposit USDC from Arbitrum", focus: "Amount", overflow },
+			{ before: "Toggle email", open: "Open deposit", heading: "Deposit USDC from Arbitrum", overflow },
 			{ before: "Toggle card funding", open: "Open deposit", heading: "Deposit", layout: "methods", overflow: "any" },
 			{ open: "Open deposit", transfer: true, heading: "Deposit USDC from Arbitrum", overflow },
 			{ before: "Toggle email", open: "Open deposit", transfer: true, heading: "Deposit USDC from Arbitrum", overflow },
@@ -463,22 +463,55 @@ for (const viewport of [
 			if ("focus" in form && viewport.height < 300) {
 				const body = dialog.locator('[data-slot="funds-modal-body"]');
 				const input = dialog.getByLabel(form.focus, { exact: true });
-				await input.evaluate((node) => (node as HTMLElement).blur());
-				await body.evaluate((node) => {
+				const readField = () =>
+					body.evaluate((node, label) => {
+						const field = node.querySelector(`input[aria-label="${label}"]`) ?? node.querySelector("input");
+						const band = node.querySelector('[data-slot="funds-modal-heading"]');
+						if (!field || !band) throw new Error("Funds form field geometry is unavailable");
+						const box = field.getBoundingClientRect();
+						return {
+							top: box.top,
+							bottom: box.bottom,
+							bandBottom: band.getBoundingClientRect().bottom,
+							bodyTop: node.getBoundingClientRect().top,
+						};
+					}, form.focus);
+				const focusFrom = async (scroll: (node: HTMLElement) => void) => {
+					await input.evaluate((node) => (node as HTMLElement).blur());
+					await body.evaluate(scroll);
+					const before = await readField();
+					return { before, focus: () => input.evaluate((node) => (node as HTMLElement).focus()) };
+				};
+				const expectClearOfBand = () =>
+					expect
+						.poll(async () => {
+							const field = await readField();
+							return field.top - field.bandBottom;
+						})
+						.toBeGreaterThanOrEqual(-0.5);
+
+				// A field revealed from out of view lands below the band in every engine.
+				const bottom = await focusFrom((node) => {
 					node.scrollTop = node.scrollHeight;
 				});
-				const bodyTop = await body.evaluate((node) => node.getBoundingClientRect().top);
-				const hidden = (await input.evaluate((node) => node.getBoundingClientRect().bottom)) < bodyTop;
-				await input.evaluate((node) => (node as HTMLElement).focus());
-				const bandBottom = await heading.evaluate((node) => node.getBoundingClientRect().bottom);
-				// A field revealed from out of view lands below the band in every engine. A field already
-				// inside the scrollport but partly under the band is moved only where focus honours
-				// `scroll-padding`; WebKit leaves it where the user scrolled it.
-				if (hidden || page.context().browser()?.browserType().name() === "chromium") {
-					await expect
-						.poll(() => input.evaluate((node) => node.getBoundingClientRect().top))
-						.toBeGreaterThanOrEqual(bandBottom - 0.5);
-				}
+				expect(bottom.before.bottom).toBeLessThan(bottom.before.bodyTop);
+				await bottom.focus();
+				await expectClearOfBand();
+
+				// A field inside the scrollport with its top edge 3px under the band is moved clear where
+				// focus honours `scroll-padding`. WebKit leaves it where the user scrolled it.
+				const covered = await focusFrom((node) => {
+					const field = node.querySelector("input") as HTMLElement;
+					const band = node.querySelector('[data-slot="funds-modal-heading"]') as HTMLElement;
+					node.scrollTop = 0;
+					for (let pass = 0; pass < 4; pass += 1) {
+						node.scrollTop += field.getBoundingClientRect().top - band.getBoundingClientRect().bottom + 3;
+					}
+				});
+				expect(covered.before.bandBottom - covered.before.top).toBeCloseTo(3, 0);
+				expect(covered.before.bottom).toBeGreaterThan(covered.before.bandBottom);
+				await covered.focus();
+				if (page.context().browser()?.browserType().name() === "chromium") await expectClearOfBand();
 			}
 
 			if ("transfer" in form) {

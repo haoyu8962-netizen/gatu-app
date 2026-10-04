@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import ts from "typescript";
 import { describe, expect, it } from "vitest";
 import {
+	FUNDS_MODAL_BACK_BUTTON_CLASS,
 	FUNDS_MODAL_BODY_CLASS,
 	FUNDS_MODAL_BODY_SLOT,
 	FUNDS_MODAL_BODY_TOP_PADDING_CLASS,
@@ -569,6 +570,19 @@ describe("funds modal scroll contract", () => {
 		]);
 		expect(FUNDS_MODAL_HEADING_SLOT).toBe("funds-modal-heading");
 		expect(read(FUNDS_DIALOG_SOURCES[0])).toContain("cn(FUNDS_MODAL_BODY_TOP_PADDING_CLASS,");
+	});
+
+	it("keeps the back button on the close button's layer, above the heading band", () => {
+		const fixture = readFileSync(resolve(SOURCE_ROOT, "../tests/browser/funds-forms.fixture.tsx"), "utf8");
+		const closeLayer = /absolute top-4 right-4 (z-\d+)/.exec(
+			readFileSync(resolve(UI_PACKAGE_ROOT, "modal.tsx"), "utf8"),
+		)?.[1];
+
+		expect(closeLayer).toBe("z-10");
+		expect(FUNDS_MODAL_BACK_BUTTON_CLASS.split(" ")).toContain(closeLayer);
+		expect(Number(closeLayer?.slice(2))).toBeGreaterThan(Number(/\bz-(\d+)\b/.exec(FUNDS_MODAL_HEADING_CLASS)?.[1]));
+		expect(read(FUNDS_FLOW_ENTRIES[0]).split("cn(\n\t\t\t\t\t\t\tFUNDS_MODAL_BACK_BUTTON_CLASS,")).toHaveLength(2);
+		expect(fixture.split("cn(FUNDS_MODAL_BACK_BUTTON_CLASS,")).toHaveLength(2);
 	});
 
 	it.each(FUNDS_DIALOG_SOURCES)("gives the one dialog in %s the shared popup, header and body classes", (file) => {

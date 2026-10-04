@@ -1,5 +1,6 @@
 import { Trans, useLingui } from "@lingui/react/macro";
-import { Button } from "@sairn/ui";
+import { CaretLeftIcon } from "@phosphor-icons/react";
+import { Button, ButtonIcon } from "@sairn/ui";
 import { useQueryClient } from "@tanstack/react-query";
 import { Suspense, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -52,6 +53,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useEmailEmbeddedWallet } from "@/hooks/wallet/use-email-embedded-wallet";
 import { useReconnectWallet, useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { STATUS_GLYPH_UNKNOWN } from "@/lib/brand/status-glyph.gen";
+import { cn } from "@/lib/cn";
 import { formatExchangeActionError, formatTransferError, isAmbiguousExchangeActionError } from "@/lib/errors/format";
 import { useNumberFormat } from "@/lib/format";
 import { infoQueryOptions, useExchange, useHyperliquid, useInfo } from "@/lib/hyperliquid";
@@ -83,6 +85,7 @@ import {
 	validateWithdrawal,
 	type WithdrawalRoute,
 } from "@/lib/trade/withdrawal";
+import { FUNDS_MODAL_BACK_BUTTON_CLASS } from "@/lib/ui/funds-modal-scroll";
 import { getPrivyEmailAddress } from "@/lib/wallet/privy-wagmi";
 import {
 	useDepositModalActions,
@@ -91,7 +94,6 @@ import {
 	useTransferModalActions,
 } from "@/stores/use-global-modal-store";
 import { useIsTestnet } from "@/stores/use-global-settings-store";
-import { FundsModalBackButton } from "../components/funds-modal-back-button";
 import { FundsModalShell } from "../components/funds-modal-shell";
 import { DepositForm } from "./deposit/deposit-form";
 import { DepositMethodChooser } from "./deposit/deposit-method-chooser";
@@ -1535,7 +1537,21 @@ export function DepositModal() {
 			tab={visibleTab}
 			headerStart={
 				canReturnToDepositMethods ? (
-					<FundsModalBackButton disabled={isDepositPending} onClick={() => setDepositStep("methods")} />
+					<ButtonIcon
+						type="button"
+						variant="ghost"
+						intent="neutral"
+						size="sm"
+						onClick={() => setDepositStep("methods")}
+						disabled={isDepositPending}
+						aria-label={t`Back`}
+						className={cn(
+							FUNDS_MODAL_BACK_BUTTON_CLASS,
+							"rounded-16 text-trading-panel-muted hover:bg-transparent not-data-disabled:hover:bg-trading-panel-hover not-data-disabled:hover:text-trading-panel-fg",
+						)}
+					>
+						<CaretLeftIcon className="size-4 rtl:rotate-180" aria-hidden="true" />
+					</ButtonIcon>
 				) : null
 			}
 		>
