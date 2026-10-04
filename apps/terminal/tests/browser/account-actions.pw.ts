@@ -204,6 +204,8 @@ async function expectFundsDialogScroll(
 	);
 	for (const control of fixedControls) {
 		expect(await control.evaluate((node) => node.closest('[data-slot="funds-modal-body"]'))).toBeNull();
+		await expect(control).toBeVisible();
+		await expect(control).toBeInViewport({ ratio: 1 });
 	}
 	const metrics = await body.evaluate((element) => {
 		const node = element as HTMLElement;
