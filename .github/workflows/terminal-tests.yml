@@ -106,6 +106,13 @@ jobs:
           src/lib/tests/privy-theme-switch-wallet-stability.test.tsx
           src/lib/tests/privy-wagmi.test.ts
           src/lib/tests/wallet-session.test.tsx
+          src/lib/tests/email-embedded-wallet-provider.test.tsx
+          src/lib/tests/email-wallet-creation-owner-contract.test.ts
+          src/lib/tests/legal-gate.test.ts
+          src/lib/tests/legal-gate-hooks.test.tsx
+          src/lib/tests/legal-acceptance-modal.test.tsx
+          src/lib/tests/email-registration-sequence.test.tsx
+          src/lib/tests/global-modals-hip3-disclaimer.test.tsx
 
       - name: Test mobile pairing protocol, signing chain and import lifecycle
         working-directory: apps/terminal

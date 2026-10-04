@@ -28,6 +28,10 @@ const testState = vi.hoisted(() => ({
 	walletsReady: true,
 	selectedWallet: undefined as { address: string } | undefined,
 	embeddedWalletAddress: undefined as string | undefined,
+	hasEmbeddedWallet: true,
+	needsEmbeddedWallet: false,
+	ensureEmailEmbeddedWallet: vi.fn(),
+	privyModalOpen: undefined as boolean | undefined,
 	shouldUseEmbeddedWallet: false,
 	walletIntentOverride: undefined as "ambiguous" | "embedded" | "external" | "unavailable" | undefined,
 	emailAddress: undefined as string | undefined,
@@ -52,6 +56,7 @@ Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 vi.mock("@privy-io/react-auth", () => ({
 	usePrivy: () => ({
 		authenticated: testState.authenticated,
+		isModalOpen: testState.privyModalOpen,
 		ready: testState.ready,
 		login: testState.login,
 		logout: testState.logout,
@@ -59,6 +64,13 @@ vi.mock("@privy-io/react-auth", () => ({
 	}),
 	useConnectWallet: () => ({ connectWallet: testState.connectWallet }),
 	useWallets: () => ({ ready: testState.walletsReady, wallets: testState.wallets }),
+}));
+
+vi.mock("@/hooks/wallet/use-email-embedded-wallet", () => ({
+	useEmailEmbeddedWallet: () => ({
+		needsEmbeddedWallet: testState.needsEmbeddedWallet,
+		ensureEmailEmbeddedWallet: testState.ensureEmailEmbeddedWallet,
+	}),
 }));
 
 vi.mock("@privy-io/wagmi", () => ({
@@ -80,6 +92,10 @@ vi.mock("wagmi", () => ({
 
 vi.mock("@/lib/hyperliquid", () => ({
 	closeAgentRegistrationSessionAndRemove: testState.closeRegistration,
+	getActiveAgentOwner: () => {
+		const raw = window.localStorage.getItem("hyperliquid_active_agent_owner");
+		return raw ? (JSON.parse(raw) as { env: string; address: string }) : null;
+	},
 	useHyperliquid: () => ({
 		clientKey: testState.clientKey,
 		env: testState.env,
@@ -101,6 +117,7 @@ vi.mock("sonner", () => ({
 vi.mock("@/lib/wallet/privy-wagmi", () => ({
 	getPrivyEmailAddress: () => testState.emailAddress,
 	getPrivyEmbeddedWalletAddress: () => testState.embeddedWalletAddress,
+	hasPrivyEmbeddedWallet: () => testState.hasEmbeddedWallet,
 	hasSameWalletAddress: (a: string | undefined, b: string | undefined) =>
 		!!a && !!b && a.toLowerCase() === b.toLowerCase(),
 	selectPrivyWagmiWallet: () => testState.selectedWallet,
@@ -117,10 +134,18 @@ function DisconnectButton() {
 }
 
 function SessionProbe() {
-	const { authenticationReady, displayAddress, hasWalletAccess, isConnected, ready, walletDirectoryReady } =
-		useWalletSession();
+	const {
+		authenticationModalOpen,
+		authenticationReady,
+		displayAddress,
+		hasWalletAccess,
+		isConnected,
+		ready,
+		walletDirectoryReady,
+	} = useWalletSession();
 
 	return createElement("output", {
+		"data-authentication-modal-open": String(authenticationModalOpen),
 		"data-authentication-ready": String(authenticationReady),
 		"data-display-address": displayAddress ?? "",
 		"data-has-wallet-access": String(hasWalletAccess),
@@ -166,6 +191,11 @@ describe("useDisconnectWallet", () => {
 		testState.userId = "did:privy:test-user";
 		testState.userWalletAddress = USER_ADDRESS;
 		testState.embeddedWalletAddress = undefined;
+		testState.hasEmbeddedWallet = true;
+		testState.needsEmbeddedWallet = false;
+		testState.ensureEmailEmbeddedWallet.mockReset();
+		testState.ensureEmailEmbeddedWallet.mockResolvedValue(USER_ADDRESS);
+		testState.privyModalOpen = undefined;
 		testState.shouldUseEmbeddedWallet = false;
 		testState.walletIntentOverride = undefined;
 		testState.emailAddress = undefined;
@@ -449,6 +479,118 @@ describe("useDisconnectWallet", () => {
 		expect(testState.logout).not.toHaveBeenCalled();
 		expect(window.localStorage.getItem(AGENT_STORAGE_KEY)).toBe(AGENT_STORAGE_VALUE);
 		expect(window.localStorage.getItem(otherStorageKey)).toBe(AGENT_STORAGE_VALUE);
+	});
+
+	function setEmailSessionWithoutWallet() {
+		testState.sessionMode = "disconnected";
+		testState.walletAddress = undefined;
+		testState.walletConnected = false;
+		testState.clientKey = "disconnected";
+		testState.userWalletAddress = undefined;
+		testState.embeddedWalletAddress = undefined;
+		testState.hasEmbeddedWallet = false;
+		testState.shouldUseEmbeddedWallet = true;
+	}
+
+	async function clickDisconnect() {
+		act(() => {
+			root.render(createElement(DisconnectButton));
+		});
+		act(() => {
+			container.querySelector("button")?.click();
+		});
+		await flushAsyncWork();
+	}
+
+	it("logs out an email session that has no wallet when no agent-only owner is stored", async () => {
+		setEmailSessionWithoutWallet();
+		window.localStorage.removeItem("hyperliquid_active_agent_owner");
+
+		await clickDisconnect();
+
+		expect(testState.closeRegistration).not.toHaveBeenCalled();
+		expect(testState.toastError).not.toHaveBeenCalled();
+		expect(testState.logout).toHaveBeenCalledTimes(1);
+		expect(window.localStorage.getItem(AGENT_STORAGE_KEY)).toBe(AGENT_STORAGE_VALUE);
+	});
+
+	it("closes the agent-only owner an email login was hiding, so logging out cannot hand the device back to it", async () => {
+		setEmailSessionWithoutWallet();
+
+		await clickDisconnect();
+
+		expect(testState.removeAgent).toHaveBeenCalledWith("Mainnet", USER_ADDRESS);
+		expect(window.localStorage.getItem(AGENT_STORAGE_KEY)).toBeNull();
+		expect(window.localStorage.getItem("hyperliquid_active_agent_owner")).toBeNull();
+		expect(testState.logout).toHaveBeenCalledTimes(1);
+	});
+
+	it("stays logged in when the hidden agent-only owner cannot be closed", async () => {
+		setEmailSessionWithoutWallet();
+		testState.removeAgent.mockReturnValue({ status: "failed", reason: "storage_unavailable" });
+
+		await clickDisconnect();
+
+		expect(testState.logout).not.toHaveBeenCalled();
+		expect(window.localStorage.getItem("hyperliquid_active_agent_owner")).not.toBeNull();
+		expect(testState.toastError).toHaveBeenCalledWith(
+			"Disconnect failed: the local trading key could not be removed. Please retry.",
+		);
+	});
+
+	it("stays logged in when another agent-only owner took the place of the one that was closed", async () => {
+		const replacement = "0x4444444444444444444444444444444444444444";
+		setEmailSessionWithoutWallet();
+		testState.removeAgent.mockImplementation((env: string, ownerAddress: string) => {
+			window.localStorage.removeItem(`hyperliquid_agent_${env}_${ownerAddress.toLowerCase()}`);
+			window.localStorage.setItem("hyperliquid_active_agent_owner", JSON.stringify({ env, address: replacement }));
+			return { status: "removed" };
+		});
+
+		await clickDisconnect();
+
+		expect(testState.removeAgent).toHaveBeenCalledWith("Mainnet", USER_ADDRESS);
+		expect(testState.logout).not.toHaveBeenCalled();
+		expect(testState.toastError).toHaveBeenCalledWith(
+			"Disconnect failed: the active trading account could not be verified. Please retry.",
+		);
+	});
+
+	it("leaves an agent-only owner of the other environment alone", async () => {
+		setEmailSessionWithoutWallet();
+		window.localStorage.setItem(
+			"hyperliquid_active_agent_owner",
+			JSON.stringify({ env: "Testnet", address: USER_ADDRESS }),
+		);
+
+		await clickDisconnect();
+
+		expect(testState.closeRegistration).not.toHaveBeenCalled();
+		expect(testState.logout).toHaveBeenCalledTimes(1);
+	});
+
+	it("keeps failing closed for a walletless identity that is not an unambiguous email session", async () => {
+		testState.sessionMode = "disconnected";
+		testState.walletAddress = undefined;
+		testState.walletConnected = false;
+		testState.clientKey = "disconnected";
+		testState.userWalletAddress = undefined;
+		testState.embeddedWalletAddress = undefined;
+		testState.hasEmbeddedWallet = false;
+		testState.walletIntentOverride = "ambiguous";
+
+		act(() => {
+			root.render(createElement(DisconnectButton));
+		});
+		act(() => {
+			container.querySelector("button")?.click();
+		});
+		await flushAsyncWork();
+
+		expect(testState.logout).not.toHaveBeenCalled();
+		expect(testState.toastError).toHaveBeenCalledWith(
+			"Disconnect failed: the active trading account could not be verified. Please retry.",
+		);
 	});
 
 	it("keeps the local trading key removed when Privy logout fails", async () => {
@@ -847,5 +989,59 @@ describe("useDisconnectWallet", () => {
 		expect(testState.toastError).toHaveBeenCalledWith(
 			"Your email wallet is unavailable. Disconnect, then log in again with the same email.",
 		);
+	});
+
+	it("retries the silent wallet creation when an email session has no wallet yet", async () => {
+		testState.shouldUseEmbeddedWallet = true;
+		testState.needsEmbeddedWallet = true;
+		testState.selectedWallet = undefined;
+		testState.wallets = [];
+
+		act(() => {
+			root.render(createElement(ReconnectButton));
+		});
+		act(() => {
+			container.querySelector("button")?.click();
+		});
+		await flushAsyncWork();
+
+		expect(testState.ensureEmailEmbeddedWallet).toHaveBeenCalledOnce();
+		expect(testState.connectWallet).not.toHaveBeenCalled();
+		expect(testState.toastError).not.toHaveBeenCalled();
+	});
+
+	it("tells an email user to log in again when the retried wallet creation fails", async () => {
+		testState.shouldUseEmbeddedWallet = true;
+		testState.needsEmbeddedWallet = true;
+		testState.selectedWallet = undefined;
+		testState.wallets = [];
+		testState.ensureEmailEmbeddedWallet.mockRejectedValue(new Error("Embedded wallet creation timed out"));
+
+		act(() => {
+			root.render(createElement(ReconnectButton));
+		});
+		act(() => {
+			container.querySelector("button")?.click();
+		});
+		await flushAsyncWork();
+
+		expect(testState.ensureEmailEmbeddedWallet).toHaveBeenCalledOnce();
+		expect(testState.connectWallet).not.toHaveBeenCalled();
+		expect(testState.toastError).toHaveBeenCalledWith(
+			"Your email wallet is unavailable. Disconnect, then log in again with the same email.",
+		);
+	});
+
+	it("reports whether Privy's own window is visible", () => {
+		act(() => {
+			root.render(createElement(SessionProbe));
+		});
+		expect(container.querySelector("output")?.getAttribute("data-authentication-modal-open")).toBe("false");
+
+		testState.privyModalOpen = true;
+		act(() => {
+			root.render(createElement(SessionProbe));
+		});
+		expect(container.querySelector("output")?.getAttribute("data-authentication-modal-open")).toBe("true");
 	});
 });

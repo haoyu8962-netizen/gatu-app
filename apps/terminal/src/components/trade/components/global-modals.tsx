@@ -125,6 +125,7 @@ function LegalAwareGlobalModals({
 				acceptanceError={legalGate.acceptanceError}
 				onAccept={legalGate.accept}
 				onRetryStatus={legalGate.retryStatus}
+				onRetryWalletSetup={legalGate.retryWalletSetup}
 				onResetAcceptance={legalGate.resetAcceptance}
 			/>
 		);

@@ -2835,10 +2835,12 @@ msgid "Discard local key"
 msgstr "Discard local key"
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
+#: src/components/trade/components/legal-acceptance-modal.tsx
 #: src/components/trade/header/user-menu.tsx
 msgid "Disconnect"
 msgstr "Disconnect"
 
+#: src/hooks/wallet/use-wallet-session.ts
 #: src/hooks/wallet/use-wallet-session.ts
 msgid "Disconnect failed: the active trading account could not be verified. Please retry."
 msgstr "Disconnect failed: the active trading account could not be verified. Please retry."
@@ -7245,6 +7247,7 @@ msgstr "Resume tracking"
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/chart/tradingview-chart.tsx
 #: src/components/trade/components/legal-acceptance-modal.tsx
+#: src/components/trade/components/legal-acceptance-modal.tsx
 #: src/components/trade/components/market-asset-info.tsx
 #: src/components/trade/components/market-asset-info.tsx
 #: src/components/trade/layout/terminal-boot-error.tsx
@@ -10989,6 +10992,10 @@ msgstr "Wallet is not ready to update account mode"
 msgid "Wallet not connected"
 msgstr "Wallet not connected"
 
+#: src/components/trade/components/legal-acceptance-modal.tsx
+msgid "Wallet not ready"
+msgstr "Wallet not ready"
+
 #: src/components/trade/components/establish-connection-modal.tsx
 msgid "Wallet or network changed before the connection completed. Reopen the action for the current account."
 msgstr "Wallet or network changed before the connection completed. Reopen the action for the current account."
@@ -11001,6 +11008,10 @@ msgstr "Wallet or network changed before the referral request could be confirmed
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Wallet returned a transaction hash, but it is not visible on Arbitrum yet. Check your wallet activity or Arbiscan before retrying to avoid sending the deposit twice."
 msgstr "Wallet returned a transaction hash, but it is not visible on Arbitrum yet. Check your wallet activity or Arbiscan before retrying to avoid sending the deposit twice."
+
+#: src/components/trade/components/legal-acceptance-modal.tsx
+msgid "We could not finish setting up your wallet. Check your connection and try again, or disconnect and log in again."
+msgstr "We could not finish setting up your wallet. Check your connection and try again, or disconnect and log in again."
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
 msgid "We could not verify the legal status for this wallet. Check your connection and try again."

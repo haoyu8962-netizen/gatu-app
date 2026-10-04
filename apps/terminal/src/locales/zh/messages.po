@@ -2835,10 +2835,12 @@ msgid "Discard local key"
 msgstr "丢弃本地私钥"
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
+#: src/components/trade/components/legal-acceptance-modal.tsx
 #: src/components/trade/header/user-menu.tsx
 msgid "Disconnect"
 msgstr "断开连接"
 
+#: src/hooks/wallet/use-wallet-session.ts
 #: src/hooks/wallet/use-wallet-session.ts
 msgid "Disconnect failed: the active trading account could not be verified. Please retry."
 msgstr "断开连接失败：无法校验当前交易账户。请重试。"
@@ -7245,6 +7247,7 @@ msgstr "继续跟踪"
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/chart/tradingview-chart.tsx
 #: src/components/trade/components/legal-acceptance-modal.tsx
+#: src/components/trade/components/legal-acceptance-modal.tsx
 #: src/components/trade/components/market-asset-info.tsx
 #: src/components/trade/components/market-asset-info.tsx
 #: src/components/trade/layout/terminal-boot-error.tsx
@@ -10989,6 +10992,10 @@ msgstr "钱包尚未就绪，无法更新账户模式"
 msgid "Wallet not connected"
 msgstr "钱包未连接"
 
+#: src/components/trade/components/legal-acceptance-modal.tsx
+msgid "Wallet not ready"
+msgstr "钱包尚未就绪"
+
 #: src/components/trade/components/establish-connection-modal.tsx
 msgid "Wallet or network changed before the connection completed. Reopen the action for the current account."
 msgstr "钱包或网络在连接完成前发生变化。请为当前账户重新打开操作。"
@@ -11001,6 +11008,10 @@ msgstr "推荐请求确认前，钱包或网络已发生变化。请重新打开
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Wallet returned a transaction hash, but it is not visible on Arbitrum yet. Check your wallet activity or Arbiscan before retrying to avoid sending the deposit twice."
 msgstr "钱包已返回交易哈希，但该交易暂时还无法在 Arbitrum 上查到。请先检查钱包活动或 Arbiscan，避免重复发送同一笔存款。"
+
+#: src/components/trade/components/legal-acceptance-modal.tsx
+msgid "We could not finish setting up your wallet. Check your connection and try again, or disconnect and log in again."
+msgstr "未能完成钱包设置。请检查网络连接后重试，或断开连接后重新登录。"
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
 msgid "We could not verify the legal status for this wallet. Check your connection and try again."

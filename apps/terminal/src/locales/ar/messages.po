@@ -2835,10 +2835,12 @@ msgid "Discard local key"
 msgstr "تجاهل المفتاح المحلي"
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
+#: src/components/trade/components/legal-acceptance-modal.tsx
 #: src/components/trade/header/user-menu.tsx
 msgid "Disconnect"
 msgstr "قطع الاتصال"
 
+#: src/hooks/wallet/use-wallet-session.ts
 #: src/hooks/wallet/use-wallet-session.ts
 msgid "Disconnect failed: the active trading account could not be verified. Please retry."
 msgstr "فشل قطع الاتصال: تعذر التحقق من حساب التداول النشط. يرجى إعادة المحاولة."
@@ -7245,6 +7247,7 @@ msgstr "استئناف التتبع"
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/chart/tradingview-chart.tsx
 #: src/components/trade/components/legal-acceptance-modal.tsx
+#: src/components/trade/components/legal-acceptance-modal.tsx
 #: src/components/trade/components/market-asset-info.tsx
 #: src/components/trade/components/market-asset-info.tsx
 #: src/components/trade/layout/terminal-boot-error.tsx
@@ -10989,6 +10992,10 @@ msgstr "المحفظة غير جاهزة لتحديث وضع الحساب"
 msgid "Wallet not connected"
 msgstr "المحفظة غير متصلة"
 
+#: src/components/trade/components/legal-acceptance-modal.tsx
+msgid "Wallet not ready"
+msgstr "المحفظة غير جاهزة"
+
 #: src/components/trade/components/establish-connection-modal.tsx
 msgid "Wallet or network changed before the connection completed. Reopen the action for the current account."
 msgstr "تغيرت المحفظة أو الشبكة قبل اكتمال الاتصال. أعد فتح الإجراء للحساب الحالي."
@@ -11001,6 +11008,10 @@ msgstr "تغيّرت المحفظة أو الشبكة قبل تأكيد طلب �
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Wallet returned a transaction hash, but it is not visible on Arbitrum yet. Check your wallet activity or Arbiscan before retrying to avoid sending the deposit twice."
 msgstr "أعادت المحفظة تجزئة معاملة، لكنها غير ظاهرة على Arbitrum بعد. تحقق من نشاط المحفظة أو Arbiscan قبل إعادة المحاولة لتجنب إرسال الإيداع مرتين."
+
+#: src/components/trade/components/legal-acceptance-modal.tsx
+msgid "We could not finish setting up your wallet. Check your connection and try again, or disconnect and log in again."
+msgstr "تعذر إكمال إعداد محفظتك. تحقق من اتصالك وحاول مرة أخرى، أو اقطع الاتصال ثم سجّل الدخول مجددًا."
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
 msgid "We could not verify the legal status for this wallet. Check your connection and try again."

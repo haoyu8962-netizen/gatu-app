@@ -39,7 +39,8 @@ This file contains durable project instructions for coding agents. Read `agent.m
 - `docs/trading-onboarding.md` and `docs/email-trading-signing.md` own this flow, including the required sequence, the `Stay Connected` storage table, the mobile wallet lifecycle and the regression checklist; keep them synchronized with any change.
 - Preserve the order: connect the exact owner wallet, verify/accept legal terms, establish the trading signer, classify complete account funding snapshots, then open deposit only for a definitively empty account. Ordinary email trading uses the exact active Privy embedded owner and never generates or approves a local Agent; external wallets and Agent-only sessions require a verified Agent/API wallet.
 - Legal status, embedded-owner signer readiness, Agent approval, local Agent key, builder-fee approval and funding state are separate gates. Errors or missing snapshots fail closed and are never treated as acceptance, approval or an empty account.
-- Agent registration must not approve the builder fee; that approval belongs to the first trading action that requires the configured builder code. Login, refresh and status checks must never sign.
+- Agent registration must not approve the builder fee; that approval belongs to the first trading action that requires the configured builder code. Login, refresh and status checks must never sign. The one accepted exception is the SIWE message Privy's `SmartWalletsProvider` signs without UI to link a smart wallet when an embedded wallet first appears: it is Privy's documented automatic smart-wallet creation, moves no funds and is not a terms, Agent, builder-fee or trading signature (`docs/adr/0033-silent-email-wallet-creation.md`). Do not add any other signature on those paths.
+- Email registration creates the embedded owner silently after login (`docs/adr/0033-silent-email-wallet-creation.md`): keep Privy's `createOnLogin` off and the root `EmailEmbeddedWalletProvider` the only automatic creator, with never more than one SDK creation request in flight. Keep the policy dialog closed while that wallet is pending and, unless an acceptance is being submitted, while a Privy window is visible. Once the wallet directory is ready, a session without a wallet must be able to retry and to disconnect, and its logout must not hand the device back to a stored agent-only owner.
 - `Stay Connected` is off by default, and every Agent-registration entry point honors the same `hyperliquid.persist_trading_connection` preference. Mobile wallet approval timeouts pause while the page is hidden; a late approval commits only after revalidating owner, registration epoch, stored key and server-approved Agent address.
 
 ## Wallet connection UI contract
@@ -69,6 +70,7 @@ This file contains durable project instructions for coding agents. Read `agent.m
 - The dark terminal and chart canvas use `#0F1A1F` (`rgb(15, 26, 31)`) as the main background; the terminal dark theme maps `bg-background`, `bg-surface`, `bg-alternate` and `bg-modal` to it (see `.claude/rules/design-tokens.md`).
 - Application modals and drawers use the dedicated `bg-modal` surface. Do not change `bg-overlay` to achieve this; tooltips, toasts and selection indicators depend on its raised contrast.
 - TradingView runs in an iframe and cannot inherit application tokens; `docs/runtime-guardrails.md` §4 owns its theme stylesheet rules, including the `#1D1E26` raised-layer color and the single theme-aware stylesheet.
+- TradingView price precision comes from market metadata under Hyperliquid's tick rules, never from the digits of a price string, and a price crossing a power of ten never rebuilds the widget; `docs/runtime-guardrails.md` §4 and ADR 0035 own the rule and its tradeoffs.
 - Keep theme colors in shared tokens or existing style abstractions instead of scattering new literals.
 - Loading placeholders never redraw the layout they stand in for: use a blank busy region, a neutral spinner or geometry taken from the same source as the content; a chunk fallback either claims no dialog chrome or renders the same shell as the loaded dialog, as the deposit dialog does (`.claude/rules/style-ui-guide.md`, Loading placeholders; `loading-placeholder-contract.test.ts`).
 - Dashboard surfaces, the cards inside them and dialog notices follow the corner tiers in `.claude/rules/style-ui-guide.md` (Dashboard page gutters, Dialog content blocks). `dashboard-surface-radius-contract.test.ts` and `dialog-notice-radius-contract.test.ts` enforce them with explicit exception lists; a new visual rule follows the same pattern (Checking a visual rule).
@@ -181,6 +183,12 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/privy-agent-signer.test.ts \
   src/lib/tests/mobile-agent-lifecycle.test.ts \
   src/lib/tests/legal-gate.test.ts \
+  src/lib/tests/legal-gate-hooks.test.tsx \
+  src/lib/tests/legal-acceptance-modal.test.tsx \
+  src/lib/tests/use-email-embedded-wallet.test.tsx \
+  src/lib/tests/email-embedded-wallet-provider.test.tsx \
+  src/lib/tests/email-wallet-creation-owner-contract.test.ts \
+  src/lib/tests/email-registration-sequence.test.tsx \
   src/lib/tests/privy-config.test.ts \
   src/lib/tests/privy-theme-switch-wallet-stability.test.tsx \
   src/lib/tests/privy-fiat-funding.test.ts \
@@ -205,6 +213,8 @@ pnpm --dir apps/terminal exec vitest run \
 pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/chart-theme-colors.test.ts \
   src/lib/tests/tradingview-chart.test.tsx \
+  src/lib/tests/chart-price-format.test.ts \
+  src/lib/tests/chart-datafeed.test.ts \
   src/lib/tests/modal-surface-contract.test.ts \
   src/lib/tests/earn-page-surface-contract.test.ts \
   src/lib/tests/dashboard-surface-radius-contract.test.ts \

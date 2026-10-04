@@ -32,6 +32,7 @@ import { createQueryPersistenceCallbacks, createQueryPersistenceOptions } from "
 import { selectPrivyWagmiWallet } from "@/lib/wallet/privy-wagmi";
 import { BaseUiDirectionProvider } from "@/providers/base-ui-direction";
 import { ClientRuntimeProvider } from "@/providers/client-runtime";
+import { EmailEmbeddedWalletProvider } from "@/providers/email-embedded-wallet-provider";
 import { HyperliquidOwnerSignerBridge } from "@/providers/hyperliquid-owner-signer-bridge";
 import { PrivyLoginMethodObserver } from "@/providers/privy-login-method-observer";
 import { PwaInstallProvider } from "@/providers/pwa-install";
@@ -105,28 +106,30 @@ export function ClientRootProvider({ children, queryClient }: Props) {
 		<PwaInstallProvider>
 			<PrivyProvider appId={PRIVY_APP_ID ?? ""} config={PRIVY_CONFIG_BY_THEME[theme]}>
 				<PrivyLoginMethodObserver />
-				<SmartWalletsProvider>
-					<PersistQueryClientProvider
-						client={queryClient}
-						persistOptions={createQueryPersistenceOptions(persister)}
-						onSuccess={persistenceCallbacks.onSuccess}
-						onError={persistenceCallbacks.onError}
-					>
-						<QueryPersistenceFlush client={queryClient} />
-						<WagmiProvider config={config} setActiveWalletForWagmi={selectPrivyWagmiWallet}>
-							<I18nProvider i18n={i18n}>
-								<BaseUiDirectionProvider>
-									<HyperliquidBridge>
-										<EmbeddedDepositAutoBridge />
-										<OrderReconciliation />
-										<TwapReconciliation />
-										<ClientRuntimeProvider>{children}</ClientRuntimeProvider>
-									</HyperliquidBridge>
-								</BaseUiDirectionProvider>
-							</I18nProvider>
-						</WagmiProvider>
-					</PersistQueryClientProvider>
-				</SmartWalletsProvider>
+				<EmailEmbeddedWalletProvider>
+					<SmartWalletsProvider>
+						<PersistQueryClientProvider
+							client={queryClient}
+							persistOptions={createQueryPersistenceOptions(persister)}
+							onSuccess={persistenceCallbacks.onSuccess}
+							onError={persistenceCallbacks.onError}
+						>
+							<QueryPersistenceFlush client={queryClient} />
+							<WagmiProvider config={config} setActiveWalletForWagmi={selectPrivyWagmiWallet}>
+								<I18nProvider i18n={i18n}>
+									<BaseUiDirectionProvider>
+										<HyperliquidBridge>
+											<EmbeddedDepositAutoBridge />
+											<OrderReconciliation />
+											<TwapReconciliation />
+											<ClientRuntimeProvider>{children}</ClientRuntimeProvider>
+										</HyperliquidBridge>
+									</BaseUiDirectionProvider>
+								</I18nProvider>
+							</WagmiProvider>
+						</PersistQueryClientProvider>
+					</SmartWalletsProvider>
+				</EmailEmbeddedWalletProvider>
 			</PrivyProvider>
 		</PwaInstallProvider>
 	);
