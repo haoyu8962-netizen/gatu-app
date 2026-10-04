@@ -4136,7 +4136,7 @@ msgstr "Importer l'accès mobile"
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 msgid "Important: send only native USDC on Arbitrum to this address. Other assets, including USDC.e, and transfers on other networks will not be credited to your trading account."
-msgstr "Important : envoyez uniquement de l’USDC natif sur Arbitrum à cette adresse. Les autres actifs, y compris l’USDC.e, et les transferts sur d’autres réseaux ne seront pas crédités sur votre compte de trading."
+msgstr "Important : envoyez uniquement des USDC natifs sur Arbitrum à cette adresse. Les autres actifs, y compris les USDC.e, et les transferts sur d'autres réseaux ne seront pas crédités sur votre compte de trading."
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #~ msgid "Important: this address can only receive native USDC on Arbitrum. Do not send USDC.e or assets from other networks. Minimum deposit is {minimumDeposit}."

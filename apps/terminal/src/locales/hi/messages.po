@@ -4136,7 +4136,7 @@ msgstr "फ़ोन एक्सेस इम्पोर्ट करें"
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 msgid "Important: send only native USDC on Arbitrum to this address. Other assets, including USDC.e, and transfers on other networks will not be credited to your trading account."
-msgstr "महत्वपूर्ण: इस पते पर केवल Arbitrum पर नेटिव USDC भेजें। अन्य एसेट, जिनमें USDC.e शामिल है, और अन्य नेटवर्क पर किए गए ट्रांसफ़र आपके ट्रेडिंग खाते में जमा नहीं होंगे।"
+msgstr "महत्वपूर्ण: इस पते पर केवल Arbitrum पर नेटिव USDC भेजें। अन्य संपत्तियां, जिनमें USDC.e शामिल है, और अन्य नेटवर्क पर किए गए ट्रांसफ़र आपके ट्रेडिंग खाते में जमा नहीं होंगे।"
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #~ msgid "Important: this address can only receive native USDC on Arbitrum. Do not send USDC.e or assets from other networks. Minimum deposit is {minimumDeposit}."
