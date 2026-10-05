@@ -482,6 +482,51 @@ the CI reading of 202,249. The other baselines are unchanged: CI read 3,294,239 
 (+7,441). Both builds passed the circular-import check and `perf:startup`, and the graph inventory is unchanged at 443
 assets (441 JavaScript, 2 CSS). This is a byte measurement, not a browser timing.
 
+## Funds dialog total-client re-baseline (2026-10-05)
+
+The funds dialog rework (shared `FundsModalShell` for the Deposit / Withdraw / Bridge dialog and its chunk fallback, the
+CCTP minimum with its typed error, the address-and-network notice, the sticky form headings and the back button
+renderer; [task records](work-memory/sessions/2026-10-05-funds-dialog-status-screens.md)) left the total client within
+its allowance in every local build, but too close to predict CI. Seven CI-style builds of `dev` and of branch commits,
+each with its own commit hash and release label and otherwise identical settings, read between 3,297,060 and 3,297,604
+against the 3,297,651 limit, and two commits with nearly identical code differed by 522 bytes. Those builds cannot
+attribute a change; the paired fixed-metadata builds below can.
+
+Measurement: Node 22.15.0, pnpm 10.21.0, an isolated worktree per side with `pnpm install --frozen-lockfile
+--prefer-offline` and no `.env.local`, pairing off and the fixed build identity of the reproduction protocol
+(`SAIRN_BUILD_SHA=e4e09966b175679ac7e13ea192246ce27fae15b5 SAIRN_RELEASE_ID=startup-guardrail-baseline
+SAIRN_BUILD_TIME=2026-08-27T00:00:00.000Z NODE_ENV=production NITRO_PRESET=node-server VITE_MOBILE_PAIRING_ENABLED=false
+pnpm --filter @sairn/terminal build`, then `perf:startup`); before = `origin/dev` at `345a2143`, after = `f9bae822`.
+
+| Metric | Before (`345a2143`) | After (`f9bae822`) | Change |
+| --- | ---: | ---: | ---: |
+| Client assets (graph inventory) | 443 | 443 | 0 |
+| All client JS + CSS | 3,296,988 | 3,297,328 | +340 |
+| Route preloads only (diagnostic) | 516,962 | 516,856 | -106 |
+| Static trade startup | 1,632,044 (101 assets) | 1,632,656 (101 assets) | +612 |
+| Mobile runtime increment / combined | 118,328 / 1,750,372 | 118,515 / 1,751,171 | +187 / +799 |
+| Desktop runtime increment / combined | 202,740 / 1,834,784 | 202,445 / 1,835,101 | -295 / +317 |
+| `client-root` static closure (`perf:startup`) | 1,270,395 (33 chunks) | 1,271,088 (33 chunks) | +693 |
+| Largest JS chunk (Privy main) | 411,575 gzip / 1,415,014 raw | 411,600 gzip / 1,415,014 raw | +25 gzip |
+
+Per asset, with content hashes stripped from the names: the shared deposit chunk is renamed from `use-deposit` to
+`use-cctp-deposit-fee` and grows by 195 (the minimum search and the fee review); `funds-modal-shell` is a new 1,365-byte
+chunk in both runtime profiles (the mobile one counts 15 assets instead of 14); `use-cctp-deposit-tracking` grows by
+508; the six catalogs grow by 328 for the notice; `global-modals` shrinks by 1,187 because the six-block skeleton
+fallback is gone; the 3,554-byte `skeleton` chunk disappears from the desktop runtime profile and `account-panel` grows
+by 3,225;
+`api-wallet`, the funding tab, the vaults page, the stylesheet and the referrals page shrink by 97 to 227 each; and 406
+other assets change by 9 bytes or less (+184 in total), mostly for renamed imports. Two assets were added and two
+removed. That is the cost of the rework rather than an accidental import, so it was re-baselined instead of removed.
+
+The total-client baseline becomes 3,287,651 + 340 = 3,287,991. The allowance `dev` had already used stays counted: the
+fixed-metadata build of the head reads +9,337 against the new baseline, where `dev` read +9,337 against the old one,
+663 bytes under the allowance. The other baselines are unchanged: the static trade startup stays below its baseline,
+the mobile runtime increment reads +7,935 of its 10,000 and the desktop runtime increment +9,316, which is 295 bytes
+better than `dev`. Both builds passed the circular-import check and `perf:startup`. This is a byte measurement, not a
+browser timing, and it does not make the remaining headroom larger than `dev`'s: a later change that grows the client
+still needs its own measurement.
+
 ## Functional acceptance gates
 
 Every terminal optimization must preserve all of the following:

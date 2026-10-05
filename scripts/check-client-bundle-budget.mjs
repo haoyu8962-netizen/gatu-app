@@ -70,7 +70,14 @@ const budgets = {
 	// branch's own build against 04469b52 had measured +1,216.
 	// Merged with dev a0c05740 on 2026-10-03: the three raises above were measured before dev's Privy upgrade and card
 	// funding and are added to its 3,281,171. The fixed-metadata build of the merge 0944584d measured 3,293,592 (+5,941).
-	totalGzipBaselineBytes: 3_287_651,
+	// Raised 2026-10-05 by +340 for the funds dialog rework (docs/terminal-performance-baseline.md): the shell the
+	// Deposit / Withdraw / Bridge dialog shares with its chunk fallback (+1,365 as a chunk of its own), the CCTP
+	// minimum and its typed error (+195 in the shared deposit chunk, +508 beside the deposit tracker), the notice in
+	// the six catalogs (+328) and the sticky form headings, against the removed six-block skeleton fallback (-1,187)
+	// and the skeleton chunk merged into the account panel chunk (-329 net). Measured as the fixed-metadata Node 22.15.0
+	// build of f9bae822 (3,297,328) minus that of dev 345a2143 (3,296,988); the +9,337 dev had already used stays
+	// counted, so the head sits where dev sat, 663 bytes under the allowance.
+	totalGzipBaselineBytes: 3_287_991,
 	totalGzipAllowedIncreaseBytes: 10_000,
 	tradeStartup: {
 		requiredRouteIds: ["__root__", "/trade/$symbol"],
