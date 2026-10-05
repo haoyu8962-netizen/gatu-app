@@ -169,6 +169,7 @@ PR：zora4523-bot/gatu-app#78（`aa809ae2`）。用户要求检查 CI 结果。7
 - 修复：新增 `components/trade/components/deposit-modal-intent.ts`，不导入任何模块，只持有一个由 `lazy-global-modals` 加载时登记的预热函数；十个存款入口改从它取 `depositModalIntentProps`。`lazy-global-modals` 的组件引用方恢复为 dev 上的三个（全局弹窗宿主、持仓弹窗宿主、导航抽屉）。弹窗宿主尚未加载时意图不做任何事。
 - 防止再犯：`loading-placeholder-contract` 新增一项，登记 `lazy-global-modals` 的引用方清单并要求意图模块不含任何导入；规范 Loading placeholders 一节写明原因。`deposit-modal-warm` 新增一项：宿主模块加载前意图不触发导入，加载后经登记的函数只导入一次。
 - 验证（工作区，提交前）：三个夹具清掉各自的依赖缓存后按 `CI=1` 整套运行，依赖扫描失败 0 次、缺失导出 0 条，分别 47、36、13 项通过；契约变异（让 `trade-panel.tsx` 重新导入注册表）失败后还原；typecheck、`pnpm check` 通过。全量单测跑了两次：第一次用默认超时，当时 `uptime` 的负载均值在 90 以上，4 个文件超时（`chart-build-assets`、`global-modals-hip3-disclaimer`、`root-route-transition`、`positions-panel-preload`），四者单独运行通过；第二次把用例与钩子超时放宽到 60 秒、3 个工作进程，665 个文件通过、1 个跳过，8785 项通过、1 项跳过。修复尚未推送，CI 还没有在它上面运行。
+- 修复提交 `0cd431ec` 的包体（固定构建元数据，与重定基线时同一规程）：总量 3,297,386，比 `f9bae822` 多 58 字节，按新基线 +9,395，离上限 605 字节；静态交易启动 +139，手机运行时 +3，桌面运行时 +44。基线没有再动。
 
 ## 后续与替代关系
 
