@@ -4,7 +4,7 @@ import { Button, Dropdown } from "@sairn/ui";
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import { Suspense } from "react";
 import { BrandLogo } from "@/components/brand/brand-logo";
-import { depositModalIntentProps } from "@/components/trade/components/lazy-global-modals";
+import { depositModalIntentProps } from "@/components/trade/components/deposit-modal-intent";
 import { BRAND_NAME } from "@/config/brand";
 import { DESKTOP_NAV_ITEMS, DESKTOP_NAV_LABELS } from "@/config/desktop-nav";
 import {

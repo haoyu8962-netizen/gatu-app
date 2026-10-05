@@ -3,7 +3,7 @@ import { Button } from "@sairn/ui";
 import { type ChangeEvent, Suspense, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useSwitchChain, useWalletClient } from "wagmi";
 import { ButtonLoading } from "@/components/brand/button-loading";
-import { depositModalIntentProps } from "@/components/trade/components/lazy-global-modals";
+import { depositModalIntentProps } from "@/components/trade/components/deposit-modal-intent";
 import { LazyDialogHost } from "@/components/ui/lazy-dialog-host";
 import { getFormattedMidPrice } from "@/components/ui/price-input";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";

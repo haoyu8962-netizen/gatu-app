@@ -2,7 +2,7 @@ import { useLingui } from "@lingui/react/macro";
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useSwitchChain, useWalletClient } from "wagmi";
 import { ButtonLoading } from "@/components/brand/button-loading";
-import { depositModalIntentProps } from "@/components/trade/components/lazy-global-modals";
+import { depositModalIntentProps } from "@/components/trade/components/deposit-modal-intent";
 import { LazyDialogHost } from "@/components/ui/lazy-dialog-host";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import { APPROVAL_ERROR_DISMISS_MS } from "@/config/time";

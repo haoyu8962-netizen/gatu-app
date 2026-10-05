@@ -1,6 +1,6 @@
 import { useLingui } from "@lingui/react/macro";
 import { useId } from "react";
-import { depositModalIntentProps } from "@/components/trade/components/lazy-global-modals";
+import { depositModalIntentProps } from "@/components/trade/components/deposit-modal-intent";
 import { ACCOUNT_LABELS } from "@/config/account-labels";
 import { useAccountModeLabels } from "@/hooks/trade/use-account-mode-labels";
 import { useNumberFormat } from "@/lib/format";

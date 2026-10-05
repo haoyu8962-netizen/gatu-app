@@ -156,12 +156,15 @@ vi.mock("@/stores/use-global-modal-store", () => ({
 	useSettingsDialogActions: () => ({ open: testState.settingsOpen }),
 }));
 
-vi.mock("@/components/trade/components/lazy-global-modals", () => ({
+vi.mock("@/components/trade/components/deposit-modal-intent", () => ({
 	depositModalIntentProps: {
 		onPointerEnter: testState.warmDepositModal,
 		onPointerDown: testState.warmDepositModal,
 		onFocus: testState.warmDepositModal,
 	},
+}));
+
+vi.mock("@/components/trade/components/lazy-global-modals", () => ({
 	preloadGlobalModal: testState.preloadGlobalModal,
 }));
 

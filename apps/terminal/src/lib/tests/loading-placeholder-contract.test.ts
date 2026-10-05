@@ -70,6 +70,20 @@ const DEPOSIT_OPENERS: Record<string, { opens: number; warms: number; note?: str
 	},
 };
 
+// The module that owns the lazy global modals holds a dynamic import of every one of them. A bundler
+// and Vite's dependency scan follow those imports, so a component that imports the owner pulls every
+// global modal into each page and browser fixture that renders the component: on this branch that
+// broke the dependency scan of the order-entry fixture and timed out its first test in CI. Controls
+// take the warm-up from `deposit-modal-intent` instead, which imports nothing.
+const LAZY_GLOBAL_MODALS_MODULE = /["'][^"']*\/lazy-global-modals["']/;
+/from\s+"(?:@\/components\/trade\/components|\.\.?(?:\/components)?)\/lazy-global-modals"/;
+const LAZY_GLOBAL_MODALS_IMPORTERS: Record<string, string> = {
+	"components/trade/components/global-modals.tsx": "the host that renders the lazy global modals",
+	"components/trade/components/position-dialog-host-gate.tsx": "the host of the lazy position dialogs",
+	"components/trade/mobile/mobile-nav-drawer.tsx": "preloads the settings modal before the drawer closes",
+};
+const DEPOSIT_INTENT_MODULE = "components/trade/components/deposit-modal-intent.ts";
+
 const DEPOSIT_ACTIONS_BINDING = /const\s+(\{[^}]*\}|\w+)\s*=\s*useDepositModalActions\(\)/g;
 const DEPOSIT_ACTIONS_USE = /(?<!function )useDepositModalActions\(\)/g;
 const DEPOSIT_WARM_SPREAD = /\{\.\.\.[^{}]*\bdepositModalIntentProps\b/g;
@@ -183,6 +197,22 @@ describe("loading placeholder contract", () => {
 		expect(found).toEqual(registered);
 		for (const [file, { opens, warms, note }] of Object.entries(DEPOSIT_OPENERS)) {
 			expect(opens === warms || Boolean(note), `${file} needs a note`).toBe(true);
+		}
+	});
+
+	it("keeps the owner of the lazy global modals out of the controls that warm the deposit dialog", () => {
+		const importers = sources.filter(({ text }) => LAZY_GLOBAL_MODALS_MODULE.test(text)).map(({ file }) => file);
+		const intent = read(DEPOSIT_INTENT_MODULE);
+
+		expect(importers.sort()).toEqual(Object.keys(LAZY_GLOBAL_MODALS_IMPORTERS).sort());
+		expect(intent).not.toMatch(/^import\s|\bimport\(|\brequire\(/m);
+		expect(read("components/trade/components/lazy-global-modals.ts")).toContain(
+			"registerDepositModalWarmUp(warmDepositModal);",
+		);
+		for (const { file, text } of sources) {
+			if (!DEPOSIT_WARM_SPREAD.test(text)) continue;
+			DEPOSIT_WARM_SPREAD.lastIndex = 0;
+			expect(text, file).toMatch(/import \{ depositModalIntentProps \} from "[^"]*\/deposit-modal-intent";/);
 		}
 	});
 });

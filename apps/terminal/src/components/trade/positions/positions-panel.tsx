@@ -2,7 +2,7 @@ import { useLingui } from "@lingui/react";
 import { Trans } from "@lingui/react/macro";
 import { Button, Tabs, TabsContent, TabsList, TabsTrigger, Tooltip } from "@sairn/ui";
 import { Suspense, useEffect, useId, useMemo, useRef, useState } from "react";
-import { depositModalIntentProps } from "@/components/trade/components/lazy-global-modals";
+import { depositModalIntentProps } from "@/components/trade/components/deposit-modal-intent";
 import { Spinner } from "@/components/ui/spinner";
 import { PORTFOLIO_TRANSFERS_TAB } from "@/config/account-ledger";
 import { HL_ALL_DEXS } from "@/config/app";

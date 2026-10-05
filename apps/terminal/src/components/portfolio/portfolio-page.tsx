@@ -4,7 +4,7 @@ import { Button, Tooltip } from "@sairn/ui";
 import { Suspense, useCallback, useId, useState } from "react";
 import { DashboardHeader, FooterBar, GlobalModals } from "@/components/dashboard/dashboard-chrome";
 import { DashboardFrameView } from "@/components/dashboard/dashboard-frame-view";
-import { depositModalIntentProps } from "@/components/trade/components/lazy-global-modals";
+import { depositModalIntentProps } from "@/components/trade/components/deposit-modal-intent";
 import { DASHBOARD_FRAMES } from "@/config/dashboard-frames";
 import { isQuoteBalanceSharedWithPerps } from "@/domain/trade/balances";
 import { getFundsAvailabilityNotice } from "@/domain/trade/data-presentation";

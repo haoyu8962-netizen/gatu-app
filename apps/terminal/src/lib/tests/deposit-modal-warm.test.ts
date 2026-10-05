@@ -59,6 +59,29 @@ describe("deposit dialog warm-up", () => {
 		expect(renderOutsideReact(DepositModal)?.type).toBe(LoadedDepositModal);
 	});
 
+	it("does nothing on intent until the owner of the lazy dialog has loaded, then warms through it", async () => {
+		vi.resetModules();
+		const before = await import("@/components/trade/components/deposit-modal-intent");
+
+		before.depositModalIntentProps.onPointerEnter();
+		before.depositModalIntentProps.onPointerDown();
+		before.depositModalIntentProps.onFocus();
+		await settle();
+		expect(testState.imports).toBe(0);
+
+		const { DepositModal } = await loadLazyGlobalModals();
+		const { depositModalIntentProps } = await import("@/components/trade/components/deposit-modal-intent");
+
+		depositModalIntentProps.onPointerEnter();
+		depositModalIntentProps.onPointerDown();
+		depositModalIntentProps.onFocus();
+		await vi.waitFor(() => expect(testState.imports).toBe(1));
+		await DepositModal.preload?.();
+
+		expect(renderOutsideReact(DepositModal)?.type).toBe(LoadedDepositModal);
+		expect(testState.imports).toBe(1);
+	});
+
 	it("warms again after a failed warm-up", async () => {
 		testState.importFails = true;
 		const { warmDepositModal } = await loadLazyGlobalModals();

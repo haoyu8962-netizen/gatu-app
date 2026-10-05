@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { createLazyComponent, preloadLazyComponents } from "@/lib/lazy";
+import { registerDepositModalWarmUp } from "./deposit-modal-intent";
 
 function importDepositModal() {
 	return import("../tradebox/deposit-modal");
@@ -55,12 +56,7 @@ export function warmDepositModal(): void {
 	);
 }
 
-/** Spread onto every control that opens the deposit dialog, while it can open it (`loading-placeholder-contract`). */
-export const depositModalIntentProps = {
-	onPointerEnter: warmDepositModal,
-	onPointerDown: warmDepositModal,
-	onFocus: warmDepositModal,
-} as const;
+registerDepositModalWarmUp(warmDepositModal);
 
 /**
  * Warms the lazy modal chunks after the surface has settled, so the first open of a global modal

@@ -159,6 +159,17 @@ Codex 只读对抗审查（`gpt-6-astra`，medium，静态推演，接上一条�
 - 处理：总量基线 3,287,651 → 3,287,991（+340），沿用「dev 已用掉的额度继续计入」的惯例，分支头在固定元数据下读 +9,337，与 dev 相同，离上限 663 字节。其他基线不动。用新基线对「后」的构建产物重跑预算脚本，读数 +9,337，退出码 0；`check-client-bundle-budget.test.mjs` 19 项通过。
 - 这次重定基线只抵掉本分支自己的增量，没有扩大 dev 原有的余量；CI 用的是合并提交的哈希，读数仍可能上下浮动几百字节。
 
+### PR #78 的 CI：浏览器回归失败及其原因
+
+PR：zora4523-bot/gatu-app#78（`aa809ae2`）。用户要求检查 CI 结果。7 项检查里 5 项通过、`claude` 一项跳过，`Terminal browser regressions (2/2)` 失败（运行 37264345736）。生产构建通过，CI 读数为总量 3,297,545，按新基线 +9,554，离上限 446 字节（按旧基线也只剩 106）。
+
+- 失败的用例：`mobile-trade-all-orders.pw.ts:387`「preserves quantity, its denomination and reduce-only through real desktop/mobile remounts」，该配置里的第一条，在第一次点击「Order type」时 30 秒超时。同一运行里另外 22 条通过。
+- 原因在本分支，不是偶发：日志里夹具服务器打印 `Failed to run dependency scan. Skipping dependency pre-bundling`，随后是一串 `No matching export in "tests/browser/mobile-trade-all-orders.browser.tsx"`，引用方是 `spot-swap-modal.tsx`、`position-tpsl-modal.tsx` 等全局弹窗。同一工作流在基于 dev 的上一次通过运行（37143609264）里这类报错为 0；本次运行里 `mobile-trade-all-orders`、`account-actions`、`top-nav-connected` 三个夹具都出现。本分支最早的改动让各存款入口从 `lazy-global-modals` 取 `depositModalIntentProps`，而那个模块对每个全局弹窗都有一条动态导入；Vite 的依赖扫描会跟进动态导入，于是凡是渲染存款入口的夹具都要扫描全部全局弹窗，夹具的替身模块没有这些弹窗需要的导出，扫描失败、不做预打包，第一条用例在冷启动里超时。本机清掉该夹具缓存后按 `CI=1` 复跑同一条用例：扫描同样失败、26 条缺失导出，但 17 秒通过，本机比 CI 快所以没有暴露。
+- 这也回答了上一条记录留下的疑问：`account-actions` 夹具启动时的缺失导出报错是本分支带来的，不是此前就有。
+- 修复：新增 `components/trade/components/deposit-modal-intent.ts`，不导入任何模块，只持有一个由 `lazy-global-modals` 加载时登记的预热函数；十个存款入口改从它取 `depositModalIntentProps`。`lazy-global-modals` 的组件引用方恢复为 dev 上的三个（全局弹窗宿主、持仓弹窗宿主、导航抽屉）。弹窗宿主尚未加载时意图不做任何事。
+- 防止再犯：`loading-placeholder-contract` 新增一项，登记 `lazy-global-modals` 的引用方清单并要求意图模块不含任何导入；规范 Loading placeholders 一节写明原因。`deposit-modal-warm` 新增一项：宿主模块加载前意图不触发导入，加载后经登记的函数只导入一次。
+- 验证（工作区，提交前）：三个夹具清掉各自的依赖缓存后按 `CI=1` 整套运行，依赖扫描失败 0 次、缺失导出 0 条，分别 47、36、13 项通过；契约变异（让 `trade-panel.tsx` 重新导入注册表）失败后还原；typecheck、`pnpm check` 通过。全量单测跑了两次：第一次用默认超时，当时 `uptime` 的负载均值在 90 以上，4 个文件超时（`chart-build-assets`、`global-modals-hip3-disclaimer`、`root-route-transition`、`positions-panel-preload`），四者单独运行通过；第二次把用例与钩子超时放宽到 60 秒、3 个工作进程，665 个文件通过、1 个跳过，8785 项通过、1 项跳过。修复尚未推送，CI 还没有在它上面运行。
+
 ## 后续与替代关系
 
 - 完成了上一条记录「未做」里的 Safari（以 WebKit 代替）、生产构建与包体预算、状态屏与错误网络屏三项，其余仍未做的见上。

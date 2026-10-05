@@ -2,7 +2,7 @@ import { useLingui } from "@lingui/react/macro";
 import { ArrowsLeftRightIcon } from "@phosphor-icons/react";
 import { Button, Tooltip } from "@sairn/ui";
 import { useId } from "react";
-import { depositModalIntentProps } from "@/components/trade/components/lazy-global-modals";
+import { depositModalIntentProps } from "@/components/trade/components/deposit-modal-intent";
 import { LIFI_BRIDGE_FEATURES, shouldShowLiFiBridgeTab } from "@/config/lifi-bridge";
 import { getFundsAvailabilityNotice } from "@/domain/trade/data-presentation";
 import { useAccountOverview } from "@/hooks/trade/use-account-overview";
