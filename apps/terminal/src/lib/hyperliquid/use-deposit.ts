@@ -60,6 +60,7 @@ import {
 	buildCctpSponsoredDepositContractArgs,
 	CCTP_EXTENSION_ABI,
 	CCTP_EXTENSION_V2_ABI,
+	CctpDepositBelowMinimumError,
 	calculateCctpDepositFee,
 	createCctpDepositParameters,
 	createCctpSponsoredDepositParameters,
@@ -329,6 +330,24 @@ function createChainSwitchError(config: DepositChainConfig, error: unknown): Loc
 
 function sleep(ms: number) {
 	return new Promise<void>((resolve) => setTimeout(resolve, ms));
+}
+
+const CCTP_FEE_CHANGED_MESSAGE = msg`Circle fees changed before submission. Review the updated fee and retry.`;
+
+/**
+ * A fresh quote can raise Circle's fee until the amount no longer covers twice of it. The dialog
+ * refuses such an amount against its own quote, so at execution the shortfall means the fee changed
+ * since the review, and the user is told that rather than a generic failure.
+ */
+function withExecutionCctpFee<T>(compute: () => T): T {
+	try {
+		return compute();
+	} catch (error) {
+		if (error instanceof CctpDepositBelowMinimumError) {
+			throw new LocalizedActionError(CCTP_FEE_CHANGED_MESSAGE, { cause: error });
+		}
+		throw error;
+	}
 }
 
 function toChainHex(chainId: number): `0x${string}` {
@@ -1275,7 +1294,7 @@ export function useDeposit({
 							msg`Circle Fast Transfer capacity is temporarily unavailable. Try again later.`,
 						);
 					}
-					const parameters =
+					const parameters = withExecutionCctpFee(() =>
 						mode === "smart"
 							? createCctpSponsoredDepositParameters({
 									amountRaw,
@@ -1291,15 +1310,14 @@ export function useDeposit({
 									nonce: createAuthorizationNonce(),
 									nowSeconds: Math.floor(Date.now() / 1000),
 									user: ready.address as Address,
-								});
+								}),
+					);
 					const reviewedCctpMaxFeeRaw = review?.expectedCctpMaxFeeRaw ?? expectedCctpMaxFeeRaw;
 					if (
 						executionScope === "manual" &&
 						(reviewedCctpMaxFeeRaw === undefined || parameters.depositForBurn.maxFee !== reviewedCctpMaxFeeRaw)
 					) {
-						throw new LocalizedActionError(
-							msg`Circle fees changed before submission. Review the updated fee and retry.`,
-						);
+						throw new LocalizedActionError(CCTP_FEE_CHANGED_MESSAGE);
 					}
 					const smartClient = mode === "smart" ? await getClientForChain({ id: cctpDepositConfig.chainId }) : undefined;
 					if (mode === "smart") {
@@ -1324,10 +1342,9 @@ export function useDeposit({
 							msg`Circle Fast Transfer capacity is temporarily unavailable. Try again later.`,
 						);
 					}
-					if (calculateCctpDepositFee(amountRaw, freshFeeQuote).maxFeeRaw !== parameters.depositForBurn.maxFee) {
-						throw new LocalizedActionError(
-							msg`Circle fees changed before submission. Review the updated fee and retry.`,
-						);
+					const freshFee = withExecutionCctpFee(() => calculateCctpDepositFee(amountRaw, freshFeeQuote));
+					if (freshFee.maxFeeRaw !== parameters.depositForBurn.maxFee) {
+						throw new LocalizedActionError(CCTP_FEE_CHANGED_MESSAGE);
 					}
 					await assertFreshSelectedDepositRoute();
 					let sourceHash: Hash;

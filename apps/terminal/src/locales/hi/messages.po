@@ -1621,7 +1621,6 @@ msgid "Circle Fast Transfer capacity is temporarily unavailable. Try again later
 msgstr "Circle Fast Transfer क्षमता अस्थायी रूप से उपलब्ध नहीं है। बाद में फिर से कोशिश करें।"
 
 #: src/lib/hyperliquid/use-deposit.ts
-#: src/lib/hyperliquid/use-deposit.ts
 msgid "Circle fees changed before submission. Review the updated fee and retry."
 msgstr "सबमिशन से पहले Circle शुल्क बदल गए। अपडेट किए गए शुल्क की समीक्षा करके फिर से कोशिश करें।"
 

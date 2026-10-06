@@ -171,6 +171,13 @@ PR：zora4523-bot/gatu-app#78（`aa809ae2`）。用户要求检查 CI 结果。7
 - 验证（工作区，提交前）：三个夹具清掉各自的依赖缓存后按 `CI=1` 整套运行，依赖扫描失败 0 次、缺失导出 0 条，分别 47、36、13 项通过；契约变异（让 `trade-panel.tsx` 重新导入注册表）失败后还原；typecheck、`pnpm check` 通过。全量单测跑了两次：第一次用默认超时，当时 `uptime` 的负载均值在 90 以上，4 个文件超时（`chart-build-assets`、`global-modals-hip3-disclaimer`、`root-route-transition`、`positions-panel-preload`），四者单独运行通过；第二次把用例与钩子超时放宽到 60 秒、3 个工作进程，665 个文件通过、1 个跳过，8785 项通过、1 项跳过。修复尚未推送，CI 还没有在它上面运行。
 - 修复提交 `0cd431ec` 的包体（固定构建元数据，与重定基线时同一规程）：总量 3,297,386，比 `f9bae822` 多 58 字节，按新基线 +9,395，离上限 605 字节；静态交易启动 +139，手机运行时 +3，桌面运行时 +44。基线没有再动。
 
+### PR #78 的第二轮 CI 与机器人评审
+
+- 修复推送后（`ff7da285`）第二轮 CI 六项全部通过，`mergeStateStatus` 为 CLEAN；用户问是否已合并时尚未合并。
+- PR 上有一条 Codex 机器人的行内评论（P2，`lib/trade/cctp-deposit.ts:414`）：执行阶段两次直接计算手续费（构造参数时，以及签名后再取一次报价时），若新报价把金额推到最低额以下，`CctpDepositBelowMinimumError` 会越过既有的「Circle fees changed before submission」归类，落成笼统的「Deposit failed」。核实后成立：`createCctpDepositParameters` / `createCctpSponsoredDepositParameters` 内部调用 `calculateCctpDepositFee`，签名后的核对也直接调用，两处都没有接住这个错误。
+- 处理：`use-deposit.ts` 新增 `withExecutionCctpFee`，把该错误转成同一条本地化的「手续费已变化」错误（保留 `cause`），两处调用都经由它；三处同一文案收成一个 `msg` 常量。`use-deposit-routing-guard` 新增两条用例：第一次报价（签名前）与签名后的第二次报价分别把金额推到最低额以下，断言不签名或不广播、错误是 `LocalizedActionError` 且文案含「fees changed」；两条在修复前失败、修复后通过。
+- 验证（工作区，提交前）：typecheck、`pnpm check` 通过；存款执行与弹窗相关 8 个测试文件 620 项通过。没有重跑全量单测与浏览器测试，交给 CI。
+
 ## 后续与替代关系
 
 - 完成了上一条记录「未做」里的 Safari（以 WebKit 代替）、生产构建与包体预算、状态屏与错误网络屏三项，其余仍未做的见上。
