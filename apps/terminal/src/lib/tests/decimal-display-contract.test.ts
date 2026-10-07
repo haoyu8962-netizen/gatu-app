@@ -130,6 +130,10 @@ const REGISTERED_FIXED_POINT_CALLS: Readonly<Record<string, Registration>> = {
 		count: 2,
 		use: "chart tick values before formatPercent",
 	},
+	"lib/chart/price-format.ts": {
+		count: 1,
+		use: "tick sizes in the TradingView variable_tick_size symbol field, read by the chart library and never shown as text",
+	},
 	"lib/lifi/use-quote.ts": {
 		count: 1,
 		use: "LI.FI smallest-unit amount",

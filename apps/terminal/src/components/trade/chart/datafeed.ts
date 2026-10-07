@@ -3,11 +3,11 @@ import type { AllMidsResponse, MetaResponse } from "@nktkas/hyperliquid";
 import { CHART_HISTORY_REQUEST_TIMEOUT_MS } from "@/config/time";
 import { candleSnapshotToBar, filterAndSortBars } from "@/lib/chart/candle";
 import { CandleRateLimitError, requestCandleSnapshot } from "@/lib/chart/candle-gate";
+import { type ChartPriceFormat, getChartPriceFormat } from "@/lib/chart/price-format";
 import { type CandleInterval, resolutionToBarMs, resolutionToInterval } from "@/lib/chart/resolution";
 import { getCandleStore, streamKey } from "@/lib/chart/store";
 import {
 	coinFromSymbolName,
-	inferPriceScaleFromMids,
 	isChartDisplaySymbolName,
 	normalizeChartSymbolKey,
 	symbolFromCoin,
@@ -31,7 +31,6 @@ import type {
 import {
 	ALL_MIDS_TTL_MS,
 	CHART_DATAFEED_CONFIG,
-	DEFAULT_PRICESCALE,
 	EXCHANGE,
 	SESSION_24X7,
 	SUPPORTED_RESOLUTIONS,
@@ -140,27 +139,29 @@ async function getAllMids(dex?: string): Promise<AllMidsResponse> {
 	return request;
 }
 
-async function isKnownCoin(coin: string): Promise<boolean> {
+async function findListedPerp(coin: string): Promise<MetaResponse["universe"][number] | undefined> {
 	// Structured spot and HIP-3 symbols must be resolved from the application's market metadata.
 	// Their shape alone does not prove that Hyperliquid accepts the coin.
-	if (coin.startsWith("@") || coin.includes(":")) return false;
+	if (coin.startsWith("@") || coin.includes(":")) return undefined;
 
-	// Perp markets - check against meta
 	try {
 		const meta = await getMeta();
-		return meta.universe.some((asset) => asset.name === coin && !(asset.isDelisted ?? false));
+		return meta.universe.find((asset) => asset.name === coin && !(asset.isDelisted ?? false));
 	} catch {
-		return false;
+		return undefined;
 	}
 }
 
-async function inferPriceScale(coin: string): Promise<number> {
-	try {
-		const mids = await getAllMids(getDexForCoin(coin));
-		return inferPriceScaleFromMids(coin, mids);
-	} catch {
-		return DEFAULT_PRICESCALE;
-	}
+async function isKnownCoin(coin: string): Promise<boolean> {
+	return (await findListedPerp(coin)) !== undefined;
+}
+
+async function inferPerpPriceFormat(coin: string): Promise<ChartPriceFormat> {
+	const [asset, mids] = await Promise.all([
+		findListedPerp(coin),
+		getAllMids(getDexForCoin(coin)).catch(() => undefined),
+	]);
+	return getChartPriceFormat(asset?.szDecimals, "perp", mids?.[coin]);
 }
 
 function cacheKey(symbol: LibrarySymbolInfo, resolution: ResolutionString): string {
@@ -265,7 +266,6 @@ const configuration: DatafeedConfiguration = {
 interface DatafeedOptions {
 	getHistoryTargetGeneration?: () => number;
 	getHistoryTarget?: () => { coin: string; resolution: ResolutionString };
-	getPriceScale?: (coin: string) => number | undefined;
 	isKnownCoin?: (coin: string) => boolean | undefined;
 	getSymbolInfo?: (
 		symbolName: string,
@@ -276,6 +276,7 @@ interface DatafeedOptions {
 				ticker: string;
 				description?: string;
 				pricescale?: number;
+				variable_tick_size?: string;
 		  }
 		| undefined;
 	onRealtimeReset?: () => void;
@@ -521,8 +522,10 @@ export function createDatafeed(options: DatafeedOptions = {}): ChartDatafeed {
 					return;
 				}
 
-				const pricescale =
-					resolvedSymbol?.pricescale ?? options.getPriceScale?.(apiTicker) ?? (await inferPriceScale(apiTicker));
+				const priceFormat: ChartPriceFormat =
+					resolvedSymbol?.pricescale === undefined
+						? await inferPerpPriceFormat(apiTicker)
+						: { pricescale: resolvedSymbol.pricescale, variable_tick_size: resolvedSymbol.variable_tick_size };
 				if (destroyed) return;
 
 				const symbolInfo: LibrarySymbolInfo = {
@@ -535,7 +538,8 @@ export function createDatafeed(options: DatafeedOptions = {}): ChartDatafeed {
 					exchange: EXCHANGE,
 					listed_exchange: EXCHANGE,
 					format: CHART_DATAFEED_CONFIG.FORMAT,
-					pricescale,
+					pricescale: priceFormat.pricescale,
+					...(priceFormat.variable_tick_size ? { variable_tick_size: priceFormat.variable_tick_size } : {}),
 					minmov: CHART_DATAFEED_CONFIG.MIN_MOVEMENT,
 					has_intraday: true,
 					intraday_multipliers: ["1", "3", "5", "15", "30", "60", "120", "240", "480", "720"],

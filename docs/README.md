@@ -21,12 +21,12 @@
 | 主题 | 设计、行为与验证入口 |
 | --- | --- |
 | 产品稳定约束与运行边界 | [AGENTS](../AGENTS.md)、[Runtime guardrails](runtime-guardrails.md) |
-| 钱包身份与首次交易 | [首次交易](trading-onboarding.md)、[邮箱签名](email-trading-signing.md)、[签名机制](hyperliquid-signing.md)、[签名 ADR](adr/0002-exact-owner-trading-signers.md) |
+| 钱包身份与首次交易 | [首次交易](trading-onboarding.md)、[邮箱签名](email-trading-signing.md)、[签名机制](hyperliquid-signing.md)、[签名 ADR](adr/0002-exact-owner-trading-signers.md)、[邮箱钱包静默创建 ADR 0033](adr/0033-silent-email-wallet-creation.md) |
 | 钱包调试与桌面配对 | [初始化调试](wallet-initialization-debugging.md)、[Privy 主题与钱包稳定性](adr/0026-privy-follows-theme-after-upgrade.md)、[手机访问与扫码设计](mobile-phone-access-scanner-prd.md)、[设备验证清单](mobile-phone-access-device-validation.md) |
 | 充值、提现与资金 | [CCTP 充值](cctp-deposits.md)、[Privy 升级与法币入金规划](privy-upgrade-and-funding-plan.md)、[银行卡入金 ADR 0034](adr/0034-privy-card-funding.md)（默认关闭；[上线验收清单](privy-card-funding-launch-checklist.md)、[法律文本待审草案](privy-card-funding-legal-draft.md)）、[提现路由](withdrawals.md)、[账户概要](account-overview.md)、[Portfolio 统计](portfolio-statistics.md) |
 | Earn 借贷储备池 | [Earn](earn.md)、[ADR 0021](adr/0021-earn-borrow-lend-page.md)：数据来源、Max 与清算价公式、按钮门控、提交核验、与官方终端的偏差；未做真实钱包验收 |
 | 账户共享模型 | [账户 ADR](adr/0001-account-overview-cross-shell-model.md)；账户概要与 Portfolio 的就绪条件不同 |
-| 市场身份、路由与展示价格 | [单交易路由迁移](architecture/trade-single-route-migration.md)、[价格来源审查](price-source-audit.md)、[资产资料来源](spot-asset-information.md) |
+| 市场身份、路由与展示价格 | [单交易路由迁移](architecture/trade-single-route-migration.md)、[价格来源审查](price-source-audit.md)、[资产资料来源](spot-asset-information.md)、[图表价格精度 ADR 0035](adr/0035-chart-price-precision-from-market-rules.md) |
 | 下单状态与桌面/移动表单 | [草稿生命周期](order-draft-lifecycle.md)、[双端一致性](order-entry-surface-parity.md)、[表单布局](order-entry-layout-audit.md)、[TWAP 回归](twap-regression-tests.md)（含 TWAP 成交 CSV 导出）、[未平仓量上限拦截](open-interest-cap.md)（[ADR 0023](adr/0023-open-interest-cap-advisory-check.md)）；[只减仓修复方案](reduce-only-repair-plan.md)记录已实施设计、官方有仓位表单观察与验收矩阵 |
 | 确认弹窗：展示与执行 | [确认面契约](confirmation-surfaces.md)、[ADR 0017](adr/0017-market-close-confirmed-size-ceiling.md)、[ADR 0014](adr/0014-market-close-submit-and-dismiss.md)；当前实施状态与保留例外见契约。[TP/SL 大额滑点提示](position-tpsl-slippage-warning.md)与[杠杆弹窗仓位上限](leverage-position-limit.md)是只读提示，不参与提交 |
 | HIP-3 部署者免责声明 | [行为、出口与官方对照](hip3-deployer-disclaimer.md)：交易页只能确认或「离开此市场」，四个平仓流程先显示可取消的声明，全部平仓在接受时重新生成快照 |
