@@ -4,6 +4,7 @@ import { Button, Dropdown } from "@sairn/ui";
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import { Suspense } from "react";
 import { BrandLogo } from "@/components/brand/brand-logo";
+import { depositModalIntentProps } from "@/components/trade/components/deposit-modal-intent";
 import { BRAND_NAME } from "@/config/brand";
 import { DESKTOP_NAV_ITEMS, DESKTOP_NAV_LABELS } from "@/config/desktop-nav";
 import {
@@ -171,6 +172,7 @@ export function TopNav({ mode = "default" }: Props) {
 						title={depositAvailability.unavailableReason ?? undefined}
 						iconLeft={depositAvailability.available ? <DownloadSimpleIcon className="size-[18px]" /> : undefined}
 						data-top-nav-deposit=""
+						{...(!isMarketLoading && depositAvailability.available ? depositModalIntentProps : undefined)}
 						className={cn(
 							APP_BAR_BUTTON_HEIGHT_CLASS,
 							TOP_NAV_DEPOSIT_CLASS,

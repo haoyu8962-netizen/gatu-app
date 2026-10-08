@@ -963,7 +963,6 @@ msgstr "Arbitrum (लेगेसी)"
 
 #: src/lib/errors/action-error.ts
 #: src/lib/hyperliquid/use-deposit.ts
-#: src/lib/tests/wrong-network-screen.test.tsx
 msgid "Arbitrum network switch was rejected."
 msgstr "Arbitrum नेटवर्क स्विच अस्वीकार कर दिया गया।"
 
@@ -1136,7 +1135,6 @@ msgstr "औसत {price}"
 #: src/components/trade/tradebox/bridge/bridge-error-screen.tsx
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
-#: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
 #: src/components/vaults/vault-action-modal.tsx
 msgid "Back"
 msgstr "वापस"
@@ -1238,12 +1236,11 @@ msgstr "पोर्टफोलियो मार्जिन मोड मे
 msgid "Bought {quantity}"
 msgstr "{quantity} खरीदा"
 
-#: src/components/trade/components/deposit-modal-loading-fallback.tsx
+#: src/components/trade/components/funds-modal-shell.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/account-panel.tsx
-#: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Bridge"
 msgstr "ब्रिज"
 
@@ -1622,7 +1619,6 @@ msgid "Circle Fast Transfer capacity is temporarily unavailable. Try again later
 msgstr "Circle Fast Transfer क्षमता अस्थायी रूप से उपलब्ध नहीं है। बाद में फिर से कोशिश करें।"
 
 #: src/lib/hyperliquid/use-deposit.ts
-#: src/lib/hyperliquid/use-deposit.ts
 msgid "Circle fees changed before submission. Review the updated fee and retry."
 msgstr "सबमिशन से पहले Circle शुल्क बदल गए। अपडेट किए गए शुल्क की समीक्षा करके फिर से कोशिश करें।"
 
@@ -1738,7 +1734,6 @@ msgstr "सबमिट करने के लिए क्लिक करे�
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/shared-ui.tsx
-#: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
 #: src/components/trade/tradebox/leverage-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
@@ -2582,7 +2577,7 @@ msgstr "डिप्लॉयर"
 #: src/components/portfolio/portfolio-page.tsx
 #: src/components/portfolio/portfolio-page.tsx
 #: src/components/staking/staking-action-modal.tsx
-#: src/components/trade/components/deposit-modal-loading-fallback.tsx
+#: src/components/trade/components/funds-modal-shell.tsx
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
@@ -2599,11 +2594,9 @@ msgstr "डिप्लॉयर"
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
-#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/amount-input.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-method-chooser.tsx
-#: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
 #: src/components/vaults/vault-detail-view.tsx
 #: src/components/vaults/vault-detail-view.tsx
 #: src/config/account-ledger.ts
@@ -4137,8 +4130,12 @@ msgid "Import phone access"
 msgstr "फ़ोन एक्सेस इम्पोर्ट करें"
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
-msgid "Important: this address can only receive native USDC on Arbitrum. Do not send USDC.e or assets from other networks. Minimum deposit is {minimumDeposit}."
-msgstr "महत्वपूर्ण: यह पता केवल Arbitrum पर नेटिव USDC प्राप्त कर सकता है। USDC.e या अन्य नेटवर्क की संपत्तियां न भेजें। न्यूनतम जमा {minimumDeposit} है।"
+msgid "Important: send only native USDC on Arbitrum to this address. Other assets, including USDC.e, and transfers on other networks will not be credited to your trading account."
+msgstr "महत्वपूर्ण: इस पते पर केवल Arbitrum पर नेटिव USDC भेजें। अन्य संपत्तियां, जिनमें USDC.e शामिल है, और अन्य नेटवर्क पर किए गए ट्रांसफ़र आपके ट्रेडिंग खाते में जमा नहीं होंगे।"
+
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+#~ msgid "Important: this address can only receive native USDC on Arbitrum. Do not send USDC.e or assets from other networks. Minimum deposit is {minimumDeposit}."
+#~ msgstr "महत्वपूर्ण: यह पता केवल Arbitrum पर नेटिव USDC प्राप्त कर सकता है। USDC.e या अन्य नेटवर्क की संपत्तियां न भेजें। न्यूनतम जमा {minimumDeposit} है।"
 
 #: src/components/staking/staking-view.tsx
 #: src/components/staking/staking-view.tsx
@@ -4637,7 +4634,6 @@ msgid "Loading recent reward claims…"
 msgstr "हाल के पुरस्कार प्राप्ति रिकॉर्ड लोड हो रहे हैं…"
 
 #: src/components/referrals/referral-dashboard.tsx
-#: src/components/referrals/referral-dashboard.tsx
 msgid "Loading referrals"
 msgstr "रेफ़रल लोड हो रहे हैं"
 
@@ -5092,13 +5088,15 @@ msgid "Minimum <0>{0}</0>; maximum <1>{1}</1>."
 msgstr "न्यूनतम <0>{0}</0>; अधिकतम <1>{1}</1>।"
 
 #. placeholder {0}: ctx.minDeposit
+#. placeholder {0}: numberFormat.formatDecimalString(formatUnits(cctpDepositBelowMinimumRaw, 6))
+#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/lib/errors/definitions/deposit.ts
 msgid "Minimum deposit is {0} USDC"
 msgstr "न्यूनतम जमा {0} USDC है"
 
 #: src/lib/hyperliquid/use-deposit.ts
-msgid "Minimum deposit is 5 USDC"
-msgstr "न्यूनतम जमा 5 USDC है"
+#~ msgid "Minimum deposit is 5 USDC"
+#~ msgstr "न्यूनतम जमा 5 USDC है"
 
 #: src/components/trade/components/spot-swap-modal.tsx
 msgid "Minimum order value is {ORDER_MIN_NOTIONAL_USD} USDC after size rounding."
@@ -8582,16 +8580,14 @@ msgid "Switch to {marketName} market, {sideLabel} order"
 msgstr "{marketName} बाज़ार पर स्विच करें, {sideLabel} ऑर्डर"
 
 #: src/components/trade/mobile/mobile-trade-view.tsx
-#: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
-#: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
 #: src/config/ui-text.ts
 #: src/lib/trade/use-button-content.ts
-msgid "Switch to Arbitrum"
-msgstr "Arbitrum पर स्विच करें"
+#~ msgid "Switch to Arbitrum"
+#~ msgstr "Arbitrum पर स्विच करें"
 
 #: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
-msgid "Switch to Arbitrum to deposit USDC to Hyperliquid"
-msgstr "Hyperliquid में USDC जमा करने के लिए Arbitrum पर स्विच करें"
+#~ msgid "Switch to Arbitrum to deposit USDC to Hyperliquid"
+#~ msgstr "Hyperliquid में USDC जमा करने के लिए Arbitrum पर स्विच करें"
 
 #: src/config/desktop-nav.ts
 msgid "Switch to dark mode"
@@ -8633,12 +8629,15 @@ msgstr "पोर्टफोलियो मार्जिन पर स्व
 msgid "Switched to Unified account"
 msgstr "एकीकृत खाते पर स्विच किया गया"
 
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Switching network"
+msgstr "नेटवर्क बदला जा रहा है"
+
 #: src/components/trade/mobile/mobile-trade-view.tsx
-#: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
 #: src/config/ui-text.ts
 #: src/lib/trade/use-button-content.ts
-msgid "Switching..."
-msgstr "स्विच हो रहा है..."
+#~ msgid "Switching..."
+#~ msgstr "स्विच हो रहा है..."
 
 #: src/components/staking/staking-view.tsx
 msgid "System finalization · hash unavailable"
@@ -10295,7 +10294,6 @@ msgstr "वर्तमान CCTP निकासी शुल्क लोड 
 msgid "Unable to switch wallet to {0}. Switch networks in your wallet and retry."
 msgstr "वॉलेट को {0} पर स्विच नहीं किया जा सका। अपने वॉलेट में नेटवर्क बदलें और दोबारा प्रयास करें।"
 
-#: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
 #: src/lib/errors/action-error.ts
 msgid "Unable to switch wallet to Arbitrum. Switch networks in your wallet and retry."
 msgstr "वॉलेट को Arbitrum पर स्विच नहीं किया जा सका। अपने वॉलेट में नेटवर्क बदलें और फिर से प्रयास करें।"
@@ -10976,7 +10974,6 @@ msgstr "वॉलेट ने ट्रांज़ैक्शन हैश �
 
 #. placeholder {0}: config.chainName
 #: src/lib/hyperliquid/use-deposit.ts
-#: src/lib/hyperliquid/use-deposit.ts
 msgid "Wallet is not connected to {0}. Switch networks in your wallet and retry."
 msgstr "वॉलेट {0} से कनेक्ट नहीं है। अपने वॉलेट में नेटवर्क बदलें और दोबारा प्रयास करें।"
 
@@ -10987,7 +10984,6 @@ msgstr "खाता मोड अपडेट करने के लिए व
 
 #: src/components/trade/tradebox/bridge/shared-ui.tsx
 #: src/components/trade/tradebox/deposit/shared-ui.tsx
-#: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
@@ -11055,7 +11051,7 @@ msgstr "पूरी पोज़िशन"
 #: src/components/portfolio/portfolio-page.tsx
 #: src/components/portfolio/portfolio-page.tsx
 #: src/components/staking/staking-action-modal.tsx
-#: src/components/trade/components/deposit-modal-loading-fallback.tsx
+#: src/components/trade/components/funds-modal-shell.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
@@ -11063,7 +11059,6 @@ msgstr "पूरी पोज़िशन"
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/account-panel.tsx
-#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #: src/components/vaults/vault-detail-view.tsx
 #: src/components/vaults/vault-detail-view.tsx

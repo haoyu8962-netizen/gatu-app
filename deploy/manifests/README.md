@@ -21,4 +21,5 @@ node apps/terminal/tests/browser/chart-analytics-probe.mjs http://localhost:<por
 node apps/terminal/tests/browser/chart-price-format-probe.mjs http://localhost:<port>
 ```
 
+The checked-in digest covers the official v28.3.0 tree plus one local patch to the loader entry and its esm/cjs/standalone copies (`_create` registers the `innerWindowLoad` listener before `document.write`; see `docs/runtime-guardrails.md` §4 and `chart-library-loader-handshake-contract` and `chart-library-loader-handshake`). After re-applying that patch to an upgraded package, regenerate the manifest with the command above so the four loader digests match the patched files.
 The manifest contains metadata only and must never contain TradingView source code or credentials.

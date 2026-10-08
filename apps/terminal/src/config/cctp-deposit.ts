@@ -4,6 +4,7 @@ import { type CctpDepositFeatureEnv, resolveCctpDepositFeatureFlags } from "./cc
 export const CCTP_ARBITRUM_DOMAIN = 3;
 export const CCTP_HYPEREVM_DOMAIN = 19;
 export const CCTP_FAST_FINALITY_THRESHOLD = 1000;
+export const CCTP_DEPOSIT_MAX_FEE_BPS = 1_000;
 export const CCTP_AUTHORIZATION_WINDOW_SECONDS = 60 * 60;
 export const CCTP_MAX_DEPOSIT_USDC = 10_000_000n * 10n ** 6n;
 export const CCTP_TESTNET_MAX_DEPOSIT_USDC = 1_000n * 10n ** 6n;

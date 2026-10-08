@@ -25,6 +25,7 @@ const state = vi.hoisted(() => ({
 	httpRequest: vi.fn(),
 	exchangeLifecycle: { id: Symbol("owner-trading-test"), active: true },
 	externalClient: { account: { address: "0x2222222222222222222222222222222222222222" }, signTypedData: vi.fn() },
+	connectionChainId: 42161 as number,
 }));
 
 vi.mock("@sairn/hl-react/provider", () => ({
@@ -46,7 +47,12 @@ vi.mock("@sairn/hl-react/clients", async (importOriginal) => ({
 vi.mock("../../../../../packages/hl-react/src/signing/use-agent-wallet", () => ({
 	useAgentWallet: () => ({ signer: { address: OTHER }, address: OTHER, isReady: true }),
 }));
-vi.mock("wagmi", () => ({ useWalletClient: () => ({ data: state.externalClient }) }));
+vi.mock("wagmi", () => ({
+	useConnection: () => ({ chainId: state.connectionChainId }),
+	useWalletClient: (parameters?: { chainId?: number }) => ({
+		data: parameters?.chainId === state.connectionChainId ? state.externalClient : undefined,
+	}),
+}));
 
 function wallet() {
 	return {
@@ -138,6 +144,20 @@ describe("embedded owner trading signer", () => {
 		expect(observed.trading).toBe(state.agentClient);
 		expect(observed.agentPublicKey).toBe(OTHER);
 		expect(state.getTradingClient).toHaveBeenCalled();
+	});
+
+	it("builds the external user client from the connection's own chain, configured or not", () => {
+		const previousClient = state.externalClient;
+		state.connectionChainId = 999_999;
+		state.externalClient = { account: { address: OWNER }, signTypedData: vi.fn() };
+		try {
+			render(null);
+			expect(observed.user).not.toBeNull();
+			expect(observed.userWalletMismatch).toBe(false);
+		} finally {
+			state.connectionChainId = 42161;
+			state.externalClient = previousClient;
+		}
 	});
 
 	it("executes a real SDK trading action through the owner session lease without a local Agent key", async () => {

@@ -1,6 +1,5 @@
 import { useLingui } from "@lingui/react/macro";
 import { useMemo } from "react";
-import { ARBITRUM_CHAIN_ID } from "@/config/contracts";
 import { DESKTOP_NAV_LABELS } from "@/config/desktop-nav";
 import { getOrderActionStage } from "@/domain/trade/order-action-stage";
 import type { RegistrationStatus } from "@/lib/hyperliquid";
@@ -8,9 +7,6 @@ import type { ButtonContent, FormValidationResult, Side } from "@/lib/trade/type
 
 interface ButtonContentInput {
 	isConnected: boolean;
-	needsChainSwitch: boolean;
-	isSwitchingChain: boolean;
-	switchChain: (chainId: number) => void;
 	availableBalance: number;
 	reduceOnly?: boolean;
 	isBalanceLoading?: boolean;
@@ -50,7 +46,6 @@ export function useButtonContent(input: ButtonContentInput): ButtonContent {
 	return useMemo<ButtonContent>(() => {
 		const stage = getOrderActionStage({
 			isConnected: input.isConnected,
-			needsChainSwitch: input.needsChainSwitch,
 			needsApproval: input.validation.needsApproval,
 			isSignerReady: input.isSignerReady,
 			hasBalanceError: input.hasBalanceError === true,
@@ -64,14 +59,6 @@ export function useButtonContent(input: ButtonContentInput): ButtonContent {
 				text: t(DESKTOP_NAV_LABELS.wallet),
 				action: input.onConnectWallet,
 				disabled: false,
-				variant: "cyan",
-			};
-		}
-		if (stage === "switchChain") {
-			return {
-				text: input.isSwitchingChain ? t`Switching...` : t`Switch to Arbitrum`,
-				action: () => input.switchChain(ARBITRUM_CHAIN_ID),
-				disabled: input.isSwitchingChain,
 				variant: "cyan",
 			};
 		}
@@ -97,6 +84,7 @@ export function useButtonContent(input: ButtonContentInput): ButtonContent {
 				action: input.canDeposit ? input.onDeposit : () => {},
 				disabled: !input.canDeposit,
 				disabledReason: input.canDeposit ? undefined : (input.depositUnavailableReason ?? undefined),
+				opensDeposit: input.canDeposit,
 				variant: "cyan",
 			};
 		}
@@ -108,9 +96,6 @@ export function useButtonContent(input: ButtonContentInput): ButtonContent {
 		};
 	}, [
 		input.isConnected,
-		input.needsChainSwitch,
-		input.isSwitchingChain,
-		input.switchChain,
 		input.availableBalance,
 		input.reduceOnly,
 		input.isBalanceLoading,

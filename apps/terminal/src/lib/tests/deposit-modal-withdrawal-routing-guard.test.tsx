@@ -8,6 +8,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, type ButtonHTMLAttributes, createElement, type ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { renderFundsModalBackButton } from "@/components/trade/components/funds-modal-back-button";
 import { DepositModal } from "@/components/trade/tradebox/deposit-modal";
 import { AccountAbstractionExecutionError } from "@/hooks/trade/use-account-abstraction-guard";
 import { FundsActionGeoExecutionError } from "@/hooks/trade/use-funds-action-availability";
@@ -72,6 +73,8 @@ const testState = vi.hoisted(() => ({
 		maxFeeRaw: bigint;
 		netAmountRaw: bigint;
 	} | null,
+	cctpDepositBelowMinimumRaw: null as bigint | null,
+	cctpDepositRefetchForwardFeeRaw: 200_000n,
 	cctpDepositFeeCalls: [] as Array<{ amountRaw: bigint | undefined; enabled: boolean; isTestnet: boolean }>,
 	cctpWithdrawalFee: "1",
 	cctpWithdrawalFeeError: false,
@@ -100,7 +103,7 @@ const testState = vi.hoisted(() => ({
 		available: boolean;
 		onBeforeStart: () => void;
 	},
-	isArbitrum: true,
+	networkSwitchPending: false,
 	exchangeGuards: new Map<string, ((params?: unknown, signal?: AbortSignal) => Promise<void>) | undefined>(),
 	exchangeFinalWait: vi.fn(),
 	exchangeErrors: new Map<string, unknown>(),
@@ -117,6 +120,7 @@ const testState = vi.hoisted(() => ({
 	infoQueryCalls: [] as Array<{ enabled: boolean; method: string; params: unknown }>,
 	modalOpen: false,
 	modalOnOpenChange: null as null | ((open: boolean) => void),
+	modalHeader: null as HTMLElement | null,
 	preTransferFresh: {
 		fee: "0",
 		isSanctioned: false,
@@ -162,13 +166,21 @@ const testState = vi.hoisted(() => ({
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 
-vi.mock("@sairn/ui", () => ({
+vi.mock("@sairn/ui", async (importOriginal) => ({
 	Button: ({ children, disabled, onClick }: ButtonHTMLAttributes<HTMLButtonElement>) =>
 		createElement("button", { disabled, onClick, type: "button" }, children),
-	ButtonIcon: ({ children, disabled, onClick, "aria-label": label }: ButtonHTMLAttributes<HTMLButtonElement>) =>
-		createElement("button", { "aria-label": label, disabled, onClick, type: "button" }, children),
+	ButtonIcon: (await importOriginal<typeof import("@sairn/ui")>()).ButtonIcon,
 	ModalContent: ({ children }: { children?: ReactNode }) => createElement("div", null, children),
-	ModalHeader: ({ children }: { children?: ReactNode }) => createElement("div", null, children),
+	ModalHeader: ({ children }: { children?: ReactNode }) =>
+		createElement(
+			"div",
+			{
+				ref: (node: HTMLElement | null) => {
+					testState.modalHeader = node;
+				},
+			},
+			children,
+		),
 	ModalTitle: ({ children, className }: { children?: ReactNode; className?: string }) =>
 		createElement("h2", { className }, children),
 }));
@@ -239,6 +251,7 @@ vi.mock("@/hooks/trade/use-cctp-deposit-fee", () => ({
 		};
 		return {
 			calculation: testState.cctpDepositFeeCalculation,
+			belowMinimumRaw: testState.cctpDepositBelowMinimumRaw,
 			data: { fastAllowanceRaw: 100_000_000n, feeQuote },
 			hasSufficientFastAllowance: true,
 			isError: false,
@@ -246,7 +259,10 @@ vi.mock("@/hooks/trade/use-cctp-deposit-fee", () => ({
 			refetch: vi.fn().mockResolvedValue({
 				data: {
 					fastAllowanceRaw: 100_000_000n,
-					feeQuote,
+					feeQuote: {
+						...feeQuote,
+						forwardFeeRaw: { ...feeQuote.forwardFeeRaw, med: testState.cctpDepositRefetchForwardFeeRaw },
+					},
 				},
 				isError: false,
 			}),
@@ -434,8 +450,6 @@ vi.mock("@/lib/hyperliquid/use-deposit", () => ({
 			executionAmount: testState.depositExecutionAmount,
 			executionRoute: testState.depositExecutionRoute,
 			hash: testState.depositHash,
-			isArbitrum: testState.isArbitrum,
-			isSwitching: false,
 			maxAmount: "10",
 			maxDepositRaw: testState.depositMaxRaw,
 			networkName: "Arbitrum",
@@ -447,12 +461,11 @@ vi.mock("@/lib/hyperliquid/use-deposit", () => ({
 				status: testState.sponsoredReadinessStatus,
 			},
 			status: testState.depositStatus,
-			switchError: null,
-			switchToArbitrum: vi.fn(),
 			validate: () => ({ error: null, valid: true }),
 			walletProviderError: testState.walletProviderError,
 			walletProviderStatus: testState.walletProviderStatus,
 			walletResponseDelayed: false,
+			networkSwitchPending: testState.networkSwitchPending,
 			cctpRecoveryUnavailable: false,
 			submissionOutcomeUnknown: testState.submissionOutcomeUnknown,
 		};
@@ -518,7 +531,15 @@ vi.mock("@/components/trade/tradebox/deposit/deposit-form", () => ({
 		fundingAddress,
 		cctpFee,
 		sponsoredCctpReadiness,
+		amountError,
+		minimumDepositRaw,
+		belowMinimumDepositRaw,
+		validation,
 	}: {
+		amountError?: string | null;
+		minimumDepositRaw: bigint | null;
+		belowMinimumDepositRaw: bigint | null;
+		validation: { valid: boolean; error: string | null };
 		cctpFee?: string | null;
 		fundingAddress?: string;
 		onRetryRouting: () => void;
@@ -537,6 +558,10 @@ vi.mock("@/components/trade/tradebox/deposit/deposit-form", () => ({
 			"div",
 			{
 				"data-cctp-fee": cctpFee,
+				"data-amount-error": amountError ?? undefined,
+				"data-minimum": minimumDepositRaw?.toString(),
+				"data-below-minimum": belowMinimumDepositRaw?.toString(),
+				"data-valid": validation.valid,
 				"data-is-pending": isPending,
 				"data-balance-status": balanceStatus,
 				"data-funding-address": fundingAddress,
@@ -635,15 +660,6 @@ vi.mock("@/components/trade/tradebox/deposit/withdraw-form", () => ({
 	},
 }));
 
-vi.mock("@/components/trade/tradebox/deposit/wrong-network-screen", () => ({
-	WrongNetworkScreen: ({ onBack }: { onBack?: () => void }) =>
-		createElement(
-			"div",
-			{ "data-testid": "wrong-network-screen" },
-			onBack ? createElement("button", { onClick: onBack, type: "button" }, "Back to deposit methods") : null,
-		),
-}));
-
 describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 	let container: HTMLDivElement;
 	let queryClient: QueryClient;
@@ -685,9 +701,10 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 		testState.fiatOffer = null;
 		testState.fiatOfferOptions = null;
 		testState.isTestnet = false;
-		testState.isArbitrum = true;
+		testState.networkSwitchPending = false;
 		testState.modalOpen = false;
 		testState.modalOnOpenChange = null;
+		testState.modalHeader = null;
 		testState.deposit.mockReset();
 		testState.refreshDepositBalance.mockReset().mockResolvedValue(10_000_000n);
 		testState.depositAvailable = true;
@@ -702,6 +719,8 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 		testState.hyperliquidSessionMode = "wallet";
 		testState.emailAddress = null;
 		testState.cctpDepositFeeCalculation = { maxFeeRaw: 200_000n, netAmountRaw: 4_800_000n };
+		testState.cctpDepositBelowMinimumRaw = null;
+		testState.cctpDepositRefetchForwardFeeRaw = 200_000n;
 		testState.cctpDepositFeeCalls.length = 0;
 		testState.cctpWithdrawalFee = "1";
 		testState.cctpWithdrawalFeeError = false;
@@ -1811,6 +1830,64 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 		}
 	});
 
+	it("gives the amount field the minimum failure and the form both minimum values", async () => {
+		testState.modalOpen = true;
+		testState.activeTab = "deposit";
+		testState.routingResponse = { depositRoute: "cctp", withdrawalRoute: "cctp" };
+		testState.cctpDepositFeeCalculation = null;
+		testState.cctpDepositBelowMinimumRaw = 400_000n;
+
+		await rerender();
+
+		const depositForm = container.querySelector('[data-testid="deposit-routing-status"]');
+		expect(depositForm?.getAttribute("data-amount-error")).toBe("Minimum deposit is 0.4 USDC");
+		expect(depositForm?.getAttribute("data-minimum")).toBe("400000");
+		expect(depositForm?.getAttribute("data-below-minimum")).toBe("400000");
+		expect(depositForm?.getAttribute("data-valid")).toBe("false");
+
+		testState.formatLocale = "de-DE";
+		await rerender();
+		expect(container.querySelector('[data-testid="deposit-routing-status"]')?.getAttribute("data-amount-error")).toBe(
+			"Minimum deposit is 0,4 USDC",
+		);
+	});
+
+	it("leaves the amount field without a minimum failure once the amount meets it", async () => {
+		testState.modalOpen = true;
+		testState.activeTab = "deposit";
+		testState.routingResponse = { depositRoute: "cctp", withdrawalRoute: "cctp" };
+
+		await rerender();
+
+		const depositForm = container.querySelector('[data-testid="deposit-routing-status"]');
+		expect(depositForm?.hasAttribute("data-amount-error")).toBe(false);
+		expect(depositForm?.getAttribute("data-minimum")).toBe("400000");
+		expect(depositForm?.hasAttribute("data-below-minimum")).toBe(false);
+	});
+
+	it("reports a fee rise that pushes the reviewed amount below the minimum as a fee change, not a route failure", async () => {
+		testState.modalOpen = true;
+		testState.activeTab = "deposit";
+		testState.emailAddress = "trader@example.com";
+		testState.routingResponse = { depositRoute: "cctp", withdrawalRoute: "cctp" };
+		testState.freshRoutingResponse = { depositRoute: "cctp", withdrawalRoute: "cctp" };
+		testState.depositMaxRaw = 400_000n;
+		testState.cctpDepositFeeCalculation = { maxFeeRaw: 200_000n, netAmountRaw: 200_000n };
+		testState.cctpDepositRefetchForwardFeeRaw = 210_000n;
+
+		await rerender();
+		await act(async () => getButton("Deposit 10 USDC").click());
+
+		expect(testState.deposit).not.toHaveBeenCalled();
+		expect(container.querySelector('[data-testid="deposit-data-error"]')?.textContent).toBe(
+			"Circle fees changed. Review the updated fee, then submit again.",
+		);
+		expect(container.querySelector('[data-testid="deposit-routing-preflight-error"]')).toBeNull();
+		expect(container.querySelector('[data-testid="deposit-routing-status"]')?.getAttribute("data-status")).toBe(
+			"ready",
+		);
+	});
+
 	it("passes the amount-independent Circle forwarding fee to an empty external deposit form", async () => {
 		testState.modalOpen = true;
 		testState.activeTab = "deposit";
@@ -2292,6 +2369,34 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 			expect(depositForm()).toBeNull();
 		});
 
+		it("ships the back button the browser fixture renders, directly inside the header", async () => {
+			offerCardFunding();
+			testState.modalOpen = true;
+			await rerender();
+			chooseMethod("transfer");
+
+			const reference = document.createElement("div");
+			const referenceRoot = createRoot(reference);
+			await act(async () => {
+				referenceRoot.render(renderFundsModalBackButton({ disabled: false, label: "Back", onClick: () => undefined }));
+			});
+			const shared = reference.firstElementChild;
+			const buttons = container.querySelectorAll<HTMLButtonElement>('button[aria-label="Back"]');
+			const header = testState.modalHeader;
+			if (!header || !shared) throw new Error("The dialog header or the reference button was not rendered");
+
+			expect(reference.children).toHaveLength(1);
+			expect(shared.tagName).toBe("BUTTON");
+			expect(shared.className.split(" ")).toContain("z-10");
+			expect(buttons).toHaveLength(1);
+			expect(buttons[0].outerHTML).toBe(shared.outerHTML);
+			expect(buttons[0].parentElement).toBe(header);
+			expect(header.childNodes).toHaveLength(2);
+			expect(header.childNodes[0]).toBe(buttons[0]);
+			expect(header.childNodes[1]).toBe(header.querySelector("h2"));
+			await act(async () => referenceRoot.unmount());
+		});
+
 		it("starts the card purchase from its own entry", async () => {
 			offerCardFunding();
 			testState.modalOpen = true;
@@ -2319,18 +2424,16 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 			expect(methods()).not.toBeNull();
 		});
 
-		it("offers the choice before asking an external wallet to switch to Arbitrum", async () => {
+		it("opens the transfer form for an external wallet without a network gate", async () => {
 			offerCardFunding("external");
-			testState.isArbitrum = false;
 			testState.walletProviderStatus = "ready";
 			testState.modalOpen = true;
 			await rerender();
 			expect(methods()).not.toBeNull();
-			expect(container.querySelector('[data-testid="wrong-network-screen"]')).toBeNull();
 
 			chooseMethod("transfer");
 
-			expect(container.querySelector('[data-testid="wrong-network-screen"]')).not.toBeNull();
+			expect(depositForm()).not.toBeNull();
 		});
 
 		it("closes the deposit dialog before the card purchase starts", async () => {
@@ -2389,18 +2492,19 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 			expect(fiat?.disabled).toBe(true);
 		});
 
-		it("lets an external wallet go back from the network switch to the method choice", async () => {
-			offerCardFunding("external");
-			testState.isArbitrum = false;
-			testState.walletProviderStatus = "ready";
+		it("names the network switch while the wallet is asked to move to Arbitrum", async () => {
 			testState.modalOpen = true;
+			testState.activeTab = "deposit";
+			testState.depositStatus = "pending";
+			testState.networkSwitchPending = true;
 			await rerender();
-			chooseMethod("transfer");
 
-			act(() => getButton("Back to deposit methods").click());
+			expect(container.querySelector('[data-testid="status-heading"]')?.textContent).toBe("Switching network");
 
-			expect(methods()).not.toBeNull();
-			expect(container.querySelector('[data-testid="wrong-network-screen"]')).toBeNull();
+			testState.networkSwitchPending = false;
+			await rerender();
+
+			expect(container.querySelector('[data-testid="status-heading"]')?.textContent).toBe("Confirm in wallet");
 		});
 
 		it("warms the purchase host while the purchase entry is on screen", async () => {

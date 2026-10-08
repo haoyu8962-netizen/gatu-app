@@ -17,7 +17,7 @@ import type {
 } from "viem";
 import { bytesToHex, createWalletClient, custom, encodeFunctionData, formatUnits, isAddress, parseUnits } from "viem";
 import { arbitrum, arbitrumSepolia } from "viem/chains";
-import { useChainId, usePublicClient } from "wagmi";
+import { usePublicClient } from "wagmi";
 import {
 	CCTP_MAX_DEPOSIT_USDC,
 	CCTP_TESTNET_MAX_DEPOSIT_USDC,
@@ -27,9 +27,11 @@ import {
 	isCctpExternalDepositEnabled,
 	isCctpSponsoredDepositEnabled,
 } from "@/config/cctp-deposit";
-import { MIN_DEPOSIT_USDC, USDC_DECIMALS } from "@/config/contracts";
+import { USDC_DECIMALS } from "@/config/contracts";
 import {
 	DEPOSIT_BROADCAST_TIMEOUT_MS,
+	DEPOSIT_CHAIN_SWITCH_POLL_INTERVAL_MS,
+	DEPOSIT_CHAIN_SWITCH_SETTLE_MS,
 	DEPOSIT_CONFIRMATION_TIMEOUT_MS,
 	DEPOSIT_POLL_INTERVAL_MS,
 	DEPOSIT_WALLET_RESPONSE_TIMEOUT_MS,
@@ -60,6 +62,7 @@ import {
 	buildCctpSponsoredDepositContractArgs,
 	CCTP_EXTENSION_ABI,
 	CCTP_EXTENSION_V2_ABI,
+	CctpDepositBelowMinimumError,
 	calculateCctpDepositFee,
 	createCctpDepositParameters,
 	createCctpSponsoredDepositParameters,
@@ -111,10 +114,6 @@ export interface DepositReview {
 }
 
 export interface UseDepositResult {
-	isArbitrum: boolean;
-	switchToArbitrum: () => void;
-	isSwitching: boolean;
-	switchError: Error | null;
 	walletProviderStatus: WalletProviderStatus;
 	walletProviderError: Error | null;
 	networkName: string;
@@ -135,6 +134,7 @@ export interface UseDepositResult {
 	cctpRecoveryUnavailable: boolean;
 	submissionOutcomeUnknown: boolean;
 	walletResponseDelayed: boolean;
+	networkSwitchPending: boolean;
 	deposit: (amount: string, review?: DepositReview) => Promise<void>;
 	refreshBalance: () => Promise<bigint | undefined>;
 	validate: (amount: string, translate: Translate) => ValidationResult;
@@ -159,15 +159,8 @@ interface UsdcBalanceState {
 	error: Error | null;
 }
 
-interface ArbitrumSwitchState {
-	key: string;
-	confirmedChainId: number | null;
-	error: Error | null;
-}
-
 interface ProviderChainState {
 	key: string;
-	chainId: number | null;
 	status: WalletProviderStatus;
 	error: Error | null;
 }
@@ -189,8 +182,8 @@ interface ReadyDepositContext {
 
 interface Eip1193Provider {
 	request(args: { method: string; params?: unknown[] | Record<string, unknown> }): Promise<unknown>;
-	on?(event: "chainChanged", listener: (chainId: string) => void): void;
-	removeListener?(event: "chainChanged", listener: (chainId: string) => void): void;
+	on?(event: "chainChanged", listener: (chainId: unknown) => void): void;
+	removeListener?(event: "chainChanged", listener: (chainId: unknown) => void): void;
 }
 
 interface RpcTransactionLike {
@@ -237,7 +230,6 @@ function validateAmount(amount: string, maxDepositRaw: bigint | undefined, trans
 	try {
 		const raw = parseUnits(trimmed, USDC_DECIMALS);
 		if (raw === 0n) return { valid: false, error: null };
-		if (raw < MIN_DEPOSIT_USDC) return { valid: false, error: translate(msg`Minimum deposit is 5 USDC`) };
 		if (raw > maxDepositRaw) return { valid: false, error: translate(msg`Insufficient balance`) };
 		return { valid: true, error: null };
 	} catch {
@@ -245,16 +237,12 @@ function validateAmount(amount: string, maxDepositRaw: bigint | undefined, trans
 	}
 }
 
-function createArbitrumSwitchState(key = ""): ArbitrumSwitchState {
-	return { key, confirmedChainId: null, error: null };
-}
-
 function createProviderChainState(
 	key = "",
 	status: WalletProviderStatus = "idle",
 	error: Error | null = null,
 ): ProviderChainState {
-	return { key, chainId: null, status, error };
+	return { key, status, error };
 }
 
 function createIdleBalanceState(key = ""): UsdcBalanceState {
@@ -330,6 +318,24 @@ function createChainSwitchError(config: DepositChainConfig, error: unknown): Loc
 
 function sleep(ms: number) {
 	return new Promise<void>((resolve) => setTimeout(resolve, ms));
+}
+
+const CCTP_FEE_CHANGED_MESSAGE = msg`Circle fees changed before submission. Review the updated fee and retry.`;
+
+/**
+ * A fresh quote can raise Circle's fee until the amount no longer covers twice of it. The dialog
+ * refuses such an amount against its own quote, so at execution the shortfall means the fee changed
+ * since the review, and the user is told that rather than a generic failure.
+ */
+function withExecutionCctpFee<T>(compute: () => T): T {
+	try {
+		return compute();
+	} catch (error) {
+		if (error instanceof CctpDepositBelowMinimumError) {
+			throw new LocalizedActionError(CCTP_FEE_CHANGED_MESSAGE, { cause: error });
+		}
+		throw error;
+	}
 }
 
 function toChainHex(chainId: number): `0x${string}` {
@@ -455,13 +461,59 @@ async function assertProviderAccountStillActive(provider: Eip1193Provider, addre
 	assertConnectedAccount(accounts, address);
 }
 
-async function getProviderChainId(provider: Eip1193Provider): Promise<string> {
+async function getProviderChainId(provider: Eip1193Provider): Promise<number | null> {
 	try {
-		const chainId = await provider.request({ method: "eth_chainId" });
-		return typeof chainId === "string" ? chainId.toLowerCase() : "";
+		return parseChainId(await provider.request({ method: "eth_chainId" }));
 	} catch (error) {
 		throw createWalletConnectionError(error);
 	}
+}
+
+function createDepositChainMismatchError(config: DepositChainConfig): LocalizedActionError {
+	return new LocalizedActionError(
+		msg`Wallet is not connected to ${config.chainName}. Switch networks in your wallet and retry.`,
+	);
+}
+
+function waitForDepositChain(provider: Eip1193Provider, config: DepositChainConfig): Promise<boolean> {
+	return new Promise((resolve, reject) => {
+		let settled = false;
+		let pollTimer: ReturnType<typeof setTimeout> | undefined;
+		const onChainChanged = (chainId: unknown) => {
+			if (parseChainId(chainId) === config.chainId) finish(true);
+		};
+		const deadline = setTimeout(() => finish(false), DEPOSIT_CHAIN_SWITCH_SETTLE_MS);
+		function cleanup() {
+			settled = true;
+			clearTimeout(deadline);
+			clearTimeout(pollTimer);
+			provider.removeListener?.("chainChanged", onChainChanged);
+		}
+		function finish(reached: boolean) {
+			if (settled) return;
+			cleanup();
+			resolve(reached);
+		}
+		async function poll() {
+			let chainId: number | null;
+			try {
+				chainId = await getProviderChainId(provider);
+			} catch (error) {
+				if (settled) return;
+				cleanup();
+				reject(error);
+				return;
+			}
+			if (settled) return;
+			if (chainId === config.chainId) {
+				finish(true);
+				return;
+			}
+			pollTimer = setTimeout(() => void poll(), DEPOSIT_CHAIN_SWITCH_POLL_INTERVAL_MS);
+		}
+		provider.on?.("chainChanged", onChainChanged);
+		void poll();
+	});
 }
 
 function getAddChainParams(config: DepositChainConfig) {
@@ -508,27 +560,8 @@ async function requestDepositChainSwitch(provider: Eip1193Provider, config: Depo
 	}
 }
 
-async function ensureDepositChain(provider: Eip1193Provider, config: DepositChainConfig) {
-	const chainId = toChainHex(config.chainId);
-	const currentChainId = await getProviderChainId(provider);
-	if (currentChainId !== chainId) {
-		await requestDepositChainSwitch(provider, config);
-	}
-
-	const nextChainId = await getProviderChainId(provider);
-	if (nextChainId !== chainId) {
-		throw new LocalizedActionError(
-			msg`Wallet is not connected to ${config.chainName}. Switch networks in your wallet and retry.`,
-		);
-	}
-}
-
 async function assertDepositChainStillActive(provider: Eip1193Provider, config: DepositChainConfig) {
-	if ((await getProviderChainId(provider)) !== toChainHex(config.chainId)) {
-		throw new LocalizedActionError(
-			msg`Wallet is not connected to ${config.chainName}. Switch networks in your wallet and retry.`,
-		);
-	}
+	if ((await getProviderChainId(provider)) !== config.chainId) throw createDepositChainMismatchError(config);
 }
 
 async function switchDepositWalletChain(
@@ -536,26 +569,36 @@ async function switchDepositWalletChain(
 	provider: Eip1193Provider,
 	config: DepositChainConfig,
 ) {
-	try {
-		await wallet.switchChain(config.chainId);
+	if (getWalletChainId(wallet) === config.chainId) {
+		await requestDepositChainSwitch(provider, config);
 		return;
-	} catch (error) {
-		if (!isUnknownChainError(error)) throw createChainSwitchError(config, error);
 	}
 
-	await requestDepositChainSwitch(provider, config);
+	try {
+		await wallet.switchChain(config.chainId);
+	} catch (error) {
+		if (!isUnknownChainError(error)) throw createChainSwitchError(config, error);
+		await requestDepositChainSwitch(provider, config);
+	}
 }
 
-async function getDepositProviderForChain(wallet: ConnectedWallet, config: DepositChainConfig) {
+async function getDepositProviderForChain(
+	wallet: ConnectedWallet,
+	config: DepositChainConfig,
+	onNetworkSwitch?: (pending: boolean) => void,
+) {
 	const provider = await getDepositProvider(wallet);
-	const providerChainId = await getProviderChainId(provider);
-	if (providerChainId === toChainHex(config.chainId)) return provider;
+	if ((await getProviderChainId(provider)) === config.chainId) return provider;
 
-	await switchDepositWalletChain(wallet, provider, config);
-
-	const nextProvider = await getDepositProvider(wallet);
-	await ensureDepositChain(nextProvider, config);
-	return nextProvider;
+	onNetworkSwitch?.(true);
+	try {
+		await switchDepositWalletChain(wallet, provider, config);
+		const nextProvider = await getDepositProvider(wallet);
+		if (!(await waitForDepositChain(nextProvider, config))) throw createDepositChainMismatchError(config);
+		return nextProvider;
+	} finally {
+		onNetworkSwitch?.(false);
+	}
 }
 
 async function fetchCctpDepositTerms(config: CctpDepositConfig) {
@@ -581,12 +624,14 @@ async function getReadyWalletDepositContext({
 	address,
 	chain,
 	config,
+	onNetworkSwitch,
 	publicClient,
 	wallet,
 }: {
 	address: `0x${string}` | undefined;
 	chain: Chain;
 	config: DepositChainConfig;
+	onNetworkSwitch?: (pending: boolean) => void;
 	publicClient: PublicClient | undefined;
 	wallet: ConnectedWallet | undefined;
 }): Promise<ReadyDepositContext> {
@@ -595,7 +640,7 @@ async function getReadyWalletDepositContext({
 	if (!wallet) throw new LocalizedActionError(msg`Wallet client not ready`);
 	if (!hasSameWalletAddress(wallet.address, address)) throw createActionError("wallet-mismatch");
 
-	const provider = await getDepositProviderForChain(wallet, config);
+	const provider = await getDepositProviderForChain(wallet, config, onNetworkSwitch);
 	await ensureProviderAccount(provider, address);
 
 	const walletClient = createWalletClient({
@@ -762,21 +807,18 @@ interface DepositChainConfig {
 	usdc: Address;
 }
 
-function useDepositChain(
+function useDepositWalletProvider(
 	wallet: ConnectedWallet | undefined,
 	address: `0x${string}` | undefined,
 	config: DepositChainConfig,
 	enabled: boolean,
 ) {
-	const chainId = useChainId();
 	const walletKey = `${address ?? ""}:${wallet?.address ?? ""}:${wallet?.chainId ?? ""}:${config.chainId}`;
-	const [switchState, setSwitchState] = useState<ArbitrumSwitchState>(createArbitrumSwitchState);
-	const [providerChainState, setProviderChainState] = useState<ProviderChainState>(createProviderChainState);
-	const [isSwitching, setIsSwitching] = useState(false);
+	const [providerState, setProviderState] = useState<ProviderChainState>(createProviderChainState);
 
 	useEffect(() => {
 		if (!enabled || !address || !wallet) {
-			setProviderChainState(
+			setProviderState(
 				enabled && address
 					? createProviderChainState(walletKey, "error", new LocalizedActionError(msg`Wallet client not ready`))
 					: createProviderChainState(),
@@ -785,92 +827,37 @@ function useDepositChain(
 		}
 
 		let cancelled = false;
-		let provider: Eip1193Provider | undefined;
-		let chainChangedHandler: ((nextChainId: string) => void) | undefined;
-
-		setProviderChainState(createProviderChainState(walletKey, "loading"));
+		setProviderState(createProviderChainState(walletKey, "loading"));
 
 		void (async () => {
 			try {
-				provider = await getDepositProvider(wallet);
-				const rawChainId = await provider.request({ method: "eth_chainId" });
+				const provider = await getDepositProvider(wallet);
+				await provider.request({ method: "eth_chainId" });
 				if (cancelled) return;
-
-				setProviderChainState({ key: walletKey, chainId: parseChainId(rawChainId), status: "ready", error: null });
-				chainChangedHandler = (nextChainId: string) => {
-					setProviderChainState({ key: walletKey, chainId: parseChainId(nextChainId), status: "ready", error: null });
-				};
-				provider.on?.("chainChanged", chainChangedHandler);
+				setProviderState(createProviderChainState(walletKey, "ready"));
 			} catch (error) {
-				if (!cancelled) setProviderChainState(createProviderChainState(walletKey, "error", toError(error)));
+				if (!cancelled) setProviderState(createProviderChainState(walletKey, "error", toError(error)));
 			}
 		})();
 
 		return () => {
 			cancelled = true;
-			if (provider && chainChangedHandler) {
-				provider.removeListener?.("chainChanged", chainChangedHandler);
-			}
 		};
 	}, [address, enabled, wallet, walletKey]);
 
-	const switchToArbitrum = useCallback(() => {
-		if (!enabled) return;
-		if (!address || !wallet) {
-			setSwitchState({
-				...createArbitrumSwitchState(walletKey),
-				error: new LocalizedActionError(msg`Wallet not connected`),
-			});
-			return;
-		}
-
-		setIsSwitching(true);
-		setSwitchState(createArbitrumSwitchState(walletKey));
-		void (async () => {
-			const provider = await getDepositProvider(wallet);
-			await ensureProviderAccount(provider, address);
-			await switchDepositWalletChain(wallet, provider, config);
-			const nextProvider = await getDepositProvider(wallet);
-			await ensureDepositChain(nextProvider, config);
-			const rawChainId = await nextProvider.request({ method: "eth_chainId" });
-			setProviderChainState({ key: walletKey, chainId: parseChainId(rawChainId), status: "ready", error: null });
-			setSwitchState({ key: walletKey, confirmedChainId: config.chainId, error: null });
-		})()
-			.catch((error) => setSwitchState({ ...createArbitrumSwitchState(walletKey), error: toError(error) }))
-			.finally(() => setIsSwitching(false));
-	}, [address, config, enabled, wallet, walletKey]);
-
 	if (!enabled) {
-		return {
-			isArbitrum: true,
-			switchToArbitrum,
-			isSwitching,
-			switchError: null,
-			walletProviderStatus: "idle" as const,
-			walletProviderError: null,
-		};
+		return { walletProviderStatus: "idle" as const, walletProviderError: null };
 	}
 
-	const walletChainId = wallet ? getWalletChainId(wallet) : null;
-	const confirmedChainId = switchState.key === walletKey ? switchState.confirmedChainId : null;
-	const currentProviderChainState = providerChainState.key === walletKey ? providerChainState : null;
-	const providerChainId = currentProviderChainState?.chainId ?? null;
-	const effectiveChainId = confirmedChainId ?? providerChainId ?? chainId ?? walletChainId;
+	const currentProviderState = providerState.key === walletKey ? providerState : null;
 	const walletProviderStatus =
-		!address || !wallet ? "error" : (currentProviderChainState?.status ?? ("loading" as WalletProviderStatus));
+		!address || !wallet ? "error" : (currentProviderState?.status ?? ("loading" as WalletProviderStatus));
 	const walletProviderError =
 		!address || !wallet
 			? new LocalizedActionError(msg`Wallet client not ready`)
-			: (currentProviderChainState?.error ?? null);
+			: (currentProviderState?.error ?? null);
 
-	return {
-		isArbitrum: effectiveChainId === config.chainId,
-		switchToArbitrum,
-		isSwitching,
-		switchError: switchState.key === walletKey ? switchState.error : null,
-		walletProviderStatus,
-		walletProviderError,
-	};
+	return { walletProviderStatus, walletProviderError };
 }
 
 function useDepositUsdcBalance(
@@ -1120,7 +1107,7 @@ export function useDeposit({
 		walletAddress,
 		walletsReady,
 	});
-	const chain = useDepositChain(depositWallet, walletAddress, cctpDepositConfig, mode === "wallet");
+	const walletProvider = useDepositWalletProvider(depositWallet, walletAddress, cctpDepositConfig, mode === "wallet");
 	const {
 		balanceRaw,
 		maxDepositRaw,
@@ -1181,6 +1168,11 @@ export function useDeposit({
 						throw new LocalizedActionError(msg`Available amount is not verified`);
 					}
 				}
+				const markNetworkSwitch = (pending: boolean) => {
+					updateDepositExecutionState(executionKey, operationId, (previous) =>
+						previous.status === "pending" ? { ...previous, networkSwitchPending: pending } : previous,
+					);
+				};
 				const markWalletResponseDelayed = () => {
 					updateDepositExecutionState(executionKey, operationId, (previous) =>
 						previous.status === "pending" ? { ...previous, walletResponseDelayed: true } : previous,
@@ -1199,6 +1191,7 @@ export function useDeposit({
 								address: walletAddress,
 								chain: depositChain,
 								config: cctpDepositConfig,
+								onNetworkSwitch: markNetworkSwitch,
 								publicClient,
 								wallet: depositWallet,
 							});
@@ -1276,7 +1269,7 @@ export function useDeposit({
 							msg`Circle Fast Transfer capacity is temporarily unavailable. Try again later.`,
 						);
 					}
-					const parameters =
+					const parameters = withExecutionCctpFee(() =>
 						mode === "smart"
 							? createCctpSponsoredDepositParameters({
 									amountRaw,
@@ -1292,15 +1285,14 @@ export function useDeposit({
 									nonce: createAuthorizationNonce(),
 									nowSeconds: Math.floor(Date.now() / 1000),
 									user: ready.address as Address,
-								});
+								}),
+					);
 					const reviewedCctpMaxFeeRaw = review?.expectedCctpMaxFeeRaw ?? expectedCctpMaxFeeRaw;
 					if (
 						executionScope === "manual" &&
 						(reviewedCctpMaxFeeRaw === undefined || parameters.depositForBurn.maxFee !== reviewedCctpMaxFeeRaw)
 					) {
-						throw new LocalizedActionError(
-							msg`Circle fees changed before submission. Review the updated fee and retry.`,
-						);
+						throw new LocalizedActionError(CCTP_FEE_CHANGED_MESSAGE);
 					}
 					const smartClient = mode === "smart" ? await getClientForChain({ id: cctpDepositConfig.chainId }) : undefined;
 					if (mode === "smart") {
@@ -1314,6 +1306,7 @@ export function useDeposit({
 					}
 					await assertReviewedBalanceUnchanged();
 					await assertFreshSelectedDepositRoute();
+					if (provider) await assertDepositChainStillActive(provider, cctpDepositConfig);
 					const authorizationSignature = await ready.walletClient.signTypedData({
 						account: ready.address,
 						...parameters.typedData,
@@ -1325,10 +1318,9 @@ export function useDeposit({
 							msg`Circle Fast Transfer capacity is temporarily unavailable. Try again later.`,
 						);
 					}
-					if (calculateCctpDepositFee(amountRaw, freshFeeQuote).maxFeeRaw !== parameters.depositForBurn.maxFee) {
-						throw new LocalizedActionError(
-							msg`Circle fees changed before submission. Review the updated fee and retry.`,
-						);
+					const freshFee = withExecutionCctpFee(() => calculateCctpDepositFee(amountRaw, freshFeeQuote));
+					if (freshFee.maxFeeRaw !== parameters.depositForBurn.maxFee) {
+						throw new LocalizedActionError(CCTP_FEE_CHANGED_MESSAGE);
 					}
 					await assertFreshSelectedDepositRoute();
 					let sourceHash: Hash;
@@ -1438,6 +1430,7 @@ export function useDeposit({
 						cctpRecoveryUnavailable,
 						submissionOutcomeUnknown: false,
 						walletResponseDelayed: false,
+						networkSwitchPending: false,
 					})
 				) {
 					return;
@@ -1489,6 +1482,7 @@ export function useDeposit({
 						route: depositRoute,
 						submissionOutcomeUnknown: false,
 						walletResponseDelayed: false,
+						networkSwitchPending: false,
 					}))
 				) {
 					return;
@@ -1512,6 +1506,7 @@ export function useDeposit({
 					error: toError(error),
 					submissionOutcomeUnknown: sponsoredSubmissionStarted && !previous.hash,
 					walletResponseDelayed: false,
+					networkSwitchPending: false,
 				}));
 			} finally {
 				finishDepositExecution(executionKey, executionLockKey, operationId);
@@ -1543,7 +1538,7 @@ export function useDeposit({
 	}, [executionKey]);
 
 	return {
-		...chain,
+		...walletProvider,
 		networkName: cctpDepositConfig.displayName,
 		sponsoredCctpEnabled,
 		sponsoredCctpReadiness,
@@ -1562,6 +1557,7 @@ export function useDeposit({
 		cctpRecoveryUnavailable: state.cctpRecoveryUnavailable,
 		submissionOutcomeUnknown: state.submissionOutcomeUnknown,
 		walletResponseDelayed: state.walletResponseDelayed,
+		networkSwitchPending: state.networkSwitchPending,
 		deposit,
 		refreshBalance: refetch,
 		validate,

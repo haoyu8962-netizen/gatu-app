@@ -147,6 +147,24 @@ vi.mock("@/lib/wallet/privy-wagmi", () => ({
 	getPrivyEmailAddress: () => "user@example.com",
 }));
 
+vi.mock("@/hooks/trade/use-cctp-deposit-fee", () => {
+	const data = {
+		feeQuote: {
+			finalityThreshold: 1000,
+			minimumFeeBps: "0",
+			forwardFeeRaw: { low: 200_000n, med: 200_000n, high: 200_000n },
+		},
+	};
+	return {
+		useCctpDepositFee: ({ amountRaw }: { amountRaw: bigint | undefined }) => ({
+			data,
+			calculation: amountRaw !== undefined && amountRaw >= 400_000n ? { maxFeeRaw: 200_000n } : null,
+		}),
+	};
+});
+vi.mock("@/lib/trade/cctp-deposit", () => ({
+	meetsCctpDepositMinimum: (amountRaw: bigint) => amountRaw >= 400_000n,
+}));
 vi.mock("@/lib/hyperliquid/use-deposit", () => ({
 	useDeposit: (options: Record<string, unknown>) => {
 		testState.useDepositOptions = options;
@@ -403,14 +421,36 @@ describe("EmbeddedDepositAutoBridge", () => {
 		expect(testState.deposit).not.toHaveBeenCalled();
 	});
 
-	it("skips an automatic deposit when the refreshed balance is below the minimum", async () => {
-		testState.refreshBalance.mockResolvedValue(4_000_000n);
+	it("skips an automatic deposit when the refreshed balance is below twice the current fee", async () => {
+		testState.refreshBalance.mockResolvedValue(399_999n);
 
 		await act(async () => {
 			root.render(createElement(EmbeddedDepositAutoBridge));
 		});
 
 		expect(testState.refreshBalance).toHaveBeenCalledTimes(1);
+		expect(testState.deposit).not.toHaveBeenCalled();
+	});
+
+	it("submits a refreshed balance below the retired 5 USDC minimum once it covers twice the fee", async () => {
+		testState.maxDepositRaw = 1_000_000n;
+		testState.refreshBalance.mockResolvedValue(1_000_000n);
+
+		await act(async () => {
+			root.render(createElement(EmbeddedDepositAutoBridge));
+		});
+
+		expect(testState.deposit).toHaveBeenCalledWith("1");
+	});
+
+	it("does not start while the balance is below twice the current fee", async () => {
+		testState.maxDepositRaw = 399_999n;
+
+		await act(async () => {
+			root.render(createElement(EmbeddedDepositAutoBridge));
+		});
+
+		expect(testState.refreshBalance).not.toHaveBeenCalled();
 		expect(testState.deposit).not.toHaveBeenCalled();
 	});
 

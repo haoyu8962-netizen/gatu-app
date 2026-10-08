@@ -96,12 +96,119 @@ The implementation uses:
   deposits. A matching `SponsoredDepositForBurnSkipped` is a definitive
   failure even when the outer transaction itself succeeded.
 
-The application keeps a conservative 5 USDC product minimum. It also rejects
+Circle sets no minimum for a CCTP deposit to HyperCore: its documentation says a
+deposit of any size succeeds, the forwarding fee is deducted from the amount, and
+the 1 USDC HyperCore activation fee is charged on the account's first outbound
+action, not on the deposit. The 5 USDC minimum belongs to the retired Bridge2
+route, where a smaller deposit was lost, and the application no longer applies or
+displays it (product decision, 2026-10-04). The contract only needs the amount to
+exceed the fee; the application requires at least twice the current maximum fee,
+the same guard as [CCTP withdrawals](withdrawals.md). `calculateCctpDepositFee`
+enforces it for the reviewed amount and again at execution with the fresh quote,
+throwing `CctpDepositBelowMinimumError` with the smallest amount at or above the
+rejected one that the same quote accepts. Because the fee is rounded up and may
+grow with the amount, that value is searched for (each candidate is raised to what
+it requires until one passes) rather than read off the rejected amount, so the
+amount a user is told to enter is itself accepted. The search is bounded, and the
+bound is sufficient only because a Fast Transfer rate above
+`CCTP_DEPOSIT_MAX_FEE_BPS` (1,000 bps, 10% of the amount) is rejected as an
+unusable quote, both when Circle's response is normalized and when a fee is
+calculated: at or below that rate the search provably ends within its limit
+(`findCctpDepositMinimumRaw` states the argument). Circle's published Fast
+Transfer rates are far below it; the ceiling exists to fail closed on a quote the
+application cannot reason about, and a deposit is not offered while it applies.
+Running out of search rounds is treated as an unusable quote too, never as proof
+that no amount can be deposited.
+`reviewCctpDepositFee` turns the failure into a result a surface can show: the
+amount field is marked invalid with "Minimum deposit is N USDC", the email form
+names the same amount, and a fee that rises between review and click so that the
+amount no longer reaches it is reported as a fee change, never as a routing
+failure. The form's "Minimum N USDC" note is `getCctpDepositMinimumRaw` of the
+current quote, the smallest amount that quote accepts, shown whenever a usable
+quote is known, and the Testnet automatic path waits for a balance that meets the rule. The
+official terminal still applies 5 USDC to its Arbitrum routes; that is its own
+choice, not a CCTP rule. The funding-address notice tells the user to send only
+native USDC on Arbitrum and that other assets or networks are not credited; it
+does not claim that funds are lost, because the address is the user's own wallet.
+The application also rejects
 transfers above Circle's 10,000,000 USDC per-burn contract limit. On testnet it
 adds a 1,000 USDC per-transfer application cap and requires an existing
 Hyperliquid mainnet account; Circle's published 1,000-USDC testnet policy may
 also apply beyond a single transfer, which the client cannot independently
 enforce.
+
+## Wallet Network
+
+The deposit form never gates on the wallet's current network and shows no
+"switch to Arbitrum" screen. The official terminal behaves the same way once a
+Privy session is authenticated: its chain-mismatch helper returns false for an
+authenticated session, and the Arbitrum USDC deposit handler calls wagmi's
+`switchChainAsync` right before `writeContractAsync` when the connected chain is
+not Arbitrum (evidence captured from the production bundle on 2026-10-08, see
+[the task record](work-memory/sessions/2026-10-08-deposit-on-demand-chain-switch.md)).
+Sairn's external-wallet submit path in `lib/hyperliquid/use-deposit.ts` does the
+same work in `getDepositProviderForChain`:
+
+1. Read `eth_chainId` from the wallet's EIP-1193 provider and normalise it with
+   `parseChainId`. Comparison is numeric: injected wallets answer with a hex
+   string, while WalletConnect's provider answers with a number. Comparing the
+   raw value with a hex literal made every WalletConnect wallet look like it was
+   on the wrong network, including one that was already on Arbitrum. This is
+   the confirmed defect; whether it was the cause of the reported phone
+   incident depends on that wallet's connector, which was not recorded
+   (a wallet's in-app browser injects a provider that answers with a hex string
+   and would not have hit it).
+2. When the chain differs, mark the execution `networkSwitchPending` (the status
+   screen heading becomes "Switching network") and ask for the switch once:
+   through Privy's `wallet.switchChain` when Privy's own record disagrees with
+   Arbitrum, or directly with `wallet_switchEthereumChain` (plus
+   `wallet_addEthereumChain` on an unknown-chain error) when Privy already
+   believes the wallet is on Arbitrum, because `switchChain` returns without
+   sending anything in that case.
+3. Wait for the wallet to report Arbitrum: a `chainChanged` listener plus
+   `eth_chainId` polling every `DEPOSIT_CHAIN_SWITCH_POLL_INTERVAL_MS`, with an
+   independent `DEPOSIT_CHAIN_SWITCH_SETTLE_MS` deadline timer that ends the
+   wait even while a chain query is still pending (late answers and events are
+   ignored once it has ended). Wallets commonly resolve the switch request
+   before the new chain is observable, so an immediate re-read is not evidence.
+   Once a switch request has been accepted, the wait never repeats it because
+   the chain has not changed yet; the only extra requests are the
+   unknown-chain recovery (`wallet_addEthereumChain` followed by one more
+   `wallet_switchEthereumChain`, inside Privy, in the direct path, or in both
+   when Privy's own recovery still reports an unknown chain). A wallet
+   that never reports Arbitrum before the deadline fails with "Wallet is not
+   connected to Arbitrum One", a rejected request with "Arbitrum network switch
+   was rejected", and either is reported through the deposit failure
+   notification. The deadline bounds only this observation phase: the wallet's
+   own answer to the switch request is awaited before it, and a backgrounded
+   page may delay the timer.
+4. Re-check the chain (numerically) right before the EIP-3009 authorization is
+   signed and again right before `writeContract`, after the gas estimate and
+   the fresh legal check, so a wallet that moved away in between still fails
+   closed.
+
+Device acceptance for this flow has not been recorded yet. It needs a phone with
+a real external wallet and a small USDC balance on Arbitrum, and covers three
+cases: a wallet already on Arbitrum must see no switch prompt at all and go
+straight to the transaction request; a wallet on another network that already
+knows Arbitrum must see one switch prompt, then the transaction request, with
+the status screen reading "Switching network" in between (a wallet that does
+not know Arbitrum goes through the add-network recovery above, so record the
+exact prompt order instead); and declining the switch must close the attempt
+with the "Arbitrum network switch was rejected" notification and no transaction
+request. Record the wallet, its connection path (WalletConnect or
+in-app browser) and the outcome in the task record before relying on this flow.
+
+`useDepositWalletProvider` only reports whether the wallet provider answers at
+all (the "Wallet connection unavailable" screen); it no longer interprets the
+chain. `use-deposit-routing-guard.test.tsx` ("wallet network") pins the numeric
+comparison, the two switch paths, the unknown-chain recovery sequence (in
+the direct path, and after Privy itself reports an unknown chain, while a
+rejection never falls back), the event channel (a `chainChanged` for another
+chain keeps the wait going), the deadline (including a query that never answers, and answers
+or events that arrive after it), a query that fails during the observation,
+listener and timer cleanup, the `networkSwitchPending` lifecycle as the hook
+returns it, the rejection and both pre-signing and pre-broadcast re-checks.
 
 ## Card Funding Before A Deposit
 
@@ -163,7 +270,17 @@ funded end-to-end release check.
 The mainnet email form explains the two steps before exposing the QR: send USDC
 to the exact wallet, then return and explicitly deposit into the trading account.
 The testnet automatic path does not display these mainnet instructions. Asset and
-network are fixed route details, not selectable dropdowns.
+network are fixed route details, not selectable dropdowns; each shows its icon
+beside the value, and the same row is used by the withdrawal form. The email form
+and the external-wallet form both open with the USDC mark above the title, so the
+two kinds of account see the same header. The QR code
+carries the USDC mark in its centre and is generated at error-correction level H
+so the covered modules stay recoverable; it keeps dark modules on a white field in
+both themes. The address sits in one field with its copy control. The layout
+follows the official terminal's deposit dialog (fixed header, body that scrolls
+without a visible scrollbar, one component for the desktop modal and the phone
+sheet); the two-step instructions, the explicit Deposit action and the Done exit
+are this application's own and stay.
 
 Passive balance, fee, wallet-readiness and route failures render numeric placeholders
 or the address skeleton, with neutral retry controls where recovery is available.

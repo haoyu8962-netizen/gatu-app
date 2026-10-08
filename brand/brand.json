@@ -10,15 +10,7 @@
 			"www": "www.sairn.ai",
 			"app": "app.sairn.ai",
 			"testnet": "testnet.sairn.ai"
-		},
-		"legacy": [
-			{
-				"apex": "gatu.ai",
-				"www": "www.gatu.ai",
-				"app": "app.gatu.ai",
-				"testnet": "testnet.gatu.ai"
-			}
-		]
+		}
 	},
 	"emails": {
 		"support": "support@sairn.ai"

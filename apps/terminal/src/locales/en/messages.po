@@ -963,7 +963,6 @@ msgstr "Arbitrum (Legacy)"
 
 #: src/lib/errors/action-error.ts
 #: src/lib/hyperliquid/use-deposit.ts
-#: src/lib/tests/wrong-network-screen.test.tsx
 msgid "Arbitrum network switch was rejected."
 msgstr "Arbitrum network switch was rejected."
 
@@ -1136,7 +1135,6 @@ msgstr "Avg. {price}"
 #: src/components/trade/tradebox/bridge/bridge-error-screen.tsx
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
-#: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
 #: src/components/vaults/vault-action-modal.tsx
 msgid "Back"
 msgstr "Back"
@@ -1238,12 +1236,11 @@ msgstr "Borrowing is automated in Portfolio Margin mode."
 msgid "Bought {quantity}"
 msgstr "Bought {quantity}"
 
-#: src/components/trade/components/deposit-modal-loading-fallback.tsx
+#: src/components/trade/components/funds-modal-shell.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/account-panel.tsx
-#: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Bridge"
 msgstr "Bridge"
 
@@ -1622,7 +1619,6 @@ msgid "Circle Fast Transfer capacity is temporarily unavailable. Try again later
 msgstr "Circle Fast Transfer capacity is temporarily unavailable. Try again later."
 
 #: src/lib/hyperliquid/use-deposit.ts
-#: src/lib/hyperliquid/use-deposit.ts
 msgid "Circle fees changed before submission. Review the updated fee and retry."
 msgstr "Circle fees changed before submission. Review the updated fee and retry."
 
@@ -1738,7 +1734,6 @@ msgstr "Click to submit · Filled trades cannot be reversed"
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/shared-ui.tsx
-#: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
 #: src/components/trade/tradebox/leverage-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
@@ -2582,7 +2577,7 @@ msgstr "Deployer"
 #: src/components/portfolio/portfolio-page.tsx
 #: src/components/portfolio/portfolio-page.tsx
 #: src/components/staking/staking-action-modal.tsx
-#: src/components/trade/components/deposit-modal-loading-fallback.tsx
+#: src/components/trade/components/funds-modal-shell.tsx
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
@@ -2599,11 +2594,9 @@ msgstr "Deployer"
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
-#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/amount-input.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-method-chooser.tsx
-#: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
 #: src/components/vaults/vault-detail-view.tsx
 #: src/components/vaults/vault-detail-view.tsx
 #: src/config/account-ledger.ts
@@ -4137,8 +4130,12 @@ msgid "Import phone access"
 msgstr "Import phone access"
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
-msgid "Important: this address can only receive native USDC on Arbitrum. Do not send USDC.e or assets from other networks. Minimum deposit is {minimumDeposit}."
-msgstr "Important: this address can only receive native USDC on Arbitrum. Do not send USDC.e or assets from other networks. Minimum deposit is {minimumDeposit}."
+msgid "Important: send only native USDC on Arbitrum to this address. Other assets, including USDC.e, and transfers on other networks will not be credited to your trading account."
+msgstr "Important: send only native USDC on Arbitrum to this address. Other assets, including USDC.e, and transfers on other networks will not be credited to your trading account."
+
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+#~ msgid "Important: this address can only receive native USDC on Arbitrum. Do not send USDC.e or assets from other networks. Minimum deposit is {minimumDeposit}."
+#~ msgstr "Important: this address can only receive native USDC on Arbitrum. Do not send USDC.e or assets from other networks. Minimum deposit is {minimumDeposit}."
 
 #: src/components/staking/staking-view.tsx
 #: src/components/staking/staking-view.tsx
@@ -4637,7 +4634,6 @@ msgid "Loading recent reward claims…"
 msgstr "Loading recent reward claims…"
 
 #: src/components/referrals/referral-dashboard.tsx
-#: src/components/referrals/referral-dashboard.tsx
 msgid "Loading referrals"
 msgstr "Loading referrals"
 
@@ -5092,13 +5088,15 @@ msgid "Minimum <0>{0}</0>; maximum <1>{1}</1>."
 msgstr "Minimum <0>{0}</0>; maximum <1>{1}</1>."
 
 #. placeholder {0}: ctx.minDeposit
+#. placeholder {0}: numberFormat.formatDecimalString(formatUnits(cctpDepositBelowMinimumRaw, 6))
+#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/lib/errors/definitions/deposit.ts
 msgid "Minimum deposit is {0} USDC"
 msgstr "Minimum deposit is {0} USDC"
 
 #: src/lib/hyperliquid/use-deposit.ts
-msgid "Minimum deposit is 5 USDC"
-msgstr "Minimum deposit is 5 USDC"
+#~ msgid "Minimum deposit is 5 USDC"
+#~ msgstr "Minimum deposit is 5 USDC"
 
 #: src/components/trade/components/spot-swap-modal.tsx
 msgid "Minimum order value is {ORDER_MIN_NOTIONAL_USD} USDC after size rounding."
@@ -8582,16 +8580,14 @@ msgid "Switch to {marketName} market, {sideLabel} order"
 msgstr "Switch to {marketName} market, {sideLabel} order"
 
 #: src/components/trade/mobile/mobile-trade-view.tsx
-#: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
-#: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
 #: src/config/ui-text.ts
 #: src/lib/trade/use-button-content.ts
-msgid "Switch to Arbitrum"
-msgstr "Switch to Arbitrum"
+#~ msgid "Switch to Arbitrum"
+#~ msgstr "Switch to Arbitrum"
 
 #: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
-msgid "Switch to Arbitrum to deposit USDC to Hyperliquid"
-msgstr "Switch to Arbitrum to deposit USDC to Hyperliquid"
+#~ msgid "Switch to Arbitrum to deposit USDC to Hyperliquid"
+#~ msgstr "Switch to Arbitrum to deposit USDC to Hyperliquid"
 
 #: src/config/desktop-nav.ts
 msgid "Switch to dark mode"
@@ -8633,12 +8629,15 @@ msgstr "Switched to Portfolio margin"
 msgid "Switched to Unified account"
 msgstr "Switched to Unified account"
 
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Switching network"
+msgstr "Switching network"
+
 #: src/components/trade/mobile/mobile-trade-view.tsx
-#: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
 #: src/config/ui-text.ts
 #: src/lib/trade/use-button-content.ts
-msgid "Switching..."
-msgstr "Switching..."
+#~ msgid "Switching..."
+#~ msgstr "Switching..."
 
 #: src/components/staking/staking-view.tsx
 msgid "System finalization · hash unavailable"
@@ -10295,7 +10294,6 @@ msgstr "Unable to load the current CCTP withdrawal fee."
 msgid "Unable to switch wallet to {0}. Switch networks in your wallet and retry."
 msgstr "Unable to switch wallet to {0}. Switch networks in your wallet and retry."
 
-#: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
 #: src/lib/errors/action-error.ts
 msgid "Unable to switch wallet to Arbitrum. Switch networks in your wallet and retry."
 msgstr "Unable to switch wallet to Arbitrum. Switch networks in your wallet and retry."
@@ -10976,7 +10974,6 @@ msgstr "Wallet did not return a transaction hash. Check your wallet activity bef
 
 #. placeholder {0}: config.chainName
 #: src/lib/hyperliquid/use-deposit.ts
-#: src/lib/hyperliquid/use-deposit.ts
 msgid "Wallet is not connected to {0}. Switch networks in your wallet and retry."
 msgstr "Wallet is not connected to {0}. Switch networks in your wallet and retry."
 
@@ -10987,7 +10984,6 @@ msgstr "Wallet is not ready to update account mode"
 
 #: src/components/trade/tradebox/bridge/shared-ui.tsx
 #: src/components/trade/tradebox/deposit/shared-ui.tsx
-#: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
@@ -11055,7 +11051,7 @@ msgstr "Whole position"
 #: src/components/portfolio/portfolio-page.tsx
 #: src/components/portfolio/portfolio-page.tsx
 #: src/components/staking/staking-action-modal.tsx
-#: src/components/trade/components/deposit-modal-loading-fallback.tsx
+#: src/components/trade/components/funds-modal-shell.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
@@ -11063,7 +11059,6 @@ msgstr "Whole position"
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/account-panel.tsx
-#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #: src/components/vaults/vault-detail-view.tsx
 #: src/components/vaults/vault-detail-view.tsx

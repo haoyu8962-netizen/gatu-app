@@ -2,11 +2,11 @@ import { i18n } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
 import type { AbstractWallet } from "@nktkas/hyperliquid/signing";
 import { useSignTypedData } from "@privy-io/react-auth";
+import { useConnectionWalletClient } from "@sairn/hl-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useLayoutEffect, useRef, useState } from "react";
-import { isAddress } from "viem";
+import { isAddress, type WalletClient } from "viem";
 import { arbitrum, arbitrumSepolia } from "viem/chains";
-import { useWalletClient } from "wagmi";
 import { createActionError } from "@/lib/errors/action-error";
 import { LocalizedActionError } from "@/lib/errors/localized-action-error";
 import type { AgentApprovalOptions, ExchangeParams, ExchangeResponse } from "@/lib/hyperliquid";
@@ -44,7 +44,7 @@ export type ExplicitAgentApprovalOptions = AgentApprovalOptions;
 export function useExplicitAgentApproval(): ExplicitAgentApproval {
 	const queryClient = useQueryClient();
 	const { signTypedData } = useSignTypedData();
-	const { data: walletClient } = useWalletClient();
+	const walletClient = useConnectionWalletClient().data as WalletClient | undefined;
 	const { enforceLegalActions, env, exchangeLifecycle, info } = useHyperliquid();
 	const { walletAddress, connectedWalletAddress, embeddedWalletAddress, hasWalletAccess, walletIntent } =
 		useWalletSession();

@@ -1,6 +1,5 @@
 import { Trans, useLingui } from "@lingui/react/macro";
-import { CaretLeftIcon } from "@phosphor-icons/react";
-import { Button, ButtonIcon, ModalContent, ModalHeader, ModalTitle } from "@sairn/ui";
+import { Button } from "@sairn/ui";
 import { useQueryClient } from "@tanstack/react-query";
 import { Suspense, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -60,7 +59,11 @@ import { isDefinitiveDepositSourceFailure } from "@/lib/hyperliquid/deposit-sour
 import { useDeposit } from "@/lib/hyperliquid/use-deposit";
 import { createLazyComponent } from "@/lib/lazy";
 import { useHasExistingBridgeExecution } from "@/lib/lifi/bridge-execution-state";
-import { calculateCctpDepositFee, getAmountIndependentCctpMaxFeeRaw } from "@/lib/trade/cctp-deposit";
+import {
+	getAmountIndependentCctpMaxFeeRaw,
+	getCctpDepositMinimumRaw,
+	reviewCctpDepositFee,
+} from "@/lib/trade/cctp-deposit";
 import { removeCctpDepositTrackingRecord } from "@/lib/trade/cctp-deposit-tracking";
 import {
 	FundsActionFeedbackCause,
@@ -88,12 +91,12 @@ import {
 	useTransferModalActions,
 } from "@/stores/use-global-modal-store";
 import { useIsTestnet } from "@/stores/use-global-settings-store";
-import { PendingActionModal } from "../components/pending-action-modal";
+import { renderFundsModalBackButton } from "../components/funds-modal-back-button";
+import { FundsModalShell } from "../components/funds-modal-shell";
 import { DepositForm } from "./deposit/deposit-form";
 import { DepositMethodChooser } from "./deposit/deposit-method-chooser";
 import { StatusScreen, WalletNotConnected } from "./deposit/shared-ui";
 import { WithdrawForm } from "./deposit/withdraw-form";
-import { WrongNetworkScreen } from "./deposit/wrong-network-screen";
 import { DepositExplorerLink } from "./deposit-explorer-link";
 
 const LazyBridgeTab = createLazyComponent(() => import("./bridge/bridge-tab"), "BridgeTab");
@@ -246,11 +249,8 @@ export function DepositModal() {
 		cctpRecoveryUnavailable,
 		submissionOutcomeUnknown,
 		walletResponseDelayed,
-		isArbitrum,
-		isSwitching,
+		networkSwitchPending,
 		deposit,
-		switchError,
-		switchToArbitrum,
 		walletProviderStatus,
 		walletProviderError,
 		validate: validateDeposit,
@@ -372,6 +372,16 @@ export function DepositModal() {
 					: null))
 			: null;
 	const cctpDepositFee = displayedCctpDepositFeeRaw !== null ? formatUnits(displayedCctpDepositFeeRaw, 6) : null;
+	const cctpDepositMinimumRaw =
+		selectedDepositRoute === "cctp" && displayedCctpDepositFeeQuery.data?.feeQuote
+			? getCctpDepositMinimumRaw(displayedCctpDepositFeeQuery.data.feeQuote)
+			: null;
+	const cctpDepositBelowMinimumRaw =
+		selectedDepositRoute === "cctp" ? displayedCctpDepositFeeQuery.belowMinimumRaw : null;
+	const cctpDepositMinimumError =
+		cctpDepositBelowMinimumRaw !== null
+			? t`Minimum deposit is ${numberFormat.formatDecimalString(formatUnits(cctpDepositBelowMinimumRaw, 6))} USDC`
+			: null;
 	const cctpDepositAmountLimitError =
 		selectedDepositRoute === "cctp" &&
 		reviewedDepositAmountRaw !== undefined &&
@@ -410,16 +420,21 @@ export function DepositModal() {
 									? { valid: false, error: null }
 									: cctpDepositAmountLimitError
 										? { valid: false, error: cctpDepositAmountLimitError }
-										: cctpDepositFeeUnavailable
-											? {
-													valid: false,
-													error: displayedCctpDepositFeeQuery.isError
-														? t`Unable to verify the current Circle CCTP fee and Fast Transfer capacity.`
-														: displayedCctpDepositFeeQuery.hasSufficientFastAllowance === false
-															? t`Circle Fast Transfer capacity is temporarily unavailable. Try again later.`
-															: null,
-												}
-											: { ...baseDepositValidation, error: depositCctpPreflightError ?? baseDepositValidation.error });
+										: cctpDepositMinimumError
+											? { valid: false, error: cctpDepositMinimumError }
+											: cctpDepositFeeUnavailable
+												? {
+														valid: false,
+														error: displayedCctpDepositFeeQuery.isError
+															? t`Unable to verify the current Circle CCTP fee and Fast Transfer capacity.`
+															: displayedCctpDepositFeeQuery.hasSufficientFastAllowance === false
+																? t`Circle Fast Transfer capacity is temporarily unavailable. Try again later.`
+																: null,
+													}
+												: {
+														...baseDepositValidation,
+														error: depositCctpPreflightError ?? baseDepositValidation.error,
+													});
 	const canUseFundsActions = walletIdentityResolved && hasWalletAccess && !!walletAddress;
 	const canUseDeposit = canUseFundsActions || isEmbeddedDeposit;
 	const hasExistingBridgeExecution = useHasExistingBridgeExecution(walletAddress);
@@ -872,8 +887,14 @@ export function DepositModal() {
 					setDepositCctpPreflightErrorCode("capacity-unavailable");
 					return;
 				}
-				const freshCalculation = calculateCctpDepositFee(reviewedDepositAmountRaw, freshFeeResult.data.feeQuote);
-				if (freshCalculation.maxFeeRaw !== reviewedCalculation.maxFeeRaw) {
+				const freshReview = reviewCctpDepositFee(reviewedDepositAmountRaw, freshFeeResult.data.feeQuote);
+				if (!freshReview.calculation) {
+					setDepositCctpPreflightErrorCode(
+						freshReview.belowMinimumRaw !== null ? "fee-changed" : "verification-unavailable",
+					);
+					return;
+				}
+				if (freshReview.calculation.maxFeeRaw !== reviewedCalculation.maxFeeRaw) {
 					setDepositCctpPreflightErrorCode("fee-changed");
 					return;
 				}
@@ -1308,6 +1329,7 @@ export function DepositModal() {
 	}
 
 	let depositPendingHeading = <Trans>Confirm in wallet</Trans>;
+	if (networkSwitchPending) depositPendingHeading = <Trans>Switching network</Trans>;
 	if (walletResponseDelayed) depositPendingHeading = <Trans>Taking longer than expected</Trans>;
 	if (depositStatus === "confirming") depositPendingHeading = <Trans>Waiting for chain confirmation</Trans>;
 	const recoveredCctpDeposit = visibleTab === "deposit" && !depositHash ? cctpDepositTracking.recoveryRecord : null;
@@ -1407,27 +1429,6 @@ export function DepositModal() {
 		);
 	}
 
-	if (
-		canUseFundsActions &&
-		depositMode === "wallet" &&
-		visibleTab === "deposit" &&
-		!showsDepositMethods &&
-		walletProviderStatus === "ready" &&
-		!isArbitrum
-	) {
-		return (
-			<WrongNetworkScreen
-				open={open}
-				presentation={presentation}
-				onClose={handleClose}
-				onBack={depositMethodsOffered ? () => setDepositStep("methods") : undefined}
-				onSwitch={switchToArbitrum}
-				isSwitching={isSwitching}
-				error={switchError}
-			/>
-		);
-	}
-
 	function renderDepositContent() {
 		if (!canUseDeposit) {
 			return <WalletNotConnected onConnect={handleReconnectWallet} isConnecting={!walletsReady || isReconnecting} />;
@@ -1454,7 +1455,7 @@ export function DepositModal() {
 				validation={depositValidation}
 				preflightError={depositCctpPreflightError}
 				onRetryData={handleDepositDataRetry}
-				amountError={cctpDepositAmountLimitError ?? baseDepositValidation.error}
+				amountError={cctpDepositAmountLimitError ?? cctpDepositMinimumError ?? baseDepositValidation.error}
 				isPending={isDepositPending}
 				onSubmit={handleDepositSubmit}
 				routingStatus={depositRoutingStatus}
@@ -1472,6 +1473,8 @@ export function DepositModal() {
 				}
 				requiresExplicitFundingDeposit={isEmbeddedDeposit && !isTestnet}
 				cctpFee={cctpDepositFee}
+				minimumDepositRaw={cctpDepositMinimumRaw}
+				belowMinimumDepositRaw={cctpDepositBelowMinimumRaw}
 				cctpFeeLoading={
 					isDepositDataRetrying || (selectedDepositRoute === "cctp" && displayedCctpDepositFeeQuery.isLoading)
 				}
@@ -1500,111 +1503,75 @@ export function DepositModal() {
 	}
 
 	return (
-		<PendingActionModal
+		<FundsModalShell
 			open={open}
 			onOpenChange={handleModalOpenChange}
 			isPending={isWithdrawPending || isDepositPreflighting}
 			presentation={presentation}
-			handleClassName={usesFundsRedesign ? "top-2.5 !rounded-[2px] bg-market-close-stroke-input" : undefined}
-			overlayClassName={usesFundsRedesign ? "!bg-scrim/60 !backdrop-blur-none" : undefined}
-			className={
-				usesFundsRedesign
-					? "font-market-close max-[1000px]:!border-0 !bg-modal !shadow-none max-[1000px]:!rounded-t-[20px] [&>button]:!top-5 [&>button]:!right-4 [&>button]:!rounded-[8px] [&>button]:text-market-close-muted [&>button:hover]:bg-market-close-hover [&>button:hover]:text-market-close-fg [&>button:active]:bg-market-close-hover min-[1001px]:!max-w-[28rem] min-[1001px]:!rounded-[16px] min-[1001px]:!shadow-overlay min-[1001px]:[&>button]:!top-6 min-[1001px]:[&>button]:!right-6 min-[1001px]:[&>button>svg]:size-[18px]"
-					: undefined
+			tab={visibleTab}
+			headerStart={
+				canReturnToDepositMethods
+					? renderFundsModalBackButton({
+							disabled: isDepositPending,
+							label: t`Back`,
+							onClick: () => setDepositStep("methods"),
+						})
+					: null
 			}
 		>
-			<ModalHeader
-				divider={!usesFundsRedesign}
-				className={
-					usesFundsRedesign
-						? "px-4 pt-7 pr-14 pb-0 text-start min-[1001px]:px-6 min-[1001px]:pr-14 min-[1001px]:pt-6"
-						: undefined
-				}
-			>
-				{canReturnToDepositMethods ? (
-					<ButtonIcon
-						type="button"
-						variant="ghost"
-						intent="neutral"
-						size="sm"
-						onClick={() => setDepositStep("methods")}
-						disabled={isDepositPending}
-						aria-label={t`Back`}
-						className="absolute top-5 left-4 rounded-16 text-trading-panel-muted hover:bg-transparent not-data-disabled:hover:bg-trading-panel-hover not-data-disabled:hover:text-trading-panel-fg min-[1001px]:top-6 min-[1001px]:left-6"
-					>
-						<CaretLeftIcon className="size-4 rtl:rotate-180" aria-hidden="true" />
-					</ButtonIcon>
-				) : null}
-				<ModalTitle className={usesFundsRedesign ? "sr-only" : undefined}>
-					{visibleTab === "deposit" ? (
-						<Trans>Deposit</Trans>
-					) : visibleTab === "withdraw" ? (
-						<Trans>Withdraw</Trans>
+			<div className={usesFundsRedesign ? "flex flex-col" : "flex min-h-72 flex-col"}>
+				{visibleTab === "deposit" && renderDepositContent()}
+
+				{visibleTab === "withdraw" &&
+					(!canUseFundsActions ? (
+						<WalletNotConnected onConnect={handleReconnectWallet} isConnecting={!walletsReady || isReconnecting} />
 					) : (
-						<Trans>Bridge</Trans>
-					)}
-				</ModalTitle>
-			</ModalHeader>
+						<WithdrawForm
+							amount={withdrawAmount}
+							onAmountChange={setWithdrawAmount}
+							destination={requiresWithdrawDestination ? withdrawDestination : (walletAddress ?? "")}
+							onDestinationChange={setWithdrawDestination}
+							destinationRequired={requiresWithdrawDestination}
+							destinationError={withdrawDestinationError}
+							available={exactWithdrawable}
+							maxAmount={withdrawalMaxAmount}
+							route={withdrawalRoute}
+							routingStatus={withdrawalRoutingStatus}
+							routingPreflightFailed={withdrawalRoutingPreflightFailed}
+							routeChanged={withdrawalRouteChanged}
+							routeFee={withdrawalRouteFee}
+							activationFee={withdrawalActivationFee}
+							showActivationFee={isPositiveDecimal(withdrawalActivationFee)}
+							prerequisitesPending={withdrawalPrerequisitesPending}
+							prerequisiteError={withdrawalPrerequisiteError}
+							canRetryPrerequisites={canRetryWithdrawalPrerequisites}
+							onRetryPrerequisites={handleWithdrawalPrerequisiteRetry}
+							validation={{
+								...withdrawValidation,
+								error:
+									withdrawalPrerequisitesReady && !withdrawalPrerequisitesPending ? withdrawValidation.error : null,
+							}}
+							canSubmit={canSubmitWithdraw}
+							isPending={isWithdrawPending}
+							onSubmit={handleWithdrawSubmit}
+							spotAvailable={accountSummary.spotUsdcAvailable}
+							showSpotFundsNotice={showSpotFundsNotice}
+							onTransferClick={
+								fundsActionAvailability.internalTransfer.available ? handlePerpsSpotTransferClick : undefined
+							}
+						/>
+					))}
 
-			<ModalContent
-				className={
-					usesFundsRedesign ? "px-4 pt-3.5 pb-5 min-[1001px]:px-6 min-[1001px]:pt-3.5 min-[1001px]:pb-6" : "space-y-4"
-				}
-			>
-				<div className={usesFundsRedesign ? "flex flex-col" : "flex min-h-72 flex-col"}>
-					{visibleTab === "deposit" && renderDepositContent()}
-
-					{visibleTab === "withdraw" &&
-						(!canUseFundsActions ? (
-							<WalletNotConnected onConnect={handleReconnectWallet} isConnecting={!walletsReady || isReconnecting} />
+				{visibleTab === "bridge" && showBridgeTab && (
+					<Suspense fallback={null}>
+						{canUseFundsActions ? (
+							<LazyBridgeTab />
 						) : (
-							<WithdrawForm
-								amount={withdrawAmount}
-								onAmountChange={setWithdrawAmount}
-								destination={requiresWithdrawDestination ? withdrawDestination : (walletAddress ?? "")}
-								onDestinationChange={setWithdrawDestination}
-								destinationRequired={requiresWithdrawDestination}
-								destinationError={withdrawDestinationError}
-								available={exactWithdrawable}
-								maxAmount={withdrawalMaxAmount}
-								route={withdrawalRoute}
-								routingStatus={withdrawalRoutingStatus}
-								routingPreflightFailed={withdrawalRoutingPreflightFailed}
-								routeChanged={withdrawalRouteChanged}
-								routeFee={withdrawalRouteFee}
-								activationFee={withdrawalActivationFee}
-								showActivationFee={isPositiveDecimal(withdrawalActivationFee)}
-								prerequisitesPending={withdrawalPrerequisitesPending}
-								prerequisiteError={withdrawalPrerequisiteError}
-								canRetryPrerequisites={canRetryWithdrawalPrerequisites}
-								onRetryPrerequisites={handleWithdrawalPrerequisiteRetry}
-								validation={{
-									...withdrawValidation,
-									error:
-										withdrawalPrerequisitesReady && !withdrawalPrerequisitesPending ? withdrawValidation.error : null,
-								}}
-								canSubmit={canSubmitWithdraw}
-								isPending={isWithdrawPending}
-								onSubmit={handleWithdrawSubmit}
-								spotAvailable={accountSummary.spotUsdcAvailable}
-								showSpotFundsNotice={showSpotFundsNotice}
-								onTransferClick={
-									fundsActionAvailability.internalTransfer.available ? handlePerpsSpotTransferClick : undefined
-								}
-							/>
-						))}
-
-					{visibleTab === "bridge" && showBridgeTab && (
-						<Suspense fallback={null}>
-							{canUseFundsActions ? (
-								<LazyBridgeTab />
-							) : (
-								<WalletNotConnected onConnect={handleReconnectWallet} isConnecting={!walletsReady || isReconnecting} />
-							)}
-						</Suspense>
-					)}
-				</div>
-			</ModalContent>
-		</PendingActionModal>
+							<WalletNotConnected onConnect={handleReconnectWallet} isConnecting={!walletsReady || isReconnecting} />
+						)}
+					</Suspense>
+				)}
+			</div>
+		</FundsModalShell>
 	);
 }

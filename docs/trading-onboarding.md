@@ -93,6 +93,40 @@ The terminal must preserve this ordering:
    and sign only after the explicit confirmation click, so they pass the same
    flag; their progress copy tells email users the wallet signs automatically
    instead of asking them to confirm in a wallet.
+   **No EVM network switch before trading.** The three signing mechanisms
+   ([Hyperliquid signing](hyperliquid-signing.md)) each avoid it in their own
+   way: Agent and API-wallet L1 actions sign locally with the fixed
+   `chainId: 1337` domain; the Privy embedded owner signs user-signed actions
+   with the configured Arbitrum chain id of its environment and never asks the
+   wallet to switch; an external wallet's user-signed actions (Agent approval,
+   builder fee, transfers, withdrawals) take `signatureChainId` from the
+   wallet's current chain, because hl-react configures none and the SDK then
+   falls back to the wallet's `getChainId()`. The official terminal does the
+   same for its `approveAgent` builder (chain id from wagmi's `useAccount()`,
+   Arbitrum only when that is undefined) and its chain-mismatch helper returns
+   false for every authenticated Privy session (bundle reading of 2026-10-08,
+   see the task record). To make that hold on any network, every external
+   signing client comes from `useConnectionWalletClient` (hl-react), which asks
+   wagmi for the client of the connection's own chain instead of the config's
+   current chain, so a wallet on a chain outside `BRIDGE_CHAINS` still gets a
+   client; the exact-owner address checks on that client are unchanged. The
+   order button therefore has no network stage: `getOrderActionStage` goes
+   from `connect` to `agent` when a signer is still needed, Enable Trading is
+   gated by `useWalletSession().hasWalletAccess` (so Agent-only sessions stay
+   inert), for an external session additionally by that connection client
+   being available (it stays inert, as approval-pending, while wagmi is still
+   fetching the client after a chain change), plus the unchanged
+   approval-pending, geo and execution guards, and
+   "Loading wallet..." means the exact embedded owner signer is still being
+   established. Only the Arbitrum USDC deposit and the LI.FI bridge need a
+   specific network; the deposit switches on demand at submit
+   ([CCTP deposits](cctp-deposits.md), Wallet Network).
+   `trade-panel-open-interest-cap`, `mobile-trade-size-validation-a11y`
+   (a wagmi chain-mismatch error leaves Enable Trading available; Agent-only,
+   owner-loading and client-pending sessions keep it inert),
+   `use-explicit-agent-approval` (approval on chain 999999),
+   `use-terms-acceptance` and `owner-trading-signer` (the default client on
+   chain 999999) and `use-connection-wallet-client` pin this.
    Page load and status checks never sign. Agent registration is separate from
    builder-fee approval.
 5. **Verify a requested new Agent (external-wallet flow).** Before opening the

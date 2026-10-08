@@ -46,6 +46,7 @@ describe("deposit execution state", () => {
 				cctpRecoveryUnavailable: false,
 				submissionOutcomeUnknown: false,
 				walletResponseDelayed: false,
+				networkSwitchPending: false,
 			}),
 		).toBe(true);
 		finishDepositExecution(manualKey, lockKey, manualOperationId);
@@ -73,6 +74,7 @@ describe("deposit execution state", () => {
 				cctpRecoveryUnavailable: false,
 				submissionOutcomeUnknown: false,
 				walletResponseDelayed: false,
+				networkSwitchPending: false,
 			}),
 		).toBe(false);
 		expect(getDepositExecutionState(executionKey).status).toBe("pending");

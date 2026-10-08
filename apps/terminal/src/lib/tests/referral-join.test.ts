@@ -13,15 +13,9 @@ describe("referral join links", () => {
 		});
 	});
 
-	it("keeps referral links working on the legacy gatu.ai hosts", () => {
-		expect(resolveReferralJoinIntent("/join/sairnappweb3", "https://app.gatu.ai")).toEqual({
-			code: "sairnappweb3",
-			env: "Mainnet",
-		});
-		expect(resolveReferralJoinIntent("/join/sairnappweb3", "https://testnet.gatu.ai")).toEqual({
-			code: "sairnappweb3",
-			env: "Testnet",
-		});
+	it("rejects the retired gatu.ai hosts", () => {
+		expect(resolveReferralJoinIntent("/join/sairnappweb3", "https://app.gatu.ai")).toBeNull();
+		expect(resolveReferralJoinIntent("/join/sairnappweb3", "https://testnet.gatu.ai")).toBeNull();
 	});
 
 	it("rejects unknown and hostname-confusion origins", () => {

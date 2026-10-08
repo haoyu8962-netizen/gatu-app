@@ -20,8 +20,8 @@ This document tracks our research and design for a more robust, configurable err
 | **Trigger Orders** | Stop trigger must be above mark | `use-order-validation.ts` |
 | **Scale Orders** | Enter price range, Scale levels must be 2-100 | `use-order-validation.ts` |
 | **TWAP** | TWAP minutes must be 5-10080 | `use-order-validation.ts` |
-| **Deposits** | Minimum deposit is 5 USDC | `use-deposit.ts` |
-| **Withdrawals** | Minimum withdrawal is $100 | `deposit-modal.tsx` |
+| **Deposits** | Minimum deposit is twice the current CCTP fee | `cctp-deposit.ts`, `deposit-modal.tsx` |
+| **Withdrawals** | Minimum withdrawal follows the route (`docs/withdrawals.md`) | `lib/trade/withdrawal.ts` |
 | **Transactions** | Transaction rejected, Insufficient gas | `transfer/errors.ts` |
 | **System** | Signer not ready, Something went wrong | Various |
 
@@ -76,7 +76,7 @@ useOrderValidation hook
 
 ### Constants
 - `src/config/constants.ts` - ORDER_MIN_NOTIONAL_USD, SCALE_LEVELS_*, TWAP_MINUTES_*
-- `src/config/contracts.ts` - MIN_DEPOSIT_USDC
+- `src/lib/trade/cctp-deposit.ts` - CCTP deposit minimum (twice the current fee; the fixed `MIN_DEPOSIT_USDC` was removed on 2026-10-04)
 - `src/config/cctp.ts` - CCTP route parameters and explicit Legacy withdrawal defaults
 - `src/lib/trade/withdrawal.ts` - Dynamic withdrawal fee, minimum, balance, and net-received validation
 
@@ -262,7 +262,7 @@ function DepositForm() {
     isWalletLoading: false,
     amount,
     walletBalance,
-    minDeposit: 5, // 5 USDC minimum
+    minDeposit: 5, // illustrative value from the original proposal; deposits no longer use a fixed minimum
   });
 
   return (

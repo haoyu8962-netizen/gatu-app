@@ -2,14 +2,16 @@ import { Trans } from "@lingui/react/macro";
 import { Button } from "@sairn/ui";
 import { formatUnits } from "viem";
 import { USDC_ICON_URL } from "@/config/bridge";
-import { MIN_DEPOSIT_USDC, USDC_DECIMALS } from "@/config/contracts";
+import { USDC_DECIMALS } from "@/config/contracts";
 import type { UsdcRoutingQueryStatus, UsdcTransferRoute } from "@/domain/trade/usdc-routing";
+import { cn } from "@/lib/cn";
 import { useNumberFormat } from "@/lib/format";
 import type { SponsoredCctpReadiness } from "@/lib/hyperliquid/use-deposit";
+import { FUNDS_MODAL_HEADING_CLASS, FUNDS_MODAL_HEADING_SLOT } from "@/lib/ui/funds-modal-scroll";
 import { AmountInput } from "./amount-input";
 import { FundingAddressCard } from "./funding-address-card";
 import { FundsRouteDetails } from "./funds-route-details";
-import { UnitDepositInfo } from "./unit-deposit-info";
+import { UNIT_DEPOSIT_INFO_LIST_CLASS, UnitDepositInfo } from "./unit-deposit-info";
 
 interface Props {
 	amount: string;
@@ -34,6 +36,8 @@ interface Props {
 	depositUnavailableReason?: string | null;
 	requiresExplicitFundingDeposit: boolean;
 	cctpFee: string | null;
+	minimumDepositRaw: bigint | null;
+	belowMinimumDepositRaw: bigint | null;
 	cctpFeeLoading: boolean;
 	cctpFeeError: boolean;
 	pendingCctpRecovery: boolean;
@@ -68,6 +72,8 @@ export function DepositForm({
 	depositUnavailableReason = null,
 	requiresExplicitFundingDeposit,
 	cctpFee: cctpFeeAmount,
+	minimumDepositRaw,
+	belowMinimumDepositRaw,
 	cctpFeeLoading,
 	cctpFeeError,
 	pendingCctpRecovery,
@@ -81,7 +87,8 @@ export function DepositForm({
 	const { formatDecimalString } = useNumberFormat();
 	const balance = formatDecimalString(walletBalance);
 	const cctpFee = cctpFeeAmount === null ? null : formatDecimalString(cctpFeeAmount);
-	const minimumDeposit = `${formatDecimalString(formatUnits(MIN_DEPOSIT_USDC, USDC_DECIMALS))} USDC`;
+	const minimumDeposit =
+		minimumDepositRaw === null ? null : `${formatDecimalString(formatUnits(minimumDepositRaw, USDC_DECIMALS))} USDC`;
 	const bridgeRoutingReady = routingStatus === "ready" && depositRoute === "bridge";
 	const cctpRoutingReady = routingStatus === "ready" && depositRoute === "cctp";
 	const explicitFundingDepositReady =
@@ -109,7 +116,7 @@ export function DepositForm({
 		return (
 			<div
 				role="alert"
-				className="rounded-[10px] border border-stroke-error-weak bg-error-soft px-3 py-2.5 text-center text-xs leading-relaxed text-market-close-danger"
+				className="rounded-16 border border-stroke-error-weak bg-error-soft px-3 py-2.5 text-center text-xs leading-relaxed text-market-close-danger"
 			>
 				<p>
 					{routingPreflightError ? (
@@ -142,7 +149,7 @@ export function DepositForm({
 		!routingNotice && actionNotice ? (
 			<div
 				role="alert"
-				className="rounded-8 border border-stroke-error-weak bg-error-soft px-3 py-2.5 text-xs text-market-close-danger"
+				className="rounded-16 border border-stroke-error-weak bg-error-soft px-3 py-2.5 text-xs text-market-close-danger"
 			>
 				{actionNotice}
 			</div>
@@ -168,7 +175,8 @@ export function DepositForm({
 		if (maxDepositRaw === undefined || maxDepositRaw === 0n) {
 			return null;
 		}
-		if (maxDepositRaw < MIN_DEPOSIT_USDC) {
+		if (belowMinimumDepositRaw !== null) {
+			const minimumDeposit = `${formatDecimalString(formatUnits(belowMinimumDepositRaw, USDC_DECIMALS))} USDC`;
 			return (
 				<Trans>
 					Available {balance} USDC is below the minimum deposit. Send at least {minimumDeposit}.
@@ -183,9 +191,11 @@ export function DepositForm({
 				<span className="whitespace-nowrap">
 					<Trans>You send</Trans>
 				</span>
-				<span className="whitespace-nowrap tabular-nums">
-					<Trans>Minimum</Trans> {minimumDeposit}
-				</span>
+				{minimumDeposit ? (
+					<span className="whitespace-nowrap tabular-nums">
+						<Trans>Minimum</Trans> {minimumDeposit}
+					</span>
+				) : null}
 			</div>
 			<FundsRouteDetails network={networkName} />
 		</div>
@@ -313,14 +323,14 @@ export function DepositForm({
 			maxDepositRaw > 0n;
 		const fundingNetworkNotice = (
 			<Trans>
-				Important: this address can only receive native USDC on Arbitrum. Do not send USDC.e or assets from other
-				networks. Minimum deposit is {minimumDeposit}.
+				Important: send only native USDC on Arbitrum to this address. Other assets, including USDC.e, and transfers on
+				other networks will not be credited to your trading account.
 			</Trans>
 		);
 
 		return (
 			<div
-				className="flex flex-1 flex-col gap-3.5 font-market-close text-market-close-fg"
+				className="flex flex-1 flex-col gap-3 font-market-close text-market-close-fg"
 				data-deposit-layout="funding-address"
 				data-deposit-readiness={sponsoredCctpReadiness.status}
 				aria-busy={
@@ -331,7 +341,11 @@ export function DepositForm({
 					isPending
 				}
 			>
-				<div className="pt-0.5 text-center">
+				<img src={USDC_ICON_URL} alt="" aria-hidden="true" className="size-10 self-center rounded-full" />
+				<div
+					data-slot={FUNDS_MODAL_HEADING_SLOT}
+					className={cn(FUNDS_MODAL_HEADING_CLASS, "-mt-1 -mb-3 pb-3 text-center")}
+				>
 					<h3 className="text-[15px] leading-5 font-bold">
 						<Trans>Deposit USDC from Arbitrum</Trans>
 					</h3>
@@ -339,7 +353,7 @@ export function DepositForm({
 
 				{requiresExplicitFundingDeposit && fundingAddressState.state !== "unavailable" ? (
 					<ol
-						className="list-decimal space-y-1 pl-4 text-xs leading-5 text-market-close-muted"
+						className="list-decimal space-y-0.5 pl-4 text-xs leading-[18px] text-market-close-muted"
 						data-slot="funding-steps"
 					>
 						<li>
@@ -361,7 +375,7 @@ export function DepositForm({
 						{fundingAddressReady && embeddedDepositStatus ? (
 							<div
 								role="alert"
-								className="rounded-8 border border-stroke-error-weak bg-error-soft px-3 py-2.5 text-center text-xs leading-relaxed text-market-close-danger"
+								className="rounded-16 border border-stroke-error-weak bg-error-soft px-3 py-2.5 text-center text-xs leading-relaxed text-market-close-danger"
 							>
 								{embeddedDepositStatus}
 							</div>
@@ -372,7 +386,7 @@ export function DepositForm({
 				) : showFundingDestinationPlaceholders ? (
 					<div
 						aria-hidden="true"
-						className="space-y-2 rounded-[10px] border border-market-close-stroke-card bg-market-close-card px-3.5 py-3"
+						className={UNIT_DEPOSIT_INFO_LIST_CLASS}
 						data-deposit-placeholder="funding-details"
 						data-deposit-slot="funding-details"
 					>
@@ -394,7 +408,7 @@ export function DepositForm({
 
 				{showFundingDestinationDetails ? (
 					<div
-						className="rounded-[10px] border border-stroke-error-weak bg-error-soft px-3 py-2.5 text-center text-xs leading-relaxed text-market-close-danger"
+						className="rounded-16 border border-stroke-error-weak bg-error-soft px-3 py-2.5 text-center text-xs leading-relaxed text-market-close-danger"
 						data-deposit-notice="funding-network"
 						data-deposit-slot="funding-network-notice"
 					>
@@ -403,7 +417,7 @@ export function DepositForm({
 				) : showFundingDestinationPlaceholders ? (
 					<div
 						aria-hidden="true"
-						className="relative overflow-hidden rounded-[10px] border border-market-close-stroke-card bg-market-close-card px-3 py-2.5 text-center text-xs leading-relaxed text-market-close-muted"
+						className="relative overflow-hidden rounded-16 border border-market-close-stroke-card bg-market-close-card px-3 py-2.5 text-center text-xs leading-relaxed text-market-close-muted"
 						data-deposit-placeholder="funding-network-notice"
 						data-deposit-slot="funding-network-notice"
 					>
@@ -449,25 +463,26 @@ export function DepositForm({
 
 	return (
 		<div
-			className="flex flex-1 flex-col gap-3.5 font-market-close text-market-close-fg"
+			className="flex flex-1 flex-col gap-3 font-market-close text-market-close-fg"
 			aria-busy={routingStatus === "loading" || balanceStatus === "loading" || cctpFeeLoading || isPending}
 		>
-			<div className="flex flex-col items-center gap-2 text-center">
-				<img src={USDC_ICON_URL} alt="" aria-hidden="true" className="size-10 rounded-full" />
-				<div className="space-y-0.5">
-					<h3 className="text-[15px] leading-[21px] font-bold text-market-close-fg">
-						<Trans>Deposit USDC from Arbitrum</Trans>
-					</h3>
-					<p className="min-h-[18px] text-2xs leading-[18px] text-market-close-subtle">
-						{cctpRoutingReady ? (
-							!cctpFeeError && !cctpFeeLoading && cctpFee ? (
-								<Trans>Up to {cctpFee} USDC in fees will be deducted from your deposit.</Trans>
-							) : (
-								<span aria-hidden="true">--</span>
-							)
-						) : null}
-					</p>
-				</div>
+			<img src={USDC_ICON_URL} alt="" aria-hidden="true" className="size-10 self-center rounded-full" />
+			<div
+				data-slot={FUNDS_MODAL_HEADING_SLOT}
+				className={cn(FUNDS_MODAL_HEADING_CLASS, "-mt-1 -mb-3 space-y-0.5 pb-3 text-center")}
+			>
+				<h3 className="text-[15px] leading-[21px] font-bold text-market-close-fg">
+					<Trans>Deposit USDC from Arbitrum</Trans>
+				</h3>
+				<p className="min-h-[18px] text-2xs leading-[18px] text-market-close-subtle">
+					{cctpRoutingReady ? (
+						!cctpFeeError && !cctpFeeLoading && cctpFee ? (
+							<Trans>Up to {cctpFee} USDC in fees will be deducted from your deposit.</Trans>
+						) : (
+							<span aria-hidden="true">--</span>
+						)
+					) : null}
+				</p>
 			</div>
 
 			{transferSelectors}
@@ -481,7 +496,7 @@ export function DepositForm({
 				</Button>
 			) : null}
 			{pendingCctpRecovery ? (
-				<div className="rounded-[10px] border border-stroke-info-weak bg-info-soft px-3 py-2.5 text-center text-xs leading-relaxed text-info">
+				<div className="rounded-16 border border-stroke-info-weak bg-info-soft px-3 py-2.5 text-center text-xs leading-relaxed text-info">
 					<Trans>A previous CCTP deposit is still being tracked. Do not resubmit the same transfer.</Trans>
 				</div>
 			) : null}

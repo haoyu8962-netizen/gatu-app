@@ -11,6 +11,7 @@ import { cn } from "@/lib/cn";
 import { useNumberFormat } from "@/lib/format";
 import { floorToString, limitDecimalInput } from "@/lib/trade/numbers";
 import { getMinimumWithdrawal, getWithdrawalNetReceived, type WithdrawalRoute } from "@/lib/trade/withdrawal";
+import { FUNDS_MODAL_HEADING_SLOT, FUNDS_MODAL_LEADING_HEADING_CLASS } from "@/lib/ui/funds-modal-scroll";
 import { FundsRouteDetails } from "./funds-route-details";
 
 interface Props {
@@ -126,7 +127,13 @@ export function WithdrawForm({
 			className="flex flex-1 flex-col gap-3.5 font-market-close"
 			aria-busy={routingStatus === "loading" || prerequisitesPending || isPending}
 		>
-			<h3 className="text-base leading-6 font-semibold text-market-close-fg">
+			<h3
+				data-slot={FUNDS_MODAL_HEADING_SLOT}
+				className={cn(
+					FUNDS_MODAL_LEADING_HEADING_CLASS,
+					"-mb-3.5 pb-3.5 text-base leading-6 font-semibold text-market-close-fg",
+				)}
+			>
 				<Trans>Withdraw USDC to Arbitrum</Trans>
 			</h3>
 			<FundsRouteDetails network={networkLabel} />

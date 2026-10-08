@@ -2,6 +2,7 @@ import { useLingui } from "@lingui/react/macro";
 import { ArrowsLeftRightIcon } from "@phosphor-icons/react";
 import { Button, Tooltip } from "@sairn/ui";
 import { type ReactNode, useId } from "react";
+import { depositModalIntentProps } from "@/components/trade/components/deposit-modal-intent";
 import { InfoRow, InfoRowGroup } from "@/components/ui/info-row";
 import { Skeleton, SkeletonValue } from "@/components/ui/skeleton";
 import { ACCOUNT_LABELS } from "@/config/account-labels";
@@ -205,6 +206,7 @@ export function AccountPanel() {
 												intent="neutral"
 												disabled={!depositAvailability.available}
 												onClick={depositAvailability.available ? () => openDepositModal("deposit") : undefined}
+												{...(depositAvailability.available ? depositModalIntentProps : undefined)}
 												aria-label={t`Deposit`}
 												title={depositAvailability.unavailableReason ?? undefined}
 												className="min-h-8 w-full min-w-0 rounded-8 bg-trading-panel-control font-bold text-trading-panel-on-control shadow-none hover:bg-trading-panel-control/90"
@@ -223,6 +225,7 @@ export function AccountPanel() {
 												onClick={
 													fundsActionAvailability.withdrawal.available ? () => openDepositModal("withdraw") : undefined
 												}
+												{...(fundsActionAvailability.withdrawal.available ? depositModalIntentProps : undefined)}
 												aria-label={t`Withdraw`}
 												aria-describedby={withdrawDisabledReason ? withdrawUnavailableId : undefined}
 												className="min-h-8 w-full min-w-0 rounded-8 border-trading-panel-stroke-input font-semibold text-trading-panel-fg shadow-none hover:border-trading-panel-stroke-control"
@@ -259,6 +262,7 @@ export function AccountPanel() {
 										variant="outline"
 										intent="neutral"
 										onClick={() => openDepositModal("bridge")}
+										{...depositModalIntentProps}
 										aria-label={t`Bridge`}
 										iconLeft={<ArrowsLeftRightIcon className="size-4" />}
 										className="min-h-8 w-full min-w-0 rounded-8 border-trading-panel-stroke-input font-semibold text-trading-panel-fg shadow-none hover:border-trading-panel-stroke-control"

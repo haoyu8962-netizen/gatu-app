@@ -1,6 +1,6 @@
 # ADR 0032：gatu.ai 直接下线，先断后接切换到 sairn.ai
 
-- 状态：已接受并实施，2026-10-02 上线（p24 `cloudfront-2026-10-02-p24`，main `3ced842e`），gatu.ai 网页已下线；真实钱包冒烟、主网小额赞助充值与 p25 清理未完成。以下为执行前写的状态：已接受，执行中。用户 2026-10-01 决定，2026-10-02 开始执行。已执行的有三项：sairn 证书 `b04a51c6…` 已签发；API 源站请求策略已加入 `X-Sairn-Forwarded-Host`；用户已在控制台给 `gatu-edge` 挂上临时策略 `gatu-edge-domain-cutover`。p24 发布、别名与 DNS 切换、Privy 与 Hyperliquid 侧的操作都还没有做。步骤、命令与每一步的结果以 [切换方案](../sairn-domain-cutover-plan.md) 为准。
+- 状态：已接受并实施，2026-10-02 上线（p24 `cloudfront-2026-10-02-p24`，main `3ced842e`），gatu.ai 网页已下线；真实钱包冒烟、主网小额赞助充值与 p25 清理未完成。2026-10-03 追记：p25 的代码已写成 PR #73，未合入、未发布，见文末补充。以下为执行前写的状态：已接受，执行中。用户 2026-10-01 决定，2026-10-02 开始执行。已执行的有三项：sairn 证书 `b04a51c6…` 已签发；API 源站请求策略已加入 `X-Sairn-Forwarded-Host`；用户已在控制台给 `gatu-edge` 挂上临时策略 `gatu-edge-domain-cutover`。p24 发布、别名与 DNS 切换、Privy 与 Hyperliquid 侧的操作都还没有做。步骤、命令与每一步的结果以 [切换方案](../sairn-domain-cutover-plan.md) 为准。
 - 关联：取代 [ADR 0031](0031-domain-move-to-sairn-ai.md) 决策 5 的上线顺序（长期并存、301 跳转），以及决策 7 中「旧域名必须一直续费」的部分；决策 2 的双组识别降为切换版本的回滚保险。另见 [ADR 0027](0027-brand-single-source-and-identifier-rename.md)、[ADR 0005](0005-spa-static-shell.md)、[任务记录](../work-memory/sessions/2026-10-01-sairn-domain-cutover-plan.md)、[CCTP 充值](../cctp-deposits.md)。
 
 ## 背景与约束
@@ -66,3 +66,29 @@
 - 赞助充值的带资金验收；
 - 官网发布后检查；
 - p25。
+
+## 补充（2026-10-03，p25 的代码部分）
+
+决策 3 的 p25 清理已写成代码，范围与[切换方案](../sairn-domain-cutover-plan.md) 4.2（PR-B）一致：
+
+- `brand/brand.json` 删除 `domains.legacy`；`config/brand.ts`、`config/public-origins.ts`、`lib/network.ts` 只认主组。
+- `scripts/brand.mjs` 只校验主组，并加了退役名单（`gatu.ai`）。
+- Lambda 删除 `LEGACY_FORWARDED_HOST_HEADER` 回退。
+- 请求函数不再写 `x-gatu-forwarded-host` 与 `x-gatu-route`，也不再删除访客自带的 `x-gatu-route`；响应函数不再读 `x-gatu-route`（改模板后重新渲染）。
+- `distribution-config.mjs` 生成的源站请求策略白名单删除 `X-Gatu-Forwarded-Host`，剩 9 个头。
+- 测试改为断言：`gatu.ai` 主机不被识别；只带旧转发头的请求还原不出公网 origin；旧路由标记不影响响应。
+
+**状态**：分支 `claude/retire-gatu-domain-group`，PR #73，未合入、未发布。用户决定等上线满 7 天（2026-10-09）之后再合入和发布。方案阶段 5 的线上步骤都没有做：
+
+- 5.1 发布 p25 并 `verify`；
+- 5.2 从线上白名单删除 `X-Gatu-Forwarded-Host`（线上目前仍有这个头）；
+- 5.3 Lambda 环境变量改名；
+- 5.4 删除旧证书。
+
+**发布间隙的行为**（按代码推演，没有在线上验证）：
+
+- p25 发布时，请求函数先于响应函数生效。间隙里线上的旧响应函数仍会读 `x-gatu-route`（2026-10-03 起线上是 p24b，它的函数与 Lambda 代码和 p24 相同，只多了两个银行卡入金开关），而 p25 请求函数不再删除访客自带的这个头。所以访客可以让自己这一次响应带上配对页的 `no-store`、`no-referrer` 和 `x-sairn-route` 响应头。viewer-response 在缓存之后按请求执行，这只影响请求者自己的响应；响应函数发布后这个现象消失。
+- 配对页与推荐页的标记，两个版本都用 `x-sairn-route`，所以发布与回滚的间隙里都有效。
+- 回滚到 p24b：它的请求函数写新旧两个头，Lambda 先读新头，不依赖白名单里的旧头（方案「按阶段回滚」的 5.1、5.2 两行）。回滚目标是 p24b 而不是 p24：重新发布 p24 会关掉银行卡入金。p24b 的产物保留在工作树 `gatu-release-p25` 里，构建 p25 要用另一个工作树，不能覆盖它（[p24b 发布记录](../work-memory/sessions/2026-10-03-cloudfront-release-p24b.md)）。
+
+本地验证与变异测试的结果见[任务记录](../work-memory/sessions/2026-10-03-retire-gatu-domain-group.md)。

@@ -37,15 +37,15 @@ describe("network storage", () => {
 		expect(getCanonicalNetworkForHostname("preview.sairn.ai")).toBeNull();
 	});
 
-	it("keeps recognising the legacy gatu.ai hosts until they are retired from brand.json", async () => {
-		expect(getCanonicalNetworkForHostname("app.gatu.ai")).toBe("mainnet");
-		expect(getCanonicalNetworkForHostname("testnet.gatu.ai")).toBe("testnet");
-		expect(getCanonicalNetworkForHostname("app.gatu.ai.evil.example")).toBeNull();
+	it("treats the retired gatu.ai hosts like any other unknown hostname", async () => {
+		expect(getCanonicalNetworkForHostname("app.gatu.ai")).toBeNull();
+		expect(getCanonicalNetworkForHostname("testnet.gatu.ai")).toBeNull();
 
 		const { switchNetwork } = await import("@/lib/network");
 		const navigate = vi.fn();
-		expect(switchNetwork("testnet", "app.gatu.ai", navigate)).toBe("navigating");
-		expect(navigate).toHaveBeenCalledExactlyOnceWith("https://testnet.gatu.ai");
+		expect(switchNetwork("testnet", "app.gatu.ai", navigate)).toBe("persisted");
+		expect(localStorage.getItem(STORAGE_KEYS.NETWORK)).toBe("testnet");
+		expect(navigate).not.toHaveBeenCalled();
 	});
 
 	it("ignores stored network values on canonical production hostnames", async () => {

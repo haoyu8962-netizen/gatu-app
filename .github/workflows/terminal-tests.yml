@@ -86,6 +86,9 @@ jobs:
           src/lib/tests/mobile-agent-sync-modal.test.tsx
           src/lib/tests/modal-surface-contract.test.ts
           src/lib/tests/dialog-notice-radius-contract.test.ts
+          src/lib/tests/loading-placeholder-contract.test.ts
+          src/lib/tests/funds-modal-scroll-contract.test.ts
+          src/lib/tests/deposit-modal-warm.test.ts
           src/lib/tests/trades.test.ts
           src/lib/tests/orderbook-panel-safety.test.tsx
           src/lib/tests/mobile-bottom-nav.test.tsx
@@ -122,6 +125,9 @@ jobs:
           src/lib/tests/qr-classification.test.ts
           src/lib/tests/mobile-agent-lifecycle.test.ts
           src/lib/tests/use-explicit-agent-approval.test.tsx
+          src/lib/tests/use-connection-wallet-client.test.tsx
+          src/lib/tests/use-terms-acceptance.test.tsx
+          src/lib/tests/owner-trading-signer.test.tsx
           src/lib/tests/privy-agent-signer.test.ts
           src/lib/tests/lambda-handler.test.ts
 
@@ -167,6 +173,7 @@ jobs:
           src/lib/tests/use-sub.test.tsx
           src/lib/tests/vite-cache-isolation.test.ts
           tests/mobile-trade-size-validation-a11y.test.tsx
+          tests/trade-panel-open-interest-cap.test.tsx
           tests/trade-size-error-a11y.test.tsx
 
       - name: Test confirmation surface contracts
@@ -335,7 +342,6 @@ jobs:
           src/lib/tests/use-privy-fiat-funding-offer.test.tsx
           src/lib/tests/use-usdc-routing.test.ts
           src/lib/tests/unit-deposit-info.test.tsx
-          src/lib/tests/wrong-network-screen.test.tsx
 
       # `pnpm test:brand` in the Website and Brand workflow also runs these, but that workflow
       # only starts when the website or a brand asset changes. Terminal changes are covered here.

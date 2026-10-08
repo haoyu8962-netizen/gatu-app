@@ -4,7 +4,6 @@ import { getOrderActionStage } from "@/domain/trade/order-action-stage";
 
 const READY_ACTION = {
 	isConnected: true,
-	needsChainSwitch: false,
 	needsApproval: false,
 	isSignerReady: true,
 	hasBalanceError: false,

@@ -433,6 +433,40 @@ The sixth round (commit `4af147fd`) changed one classification function in the d
 3,286,638 in total (+16), 1,626,663 static trade startup, 117,769 mobile and 201,070 desktop, with the desktop runtime
 increment 918 bytes under its allowance. Later commits on the branch change tests and documents only.
 
+## Total-client re-baseline before release p26 (2026-10-08)
+
+Promoting `dev` to `main` for release p26 failed the pairing-on production build that only pull requests into `main`
+run: the total client measured 3,298,948 gzip bytes with CI metadata, 11,297 over the 3,287,651 baseline against a
+10,000-byte allowance, while the pairing-off builds of the same head read 3,297,05x in CI and stayed 55 bytes under
+the limit only when no developer `.env.local` was read. Nothing in the head is a regression to remove: the growth is
+the shipped p24b tree plus [PR #77](https://github.com/zora4523-bot/gatu-app/pull/77) (chart price precision from
+market rules, ADR 0035, and silent email wallet creation, ADR 0033), both merged with pairing-off CI builds under
+the allowance; the loader patch of [PR #81](https://github.com/zora4523-bot/gatu-app/pull/81) touches only
+`public/charting_library/`, which the budget does not count.
+
+Measured in one isolated worktree (`gatu-release-p26`, no `.env.local`, Node 22.15.0, pnpm 10.21.0, pairing off) with
+the fixed identity `SAIRN_BUILD_SHA=54235298e5db2dc32eadfa7f824b8660a54c06f0 SAIRN_RELEASE_ID=p26-rebaseline
+SAIRN_BUILD_TIME=2026-10-08T00:00:00.000Z NODE_ENV=production NITRO_PRESET=node-server` for all three commits:
+
+| Metric | p24b main `6da4c15a` | dev after #77 `345a2143` | dev after #81 `54235298` |
+| --- | ---: | ---: | ---: |
+| All client JS + CSS | 3,294,335 | 3,296,905 | 3,296,759 |
+| Static trade startup | 1,630,085 (101 assets) | 1,631,938 (101 assets) | 1,631,834 (101 assets) |
+| Mobile runtime increment | 118,027 | 118,315 | 118,319 |
+| Desktop runtime increment | 202,265 | 202,745 | 202,722 |
+
+The total-client baseline becomes the dev head itself, 3,296,759: +6,684 that p24b had already used against the
+previous baseline and +2,570 for PR #77 (the price-format module and its callers, the email embedded wallet provider
+and the registration sequence; the static startup +1,853, the desktop runtime +480, the mobile runtime +288 all stay
+under their allowances). PR #81 reads -146, build noise of the kind the card funding section describes. With this
+baseline the pairing-on CI build of the same head sits about 2,200 over (3,298,948 with CI metadata), a release build
+that reads the developer `.env.local` about 950 over (3,297,706), and the pairing-off CI build about 300 over.
+
+Not re-baselined: the desktop runtime increment is 9,593 over its 193,129 baseline (407 bytes under the allowance;
+the pairing-on CI build read 9,596) and the mobile runtime increment 7,739 over 110,580. Both already stood at 9,136
+and 7,447 at p24b, so the next desktop runtime growth needs its own measured re-baseline rather than a larger
+allowance; nothing in this release changes those increments by more than the figures above.
+
 ## Locale and number-format desktop runtime re-baseline (2026-10-03)
 
 PR #71 makes the desktop footer clock keep time and rendered numbers and dates follow the number-format setting and the
@@ -481,6 +515,51 @@ the CI reading of 202,249. The other baselines are unchanged: CI read 3,294,239 
 10,000), 1,629,984 for the static trade startup (below its baseline) and 118,021 for the mobile runtime increment
 (+7,441). Both builds passed the circular-import check and `perf:startup`, and the graph inventory is unchanged at 443
 assets (441 JavaScript, 2 CSS). This is a byte measurement, not a browser timing.
+
+## Funds dialog total-client re-baseline (2026-10-05)
+
+The funds dialog rework (shared `FundsModalShell` for the Deposit / Withdraw / Bridge dialog and its chunk fallback, the
+CCTP minimum with its typed error, the address-and-network notice, the sticky form headings and the back button
+renderer; [task records](work-memory/sessions/2026-10-05-funds-dialog-status-screens.md)) left the total client within
+its allowance in every local build, but too close to predict CI. Seven CI-style builds of `dev` and of branch commits,
+each with its own commit hash and release label and otherwise identical settings, read between 3,297,060 and 3,297,604
+against the 3,297,651 limit, and two commits with nearly identical code differed by 522 bytes. Those builds cannot
+attribute a change; the paired fixed-metadata builds below can.
+
+Measurement: Node 22.15.0, pnpm 10.21.0, an isolated worktree per side with `pnpm install --frozen-lockfile
+--prefer-offline` and no `.env.local`, pairing off and the fixed build identity of the reproduction protocol
+(`SAIRN_BUILD_SHA=e4e09966b175679ac7e13ea192246ce27fae15b5 SAIRN_RELEASE_ID=startup-guardrail-baseline
+SAIRN_BUILD_TIME=2026-08-27T00:00:00.000Z NODE_ENV=production NITRO_PRESET=node-server VITE_MOBILE_PAIRING_ENABLED=false
+pnpm --filter @sairn/terminal build`, then `perf:startup`); before = `origin/dev` at `345a2143`, after = `f9bae822`.
+
+| Metric | Before (`345a2143`) | After (`f9bae822`) | Change |
+| --- | ---: | ---: | ---: |
+| Client assets (graph inventory) | 443 | 443 | 0 |
+| All client JS + CSS | 3,296,988 | 3,297,328 | +340 |
+| Route preloads only (diagnostic) | 516,962 | 516,856 | -106 |
+| Static trade startup | 1,632,044 (101 assets) | 1,632,656 (101 assets) | +612 |
+| Mobile runtime increment / combined | 118,328 / 1,750,372 | 118,515 / 1,751,171 | +187 / +799 |
+| Desktop runtime increment / combined | 202,740 / 1,834,784 | 202,445 / 1,835,101 | -295 / +317 |
+| `client-root` static closure (`perf:startup`) | 1,270,395 (33 chunks) | 1,271,088 (33 chunks) | +693 |
+| Largest JS chunk (Privy main) | 411,575 gzip / 1,415,014 raw | 411,600 gzip / 1,415,014 raw | +25 gzip |
+
+Per asset, with content hashes stripped from the names: the shared deposit chunk is renamed from `use-deposit` to
+`use-cctp-deposit-fee` and grows by 195 (the minimum search and the fee review); `funds-modal-shell` is a new 1,365-byte
+chunk in both runtime profiles (the mobile one counts 15 assets instead of 14); `use-cctp-deposit-tracking` grows by
+508; the six catalogs grow by 328 for the notice; `global-modals` shrinks by 1,187 because the six-block skeleton
+fallback is gone; the 3,554-byte `skeleton` chunk disappears from the desktop runtime profile and `account-panel` grows
+by 3,225;
+`api-wallet`, the funding tab, the vaults page, the stylesheet and the referrals page shrink by 97 to 227 each; and 406
+other assets change by 9 bytes or less (+184 in total), mostly for renamed imports. Two assets were added and two
+removed. That is the cost of the rework rather than an accidental import, so it was re-baselined instead of removed.
+
+The total-client baseline becomes 3,287,651 + 340 = 3,287,991. The allowance `dev` had already used stays counted: the
+fixed-metadata build of the head reads +9,337 against the new baseline, where `dev` read +9,337 against the old one,
+663 bytes under the allowance. The other baselines are unchanged: the static trade startup stays below its baseline,
+the mobile runtime increment reads +7,935 of its 10,000 and the desktop runtime increment +9,316, which is 295 bytes
+better than `dev`. Both builds passed the circular-import check and `perf:startup`. This is a byte measurement, not a
+browser timing, and it does not make the remaining headroom larger than `dev`'s: a later change that grows the client
+still needs its own measurement.
 
 ## Functional acceptance gates
 

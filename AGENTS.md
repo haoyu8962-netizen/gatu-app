@@ -80,6 +80,7 @@ This file contains durable project instructions for coding agents. Read `agent.m
 - TradingView runs in an iframe and cannot inherit application tokens; `docs/runtime-guardrails.md` §4 owns its theme stylesheet rules, including the `#1D1E26` raised-layer color and the single theme-aware stylesheet.
 - TradingView price precision comes from market metadata under Hyperliquid's tick rules, never from the digits of a price string, and a price crossing a power of ten never rebuilds the widget; `docs/runtime-guardrails.md` §4 and ADR 0035 own the rule and its tradeoffs.
 - Keep theme colors in shared tokens or existing style abstractions instead of scattering new literals.
+- Loading placeholders never redraw the layout they stand in for: use a blank busy region, a neutral spinner or geometry taken from the same source as the content; a chunk fallback either claims no dialog chrome or renders the same shell as the loaded dialog, as the deposit dialog does (`.claude/rules/style-ui-guide.md`, Loading placeholders; `loading-placeholder-contract.test.ts`).
 - Dashboard surfaces, the cards inside them and dialog notices follow the corner tiers in `.claude/rules/style-ui-guide.md` (Dashboard page gutters, Dialog content blocks). `dashboard-surface-radius-contract.test.ts` and `dialog-notice-radius-contract.test.ts` enforce them with explicit exception lists; a new visual rule follows the same pattern (Checking a visual rule).
 
 ## Order book contract
@@ -163,12 +164,12 @@ This file contains durable project instructions for coding agents. Read `agent.m
 
 ## Brand identity contract
 
-- `docs/brand-assets.md` owns the brand source, its readers, the logo, icon, accent and status-motion rules and the sairn.ai go-live order; ADR 0027 (single source, renamed and kept identifiers, history policy), 0028 (accent colours), 0029 (status motion), 0030 (PnL share card), 0031 (domain move) and 0032 (gatu.ai offline cutover) record the decisions.
+- `docs/brand-assets.md` owns the brand source, its readers, the logo, icon, accent and status-motion rules and the domain rules; ADR 0027 (single source, renamed and kept identifiers, history policy), 0028 (accent colours), 0029 (status motion), 0030 (PnL share card), 0031 (domain move) and 0032 (gatu.ai offline cutover) record the decisions.
 - Brand values (name, legal entity, domains, support email, accent and logo colours, PWA theme colour) come only from `brand/brand.json`, through `config/brand.ts`, the website config or `scripts/brand.mjs`. Name the product in messages only through `BRAND_NAME` / `{BRAND_NAME}`; never write brand names, domains or mailboxes as literals elsewhere.
-- Internal identifiers (storage keys, Web Lock names, the Hyperliquid Agent slot, headers, environment variables, package scope) are `sairn` literals, never read from `brand.json`; renaming one is a signing or data-continuity change, not a brand edit. The `gatu` names that stay (AWS resources, the repository, the `domains.legacy` group, the dual-written legacy forwarded-host header) are listed in ADR 0027.
+- Internal identifiers (storage keys, Web Lock names, the Hyperliquid Agent slot, headers, environment variables, package scope) are `sairn` literals, never read from `brand.json`; renaming one is a signing or data-continuity change, not a brand edit. The `gatu` names that stay (AWS resources and the repository) are listed in ADR 0027.
 - Generated, exported and synced files are never edited by hand: `pnpm brand:export-motion` (needs Chromium) rewrites `brand/loader`, `brand/loader-supplement/glyphs` and `brand/tokens`, `pnpm brand:derive-icons` the derived icons and e-mail logo in `brand/web`, and `pnpm brand:sync` the `lib/brand/*.gen.*` modules and the copies in `public/`. `pnpm brand:check` and `pnpm test:brand` must pass after any change to `brand/`, `legal/` or a brand reader.
 - The status of a requested action uses `StatusGlyph`, `BrandMotion` or `ButtonLoading` with semantic tones; an unknown result is never drawn as an error. Passive loading keeps the neutral spinner, and every remaining spinner is registered with its reason in `status-motion-surface-contract.test.ts`.
-- Keep `gatu.ai` in `domains.legacy`, and the dual-written legacy forwarded-host header and route marker, until the retirement release in ADR 0032; canonical URLs, the sitemap, legal text and referral links use only `domains.primary`.
+- `brand.json` has one domain group, `domains.primary`: canonical URLs, the sitemap, legal text, referral links and hostname-based network detection use only it. The `gatu.ai` group and the transitional `x-gatu-forwarded-host` header and `x-gatu-route` marker are retired (ADR 0032); do not read or write them again, and `pnpm brand:check` rejects a retired host in `brand.json` or the legal text.
 
 ## Verification
 
@@ -187,6 +188,7 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/agent-registration-session.test.ts \
   src/lib/tests/agent-storage-scope.test.ts \
   src/lib/tests/external-agent-signer.test.ts \
+  src/lib/tests/use-connection-wallet-client.test.tsx \
   src/lib/tests/privy-agent-signer.test.ts \
   src/lib/tests/mobile-agent-lifecycle.test.ts \
   src/lib/tests/legal-gate.test.ts \
@@ -219,13 +221,20 @@ pnpm --dir apps/terminal exec vitest run \
 # Trading terminal visual contract
 pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/chart-theme-colors.test.ts \
+  src/lib/tests/chart-library-loader-handshake-contract.test.ts \
+  src/lib/tests/chart-library-loader-handshake.test.ts \
+  src/lib/tests/chart-build-assets.test.ts \
   src/lib/tests/tradingview-chart.test.tsx \
   src/lib/tests/chart-price-format.test.ts \
   src/lib/tests/chart-datafeed.test.ts \
   src/lib/tests/modal-surface-contract.test.ts \
   src/lib/tests/earn-page-surface-contract.test.ts \
   src/lib/tests/dashboard-surface-radius-contract.test.ts \
-  src/lib/tests/dialog-notice-radius-contract.test.ts
+  src/lib/tests/dialog-notice-radius-contract.test.ts \
+  src/lib/tests/loading-placeholder-contract.test.ts \
+  src/lib/tests/funds-modal-scroll-contract.test.ts \
+  src/lib/tests/global-modals-hip3-disclaimer.test.tsx \
+  src/lib/tests/deposit-modal-warm.test.ts
 
 # Order book: geometry, transport, animation and palette
 pnpm --dir apps/terminal exec vitest run \
@@ -301,6 +310,7 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/use-asset-leverage.test.tsx \
   src/lib/tests/funds-action-balances.test.tsx \
   src/lib/tests/deposit-modal-withdrawal-routing-guard.test.tsx \
+  src/lib/tests/use-deposit-routing-guard.test.tsx \
   src/lib/tests/cctp-deposit-tracking-notifier.test.tsx \
   src/lib/tests/referral-action-modal.test.tsx \
   src/lib/tests/api-wallet-action-modal.test.tsx \

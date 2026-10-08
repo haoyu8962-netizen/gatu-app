@@ -410,17 +410,19 @@ describe("GlobalModals HIP-3 disclaimer priority", () => {
 		const fallback = document.body.querySelector('[data-testid="deposit-modal-loading-fallback"]');
 		expect(fallback).not.toBeNull();
 		expect(fallback?.getAttribute("aria-busy")).toBe("true");
-		expect(fallback?.getAttribute("data-deposit-loading-layout")).toBe("funding-address");
-		expect(fallback?.getAttribute("data-desktop-content-height")).toBe("37.5rem");
-		expect(fallback?.className).toContain("min-[1001px]:h-[37.5rem]");
-		expect(fallback?.querySelectorAll("[data-skeleton-slot]")).toHaveLength(6);
-		expect(fallback?.querySelector('[aria-hidden="true"]')).not.toBeNull();
+		expect([...(fallback?.children ?? [])].map((child) => child.tagName.toLowerCase())).toEqual(["span", "svg"]);
+		const fundsBody = fallback?.closest('[data-slot="funds-modal-body"]');
+		expect(fundsBody?.className).toContain("overflow-y-auto");
+		expect(fundsBody?.className).toContain("[scrollbar-width:none]");
+		expect(fundsBody?.closest('[role="dialog"]')?.className).toContain("!overflow-hidden");
+		expect(fallback?.querySelector("span")?.childElementCount).toBe(0);
+		expect(fallback?.className).not.toMatch(/\bh-\[/);
 		const depositTitle = document.body.querySelector("h2");
 		expect(depositTitle?.textContent).toBe("Deposit");
 		expect(depositTitle?.className).toContain("sr-only");
 		expect(document.body.querySelector('[role="dialog"]')?.getAttribute("aria-labelledby")).toBe(depositTitle?.id);
 		expect(fallback?.querySelector("span.sr-only")?.textContent).toContain("Loading");
-		expect(fallback?.querySelector(LOADING_INDICATOR_SELECTOR)).toBeNull();
+		expect(fallback?.querySelector(LOADING_INDICATOR_SELECTOR)).not.toBeNull();
 		expect(container.querySelector('[data-testid="global-modal-loading-fallback"]')).toBeNull();
 
 		const closeButton = document.body.querySelector<HTMLButtonElement>('button[aria-label="Close"]');
@@ -429,7 +431,7 @@ describe("GlobalModals HIP-3 disclaimer priority", () => {
 		expect(testState.closeDepositModal).toHaveBeenCalledOnce();
 	});
 
-	it("keeps the withdrawal title visible while its lazy chunk loads", async () => {
+	it("keeps the withdrawal title for assistive technology only, as the loaded dialog does", async () => {
 		testState.depositModalTab = "withdraw";
 		testState.suspendedLazyComponent = "DepositModal";
 		const { GlobalModals } = await import("@/components/trade/components/global-modals");
@@ -438,7 +440,7 @@ describe("GlobalModals HIP-3 disclaimer priority", () => {
 
 		const withdrawTitle = document.body.querySelector("h2");
 		expect(withdrawTitle?.textContent).toBe("Withdraw");
-		expect(withdrawTitle?.className).not.toContain("sr-only");
+		expect(withdrawTitle?.className).toContain("sr-only");
 	});
 
 	it("preserves the compact loading fallback for other lazy global modals", async () => {
@@ -452,15 +454,16 @@ describe("GlobalModals HIP-3 disclaimer priority", () => {
 		expect(document.body.querySelector('[data-testid="deposit-modal-loading-fallback"]')).toBeNull();
 	});
 
-	it("preserves the compact loading fallback for external-wallet deposits", async () => {
+	it("uses the same deposit shell fallback for external-wallet deposits", async () => {
 		testState.depositPath = "external";
 		testState.suspendedLazyComponent = "DepositModal";
 		const { GlobalModals } = await import("@/components/trade/components/global-modals");
 
 		act(() => root.render(createElement(I18nProvider, { i18n }, createElement(GlobalModals))));
 
-		expect(container.querySelector('[data-testid="global-modal-loading-fallback"]')).not.toBeNull();
-		expect(document.body.querySelector('[data-testid="deposit-modal-loading-fallback"]')).toBeNull();
+		expect(container.querySelector('[data-testid="global-modal-loading-fallback"]')).toBeNull();
+		expect(document.body.querySelector('[data-testid="deposit-modal-loading-fallback"]')).not.toBeNull();
+		expect(document.body.querySelector('button[aria-label="Close"]')).not.toBeNull();
 	});
 
 	it("mounts the globally accessible Send modal with the requested account defaults", async () => {
