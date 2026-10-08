@@ -67,6 +67,10 @@
 - 官网发布后检查；
 - p25。
 
+## 补充（2026-10-08，p25 清理已发布）
+
+阶段 5.1 已完成：PR #73 于 2026-10-08 合入 `dev`（`d6033daf`）并随 PR #87 晋升 `main`（`d74dd616`），作为 `cloudfront-2026-10-08-p28` 发布，两网 `verify` 通过（签名 POST allowed）、`csp-coverage` 0 违规；线上自此不再识别 gatu 主机。阶段 5.2（白名单删除 `X-Gatu-Forwarded-Host`）、5.3（Lambda 环境变量改名）、5.4（删除 gatu 证书）仍未做。回滚到 p27 不需要恢复白名单（仍含旧头）。见[发布记录](../work-memory/sessions/2026-10-08-cloudfront-release-p28.md)。
+
 ## 补充（2026-10-03，p25 的代码部分）
 
 决策 3 的 p25 清理已写成代码，范围与[切换方案](../sairn-domain-cutover-plan.md) 4.2（PR-B）一致：

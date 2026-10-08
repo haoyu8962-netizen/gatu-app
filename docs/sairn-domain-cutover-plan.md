@@ -164,7 +164,7 @@ p24 发布到窗口之间，站内推荐链接、法律页链接、站点地图�
 
 | # | 步骤 | 前提 |
 |---|---|---|
-| 5.1 | PR-B（PR #73，2026-10-03 已开，未合入）合入、发布 p25（`--origin https://app.sairn.ai`），`verify` 的签名 POST 返回 200 | 0.6 的读回输出证明策略含 `X-Sairn-Forwarded-Host` |
+| 5.1 | PR-B（PR #73）合入、发布 p25（`--origin https://app.sairn.ai`），`verify` 的签名 POST 返回 200。**2026-10-08 已完成**：#73 于 2026-10-08 合入 `dev`（`d6033daf`），随 PR #87 晋升 `main`（`d74dd616`），作为 `cloudfront-2026-10-08-p28` 发布；发布前读回三条分发别名都不含 gatu.ai、策略含 `X-Sairn-Forwarded-Host`（ETag `ETVPDKIKX0DER`）；两网 `verify` 的签名 POST 为 allowed。见[发布记录](work-memory/sessions/2026-10-08-cloudfront-release-p28.md)。用户原定 10-09 之后再合，本次按用户指示提前 | 0.6 的读回输出证明策略含 `X-Sairn-Forwarded-Host` |
 | 5.2 | 源站请求策略删除 `X-Gatu-Forwarded-Host`；选 A 时之后由你摘除并删除临时策略 `gatu-edge-domain-cutover` | p25 已验证 |
 | 5.3 | Lambda：**在控制台**删除 `GATU_TRUST_VIEWER_ADDRESS`，可显式设 `SAIRN_TRUST_VIEWER_ADDRESS=true`（命令行更新会整表替换，漏写会丢掉 `IPDATA_API_KEY`） | `verify` 的 geo 返回真实国家 |
 | 5.4 | 30 天后删除两张 gatu 证书 `548ac30d…`、`ff5677c6…`，再删 gatu 区的 `_…acm-validations`（之后旧主机名才会是 NXDOMAIN）；证书删除不可恢复，需你确认 | 无回滚需要 |
