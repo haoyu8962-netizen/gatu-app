@@ -99,6 +99,15 @@ function matchesAnyFile(directory, listed) {
 	return existsSync(parent) && readdirSync(parent).some((entry) => !entry.startsWith(".") && name.test(entry));
 }
 
+function pathSelectsFile(listed, file) {
+	if (dirname(listed) !== dirname(file)) return false;
+	if (!listed.includes("*")) return basename(listed) === basename(file);
+	const pattern = basename(listed)
+		.replace(/[.+?^${}()|[\]\\]/g, "\\$&")
+		.replaceAll("*", ".*");
+	return new RegExp(`^${pattern}$`).test(basename(file));
+}
+
 test("cancels superseded runs in pull request workflows and never in the comment-driven one", () => {
 	for (const name of PULL_REQUEST_WORKFLOWS) {
 		const workflow = readWorkflow(name);
@@ -288,6 +297,55 @@ test("never lists a test path that matches no file", () => {
 		missing,
 		[],
 		"vitest and Playwright read a path that matches no file as a filter that selects nothing, and the step still passes",
+	);
+});
+
+/** The part of a shell command that runs: everything from the first `#` token on is a comment. */
+function executableCommand(command) {
+	const tokens = command.split(/\s+/);
+	const comment = tokens.findIndex((token) => token.startsWith("#"));
+	return (comment < 0 ? tokens : tokens.slice(0, comment)).join(" ");
+}
+
+function tradingViewStepCalls(workflow) {
+	const steps = workflowListItems(workflow).filter((item) =>
+		item.lines.some((line) => line.trim() === "name: Test TradingView integration"),
+	);
+	assert.equal(steps.length, 1, "terminal-tests.yml has exactly one TradingView step");
+	const { directory, commands } = stepCommands(steps[0]);
+	return commands.flatMap((command) => testRunnerCalls(directory, executableCommand(command)));
+}
+
+test("selects both TradingView loader handshake tests in the terminal TradingView step", () => {
+	const required = [
+		"src/lib/tests/chart-library-loader-handshake-contract.test.ts",
+		"src/lib/tests/chart-library-loader-handshake.test.ts",
+	];
+	const calls = tradingViewStepCalls(readWorkflow("terminal-tests.yml"));
+	assert.equal(calls.length > 0, true, "the TradingView step runs a test runner");
+	for (const file of required) {
+		assert.equal(existsSync(join(REPOSITORY_ROOT, "apps/terminal", file)), true, `${file} is missing`);
+		const selected = calls.some(
+			({ directory, paths }) => directory === "apps/terminal" && paths.some((listed) => pathSelectsFile(listed, file)),
+		);
+		assert.equal(selected, true, `terminal-tests.yml does not select ${file}; the vendored loader patch would go unchecked`);
+	}
+});
+
+test("ignores a TradingView step whose runner is commented out inline", () => {
+	const workflow = readWorkflow("terminal-tests.yml");
+	const step = workflowListItems(workflow).find((item) =>
+		item.lines.some((line) => line.trim() === "name: Test TradingView integration"),
+	);
+	const runLine = step.lines.findIndex((line) => line.trim().startsWith("run:"));
+	const commentedOut = [...step.lines];
+	commentedOut[runLine + 1] = `${commentedOut[runLine + 1].replace(/^(\s*)/, "$1true; # ")}`;
+	const { directory, commands } = stepCommands({ ...step, lines: commentedOut });
+	assert.equal(commands.flatMap((command) => testRunnerCalls(directory, command)).length > 0, true);
+	assert.deepEqual(
+		commands.flatMap((command) => testRunnerCalls(directory, executableCommand(command))),
+		[],
+		"a runner behind an inline comment must not count as selected",
 	);
 });
 
