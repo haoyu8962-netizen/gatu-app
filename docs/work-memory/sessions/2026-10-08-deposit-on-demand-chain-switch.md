@@ -90,6 +90,8 @@
 - 本轮修复验证：`pnpm --filter @sairn/terminal typecheck`、Biome、CI 契约测试通过；两面板、owner-trading-signer、use-terms-acceptance、use-connection-wallet-client、use-explicit-agent-approval 共 6 个文件 125 项通过。
 - 对 d5bbc7c0..0fc0cc6b 的第三轮 Codex 三路审查：V 8.5、B 8.5、C 8.5，无新增运行时缺陷。V/C：`use-connection-wallet-client` 的链变化用例在第二次渲染才加 key、实际重挂载，钉不住「同一挂载跟随链变化」 → 四次渲染都不传 key，加挂载计数断言（恒为 1）并补 999999 → 42161 的回切；缓存首链的变异被抓到。C：owner 模式豁免（Privy 嵌入式 owner 不需要 wagmi 客户端）无正例 → 两面板各加「owner 就绪、builder 待批、wagmi 客户端缺失时仍可点并调用 authorize」用例；去掉豁免的变异被抓到。B：`docs/hyperliquid-signing.md` 仍有 7 处固定 0x66eee（示例注释、提现步骤表、小节标题、流程示意、审批注释、实现说明）→ 全部改为「签名者的链」措辞，并注明裸私钥示例未配置 `signatureChainId` 时取 SDK 默认值而非 0x66eee；B 同时指出记录对「同一挂载」的描述夸大，已随测试修正。
 - 第三轮修复验证：typecheck、Biome 通过；`use-connection-wallet-client`、两面板共 3 个文件 84 项通过。
+- b7b22cd3 窄范围单路 Codex 复核：10.0，无发现。
+- b7b22cd3 上的 `pnpm --filter @sairn/terminal test -- --maxWorkers=4`：8576 项中 8561 通过、7 跳过、8 失败。失败项：`vite-development-cache`（沙箱禁止监听本地端口，EPERM）；`chart-build-assets`、`chart-store`、`dashboard-chrome`（4）、`global-modals-hip3-disclaimer`、`positions-panel-preload` 均为并行负载下的测试或钩子超时，与本次改动无关，五个文件单独重跑 79 项全部通过。
 
 ## 后续与替代关系
 
