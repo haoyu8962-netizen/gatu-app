@@ -283,6 +283,7 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/use-asset-leverage.test.tsx \
   src/lib/tests/funds-action-balances.test.tsx \
   src/lib/tests/deposit-modal-withdrawal-routing-guard.test.tsx \
+  src/lib/tests/use-deposit-routing-guard.test.tsx \
   src/lib/tests/cctp-deposit-tracking-notifier.test.tsx \
   src/lib/tests/referral-action-modal.test.tsx \
   src/lib/tests/api-wallet-action-modal.test.tsx \

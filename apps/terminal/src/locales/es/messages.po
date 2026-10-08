@@ -963,7 +963,6 @@ msgstr "Arbitrum (heredado)"
 
 #: src/lib/errors/action-error.ts
 #: src/lib/hyperliquid/use-deposit.ts
-#: src/lib/tests/wrong-network-screen.test.tsx
 msgid "Arbitrum network switch was rejected."
 msgstr "Se rechazó el cambio a la red Arbitrum."
 
@@ -1136,7 +1135,6 @@ msgstr "Promedio {price}"
 #: src/components/trade/tradebox/bridge/bridge-error-screen.tsx
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
-#: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
 #: src/components/vaults/vault-action-modal.tsx
 msgid "Back"
 msgstr "Atrás"
@@ -1738,7 +1736,6 @@ msgstr "Haz clic para enviar · Las operaciones ejecutadas no se pueden revertir
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/shared-ui.tsx
-#: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
 #: src/components/trade/tradebox/leverage-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
@@ -2603,7 +2600,6 @@ msgstr "Desplegador"
 #: src/components/trade/tradebox/deposit/amount-input.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-method-chooser.tsx
-#: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
 #: src/components/vaults/vault-detail-view.tsx
 #: src/components/vaults/vault-detail-view.tsx
 #: src/config/account-ledger.ts
@@ -8579,16 +8575,14 @@ msgid "Switch to {marketName} market, {sideLabel} order"
 msgstr "Cambiar al mercado {marketName}, orden {sideLabel}"
 
 #: src/components/trade/mobile/mobile-trade-view.tsx
-#: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
-#: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
 #: src/config/ui-text.ts
 #: src/lib/trade/use-button-content.ts
 msgid "Switch to Arbitrum"
 msgstr "Cambiar a Arbitrum"
 
 #: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
-msgid "Switch to Arbitrum to deposit USDC to Hyperliquid"
-msgstr "Cambia a Arbitrum para depositar USDC en Hyperliquid"
+#~ msgid "Switch to Arbitrum to deposit USDC to Hyperliquid"
+#~ msgstr "Cambia a Arbitrum para depositar USDC en Hyperliquid"
 
 #: src/config/desktop-nav.ts
 msgid "Switch to dark mode"
@@ -8630,8 +8624,11 @@ msgstr "Cambiado a margen de cartera"
 msgid "Switched to Unified account"
 msgstr "Cambiado a cuenta unificada"
 
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Switching network"
+msgstr "Cambiando de red"
+
 #: src/components/trade/mobile/mobile-trade-view.tsx
-#: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
 #: src/config/ui-text.ts
 #: src/lib/trade/use-button-content.ts
 msgid "Switching..."
@@ -10292,7 +10289,6 @@ msgstr "No se pudo cargar la tarifa actual de retiro mediante CCTP."
 msgid "Unable to switch wallet to {0}. Switch networks in your wallet and retry."
 msgstr "No se pudo cambiar el monedero a {0}. Cambia de red en tu monedero y vuelve a intentarlo."
 
-#: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
 #: src/lib/errors/action-error.ts
 msgid "Unable to switch wallet to Arbitrum. Switch networks in your wallet and retry."
 msgstr "No se pudo cambiar la billetera a Arbitrum. Cambia la red en tu billetera y vuelve a intentarlo."
@@ -10973,7 +10969,6 @@ msgstr "La billetera no devolvió un hash de transacción. Revisa la actividad d
 
 #. placeholder {0}: config.chainName
 #: src/lib/hyperliquid/use-deposit.ts
-#: src/lib/hyperliquid/use-deposit.ts
 msgid "Wallet is not connected to {0}. Switch networks in your wallet and retry."
 msgstr "El monedero no está conectado a {0}. Cambia de red en tu monedero y vuelve a intentarlo."
 
@@ -10984,7 +10979,6 @@ msgstr "La billetera no está lista para actualizar el modo de cuenta"
 
 #: src/components/trade/tradebox/bridge/shared-ui.tsx
 #: src/components/trade/tradebox/deposit/shared-ui.tsx
-#: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts

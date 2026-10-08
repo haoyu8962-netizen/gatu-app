@@ -93,7 +93,6 @@ import { DepositForm } from "./deposit/deposit-form";
 import { DepositMethodChooser } from "./deposit/deposit-method-chooser";
 import { StatusScreen, WalletNotConnected } from "./deposit/shared-ui";
 import { WithdrawForm } from "./deposit/withdraw-form";
-import { WrongNetworkScreen } from "./deposit/wrong-network-screen";
 import { DepositExplorerLink } from "./deposit-explorer-link";
 
 const LazyBridgeTab = createLazyComponent(() => import("./bridge/bridge-tab"), "BridgeTab");
@@ -246,11 +245,8 @@ export function DepositModal() {
 		cctpRecoveryUnavailable,
 		submissionOutcomeUnknown,
 		walletResponseDelayed,
-		isArbitrum,
-		isSwitching,
+		networkSwitchPending,
 		deposit,
-		switchError,
-		switchToArbitrum,
 		walletProviderStatus,
 		walletProviderError,
 		validate: validateDeposit,
@@ -1313,6 +1309,7 @@ export function DepositModal() {
 	}
 
 	let depositPendingHeading = <Trans>Confirm in wallet</Trans>;
+	if (networkSwitchPending) depositPendingHeading = <Trans>Switching network</Trans>;
 	if (walletResponseDelayed) depositPendingHeading = <Trans>Taking longer than expected</Trans>;
 	if (depositStatus === "confirming") depositPendingHeading = <Trans>Waiting for chain confirmation</Trans>;
 	const recoveredCctpDeposit = visibleTab === "deposit" && !depositHash ? cctpDepositTracking.recoveryRecord : null;
@@ -1409,27 +1406,6 @@ export function DepositModal() {
 					</Button>
 				</div>
 			</StatusScreen>
-		);
-	}
-
-	if (
-		canUseFundsActions &&
-		depositMode === "wallet" &&
-		visibleTab === "deposit" &&
-		!showsDepositMethods &&
-		walletProviderStatus === "ready" &&
-		!isArbitrum
-	) {
-		return (
-			<WrongNetworkScreen
-				open={open}
-				presentation={presentation}
-				onClose={handleClose}
-				onBack={depositMethodsOffered ? () => setDepositStep("methods") : undefined}
-				onSwitch={switchToArbitrum}
-				isSwitching={isSwitching}
-				error={switchError}
-			/>
 		);
 	}
 

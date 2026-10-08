@@ -150,6 +150,7 @@
 
 当前规范：[docs/account-overview.md](../../docs/account-overview.md) · [docs/withdrawals.md](../../docs/withdrawals.md) · [docs/cctp-deposits.md](../../docs/cctp-deposits.md)
 
+- [手机外部钱包存款报「未连接到 Arbitrum One」：数字链 ID 与按需切链](sessions/2026-10-08-deposit-on-demand-chain-switch.md) — 2026-10-08；已整理，验证见正文。手机外部钱包（WalletConnect）点击存款报「钱包未连接到 Arbitrum One」：根因是 use-deposit.ts 的 getProviderChainId 只接受字符串、WalletConnect provider 的 eth_chainId 返回数字，表单侧用 parseChainId 判定正常而提交侧永远不匹配；切链后又立即重读不等 chainChanged。对照官方终端打包代码（已登录 Privy 时不预拦截、发交易前 switchChainAsync）后：删除 WrongNetworkScreen 预拦截，提交路径按数字比较、只发一次切链请求、以 chainChanged 加有界轮询等待、状态屏显示「正在切换网络」，拒绝与超时走存款失败通知。单测钉住五种情形；未在真实手机钱包上验收。
 - [Privy 银行卡入金（阶段二）：精确 owner 收款、分网开关与发布闸门](sessions/2026-10-02-privy-card-funding.md) — 2026-10-02；已整理，验证见正文。按用户决定（只做法币、邮箱与外部钱包都开放、主网测试网分开开关）在阶段一升级之上实现银行卡入金：useFiatOnramp 显式收款到精确的 Hyperliquid owner（须在 Privy 已连接列表中），不用会退回第一个嵌入式钱包的 useDepositFunds；用户看过官方终端后要求独立入口，充值弹层第一屏改为「转入 USDC」与「用银行卡购买 USDC」两个入口；购买窗口默认美元 100；选购买先关充值弹层，页面级宿主（由充值弹层的块加载）持有请求，确认/提交都不声称到账，可能已扣款的拒绝报常驻的状态未知；独立审查 1 项 P2、9 项 P3 已修；build-meta 记录开关，主网发布需 --allow-mainnet-card-funding；CSP 静态放行 Stripe 公布的来源并重新生成 CloudFront 响应函数；总量基线按 CI 同口径实测 +11,563；ADR 0034。后续同日：选择页显示时预热宿主；生产构建实测点击到 Privy 首个请求 22–29 ms，此前记录的 8–14 秒是被遮挡窗口里定时器被限速所致；控制台只读核对线上应用的卡入金已开启（Stripe、MoonPay）、应用处于 development mode；待人工完成的各项写成上线验收清单，法律文本写成待审草案。法律文本未改（需合格法律审阅），permissions-policy 未改（Apple/Google Pay 与页面内摄像头不可用）。未做沙盒与真实购买、外部钱包与手机实测。Codex 对抗审查后：购买结果与无法打开的提示改为渲染时核对 owner 与网络的自定义通知卡片（与订单通知同一套生命周期，覆盖 Sonner 先撤下后插入）；测试网沙盒的结果只说明没有扣款、不会到账；只有明确拒卡的原因判为未完成；上线清单分为发布之前、沙盒发布、主网发布之后三个阶段；宿主在打开 Privy 前复核收款钱包，购买入口在 Privy 窗口关闭时释放（SDK 的 fund 要等首次报价返回才结束），通知只在排在最前时计时且不覆盖 Sonner 的暂停；Sonner 与 Privy 的补丁各加一段（时长切换时的计时基准、fund 结果的拒绝处理），闸门测试渲染生产的 AppToaster。
 - [Privy SDK 升级与 Funding 接入：规划与阶段一升级](sessions/2026-10-02-privy-upgrade-funding-plan.md) — 2026-10-02；已整理，验证见正文。用户要求单独开分支规划并执行 Privy SDK 升级与 Funding 接入，决定只做法币、邮箱与外部钱包都开放、其余按推荐（两个 PR、开关分网、viem 不动）。阶段一把 react-auth 升到 3.46.0、wagmi 升到 4.0.17：空嵌入式钱包列表补丁按新产物重做（不带补丁对照 2 项失败、加补丁 4 项通过），手动分块只收应用自己的 Base UI（首屏省约 40 kB），其余增量来自 Privy 核心库静态引入 libphonenumber-js 与自带 viem 变大，按规则用固定元数据前后构建重设基线（总量 +83,687、交易首屏 +62,713）。类型检查、钱包回归 264 项、终端全量 7,996 项通过（1 项 TradingView 摘要用例负载下超时、单跑通过）。未做真实钱包验收；阶段二未实施。
 - [承接 Privy 方案 B：升级、即时主题与钱包列表稳定性](sessions/2026-09-30-privy-theme-upgrade.md) — 2026-09-30；已验证，范围见正文。方案 B 升级 Privy、恢复即时主题并稳定钱包数组；提交后复核补齐 CI 覆盖遗漏，CI 同版 Node 下 7869 项终端测试、60 项 Privy 专项、全仓类型与 Biome 检查通过；真实钱包验收及历史浏览器异常归因未完成，未发布。
@@ -332,6 +333,7 @@
 
 | 记录日期 | 任务记录 | 来源任务 | 基线提交 | 状态 |
 | --- | --- | --- | --- | --- |
+| 2026-10-08 | [手机外部钱包存款报「未连接到 Arbitrum One」：数字链 ID 与按需切链](sessions/2026-10-08-deposit-on-demand-chain-switch.md) | 未取得任务标识，见正文 | `6da4c15a` | 已整理，验证见正文 |
 | 2026-10-02 | [CI 测试清单的失效 geo 参数换成继任测试，并钉住列出的路径必须存在](sessions/2026-10-02-ci-listed-test-paths.md) | 未取得任务标识，见正文 | `682430ba` | 已验证，范围见正文 |
 | 2026-10-02 | [日期与列表格式化契约：组件与 Hook 调用 formatDateTime 等函数一律传 locale](sessions/2026-10-02-date-locale-reactivity-contract.md) | 未取得任务标识，见正文 | `04469b52` | 已验证，范围见正文 |
 | 2026-10-02 | [手写数字格式不跟随数字格式设置：精确小数串经 formatDecimalString 换分隔符，并逐处分类 toFixed](sessions/2026-10-02-exact-decimal-number-format.md) | 未取得任务标识，见正文 | `04469b52` | 已验证，范围见正文 |

@@ -963,7 +963,6 @@ msgstr "Arbitrum (قديم)"
 
 #: src/lib/errors/action-error.ts
 #: src/lib/hyperliquid/use-deposit.ts
-#: src/lib/tests/wrong-network-screen.test.tsx
 msgid "Arbitrum network switch was rejected."
 msgstr "تم رفض التبديل إلى شبكة Arbitrum."
 
@@ -1136,7 +1135,6 @@ msgstr "المتوسط {price}"
 #: src/components/trade/tradebox/bridge/bridge-error-screen.tsx
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
-#: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
 #: src/components/vaults/vault-action-modal.tsx
 msgid "Back"
 msgstr "رجوع"
@@ -1738,7 +1736,6 @@ msgstr "انقر للإرسال · لا يمكن التراجع عن الصفق�
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/shared-ui.tsx
-#: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
 #: src/components/trade/tradebox/leverage-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
@@ -2603,7 +2600,6 @@ msgstr "جهة النشر"
 #: src/components/trade/tradebox/deposit/amount-input.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-method-chooser.tsx
-#: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
 #: src/components/vaults/vault-detail-view.tsx
 #: src/components/vaults/vault-detail-view.tsx
 #: src/config/account-ledger.ts
@@ -8579,16 +8575,14 @@ msgid "Switch to {marketName} market, {sideLabel} order"
 msgstr "التبديل إلى سوق {marketName}، أمر {sideLabel}"
 
 #: src/components/trade/mobile/mobile-trade-view.tsx
-#: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
-#: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
 #: src/config/ui-text.ts
 #: src/lib/trade/use-button-content.ts
 msgid "Switch to Arbitrum"
 msgstr "التبديل إلى Arbitrum"
 
 #: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
-msgid "Switch to Arbitrum to deposit USDC to Hyperliquid"
-msgstr "التبديل إلى Arbitrum لإيداع USDC في Hyperliquid"
+#~ msgid "Switch to Arbitrum to deposit USDC to Hyperliquid"
+#~ msgstr "التبديل إلى Arbitrum لإيداع USDC في Hyperliquid"
 
 #: src/config/desktop-nav.ts
 msgid "Switch to dark mode"
@@ -8630,8 +8624,11 @@ msgstr "تم التبديل إلى هامش المحفظة"
 msgid "Switched to Unified account"
 msgstr "تم التبديل إلى الحساب الموحد"
 
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Switching network"
+msgstr "جارٍ تبديل الشبكة"
+
 #: src/components/trade/mobile/mobile-trade-view.tsx
-#: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
 #: src/config/ui-text.ts
 #: src/lib/trade/use-button-content.ts
 msgid "Switching..."
@@ -10292,7 +10289,6 @@ msgstr "تعذر تحميل رسوم السحب الحالية عبر CCTP."
 msgid "Unable to switch wallet to {0}. Switch networks in your wallet and retry."
 msgstr "تعذّر تبديل المحفظة إلى {0}. بدّل الشبكة في محفظتك ثم أعد المحاولة."
 
-#: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
 #: src/lib/errors/action-error.ts
 msgid "Unable to switch wallet to Arbitrum. Switch networks in your wallet and retry."
 msgstr "تعذّر تبديل المحفظة إلى Arbitrum. بدّل الشبكة من داخل المحفظة ثم أعد المحاولة."
@@ -10973,7 +10969,6 @@ msgstr "لم تُرجع المحفظة تجزئة معاملة. تحقق من ن
 
 #. placeholder {0}: config.chainName
 #: src/lib/hyperliquid/use-deposit.ts
-#: src/lib/hyperliquid/use-deposit.ts
 msgid "Wallet is not connected to {0}. Switch networks in your wallet and retry."
 msgstr "المحفظة غير متصلة بـ {0}. بدّل الشبكة في محفظتك ثم أعد المحاولة."
 
@@ -10984,7 +10979,6 @@ msgstr "المحفظة غير جاهزة لتحديث وضع الحساب"
 
 #: src/components/trade/tradebox/bridge/shared-ui.tsx
 #: src/components/trade/tradebox/deposit/shared-ui.tsx
-#: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts

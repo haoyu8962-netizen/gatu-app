@@ -67,7 +67,6 @@ const MOTION_SURFACES: Record<string, string> = {
 	"components/trade/mobile/mobile-trade-view.tsx": "<ButtonLoading",
 	"components/trade/components/establish-connection-modal.tsx": "<ButtonLoading",
 	"components/trade/components/wallet-modal.tsx": "<ButtonLoading",
-	"components/trade/tradebox/deposit/wrong-network-screen.tsx": "<ButtonLoading",
 	"components/trade/components/mobile-agent-sync-modal.tsx": "<ButtonLoading",
 	"components/trade/components/mobile-agent-qr-scanner.tsx": "<ButtonLoading",
 	"routes/mobile-agent-sync.tsx": "<ButtonLoading",

@@ -45,7 +45,6 @@ const REVIEWED_PROGRESS_LABELS: Record<string, { labels: string[]; reason: strin
 	},
 	"tradebox/bridge/confirmation-screen.tsx": { labels: ["Preparing your quote..."], reason: "passive loading" },
 	"tradebox/deposit-modal.tsx": { labels: ["Creating your wallet. Please wait..."], reason: "wallet provisioning" },
-	"tradebox/deposit/wrong-network-screen.tsx": { labels: ["Switching..."], reason: "chain switch in the wallet" },
 	"tradebox/embedded-deposit-auto-bridge.tsx": {
 		labels: [
 			"Checking the current Hyperliquid deposit route...",
