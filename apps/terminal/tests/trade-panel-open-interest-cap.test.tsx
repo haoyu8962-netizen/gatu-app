@@ -510,6 +510,23 @@ describe("desktop TradePanel trading approval errors", () => {
 		}
 	});
 
+	it("lets the Privy owner enable trading without any wagmi client", async () => {
+		testState.signerMode = "owner";
+		testState.isReady = false;
+		wagmiState.walletClientMissing = true;
+		try {
+			await renderPanel(root);
+			const button = getOrderButton(container);
+			expect(button.textContent?.trim()).toBe("Enable Trading");
+			expect(button.disabled).toBe(false);
+			await act(async () => button.click());
+			expect(testState.authorize).toHaveBeenCalledTimes(1);
+			expect(wagmiState.switchChain).not.toHaveBeenCalled();
+		} finally {
+			wagmiState.walletClientMissing = false;
+		}
+	});
+
 	it("waits for the external wallet client before offering Enable Trading", async () => {
 		testState.signerMode = "agent";
 		wagmiState.walletClientLoading = true;

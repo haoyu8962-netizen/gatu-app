@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import { useConnectionWalletClient } from "@sairn/hl-react";
-import { act, createElement } from "react";
+import { act, createElement, useEffect } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -24,9 +24,13 @@ describe("useConnectionWalletClient", () => {
 	let container: HTMLDivElement;
 	let root: Root;
 	let captured: ReturnType<typeof useConnectionWalletClient> | null = null;
+	let mounts = 0;
 
 	function Probe() {
 		captured = useConnectionWalletClient();
+		useEffect(() => {
+			mounts += 1;
+		}, []);
 		return null;
 	}
 
@@ -36,6 +40,7 @@ describe("useConnectionWalletClient", () => {
 		root = createRoot(container);
 		wagmiState.requests = [];
 		captured = null;
+		mounts = 0;
 	});
 
 	afterEach(() => {
@@ -55,11 +60,16 @@ describe("useConnectionWalletClient", () => {
 		wagmiState.chainId = 42161;
 		act(() => root.render(createElement(Probe)));
 		wagmiState.chainId = 999_999;
-		act(() => root.render(createElement(Probe, { key: "same" })));
+		act(() => root.render(createElement(Probe)));
+		expect(captured?.data).toEqual({ requestedChainId: 999_999 });
+		wagmiState.chainId = 42161;
+		act(() => root.render(createElement(Probe)));
+		expect(captured?.data).toEqual({ requestedChainId: 42161 });
 		wagmiState.chainId = undefined;
-		act(() => root.render(createElement(Probe, { key: "same" })));
+		act(() => root.render(createElement(Probe)));
 
-		expect(wagmiState.requests).toEqual([{ chainId: 42161 }, { chainId: 999_999 }, undefined]);
+		expect(mounts).toBe(1);
+		expect(wagmiState.requests).toEqual([{ chainId: 42161 }, { chainId: 999_999 }, { chainId: 42161 }, undefined]);
 		expect(captured?.data).toEqual({ requestedChainId: undefined });
 	});
 

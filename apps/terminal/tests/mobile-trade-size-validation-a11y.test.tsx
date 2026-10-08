@@ -482,6 +482,23 @@ describe("MobileTradeView order-size validation accessibility", () => {
 		}
 	});
 
+	it("lets the Privy owner enable trading without any wagmi client", async () => {
+		activateLocale("en");
+		testState.tradingReady = false;
+		testState.signerMode = "owner";
+		wagmiState.walletClientMissing = true;
+		try {
+			await renderView(root);
+			const enable = getCtaButton(container, "Enable Trading");
+			expect(enable.disabled).toBe(false);
+			await act(async () => enable.click());
+			expect(testState.authorize).toHaveBeenCalledTimes(1);
+			expect(wagmiState.switchChain).not.toHaveBeenCalled();
+		} finally {
+			wagmiState.walletClientMissing = false;
+		}
+	});
+
 	it("waits for the external wallet client before offering Enable Trading", async () => {
 		activateLocale("en");
 		testState.tradingReady = false;
