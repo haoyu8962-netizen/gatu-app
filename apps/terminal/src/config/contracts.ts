@@ -5,4 +5,3 @@ export const HYPERCORE_CHAIN_ID = 1337;
 export const HYPERCORE_USDC_ADDRESS = "0xaf88d065e77c8cC2239327C5EDb3A432268e5831";
 
 export const USDC_DECIMALS = 6;
-export const MIN_DEPOSIT_USDC = 5n * 10n ** 6n;

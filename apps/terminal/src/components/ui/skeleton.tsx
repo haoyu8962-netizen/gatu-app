@@ -8,8 +8,9 @@ type SkeletonProps = ComponentProps<typeof BoneyardSkeleton>;
 
 /**
  * Boneyard renders nothing while loading when no bones are registered for `name`
- * (the generated registry is opt-in and can lag behind new call sites), so every
- * skeleton in the app goes through this wrapper to guarantee a visible placeholder.
+ * (the generated registry is opt-in and can lag behind new call sites), so this wrapper
+ * guarantees a visible placeholder. New loading states follow the Loading placeholders
+ * rule in `.claude/rules/style-ui-guide.md` instead of adding call sites here.
  */
 export function Skeleton({ fallback, ...props }: SkeletonProps) {
 	return <BoneyardSkeleton fallback={fallback ?? <SkeletonRows />} {...props} />;

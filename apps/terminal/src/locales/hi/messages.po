@@ -1238,12 +1238,11 @@ msgstr "पोर्टफोलियो मार्जिन मोड मे
 msgid "Bought {quantity}"
 msgstr "{quantity} खरीदा"
 
-#: src/components/trade/components/deposit-modal-loading-fallback.tsx
+#: src/components/trade/components/funds-modal-shell.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/account-panel.tsx
-#: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Bridge"
 msgstr "ब्रिज"
 
@@ -1621,7 +1620,6 @@ msgstr "Circle CCTP जमा प्रति ट्रांसफ़र 10,000
 msgid "Circle Fast Transfer capacity is temporarily unavailable. Try again later."
 msgstr "Circle Fast Transfer क्षमता अस्थायी रूप से उपलब्ध नहीं है। बाद में फिर से कोशिश करें।"
 
-#: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Circle fees changed before submission. Review the updated fee and retry."
 msgstr "सबमिशन से पहले Circle शुल्क बदल गए। अपडेट किए गए शुल्क की समीक्षा करके फिर से कोशिश करें।"
@@ -2582,7 +2580,7 @@ msgstr "डिप्लॉयर"
 #: src/components/portfolio/portfolio-page.tsx
 #: src/components/portfolio/portfolio-page.tsx
 #: src/components/staking/staking-action-modal.tsx
-#: src/components/trade/components/deposit-modal-loading-fallback.tsx
+#: src/components/trade/components/funds-modal-shell.tsx
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
@@ -2596,7 +2594,6 @@ msgstr "डिप्लॉयर"
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/account-panel.tsx
-#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
@@ -4137,8 +4134,12 @@ msgid "Import phone access"
 msgstr "फ़ोन एक्सेस इम्पोर्ट करें"
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
-msgid "Important: this address can only receive native USDC on Arbitrum. Do not send USDC.e or assets from other networks. Minimum deposit is {minimumDeposit}."
-msgstr "महत्वपूर्ण: यह पता केवल Arbitrum पर नेटिव USDC प्राप्त कर सकता है। USDC.e या अन्य नेटवर्क की संपत्तियां न भेजें। न्यूनतम जमा {minimumDeposit} है।"
+msgid "Important: send only native USDC on Arbitrum to this address. Other assets, including USDC.e, and transfers on other networks will not be credited to your trading account."
+msgstr "महत्वपूर्ण: इस पते पर केवल Arbitrum पर नेटिव USDC भेजें। अन्य संपत्तियां, जिनमें USDC.e शामिल है, और अन्य नेटवर्क पर किए गए ट्रांसफ़र आपके ट्रेडिंग खाते में जमा नहीं होंगे।"
+
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+#~ msgid "Important: this address can only receive native USDC on Arbitrum. Do not send USDC.e or assets from other networks. Minimum deposit is {minimumDeposit}."
+#~ msgstr "महत्वपूर्ण: यह पता केवल Arbitrum पर नेटिव USDC प्राप्त कर सकता है। USDC.e या अन्य नेटवर्क की संपत्तियां न भेजें। न्यूनतम जमा {minimumDeposit} है।"
 
 #: src/components/staking/staking-view.tsx
 #: src/components/staking/staking-view.tsx
@@ -4637,7 +4638,6 @@ msgid "Loading recent reward claims…"
 msgstr "हाल के पुरस्कार प्राप्ति रिकॉर्ड लोड हो रहे हैं…"
 
 #: src/components/referrals/referral-dashboard.tsx
-#: src/components/referrals/referral-dashboard.tsx
 msgid "Loading referrals"
 msgstr "रेफ़रल लोड हो रहे हैं"
 
@@ -5092,13 +5092,15 @@ msgid "Minimum <0>{0}</0>; maximum <1>{1}</1>."
 msgstr "न्यूनतम <0>{0}</0>; अधिकतम <1>{1}</1>।"
 
 #. placeholder {0}: ctx.minDeposit
+#. placeholder {0}: numberFormat.formatDecimalString(formatUnits(cctpDepositBelowMinimumRaw, 6))
+#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/lib/errors/definitions/deposit.ts
 msgid "Minimum deposit is {0} USDC"
 msgstr "न्यूनतम जमा {0} USDC है"
 
 #: src/lib/hyperliquid/use-deposit.ts
-msgid "Minimum deposit is 5 USDC"
-msgstr "न्यूनतम जमा 5 USDC है"
+#~ msgid "Minimum deposit is 5 USDC"
+#~ msgstr "न्यूनतम जमा 5 USDC है"
 
 #: src/components/trade/components/spot-swap-modal.tsx
 msgid "Minimum order value is {ORDER_MIN_NOTIONAL_USD} USDC after size rounding."
@@ -11055,7 +11057,7 @@ msgstr "पूरी पोज़िशन"
 #: src/components/portfolio/portfolio-page.tsx
 #: src/components/portfolio/portfolio-page.tsx
 #: src/components/staking/staking-action-modal.tsx
-#: src/components/trade/components/deposit-modal-loading-fallback.tsx
+#: src/components/trade/components/funds-modal-shell.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
@@ -11063,7 +11065,6 @@ msgstr "पूरी पोज़िशन"
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/account-panel.tsx
-#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #: src/components/vaults/vault-detail-view.tsx
 #: src/components/vaults/vault-detail-view.tsx

@@ -62,7 +62,10 @@ const PENDING_EXCEPTIONS = [
 const DIALOG_FILE_NAME = /modal|dialog|drawer|sheet/;
 const DIALOG_ELEMENT = /<(?:AdaptiveModal|Modal|ModalPopup|Drawer|DrawerContent)\b/;
 // Content components that only render inside a dialog but that neither their name nor a dialog primitive reveals.
-const DIALOG_CONTENT_SOURCES = ["components/trade/tradebox/deposit/deposit-method-chooser.tsx"];
+const DIALOG_CONTENT_SOURCES = [
+	"components/trade/tradebox/deposit/deposit-method-chooser.tsx",
+	"components/trade/tradebox/deposit/deposit-form.tsx",
+];
 const STRING_LITERAL = /"([^"\n]*)"|'([^'\n]*)'|`([^`]*)`/g;
 
 function listDialogSources(dir: string): string[] {

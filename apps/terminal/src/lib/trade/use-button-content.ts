@@ -97,6 +97,7 @@ export function useButtonContent(input: ButtonContentInput): ButtonContent {
 				action: input.canDeposit ? input.onDeposit : () => {},
 				disabled: !input.canDeposit,
 				disabledReason: input.canDeposit ? undefined : (input.depositUnavailableReason ?? undefined),
+				opensDeposit: input.canDeposit,
 				variant: "cyan",
 			};
 		}

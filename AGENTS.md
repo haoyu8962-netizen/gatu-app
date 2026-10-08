@@ -72,6 +72,7 @@ This file contains durable project instructions for coding agents. Read `agent.m
 - TradingView runs in an iframe and cannot inherit application tokens; `docs/runtime-guardrails.md` §4 owns its theme stylesheet rules, including the `#1D1E26` raised-layer color and the single theme-aware stylesheet.
 - TradingView price precision comes from market metadata under Hyperliquid's tick rules, never from the digits of a price string, and a price crossing a power of ten never rebuilds the widget; `docs/runtime-guardrails.md` §4 and ADR 0035 own the rule and its tradeoffs.
 - Keep theme colors in shared tokens or existing style abstractions instead of scattering new literals.
+- Loading placeholders never redraw the layout they stand in for: use a blank busy region, a neutral spinner or geometry taken from the same source as the content; a chunk fallback either claims no dialog chrome or renders the same shell as the loaded dialog, as the deposit dialog does (`.claude/rules/style-ui-guide.md`, Loading placeholders; `loading-placeholder-contract.test.ts`).
 - Dashboard surfaces, the cards inside them and dialog notices follow the corner tiers in `.claude/rules/style-ui-guide.md` (Dashboard page gutters, Dialog content blocks). `dashboard-surface-radius-contract.test.ts` and `dialog-notice-radius-contract.test.ts` enforce them with explicit exception lists; a new visual rule follows the same pattern (Checking a visual rule).
 
 ## Order book contract
@@ -220,7 +221,11 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/modal-surface-contract.test.ts \
   src/lib/tests/earn-page-surface-contract.test.ts \
   src/lib/tests/dashboard-surface-radius-contract.test.ts \
-  src/lib/tests/dialog-notice-radius-contract.test.ts
+  src/lib/tests/dialog-notice-radius-contract.test.ts \
+  src/lib/tests/loading-placeholder-contract.test.ts \
+  src/lib/tests/funds-modal-scroll-contract.test.ts \
+  src/lib/tests/global-modals-hip3-disclaimer.test.tsx \
+  src/lib/tests/deposit-modal-warm.test.ts
 
 # Order book: geometry, transport, animation and palette
 pnpm --dir apps/terminal exec vitest run \

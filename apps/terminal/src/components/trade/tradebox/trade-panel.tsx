@@ -2,6 +2,7 @@ import { useLingui } from "@lingui/react/macro";
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useSwitchChain, useWalletClient } from "wagmi";
 import { ButtonLoading } from "@/components/brand/button-loading";
+import { depositModalIntentProps } from "@/components/trade/components/deposit-modal-intent";
 import { LazyDialogHost } from "@/components/ui/lazy-dialog-host";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import { APPROVAL_ERROR_DISMISS_MS } from "@/config/time";
@@ -907,6 +908,7 @@ export function TradePanel() {
 									variant={buttonContent.variant}
 									label={buttonContent.text}
 									onClick={handleCtaClick}
+									{...(buttonContent.opensDeposit ? depositModalIntentProps : undefined)}
 									disabled={buttonContent.disabled}
 									aria-label={buttonContent.text}
 									iconLeft={isRegistering ? <ButtonLoading /> : undefined}

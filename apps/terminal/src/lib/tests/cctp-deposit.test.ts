@@ -22,6 +22,7 @@ import {
 	buildCctpSponsoredDepositContractArgs,
 	CCTP_EXTENSION_ABI,
 	CCTP_EXTENSION_V2_ABI,
+	CctpDepositBelowMinimumError,
 	calculateCctpDepositFee,
 	createCctpDepositParameters,
 	createCctpSponsoredDepositParameters,
@@ -30,10 +31,13 @@ import {
 	fetchCctpDepositFees,
 	fetchCctpFastAllowance,
 	getAmountIndependentCctpMaxFeeRaw,
+	getCctpDepositMinimumRaw,
 	getHyperCoreRecipientState,
 	hasHyperCoreMainnetState,
+	meetsCctpDepositMinimum,
 	normalizeCctpDepositFees,
 	normalizeCctpFastAllowance,
+	reviewCctpDepositFee,
 	splitCctpAuthorizationSignature,
 } from "@/lib/trade/cctp-deposit";
 import type { Translate } from "@/lib/translate";
@@ -51,6 +55,10 @@ function captureError(action: () => unknown): unknown {
 		return error;
 	}
 	throw new Error("Expected the action to throw");
+}
+
+function createForwardFee(raw: number) {
+	return { low: BigInt(raw), med: BigInt(raw), high: BigInt(raw) };
 }
 
 function createFeePayload(minimumFee = 0, forwardFee = 200_000) {
@@ -289,10 +297,130 @@ describe("CCTP fee handling", () => {
 		});
 	});
 
-	it("fails closed when fees consume the transfer", () => {
-		expect(() => calculateCctpDepositFee(200_000n, normalizeCctpDepositFees(createFeePayload()))).toThrow(
-			"CCTP fees must be lower than the deposit amount",
+	it("fails closed with the missed minimum when fees consume the transfer", () => {
+		const quote = normalizeCctpDepositFees(createFeePayload());
+
+		expect(() => calculateCctpDepositFee(200_000n, quote)).toThrow(CctpDepositBelowMinimumError);
+		expect(reviewCctpDepositFee(200_000n, quote)).toEqual({ calculation: null, belowMinimumRaw: 400_000n });
+	});
+
+	it("requires twice the current maximum fee instead of a fixed legacy-bridge minimum", () => {
+		const quote = normalizeCctpDepositFees(createFeePayload(0));
+
+		expect(getCctpDepositMinimumRaw(quote)).toBe(400_000n);
+		expect(() => calculateCctpDepositFee(399_999n, quote)).toThrow(CctpDepositBelowMinimumError);
+		expect(calculateCctpDepositFee(400_000n, quote).netAmountRaw).toBe(200_000n);
+		expect(meetsCctpDepositMinimum(399_999n, quote)).toBe(false);
+		expect(meetsCctpDepositMinimum(400_000n, quote)).toBe(true);
+		expect(meetsCctpDepositMinimum(4_999_999n, quote)).toBe(true);
+	});
+
+	it("names a minimum that the same quote accepts, also when the fee grows with the amount", () => {
+		const proportional = normalizeCctpDepositFees(createFeePayload(1.3));
+
+		expect(reviewCctpDepositFee(400_000n, proportional)).toEqual({ calculation: null, belowMinimumRaw: 400_128n });
+		expect(reviewCctpDepositFee(400_126n, proportional).belowMinimumRaw).toBe(400_128n);
+		expect(reviewCctpDepositFee(400_128n, proportional).calculation?.maxFeeRaw).toBe(200_064n);
+		expect(getCctpDepositMinimumRaw(proportional)).toBe(400_128n);
+		expect(meetsCctpDepositMinimum(400_127n, proportional)).toBe(false);
+		expect(meetsCctpDepositMinimum(1_000_001n, proportional)).toBe(true);
+	});
+
+	function findSmallestAcceptedByScan(fromRaw: bigint, quote: ReturnType<typeof normalizeCctpDepositFees>) {
+		for (let amountRaw = fromRaw; amountRaw < fromRaw + 20_000n; amountRaw += 1n) {
+			if (meetsCctpDepositMinimum(amountRaw, quote)) return amountRaw;
+		}
+		throw new Error("No accepted amount within the scan window");
+	}
+
+	it.each([
+		{ bps: 0, forward: 200_000 },
+		{ bps: 0, forward: 0 },
+		{ bps: 1.3, forward: 200_000 },
+		{ bps: 14, forward: 200_000 },
+		{ bps: 100, forward: 123_457 },
+		{ bps: 1_000, forward: 1 },
+		{ bps: 1_000, forward: 3 },
+		{ bps: 7, forward: 0 },
+		{ bps: 999.9, forward: 977 },
+	])("returns the smallest accepted amount for $bps bps and a $forward forwarding fee", ({ bps, forward }) => {
+		const quote = { ...normalizeCctpDepositFees(createFeePayload(bps)), forwardFeeRaw: createForwardFee(forward) };
+		const minimumRaw = getCctpDepositMinimumRaw(quote);
+		if (minimumRaw === null) throw new Error("Expected a depositable minimum");
+
+		expect(minimumRaw).toBe(findSmallestAcceptedByScan(BigInt(Math.max(1, 2 * forward)), quote));
+		expect(reviewCctpDepositFee(minimumRaw, quote).calculation).not.toBeNull();
+		if (minimumRaw > 1n) {
+			expect(reviewCctpDepositFee(minimumRaw - 1n, quote)).toEqual({ calculation: null, belowMinimumRaw: minimumRaw });
+		}
+	});
+
+	it("names the nearest accepted amount for every rejected amount, including above the minimum", () => {
+		const quote = { ...normalizeCctpDepositFees(createFeePayload(1_000)), forwardFeeRaw: createForwardFee(3) };
+		const minimumRaw = getCctpDepositMinimumRaw(quote);
+		let rejectedAboveMinimum = 0;
+
+		expect(minimumRaw).toBe(10n);
+		for (let amountRaw = 1n; amountRaw <= 400n; amountRaw += 1n) {
+			const review = reviewCctpDepositFee(amountRaw, quote);
+			if (review.calculation) continue;
+			if (amountRaw > 10n) rejectedAboveMinimum += 1;
+			expect(review.belowMinimumRaw).toBe(findSmallestAcceptedByScan(amountRaw, quote));
+		}
+		expect(reviewCctpDepositFee(11n, quote)).toEqual({ calculation: null, belowMinimumRaw: 12n });
+		expect(rejectedAboveMinimum).toBeGreaterThan(0);
+	});
+
+	it("charges at least one unit for any positive rate instead of rounding a tiny product away", () => {
+		const fixed = normalizeCctpDepositFees(createFeePayload(0));
+		const tiny = { ...fixed, minimumFeeBps: "1e-20", forwardFeeRaw: createForwardFee(100) };
+
+		expect(reviewCctpDepositFee(204n, tiny).calculation).toMatchObject({
+			protocolFeeRaw: 1n,
+			bufferedProtocolFeeRaw: 2n,
+			maxFeeRaw: 102n,
+		});
+		expect(reviewCctpDepositFee(199n, tiny)).toEqual({ calculation: null, belowMinimumRaw: 204n });
+		expect(getCctpDepositMinimumRaw(tiny)).toBe(204n);
+		expect(calculateCctpDepositFee(10_000_000_000_000n, { ...fixed, minimumFeeBps: "1.3" })).toMatchObject({
+			protocolFeeRaw: 1_300_000_000n,
+			bufferedProtocolFeeRaw: 1_560_000_000n,
+		});
+	});
+
+	it("finds the minimum for the largest supported rate and a forwarding fee at the safe-integer limit", () => {
+		const forward = BigInt(Number.MAX_SAFE_INTEGER);
+		const quote = {
+			...normalizeCctpDepositFees(createFeePayload(1_000)),
+			forwardFeeRaw: { low: forward, med: forward, high: forward },
+		};
+		const minimumRaw = getCctpDepositMinimumRaw(quote);
+		if (minimumRaw === null) throw new Error("Expected a depositable minimum");
+
+		expect(meetsCctpDepositMinimum(minimumRaw, quote)).toBe(true);
+		expect(meetsCctpDepositMinimum(minimumRaw - 1n, quote)).toBe(false);
+		expect(reviewCctpDepositFee(1n, quote).belowMinimumRaw).toBe(minimumRaw);
+	});
+
+	it("treats a rate above the supported ceiling as an unusable quote instead of searching for a minimum", () => {
+		const fixed = normalizeCctpDepositFees(createFeePayload(0));
+		const aboveCeiling = { ...fixed, minimumFeeBps: "4000" };
+
+		expect(() => normalizeCctpDepositFees(createFeePayload(1_000.1))).toThrow(
+			"Circle returned a CCTP fee rate outside the supported range",
 		);
+		expect(normalizeCctpDepositFees(createFeePayload(1_000)).minimumFeeBps).toBe("1000");
+		expect(getCctpDepositMinimumRaw(aboveCeiling)).toBeNull();
+		expect(() => calculateCctpDepositFee(10_000_000n, aboveCeiling)).toThrow(
+			"CCTP fee rate is outside the supported range",
+		);
+		expect(reviewCctpDepositFee(10_000_000n, aboveCeiling)).toEqual({ calculation: null, belowMinimumRaw: null });
+		expect(getCctpDepositMinimumRaw({ ...fixed, minimumFeeBps: "not-a-number" })).toBeNull();
+		expect(reviewCctpDepositFee(0n, fixed)).toEqual({ calculation: null, belowMinimumRaw: null });
+		expect(reviewCctpDepositFee(400_000n, { ...fixed, minimumFeeBps: "not-a-number" })).toEqual({
+			calculation: null,
+			belowMinimumRaw: null,
+		});
 	});
 
 	it("only exposes an amount-independent fee preview when the protocol fee is zero", () => {

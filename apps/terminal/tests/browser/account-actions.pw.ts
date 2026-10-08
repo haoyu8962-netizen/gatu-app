@@ -1,4 +1,4 @@
-import { expect, type Page, test } from "@playwright/test";
+import { expect, type Locator, type Page, test } from "@playwright/test";
 
 async function readGridGeometry(page: Page) {
 	return page.locator("[data-panel]").evaluateAll((panels) =>
@@ -171,6 +171,157 @@ for (const width of [375, 393]) {
 	});
 }
 
+async function waitForDialogTransition(page: Page) {
+	const dialog = page.getByRole("dialog");
+	let previous = "";
+	await expect
+		.poll(
+			async () => {
+				const state = await dialog.evaluate((node) => {
+					const { x, y, width, height } = node.getBoundingClientRect();
+					return JSON.stringify([node.getAnimations().length, x, y, width, height]);
+				});
+				const settled = state === previous && state.startsWith("[0,");
+				previous = state;
+				return settled;
+			},
+			{ intervals: [120] },
+		)
+		.toBe(true);
+}
+
+async function expectFundsDialogScroll(
+	page: Page,
+	closeName: string,
+	overflow: "none" | "required" | "any",
+	fixedControlNames: string[] = [],
+) {
+	const dialog = page.getByRole("dialog");
+	await waitForDialogTransition(page);
+	const body = dialog.locator('[data-slot="funds-modal-body"]');
+	const fixedControls = [closeName, ...fixedControlNames].map((name) =>
+		dialog.getByRole("button", { name, exact: true }),
+	);
+	for (const control of fixedControls) {
+		expect(await control.evaluate((node) => node.closest('[data-slot="funds-modal-body"]'))).toBeNull();
+		await expect(control).toBeVisible();
+		await expect(control).toBeInViewport({ ratio: 1 });
+	}
+	expect(await readContentUnderFixedControls(body, fixedControls, [0])).toEqual([]);
+	const metrics = await body.evaluate((element) => {
+		const node = element as HTMLElement;
+		const popup = node.closest('[role="dialog"]') as HTMLElement;
+		return {
+			scrollbar: getComputedStyle(node).scrollbarWidth,
+			bodyOverflow: getComputedStyle(node).overflowY,
+			gutter: node.offsetWidth - node.clientWidth,
+			bodyOverflows: node.scrollHeight > node.clientHeight + 1,
+			popupScrolls: popup.scrollHeight > popup.clientHeight + 1,
+			popupOverflow: getComputedStyle(popup).overflowY,
+		};
+	});
+	expect(metrics.scrollbar).toBe("none");
+	expect(metrics.bodyOverflow).toBe("auto");
+	expect(metrics.gutter).toBe(0);
+	expect(metrics.popupScrolls).toBe(false);
+	expect(metrics.popupOverflow).toBe("hidden");
+	if (overflow === "none") expect(metrics.bodyOverflows).toBe(false);
+	if (overflow === "required") expect(metrics.bodyOverflows).toBe(true);
+	if (!metrics.bodyOverflows) return;
+
+	const controlsBefore = await Promise.all(fixedControls.map((control) => control.boundingBox()));
+	const bodyBox = await body.boundingBox();
+	if (!bodyBox || controlsBefore.some((box) => box === null)) throw new Error("Funds dialog geometry is unavailable");
+	await page.mouse.move(bodyBox.x + bodyBox.width / 2, bodyBox.y + bodyBox.height / 2);
+	await page.mouse.wheel(0, 2_000);
+	await expect.poll(() => body.evaluate((node) => node.scrollTop)).toBeGreaterThan(0);
+	await expect
+		.poll(() => body.evaluate((node) => Math.abs(node.scrollTop + node.clientHeight - node.scrollHeight) <= 1))
+		.toBe(true);
+	expect(await Promise.all(fixedControls.map((control) => control.boundingBox()))).toEqual(controlsBefore);
+	for (const control of fixedControls) await expect(control).toBeInViewport({ ratio: 1 });
+	expect(await dialog.evaluate((node) => node.scrollTop)).toBe(0);
+	await page.mouse.wheel(0, -2_000);
+	await expect.poll(() => body.evaluate((node) => node.scrollTop)).toBe(0);
+
+	const scrollRange = await body.evaluate((node) => node.scrollHeight - node.clientHeight);
+	const offsets = Array.from({ length: Math.ceil(scrollRange / 8) + 1 }, (_, step) => Math.min(step * 8, scrollRange));
+	expect(await readContentUnderFixedControls(body, fixedControls, offsets)).toEqual([]);
+	await body.evaluate((node) => {
+		node.scrollTop = 0;
+	});
+}
+
+/**
+ * The close and back buttons reach below the header. At every scroll offset each of them must be
+ * the topmost element across its own box, and the only body content allowed under it is the form's
+ * sticky heading band, painted fully opaque in the dialog's own surface colour. This samples nine
+ * points per control at each offset through hit testing: it is not a pixel proof, and it does not
+ * see content painted with `pointer-events: none`. Returns each offender as `offset: description`.
+ */
+async function readContentUnderFixedControls(body: Locator, controls: Locator[], offsets: number[]) {
+	const handles = await Promise.all(controls.map((control) => control.elementHandle()));
+	return body.evaluate(
+		(node, { controlNodes, scrollOffsets }) => {
+			const popup = node.closest('[role="dialog"]') as HTMLElement;
+			const heading = node.querySelector('[data-slot="funds-modal-heading"]');
+			const surface = getComputedStyle(popup).backgroundColor;
+			const offenders: string[] = [];
+			if (heading) {
+				const band = getComputedStyle(heading).backgroundColor;
+				if (band !== surface || !/^rgb\(/.test(surface)) offenders.push(`heading band is ${band} on ${surface}`);
+				let opacity = 1;
+				for (let element: Element | null = heading; element; element = element === popup ? null : element.parentElement) {
+					opacity *= Number(getComputedStyle(element).opacity);
+				}
+				if (opacity !== 1) offenders.push(`heading band has opacity ${opacity}`);
+			}
+			for (const offset of scrollOffsets) {
+				node.scrollTop = offset;
+				const bodyBox = node.getBoundingClientRect();
+				for (const control of controlNodes) {
+					if (!control) continue;
+					const box = control.getBoundingClientRect();
+					const label = control.getAttribute("aria-label") ?? control.textContent?.trim();
+					for (const fraction of [0.25, 0.5, 0.75]) {
+						for (const y of [box.top + box.height * 0.25, box.top + box.height / 2, box.top + box.height * 0.75]) {
+							const top = document.elementFromPoint(box.left + box.width * fraction, y);
+							if (!top || !control.contains(top)) offenders.push(`${offset}: ${label} is covered by ${top?.tagName}`);
+						}
+					}
+					for (const x of [box.left + 1, (box.left + box.right) / 2, box.right - 1]) {
+						for (const y of [box.top + 1, (box.top + box.bottom) / 2, box.bottom - 1]) {
+							if (y < bodyBox.top || y > bodyBox.bottom) continue;
+							const content = document
+								.elementsFromPoint(x, y)
+								.find((element) => element !== node && node.contains(element));
+							if (!content || heading?.contains(content) || (heading && content.contains(heading))) continue;
+							offenders.push(`${offset}: ${content.tagName.toLowerCase()} ${content.textContent?.trim().slice(0, 40)}`);
+						}
+					}
+				}
+			}
+			return [...new Set(offenders)];
+		},
+		{ controlNodes: handles, scrollOffsets: offsets },
+	);
+}
+
+async function readFundingAddressGeometry(page: Page) {
+	return page
+		.getByRole("dialog")
+		.locator("[data-address-state]")
+		.evaluate((card) => {
+			const field = card.querySelector('[class*="min-h-11"]') as HTMLElement;
+			const frame = card.querySelector('[class*="size-[140px]"]') as HTMLElement;
+			return {
+				card: (card as HTMLElement).offsetHeight,
+				field: field.offsetHeight,
+				frame: frame.offsetHeight,
+			};
+		});
+}
+
 for (const width of [375, 393, 1363]) {
 	for (const theme of ["light", "dark"] as const) {
 		test(`keeps ${theme} funding forms readable and drafts stable at ${width}px`, async ({ page }) => {
@@ -187,6 +338,7 @@ for (const width of [375, 393, 1363]) {
 			await dialog.getByLabel("Destination address", { exact: true }).fill(address);
 			await expect(dialog.getByText("$2.30", { exact: true })).toBeVisible();
 			expect(await dialog.evaluate((node) => node.scrollWidth <= node.clientWidth + 1)).toBe(true);
+			await expectFundsDialogScroll(page, "Close", width === 375 ? "any" : "none");
 			await dialog.getByRole("button", { name: "Withdraw to Arbitrum", exact: true }).scrollIntoViewIfNeeded();
 			await expect(dialog.getByRole("button", { name: "Withdraw to Arbitrum", exact: true })).toBeInViewport();
 			await page.screenshot({ path: test.info().outputPath(`withdraw-${width}-${theme}.png`) });
@@ -208,6 +360,26 @@ for (const width of [375, 393, 1363]) {
 				.toBe(true);
 			await expect(dialog.getByRole("combobox")).toHaveCount(0);
 			expect(await dialog.evaluate((node) => node.scrollWidth <= node.clientWidth + 1)).toBe(true);
+			await expect(dialog.locator('[data-slot="qr-token-logo"]')).toBeVisible();
+			const route = dialog.locator('[data-slot="funds-route-details"]');
+			await expect(route.locator("img")).toHaveCount(2);
+			expect(
+				await route.evaluate((node) => {
+					const [asset, network] = [...node.children].map((child) => child.getBoundingClientRect());
+					return Math.abs(asset.y - network.y) <= 1 && Math.abs(asset.height - network.height) <= 1;
+				}),
+			).toBe(true);
+			await expectFundsDialogScroll(page, "关闭", width === 375 ? "required" : "none");
+			const readyAddress = await readFundingAddressGeometry(page);
+			await dialog.getByRole("button", { name: "关闭", exact: true }).click();
+			await page.getByRole("button", { name: "Toggle address", exact: true }).click();
+			await page.getByRole("button", { name: "Open deposit", exact: true }).click();
+			await expect(dialog.locator('[data-address-state="loading"]')).toBeVisible();
+			expect(await readFundingAddressGeometry(page)).toEqual(readyAddress);
+			await dialog.getByRole("button", { name: "关闭", exact: true }).click();
+			await page.getByRole("button", { name: "Toggle address", exact: true }).click();
+			await page.getByRole("button", { name: "Open deposit", exact: true }).click();
+			await expect(dialog.locator('[data-address-state="ready"]')).toBeVisible();
 			await dialog.getByRole("button", { name: "完成", exact: true }).scrollIntoViewIfNeeded();
 			await expect(dialog.getByRole("button", { name: "完成", exact: true })).toBeInViewport();
 			await page.screenshot({ path: test.info().outputPath(`deposit-${width}-${theme}.png`) });
@@ -224,6 +396,132 @@ for (const width of [375, 393, 1363]) {
 			await expect(dialog.getByRole("button", { name: "Deposit", exact: true })).toBeEnabled();
 		});
 	}
+}
+
+for (const viewport of [
+	{ width: 375, height: 260 },
+	{ width: 375, height: 666 },
+	{ width: 1363, height: 260 },
+	{ width: 1363, height: 852 },
+]) {
+	test(`keeps the deposit status and wrong-network screens on the funds scroll structure at ${viewport.width}x${viewport.height}`, async ({
+		page,
+	}) => {
+		await page.setViewportSize(viewport);
+		await page.goto("/account-actions.html?surface=funds");
+		const dialog = page.getByRole("dialog");
+		const overflow = viewport.height < 300 ? "required" : "none";
+
+		await page.getByRole("button", { name: "Open status", exact: true }).click();
+		await expect(dialog.getByText("Waiting for chain confirmation", { exact: true })).toBeVisible();
+		await expectFundsDialogScroll(page, "Close", overflow);
+		await dialog.getByRole("button", { name: "Dismiss status", exact: true }).scrollIntoViewIfNeeded();
+		await dialog.getByRole("button", { name: "Dismiss status", exact: true }).click();
+		await expect(dialog).toHaveCount(0);
+
+		await page.getByRole("button", { name: "Open wrong network", exact: true }).click();
+		await expect(dialog.getByRole("button", { name: "Switch to Arbitrum", exact: true })).toBeVisible();
+		await expect(dialog.getByRole("alert")).toContainText("Unable to switch wallet to Arbitrum");
+		await expectFundsDialogScroll(page, "Close", overflow, ["Back"]);
+		await dialog.getByRole("button", { name: "Close", exact: true }).click();
+		await expect(dialog).toHaveCount(0);
+	});
+
+	test(`keeps content from scrolling under the close button of every funds form at ${viewport.width}x${viewport.height}`, async ({
+		page,
+	}) => {
+		await page.setViewportSize(viewport);
+		await page.goto("/account-actions.html?surface=funds");
+		const dialog = page.getByRole("dialog");
+		const overflow = viewport.height < 300 ? "required" : "any";
+		const forms = [
+			{ open: "Open deposit", heading: "Deposit USDC from Arbitrum", layout: "funding-address", overflow },
+			{ open: "Open withdraw", heading: "Withdraw USDC to Arbitrum", focus: "Amount", overflow },
+			{ before: "Toggle email", open: "Open deposit", heading: "Deposit USDC from Arbitrum", overflow },
+			{ before: "Toggle card funding", open: "Open deposit", heading: "Deposit", layout: "methods", overflow: "any" },
+			{ open: "Open deposit", transfer: true, heading: "Deposit USDC from Arbitrum", overflow },
+			{ before: "Toggle email", open: "Open deposit", transfer: true, heading: "Deposit USDC from Arbitrum", overflow },
+		] as const;
+
+		for (const form of forms) {
+			if ("before" in form) await page.getByRole("button", { name: form.before, exact: true }).click();
+			await page.getByRole("button", { name: form.open, exact: true }).click();
+			const methods = dialog.locator('[data-deposit-layout="methods"]');
+			const back = dialog.getByRole("button", { name: "Back", exact: true });
+			if ("transfer" in form) {
+				await waitForDialogTransition(page);
+				await methods.locator('[data-deposit-method="transfer"]').click();
+				await expect(methods).toHaveCount(0);
+			}
+			const heading = dialog.locator('[data-slot="funds-modal-heading"]');
+			await expect(heading).toHaveCount(1);
+			await expect(heading).toContainText(form.heading);
+			if ("layout" in form) await expect(dialog.locator(`[data-deposit-layout="${form.layout}"]`)).toBeVisible();
+			await expect(back).toHaveCount("transfer" in form ? 1 : 0);
+			await expectFundsDialogScroll(page, "Close", form.overflow, "transfer" in form ? ["Back"] : []);
+
+			if ("focus" in form && viewport.height < 300) {
+				const body = dialog.locator('[data-slot="funds-modal-body"]');
+				const input = dialog.getByLabel(form.focus, { exact: true });
+				const readField = () =>
+					body.evaluate((node, label) => {
+						const field = node.querySelector(`input[aria-label="${label}"]`) ?? node.querySelector("input");
+						const band = node.querySelector('[data-slot="funds-modal-heading"]');
+						if (!field || !band) throw new Error("Funds form field geometry is unavailable");
+						const box = field.getBoundingClientRect();
+						return {
+							top: box.top,
+							bottom: box.bottom,
+							bandBottom: band.getBoundingClientRect().bottom,
+							bodyTop: node.getBoundingClientRect().top,
+						};
+					}, form.focus);
+				const focusFrom = async (scroll: (node: HTMLElement) => void) => {
+					await input.evaluate((node) => (node as HTMLElement).blur());
+					await body.evaluate(scroll);
+					const before = await readField();
+					return { before, focus: () => input.evaluate((node) => (node as HTMLElement).focus()) };
+				};
+				const expectClearOfBand = () =>
+					expect
+						.poll(async () => {
+							const field = await readField();
+							return field.top - field.bandBottom;
+						})
+						.toBeGreaterThanOrEqual(-0.5);
+
+				// A field revealed from out of view lands below the band in every engine.
+				const bottom = await focusFrom((node) => {
+					node.scrollTop = node.scrollHeight;
+				});
+				expect(bottom.before.bottom).toBeLessThan(bottom.before.bodyTop);
+				await bottom.focus();
+				await expectClearOfBand();
+
+				// A field inside the scrollport with its top edge 3px under the band is moved clear where
+				// focus honours `scroll-padding`. WebKit leaves it where the user scrolled it.
+				const covered = await focusFrom((node) => {
+					const field = node.querySelector("input") as HTMLElement;
+					const band = node.querySelector('[data-slot="funds-modal-heading"]') as HTMLElement;
+					node.scrollTop = 0;
+					for (let pass = 0; pass < 4; pass += 1) {
+						node.scrollTop += field.getBoundingClientRect().top - band.getBoundingClientRect().bottom + 3;
+					}
+				});
+				expect(covered.before.bandBottom - covered.before.top).toBeCloseTo(3, 0);
+				expect(covered.before.bottom).toBeGreaterThan(covered.before.bandBottom);
+				await covered.focus();
+				if (page.context().browser()?.browserType().name() === "chromium") await expectClearOfBand();
+			}
+
+			if ("transfer" in form) {
+				await back.click();
+				await expect(methods).toBeVisible();
+			}
+			await dialog.getByRole("button", { name: "Close", exact: true }).click();
+			await expect(dialog).toHaveCount(0);
+		}
+	});
 }
 
 for (const width of [375, 1363]) {
@@ -247,6 +545,7 @@ for (const width of [375, 1363]) {
 				await expect(dialog.getByRole("heading", { name: "Deposit USDC from Arbitrum" })).toHaveCount(0);
 				expect(await dialog.evaluate((node) => node.scrollWidth <= node.clientWidth + 1)).toBe(true);
 				await expect(fiat).toBeInViewport({ ratio: 1 });
+				await expectFundsDialogScroll(page, "Close", "none");
 				await page.screenshot({ path: test.info().outputPath(`deposit-methods-${walletKind}-${width}-${theme}.png`) });
 
 				await transfer.click();

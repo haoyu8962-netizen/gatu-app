@@ -3,15 +3,17 @@ import { useEffect, useLayoutEffect, useRef } from "react";
 import { toast } from "sonner";
 import { formatUnits } from "viem";
 import { isCctpSponsoredDepositEnabled } from "@/config/cctp-deposit";
-import { MIN_DEPOSIT_USDC, USDC_DECIMALS } from "@/config/contracts";
+import { USDC_DECIMALS } from "@/config/contracts";
 import { DEPOSIT_BALANCE_REFRESH_MS } from "@/config/time";
 import { getUsdcRoutingQueryStatus } from "@/domain/trade/usdc-routing";
+import { useCctpDepositFee } from "@/hooks/trade/use-cctp-deposit-fee";
 import { useCctpDepositTracking } from "@/hooks/trade/use-cctp-deposit-tracking";
 import { UsdcDepositRouteError, useUsdcRouting } from "@/hooks/trade/use-usdc-routing";
 import { useEmailEmbeddedWallet } from "@/hooks/wallet/use-email-embedded-wallet";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { formatTransferError, isSmartWalletNonceConflict } from "@/lib/errors/format";
 import { useDeposit } from "@/lib/hyperliquid/use-deposit";
+import { meetsCctpDepositMinimum } from "@/lib/trade/cctp-deposit";
 import { formatFundsActionFeedback } from "@/lib/trade/funds-action-feedback";
 import { runWithExclusiveBrowserLock } from "@/lib/wallet/exclusive-browser-lock";
 import { getPrivyEmailAddress } from "@/lib/wallet/privy-wagmi";
@@ -96,6 +98,12 @@ export function EmbeddedDepositAutoBridge() {
 		mode: "smart",
 		walletAddress: isEmbeddedDeposit ? depositEmbeddedWalletAddress : undefined,
 	});
+	const depositFeeQuery = useCctpDepositFee({
+		amountRaw: maxDepositRaw,
+		enabled: shouldMonitorDepositBalance,
+		isTestnet,
+	});
+	const depositFeeQuote = depositFeeQuery.data?.feeQuote;
 
 	const balanceEligibleKey =
 		isEmbeddedDeposit &&
@@ -107,7 +115,7 @@ export function EmbeddedDepositAutoBridge() {
 		!embeddedWalletError &&
 		depositEmbeddedWalletAddress &&
 		maxDepositRaw !== undefined &&
-		maxDepositRaw >= MIN_DEPOSIT_USDC
+		depositFeeQuery.calculation !== null
 			? `${networkName}:${depositEmbeddedWalletAddress.toLowerCase()}:${maxDepositRaw.toString()}`
 			: null;
 	const eligibleDepositKey = balanceEligibleKey && autoCctpRouteAvailable ? balanceEligibleKey : null;
@@ -253,7 +261,7 @@ export function EmbeddedDepositAutoBridge() {
 					scheduleRetry(eligibleDepositKey);
 					return;
 				}
-				if (currentBalanceRaw < MIN_DEPOSIT_USDC) {
+				if (!depositFeeQuote || !meetsCctpDepositMinimum(currentBalanceRaw, depositFeeQuote)) {
 					return;
 				}
 
@@ -276,6 +284,7 @@ export function EmbeddedDepositAutoBridge() {
 		deposit,
 		depositEmbeddedWalletAddress,
 		depositError,
+		depositFeeQuote,
 		depositStatus,
 		depositIdentityKey,
 		eligibleDepositKey,

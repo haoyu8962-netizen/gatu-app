@@ -2,6 +2,8 @@ import { Trans } from "@lingui/react/macro";
 import { useNumberFormat } from "@/lib/format";
 import { HyperCoreUsdcIcon } from "../hypercore-usdc-icon";
 
+export const UNIT_DEPOSIT_INFO_LIST_CLASS = "space-y-2 py-1 text-xs";
+
 interface Props {
 	cctpFee?: string | null;
 	cctpFeeLoading?: boolean;
@@ -13,7 +15,7 @@ export function UnitDepositInfo({ cctpFee, cctpFeeLoading = false, cctpFeeError 
 	const fee = !cctpFeeLoading && !cctpFeeError && cctpFee ? formatUSD(cctpFee, { compact: false }) : "--";
 
 	return (
-		<dl className="space-y-2 py-3 text-xs" data-presentation="funding" aria-busy={cctpFeeLoading}>
+		<dl className={UNIT_DEPOSIT_INFO_LIST_CLASS} data-presentation="funding" aria-busy={cctpFeeLoading}>
 			<div className="flex items-center justify-between gap-3">
 				<dt className="text-market-close-muted">
 					<Trans>You receive</Trans>
