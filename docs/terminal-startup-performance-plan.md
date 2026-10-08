@@ -109,7 +109,7 @@ CloudWatch 告警：Lambda `Errors`、`Throttles`、`Duration p95`；CloudFront 
 4. **移动端不参与。** `mobile-trade-layout.tsx` 只在 `topView === "chart"` 时激活图表，`media` 条件让 1000 px 及以下不下载这些文件。
 5. **不做的事。** 官方站式头部同步脚本（阻塞解析、FCP 退化）；在面板挂载前创建 widget；预取 72 个文件全集（文件名随语言与主题变化，大部分是小 CSS，收益集中在 `library.js`）。
 
-验证：注入脚本测试覆盖字段缺失与 glob 不唯一即失败、media 条件、去重；DNS 切换前在 iPad WebKit 上做热缓存图表初始化回归（`deploy/README.md` 记录过 v28 在 WebKit 热缓存下可能初始化失败，但没有可复现证据，immutable 入口与 bundle 是新的暴露面）；`deploy.test.mjs` 断言入口 immutable；`verify` 新增"壳含图表入口 preload 且线上返回 200 与 immutable"；Playwright 同机冷缓存前后对比 `chartEntryEnd`（目标 ≤ 1.0 s）、iframe `frameStart` 与资源完成（目标 ≤ `frameStart` + 0.2 s）、控制台无 "preloaded but not used" 警告；DevTools Slow 4G 对比 FCP 与启动 JS 到齐时间不退化。
+验证：注入脚本测试覆盖字段缺失与 glob 不唯一即失败、media 条件、去重；DNS 切换前在 iPad WebKit 上做热缓存图表初始化回归（`deploy/README.md` 记录过 v28 在 WebKit 热缓存下可能初始化失败，当时没有可复现证据，immutable 入口与 bundle 是新的暴露面；2026-10-08 复现并修复，见 `docs/work-memory/sessions/2026-10-08-webkit-chart-rebuild-handshake-race.md`）；`deploy.test.mjs` 断言入口 immutable；`verify` 新增"壳含图表入口 preload 且线上返回 200 与 immutable"；Playwright 同机冷缓存前后对比 `chartEntryEnd`（目标 ≤ 1.0 s）、iframe `frameStart` 与资源完成（目标 ≤ `frameStart` + 0.2 s）、控制台无 "preloaded but not used" 警告；DevTools Slow 4G 对比 FCP 与启动 JS 到齐时间不退化。
 
 预期收益：入口到达 1.76 s → 约 0.9 s；iframe 阶段 0.7 s → 约 0.15 s；图表可见约提前 1 s；FCP 与 load 不变。
 
