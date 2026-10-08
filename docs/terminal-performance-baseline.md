@@ -433,6 +433,40 @@ The sixth round (commit `4af147fd`) changed one classification function in the d
 3,286,638 in total (+16), 1,626,663 static trade startup, 117,769 mobile and 201,070 desktop, with the desktop runtime
 increment 918 bytes under its allowance. Later commits on the branch change tests and documents only.
 
+## Total-client re-baseline before release p26 (2026-10-08)
+
+Promoting `dev` to `main` for release p26 failed the pairing-on production build that only pull requests into `main`
+run: the total client measured 3,298,948 gzip bytes with CI metadata, 11,297 over the 3,287,651 baseline against a
+10,000-byte allowance, while the pairing-off builds of the same head read 3,297,05x in CI and stayed 55 bytes under
+the limit only when no developer `.env.local` was read. Nothing in the head is a regression to remove: the growth is
+the shipped p24b tree plus [PR #77](https://github.com/zora4523-bot/gatu-app/pull/77) (chart price precision from
+market rules, ADR 0035, and silent email wallet creation, ADR 0033), both merged with pairing-off CI builds under
+the allowance; the loader patch of [PR #81](https://github.com/zora4523-bot/gatu-app/pull/81) touches only
+`public/charting_library/`, which the budget does not count.
+
+Measured in one isolated worktree (`gatu-release-p26`, no `.env.local`, Node 22.15.0, pnpm 10.21.0, pairing off) with
+the fixed identity `SAIRN_BUILD_SHA=54235298e5db2dc32eadfa7f824b8660a54c06f0 SAIRN_RELEASE_ID=p26-rebaseline
+SAIRN_BUILD_TIME=2026-10-08T00:00:00.000Z NODE_ENV=production NITRO_PRESET=node-server` for all three commits:
+
+| Metric | p24b main `6da4c15a` | dev after #77 `345a2143` | dev after #81 `54235298` |
+| --- | ---: | ---: | ---: |
+| All client JS + CSS | 3,294,335 | 3,296,905 | 3,296,759 |
+| Static trade startup | 1,630,085 (101 assets) | 1,631,938 (101 assets) | 1,631,834 (101 assets) |
+| Mobile runtime increment | 118,027 | 118,315 | 118,319 |
+| Desktop runtime increment | 202,265 | 202,745 | 202,722 |
+
+The total-client baseline becomes the dev head itself, 3,296,759: +6,684 that p24b had already used against the
+previous baseline and +2,570 for PR #77 (the price-format module and its callers, the email embedded wallet provider
+and the registration sequence; the static startup +1,853, the desktop runtime +480, the mobile runtime +288 all stay
+under their allowances). PR #81 reads -146, build noise of the kind the card funding section describes. With this
+baseline the pairing-on CI build of the same head sits about 2,200 over (3,298,948 with CI metadata), a release build
+that reads the developer `.env.local` about 950 over (3,297,706), and the pairing-off CI build about 300 over.
+
+Not re-baselined: the desktop runtime increment is 9,593 over its 193,129 baseline (407 bytes under the allowance;
+the pairing-on CI build read 9,596) and the mobile runtime increment 7,739 over 110,580. Both already stood at 9,136
+and 7,447 at p24b, so the next desktop runtime growth needs its own measured re-baseline rather than a larger
+allowance; nothing in this release changes those increments by more than the figures above.
+
 ## Locale and number-format desktop runtime re-baseline (2026-10-03)
 
 PR #71 makes the desktop footer clock keep time and rendered numbers and dates follow the number-format setting and the

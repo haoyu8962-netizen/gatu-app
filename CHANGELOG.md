@@ -525,6 +525,11 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Fixed
 
+- On iPhone and iPad Safari, the chart no longer stays on the loading mark and then shows
+  "Something went wrong" after you leave the trade page and come back, switch back to a language
+  the chart had already shown, change the number format or press Retry. The TradingView loader
+  registered its ready listener a moment too late when Safari replayed the chart files from
+  memory; the loader is patched to listen first.
 - Switching the number format in the language menu (for example `1,234.56` to `1.234,56`) now
   rewrites at once the figures in positions, open orders, balances, trade, funding and order
   histories, TWAP, the order book, desktop and mobile account summaries, order entry summaries and
