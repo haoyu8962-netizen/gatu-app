@@ -38,12 +38,33 @@
 
 ## 验证与限制
 
-- 工作区基线 6da4c15a（main，分支 claude/arbitrum-network-connection-issue-8325cd）。
+工作区基线 6da4c15a（main，分支 claude/arbitrum-network-connection-issue-8325cd）。下面按版本分段；每段只覆盖该版本实际跑过的检查。
+
+### 原修复 422d8408
+
 - `pnpm --filter @sairn/terminal typecheck` 通过；`pnpm exec biome check` 对改动文件通过。
-- `vitest run`：`use-deposit-routing-guard`（新增「wallet network」五例：数字链 ID 不发切链请求；Privy 已认为在 Arbitrum 时直接向钱包发一次请求并等 chainChanged；Privy 切链后等钱包报告 Arbitrum；钱包始终不切换时超时报错且不发第二次请求；拒绝不广播）、`deposit-modal-withdrawal-routing-guard`（外部钱包不再出现网络门、挂起状态显示「正在切换网络」）、`deposit-execution-state`、`action-progress-label-contract`、`status-motion-surface-contract`、`i18n-reactivity-contract`、`errors` 通过。
+- `vitest run`：`use-deposit-routing-guard`（当时新增「wallet network」五例：数字链 ID 不发切链请求；Privy 已认为在 Arbitrum 时直接向钱包发一次请求并等 chainChanged；Privy 切链后等钱包报告 Arbitrum；钱包始终不切换时超时报错且不发第二次请求；拒绝不广播）、`deposit-modal-withdrawal-routing-guard`（外部钱包不再出现网络门、挂起状态显示「正在切换网络」）、`deposit-execution-state`、`action-progress-label-contract`、`status-motion-surface-contract`、`i18n-reactivity-contract`、`errors` 通过。
 - `pnpm --filter @sairn/terminal test -- --maxWorkers=4`：658 个文件中 655 通过、1 跳过；`design-token-ratchet` 因删除的 wrong-network-screen 带一处 `!rounded-t-[18px]` 而要求把任意圆角基线从 224 降到 223（已改并复跑通过）；`vite-development-cache` 在本会话沙箱里因禁止监听本地端口失败（EPERM），沙箱外单独复跑通过。
 - 开发服务器（端口 3015）无头 Chromium 打开 /trade/BTC 手机视口：页面正常揭示、无运行时错误（仅有开发端口不在 CSP 列表的 Privy iframe 告警，与本次无关）；未连接钱包，存款弹层本身未在页面里打开。
 - `pnpm memory:index`、`pnpm memory:check`、`pnpm memory:test` 在记录建立后各运行并通过（memory:test 10 项，skipped 0）。
+
+### 第一轮修复 7445dd38
+
+- `node --test scripts/ci-workflows.test.mjs` 10 项通过（修复前 1 项失败：工作流列出已删除文件）。
+- `pnpm --filter @sairn/terminal typecheck` 通过；`pnpm exec biome check` 对改动文件通过。
+- `vitest run`：`use-deposit-routing-guard`（「wallet network」扩到十例）、`deposit-modal-withdrawal-routing-guard`、`deposit-execution-state`、`deposit-broadcast`、`embedded-deposit-auto-bridge`（含 sonner）、`action-progress-label-contract`、`status-motion-surface-contract`、`i18n-reactivity-contract`、`design-token-ratchet` 共 10 个文件 511 项通过；九个变异逐一验证（见上文）。全量套件未重跑。
+
+### 第二轮修复（本段之后的提交）
+
+- 第二轮 Codex 三路审查（V 8.5 / B 8.3 / C 8.5）：V 与 C 指出截止后迟到的查询结果、观察期查询拒绝、成功后的定时器清理没有用例钉住；B 指出 hook 返回的 `networkSwitchPending` 没有经真实渲染断言（弹层测试 mock 了 hook）、记录未按版本分开验证范围。处理：新增四例（截止后迟到答案与事件被忽略且不再查询；观察期查询拒绝即结束、监听清空、之后不再查询；事件结束等待后轮询与截止两个定时器都被清除、不再查询；切链挂起时经 act 刷新后 hook 返回 true、完成后 false），并用五个变异验证（删查询后的 settled 检查、删查询失败的 cleanup、删 clearTimeout(pollTimer)、删 clearTimeout(deadline)、hook 固定返回 false，全部被抓到）；本节按版本拆分。
+- 本段的 typecheck、Biome 与测试结果写在下一次提交前核对后的一行里：见「验证结果（第二轮修复）」。
+
+### 验证结果（第二轮修复）
+
+- `pnpm --filter @sairn/terminal typecheck` 通过；`pnpm exec biome check` 对改动文件通过。
+- `vitest run`：`use-deposit-routing-guard`（「wallet network」十四例）、`deposit-modal-withdrawal-routing-guard`、`deposit-execution-state` 共 3 个文件 202 项通过；十四个变异全部被抓到。全量套件未在此版本重跑。
+- `pnpm memory:index` / `memory:check` / `memory:test` 在本段写入后重跑通过。
+
 - 未做：真实手机钱包（WalletConnect 与钱包内置浏览器）的存款验收。
 - 翻译：「Switching network」已补 zh/es/fr/hi/ar；其余四种语言此前缺失的 43 条与本次无关。
 
