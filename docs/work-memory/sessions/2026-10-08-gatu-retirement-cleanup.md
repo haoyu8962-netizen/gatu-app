@@ -7,7 +7,7 @@
   "kind": "task",
   "status": "recorded",
   "topics": ["brand-identity", "static-hosting"],
-  "summary": "p28 发布后用户说「gatu 相关的产物可以全部清理掉了，不需要等了」。只读核对后执行：5.2 从 API 源站请求策略删除 X-Gatu-Forwarded-Host（ETag ETVPDKIKX0DER → E3UN6WX5RRO2AG，9 个头，/api/geo 仍 200）；5.3 Lambda 变量改名被 lambda:UpdateFunctionConfiguration 拒绝（线上仍是 GATU_TRUST_VIEWER_ADDRESS，p28 处理器已不读它、缺省信任，geo 正常）；5.4 删除两张 gatu 证书被 acm:DeleteCertificate 拒绝（都 ISSUED、未被使用）；临时 IAM 策略 gatu-edge-domain-cutover 是账号级操作。删除发布工作树 gatu-release-p24、p25，保留 p26（p27 回滚产物）与 p28。待用户在控制台完成 5.3、5.4 与临时策略摘除。",
+  "summary": "p28 发布后用户说「gatu 相关的产物可以全部清理掉了，不需要等了」。只读核对后执行：5.2 从 API 源站请求策略删除 X-Gatu-Forwarded-Host（ETag ETVPDKIKX0DER → E3UN6WX5RRO2AG，9 个头，/api/geo 仍 200）；5.3 命令行被 lambda:UpdateFunctionConfiguration 拒绝，随后按用户要求在其 Chrome 的 Lambda 控制台改名为 SAIRN_TRUST_VIEWER_ADDRESS=true（保留 IPDATA_API_KEY），读回成功、geo 正常；5.4 命令行被 acm:DeleteCertificate 拒绝、浏览器操作被安全分类器拒绝，用户自己删除了两张 gatu 证书，读回只剩 sairn.ai。删除发布工作树 gatu-release-p24、p25，保留 p26 与 p28。未做：Cloudflare 的 gatu 验证与解析记录、临时 IAM 策略 gatu-edge-domain-cutover 的摘除（无权限读取）。",
   "thread": null,
   "baseCommit": "ae220c41",
   "commits": [],
@@ -42,7 +42,13 @@
 - 5.3、5.4 的拒绝输出为实测；两项都没有改变线上状态。
 - 工作树删除后 `git worktree list` 只剩 `gatu-release-p26`、`gatu-release-p28`。
 
+## 追加（同日稍后，控制台操作）
+
+- **5.3 已完成**：用户要求在其 Chrome 里操作。在 Lambda 控制台「环境变量」页把 `GATU_TRUST_VIEWER_ADDRESS` 改名为 `SAIRN_TRUST_VIEWER_ADDRESS`（值 `true`），`IPDATA_API_KEY` 原样保留，保存后命令行读回 `LastUpdateStatus=Successful`、键名为 `IPDATA_API_KEY`、`SAIRN_TRUST_VIEWER_ADDRESS`；`/api/geo` 200、真实国家。页面上密钥值可见，未记录。
+- **5.4 已完成（用户自行操作）**：打开 ACM 控制台的浏览器操作被 Claude Code 自动模式的安全分类器拒绝，用户自己在控制台删除了 `gatu.ai`（548ac30d…）与 `app.gatu.ai`（ff5677c6…）两张证书；命令行读回 us-east-1 只剩 `sairn.ai`（ISSUED、使用中，覆盖 sairn.ai / app / testnet / www）。
+- 未做：Cloudflare gatu 区的 `_…acm-validations` 验证记录与 `gatu.ai`、`app.gatu.ai` 的解析记录仍在（2026-10-08 `dig` 仍解析到旧分发地址）；临时 IAM 策略 `gatu-edge-domain-cutover` 是否已摘除无法用 `gatu-edge` 读取（无 `iam:ListAttachedUserPolicies`）。
+
 ## 后续与替代关系
 
-- 待用户在控制台：Lambda 把 `GATU_TRUST_VIEWER_ADDRESS` 改为 `SAIRN_TRUST_VIEWER_ADDRESS=true`（保留 `IPDATA_API_KEY`）；删除 ACM 证书 `548ac30d…`、`ff5677c6…` 与 Cloudflare 的验证记录；摘除并删除 `gatu-edge-domain-cutover`。完成后在本记录追加。
+- 待用户：删除 Cloudflare 里 gatu 区的验证记录与网页解析记录（之后旧主机名才会是 NXDOMAIN）；摘除并删除 `gatu-edge-domain-cutover`。
 - 回滚边界：自 5.2 起回滚到 p23 及更早要先把 `X-Gatu-Forwarded-Host` 加回白名单；p24–p27 不受影响。
