@@ -64,6 +64,14 @@ export function getPrivyEmbeddedWalletAddress(user: User | null | undefined): `0
 	return primaryHdWallets.length === 1 ? (primaryHdWallets[0]?.address as `0x${string}`) : undefined;
 }
 
+/** True when the user has any embedded Ethereum wallet, even one that cannot be selected unambiguously. */
+export function hasPrivyEmbeddedWallet(user: User | null | undefined): boolean {
+	if (isPrivyEmbeddedWallet(user?.wallet)) return true;
+	return ((user?.linkedAccounts ?? []) as WalletIdentity[]).some(
+		(account) => account.type === "wallet" && isPrivyEmbeddedWallet(account),
+	);
+}
+
 function getPrivyExternalWalletAddresses(user: User | null | undefined): string[] {
 	const walletAccounts: Array<WalletIdentity | null | undefined> = [
 		user?.wallet as WalletIdentity | undefined,

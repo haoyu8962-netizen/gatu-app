@@ -49,6 +49,8 @@ The main problems are concentrated in:
 3. `apps/terminal/src/components/trade/chart/datafeed.ts`
    TradingView price-scale inference uses `getInfoClient().allMids()` without a dex parameter. The official docs say omitted `dex` uses the first perp dex and only includes spot mids there. For builder-perp coins this means `inferPriceScale()` can fall back to the default price scale instead of using a verified mid. Candle fetching itself is correct because the app passes the required `dex:coin` prefix for HIP-3 markets.
 
+   Status 2026-10-02: no longer applies. Builder-perp and spot symbols resolve only through the application's market metadata, and the datafeed fallback, which can only verify listed main-dex perps, derives the price format from `meta` `szDecimals` and the mid's magnitude. `inferPriceScale()` and the mid-digit inference were removed; see [ADR 0035](adr/0035-chart-price-precision-from-market-rules.md).
+
 ### Resolved during this audit
 
 1. `apps/terminal/src/hooks/trade/use-asset-leverage.ts`
