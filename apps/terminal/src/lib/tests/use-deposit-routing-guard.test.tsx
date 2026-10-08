@@ -1869,6 +1869,48 @@ describe("useDeposit fresh USDC route guard", () => {
 		expect(capturedDeposit?.error?.message).toContain("fees changed");
 	});
 
+	it.each([
+		{ name: "before signing", feeFetchesBeforeRise: 0, signs: 0 },
+		{ name: "after signing", feeFetchesBeforeRise: 1, signs: 1 },
+	])(
+		"reports a fee change when a fresh quote puts the amount below the Circle minimum $name",
+		async ({ feeFetchesBeforeRise, signs }) => {
+			testState.routingResponse = { depositRoute: "cctp", withdrawalRoute: "cctp" };
+			let feeRequestCount = 0;
+			vi.stubGlobal(
+				"fetch",
+				vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+					const body = typeof init?.body === "string" ? (JSON.parse(init.body) as { method?: string }) : null;
+					if (body?.method === "eth_call") {
+						return new Response(JSON.stringify({ result: "0x4c4b40" }), { status: 200 });
+					}
+					if (String(input).includes("/fastBurn/USDC/allowance")) {
+						return new Response(JSON.stringify({ allowance: 1_000_000 }), { status: 200 });
+					}
+					feeRequestCount += 1;
+					const forwardFee = feeRequestCount <= feeFetchesBeforeRise ? 200_000 : 3_000_000;
+					return new Response(
+						JSON.stringify([
+							{
+								finalityThreshold: 1000,
+								minimumFee: 0,
+								forwardFee: { low: forwardFee, med: forwardFee, high: forwardFee },
+							},
+						]),
+						{ status: 200 },
+					);
+				}),
+			);
+
+			await submit("smart", "cctp");
+
+			expect(testState.permitSign).toHaveBeenCalledTimes(signs);
+			expect(testState.smartSendTransaction).not.toHaveBeenCalled();
+			expect(capturedDeposit?.error).toBeInstanceOf(LocalizedActionError);
+			expect(capturedDeposit?.error?.message).toContain("fees changed");
+		},
+	);
+
 	it("treats the V2 skipped event as a definitive source failure", async () => {
 		testState.routingResponse = { depositRoute: "cctp", withdrawalRoute: "cctp" };
 		stubSuccessfulCctpCapacity();

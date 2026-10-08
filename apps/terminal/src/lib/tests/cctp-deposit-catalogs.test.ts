@@ -5,7 +5,7 @@ const cctpMessages = [
 	"~2 minutes",
 	"Available {balance} USDC is below the minimum deposit. Send at least {minimumDeposit}.",
 	"Gas-sponsored CCTP deposits are not enabled for this network.",
-	"Important: this address can only receive native USDC on Arbitrum. Do not send USDC.e or assets from other networks. Minimum deposit is {minimumDeposit}.",
+	"Important: send only native USDC on Arbitrum to this address. Other assets, including USDC.e, and transfers on other networks will not be credited to your trading account.",
 	"Legacy Bridge2 deposits are no longer accepted. Deposits are paused.",
 	"Legacy Bridge2 deposits are no longer accepted. This deposit was not submitted.",
 	"Unable to verify the CCTP authorization.",

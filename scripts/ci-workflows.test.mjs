@@ -379,6 +379,10 @@ test("runs the release metadata, CSP and card funding guards on pull requests", 
 		"src/lib/tests/use-terms-acceptance.test.tsx",
 		"src/lib/tests/owner-trading-signer.test.tsx",
 		"src/lib/tests/dialog-notice-radius-contract.test.ts",
+		"src/lib/tests/loading-placeholder-contract.test.ts",
+		"src/lib/tests/funds-modal-scroll-contract.test.ts",
+		"src/lib/tests/global-modals-hip3-disclaimer.test.tsx",
+		"src/lib/tests/deposit-modal-warm.test.ts",
 		"src/lib/tests/i18n-reactivity-contract.test.ts",
 	]) {
 		assert.equal(terminalTests.includes(file), true, `${file} never runs in CI`);

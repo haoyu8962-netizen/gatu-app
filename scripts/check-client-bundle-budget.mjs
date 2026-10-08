@@ -76,7 +76,14 @@ const budgets = {
 	// 345a2143 measured 3,296,905); PR #81 (the TradingView loader patch and its tests) changed no client asset
 	// (3,296,759, -146 of build noise). The pairing-on build that only pull requests into main run measures about
 	// 2,200 more (CI read 3,298,948 for the same head) and had exceeded the previous allowance by 1,297.
-	totalGzipBaselineBytes: 3_296_759,
+	// Raised 2026-10-05 by +340 for the funds dialog rework (docs/terminal-performance-baseline.md): the shell the
+	// Deposit / Withdraw / Bridge dialog shares with its chunk fallback (+1,365 as a chunk of its own), the CCTP
+	// minimum and its typed error (+195 in the shared deposit chunk, +508 beside the deposit tracker), the notice in
+	// the six catalogs (+328) and the sticky form headings, against the removed six-block skeleton fallback (-1,187)
+	// and the skeleton chunk merged into the account panel chunk (-329 net). Measured as the fixed-metadata Node 22.15.0
+	// build of f9bae822 (3,297,328) minus that of dev 345a2143 (3,296,988); the +9,337 dev had already used stays
+	// counted. Merged with dev 508ff73d on 2026-10-08: the +340 is added to its re-baselined 3,296,759.
+	totalGzipBaselineBytes: 3_297_099,
 	totalGzipAllowedIncreaseBytes: 10_000,
 	tradeStartup: {
 		requiredRouteIds: ["__root__", "/trade/$symbol"],

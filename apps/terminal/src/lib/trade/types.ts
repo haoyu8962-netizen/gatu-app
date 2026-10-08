@@ -20,6 +20,7 @@ export interface ButtonContent {
 	action: () => void;
 	disabled: boolean;
 	disabledReason?: string;
+	opensDeposit?: boolean;
 	variant: "cyan" | "buy" | "sell";
 }
 

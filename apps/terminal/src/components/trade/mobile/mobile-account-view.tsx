@@ -2,6 +2,7 @@ import { useLingui } from "@lingui/react/macro";
 import { ArrowsLeftRightIcon } from "@phosphor-icons/react";
 import { Button, Tooltip } from "@sairn/ui";
 import { useId } from "react";
+import { depositModalIntentProps } from "@/components/trade/components/deposit-modal-intent";
 import { LIFI_BRIDGE_FEATURES, shouldShowLiFiBridgeTab } from "@/config/lifi-bridge";
 import { getFundsAvailabilityNotice } from "@/domain/trade/data-presentation";
 import { useAccountOverview } from "@/hooks/trade/use-account-overview";
@@ -192,6 +193,7 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 									onClick={
 										showsEmailDeposit && depositAvailability.available ? () => openDepositModal("deposit") : undefined
 									}
+									{...(showsEmailDeposit && depositAvailability.available ? depositModalIntentProps : undefined)}
 									aria-label={t`Deposit`}
 									title={disconnectedDepositNotice ?? undefined}
 									className="min-h-11 w-full"
@@ -228,6 +230,7 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 											focusableWhenDisabled
 											aria-describedby={depositNotice ? depositUnavailableId : undefined}
 											onClick={depositAvailability.available ? () => openDepositModal("deposit") : undefined}
+											{...(depositAvailability.available ? depositModalIntentProps : undefined)}
 											aria-label={t`Deposit`}
 											className="min-h-11 w-full"
 										>
@@ -247,6 +250,7 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 											onClick={
 												fundsActionAvailability.withdrawal.available ? () => openDepositModal("withdraw") : undefined
 											}
+											{...(fundsActionAvailability.withdrawal.available ? depositModalIntentProps : undefined)}
 											aria-label={t`Withdraw`}
 											className="min-h-11 w-full"
 										>
@@ -285,6 +289,7 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 									intent="neutral"
 									size="md"
 									onClick={() => openDepositModal("bridge")}
+									{...depositModalIntentProps}
 									aria-label={t`Bridge`}
 									iconLeft={<ArrowsLeftRightIcon className="size-4" />}
 									className="min-h-11 w-full"

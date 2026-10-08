@@ -29,8 +29,6 @@ import {
 } from "./vaults-fixture";
 import { VaultsList } from "./vaults-list";
 
-const VAULT_DETAIL_SKELETON_KEYS = ["metric-1", "metric-2", "metric-3", "metric-4"] as const;
-
 export function VaultsPage() {
 	const fixture = getVaultsFixtureFromLocation();
 	if (fixture) {
@@ -243,16 +241,8 @@ function VaultDetailSkeleton() {
 			data-state="loading"
 			aria-busy="true"
 			aria-label={t`Loading Vault details`}
-			className="space-y-3 rounded-24 bg-surface p-4 shadow-raised min-[1001px]:p-5"
-		>
-			<div className="h-14 animate-pulse rounded-16 bg-fill-weak motion-reduce:animate-none" />
-			<div className="grid grid-cols-2 gap-2 min-[1001px]:grid-cols-4">
-				{VAULT_DETAIL_SKELETON_KEYS.map((key) => (
-					<div key={key} className="h-20 animate-pulse rounded-16 bg-fill-weak motion-reduce:animate-none" />
-				))}
-			</div>
-			<div className="h-72 animate-pulse rounded-16 bg-fill-weak motion-reduce:animate-none" />
-		</section>
+			className="min-h-80 rounded-24 bg-surface shadow-raised"
+		/>
 	);
 }
 
