@@ -93,7 +93,6 @@ const REACTIVE_COMPONENTS = [
 	"components/trade/tradebox/deposit/deposit-method-chooser.tsx",
 	"components/trade/tradebox/deposit/funding-address-card.tsx",
 	"components/trade/tradebox/deposit/withdraw-form.tsx",
-	"components/trade/tradebox/deposit/wrong-network-screen.tsx",
 	"components/trade/tradebox/embedded-deposit-auto-bridge.tsx",
 	"components/trade/tradebox/leverage-editor.tsx",
 	"components/trade/tradebox/leverage-modal.tsx",

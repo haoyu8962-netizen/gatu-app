@@ -963,7 +963,6 @@ msgstr "Arbitrum (लेगेसी)"
 
 #: src/lib/errors/action-error.ts
 #: src/lib/hyperliquid/use-deposit.ts
-#: src/lib/tests/wrong-network-screen.test.tsx
 msgid "Arbitrum network switch was rejected."
 msgstr "Arbitrum नेटवर्क स्विच अस्वीकार कर दिया गया।"
 
@@ -1136,7 +1135,6 @@ msgstr "औसत {price}"
 #: src/components/trade/tradebox/bridge/bridge-error-screen.tsx
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
-#: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
 #: src/components/vaults/vault-action-modal.tsx
 msgid "Back"
 msgstr "वापस"
@@ -1736,7 +1734,6 @@ msgstr "सबमिट करने के लिए क्लिक करे�
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/shared-ui.tsx
-#: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
 #: src/components/trade/tradebox/leverage-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
@@ -2600,7 +2597,6 @@ msgstr "डिप्लॉयर"
 #: src/components/trade/tradebox/deposit/amount-input.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-method-chooser.tsx
-#: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
 #: src/components/vaults/vault-detail-view.tsx
 #: src/components/vaults/vault-detail-view.tsx
 #: src/config/account-ledger.ts
@@ -8584,16 +8580,14 @@ msgid "Switch to {marketName} market, {sideLabel} order"
 msgstr "{marketName} बाज़ार पर स्विच करें, {sideLabel} ऑर्डर"
 
 #: src/components/trade/mobile/mobile-trade-view.tsx
-#: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
-#: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
 #: src/config/ui-text.ts
 #: src/lib/trade/use-button-content.ts
-msgid "Switch to Arbitrum"
-msgstr "Arbitrum पर स्विच करें"
+#~ msgid "Switch to Arbitrum"
+#~ msgstr "Arbitrum पर स्विच करें"
 
 #: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
-msgid "Switch to Arbitrum to deposit USDC to Hyperliquid"
-msgstr "Hyperliquid में USDC जमा करने के लिए Arbitrum पर स्विच करें"
+#~ msgid "Switch to Arbitrum to deposit USDC to Hyperliquid"
+#~ msgstr "Hyperliquid में USDC जमा करने के लिए Arbitrum पर स्विच करें"
 
 #: src/config/desktop-nav.ts
 msgid "Switch to dark mode"
@@ -8635,12 +8629,15 @@ msgstr "पोर्टफोलियो मार्जिन पर स्व
 msgid "Switched to Unified account"
 msgstr "एकीकृत खाते पर स्विच किया गया"
 
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Switching network"
+msgstr "नेटवर्क बदला जा रहा है"
+
 #: src/components/trade/mobile/mobile-trade-view.tsx
-#: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
 #: src/config/ui-text.ts
 #: src/lib/trade/use-button-content.ts
-msgid "Switching..."
-msgstr "स्विच हो रहा है..."
+#~ msgid "Switching..."
+#~ msgstr "स्विच हो रहा है..."
 
 #: src/components/staking/staking-view.tsx
 msgid "System finalization · hash unavailable"
@@ -10297,7 +10294,6 @@ msgstr "वर्तमान CCTP निकासी शुल्क लोड 
 msgid "Unable to switch wallet to {0}. Switch networks in your wallet and retry."
 msgstr "वॉलेट को {0} पर स्विच नहीं किया जा सका। अपने वॉलेट में नेटवर्क बदलें और दोबारा प्रयास करें।"
 
-#: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
 #: src/lib/errors/action-error.ts
 msgid "Unable to switch wallet to Arbitrum. Switch networks in your wallet and retry."
 msgstr "वॉलेट को Arbitrum पर स्विच नहीं किया जा सका। अपने वॉलेट में नेटवर्क बदलें और फिर से प्रयास करें।"
@@ -10978,7 +10974,6 @@ msgstr "वॉलेट ने ट्रांज़ैक्शन हैश �
 
 #. placeholder {0}: config.chainName
 #: src/lib/hyperliquid/use-deposit.ts
-#: src/lib/hyperliquid/use-deposit.ts
 msgid "Wallet is not connected to {0}. Switch networks in your wallet and retry."
 msgstr "वॉलेट {0} से कनेक्ट नहीं है। अपने वॉलेट में नेटवर्क बदलें और दोबारा प्रयास करें।"
 
@@ -10989,7 +10984,6 @@ msgstr "खाता मोड अपडेट करने के लिए व
 
 #: src/components/trade/tradebox/bridge/shared-ui.tsx
 #: src/components/trade/tradebox/deposit/shared-ui.tsx
-#: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts

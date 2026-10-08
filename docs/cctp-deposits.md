@@ -137,6 +137,79 @@ Hyperliquid mainnet account; Circle's published 1,000-USDC testnet policy may
 also apply beyond a single transfer, which the client cannot independently
 enforce.
 
+## Wallet Network
+
+The deposit form never gates on the wallet's current network and shows no
+"switch to Arbitrum" screen. The official terminal behaves the same way once a
+Privy session is authenticated: its chain-mismatch helper returns false for an
+authenticated session, and the Arbitrum USDC deposit handler calls wagmi's
+`switchChainAsync` right before `writeContractAsync` when the connected chain is
+not Arbitrum (evidence captured from the production bundle on 2026-10-08, see
+[the task record](work-memory/sessions/2026-10-08-deposit-on-demand-chain-switch.md)).
+Sairn's external-wallet submit path in `lib/hyperliquid/use-deposit.ts` does the
+same work in `getDepositProviderForChain`:
+
+1. Read `eth_chainId` from the wallet's EIP-1193 provider and normalise it with
+   `parseChainId`. Comparison is numeric: injected wallets answer with a hex
+   string, while WalletConnect's provider answers with a number. Comparing the
+   raw value with a hex literal made every WalletConnect wallet look like it was
+   on the wrong network, including one that was already on Arbitrum. This is
+   the confirmed defect; whether it was the cause of the reported phone
+   incident depends on that wallet's connector, which was not recorded
+   (a wallet's in-app browser injects a provider that answers with a hex string
+   and would not have hit it).
+2. When the chain differs, mark the execution `networkSwitchPending` (the status
+   screen heading becomes "Switching network") and ask for the switch once:
+   through Privy's `wallet.switchChain` when Privy's own record disagrees with
+   Arbitrum, or directly with `wallet_switchEthereumChain` (plus
+   `wallet_addEthereumChain` on an unknown-chain error) when Privy already
+   believes the wallet is on Arbitrum, because `switchChain` returns without
+   sending anything in that case.
+3. Wait for the wallet to report Arbitrum: a `chainChanged` listener plus
+   `eth_chainId` polling every `DEPOSIT_CHAIN_SWITCH_POLL_INTERVAL_MS`, with an
+   independent `DEPOSIT_CHAIN_SWITCH_SETTLE_MS` deadline timer that ends the
+   wait even while a chain query is still pending (late answers and events are
+   ignored once it has ended). Wallets commonly resolve the switch request
+   before the new chain is observable, so an immediate re-read is not evidence.
+   Once a switch request has been accepted, the wait never repeats it because
+   the chain has not changed yet; the only extra requests are the
+   unknown-chain recovery (`wallet_addEthereumChain` followed by one more
+   `wallet_switchEthereumChain`, inside Privy, in the direct path, or in both
+   when Privy's own recovery still reports an unknown chain). A wallet
+   that never reports Arbitrum before the deadline fails with "Wallet is not
+   connected to Arbitrum One", a rejected request with "Arbitrum network switch
+   was rejected", and either is reported through the deposit failure
+   notification. The deadline bounds only this observation phase: the wallet's
+   own answer to the switch request is awaited before it, and a backgrounded
+   page may delay the timer.
+4. Re-check the chain (numerically) right before the EIP-3009 authorization is
+   signed and again right before `writeContract`, after the gas estimate and
+   the fresh legal check, so a wallet that moved away in between still fails
+   closed.
+
+Device acceptance for this flow has not been recorded yet. It needs a phone with
+a real external wallet and a small USDC balance on Arbitrum, and covers three
+cases: a wallet already on Arbitrum must see no switch prompt at all and go
+straight to the transaction request; a wallet on another network that already
+knows Arbitrum must see one switch prompt, then the transaction request, with
+the status screen reading "Switching network" in between (a wallet that does
+not know Arbitrum goes through the add-network recovery above, so record the
+exact prompt order instead); and declining the switch must close the attempt
+with the "Arbitrum network switch was rejected" notification and no transaction
+request. Record the wallet, its connection path (WalletConnect or
+in-app browser) and the outcome in the task record before relying on this flow.
+
+`useDepositWalletProvider` only reports whether the wallet provider answers at
+all (the "Wallet connection unavailable" screen); it no longer interprets the
+chain. `use-deposit-routing-guard.test.tsx` ("wallet network") pins the numeric
+comparison, the two switch paths, the unknown-chain recovery sequence (in
+the direct path, and after Privy itself reports an unknown chain, while a
+rejection never falls back), the event channel (a `chainChanged` for another
+chain keeps the wait going), the deadline (including a query that never answers, and answers
+or events that arrive after it), a query that fails during the observation,
+listener and timer cleanup, the `networkSwitchPending` lifecycle as the hook
+returns it, the rejection and both pre-signing and pre-broadcast re-checks.
+
 ## Card Funding Before A Deposit
 
 When the per-network card funding flag is on and the session has an exact owner

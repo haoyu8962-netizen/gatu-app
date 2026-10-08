@@ -526,6 +526,19 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Fixed
 
+- The order button no longer asks an external wallet to "Switch to Arbitrum" before Enable
+  Trading, and an external wallet on a network the terminal does not list can now enable
+  trading, approve the builder fee and send other wallet-signed requests instead of failing
+  with a wallet mismatch: those requests are signed on the network the wallet is already on,
+  as on the official terminal. Only a USDC deposit needs Arbitrum, and that dialog asks for
+  the switch when you press Deposit.
+- Depositing from an external wallet on a phone no longer fails with "Wallet is not connected to
+  Arbitrum One" when the wallet is already on Arbitrum. The deposit dialog no longer opens on a
+  "Switch to Arbitrum" screen: as on the official terminal, a wallet on another network is asked
+  to switch when you press Deposit (the status screen says "Switching network"), the terminal
+  waits for the wallet to report Arbitrum instead of re-reading immediately, and a declined
+  switch, or a wallet that still reports another network ten seconds after accepting the
+  request, is reported through the deposit failure notification.
 - On iPhone and iPad Safari, the chart no longer stays on the loading mark and then shows
   "Something went wrong" after you leave the trade page and come back, switch back to a language
   the chart had already shown, change the number format or press Retry. The TradingView loader

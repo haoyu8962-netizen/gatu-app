@@ -68,7 +68,6 @@ describe("Reduce Only capacity", () => {
 	it("keeps zero-balance reduce-only in the trade flow and retains other gates", () => {
 		const input = {
 			isConnected: true,
-			needsChainSwitch: false,
 			needsApproval: false,
 			isSignerReady: true,
 			hasBalanceError: false,

@@ -11,7 +11,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const testState = vi.hoisted(() => ({
 	authorize: vi.fn(async () => {}),
 	availableBalance: 100,
+	hasWalletAccess: true,
 	isReady: true,
+	isSignerLoading: false,
+	signerMode: "owner" as "owner" | "agent",
 	limitPrice: "100",
 	openInterestCapped: false,
 	orderType: "limit",
@@ -35,9 +38,26 @@ const testState = vi.hoisted(() => ({
 	},
 }));
 
+const wagmiState = vi.hoisted(() => ({
+	connectionChainId: 42161 as number,
+	walletClientError: null as Error | null,
+	walletClientLoading: false,
+	walletClientMissing: false,
+	switchChain: vi.fn(),
+}));
+
 vi.mock("wagmi", () => ({
-	useSwitchChain: () => ({ isPending: false, mutate: vi.fn() }),
-	useWalletClient: () => ({ data: {}, error: null, isLoading: false }),
+	useConnection: () => ({ chainId: wagmiState.connectionChainId }),
+	useSwitchChain: () => ({ isPending: false, mutate: wagmiState.switchChain }),
+	useWalletClient: (parameters?: { chainId?: number }) => {
+		const matchesConnection = parameters?.chainId === wagmiState.connectionChainId;
+		const data =
+			matchesConnection && !wagmiState.walletClientLoading && !wagmiState.walletClientMissing
+				? { account: { address: "0xabc" } }
+				: undefined;
+		const error = matchesConnection ? null : wagmiState.walletClientError;
+		return { data, error, isLoading: wagmiState.walletClientLoading };
+	},
 }));
 
 vi.mock("@/components/trade/tradebox/trade-form-fields", () => ({ TradeFormFields: () => null }));
@@ -153,7 +173,7 @@ vi.mock("@/hooks/use-geo-restriction", () => ({
 	useGeoRestriction: () => ({ actionsBlocked: false, isError: false, isResolved: true, tradeRestricted: false }),
 }));
 vi.mock("@/hooks/wallet/use-wallet-session", () => ({
-	useWalletSession: () => ({ address: "0xabc", isConnected: true }),
+	useWalletSession: () => ({ address: "0xabc", isConnected: true, hasWalletAccess: testState.hasWalletAccess }),
 }));
 
 vi.mock("@/lib/hyperliquid", () => ({
@@ -178,9 +198,9 @@ vi.mock("@/lib/hyperliquid", () => ({
 	useTradingStatus: () => ({
 		isBuilderFeeLoading: false,
 		isReady: testState.isReady,
-		isSignerLoading: false,
-		isSignerReady: true,
-		signerMode: "wallet",
+		isSignerLoading: testState.isSignerLoading,
+		isSignerReady: !testState.isSignerLoading,
+		signerMode: testState.signerMode,
 	}),
 	useUserPositions: () => ({
 		getPosition: () => null,
@@ -437,7 +457,105 @@ describe("desktop TradePanel trading approval errors", () => {
 		container.remove();
 		vi.clearAllMocks();
 		testState.isReady = true;
+		testState.hasWalletAccess = true;
+		testState.isSignerLoading = false;
+		testState.signerMode = "owner";
 		activateLocale("en");
+	});
+
+	it("keeps Enable Trading inert for an Agent-only session without wallet access", async () => {
+		testState.hasWalletAccess = false;
+		await renderPanel(root);
+		const button = getOrderButton(container);
+		expect(button.textContent?.trim()).toBe("Enable Trading");
+		expect(button.disabled).toBe(true);
+
+		await act(async () => button.click());
+
+		expect(testState.authorize).not.toHaveBeenCalled();
+	});
+
+	it("keeps Enable Trading inert while the exact owner signer is still being established", async () => {
+		testState.isSignerLoading = true;
+		testState.signerMode = "owner";
+		await renderPanel(root);
+		const button = getOrderButton(container);
+		expect(button.textContent?.trim()).toBe("Enable Trading");
+		expect(button.disabled).toBe(true);
+
+		await act(async () => button.click());
+
+		expect(testState.authorize).not.toHaveBeenCalled();
+	});
+
+	it("offers Enable Trading on the wallet's current network instead of a switch to Arbitrum", async () => {
+		testState.signerMode = "agent";
+		wagmiState.connectionChainId = 999_999;
+		wagmiState.walletClientError = new Error(
+			"The current chain of the connector (id: 999999) does not match the connection's chain (id: 42161).",
+		);
+		try {
+			await renderPanel(root);
+			const button = getOrderButton(container);
+			expect(button.textContent?.trim()).toBe("Enable Trading");
+			expect(button.disabled).toBe(false);
+
+			await act(async () => button.click());
+
+			expect(testState.authorize).toHaveBeenCalledTimes(1);
+			expect(wagmiState.switchChain).not.toHaveBeenCalled();
+		} finally {
+			wagmiState.connectionChainId = 42161;
+			wagmiState.walletClientError = null;
+		}
+	});
+
+	it("lets the Privy owner enable trading without any wagmi client", async () => {
+		testState.signerMode = "owner";
+		testState.isReady = false;
+		wagmiState.walletClientMissing = true;
+		try {
+			await renderPanel(root);
+			const button = getOrderButton(container);
+			expect(button.textContent?.trim()).toBe("Enable Trading");
+			expect(button.disabled).toBe(false);
+			await act(async () => button.click());
+			expect(testState.authorize).toHaveBeenCalledTimes(1);
+			expect(wagmiState.switchChain).not.toHaveBeenCalled();
+		} finally {
+			wagmiState.walletClientMissing = false;
+		}
+	});
+
+	it("waits for the external wallet client before offering Enable Trading", async () => {
+		testState.signerMode = "agent";
+		wagmiState.walletClientLoading = true;
+		try {
+			await renderPanel(root);
+			const pending = getOrderButton(container);
+			expect(pending.textContent?.trim()).toBe("Enable Trading");
+			expect(pending.disabled).toBe(true);
+			await act(async () => pending.click());
+			expect(testState.authorize).not.toHaveBeenCalled();
+
+			wagmiState.walletClientLoading = false;
+			wagmiState.walletClientMissing = true;
+			await renderPanel(root);
+			const missing = getOrderButton(container);
+			expect(missing.disabled).toBe(true);
+			await act(async () => missing.click());
+			expect(testState.authorize).not.toHaveBeenCalled();
+
+			wagmiState.walletClientMissing = false;
+			await renderPanel(root);
+			const ready = getOrderButton(container);
+			expect(ready.disabled).toBe(false);
+			await act(async () => ready.click());
+			expect(testState.authorize).toHaveBeenCalledTimes(1);
+		} finally {
+			wagmiState.walletClientLoading = false;
+			wagmiState.walletClientMissing = false;
+		}
 	});
 
 	it.each([

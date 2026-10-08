@@ -16,6 +16,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CCTP_DEPOSIT_NETWORKS } from "@/config/cctp-deposit";
 import { useCctpDepositTracking } from "@/hooks/trade/use-cctp-deposit-tracking";
 import { LocalizedActionError } from "@/lib/errors/localized-action-error";
+import { getDepositExecutionState } from "@/lib/hyperliquid/deposit-execution-state";
 import { DefinitiveDepositSourceFailureError } from "@/lib/hyperliquid/deposit-source-error";
 import { type DepositReview, type UseDepositResult, useDeposit } from "@/lib/hyperliquid/use-deposit";
 import { addressToBytes32, CCTP_EXTENSION_ABI, CCTP_EXTENSION_V2_ABI } from "@/lib/trade/cctp-deposit";
@@ -713,6 +714,545 @@ describe("useDeposit fresh USDC route guard", () => {
 			expect(capturedDeposit?.error?.message).toContain("Selected wallet does not match");
 		},
 	);
+
+	describe("wallet network", () => {
+		const EXECUTION_KEY = `mainnet:manual:wallet:${WALLET_ADDRESS.toLowerCase()}`;
+
+		function networkSwitchPending() {
+			return getDepositExecutionState(EXECUTION_KEY).networkSwitchPending;
+		}
+
+		function providerOn(
+			chainIds: () => unknown,
+			options: { onSwitch?: (params: unknown) => Promise<unknown> | unknown } = {},
+		) {
+			const listeners = new Set<(chainId: unknown) => void>();
+			const requests: Array<{ method: string; params?: unknown }> = [];
+			testState.providerRequest.mockImplementation(async ({ method, params }: { method: string; params?: unknown }) => {
+				if (method === "eth_chainId") return chainIds();
+				if (method === "eth_accounts" || method === "eth_requestAccounts") return [WALLET_ADDRESS];
+				if (method === "wallet_switchEthereumChain" || method === "wallet_addEthereumChain") {
+					requests.push({ method, params });
+					return method === "wallet_switchEthereumChain" ? await options.onSwitch?.(params) : null;
+				}
+				throw new Error(`Unexpected provider method: ${method}`);
+			});
+			const provider = {
+				request: testState.providerRequest,
+				on: (_event: string, listener: (chainId: unknown) => void) => listeners.add(listener),
+				removeListener: (_event: string, listener: (chainId: unknown) => void) => listeners.delete(listener),
+			};
+			testState.wallet.getEthereumProvider = async () => provider;
+			return {
+				listeners,
+				requests,
+				switchRequests: () => requests.filter((request) => request.method === "wallet_switchEthereumChain"),
+				emitChainChanged: (chainId: unknown) => {
+					for (const listener of listeners) listener(chainId);
+				},
+			};
+		}
+
+		async function flushUntil(condition: () => boolean) {
+			for (let attempt = 0; attempt < 200 && !condition(); attempt += 1) await Promise.resolve();
+			expect(condition()).toBe(true);
+		}
+
+		afterEach(() => {
+			testState.wallet.getEthereumProvider = async () => ({ request: testState.providerRequest });
+			testState.wallet.switchChain = vi.fn();
+		});
+
+		it("accepts a WalletConnect provider that reports the Arbitrum chain id as a number", async () => {
+			testState.routingResponse = { depositRoute: "cctp", withdrawalRoute: "cctp" };
+			stubSuccessfulCctpCapacity();
+			const { listeners, requests } = providerOn(() => 42161);
+
+			await submit("wallet", "cctp");
+
+			expect(requests).toHaveLength(0);
+			expect(testState.wallet.switchChain).not.toHaveBeenCalled();
+			expect(testState.walletWriteContract).toHaveBeenCalledOnce();
+			expect(listeners.size).toBe(0);
+			expect(capturedDeposit?.networkSwitchPending).toBe(false);
+		});
+
+		it("asks the wallet itself to switch when Privy already believes it is on Arbitrum", async () => {
+			testState.routingResponse = { depositRoute: "cctp", withdrawalRoute: "cctp" };
+			stubSuccessfulCctpCapacity();
+			let chainId: unknown = 56;
+			let pendingDuringSwitch: boolean | undefined;
+			const { listeners, requests, emitChainChanged } = providerOn(() => chainId, {
+				onSwitch: () => {
+					pendingDuringSwitch = networkSwitchPending();
+					setTimeout(() => {
+						chainId = "0xa4b1";
+						emitChainChanged("0xa4b1");
+					}, 0);
+					return null;
+				},
+			});
+
+			await submit("wallet", "cctp");
+
+			expect(testState.wallet.switchChain).not.toHaveBeenCalled();
+			expect(requests).toEqual([{ method: "wallet_switchEthereumChain", params: [{ chainId: "0xa4b1" }] }]);
+			expect(pendingDuringSwitch).toBe(true);
+			expect(testState.walletWriteContract).toHaveBeenCalledOnce();
+			expect(listeners.size).toBe(0);
+			expect(capturedDeposit?.networkSwitchPending).toBe(false);
+		});
+
+		it("adds Arbitrum and switches again when the wallet does not know the chain", async () => {
+			testState.routingResponse = { depositRoute: "cctp", withdrawalRoute: "cctp" };
+			stubSuccessfulCctpCapacity();
+			let chainId: unknown = 56;
+			let switchAttempts = 0;
+			const { requests } = providerOn(() => chainId, {
+				onSwitch: () => {
+					switchAttempts += 1;
+					if (switchAttempts === 1) throw Object.assign(new Error("Unrecognized chain ID"), { code: 4902 });
+					chainId = 42161;
+					return null;
+				},
+			});
+
+			await submit("wallet", "cctp");
+
+			expect(requests.map((request) => request.method)).toEqual([
+				"wallet_switchEthereumChain",
+				"wallet_addEthereumChain",
+				"wallet_switchEthereumChain",
+			]);
+			expect(testState.walletWriteContract).toHaveBeenCalledOnce();
+		});
+
+		it("continues on the chainChanged event before the next poll is due", async () => {
+			vi.useFakeTimers();
+			testState.routingResponse = { depositRoute: "cctp", withdrawalRoute: "cctp" };
+			stubSuccessfulCctpCapacity();
+			let chainId: unknown = 56;
+			const { listeners, switchRequests, emitChainChanged } = providerOn(() => chainId);
+			const depositHook = renderMode("wallet", "cctp");
+
+			await act(async () => {
+				const request = depositHook.deposit("5");
+				await flushUntil(() => switchRequests().length === 1 && listeners.size === 1);
+				chainId = 42161;
+				emitChainChanged("0xa4b1");
+				await request;
+			});
+
+			expect(testState.walletWriteContract).toHaveBeenCalledOnce();
+			expect(listeners.size).toBe(0);
+		});
+
+		it("switches through Privy exactly once and waits for the wallet to report Arbitrum", async () => {
+			vi.useFakeTimers();
+			testState.routingResponse = { depositRoute: "cctp", withdrawalRoute: "cctp" };
+			stubSuccessfulCctpCapacity();
+			testState.wallet.chainId = "eip155:56";
+			let chainId: unknown = "0x38";
+			let pendingDuringSwitch: boolean | undefined;
+			let pendingDuringSigning: boolean | undefined;
+			const { listeners, switchRequests } = providerOn(() => chainId);
+			testState.wallet.switchChain = vi.fn(async () => {
+				pendingDuringSwitch = networkSwitchPending();
+				setTimeout(() => {
+					chainId = 42161;
+				}, 9_000);
+			});
+			testState.permitSign.mockImplementation(async () => {
+				pendingDuringSigning = networkSwitchPending();
+				return PERMIT_SIGNATURE;
+			});
+			const depositHook = renderMode("wallet", "cctp");
+
+			await act(async () => {
+				const request = depositHook.deposit("5");
+				await vi.advanceTimersByTimeAsync(9_500);
+				await request;
+			});
+
+			expect(testState.wallet.switchChain).toHaveBeenCalledTimes(1);
+			expect(testState.wallet.switchChain).toHaveBeenCalledWith(42161);
+			expect(switchRequests()).toHaveLength(0);
+			expect(pendingDuringSwitch).toBe(true);
+			expect(pendingDuringSigning).toBe(false);
+			expect(testState.walletWriteContract).toHaveBeenCalledOnce();
+			expect(listeners.size).toBe(0);
+			expect(capturedDeposit?.networkSwitchPending).toBe(false);
+		});
+
+		it("reports a wallet that never moves to Arbitrum without a second switch request", async () => {
+			vi.useFakeTimers();
+			testState.routingResponse = { depositRoute: "cctp", withdrawalRoute: "cctp" };
+			stubSuccessfulCctpCapacity();
+			testState.wallet.chainId = "eip155:56";
+			const { listeners, switchRequests } = providerOn(() => "0x38");
+			testState.wallet.switchChain = vi.fn(async () => undefined);
+			const depositHook = renderMode("wallet", "cctp");
+
+			await act(async () => {
+				const request = depositHook.deposit("5");
+				await vi.advanceTimersByTimeAsync(9_900);
+				expect(testState.walletWriteContract).not.toHaveBeenCalled();
+				expect(networkSwitchPending()).toBe(true);
+				await vi.advanceTimersByTimeAsync(200);
+				await request;
+			});
+
+			expect(testState.wallet.switchChain).toHaveBeenCalledTimes(1);
+			expect(switchRequests()).toHaveLength(0);
+			expect(testState.walletWriteContract).not.toHaveBeenCalled();
+			expect(listeners.size).toBe(0);
+			expect(capturedDeposit?.networkSwitchPending).toBe(false);
+			expect(capturedDeposit?.error?.message).toContain("Wallet is not connected to");
+		});
+
+		it("gives up on a chain query that never answers once the settle window closes", async () => {
+			vi.useFakeTimers();
+			testState.routingResponse = { depositRoute: "cctp", withdrawalRoute: "cctp" };
+			stubSuccessfulCctpCapacity();
+			let switched = false;
+			const { listeners } = providerOn(() => (switched ? new Promise(() => {}) : 56), {
+				onSwitch: () => {
+					switched = true;
+					return null;
+				},
+			});
+			const depositHook = renderMode("wallet", "cctp");
+
+			await act(async () => {
+				const request = depositHook.deposit("5");
+				await vi.advanceTimersByTimeAsync(10_100);
+				await request;
+			});
+
+			expect(testState.walletWriteContract).not.toHaveBeenCalled();
+			expect(listeners.size).toBe(0);
+			expect(capturedDeposit?.networkSwitchPending).toBe(false);
+			expect(capturedDeposit?.error?.message).toContain("Wallet is not connected to");
+		});
+
+		function deferred<T>() {
+			let resolve!: (value: T) => void;
+			let reject!: (reason: unknown) => void;
+			const promise = new Promise<T>((res, rej) => {
+				resolve = res;
+				reject = rej;
+			});
+			return { promise, resolve, reject };
+		}
+
+		it("exposes the network switch through the hook while the wallet is asked to switch", async () => {
+			testState.routingResponse = { depositRoute: "cctp", withdrawalRoute: "cctp" };
+			stubSuccessfulCctpCapacity();
+			testState.wallet.chainId = "eip155:56";
+			let chainId: unknown = 56;
+			const switchAnswer = deferred<void>();
+			providerOn(() => chainId);
+			testState.wallet.switchChain = vi.fn(() => switchAnswer.promise);
+			const depositHook = renderMode("wallet", "cctp");
+			expect(depositHook.networkSwitchPending).toBe(false);
+
+			let request: Promise<void> | undefined;
+			await act(async () => {
+				request = depositHook.deposit("5");
+				await flushUntil(() => testState.wallet.switchChain.mock.calls.length === 1);
+			});
+			expect(capturedDeposit?.networkSwitchPending).toBe(true);
+
+			await act(async () => {
+				chainId = 42161;
+				switchAnswer.resolve();
+				await request;
+			});
+			expect(capturedDeposit?.networkSwitchPending).toBe(false);
+			expect(testState.walletWriteContract).toHaveBeenCalledOnce();
+		});
+
+		it("ignores chain answers that arrive after the settle window closed", async () => {
+			vi.useFakeTimers();
+			testState.routingResponse = { depositRoute: "cctp", withdrawalRoute: "cctp" };
+			stubSuccessfulCctpCapacity();
+			let switched = false;
+			const lateAnswers: Array<ReturnType<typeof deferred<unknown>>> = [];
+			let queries = 0;
+			const { listeners, emitChainChanged } = providerOn(
+				() => {
+					if (!switched) return 56;
+					queries += 1;
+					const answer = deferred<unknown>();
+					lateAnswers.push(answer);
+					return answer.promise;
+				},
+				{
+					onSwitch: () => {
+						switched = true;
+						return null;
+					},
+				},
+			);
+			const depositHook = renderMode("wallet", "cctp");
+
+			await act(async () => {
+				const request = depositHook.deposit("5");
+				await vi.advanceTimersByTimeAsync(10_100);
+				await request;
+			});
+			const queriesAtDeadline = queries;
+			expect(queriesAtDeadline).toBe(1);
+			expect(capturedDeposit?.error?.message).toContain("Wallet is not connected to");
+			const errorAtDeadline = capturedDeposit?.error;
+
+			await act(async () => {
+				lateAnswers[0]?.resolve(56);
+				emitChainChanged("0xa4b1");
+				await vi.advanceTimersByTimeAsync(2_000);
+			});
+
+			expect(queries).toBe(queriesAtDeadline);
+			expect(listeners.size).toBe(0);
+			expect(testState.walletWriteContract).not.toHaveBeenCalled();
+			expect(capturedDeposit?.error).toBe(errorAtDeadline);
+			expect(capturedDeposit?.networkSwitchPending).toBe(false);
+		});
+
+		it("stops waiting and cleans up when a chain query fails during the observation", async () => {
+			vi.useFakeTimers();
+			testState.routingResponse = { depositRoute: "cctp", withdrawalRoute: "cctp" };
+			stubSuccessfulCctpCapacity();
+			let switched = false;
+			let queries = 0;
+			const failure = deferred<unknown>();
+			const { listeners } = providerOn(
+				() => {
+					if (!switched) return 56;
+					queries += 1;
+					return failure.promise;
+				},
+				{
+					onSwitch: () => {
+						switched = true;
+						return null;
+					},
+				},
+			);
+			const depositHook = renderMode("wallet", "cctp");
+
+			await act(async () => {
+				const request = depositHook.deposit("5");
+				await flushUntil(() => queries === 1 && listeners.size === 1);
+				failure.reject(new Error("provider closed"));
+				await request;
+			});
+
+			expect(listeners.size).toBe(0);
+			expect(capturedDeposit?.networkSwitchPending).toBe(false);
+			expect(capturedDeposit?.error).not.toBeNull();
+			expect(testState.walletWriteContract).not.toHaveBeenCalled();
+
+			await act(async () => {
+				await vi.advanceTimersByTimeAsync(11_000);
+			});
+			expect(queries).toBe(1);
+		});
+
+		it("does not query again after the chainChanged event ended the wait", async () => {
+			vi.useFakeTimers();
+			testState.routingResponse = { depositRoute: "cctp", withdrawalRoute: "cctp" };
+			stubSuccessfulCctpCapacity();
+			let switched = false;
+			let chainId: unknown = 56;
+			let queriesAfterSwitch = 0;
+			const { listeners, emitChainChanged } = providerOn(
+				() => {
+					if (switched) queriesAfterSwitch += 1;
+					return chainId;
+				},
+				{
+					onSwitch: () => {
+						switched = true;
+						return null;
+					},
+				},
+			);
+			const depositHook = renderMode("wallet", "cctp");
+			const scheduled: Array<{ id: unknown; delay: unknown }> = [];
+			const fakeSetTimeout = globalThis.setTimeout;
+			const setTimeoutSpy = vi.spyOn(globalThis, "setTimeout").mockImplementation(((
+				handler: Parameters<typeof setTimeout>[0],
+				delay?: number,
+				...args: unknown[]
+			) => {
+				const id = fakeSetTimeout(handler, delay, ...args);
+				scheduled.push({ id, delay });
+				return id;
+			}) as typeof setTimeout);
+			const clearTimeoutSpy = vi.spyOn(globalThis, "clearTimeout");
+
+			await act(async () => {
+				const request = depositHook.deposit("5");
+				await flushUntil(() => queriesAfterSwitch === 1 && listeners.size === 1);
+				await vi.advanceTimersByTimeAsync(100);
+				chainId = 42161;
+				emitChainChanged("42161");
+				await request;
+			});
+			expect(testState.walletWriteContract).toHaveBeenCalledOnce();
+			const deadlineTimer = scheduled.find((timer) => timer.delay === 10_000);
+			const pollTimer = scheduled.find((timer) => timer.delay === 250);
+			expect(deadlineTimer).toBeDefined();
+			expect(pollTimer).toBeDefined();
+			expect(clearTimeoutSpy).toHaveBeenCalledWith(deadlineTimer?.id);
+			expect(clearTimeoutSpy).toHaveBeenCalledWith(pollTimer?.id);
+			setTimeoutSpy.mockRestore();
+			clearTimeoutSpy.mockRestore();
+			const queriesAtEnd = queriesAfterSwitch;
+
+			await act(async () => {
+				await vi.advanceTimersByTimeAsync(11_000);
+			});
+			expect(queriesAfterSwitch).toBe(queriesAtEnd);
+			expect(listeners.size).toBe(0);
+		});
+
+		it("keeps waiting when the wallet reports a chain other than Arbitrum", async () => {
+			vi.useFakeTimers();
+			testState.routingResponse = { depositRoute: "cctp", withdrawalRoute: "cctp" };
+			stubSuccessfulCctpCapacity();
+			let switched = false;
+			let chainId: unknown = 56;
+			const { listeners, emitChainChanged } = providerOn(() => chainId, {
+				onSwitch: () => {
+					switched = true;
+					return null;
+				},
+			});
+			const depositHook = renderMode("wallet", "cctp");
+
+			let request: Promise<void> | undefined;
+			await act(async () => {
+				request = depositHook.deposit("5");
+				await flushUntil(() => switched && listeners.size === 1);
+				emitChainChanged("0x1");
+				await vi.advanceTimersByTimeAsync(250);
+			});
+			expect(listeners.size).toBe(1);
+			expect(capturedDeposit?.networkSwitchPending).toBe(true);
+			expect(testState.permitSign).not.toHaveBeenCalled();
+
+			await act(async () => {
+				chainId = 42161;
+				emitChainChanged("0xa4b1");
+				await request;
+			});
+			expect(testState.walletWriteContract).toHaveBeenCalledOnce();
+			expect(listeners.size).toBe(0);
+			expect(capturedDeposit?.networkSwitchPending).toBe(false);
+		});
+
+		it("falls back to the wallet provider when Privy itself reports an unknown chain", async () => {
+			testState.routingResponse = { depositRoute: "cctp", withdrawalRoute: "cctp" };
+			stubSuccessfulCctpCapacity();
+			testState.wallet.chainId = "eip155:56";
+			let chainId: unknown = 56;
+			let switchAttempts = 0;
+			const { requests } = providerOn(() => chainId, {
+				onSwitch: () => {
+					switchAttempts += 1;
+					if (switchAttempts === 1) throw Object.assign(new Error("Unrecognized chain ID"), { code: 4902 });
+					chainId = 42161;
+					return null;
+				},
+			});
+			testState.wallet.switchChain = vi.fn(async () => {
+				throw Object.assign(new Error("Unknown chain"), { code: 4902 });
+			});
+
+			await submit("wallet", "cctp");
+
+			expect(testState.wallet.switchChain).toHaveBeenCalledTimes(1);
+			expect(requests.map((request) => request.method)).toEqual([
+				"wallet_switchEthereumChain",
+				"wallet_addEthereumChain",
+				"wallet_switchEthereumChain",
+			]);
+			expect(testState.permitSign).toHaveBeenCalledOnce();
+			expect(testState.walletWriteContract).toHaveBeenCalledOnce();
+			expect(capturedDeposit?.networkSwitchPending).toBe(false);
+		});
+
+		it("does not fall back to the wallet provider when Privy reports a rejected switch", async () => {
+			testState.routingResponse = { depositRoute: "cctp", withdrawalRoute: "cctp" };
+			stubSuccessfulCctpCapacity();
+			testState.wallet.chainId = "eip155:56";
+			const { requests } = providerOn(() => 56);
+			testState.wallet.switchChain = vi.fn(async () => {
+				throw Object.assign(new Error("User rejected the request."), { code: 4001 });
+			});
+
+			await submit("wallet", "cctp");
+
+			expect(requests).toHaveLength(0);
+			expect(testState.walletWriteContract).not.toHaveBeenCalled();
+			expect(capturedDeposit?.error?.message).toBe("Arbitrum network switch was rejected.");
+		});
+
+		it("reports a rejected switch without broadcasting", async () => {
+			testState.routingResponse = { depositRoute: "cctp", withdrawalRoute: "cctp" };
+			stubSuccessfulCctpCapacity();
+			testState.wallet.chainId = "eip155:56";
+			const { listeners } = providerOn(() => 56);
+			testState.wallet.switchChain = vi.fn(async () => {
+				throw Object.assign(new Error("User rejected the request."), { code: 4001 });
+			});
+
+			await submit("wallet", "cctp");
+
+			expect(testState.walletWriteContract).not.toHaveBeenCalled();
+			expect(listeners.size).toBe(0);
+			expect(capturedDeposit?.networkSwitchPending).toBe(false);
+			expect(capturedDeposit?.error?.message).toBe("Arbitrum network switch was rejected.");
+		});
+
+		it("does not sign the authorization when the wallet leaves Arbitrum before signing", async () => {
+			testState.routingResponse = { depositRoute: "cctp", withdrawalRoute: "cctp" };
+			stubSuccessfulCctpCapacity();
+			let chainId: unknown = 42161;
+			let routingChecks = 0;
+			providerOn(() => chainId);
+			testState.fetchRouting.mockImplementation(async () => {
+				routingChecks += 1;
+				if (routingChecks === 2) chainId = 56;
+				return testState.routingResponse;
+			});
+
+			await submit("wallet", "cctp");
+
+			expect(testState.permitSign).not.toHaveBeenCalled();
+			expect(testState.walletWriteContract).not.toHaveBeenCalled();
+			expect(capturedDeposit?.error?.message).toContain("Wallet is not connected to");
+		});
+
+		it("does not broadcast when the wallet leaves Arbitrum after signing", async () => {
+			testState.routingResponse = { depositRoute: "cctp", withdrawalRoute: "cctp" };
+			stubSuccessfulCctpCapacity();
+			let chainId: unknown = "0xa4b1";
+			providerOn(() => chainId);
+			testState.verifyLegalAction.mockImplementation(async () => {
+				chainId = 56;
+				return { canPerformActions: true };
+			});
+
+			await submit("wallet", "cctp");
+
+			expect(testState.permitSign).toHaveBeenCalledOnce();
+			expect(testState.walletWriteContract).not.toHaveBeenCalled();
+			expect(capturedDeposit?.error?.message).toContain("Wallet is not connected to");
+		});
+	});
 
 	it("fails closed before CCTP signing or broadcast when cross-tab Web Locks are unavailable", async () => {
 		testState.routingResponse = { depositRoute: "cctp", withdrawalRoute: "cctp" };

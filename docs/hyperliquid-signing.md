@@ -7,7 +7,7 @@
 | Signing Type | Chain ID | Domain | Use Case | Network Required |
 |--------------|----------|--------|----------|------------------|
 | **L1 Actions** | 1337 | "Exchange" | Trading operations | None (API only) |
-| **User-Signed** | 0x66eee (421614) | "HyperliquidSignTransaction" | Transfers, agent approval | None (API only) |
+| **User-Signed** | Signer's chain: external wallet → its current chain; Privy embedded owner → the environment's Arbitrum (42161 / 421614); SDK examples use 0x66eee | "HyperliquidSignTransaction" | Transfers, agent approval | None (API only) |
 | **Arbitrum EVM** | 42161 | USDC EIP-3009 + contract call | CCTP deposits from Arbitrum | Arbitrum network |
 
 ---
@@ -23,7 +23,7 @@
 │  │   L1 Actions         │  │   User-Signed        │  │  Arbitrum EVM │  │
 │  │   (Trading)          │  │   (Admin/Transfers)  │  │  (Deposits)   │  │
 │  ├──────────────────────┤  ├──────────────────────┤  ├───────────────┤  │
-│  │ Chain ID: 1337       │  │ Chain ID: 0x66eee    │  │ Chain ID:     │  │
+│  │ Chain ID: 1337       │  │ Chain ID: signer's   │  │ Chain ID:     │  │
 │  │ Domain: "Exchange"   │  │ Domain: "Hyperliquid │  │ 42161         │  │
 │  │                      │  │ SignTransaction"     │  │               │  │
 │  ├──────────────────────┤  ├──────────────────────┤  ├───────────────┤  │
@@ -125,7 +125,7 @@ Administrative operations that use EIP-712 typed data with Hyperliquid's signatu
 
 | Property | Value |
 |----------|-------|
-| Chain ID | 0x66eee (421614 decimal) |
+| Chain ID | `signatureChainId` of the signer: hl-react configures none, so the SDK's `resolveSignatureChainId` reads the wallet's `getChainId()`. An external wallet therefore signs with whatever chain it is on (via `useConnectionWalletClient`, which never requires a switch); the Privy embedded owner reports the environment's Arbitrum chain (42161 Mainnet, 421614 Testnet); the SDK's own examples show 0x66eee (421614). Hyperliquid accepts any value here as long as the EIP-712 domain and the action agree |
 | Domain Name | "HyperliquidSignTransaction" |
 | Serialization | Direct EIP-712 typed data |
 | Signed By | Master wallet (wagmi walletClient or viem account) |
@@ -158,7 +158,7 @@ const client = new ExchangeClient({
   wallet: masterAccount,
 });
 
-// SDK handles user-signed action internally (chainId 0x66eee)
+// SDK signs the user-signed action with the signer's chain id (see "Chain ID" above); a bare private key with no configured signatureChainId falls back to the SDK default, not 0x66eee
 await client.withdraw3({
   destination: "0x...",
   amount: "100.0",
@@ -203,7 +203,7 @@ Withdrawals use **User-Signed Actions** (not Arbitrum EVM).
 
 | Step | Action | Signing Type |
 |------|--------|--------------|
-| 1 | Call `exchange.withdraw3()` | User-Signed (0x66eee) |
+| 1 | Call `exchange.withdraw3()` | User-Signed (signer's chain) |
 | 2 | Hyperliquid processes | Automatic |
 | 3 | USDC arrives on Arbitrum | ~10 min |
 
@@ -233,7 +233,7 @@ await exchangeClient.withdraw3({
 | **Staking (L1)** | `cDeposit`, `cWithdraw`, `linkStakingUser`, `cSignerAction`, `cValidatorAction` |
 | **Advanced** | `evmUserModify`, `perpDeploy`, `spotDeploy`, `reserveRequestWeight`, `agentEnableDexAbstraction`, `convertToMultiSigUser`, `noop` |
 
-### User-Signed Actions (Chain ID: 0x66eee)
+### User-Signed Actions (Chain ID: the signer's chain)
 
 | Category | Methods |
 |----------|---------|
@@ -291,14 +291,14 @@ await exchangeClient.withdraw3({
 │  │ HyperCore│───▶│ withdraw3│───▶│ Arbitrum │                           │
 │  │ Balance  │    │ API Call │    │ USDC     │                           │
 │  └──────────┘    └──────────┘    └──────────┘                           │
-│  Signing: User-Signed (0x66eee)                                          │
+│  Signing: User-Signed (signer's chain)                                   │
 │                                                                          │
 │  HYPERCORE → HYPEREVM (Internal Bridge)                                  │
 │  ┌──────────┐    ┌──────────┐    ┌──────────┐                           │
 │  │ HyperCore│───▶│ spotSend │───▶│ HyperEVM │                           │
 │  │ Spot     │    │ to 0x200.│    │ USDC     │                           │
 │  └──────────┘    └──────────┘    └──────────┘                           │
-│  Signing: User-Signed (0x66eee)                                          │
+│  Signing: User-Signed (signer's chain)                                   │
 │                                                                          │
 │  HYPEREVM → HYPERCORE (Internal Bridge)                                  │
 │  ┌──────────┐    ┌──────────┐    ┌──────────┐                           │
@@ -340,7 +340,7 @@ Solution: Two-wallet pattern
 │  │ • spotSend           │         │ • All L1 Actions     │              │
 │  └──────────────────────┘         └──────────────────────┘              │
 │           │                                  │                           │
-│           │ Chain ID: 0x66eee               │ Chain ID: 1337            │
+│           │ Chain ID: signer's chain        │ Chain ID: 1337            │
 │           │ (No network switch needed)       │ (No network needed)       │
 │           │                                  │                           │
 │           ▼                                  ▼                           │
@@ -378,7 +378,7 @@ const register = async (options: { persistConnection: boolean }) => {
   const privateKey = generatePrivateKey();
   const account = privateKeyToAccount(privateKey);
 
-  // 2. Master wallet signs approveAgent (User-Signed, 0x66eee)
+  // 2. Master wallet signs approveAgent (User-Signed, the signer's chain)
   await exchangeClient.approveAgent({
     agentAddress: account.address,
     agentName,
@@ -424,7 +424,7 @@ the product decisions and the official comparison are in
 [ADR 0015](adr/0015-link-device-alignment.md).
 
 - The desktop generates the Agent private key locally and the exact owner
-  wallet signs `approveAgent` (User-Signed, `0x66eee`) with the name
+  wallet signs `approveAgent` (User-Signed, with the signer's chain id: the external wallet's current chain, or the embedded owner's environment Arbitrum chain) with the name
   `Mobile valid_until <ms>`, where `<ms>` is the expiry 30 days after approval
   (`packages/hl-react/src/signing/mobile-agent.ts`, `MOBILE_AGENT_VALIDITY_MS`).
   Approval is the dialog's single explicit action and its only signing action;
@@ -525,7 +525,8 @@ export function toHyperliquidWallet(
 | Purpose | Chain ID | Decimal |
 |---------|----------|---------|
 | L1 Actions | 1337 | 1337 |
-| User-Signed | 0x66eee | 421614 |
+| User-Signed (external wallet) | wallet's current chain | — |
+| User-Signed (Privy embedded owner) | 0xa4b1 Mainnet / 0x66eee Testnet | 42161 / 421614 |
 | Arbitrum One | 42161 | 42161 |
 | Arbitrum Sepolia | 421614 | 421614 |
 

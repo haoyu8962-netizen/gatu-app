@@ -1,6 +1,6 @@
 import { useLingui } from "@lingui/react/macro";
+import { useConnectionWalletClient } from "@sairn/hl-react";
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
-import { useSwitchChain, useWalletClient } from "wagmi";
 import { ButtonLoading } from "@/components/brand/button-loading";
 import { depositModalIntentProps } from "@/components/trade/components/deposit-modal-intent";
 import { LazyDialogHost } from "@/components/ui/lazy-dialog-host";
@@ -131,11 +131,9 @@ function warmDesktopTradeSettingsModals() {
 
 export function TradePanel() {
 	const { t } = useLingui();
-	const { address, isConnected } = useWalletSession();
+	const { address, isConnected, hasWalletAccess } = useWalletSession();
+	const { data: connectionWalletClient } = useConnectionWalletClient();
 	const depositAvailability = useDepositAvailability();
-	const { data: walletClient, isLoading: isWalletLoading, error: walletClientError } = useWalletClient();
-	const switchChain = useSwitchChain();
-	const needsChainSwitch = !!walletClientError && walletClientError.message.includes("does not match");
 
 	const { data: market } = useSelectedMarketInfo();
 	const { spotMarkets, isLoading: isMarketCatalogLoading, error: marketCatalogError } = useMarketsInfo();
@@ -314,6 +312,7 @@ export function TradePanel() {
 	const requiresBuilderFee = !twapOrder;
 	const { isReady, isSignerReady, isSignerLoading, isBuilderFeeLoading, signerMode } = useTradingStatus();
 	const isTradingAuthorized = requiresBuilderFee ? isReady : isSignerReady;
+	const isWalletLoading = isConnected && signerMode === "owner" && isSignerLoading;
 	const { authorize, status: registerStatus } = useTradingAuthorization({ requiresBuilderFee });
 	const twapPriceFormat = { assetId: market?.assetId, szDecimals: market?.szDecimals ?? 0 };
 	const { triggerPx: twapTriggerPx, stopPx: twapStopPx } = resolveTwapPriceInputs(
@@ -431,7 +430,7 @@ export function TradePanel() {
 
 	const needsAgentApproval = !isTradingAuthorized;
 	const isReadyToTrade = isTradingAuthorized;
-	const canApprove = !!walletClient && !!address;
+	const canApprove = hasWalletAccess && !!address && (signerMode === "owner" || !!connectionWalletClient);
 	const isApprovalLoading = isSignerReady ? requiresBuilderFee && isBuilderFeeLoading : isSignerLoading;
 
 	const baseInput = {
@@ -704,9 +703,6 @@ export function TradePanel() {
 
 	const buttonContent = useButtonContent({
 		isConnected,
-		needsChainSwitch,
-		isSwitchingChain: switchChain.isPending,
-		switchChain: (chainId) => switchChain.mutate({ chainId }),
 		availableBalance,
 		reduceOnly,
 		isBalanceLoading: isAvailabilityLoading || isAvailabilityStale || isAvailabilityBlocked,

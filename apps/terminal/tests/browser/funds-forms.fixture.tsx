@@ -6,7 +6,6 @@ import { DepositForm } from "@/components/trade/tradebox/deposit/deposit-form";
 import { DepositMethodChooser } from "@/components/trade/tradebox/deposit/deposit-method-chooser";
 import { StatusScreen } from "@/components/trade/tradebox/deposit/shared-ui";
 import { WithdrawForm } from "@/components/trade/tradebox/deposit/withdraw-form";
-import { WrongNetworkScreen } from "@/components/trade/tradebox/deposit/wrong-network-screen";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 const address = "0x1111111111111111111111111111111111111111" as const;
@@ -18,7 +17,7 @@ export function FundsFormsFixture() {
 	const [email, setEmail] = useState(true);
 	const [cardFunding, setCardFunding] = useState(false);
 	const [addressPending, setAddressPending] = useState(false);
-	const [screen, setScreen] = useState<"status" | "network" | null>(null);
+	const [screen, setScreen] = useState<"status" | null>(null);
 	const [depositStep, setDepositStep] = useState<"methods" | "transfer">("methods");
 	const [purchases, setPurchases] = useState(0);
 	const [status, setStatus] = useState<"success" | "loading" | "error">("success");
@@ -44,7 +43,6 @@ export function FundsFormsFixture() {
 				<Button onClick={() => setCardFunding(!cardFunding)}>Toggle card funding</Button>
 				<Button onClick={() => setAddressPending(!addressPending)}>Toggle address</Button>
 				<Button onClick={() => setScreen("status")}>Open status</Button>
-				<Button onClick={() => setScreen("network")}>Open wrong network</Button>
 				<output aria-label="Fixture submissions">{submitted}</output>
 				<output aria-label="Fixture card purchases">{purchases}</output>
 			</div>
@@ -146,15 +144,6 @@ export function FundsFormsFixture() {
 					Dismiss status
 				</Button>
 			</StatusScreen>
-			<WrongNetworkScreen
-				open={screen === "network"}
-				presentation={mobile ? "drawer" : "modal"}
-				onClose={() => setScreen(null)}
-				onBack={() => setScreen(null)}
-				onSwitch={noop}
-				isSwitching={false}
-				error={new Error("Fixture switch failure")}
-			/>
 		</>
 	);
 }

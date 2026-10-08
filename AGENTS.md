@@ -180,6 +180,7 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/agent-registration-session.test.ts \
   src/lib/tests/agent-storage-scope.test.ts \
   src/lib/tests/external-agent-signer.test.ts \
+  src/lib/tests/use-connection-wallet-client.test.tsx \
   src/lib/tests/privy-agent-signer.test.ts \
   src/lib/tests/mobile-agent-lifecycle.test.ts \
   src/lib/tests/legal-gate.test.ts \
@@ -301,6 +302,7 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/use-asset-leverage.test.tsx \
   src/lib/tests/funds-action-balances.test.tsx \
   src/lib/tests/deposit-modal-withdrawal-routing-guard.test.tsx \
+  src/lib/tests/use-deposit-routing-guard.test.tsx \
   src/lib/tests/cctp-deposit-tracking-notifier.test.tsx \
   src/lib/tests/referral-action-modal.test.tsx \
   src/lib/tests/api-wallet-action-modal.test.tsx \
