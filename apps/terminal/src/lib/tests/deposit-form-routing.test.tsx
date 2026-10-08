@@ -135,6 +135,11 @@ describe("DepositForm routing gate", () => {
 		expect(instructions?.getAttribute("data-cctp-fee")).toBe("0.2");
 		expect(instructions?.getAttribute("data-presentation")).toBe("funding");
 		expect(container.firstElementChild?.className).toContain("font-market-close");
+		const headerIcon = container.querySelector<HTMLImageElement>('img[src="/coins/USDC.svg"][class*="size-10"]');
+		expect(headerIcon?.alt).toBe("");
+		expect(headerIcon?.getAttribute("aria-hidden")).toBe("true");
+		expect(headerIcon?.nextElementSibling?.getAttribute("data-slot")).toBe("funds-modal-heading");
+		expect(headerIcon?.nextElementSibling?.textContent).toBe("Deposit USDC from Arbitrum");
 		expect(container.textContent).toContain("Deposit USDC from Arbitrum");
 		expect(container.textContent).toContain("You send");
 		expect(container.textContent).toContain("Minimum 0.4 USDC");

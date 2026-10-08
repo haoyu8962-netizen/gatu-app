@@ -61,7 +61,8 @@ changes, not evidence that a build has been deployed or accepted on real devices
 - The deposit dialog is tidier and no longer shows a scrollbar. The close and back buttons and the
   form's title stay in place while the content scrolls underneath on short screens, and nothing scrolls on common desktop
   and phone sizes. Asset and network sit on one row with their icons, the QR code carries the USDC
-  mark in its centre, and the address and its copy button share one field. Withdraw, Bridge and the
+  mark in its centre, the address and its copy button share one field, and the email deposit form opens
+  with the same USDC mark above its title as the wallet form. Withdraw, Bridge and the
   deposit status and switch-network screens use the same frame, and the phone sheet and the desktop dialog are built from the same components,
   with the paddings and corners each surface already had.
 

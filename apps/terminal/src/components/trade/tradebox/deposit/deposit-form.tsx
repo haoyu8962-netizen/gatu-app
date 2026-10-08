@@ -7,11 +7,7 @@ import type { UsdcRoutingQueryStatus, UsdcTransferRoute } from "@/domain/trade/u
 import { cn } from "@/lib/cn";
 import { useNumberFormat } from "@/lib/format";
 import type { SponsoredCctpReadiness } from "@/lib/hyperliquid/use-deposit";
-import {
-	FUNDS_MODAL_HEADING_CLASS,
-	FUNDS_MODAL_HEADING_SLOT,
-	FUNDS_MODAL_LEADING_HEADING_CLASS,
-} from "@/lib/ui/funds-modal-scroll";
+import { FUNDS_MODAL_HEADING_CLASS, FUNDS_MODAL_HEADING_SLOT } from "@/lib/ui/funds-modal-scroll";
 import { AmountInput } from "./amount-input";
 import { FundingAddressCard } from "./funding-address-card";
 import { FundsRouteDetails } from "./funds-route-details";
@@ -345,9 +341,10 @@ export function DepositForm({
 					isPending
 				}
 			>
+				<img src={USDC_ICON_URL} alt="" aria-hidden="true" className="size-10 self-center rounded-full" />
 				<div
 					data-slot={FUNDS_MODAL_HEADING_SLOT}
-					className={cn(FUNDS_MODAL_LEADING_HEADING_CLASS, "-mb-3 pt-3.5 pb-3 text-center")}
+					className={cn(FUNDS_MODAL_HEADING_CLASS, "-mt-1 -mb-3 pb-3 text-center")}
 				>
 					<h3 className="text-[15px] leading-5 font-bold">
 						<Trans>Deposit USDC from Arbitrum</Trans>

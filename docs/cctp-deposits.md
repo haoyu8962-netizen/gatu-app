@@ -198,7 +198,9 @@ The mainnet email form explains the two steps before exposing the QR: send USDC
 to the exact wallet, then return and explicitly deposit into the trading account.
 The testnet automatic path does not display these mainnet instructions. Asset and
 network are fixed route details, not selectable dropdowns; each shows its icon
-beside the value, and the same row is used by the withdrawal form. The QR code
+beside the value, and the same row is used by the withdrawal form. The email form
+and the external-wallet form both open with the USDC mark above the title, so the
+two kinds of account see the same header. The QR code
 carries the USDC mark in its centre and is generated at error-correction level H
 so the covered modules stay recoverable; it keeps dark modules on a white field in
 both themes. The address sits in one field with its copy control. The layout
