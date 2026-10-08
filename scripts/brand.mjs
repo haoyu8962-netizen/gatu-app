@@ -16,6 +16,8 @@ const LOGO_VARIANTS = {
 };
 const LOGO_COLORWAYS = ["on-light", "on-dark", "black", "white", "mono"];
 const LOADER_SOURCE = "brand/loader/svg/on-light/page-loading.svg";
+// Domains taken offline (docs/adr/0032-gatu-offline-cutover-to-sairn.md). They must not return to brand.json or the legal text.
+const RETIRED_APEXES = ["gatu.ai"];
 
 // Public files copied verbatim from brand/. Hashed website assets are imported by Astro instead.
 const SYNCED_FILES = [
@@ -173,7 +175,7 @@ export function checkBrand() {
 
 	const primary = brand.domains.primary;
 	const primaryHosts = new Set(Object.values(primary));
-	const brandApexes = [primary.apex, ...brand.domains.legacy.map((group) => group.apex)];
+	const brandApexes = [primary.apex, ...RETIRED_APEXES];
 	const primaryEmails = new Set(Object.values(brand.emails));
 
 	const manifest = readJson("apps/terminal/public/manifest.json");
@@ -272,29 +274,24 @@ function checkSource(brand) {
 		problems.push(`${BRAND_SOURCE} name.lowercase must be lowercase`);
 	}
 
-	const groups = [
-		["domains.primary", brand?.domains?.primary],
-		...(Array.isArray(brand?.domains?.legacy) ? brand.domains.legacy : [null]).map((group, index) => [
-			`domains.legacy[${index}]`,
-			group,
-		]),
-	];
-	const seenHosts = new Map();
-	for (const [path, group] of groups) {
-		if (!group) {
-			problems.push(`${BRAND_SOURCE} ${path} is missing`);
-			continue;
+	for (const key of Object.keys(brand?.domains ?? {})) {
+		if (key !== "primary") problems.push(`${BRAND_SOURCE} domains.${key} is not read by anything; only domains.primary exists`);
+	}
+	const primary = brand?.domains?.primary;
+	if (!primary) {
+		problems.push(`${BRAND_SOURCE} domains.primary is missing`);
+		return problems;
+	}
+	for (const key of ["apex", "www", "app", "testnet"]) {
+		const host = primary[key];
+		requireString(`domains.primary.${key}`, host);
+		if (typeof host !== "string") continue;
+		if (host !== host.toLowerCase()) problems.push(`${BRAND_SOURCE} domains.primary.${key} must be lowercase`);
+		if (key !== "apex" && host !== `${key}.${primary.apex}`) {
+			problems.push(`${BRAND_SOURCE} domains.primary.${key} must be ${key}.${primary.apex}`);
 		}
-		for (const key of ["apex", "www", "app", "testnet"]) {
-			const host = group[key];
-			requireString(`${path}.${key}`, host);
-			if (typeof host !== "string") continue;
-			if (host !== host.toLowerCase()) problems.push(`${BRAND_SOURCE} ${path}.${key} must be lowercase`);
-			if (key !== "apex" && host !== `${key === "www" ? "www" : key}.${group.apex}`) {
-				problems.push(`${BRAND_SOURCE} ${path}.${key} must be ${key}.${group.apex}`);
-			}
-			if (seenHosts.has(host)) problems.push(`${BRAND_SOURCE} ${host} appears in ${seenHosts.get(host)} and ${path}`);
-			seenHosts.set(host, path);
+		if (isBrandHost(host.toLowerCase(), RETIRED_APEXES)) {
+			problems.push(`${BRAND_SOURCE} domains.primary.${key} uses the retired domain ${host}`);
 		}
 	}
 

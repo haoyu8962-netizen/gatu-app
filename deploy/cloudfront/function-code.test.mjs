@@ -55,7 +55,7 @@ test("pages the origin still serves stay allowed even when the live function nam
 test("the size limit and the edge config are validated", () => {
 	assert.equal(assertFunctionCodeSize("x".repeat(FUNCTION_CODE_LIMIT_BYTES)), FUNCTION_CODE_LIMIT_BYTES);
 	assert.throws(() => assertFunctionCodeSize("x".repeat(FUNCTION_CODE_LIMIT_BYTES + 1)), /CloudFront Functions allow/);
-	const dir = mkdtempSync(join(tmpdir(), "gatu-edge-config-"));
+	const dir = mkdtempSync(join(tmpdir(), "sairn-edge-config-"));
 	const path = join(dir, "edge-config.json");
 	writeFileSync(path, JSON.stringify({ cspReportUri: "https://reports.example/", cspScriptHashes: "enforce", cspImageSources: "report-only" }));
 	assert.deepEqual(readEdgeConfig(path), { cspReportUri: "https://reports.example/", cspScriptHashes: "enforce", cspImageSources: "report-only" });

@@ -127,6 +127,12 @@ changes, not evidence that a build has been deployed or accepted on real devices
   embedded wallet address; move funds from the old address before the switch. See
   [ADR 0032](docs/adr/0032-gatu-offline-cutover-to-sairn.md) and the
   [cutover plan](docs/sairn-domain-cutover-plan.md).
+- The terminal no longer recognises the retired `gatu.ai` hosts. `gatu.ai` has served no pages
+  since 2026-10-02, so visitors see no change; on those hostnames the network would no longer be
+  fixed by the hostname and `/join/<code>` links would not resolve. The transitional
+  `x-gatu-forwarded-host` header and `x-gatu-route` marker are no longer written or read, and
+  `pnpm brand:check` fails when a `gatu.ai` host returns to `brand/brand.json` or the legal text.
+  AWS resource names and the repository keep the `gatu` name.
 - Notices on the Staking page and in the Staking, Referral, API wallet and Vault dialogs are rounded
   8px like the other notices; they were 4px to 10px.
 

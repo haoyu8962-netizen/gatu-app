@@ -12,10 +12,14 @@
 | 补充状态符号（部分成交、提示、警告） | `brand/loader-supplement` | 动效库 v1.3 缺这三个符号；同一条导出命令用库自己的引擎渲染 `definitions.js`，待设计方确认，设计方交付后删除（`brand/loader-supplement/README.md`） |
 | 设计令牌 | `brand/tokens/sairn.tokens.json` | 由同一脚本从两个设计工具中提取 |
 
-### `brand.json` 的域名分组
+### `brand.json` 的域名
 
-- `domains.primary` 是规范域名：SEO、站点地图、推荐链接、法律文本只用这一组。
-- `domains.legacy` 列出仍需识别的旧域名组。识别意味着：在这些主机上，网络（主网、测试网）按主机名判定，推荐链接 `/join/<code>` 生效，切换网络时留在同一组域名内（`apps/terminal/src/config/public-origins.ts`）。旧域名组只在切换期间保留，退役后从列表删除。
+- `domains.primary` 是唯一的域名组，也是规范域名：SEO、站点地图、推荐链接、法律文本和客服邮箱都用它。
+- 终端按主机名判定网络时也只认这一组：`app` 主机是主网，`testnet` 主机是测试网（`apps/terminal/src/config/public-origins.ts`）。其他主机（本地、预览）按本地存储的选择。
+- 旧域名组 `gatu.ai` 已退役（[ADR 0032](adr/0032-gatu-offline-cutover-to-sairn.md)），`brand.json` 里不再有 `domains.legacy`。`scripts/brand.mjs` 的退役名单让 `pnpm brand:check` 在三种情况下失败：
+  - `brand.json` 出现 `domains.primary` 以外的域名组；
+  - 主组用了退役域名；
+  - `legal/*.md` 链接到退役域名，或写了退役域名的邮箱。
 
 ## 读取方
 
@@ -115,24 +119,18 @@
 
 CI 中，`Terminal Tests` 在 `brand/**`、`legal/**` 变化时运行 `pnpm brand:check` 和终端品牌测试组；`Website and Brand` 运行 `pnpm test:brand`。路径与测试清单由 `scripts/ci-workflows.test.mjs` 固定。
 
-## 域名切换到 sairn.ai
+## 域名
 
-代码已经以 `sairn.ai` 为主域名：SEO、站点地图、`robots.txt`、法律文本、推荐链接和官网都指向 `app.sairn.ai`、`testnet.sairn.ai`、`sairn.ai`，客服邮箱是 `support@sairn.ai`。`gatu.ai` 在 `brand.json` 的 `domains.legacy` 里继续被识别，所以新代码先部署到旧域名上也不会把测试网当成主网，旧域名上的推荐链接照常可用，切换网络时留在旧域名组内。
+本节原名「域名切换到 sairn.ai」。最初的八步并存方案记录在 [ADR 0031](adr/0031-domain-move-to-sairn-ai.md) 决策 5，已被 [ADR 0032](adr/0032-gatu-offline-cutover-to-sairn.md) 取代。
 
-> **2026-10-01 更新**：用户决定旧域名直接下线、不设并存期也不做 301。下面的上线顺序（尤其第 6 步长期并存、第 8 步 301）已被 [gatu.ai 下线、切换到 sairn.ai](sairn-domain-cutover-plan.md) 取代，执行以该方案为准（2026-10-02 已上线，决策见 [ADR 0032](adr/0032-gatu-offline-cutover-to-sairn.md)）；本节保留作为原方案记录。同日用户还决定 `gatu.ai` 不永久续费（已注册到 2028-05-06，到期前按该方案的「到期前清单」处理后再定），第 1 步「保持自动续费」不再适用；gatu.ai 的邮件与 SES 等品牌替换完成后再处理。
-
-上线顺序（DNS 永远最后切，每一步用权威 DNS 和 AWS API 核对）：
-
-1. 注册并续费 `sairn.ai`；旧域名 `gatu.ai` 保持自动续费（HSTS 一年，旧 origin 的浏览器存储里可能留有 Agent 私钥）。2026-10-01 复查：WHOIS 显示 `sairn.ai` 于 11:40:28 UTC 经 Cloudflare 注册，`.ai` 权威服务器已把它委派给 Cloudflare 名称服务器，还没有 A、MX 记录；归属账号以 Cloudflare 后台为准，仓库里没有记录。
-2. Cloudflare 建 `sairn.ai` 区（DNS-only），配置邮件 MX、SPF、DKIM、DMARC，确认 `support@sairn.ai` 可以收信。
-3. ACM（us-east-1）申请证书，状态为 `ISSUED` 后再继续。一个分发只能挂一张证书，而第 6 步要在同一个分发上并存新旧别名，所以每张证书都要同时覆盖新旧两组：主网终端分发 `app.sairn.ai` 与 `app.gatu.ai`，测试网分发 `testnet.sairn.ai` 与 `testnet.gatu.ai`，官网分发 `sairn.ai`、`www.sairn.ai`、`gatu.ai`、`www.gatu.ai`（`deploy/website/README.md`）。只申请新主机名的证书会让旧域名在换证书后出现证书不匹配。
-4. Privy 后台的 Allowed origins **添加** `https://app.sairn.ai`、`https://testnet.sairn.ai`，旧的先保留；应用名改为 Sairn；UI components → Logo 填 `https://app.sairn.ai/brand/email-logo.png`。代码里的 `appearance.logo` 只覆盖登录窗口，登录验证码邮件用的是后台这张 Logo，Privy 要求 `.png`（不接受 SVG），建议 2:1、180×90（这张是 2 倍尺寸的 360×180，白底，深色邮件客户端里也看得清）。
-5. 按 `deploy/cloudfront/README.md` 顶部的说明更新 API 源站请求策略的转发头（`X-Sairn-Forwarded-Host`）。
-6. 发布终端与官网；用 `deploy.mjs aliases` 给分发**同时**挂新旧别名并换上新证书，等分发状态 `Deployed`。
-7. 用 `curl --resolve` 预验证新主机名（`deploy.mjs verify --origin https://app.sairn.ai`、测试网同理、`csp-coverage`），再在 Cloudflare 给新主机名加 CNAME，最后用公网 DNS 复验。
-8. 确认新域名稳定后，把 `gatu.ai` 跳转到 `sairn.ai`（保留路径和查询串），在 Search Console 提交地址更改，再从 `brand.json` 的 `domains.legacy` 删掉旧组，并从 Privy 移除旧 origin。
-
-换域名等于换浏览器存储的 origin：旧域名上的设置、登录状态、Stay Connected 的 Agent 私钥和进行中操作的本地记录都不会带到新域名。目前没有用户，这一步不需要迁移这些数据；外部钱包在新域名上需要重新授权（Agent 槽位名也已改为 `sairn`）。
+- 规范域名是 `sairn.ai`：
+  - 终端主网 `app.sairn.ai`，测试网 `testnet.sairn.ai`；
+  - 官网 `sairn.ai` 与 `www.sairn.ai`；
+  - 客服邮箱 `support@sairn.ai`。
+- 2026-10-02 上线，`gatu.ai` 的网页同时下线，没有并存期，也没有 301。执行步骤、结果和还没做完的清理（阶段 5）见[切换方案](sairn-domain-cutover-plan.md)。
+- 代码不再识别 `gatu.ai` 主机，也不再读写过渡期的旧转发头 `x-gatu-forwarded-host` 与旧路由标记 `x-gatu-route`（切换方案 PR-B，对应发布 p25）。这部分代码的合入与发布状态见 ADR 0032 的补充。
+- 换域名等于换浏览器存储的 origin：旧域名上的设置、登录状态、Stay Connected 的 Agent 私钥和进行中操作的本地记录都不会带到新域名。外部钱包在新域名上需要重新授权，Agent 槽位名是 `sairn`。
+- `gatu.ai` 的注册、邮件与旧证书怎么处理，由切换方案的阶段 5 和第 7 节负责。AWS 资源名与仓库名保留 `gatu`，清单见 [ADR 0027](adr/0027-brand-single-source-and-identifier-rename.md) 决策 5。
 
 ## 改名时的约定
 
