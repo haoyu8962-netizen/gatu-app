@@ -14,6 +14,8 @@ const port = Number(process.argv[3] ?? 3031);
 const IMMUTABLE = "public, max-age=31536000, immutable";
 const HASHED_CHART_BUNDLE = /^charting_library\/bundles\/[^/]+\.[0-9a-f]{20}(\.rtl)?\.[a-z0-9]+$/;
 const HASHED_CHART_ENTRY = /^charting_library\/charting_library\.[0-9a-f]{16}\.js$/;
+/** The deploy never uploads precompressed siblings (deploy.mjs returns null for them), so they are not served either. */
+const PRECOMPRESSED = new Set([".br", ".gz", ".zst"]);
 const CONTENT_TYPES = {
 	".html": "text/html; charset=utf-8",
 	".js": "text/javascript",
@@ -50,7 +52,7 @@ createServer((request, response) => {
 		response.end("bad request");
 		return;
 	}
-	if (!existsSync(target.file)) {
+	if (!existsSync(target.file) || PRECOMPRESSED.has(extname(target.file))) {
 		response.writeHead(404, { "content-type": "text/plain; charset=utf-8", "cache-control": "no-store" });
 		response.end("not found");
 		return;

@@ -139,8 +139,11 @@ async function runHandshake(Widget: WidgetConstructor, features: string[], mode:
 		return { ...state, ready };
 	} finally {
 		if (budget) clearTimeout(budget);
-		widget?.remove();
-		container.remove();
+		try {
+			widget?.remove();
+		} finally {
+			container.remove();
+		}
 	}
 }
 
