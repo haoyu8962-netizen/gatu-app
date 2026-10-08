@@ -531,116 +531,16 @@ export function toHyperliquidWallet(
 
 ---
 
-## Implementation Strategy
+## Where the signers live today
 
-> See [signing-architecture-proposal.md](./signing-architecture-proposal.md) for full details.
+An earlier version of this page ended with an app-local refactoring proposal: a `src/lib/hyperliquid/{signing,trading,admin,deposits}` layout, per-method hooks such as `useExchangeOrder` and `useExchangeWithdraw3`, `useTradingClient`/`useAdminClient`, and an unchecked migration checklist. That proposal was superseded when the signer model moved into `@sairn/hl-react`; [signing-architecture-proposal.md](./signing-architecture-proposal.md) keeps it as a historical record. The current split (2026-10-08):
 
-### Current State Issues
+| Concern | Implementation |
+|---------|----------------|
+| Signer choice per action | `useExchange(method, options)` in `packages/hl-react/src/hooks/useExchange.ts`. `packages/hl-react/src/registries/exchange.ts` routes the user-signed methods (`withdraw3`, `usdSend`, `spotSend`, `usdClassTransfer`, `sendAsset`, `approveAgent`, `approveBuilderFee`, staking and account-mode actions) to the exact owner and every other method, an L1 action, to the trading signer; only `order` gets the builder code injected. |
+| Trading signer | Email sessions sign L1 actions with the exact active Privy embedded owner (`signing/owner-signer-client.ts`, `signing/owner-signer-provider.tsx`, supplied by `apps/terminal/src/providers/hyperliquid-owner-signer-bridge.tsx`); external-wallet and Agent-only sessions use a verified Agent (`signing/use-agent-registration.ts`, `agent-storage.ts`, `use-agent-status.ts`). |
+| Decision record | [ADR 0002](adr/0002-exact-owner-trading-signers.md) for the signer model; [trading onboarding](trading-onboarding.md) and [email trading signing](email-trading-signing.md) for the first-use sequence. |
 
-| Issue | Description |
-|-------|-------------|
-| **Wrong client for withdrawals** | `withdraw3`, `usdSend`, `spotSend` use agent client but need master wallet |
-| **Two ExchangeClients confusion** | Context has master wallet client, `useSignedExchange` has agent client |
-| **Overlapping hooks** | 6+ hooks with unclear responsibilities |
-| **Naming confusion** | `useSignedExchange` returns client, not signing function |
-
-### Proposed Module Structure
-
-```
-src/lib/hyperliquid/
-├── signing/              # Agent + master wallet management
-│   ├── use-agent-status.ts
-│   ├── use-agent-registration.ts
-│   └── use-master-wallet.ts
-│
-├── trading/              # L1 Actions (agent wallet)
-│   ├── use-trading-client.ts
-│   └── use-trading-status.ts
-│
-├── admin/                # User-Signed Actions (master wallet)
-│   ├── use-admin-client.ts
-│   ├── use-withdraw.ts        # withdraw3
-│   ├── use-transfer.ts        # usdSend, spotSend
-│   ├── use-usd-class-transfer.ts  # usdClassTransfer (perp↔spot)
-│   ├── use-send-asset.ts      # sendAsset (DEX/sub-account transfers)
-│   └── use-staking.ts         # tokenDelegate
-│
-└── deposits/             # Arbitrum CCTP (viem + Privy Smart Wallet)
-    └── use-deposit.ts
-```
-
-### Hook → Signing Type → Client Mapping
-
-| Hook | Signing Type | Client | Wallet |
-|------|--------------|--------|--------|
-| `useExchangeOrder` | L1 Action | Trading | Agent |
-| `useExchangeCancel` | L1 Action | Trading | Agent |
-| `useExchangeUpdateLeverage` | L1 Action | Trading | Agent |
-| `useExchangeVaultTransfer` | L1 Action | Trading | Agent |
-| `useExchangeSubAccountTransfer` | L1 Action | Trading | Agent |
-| `useWithdraw` | User-Signed | Admin | **Master** |
-| `useTransfer` (usdSend) | User-Signed | Admin | **Master** |
-| `useTransfer` (spotSend) | User-Signed | Admin | **Master** |
-| `useUsdClassTransfer` | User-Signed | Admin | **Master** |
-| `useSendAsset` | User-Signed | Admin | **Master** |
-| `useAgentRegistration` | User-Signed | Admin | **Master** |
-| `useDeposit` | EIP-3009 + Arbitrum EVM | viem / Privy Smart Wallet | **Exact master or embedded EOA** |
-
-### Key Implementation Details
-
-#### Trading Client (Agent Wallet)
-```typescript
-// trading/use-trading-client.ts
-export function useTradingClient() {
-  const { env } = useHyperliquid();
-  const { address } = useConnection();
-  const { status, agentAddress } = useAgentStatus();
-
-  const client = useMemo(() => {
-    if (status !== "ready") return null;
-    const agent = readAgentFromStorage(env, address);
-    if (!agent) return null;
-    const signer = privateKeyToAccount(agent.privateKey);
-    return createExchangeClient(signer);
-  }, [status, env, address]);
-
-  return { client, isReady: client !== null };
-}
-```
-
-#### Admin Client (Master Wallet)
-```typescript
-// admin/use-admin-client.ts
-export function useAdminClient() {
-  const { data: walletClient } = useWalletClient();
-  const { address } = useConnection();
-
-  const client = useMemo(() => {
-    if (!walletClient || !address) return null;
-    const wallet = toHyperliquidWallet(walletClient, address);
-    if (!wallet) return null;
-    return createExchangeClient(wallet);
-  }, [walletClient, address]);
-
-  return { client, isReady: client !== null };
-}
-```
-
-#### Deposit (CCTP-only)
+### Deposit (CCTP-only)
 
 `useDeposit` requires an explicit CCTP route. The exact owner signs the USDC EIP-3009 authorization; external wallets submit CctpExtension directly, while email-wallet sessions submit CctpExtensionV2 through the already configured Privy Smart Wallet Paymaster/Bundler. Neither path may fall back to Bridge2 when routing, fee, allowance, owner, or receipt validation fails.
-
-### Migration Checklist
-
-- [ ] Create `signing/` module with agent status hooks
-- [ ] Create `trading/` module with `useTradingClient`
-- [ ] Create `admin/` module with `useAdminClient`
-- [x] Keep CCTP execution in `lib/hyperliquid/use-deposit.ts` and pure validation in `lib/trade/cctp-deposit.ts`
-- [ ] Update `useExchangeWithdraw3` to use admin client
-- [ ] Update `useExchangeUsdSend` to use admin client
-- [ ] Update `useExchangeSpotSend` to use admin client
-- [ ] Update `useExchangeUsdClassTransfer` to use admin client
-- [ ] Update `useExchangeSendAsset` to use admin client (if exists)
-- [ ] Update exchange hooks to explicitly use trading client
-- [ ] Deprecate `useSignedExchange`, `useTradingAgent`, etc.
-- [ ] Update all component consumers

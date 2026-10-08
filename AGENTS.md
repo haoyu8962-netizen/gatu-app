@@ -10,6 +10,14 @@ This file contains durable project instructions for coding agents. Read `agent.m
 - Do not change behavior outside the requested surface while making visual-alignment changes.
 - Follow `docs/i18n-presentation.md`: rendered translations must subscribe to locale changes, and presentation helpers must receive their translation dependencies explicitly. Language switches must preserve mounted panels, input values and protocol values.
 
+## Operator collaboration
+
+- `docs/agent-handbook.md` owns how agents work with the operator in this repository: reply language, steps reserved for the operator, actions that need approval, the shared checkout and worktree practice, review delegation, the release outline and the account-switch checklist. Read it at the start of a task, together with the newest handover and release records listed in `docs/work-memory/INDEX.md`.
+- Reply to the operator in Simplified Chinese, headings and tables included; keep code, paths, hashes, identifiers, command output and quoted English UI strings unchanged.
+- Leave every step that needs the operator's own identity or authority to the operator: signing in, entering credentials or payment details, accepting legal terms, creating third-party accounts, and changing cloud permissions or billing. Never read or print `.env*` values, keys or account identifiers.
+- Ask before pushing, opening or merging a pull request, releasing, or changing AWS, Cloudflare, Privy or GitHub settings; one approval covers one action. Never enable auto-merge.
+- Keep durable knowledge in the repository (canonical documents, ADRs and task records), never only in an agent's private memory or a reply: private memory does not survive an account, machine or cloud-session change.
+
 ## Work memory
 
 - Follow `docs/work-memory/README.md`. Before repeating an investigation, consult `docs/work-memory/INDEX.md`, the relevant task records, and the current canonical topic documents.

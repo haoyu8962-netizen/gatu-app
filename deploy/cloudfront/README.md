@@ -138,13 +138,15 @@ node deploy/cloudfront/deploy.mjs verify --origin https://testnet.sairn.ai --net
 | --- | --- | --- | --- |
 | 主网赞助充值 | `cctpDeposits.mainnetSponsoredWallet` | `--allow-sponsored-mainnet-deposits` | 见 [CCTP 充值](../../docs/cctp-deposits.md) 的发布模式 |
 | 移动配对 | `mobileSync.enabled`（2026-09-24 之前的构建为 `importFromQr` 或 `createAndReveal`，两种形状都能读） | `--allow-mobile-pairing` | 仅在 [真机清单](../../docs/mobile-phone-access-device-validation.md) 记录完成之后；此前开关必须保持关闭 |
-| 主网银行卡入金 | `privyFiatFunding.mainnet` | `--allow-mainnet-card-funding` | 仅在[上线验收清单](../../docs/privy-card-funding-launch-checklist.md)的前两个阶段全部通过之后（[ADR 0034](../../docs/adr/0034-privy-card-funding.md)「上线前提」）：Privy 控制台开启入金方式、审阅后的法律文本已发布、新的响应函数（含 Stripe 的 CSP 来源）已用 `functions --execute` 发布、本地的沙盒与最低金额真实购买已通过、只打开测试网开关的沙盒发布已在测试网站点验收 |
+| 主网银行卡入金 | `privyFiatFunding.mainnet` | `--allow-mainnet-card-funding` | 仅在[上线验收清单](../../docs/privy-card-funding-launch-checklist.md)的前两个阶段全部通过之后（[ADR 0034](../../docs/adr/0034-privy-card-funding.md)「上线前提」）：Privy 控制台开启入金方式、审阅后的法律文本已发布、新的响应函数（含 Stripe 的 CSP 来源）已用 `functions --execute` 发布、本地的沙盒与最低金额真实购买已通过、只打开测试网开关的沙盒发布已在测试网站点验收。2026-10-03 的 p24b 是运营方知情后跳过前两个阶段打开两网开关的，见[发布记录](../../docs/work-memory/sessions/2026-10-03-cloudfront-release-p24b.md) |
 
 规则是双向精确匹配：构建打开了闸门而没有带参数，拒绝；带了参数而构建没有打开，也拒绝（说明运营方以为在发的版本和实际产物不一致）；`build-meta.json` 没有这些字段（旧构建）同样拒绝，需用当前源码重新构建。`sync` 每次都会打印一行 `release gates: …`；不带 `--execute` 的演练只给出警告。`verify` 会比较线上与本地构建的闸门状态。测试网的两个充值开关与测试网银行卡入金开关只记录、不需要确认。
 
 未从旧 EC2 校验器移植的部分：`VITE_PRIVY_APP_ID` 非空、`VITE_HYPERLIQUID_AGENT_NAME=sairn`、`VITE_HYPERLIQUID_TESTNET` 为空、禁止 `.env.production*` 这几条属于环境文件拼写检查而不是暴露确认；其中「哪个文件生效」已由读取构建产物覆盖，其余仍靠发布前人工核对 [`env.build.example`](../env.build.example)。
 
 顺序说明：CloudFront 函数最先发布，因为新页面的内联脚本哈希必须先进入线上策略（`sync` 会核对，见 4c），失效完成前的旧页面由函数里保留的上一版集合覆盖；Lambda 先于静态文件更新，因为新壳可能依赖新的 API 行为；`sync` 从不删除旧对象，正在打开旧壳的浏览器仍能取到旧资源；`invalidate` 用 `/*` 是为了让 `no-cache` 的壳与文档页立即刷新，资源本身是内容哈希不受影响。
+
+每次发布在两网 `verify` 之后再运行 `node apps/terminal/tests/browser/csp-coverage.mjs https://app.sairn.ai`，并完整阅读它的步骤与违规统计。构建放在仓库外的独立工作树里，`apps/terminal/.env.local` 只软链、不读取，所有开关在命令行显式写出，这样产物不依赖开发机的本地开关；具体做法与每次发布的取值见 [Agent 工作手册](../../docs/agent-handbook.md)第 8 节和工作记忆里的发布记录。
 
 ## 与已退役 EC2 部署的差异
 

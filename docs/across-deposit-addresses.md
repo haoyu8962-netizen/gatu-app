@@ -1,6 +1,6 @@
 # Across 持久充值地址接入设计
 
-状态：拟议，尚未实现、联调或发布。修订日期：2026-09-13；本次复核基线：`965e0590`。原 `0662cae1` 方案的[首轮复核](work-memory/sessions/2026-09-13-across-plan-review-followup.md)与本轮 [N1–N8 处置](work-memory/sessions/2026-09-13-across-rereview-resolution.md)保留依据。当前运行行为继续由 [CCTP](cctp-deposits.md)、[首次交易](trading-onboarding.md)及[资金入口](account-overview.md)约束；官方资料按[共享阅读流程](across-reference.md)核对。
+状态：拟议，尚未实现、联调或发布。修订日期：2026-09-13；本次复核基线：`965e0590`。原 `0662cae1` 方案的[首轮复核](work-memory/sessions/2026-09-13-across-plan-review-followup.md)与本轮 [N1–N8 处置](work-memory/sessions/2026-09-13-across-rereview-resolution.md)保留依据。当前运行行为继续由 [CCTP](cctp-deposits.md)、[首次交易](trading-onboarding.md)及[资金入口](account-overview.md)约束；官方资料按[共享阅读流程](across-reference.md)核对。 2026-10-08 补记：实现分支在 2026-09-20 没有合并，归档为远端标签 `archive/across-deposit-addresses-20260920`（另有含周整理修订的 `…-weekly-revisions`）。本文的服务端部署设计（`deploy/gatu.service`、`/opt/gatu/shared` 下的 SQLite、systemd 路径）基于 2026-09-17 已退役的 EC2 宿主；在现行的 CloudFront + S3 + Lambda 架构下重新启动这项工作，要先重做持久化与部署设计。
 
 ## 1. 目标与首期范围
 

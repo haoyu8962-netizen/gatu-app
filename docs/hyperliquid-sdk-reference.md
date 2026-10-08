@@ -66,6 +66,17 @@ For each API-dependent change:
 - `predictedFundings` takes no parameters and no user. SDK `0.33.3` declares the response as `[asset, [venue, { fundingRate, nextFundingTime, fundingIntervalHours? } | null][]][]`. Hyperliquid documents that predicted rates cover only the first perp dex, so asset names are main-dex names and HIP-3 markets never appear. On 2026-09-27 Mainnet returned 234 assets (about 64 KB) with the venues `HlPerp`, `BinPerp` and `BybitPerp`; `HlPerp` always reported a 1-hour interval, Binance 4 or 8 hours and Bybit 1, 4 or 8 hours, 69 venue entries were `null`, and 20 Binance entries had no `fundingIntervalHours` (all `"0.0"` rates on delisted coins). Each rate is per its own interval, so convert to an hourly rate before comparing venues. The terminal treats a missing Hyperliquid interval as 1 hour but shows a CEX rate without an interval as unavailable rather than guessing (the official frontend falls back to hard-coded coin lists), ignores unknown venue names, treats `null` as an unavailable venue, and rejects the whole snapshot when any asset or venue entry is malformed or duplicated. [Funding comparison](funding-comparison.md) owns the terminal use.
 - `perpDexLimits({ dex })` returns `null` for the main dex and, for a HIP-3 dex, `coinToOiCap` as `[coin, oiCap]` tuples with dex-prefixed coin names (for example `km:AAPL`), matching `BuilderPerpMarket.name`. The SDK validates the request only, so parse the response as unknown and accept only an exact coin with a positive protocol decimal. The semantics of `totalOiCap`, `oiSzCapPerPerp` and `maxTransferNtl` are unverified; do not display or enforce them.
 
+## Measured behavior the documentation does not state
+
+These were measured against Mainnet while reviewing the history and onboarding work around commit `1d895685` (2026-08-27 to 2026-08-30). They were moved here from an agent's private notes on 2026-10-08 without being measured again; re-check them before relying on them for a new pagination, history or funds path.
+
+- `userFillsByTime` with `aggregateByTime: true` applies its 2,000-row page limit after aggregation: the same window aggregated covers more time and still returns exactly 2,000 rows. The `userFills` snapshot is also exactly 2,000 rows after aggregation, so `length === 2000` is a reliable "limit reached" signal.
+- The documented "only the most recent 10,000 fills" is not a hard cap for cursor paging: walking the time cursor returned 13,800 unique fills.
+- `userFunding` returns exactly 500 rows per page in ascending time order (several coins can share one timestamp), and `(time, coin)` is unique. `userFillsByTime` is ascending by default; `reversed` flips it.
+- A self-trade produces no fill (the resting order is canceled), so `(time, coin, tid)` identifies a user's fills without collisions.
+- `fastAssetCtxs` sends one full snapshot and then only the coins that changed. A coin missing from later frames still has its last value; a per-coin staleness check is wrong for this stream. The compact `pac`/`sac` channels follow the same snapshot-then-delta pattern ([ADR 0008](adr/0008-compact-market-context-channels.md)).
+- Trigger orders carry no time-in-force field; do not add TIF controls or validation to them.
+
 ## Review 3965ddff / 0bc72134 disposition
 
 - F1, F2, F4, and F7 were already closed by later bounded reconciliation, deterministic 429 handling, per-submission storage merging, and terminal unconfirmed queue states.

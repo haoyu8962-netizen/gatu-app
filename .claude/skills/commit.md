@@ -21,8 +21,8 @@ Create a clean commit for the user's requested changes.
    - If unsure whether a file belongs to this session, ask the user before staging it.
 
 3. Use a one-line conventional commit message:
-   - Format: `<type>: <subject>` or `<type>(<scope>): <subject>`.
-   - Types: `feat`, `fix`, `refactor`, `perf`, `style`, `test`, `build`, `ci`, `docs`, `chore`, `revert`, `i18n`.
+   - Format: `<type>(<scope>): <subject>`; commitlint rejects an empty scope.
+   - Types: `feat`, `fix`, `refactor`, `perf`, `style`, `test`, `build`, `ci`, `docs`, `chore`, `revert` (commitlint's conventional set).
    - Keep it under 72 characters.
    - Lowercase subject, imperative mood, no period.
    - No body unless the user explicitly requests one.
