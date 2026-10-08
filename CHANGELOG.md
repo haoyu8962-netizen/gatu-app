@@ -58,6 +58,34 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Changed
 
+- The deposit dialog is tidier and no longer shows a scrollbar. The close and back buttons and the
+  form's title stay in place while the content scrolls underneath on short screens, and nothing scrolls on common desktop
+  and phone sizes. Asset and network sit on one row with their icons, the QR code carries the USDC
+  mark in its centre, the address and its copy button share one field, and the email deposit form opens
+  with the same USDC mark above its title as the wallet form. Withdraw, Bridge and the
+  deposit status and switch-network screens use the same frame, and the phone sheet and the desktop dialog are built from the same components,
+  with the paddings and corners each surface already had.
+
+- Deposits follow the CCTP rules instead of the retired bridge's. The fixed 5 USDC minimum is gone:
+  a deposit now has to be at least twice the current Circle fee (0.40 USDC while the fee is 0.20).
+  The dialog shows that minimum once the fee is known, and an amount below it is marked on the
+  amount field with the smallest amount that would be accepted. If the fee rises between
+  the review and the click so that the amount no longer reaches the minimum, the dialog says the fee
+  changed instead of reporting a routing problem. A Circle quote whose rate exceeds 10% of the amount
+  is treated as unavailable, and no deposit is offered while it lasts. The notice under the deposit address no
+  longer repeats a minimum; it says to send only native USDC on Arbitrum and that other assets or
+  networks are not credited to the trading account. A new HyperCore account still pays Hyperliquid's
+  1 USDC activation fee on its first withdrawal or transfer out, so a very small first deposit cannot
+  be moved out again until the balance covers it.
+
+- Loading states no longer show an outdated outline of the page. Opening Deposit, Withdraw or Bridge
+  before its code has loaded shows the dialog frame with a small spinner instead of a grey sketch of
+  the deposit form that no longer matched it and made the dialog jump taller. The dialog's code is
+  now fetched when the pointer, a press or focus reaches an enabled button that opens it, instead of
+  only after the click; a failed early fetch is forgotten and the click loads it as before. The
+  Funding tab of the account table, the Referrals page, a Vault's detail page and the API wallet list
+  wait on a blank area like the other tabs and pages instead of grey blocks shaped like an older
+  layout, and the fee rows in the deposit dialog keep the same plain layout while they load.
 - The Privy wallet SDK is updated to React Auth 3.46.0 and Privy wagmi 4.0.17. Login, wallet
   ordering, signing and the theme-following login window behave as before; the patch that keeps a
   wallet session from reconnecting on a theme toggle is carried over to the new version.

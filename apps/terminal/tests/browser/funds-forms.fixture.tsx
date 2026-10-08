@@ -1,9 +1,12 @@
-import { Button, ModalContent, ModalHeader, ModalTitle } from "@sairn/ui";
+import { Button } from "@sairn/ui";
 import { useState } from "react";
-import { PendingActionModal } from "@/components/trade/components/pending-action-modal";
+import { renderFundsModalBackButton } from "@/components/trade/components/funds-modal-back-button";
+import { FundsModalShell } from "@/components/trade/components/funds-modal-shell";
 import { DepositForm } from "@/components/trade/tradebox/deposit/deposit-form";
 import { DepositMethodChooser } from "@/components/trade/tradebox/deposit/deposit-method-chooser";
+import { StatusScreen } from "@/components/trade/tradebox/deposit/shared-ui";
 import { WithdrawForm } from "@/components/trade/tradebox/deposit/withdraw-form";
+import { WrongNetworkScreen } from "@/components/trade/tradebox/deposit/wrong-network-screen";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 const address = "0x1111111111111111111111111111111111111111" as const;
@@ -14,6 +17,8 @@ export function FundsFormsFixture() {
 	const [form, setForm] = useState<"deposit" | "withdraw" | null>(null);
 	const [email, setEmail] = useState(true);
 	const [cardFunding, setCardFunding] = useState(false);
+	const [addressPending, setAddressPending] = useState(false);
+	const [screen, setScreen] = useState<"status" | "network" | null>(null);
 	const [depositStep, setDepositStep] = useState<"methods" | "transfer">("methods");
 	const [purchases, setPurchases] = useState(0);
 	const [status, setStatus] = useState<"success" | "loading" | "error">("success");
@@ -37,22 +42,26 @@ export function FundsFormsFixture() {
 				<Button onClick={() => setEmail(!email)}>Toggle email</Button>
 				<Button onClick={() => setStatus(status === "success" ? "error" : "success")}>Toggle data</Button>
 				<Button onClick={() => setCardFunding(!cardFunding)}>Toggle card funding</Button>
+				<Button onClick={() => setAddressPending(!addressPending)}>Toggle address</Button>
+				<Button onClick={() => setScreen("status")}>Open status</Button>
+				<Button onClick={() => setScreen("network")}>Open wrong network</Button>
 				<output aria-label="Fixture submissions">{submitted}</output>
 				<output aria-label="Fixture card purchases">{purchases}</output>
 			</div>
-			<PendingActionModal
+			<FundsModalShell
 				open={form !== null}
 				isPending={false}
 				onOpenChange={(open) => {
 					if (!open) setForm(null);
 				}}
 				presentation={mobile ? "drawer" : "modal"}
-				className="font-market-close !border-0 !bg-modal min-[1001px]:!max-w-[28rem]"
+				tab={form ?? "deposit"}
+				headerStart={
+					form === "deposit" && cardFunding && depositStep === "transfer" ? (
+						renderFundsModalBackButton({ label: "Back", onClick: () => setDepositStep("methods") })
+					) : null
+				}
 			>
-				<ModalHeader divider={false} className="px-4 pt-7 pb-0 min-[1001px]:px-6">
-					<ModalTitle className="sr-only">Funding fixture</ModalTitle>
-				</ModalHeader>
-				<ModalContent className="px-4 pt-3.5 pb-5 min-[1001px]:px-6">
 					{showsDepositMethods ? (
 						<DepositMethodChooser
 							fiat={{ walletKind: email ? "embedded" : "external", disabled: !ready }}
@@ -85,11 +94,13 @@ export function FundsFormsFixture() {
 							sponsoredCctpReadiness={{ status: "ready", failure: null, retry: noop }}
 							requiresExplicitFundingDeposit={email}
 							cctpFee="0.2"
+							minimumDepositRaw={400_000n}
+							belowMinimumDepositRaw={null}
 							cctpFeeLoading={status === "loading"}
 							cctpFeeError={status === "error"}
 							pendingCctpRecovery={false}
 							usesFundingAddressFlow={email}
-							fundingAddressPending={false}
+							fundingAddressPending={addressPending}
 							fundingAddress={address}
 							onDone={() => setForm(null)}
 						/>
@@ -120,8 +131,30 @@ export function FundsFormsFixture() {
 							onSubmit={() => setSubmitted(submitted + 1)}
 						/>
 					) : null}
-				</ModalContent>
-			</PendingActionModal>
+			</FundsModalShell>
+			<StatusScreen
+				open={screen === "status"}
+				presentation={mobile ? "drawer" : "modal"}
+				title="Deposit"
+				icon="awaiting"
+				heading="Waiting for chain confirmation"
+				description="12.345678 USDC → Hyperliquid. Keep this window open until the transfer is confirmed."
+				txHash="0x1111111111111111111111111111111111111111111111111111111111111111"
+				onClose={() => setScreen(null)}
+			>
+				<Button onClick={() => setScreen(null)} className="w-full">
+					Dismiss status
+				</Button>
+			</StatusScreen>
+			<WrongNetworkScreen
+				open={screen === "network"}
+				presentation={mobile ? "drawer" : "modal"}
+				onClose={() => setScreen(null)}
+				onBack={() => setScreen(null)}
+				onSwitch={noop}
+				isSwitching={false}
+				error={new Error("Fixture switch failure")}
+			/>
 		</>
 	);
 }

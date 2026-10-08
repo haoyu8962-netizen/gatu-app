@@ -96,7 +96,41 @@ The implementation uses:
   deposits. A matching `SponsoredDepositForBurnSkipped` is a definitive
   failure even when the outer transaction itself succeeded.
 
-The application keeps a conservative 5 USDC product minimum. It also rejects
+Circle sets no minimum for a CCTP deposit to HyperCore: its documentation says a
+deposit of any size succeeds, the forwarding fee is deducted from the amount, and
+the 1 USDC HyperCore activation fee is charged on the account's first outbound
+action, not on the deposit. The 5 USDC minimum belongs to the retired Bridge2
+route, where a smaller deposit was lost, and the application no longer applies or
+displays it (product decision, 2026-10-04). The contract only needs the amount to
+exceed the fee; the application requires at least twice the current maximum fee,
+the same guard as [CCTP withdrawals](withdrawals.md). `calculateCctpDepositFee`
+enforces it for the reviewed amount and again at execution with the fresh quote,
+throwing `CctpDepositBelowMinimumError` with the smallest amount at or above the
+rejected one that the same quote accepts. Because the fee is rounded up and may
+grow with the amount, that value is searched for (each candidate is raised to what
+it requires until one passes) rather than read off the rejected amount, so the
+amount a user is told to enter is itself accepted. The search is bounded, and the
+bound is sufficient only because a Fast Transfer rate above
+`CCTP_DEPOSIT_MAX_FEE_BPS` (1,000 bps, 10% of the amount) is rejected as an
+unusable quote, both when Circle's response is normalized and when a fee is
+calculated: at or below that rate the search provably ends within its limit
+(`findCctpDepositMinimumRaw` states the argument). Circle's published Fast
+Transfer rates are far below it; the ceiling exists to fail closed on a quote the
+application cannot reason about, and a deposit is not offered while it applies.
+Running out of search rounds is treated as an unusable quote too, never as proof
+that no amount can be deposited.
+`reviewCctpDepositFee` turns the failure into a result a surface can show: the
+amount field is marked invalid with "Minimum deposit is N USDC", the email form
+names the same amount, and a fee that rises between review and click so that the
+amount no longer reaches it is reported as a fee change, never as a routing
+failure. The form's "Minimum N USDC" note is `getCctpDepositMinimumRaw` of the
+current quote, the smallest amount that quote accepts, shown whenever a usable
+quote is known, and the Testnet automatic path waits for a balance that meets the rule. The
+official terminal still applies 5 USDC to its Arbitrum routes; that is its own
+choice, not a CCTP rule. The funding-address notice tells the user to send only
+native USDC on Arbitrum and that other assets or networks are not credited; it
+does not claim that funds are lost, because the address is the user's own wallet.
+The application also rejects
 transfers above Circle's 10,000,000 USDC per-burn contract limit. On testnet it
 adds a 1,000 USDC per-transfer application cap and requires an existing
 Hyperliquid mainnet account; Circle's published 1,000-USDC testnet policy may
@@ -163,7 +197,17 @@ funded end-to-end release check.
 The mainnet email form explains the two steps before exposing the QR: send USDC
 to the exact wallet, then return and explicitly deposit into the trading account.
 The testnet automatic path does not display these mainnet instructions. Asset and
-network are fixed route details, not selectable dropdowns.
+network are fixed route details, not selectable dropdowns; each shows its icon
+beside the value, and the same row is used by the withdrawal form. The email form
+and the external-wallet form both open with the USDC mark above the title, so the
+two kinds of account see the same header. The QR code
+carries the USDC mark in its centre and is generated at error-correction level H
+so the covered modules stay recoverable; it keeps dark modules on a white field in
+both themes. The address sits in one field with its copy control. The layout
+follows the official terminal's deposit dialog (fixed header, body that scrolls
+without a visible scrollbar, one component for the desktop modal and the phone
+sheet); the two-step instructions, the explicit Deposit action and the Done exit
+are this application's own and stay.
 
 Passive balance, fee, wallet-readiness and route failures render numeric placeholders
 or the address skeleton, with neutral retry controls where recovery is available.

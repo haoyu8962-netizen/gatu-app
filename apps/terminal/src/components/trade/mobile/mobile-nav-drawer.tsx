@@ -14,6 +14,7 @@ import { useTradeHomePath } from "@/hooks/trade/use-trade-home-path";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { useDepositModalActions, useSettingsDialogActions } from "@/stores/use-global-modal-store";
+import { depositModalIntentProps } from "../components/deposit-modal-intent";
 import { type PreloadableGlobalModal, preloadGlobalModal } from "../components/lazy-global-modals";
 import { HeaderIconButtonView } from "../header/header-icon-button-view";
 import { ThemeToggle } from "../header/theme-toggle";
@@ -38,6 +39,7 @@ export function MobileNavDrawer() {
 	const tradeActive = isTradeRoutePath(pathname);
 	const vaultsActive = pathname === "/vaults" || pathname.startsWith("/vaults/");
 	const showsDepositEntry = hasWalletAccess || sessionMode === "agent-only" || depositAvailability.path === "sponsored";
+	const canOpenDeposit = pendingModal === null && depositAvailability.available;
 
 	function getNavLinkClass(active: boolean): string {
 		return cn(
@@ -298,7 +300,8 @@ export function MobileNavDrawer() {
 									intent="brand"
 									size="sm"
 									onClick={depositAvailability.available ? () => requestGlobalModal("deposit") : undefined}
-									disabled={pendingModal !== null || !depositAvailability.available}
+									{...(canOpenDeposit ? depositModalIntentProps : undefined)}
+									disabled={!canOpenDeposit}
 									aria-busy={pendingModal === "deposit" || undefined}
 									iconLeft={
 										pendingModal === "deposit" ? (

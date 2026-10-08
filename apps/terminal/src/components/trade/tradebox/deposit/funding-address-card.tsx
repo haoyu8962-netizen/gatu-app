@@ -3,8 +3,10 @@ import { CopyIcon, QrCodeIcon, WarningCircleIcon } from "@phosphor-icons/react";
 import { ButtonIcon } from "@sairn/ui";
 import { type ReactNode, useEffect, useRef } from "react";
 import { BrandMotion } from "@/components/brand/brand-motion";
+import { USDC_ICON_URL } from "@/config/bridge";
 import { useCopyToClipboard } from "@/hooks/ui/use-copy-to-clipboard";
 import { BRAND_MOTION_COPY_FEEDBACK } from "@/lib/brand/brand-motion.gen";
+import { cn } from "@/lib/cn";
 
 interface ReadyProps {
 	address: `0x${string}`;
@@ -26,6 +28,19 @@ interface UnavailableProps {
 
 type Props = PendingProps | ReadyProps | UnavailableProps;
 
+const QR_SIZE = 132;
+const CARD_CLASS = "flex flex-col items-center gap-3";
+const QR_FRAME_CLASS =
+	"flex size-[140px] items-center justify-center rounded-24 border border-market-close-stroke-card bg-market-close-card";
+const ADDRESS_GROUP_CLASS = "w-full space-y-1.5";
+const ADDRESS_LABEL_CLASS = "text-2xs leading-4 text-market-close-subtle";
+const ADDRESS_FIELD_CLASS =
+	"relative flex min-h-11 items-center gap-2 rounded-20 border border-market-close-stroke-card bg-market-close-card px-3 py-1.5";
+const ADDRESS_TEXT_CLASS =
+	"min-w-0 flex-1 break-all text-balance text-center font-mono text-xs leading-[18px] tabular-nums text-market-close-fg";
+const ADDRESS_ACTION_SIZE_CLASS = "size-8 shrink-0";
+const ADDRESS_SHAPE = `0x${"0".repeat(40)}`;
+
 export function FundingAddressCard(props: Props) {
 	const { t } = useLingui();
 	const address = props.state === "ready" ? props.address : null;
@@ -42,9 +57,9 @@ export function FundingAddressCard(props: Props) {
 			.then(({ toCanvas }) => {
 				if (cancelled) return;
 				return toCanvas(canvas, address, {
-					errorCorrectionLevel: "M",
+					errorCorrectionLevel: "H",
 					margin: 1,
-					width: 132,
+					width: QR_SIZE,
 				});
 			})
 			.catch(() => {
@@ -61,12 +76,8 @@ export function FundingAddressCard(props: Props) {
 		const isUnavailable = props.state === "unavailable";
 
 		return (
-			<div
-				className="flex flex-col items-center gap-4"
-				data-address-state={props.state}
-				aria-busy={props.state === "loading"}
-			>
-				<div className="flex size-[140px] flex-col items-center justify-center gap-2 rounded-[12px] border border-market-close-stroke-card bg-market-close-card px-4 text-center">
+			<div className={CARD_CLASS} data-address-state={props.state} aria-busy={props.state === "loading"}>
+				<div className={cn(QR_FRAME_CLASS, "flex-col gap-2 px-4 text-center")}>
 					{!isUnavailable ? (
 						<QrCodeIcon className="size-8 text-market-close-muted" aria-hidden="true" />
 					) : (
@@ -81,22 +92,23 @@ export function FundingAddressCard(props: Props) {
 					</div>
 				) : null}
 
-				<div className="w-full space-y-1.5">
-					<p className="text-2xs leading-4 text-market-close-subtle">
+				<div className={ADDRESS_GROUP_CLASS}>
+					<p className={ADDRESS_LABEL_CLASS}>
 						<Trans>Deposit address</Trans>
 					</p>
-					<div
-						className="flex min-h-[50px] items-center justify-center rounded-[10px] border border-market-close-stroke-card bg-market-close-card px-3 py-2"
-						aria-hidden="true"
-					>
-						{!isUnavailable ? (
-							<div
-								className="h-2 w-3/4 rounded-full bg-market-close-stroke-input/50"
-								data-address-placeholder="skeleton"
-							/>
-						) : (
-							<span className="text-sm text-market-close-muted">—</span>
-						)}
+					<div className={ADDRESS_FIELD_CLASS} aria-hidden="true">
+						<span className={cn(ADDRESS_TEXT_CLASS, "invisible")}>{ADDRESS_SHAPE}</span>
+						<span className={ADDRESS_ACTION_SIZE_CLASS} />
+						<span className="absolute inset-0 flex items-center justify-center">
+							{!isUnavailable ? (
+								<span
+									className="h-2 w-3/4 rounded-full bg-market-close-stroke-input/50"
+									data-address-placeholder="skeleton"
+								/>
+							) : (
+								<span className="text-sm text-market-close-muted">—</span>
+							)}
+						</span>
 					</div>
 				</div>
 			</div>
@@ -104,35 +116,44 @@ export function FundingAddressCard(props: Props) {
 	}
 
 	return (
-		<div className="flex flex-col items-center gap-4" data-address-state="ready">
-			<div className="flex size-[140px] items-center justify-center rounded-[12px] border border-market-close-stroke-card bg-market-close-card p-[3px]">
-				<canvas
-					ref={canvasRef}
-					className="block size-[132px] rounded-[8px] bg-white"
-					role="img"
-					aria-label={t`Deposit address QR code`}
-				/>
+		<div className={CARD_CLASS} data-address-state="ready">
+			<div className={QR_FRAME_CLASS}>
+				<div className="relative">
+					<canvas
+						ref={canvasRef}
+						className="block size-[132px] rounded-16 bg-white"
+						role="img"
+						aria-label={t`Deposit address QR code`}
+					/>
+					<img
+						src={USDC_ICON_URL}
+						alt=""
+						aria-hidden="true"
+						data-slot="qr-token-logo"
+						className="pointer-events-none absolute top-1/2 left-1/2 size-7 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white p-0.5"
+					/>
+				</div>
 			</div>
 
-			<div className="w-full space-y-1.5">
-				<p className="text-2xs leading-4 text-market-close-subtle">
+			<div className={ADDRESS_GROUP_CLASS}>
+				<p className={ADDRESS_LABEL_CLASS}>
 					<Trans>Deposit address</Trans>
 				</p>
-				<div className="flex min-h-12 items-center gap-2.5 rounded-[10px] border border-market-close-stroke-card bg-market-close-card px-3 py-2">
-					<span
-						className="min-w-0 flex-1 break-all text-center font-mono text-xs leading-[18px] tabular-nums text-market-close-fg"
-						title={props.address}
-					>
+				<div className={ADDRESS_FIELD_CLASS}>
+					<span className={ADDRESS_TEXT_CLASS} title={props.address}>
 						{props.address}
 					</span>
 					<ButtonIcon
 						type="button"
-						variant="outline"
+						variant="ghost"
 						intent="neutral"
 						size="sm"
 						onClick={() => copy(props.address)}
 						aria-label={copied ? t`Copied` : t`Copy deposit address`}
-						className="rounded-[7px] border-market-close-stroke-input bg-modal text-market-close-fg shadow-none hover:border-market-close-control"
+						className={cn(
+							ADDRESS_ACTION_SIZE_CLASS,
+							"rounded-16 text-market-close-muted shadow-none not-data-disabled:hover:bg-market-close-hover not-data-disabled:hover:text-market-close-fg",
+						)}
 					>
 						{copied ? (
 							<BrandMotion motion={BRAND_MOTION_COPY_FEEDBACK} size={16} />

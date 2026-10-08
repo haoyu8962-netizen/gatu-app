@@ -132,6 +132,16 @@
 
 若实施精简，需在实际被修改的桌面和移动布局、深浅主题中检查：只读信息仍易读；输入、选择、悬浮、焦点和禁用态清晰；所有共享消费者同步；加载占位与已加载几何一致；长标签、数字与翻译不溢出；二维码白底/留白和复制按钮可用。验证命令按最终改动选择，工作记录必须区分真实通过与待测项目。
 
+## 2026-10-04 更正
+
+本文其余部分和附录仍对应开头写明的源码基线，未随后续提交更新。以下三处在 `29c550c6` 及其后续修复中已改变，查阅时以当前代码为准：
+
+- 「充值弹窗整块占位」已删除。`deposit-modal-loading-fallback.tsx` 现在只在与真实弹窗共用的 `FundsModalShell` 里显示中性转圈，不再有六处占位卡片。
+- 「充值表单内部占位」中的费用占位不再带卡片底色，与 `UnitDepositInfo` 共用 `UNIT_DEPOSIT_INFO_LIST_CLASS`；网络说明占位未变。
+- 附录引用的 `components/dashboard/dashboard-shell-skeleton.tsx` 在本次任务开始前就已不存在，未在本次任务中处理。
+
+规则见 [.claude/rules/style-ui-guide.md](../.claude/rules/style-ui-guide.md) 的 Loading placeholders 一节，任务记录见 [2026-10-04 加载占位审查](work-memory/sessions/2026-10-04-loading-placeholder-review.md)。
+
 ## 全量 class 位置附录
 
 C/H/F 含义见开头。行号链接到当前文件，数字固定对应基线；括号不表示渲染次数。按源码定义保留 hover、条件分支、共享样式和未启用分支，具体判断以前文为准。

@@ -4,6 +4,7 @@ import { Button, Tooltip } from "@sairn/ui";
 import { Suspense, useCallback, useId, useState } from "react";
 import { DashboardHeader, FooterBar, GlobalModals } from "@/components/dashboard/dashboard-chrome";
 import { DashboardFrameView } from "@/components/dashboard/dashboard-frame-view";
+import { depositModalIntentProps } from "@/components/trade/components/deposit-modal-intent";
 import { DASHBOARD_FRAMES } from "@/config/dashboard-frames";
 import { isQuoteBalanceSharedWithPerps } from "@/domain/trade/balances";
 import { getFundsAvailabilityNotice } from "@/domain/trade/data-presentation";
@@ -181,6 +182,7 @@ export function PortfolioPage() {
 												onClick={
 													fundsActionAvailability.withdrawal.available ? () => openDepositModal("withdraw") : undefined
 												}
+												{...(fundsActionAvailability.withdrawal.available ? depositModalIntentProps : undefined)}
 												iconLeft={<UploadSimpleIcon className="size-3.5" />}
 											>
 												<Trans>Withdraw</Trans>
@@ -196,6 +198,7 @@ export function PortfolioPage() {
 												disabled={depositDisabled}
 												aria-describedby={getUnavailableReasonId(depositAvailability.unavailableReason)}
 												onClick={depositAvailability.available ? () => openDepositModal("deposit") : undefined}
+												{...(depositAvailability.available ? depositModalIntentProps : undefined)}
 												aria-label={
 													depositAvailability.available || isMobile ? undefined : depositAvailability.unavailableLabel
 												}
