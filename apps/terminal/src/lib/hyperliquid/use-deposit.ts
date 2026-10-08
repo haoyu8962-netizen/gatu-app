@@ -458,19 +458,22 @@ function createDepositChainMismatchError(config: DepositChainConfig): LocalizedA
 }
 
 function waitForDepositChain(provider: Eip1193Provider, config: DepositChainConfig): Promise<boolean> {
-	const maxPolls = Math.ceil(DEPOSIT_CHAIN_SWITCH_SETTLE_MS / DEPOSIT_CHAIN_SWITCH_POLL_INTERVAL_MS);
 	return new Promise((resolve, reject) => {
 		let settled = false;
-		let polls = 0;
-		let timer: ReturnType<typeof setTimeout> | undefined;
+		let pollTimer: ReturnType<typeof setTimeout> | undefined;
 		const onChainChanged = (chainId: unknown) => {
 			if (parseChainId(chainId) === config.chainId) finish(true);
 		};
+		const deadline = setTimeout(() => finish(false), DEPOSIT_CHAIN_SWITCH_SETTLE_MS);
+		function cleanup() {
+			settled = true;
+			clearTimeout(deadline);
+			clearTimeout(pollTimer);
+			provider.removeListener?.("chainChanged", onChainChanged);
+		}
 		function finish(reached: boolean) {
 			if (settled) return;
-			settled = true;
-			clearTimeout(timer);
-			provider.removeListener?.("chainChanged", onChainChanged);
+			cleanup();
 			resolve(reached);
 		}
 		async function poll() {
@@ -479,8 +482,7 @@ function waitForDepositChain(provider: Eip1193Provider, config: DepositChainConf
 				chainId = await getProviderChainId(provider);
 			} catch (error) {
 				if (settled) return;
-				settled = true;
-				provider.removeListener?.("chainChanged", onChainChanged);
+				cleanup();
 				reject(error);
 				return;
 			}
@@ -489,12 +491,7 @@ function waitForDepositChain(provider: Eip1193Provider, config: DepositChainConf
 				finish(true);
 				return;
 			}
-			polls += 1;
-			if (polls >= maxPolls) {
-				finish(false);
-				return;
-			}
-			timer = setTimeout(() => void poll(), DEPOSIT_CHAIN_SWITCH_POLL_INTERVAL_MS);
+			pollTimer = setTimeout(() => void poll(), DEPOSIT_CHAIN_SWITCH_POLL_INTERVAL_MS);
 		}
 		provider.on?.("chainChanged", onChainChanged);
 		void poll();
@@ -1292,6 +1289,7 @@ export function useDeposit({
 					}
 					await assertReviewedBalanceUnchanged();
 					await assertFreshSelectedDepositRoute();
+					if (provider) await assertDepositChainStillActive(provider, cctpDepositConfig);
 					const authorizationSignature = await ready.walletClient.signTypedData({
 						account: ready.address,
 						...parameters.typedData,

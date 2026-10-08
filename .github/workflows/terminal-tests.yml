@@ -328,7 +328,6 @@ jobs:
           src/lib/tests/use-privy-fiat-funding-offer.test.tsx
           src/lib/tests/use-usdc-routing.test.ts
           src/lib/tests/unit-deposit-info.test.tsx
-          src/lib/tests/wrong-network-screen.test.tsx
 
       # `pnpm test:brand` in the Website and Brand workflow also runs these, but that workflow
       # only starts when the website or a brand asset changes. Terminal changes are covered here.

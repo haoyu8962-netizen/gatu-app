@@ -117,7 +117,11 @@ same work in `getDepositProviderForChain`:
    `parseChainId`. Comparison is numeric: injected wallets answer with a hex
    string, while WalletConnect's provider answers with a number. Comparing the
    raw value with a hex literal made every WalletConnect wallet look like it was
-   on the wrong network, including one that was already on Arbitrum.
+   on the wrong network, including one that was already on Arbitrum. This is
+   the confirmed defect; whether it was the cause of the reported phone
+   incident depends on that wallet's connector, which was not recorded
+   (a wallet's in-app browser injects a provider that answers with a hex string
+   and would not have hit it).
 2. When the chain differs, mark the execution `networkSwitchPending` (the status
    screen heading becomes "Switching network") and ask for the switch once:
    through Privy's `wallet.switchChain` when Privy's own record disagrees with
@@ -126,22 +130,33 @@ same work in `getDepositProviderForChain`:
    believes the wallet is on Arbitrum, because `switchChain` returns without
    sending anything in that case.
 3. Wait for the wallet to report Arbitrum: a `chainChanged` listener plus
-   `eth_chainId` polling every `DEPOSIT_CHAIN_SWITCH_POLL_INTERVAL_MS`, bounded
-   by `DEPOSIT_CHAIN_SWITCH_SETTLE_MS` (counted in polls, not wall-clock time).
-   Wallets commonly resolve the switch request before the new chain is
-   observable, so an immediate re-read is not evidence. No second switch request
-   is sent; a wallet that never reports Arbitrum fails with "Wallet is not
+   `eth_chainId` polling every `DEPOSIT_CHAIN_SWITCH_POLL_INTERVAL_MS`, with an
+   independent `DEPOSIT_CHAIN_SWITCH_SETTLE_MS` deadline timer that ends the
+   wait even while a chain query is still pending (late answers and events are
+   ignored once it has ended). Wallets commonly resolve the switch request
+   before the new chain is observable, so an immediate re-read is not evidence.
+   Once a switch request has been accepted, the wait never repeats it because
+   the chain has not changed yet; the only extra requests are the
+   unknown-chain recovery (`wallet_addEthereumChain` followed by one more
+   `wallet_switchEthereumChain`, inside Privy or in the direct path). A wallet
+   that never reports Arbitrum before the deadline fails with "Wallet is not
    connected to Arbitrum One", a rejected request with "Arbitrum network switch
    was rejected", and either is reported through the deposit failure
-   notification.
-4. Re-check the chain (numerically) right before `writeContract`, after the gas
-   estimate and the fresh legal check, so a wallet that moved away in between
-   still fails closed.
+   notification. The deadline bounds only this observation phase: the wallet's
+   own answer to the switch request is awaited before it, and a backgrounded
+   page may delay the timer.
+4. Re-check the chain (numerically) right before the EIP-3009 authorization is
+   signed and again right before `writeContract`, after the gas estimate and
+   the fresh legal check, so a wallet that moved away in between still fails
+   closed.
 
 `useDepositWalletProvider` only reports whether the wallet provider answers at
 all (the "Wallet connection unavailable" screen); it no longer interprets the
 chain. `use-deposit-routing-guard.test.tsx` ("wallet network") pins the numeric
-comparison, the two switch paths, the bounded wait and the rejection.
+comparison, the two switch paths, the unknown-chain recovery sequence, the
+event channel, the deadline (including a query that never answers), listener
+cleanup, the `networkSwitchPending` lifecycle, the rejection and both
+pre-signing and pre-broadcast re-checks.
 
 ## Card Funding Before A Deposit
 

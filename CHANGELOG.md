@@ -502,8 +502,9 @@ changes, not evidence that a build has been deployed or accepted on real devices
   Arbitrum One" when the wallet is already on Arbitrum. The deposit dialog no longer opens on a
   "Switch to Arbitrum" screen: as on the official terminal, a wallet on another network is asked
   to switch when you press Deposit (the status screen says "Switching network"), the terminal
-  waits for the wallet to report Arbitrum instead of re-reading immediately, and a declined or
-  unanswered switch is reported through the deposit failure notification.
+  waits for the wallet to report Arbitrum instead of re-reading immediately, and a declined
+  switch, or a wallet that still reports another network ten seconds after accepting the
+  request, is reported through the deposit failure notification.
 - Switching the number format in the language menu (for example `1,234.56` to `1.234,56`) now
   rewrites at once the figures in positions, open orders, balances, trade, funding and order
   histories, TWAP, the order book, desktop and mobile account summaries, order entry summaries and
