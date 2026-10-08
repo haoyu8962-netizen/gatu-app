@@ -11,6 +11,7 @@ import {
 import {
 	getPrivyEmailAddress,
 	getPrivyEmbeddedWalletAddress,
+	hasPrivyEmbeddedWallet,
 	hasSameWalletAddress,
 	resolvePrivyWalletIntent,
 	selectPrivyWagmiWallet,
@@ -413,5 +414,46 @@ describe("selectPrivyWagmiWallet", () => {
 
 		clearPrivyLoginMethod(PRIVY_USER_ID);
 		expect(getPrivyLoginMethod(PRIVY_USER_ID)).toBeUndefined();
+	});
+
+	it("reports any embedded Ethereum wallet, including ones that cannot be selected unambiguously", () => {
+		const embeddedAccount = (address: string, walletIndex: number) => ({
+			address,
+			chainType: "ethereum",
+			connectorType: "embedded",
+			type: "wallet",
+			walletClientType: "privy",
+			walletIndex,
+		});
+		const ambiguousUser = {
+			linkedAccounts: [
+				embeddedAccount("0x1111111111111111111111111111111111111111", 1),
+				embeddedAccount("0x2222222222222222222222222222222222222222", 2),
+			],
+		} as unknown as User;
+
+		expect(getPrivyEmbeddedWalletAddress(ambiguousUser)).toBeUndefined();
+		expect(hasPrivyEmbeddedWallet(ambiguousUser)).toBe(true);
+		expect(hasPrivyEmbeddedWallet(user("0x1111111111111111111111111111111111111111", "privy"))).toBe(true);
+	});
+
+	it("reports no embedded wallet for email-only, external-wallet and Solana-only users", () => {
+		expect(hasPrivyEmbeddedWallet(null)).toBe(false);
+		expect(hasPrivyEmbeddedWallet({ linkedAccounts: [{ address: "a@example.com", type: "email" }] } as User)).toBe(
+			false,
+		);
+		expect(hasPrivyEmbeddedWallet(user("0x1111111111111111111111111111111111111111"))).toBe(false);
+		expect(
+			hasPrivyEmbeddedWallet({
+				linkedAccounts: [
+					{
+						address: "So11111111111111111111111111111111111111112",
+						chainType: "solana",
+						type: "wallet",
+						walletClientType: "privy",
+					},
+				],
+			} as unknown as User),
+		).toBe(false);
 	});
 });

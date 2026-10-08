@@ -2833,10 +2833,12 @@ msgid "Discard local key"
 msgstr "Supprimer la clé locale"
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
+#: src/components/trade/components/legal-acceptance-modal.tsx
 #: src/components/trade/header/user-menu.tsx
 msgid "Disconnect"
 msgstr "Déconnecter"
 
+#: src/hooks/wallet/use-wallet-session.ts
 #: src/hooks/wallet/use-wallet-session.ts
 msgid "Disconnect failed: the active trading account could not be verified. Please retry."
 msgstr "Échec de la déconnexion : le compte de trading actif n'a pas pu être vérifié. Veuillez réessayer."
@@ -7244,6 +7246,7 @@ msgstr "Reprendre le suivi"
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/chart/tradingview-chart.tsx
 #: src/components/trade/components/legal-acceptance-modal.tsx
+#: src/components/trade/components/legal-acceptance-modal.tsx
 #: src/components/trade/components/market-asset-info.tsx
 #: src/components/trade/components/market-asset-info.tsx
 #: src/components/trade/layout/terminal-boot-error.tsx
@@ -10986,6 +10989,10 @@ msgstr "Le portefeuille n'est pas prêt à mettre à jour le mode de compte"
 msgid "Wallet not connected"
 msgstr "Portefeuille non connecté"
 
+#: src/components/trade/components/legal-acceptance-modal.tsx
+msgid "Wallet not ready"
+msgstr "Portefeuille pas encore prêt"
+
 #: src/components/trade/components/establish-connection-modal.tsx
 msgid "Wallet or network changed before the connection completed. Reopen the action for the current account."
 msgstr "Le portefeuille ou le réseau a changé avant la fin de la connexion. Rouvrez l’action pour le compte actuel."
@@ -10998,6 +11005,10 @@ msgstr "Le portefeuille ou le réseau a changé avant que la demande de parraina
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Wallet returned a transaction hash, but it is not visible on Arbitrum yet. Check your wallet activity or Arbiscan before retrying to avoid sending the deposit twice."
 msgstr "Le portefeuille a renvoyé un hash de transaction, mais il n'est pas encore visible sur Arbitrum. Vérifiez l'activité du portefeuille ou Arbiscan avant de réessayer afin d'éviter d'envoyer le dépôt deux fois."
+
+#: src/components/trade/components/legal-acceptance-modal.tsx
+msgid "We could not finish setting up your wallet. Check your connection and try again, or disconnect and log in again."
+msgstr "Nous n'avons pas pu terminer la configuration de votre portefeuille. Vérifiez votre connexion et réessayez, ou déconnectez-vous puis reconnectez-vous."
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
 msgid "We could not verify the legal status for this wallet. Check your connection and try again."

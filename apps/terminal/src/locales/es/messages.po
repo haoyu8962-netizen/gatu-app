@@ -2833,10 +2833,12 @@ msgid "Discard local key"
 msgstr "Descartar clave local"
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
+#: src/components/trade/components/legal-acceptance-modal.tsx
 #: src/components/trade/header/user-menu.tsx
 msgid "Disconnect"
 msgstr "Desconectar"
 
+#: src/hooks/wallet/use-wallet-session.ts
 #: src/hooks/wallet/use-wallet-session.ts
 msgid "Disconnect failed: the active trading account could not be verified. Please retry."
 msgstr "No se pudo desconectar: no se pudo verificar la cuenta de trading activa. Vuelve a intentarlo."
@@ -7244,6 +7246,7 @@ msgstr "Reanudar seguimiento"
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/chart/tradingview-chart.tsx
 #: src/components/trade/components/legal-acceptance-modal.tsx
+#: src/components/trade/components/legal-acceptance-modal.tsx
 #: src/components/trade/components/market-asset-info.tsx
 #: src/components/trade/components/market-asset-info.tsx
 #: src/components/trade/layout/terminal-boot-error.tsx
@@ -10986,6 +10989,10 @@ msgstr "La billetera no está lista para actualizar el modo de cuenta"
 msgid "Wallet not connected"
 msgstr "Billetera no conectada"
 
+#: src/components/trade/components/legal-acceptance-modal.tsx
+msgid "Wallet not ready"
+msgstr "El monedero no está listo"
+
 #: src/components/trade/components/establish-connection-modal.tsx
 msgid "Wallet or network changed before the connection completed. Reopen the action for the current account."
 msgstr "El monedero o la red cambiaron antes de que se completara la conexión. Vuelve a abrir la acción para la cuenta actual."
@@ -10998,6 +11005,10 @@ msgstr "El monedero o la red cambió antes de que pudiera confirmarse la solicit
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Wallet returned a transaction hash, but it is not visible on Arbitrum yet. Check your wallet activity or Arbiscan before retrying to avoid sending the deposit twice."
 msgstr "La billetera devolvió un hash de transacción, pero aún no es visible en Arbitrum. Revisa la actividad de tu billetera o Arbiscan antes de reintentar para evitar enviar el depósito dos veces."
+
+#: src/components/trade/components/legal-acceptance-modal.tsx
+msgid "We could not finish setting up your wallet. Check your connection and try again, or disconnect and log in again."
+msgstr "No pudimos terminar de configurar su monedero. Compruebe la conexión e inténtelo de nuevo, o desconéctese y vuelva a iniciar sesión."
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
 msgid "We could not verify the legal status for this wallet. Check your connection and try again."

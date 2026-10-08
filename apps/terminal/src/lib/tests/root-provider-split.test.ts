@@ -111,6 +111,7 @@ describe("root provider startup split", () => {
 	it("preserves the managed wallet and signing provider hierarchy", () => {
 		const providerOrder = [
 			"<PrivyProvider",
+			"<EmailEmbeddedWalletProvider>",
 			"<SmartWalletsProvider>",
 			"<PersistQueryClientProvider",
 			"<WagmiProvider",
