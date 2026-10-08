@@ -1,6 +1,6 @@
 # ADR 0031：域名迁移到 sairn.ai：两组域名并存识别与上线顺序
 
-- 状态：代码部分已接受并实施（2026-10-01，分支 `claude/from-dev-1001`，提交 `5cd45ab8`；请求头与环境变量改名在 `7e228768`）。本 ADR 是实施后同日补写的回溯记录。分支没有推送，未合入 `dev`，也未发布。按执行记录，仓库外的步骤（注册、DNS、证书、CloudFront 别名、源站请求策略、Privy、邮件）一项都没有执行。撰写本 ADR 时观察到 `sairn.ai` 已委派给 Cloudflare 名称服务器，但归属没有记录，详见「背景与约束」。
+- 状态：代码部分已接受并实施（2026-10-01，分支 `claude/from-dev-1001`，提交 `5cd45ab8`；请求头与环境变量改名在 `7e228768`）。本 ADR 是实施后同日补写的回溯记录。分支没有推送，未合入 `dev`，也未发布。按执行记录，仓库外的步骤（注册、DNS、证书、CloudFront 别名、源站请求策略、Privy、邮件）一项都没有执行。撰写本 ADR 时观察到 `sairn.ai` 已委派给 Cloudflare 名称服务器，但归属没有记录，详见「背景与约束」。 2026-10-08 补记：之后随 p24 发布（main `3ced842e`，2026-10-02）。
 - 关联：[ADR 0027](0027-brand-single-source-and-identifier-rename.md)（单一来源、内部标识）；[ADR 0005](0005-spa-static-shell.md)（CloudFront 托管）；[迁移计划](../brand-migration-plan.md) D2、D9、D17、D23、阶段 7、§4.2、风险 #14–#18、#23–#26；[品牌标识与素材](../brand-assets.md)「域名切换到 sairn.ai」；[部署说明](../../deploy/cloudfront/README.md)顶部的过渡说明；[首次交易](../trading-onboarding.md)；[执行记录](../work-memory/sessions/2026-10-01-sairn-brand-migration-execution.md)。
 
 ## 背景与约束
@@ -105,3 +105,19 @@
 同日用户答复切换方案的待决问题（方案第 7 节）：gatu.ai 不永久续费，目前没有用户；域名已注册到 2028-05-06，到期前再决定续不续。上一段列出的接管、邮箱找回与钓鱼风险由用户接受，并由方案的「到期前清单」覆盖，所以决策 5 第 1 步「`gatu.ai` 保持自动续费」与决策 7「旧域名必须一直续费」不再适用。gatu.ai 的邮件与 SES 发信配置等品牌替换完成后再处理，切换时不动任何邮件记录；对外推荐改用另行登记的 sairn 推荐码；不做告别 Service Worker。
 
 2026-10-02 补充：上述执行方案已开始执行，切换顺序改为先断后接，并决定换用新的 Privy 应用。决策另立为 [ADR 0032](0032-gatu-offline-cutover-to-sairn.md)，它取代本 ADR 决策 5 与决策 7 的相应部分。
+
+## 补充（2026-10-03，旧域名组在代码中退役）
+
+本 ADR 的代码已于 2026-10-02 经 PR #68 合入 `dev`、经 PR #67 晋升 `main`，并随 p24 发布；状态行里的「没有推送、未合入、未发布」是撰写时的状态。
+
+决策 1、2、4 的过渡部分随切换方案 PR-B（对应发布 p25）从代码中删除：
+
+- `brand.json` 只剩 `domains.primary`；
+- `public-origins.ts` 只认主组，`gatu.ai` 主机与其他未知主机同样处理；
+- 转发主机名只用 `x-sairn-forwarded-host`。
+
+「证据」一节列出的测试相应改写：双组识别、新旧头读取顺序和双写的用例，改为断言旧主机不被识别、旧头与旧标记不被读写。
+
+[品牌标识与素材](../brand-assets.md)的「域名切换到 sairn.ai」一节改名为「域名」，内容改为现状；原来的八步顺序以本 ADR 决策 5 为准。
+
+这部分代码在 PR #73，未合入、未发布，状态见 [ADR 0032](0032-gatu-offline-cutover-to-sairn.md) 的补充。

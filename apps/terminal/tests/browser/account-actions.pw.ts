@@ -404,7 +404,7 @@ for (const viewport of [
 	{ width: 1363, height: 260 },
 	{ width: 1363, height: 852 },
 ]) {
-	test(`keeps the deposit status and wrong-network screens on the funds scroll structure at ${viewport.width}x${viewport.height}`, async ({
+	test(`keeps the deposit status screen on the funds scroll structure at ${viewport.width}x${viewport.height}`, async ({
 		page,
 	}) => {
 		await page.setViewportSize(viewport);
@@ -417,13 +417,6 @@ for (const viewport of [
 		await expectFundsDialogScroll(page, "Close", overflow);
 		await dialog.getByRole("button", { name: "Dismiss status", exact: true }).scrollIntoViewIfNeeded();
 		await dialog.getByRole("button", { name: "Dismiss status", exact: true }).click();
-		await expect(dialog).toHaveCount(0);
-
-		await page.getByRole("button", { name: "Open wrong network", exact: true }).click();
-		await expect(dialog.getByRole("button", { name: "Switch to Arbitrum", exact: true })).toBeVisible();
-		await expect(dialog.getByRole("alert")).toContainText("Unable to switch wallet to Arbitrum");
-		await expectFundsDialogScroll(page, "Close", overflow, ["Back"]);
-		await dialog.getByRole("button", { name: "Close", exact: true }).click();
 		await expect(dialog).toHaveCount(0);
 	});
 

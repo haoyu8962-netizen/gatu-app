@@ -11,11 +11,6 @@ import { createLeaderboardApiHandler } from "@/lib/leaderboard/leaderboard-serve
 
 /** Header the CloudFront viewer-request function fills with the public host the viewer used. */
 export const FORWARDED_HOST_HEADER = "x-sairn-forwarded-host";
-/**
- * Name used before the Sairn rename. The viewer-request function still writes it until the API origin
- * request policy forwards the new name (deploy/cloudfront/README.md), so either policy keeps working.
- */
-export const LEGACY_FORWARDED_HOST_HEADER = "x-gatu-forwarded-host";
 /** Header CloudFront adds when the origin request policy forwards it: `ip:port` or `[ipv6]:port`. */
 export const VIEWER_ADDRESS_HEADER = "cloudfront-viewer-address";
 /** Internal header the adapter sets from the trusted source; incoming values are always discarded. */
@@ -69,7 +64,7 @@ export function resolveClientIp(event: LambdaFunctionUrlEvent, trustViewerAddres
 }
 
 export function resolveRequestOrigin(event: LambdaFunctionUrlEvent, publicOrigin: string | undefined): string {
-	const forwardedHost = readHeader(event, FORWARDED_HOST_HEADER) ?? readHeader(event, LEGACY_FORWARDED_HOST_HEADER);
+	const forwardedHost = readHeader(event, FORWARDED_HOST_HEADER);
 	if (forwardedHost && /^[a-z0-9.-]+(?::\d{1,5})?$/i.test(forwardedHost))
 		return `https://${forwardedHost.toLowerCase()}`;
 	if (publicOrigin) return publicOrigin.replace(/\/+$/, "");

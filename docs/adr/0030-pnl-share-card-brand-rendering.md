@@ -1,6 +1,6 @@
 # ADR 0030：盈亏分享卡的品牌渲染边界
 
-- 状态：已接受并实施（2026-10-01，分支 `claude/from-dev-1001`，提交 `3f502cb7`；品牌名和文件名前缀的接线在 `4bba29b1`）。本 ADR 是实施后同日补写的回溯记录。分支没有推送，未合入 `dev`，也未发布。没有在真机上分享过真实持仓。
+- 状态：已接受并实施（2026-10-01，分支 `claude/from-dev-1001`，提交 `3f502cb7`；品牌名和文件名前缀的接线在 `4bba29b1`）。本 ADR 是实施后同日补写的回溯记录。分支没有推送，未合入 `dev`，也未发布。没有在真机上分享过真实持仓。 2026-10-08 补记：之后随 p24 发布（main `3ced842e`，2026-10-02）。
 - 关联：[ADR 0027](0027-brand-single-source-and-identifier-rename.md)（单一来源、`BrandLogo`、Logo 令牌）；[ADR 0028](0028-brand-accent-colors.md)（品牌色）；[迁移计划](../brand-migration-plan.md) D13、阶段 4b；[品牌标识与素材](../brand-assets.md)「Logo、图标与加载动效」；[执行记录](../work-memory/sessions/2026-10-01-sairn-brand-migration-execution.md)。
 
 ## 背景与约束

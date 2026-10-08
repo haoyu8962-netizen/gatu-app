@@ -15,7 +15,6 @@
     { "path": ".claude/rules/style-ui-guide.md" },
     { "path": "apps/terminal/src/lib/ui/funds-modal-scroll.ts" },
     { "path": "apps/terminal/src/components/trade/tradebox/deposit/shared-ui.tsx" },
-    { "path": "apps/terminal/src/components/trade/tradebox/deposit/wrong-network-screen.tsx" },
     { "path": "apps/terminal/src/lib/tests/funds-modal-scroll-contract.test.ts" },
     { "path": "apps/terminal/tests/browser/account-actions.pw.ts" },
     { "path": "docs/work-memory/sessions/2026-10-04-funds-dialog-layout.md" }
@@ -186,3 +185,7 @@ PR：zora4523-bot/gatu-app#78（`aa809ae2`）。用户要求检查 CI 结果。7
 - 总量预算：已按成对测量把基线提高 340 字节（见上一节）。分支头与 dev 一样离上限约 0.66 kB（固定元数据），之后增大客户端的改动仍需各自测量。
 - 仍待用户决定：Fast 费率 10% 上限这条我加的失败关闭规则；提醒措辞；「Legacy Bridge2 deposits are no longer accepted」暂停文案是否改写。
 - 无被替代的记录。
+
+## 更正（2026-10-08）
+
+本记录来源列表原含 `apps/terminal/src/components/trade/tradebox/deposit/wrong-network-screen.tsx`；该屏幕已在 [2026-10-08 存款按需切链](2026-10-08-deposit-on-demand-chain-switch.md) 中按官方做法删除（存款弹层不再预先拦截网络），其滚动结构的契约登记与浏览器夹具场景随之移除。记录正文保留当时的实施说明。

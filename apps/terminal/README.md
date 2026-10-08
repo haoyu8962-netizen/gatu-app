@@ -49,7 +49,7 @@ apps/terminal/
 │   ├── routes/           TanStack file routes and server endpoints
 │   ├── router.tsx        Router + QueryClient + SSR query integration
 │   ├── routeTree.gen.ts  Generated route map; do not edit
-│   ├── providers/        SSR shell, client wallet runtime and exchange scope
+│   ├── providers/        prerendered-shell providers, client wallet runtime and exchange scope
 │   ├── components/       trade/, dashboard/, pages/, ui/, funds-action/, icons/
 │   ├── hooks/            trade/, wallet/, ui/ and shared app hooks
 │   ├── domain/           market/ and trade/ models, calculations and guards
@@ -138,7 +138,7 @@ PwaInstallProvider
                 HyperliquidOwnerSignerBridge → HyperliquidAgentApprovalProvider
                   legal lifecycle + MarketsProvider
                     deposit/order/TWAP reconciliation + ClientRuntimeProvider
-                      I18nReadyGate → ExchangeScopeProvider → MarketsInfoProvider → Outlet
+                      StartupReadyGate → ExchangeScopeProvider → MarketsInfoProvider → Outlet
 ```
 
 The final locale/scope/market-info gate is composed by `AppRuntime` in `__root.tsx`. `MarketsProvider` provides the market catalog; `MarketsInfoProvider` is a distinct application layer. [config/wagmi.ts](src/config/wagmi.ts) configures bridge chains/transports and intentionally supplies no parallel connector list: Privy owns wallet selection.
@@ -147,7 +147,7 @@ The final locale/scope/market-info gate is composed by `AppRuntime` in `__root.t
 
 ### Signing and first-use onboarding
 
-Privy supports wallet/email login, creates embedded Ethereum wallets only for users without wallets, and disables passkeys. Email sessions trade with the exact authenticated embedded owner; external-wallet and Agent-only sessions require a verified Agent/API wallet. Active-wallet identity must match the selected owner for user-signed clients. Never substitute the first connected wallet or a stored Agent for a missing email owner.
+Privy supports wallet/email login and disables passkeys. The login window never creates a wallet (`createOnLogin: "off"`); the root `EmailEmbeddedWalletProvider` silently creates the embedded Ethereum owner for an email user without one ([ADR 0033](../../docs/adr/0033-silent-email-wallet-creation.md)). Email sessions trade with the exact authenticated embedded owner; external-wallet and Agent-only sessions require a verified Agent/API wallet. Active-wallet identity must match the selected owner for user-signed clients. Never substitute the first connected wallet or a stored Agent for a missing email owner.
 
 Legal acceptance, signer readiness, Agent approval/key storage, builder-fee approval and funding classification remain separate gates. The order is owner connection → legal acceptance → signer setup → complete account funding snapshot → deposit only if definitively empty. Agent registration does not approve builder fees. Status checks, login and refresh do not sign. `Stay Connected` defaults off (`sessionStorage`); opt-in uses `localStorage` for generated Agent keys.
 
@@ -173,7 +173,7 @@ Read [trading onboarding](../../docs/trading-onboarding.md) and [email trading s
 
 The dark terminal canvas and modal surface resolve to `#0F1A1F`. Modals/drawers use `bg-modal`; raised lightweight UI retains `bg-overlay`. TradingView iframe backgrounds require their own theme variables, with raised interactive layers kept separate from the canvas. Order-book depth, price and animation tokens have their own contrast contract in [order-book animation](../../docs/orderbook-new-level-animation.md).
 
-[config/i18n.ts](src/config/i18n.ts) declares locales and number-format metadata. [lib/i18n.ts](src/lib/i18n.ts) activates English synchronously for SSR, loads other catalogs lazily, restores the persisted locale and exposes `dynamicActivate`/`i18nReady`. Rendered text must subscribe to locale changes:
+[config/i18n.ts](src/config/i18n.ts) declares locales and number-format metadata. [lib/i18n.ts](src/lib/i18n.ts) activates English synchronously for the server render (build-time prerender and dev server), loads other catalogs lazily, restores the persisted locale and exposes `dynamicActivate`/`i18nReady`. Rendered text must subscribe to locale changes:
 
 ```tsx
 import { Trans, useLingui } from "@lingui/react/macro";

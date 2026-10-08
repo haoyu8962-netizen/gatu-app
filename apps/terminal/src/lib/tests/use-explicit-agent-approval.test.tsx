@@ -44,6 +44,7 @@ const testState = vi.hoisted(() => ({
 	createPrivyAgentSigner: vi.fn(),
 	beforeSubmit: undefined as (() => Promise<void>) | undefined,
 	connectedWalletAddress: "0x1111111111111111111111111111111111111111",
+	connectionChainId: 42161 as number,
 	embeddedWalletAddress: "0x1111111111111111111111111111111111111111",
 	enforceLegalActions: false,
 	env: "Mainnet" as "Mainnet" | "Testnet",
@@ -68,7 +69,10 @@ vi.mock("@privy-io/react-auth", () => ({
 }));
 
 vi.mock("wagmi", () => ({
-	useWalletClient: () => ({ data: testState.walletClient }),
+	useConnection: () => ({ chainId: testState.connectionChainId }),
+	useWalletClient: (parameters?: { chainId?: number }) => ({
+		data: parameters?.chainId === testState.connectionChainId ? testState.walletClient : undefined,
+	}),
 }));
 
 vi.mock("@/lib/hyperliquid", () => ({
@@ -443,6 +447,28 @@ describe("useExplicitAgentApproval", () => {
 		);
 		expect(testState.createPrivyAgentSigner).not.toHaveBeenCalled();
 		expect(testState.clientApproveAgent).toHaveBeenCalledWith(params, { signal: controller.signal });
+	});
+
+	it("signs with the external wallet on a network outside the configured chains", async () => {
+		testState.walletIntent = "external";
+		testState.embeddedWalletAddress = OTHER_OWNER;
+		testState.connectionChainId = 999_999;
+		try {
+			const hook = await renderApprovalHook();
+			const params = { agentAddress: AGENT, agentName: "Mobile" };
+
+			await act(async () => {
+				await hook.mutateAsync(params, { applicationReview: "confirmed" });
+			});
+
+			expect(testState.createExternalAgentSigner).toHaveBeenCalledWith(
+				expect.objectContaining({ expectedAddress: OWNER, walletClient: testState.walletClient }),
+			);
+			expect(testState.clientApproveAgent).toHaveBeenCalledTimes(1);
+			expect(testState.clientApproveAgent.mock.calls[0]?.[0]).toEqual(params);
+		} finally {
+			testState.connectionChainId = 42161;
+		}
 	});
 
 	it("requires a force-fresh legal check after external-wallet signing", async () => {

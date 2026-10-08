@@ -1,6 +1,6 @@
 # ADR 0019：交易任务和普通提示共用全局 Sonner 宿主
 
-- 状态：已接受并实施，2026-09-21；尚未发布。本记录描述本次采用的决策，不把历史审查或自动化检查当作真实交易验收。
+- 状态：已接受并实施，2026-09-21；尚未发布。本记录描述本次采用的决策，不把历史审查或自动化检查当作真实交易验收。 2026-10-08 补记：之后随 p23 发布（main `121e8e76`，2026-09-24）。
 - 归属 Reference：[全局操作通知规范](../trading-notifications.md)。关联：[确认面契约](../confirmation-surfaces.md)、[资金反馈方案](../funds-dialog-outcome-plan.md)、[ADR 0014](0014-market-close-submit-and-dismiss.md)。
 
 ## 背景与目标

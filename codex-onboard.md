@@ -1,5 +1,8 @@
 # Onboarding task — understand the "Sairn" repo, then run it on http://localhost:3005
 
+Rewritten 2026-10-08 to match the current repository. The first version (2026-06-25, commit `f4d8de46`)
+described runtime SSR, Node 24 and hook names that no longer exist; Git keeps it for reference.
+
 ## Your role
 You are a senior engineer onboarding onto an unfamiliar PRODUCTION codebase.
 Two goals, in order: (1) build an accurate mental model of this project;
@@ -7,69 +10,73 @@ Two goals, in order: (1) build an accurate mental model of this project;
 Read before you run. Work from the actual files — never assume contents.
 
 ## What this project is
-"Sairn" is a production web trading terminal for the Hyperliquid DEX (perps + spot):
-real-time orderbook/charts, wallet connect, order entry. It is a pnpm monorepo.
-Stack: TanStack Start 1.132 (SSR) + Nitro · React 19 (compiler ON) · Vite 7 · TypeScript ·
-Tailwind v4 · Lingui i18n · Privy (wallet auth) · @nktkas/hyperliquid SDK · big.js (money math) ·
-Zustand · TanStack Query/Router/Table/Virtual · Biome (lint/format). Node 24, pnpm 10.
+"Sairn" is a production web trading terminal for the Hyperliquid DEX (perps, spot and
+builder-deployed perp DEXes): real-time order book and chart, wallet connection, order entry,
+funds and dashboards. It is a pnpm monorepo. Stack (versions are authoritative in the
+`package.json` files): TanStack Start with a prerendered SPA shell (no runtime server rendering)
+· React 19 with React Compiler · Vite 7 · TypeScript · Tailwind v4 · Lingui · Privy · the
+`@nktkas/hyperliquid` SDK · big.js · Zustand · TanStack Query/Router · Biome.
+Node `>=22.15.0`, pnpm `10.21.0`. Production runs on CloudFront + S3 + Lambda.
 
 ## Repo map — read in this order
-1. `README.md`.
-2. `.claude/rules/*.md` — BINDING conventions, they override your defaults. Read all:
-   `agent.md`, `code-style.md`, `ssr.md`, `hyperliquid.md`, `design-tokens.md`,
-   `ui-library.md`, `style-ui-guide.md`, `git.md`.
-3. `apps/terminal/`:
-   - `vite.config.ts` — SSR/Nitro + Lingui + React-compiler plugins.
-   - `src/routes/` — file-based routes: `index.tsx`(/), `perp.tsx`, `spot.tsx`,
-     `builders-perp.*`, `docs|terms|privacy|support.tsx`, `__root.tsx`(root doc+providers),
-     `$.tsx`(catch-all).
-   - `src/providers/`, `src/router.tsx` — Privy/Query/i18n/SSR wiring.
-   - `src/domain/` — pure business logic (`domain/trade/` order building, `domain/market/` price math).
-   - `src/lib/` — utils by domain (`lib/trade/`, `lib/chart/`, …).
-   - `src/hooks/`, `src/stores/`, `src/components/`, `src/config/`, `src/locales/`.
-4. `packages/`:
-   - `hl-react` — the data layer: `useSubL2Book`/`useSubTrades` (real-time WS),
-     `useInfo*` (one-shot), `useAction*` (signed mutations).
-   - `hyperliquid-api` — API/types surface. `ui` — `@sairn/ui` design system (primitives only).
+1. `AGENTS.md` (durable contracts), `agent.md` (implementation map, commands),
+   `docs/agent-handbook.md` (working with the operator, worktrees, reviews, releases).
+2. `.claude/rules/*.md` — BINDING conventions that override your defaults; read every file.
+3. `docs/README.md` — the documentation map; `docs/work-memory/INDEX.md` — task records.
+4. `apps/terminal/`:
+   - `vite.config.ts` — Nitro, TanStack Start (SPA shell prerender), React Compiler, Lingui, Tailwind.
+   - `src/routes/` — file routes: `/trade/:symbol` and `/trade/:base/:quote` (`/` redirects to a
+     market), `/perp`, `/spot`, `/builders-perp`, dashboard routes (portfolio, earn, vaults,
+     staking, leaderboard, referrals, history pages), Docs/Support/legal pages, and the
+     Web-standard `/api/*` handlers (`api.*.ts`).
+   - `src/providers/`, `src/router.tsx` — Privy, Query, Lingui and Hyperliquid composition.
+   - `src/domain/` — pure business logic; `src/lib/` — utilities by domain; `src/hooks/`,
+     `src/stores/`, `src/components/`, `src/config/`, `src/locales/`.
+5. `packages/`:
+   - `hl-react` — the data layer: `useInfo(method, params)` (requests),
+     `useSubscription(method, params)` (WebSocket), `useExchange(method, options)` (signed actions).
+   - `ui` — the `@sairn/ui` design system (primitives only).
+   - `hyperliquid-api` — an Agent Skill reference, not a runtime dependency.
 
 ## Facts you MUST respect
-- SSR: all module top-level code runs on the server. Never touch `window`/`document`/
-  `localStorage` at module scope without a guard (see `.claude/rules/ssr.md`).
-  `React.lazy` does NOT stop SSR evaluation.
-- Env: client = `VITE_*` (bundled, public, e.g. `VITE_PRIVY_APP_ID`); server-only secret =
-  `IPDATA_API_KEY` (no VITE_ prefix). Dev auto-loads `apps/terminal/.env.local`.
-  Do NOT print, copy, or exfiltrate any value from `.env.local`.
+- Module top-level code still runs on the server during the build-time prerender and in the dev
+  server. Never touch `window`/`document`/`localStorage` at module scope without a guard
+  (see `.claude/rules/ssr.md`). `React.lazy` does NOT stop server evaluation.
+- Env: client values are `VITE_*` (bundled and public, e.g. `VITE_PRIVY_APP_ID`); the server-only
+  secret `IPDATA_API_KEY` has no `VITE_` prefix. Dev auto-loads `apps/terminal/.env.local`.
+  Do NOT print, copy or exfiltrate any value from `.env*` files.
 - Data principle: keep API strings as-is; use big.js only when math is needed, then back to string.
-- React 19 compiler handles memoization — no manual `useMemo`/`useCallback` for perf.
+- React Compiler handles memoization — no manual `useMemo`/`useCallback` for performance.
 
 ## Phase 1 — Understand (read-only, do not modify code)
 
-## Phase 2 — Run on :3005 (from repo root)
-1. Deps: if `node_modules` is missing → `pnpm install` (needs network); if present → skip.
+## Phase 2 — Run on :3005 (from the repository root)
+1. Deps: if `node_modules` is missing → `pnpm install --frozen-lockfile` (needs network); otherwise skip.
 2. Env: ensure `apps/terminal/.env.local` exists; if missing,
    `cp apps/terminal/.env.example apps/terminal/.env.local`
-   (page renders without `VITE_PRIVY_APP_ID`; only wallet login is disabled).
-3. Start dev server on 3005:
-   `cd apps/terminal && pnpm dev --port 3005`
-   (if the flag isn't honored: `pnpm --filter @sairn/terminal exec vite --port 3005`)
-4. Verify: `curl -sS -o /dev/null -w "%{http_code}\n" http://localhost:3005/` → expect `200`;
-   SSR HTML `<title>` should be `Trade | Sairn`.
-   This is the HMR dev server (not a prod build); run it backgrounded if you need the shell.
+   (pages render without `VITE_PRIVY_APP_ID`; only wallet login is disabled).
+3. Start the dev server: `pnpm --filter @sairn/terminal exec vite dev --port 3005 --strictPort`
+   (the same command as the `terminal` entry in `.claude/launch.json`).
+4. Verify: `curl -sS -o /dev/null -w "%{http_code}\n" http://localhost:3005/trade/HYPE` → expect `200`.
+   The HTML is the application shell; visible content appears only after hydration, by design
+   (`.claude/rules/startup-rendering.md`). This is the HMR dev server, not a production build;
+   run it in the background if you need the shell.
 
 ## Guardrails
-- Do not modify source, do not commit/push. Do not run the prod `build` unless asked
-  (it needs an 8 GB heap; dev server is enough for :3005). Obey every `.claude/rules/` file.
-  Never expose `.env.local` secrets.
+- Do not modify source, do not commit or push. Do not run the production `build` unless asked
+  (it needs an 8 GB heap; the dev server is enough for :3005). Obey every `.claude/rules/` file.
+  Never expose `.env*` secrets.
 
 ## Deliverable — output a STRUCTURED summary
 1. One-paragraph project overview (what it is, who it's for).
-2. Architecture & data flow: route → providers → components → `domain`/`lib` →
-   `packages/hl-react` → Hyperliquid (real-time WS vs one-shot info vs signed order actions).
+2. Architecture and data flow: route → providers → components → `domain`/`lib` →
+   `packages/hl-react` → Hyperliquid (WebSocket subscriptions, info requests, signed actions).
 3. Key modules (5–10 bullets: path → responsibility).
-4. Cross-cutting concerns: SSR model, i18n, Privy wallet, geo restriction, chart engine, big.js money.
+4. Cross-cutting concerns: prerendered shell and startup gate, i18n, Privy wallet and signer
+   model, geo restriction, chart engine, big.js money.
 5. Risks / things to be careful with.
-6. Run result: the :3005 HTTP status, page title, any console/server warnings.
+6. Run result: the :3005 HTTP status, page title, any console or server warnings.
 
 ## Acceptance criteria
-- http://localhost:3005/ returns 200 and serves the Sairn SSR page (`<title>Trade | Sairn</title>`).
+- http://localhost:3005/trade/HYPE returns 200 and serves the Sairn application shell.
 - A structured understanding summary covering all six deliverable points.

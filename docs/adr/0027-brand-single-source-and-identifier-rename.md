@@ -1,6 +1,6 @@
 # ADR 0027：品牌迁移总则：单一来源、显示名、内部标识与历史记录
 
-- 状态：已接受并实施（2026-10-01，分支 `claude/from-dev-1001`，提交 `c2d47191` 至 `94175c1c`，记录提交 `f440fa1b`）。本 ADR 是实施后同日补写的回溯记录。分支没有推送，未合入 `dev`，也未发布。决定由用户在执行前给出，见[执行记录](../work-memory/sessions/2026-10-01-sairn-brand-migration-execution.md)的「背景与范围」。其中「内部标识全部改为 sairn」推翻了[迁移计划](../brand-migration-plan.md) D8、D9 的推荐默认值。
+- 状态：已接受并实施（2026-10-01，分支 `claude/from-dev-1001`，提交 `c2d47191` 至 `94175c1c`，记录提交 `f440fa1b`）。本 ADR 是实施后同日补写的回溯记录。分支没有推送，未合入 `dev`，也未发布。决定由用户在执行前给出，见[执行记录](../work-memory/sessions/2026-10-01-sairn-brand-migration-execution.md)的「背景与范围」。其中「内部标识全部改为 sairn」推翻了[迁移计划](../brand-migration-plan.md) D8、D9 的推荐默认值。 2026-10-08 补记：之后随 p24 发布（main `3ced842e`，2026-10-02）。
 - 关联：[品牌标识与素材](../brand-assets.md)（现行 Reference）；[迁移计划](../brand-migration-plan.md)（D1–D24、阶段、风险）；[规划记录](../work-memory/sessions/2026-10-01-sairn-brand-migration-plan.md)；[ADR 0028](0028-brand-accent-colors.md)（品牌色）、[ADR 0029](0029-brand-status-motion.md)（品牌动效与状态符号）、[ADR 0030](0030-pnl-share-card-brand-rendering.md)（盈亏分享卡）、[ADR 0031](0031-domain-move-to-sairn-ai.md)（域名迁移）。
 
 ## 背景与约束
@@ -119,3 +119,22 @@
 ## 补充（2026-10-02，历史记录的更正）
 
 Codex 对 PR #68 的只读审查发现，有 4 处替换违反了决策 7「带日期的历史事实保留原值」：工作记录的原始任务标题（`2026-09-12-pairing-release.md` 的 `thread.title`）、本机定时任务的名称（`2026-09-12-work-memory.md`），以及两条实测输出（`2026-09-13-spa-shell-spike.md` 的 `h1`、`2026-09-27-legal-pages-app-shell.md` 的页面标题）。这些都已恢复为原文，正文处另加「改名前的实测原文」说明。任务标题、实测输出与现存外部对象的名称都属于决策 7 所说的历史事实，与命令、域名、AWS 名称一样保留原样。
+
+## 补充（2026-10-03，旧域名组与过渡请求头退役）
+
+本 ADR 的内容已于 2026-10-02 经 PR #68 合入 `dev`（`682430ba`）、经 PR #67 晋升 `main`（`3ced842e`），并随 p24 发布；状态行里的「未推送、未合入、未发布」是撰写时的状态。
+
+决策 5「继续保留 `gatu` 的标识」里，有两项随切换方案 PR-B（对应发布 p25）从代码中退役：
+
+- `brand.json` 的 `domains.legacy`（`gatu.ai` 组）已删除，读取方只认 `domains.primary`。
+- 过渡期双写的旧请求头 `x-gatu-forwarded-host`：请求函数不再写，Lambda 不再读。旧路由标记 `x-gatu-route` 同时删除。
+
+退役之后，仍然保留 `gatu` 的只有：
+
+- AWS 资源名、GitHub 仓库名与本地检出路径；
+- 测试里用来拒绝旧名的断言；
+- 文档中带日期的历史事实。
+
+`scripts/brand.mjs` 新增退役名单：`gatu.ai` 回到 `brand.json` 或法律文本时，`brand:check` 失败。「读历史记录时的名称对照」表里「旧转发头在过渡期仍会双写」一句从此不再成立。
+
+这部分代码在分支 `claude/retire-gatu-domain-group`（PR #73），未合入、未发布。合入时机、线上还没做的步骤与发布间隙的行为，见 [ADR 0032](0032-gatu-offline-cutover-to-sairn.md) 的补充。

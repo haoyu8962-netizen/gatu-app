@@ -9,6 +9,9 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const testState = vi.hoisted(() => ({
+	hasWalletAccess: true,
+	isSignerLoading: false,
+	signerMode: "owner" as "owner" | "agent",
 	availableBalance: 100,
 	baseAvailable: 100,
 	availabilityStatus: "success" as "success" | "loading" | "stale" | "error",
@@ -61,9 +64,26 @@ vi.mock("@sairn/ui", async (importOriginal) => ({
 	Tooltip: ({ children }: { children: ReactNode }) => children,
 }));
 
+const wagmiState = vi.hoisted(() => ({
+	connectionChainId: 42161 as number,
+	walletClientError: null as Error | null,
+	walletClientLoading: false,
+	walletClientMissing: false,
+	switchChain: vi.fn(),
+}));
+
 vi.mock("wagmi", () => ({
-	useSwitchChain: () => ({ isPending: false, switchChain: vi.fn() }),
-	useWalletClient: () => ({ data: {}, error: null, isLoading: false }),
+	useConnection: () => ({ chainId: wagmiState.connectionChainId }),
+	useSwitchChain: () => ({ isPending: false, switchChain: wagmiState.switchChain }),
+	useWalletClient: (parameters?: { chainId?: number }) => {
+		const matchesConnection = parameters?.chainId === wagmiState.connectionChainId;
+		const data =
+			matchesConnection && !wagmiState.walletClientLoading && !wagmiState.walletClientMissing
+				? { account: { address: "0xabc" } }
+				: undefined;
+		const error = matchesConnection ? null : wagmiState.walletClientError;
+		return { data, error, isLoading: wagmiState.walletClientLoading };
+	},
 }));
 
 vi.mock("@/components/trade/chart/token-selector", () => ({ TokenSelector: () => null }));
@@ -200,7 +220,7 @@ vi.mock("@/hooks/use-geo-restriction", () => ({
 }));
 
 vi.mock("@/hooks/wallet/use-wallet-session", () => ({
-	useWalletSession: () => ({ address: "0xabc", isConnected: true }),
+	useWalletSession: () => ({ address: "0xabc", isConnected: true, hasWalletAccess: testState.hasWalletAccess }),
 }));
 
 vi.mock("@/lib/hyperliquid", () => ({
@@ -211,10 +231,11 @@ vi.mock("@/lib/hyperliquid", () => ({
 		isLeveraged: testState.kind === "perp",
 	}),
 	useTradingStatus: () => ({
-		isSignerLoading: false,
-		isSignerReady: true,
+		isSignerLoading: testState.isSignerLoading,
+		isSignerReady: !testState.isSignerLoading,
 		isBuilderFeeLoading: false,
 		isReady: testState.tradingReady,
+		signerMode: testState.signerMode,
 	}),
 	useSelectedMarketInfo: () => ({
 		data: {
@@ -405,6 +426,110 @@ describe("MobileTradeView order-size validation accessibility", () => {
 		expect(control.dataset.dragging).toBeUndefined();
 		await act(async () => getOrderButton(container).click());
 		expect(testState.requestSubmit).toHaveBeenCalledTimes(1);
+	});
+
+	it("keeps Enable Trading inert for an Agent-only session without wallet access", async () => {
+		activateLocale("en");
+		testState.tradingReady = false;
+		testState.hasWalletAccess = false;
+		try {
+			await renderView(root);
+			const enable = getCtaButton(container, "Enable Trading");
+			expect(enable.disabled).toBe(true);
+			await act(async () => enable.click());
+			expect(testState.authorize).not.toHaveBeenCalled();
+		} finally {
+			testState.hasWalletAccess = true;
+		}
+	});
+
+	it("keeps Enable Trading inert while the exact owner signer is still being established", async () => {
+		activateLocale("en");
+		testState.tradingReady = false;
+		testState.isSignerLoading = true;
+		try {
+			await renderView(root);
+			const enable = getCtaButton(container, "Enable Trading");
+			expect(enable.disabled).toBe(true);
+			await act(async () => enable.click());
+			expect(testState.authorize).not.toHaveBeenCalled();
+		} finally {
+			testState.isSignerLoading = false;
+		}
+	});
+
+	it("offers Enable Trading on the wallet's current network instead of a switch to Arbitrum", async () => {
+		activateLocale("en");
+		testState.tradingReady = false;
+		testState.signerMode = "agent";
+		wagmiState.connectionChainId = 999_999;
+		wagmiState.walletClientError = new Error(
+			"The current chain of the connector (id: 999999) does not match the connection's chain (id: 42161).",
+		);
+		try {
+			await renderView(root);
+			const enable = getCtaButton(container, "Enable Trading");
+			expect(enable.disabled).toBe(false);
+
+			await act(async () => enable.click());
+
+			expect(testState.authorize).toHaveBeenCalledTimes(1);
+			expect(wagmiState.switchChain).not.toHaveBeenCalled();
+		} finally {
+			testState.signerMode = "owner";
+			wagmiState.connectionChainId = 42161;
+			wagmiState.walletClientError = null;
+		}
+	});
+
+	it("lets the Privy owner enable trading without any wagmi client", async () => {
+		activateLocale("en");
+		testState.tradingReady = false;
+		testState.signerMode = "owner";
+		wagmiState.walletClientMissing = true;
+		try {
+			await renderView(root);
+			const enable = getCtaButton(container, "Enable Trading");
+			expect(enable.disabled).toBe(false);
+			await act(async () => enable.click());
+			expect(testState.authorize).toHaveBeenCalledTimes(1);
+			expect(wagmiState.switchChain).not.toHaveBeenCalled();
+		} finally {
+			wagmiState.walletClientMissing = false;
+		}
+	});
+
+	it("waits for the external wallet client before offering Enable Trading", async () => {
+		activateLocale("en");
+		testState.tradingReady = false;
+		testState.signerMode = "agent";
+		wagmiState.walletClientLoading = true;
+		try {
+			await renderView(root);
+			const pending = getCtaButton(container, "Enable Trading");
+			expect(pending.disabled).toBe(true);
+			await act(async () => pending.click());
+			expect(testState.authorize).not.toHaveBeenCalled();
+
+			wagmiState.walletClientLoading = false;
+			wagmiState.walletClientMissing = true;
+			await renderView(root);
+			const missing = getCtaButton(container, "Enable Trading");
+			expect(missing.disabled).toBe(true);
+			await act(async () => missing.click());
+			expect(testState.authorize).not.toHaveBeenCalled();
+
+			wagmiState.walletClientMissing = false;
+			await renderView(root);
+			const ready = getCtaButton(container, "Enable Trading");
+			expect(ready.disabled).toBe(false);
+			await act(async () => ready.click());
+			expect(testState.authorize).toHaveBeenCalledTimes(1);
+		} finally {
+			testState.signerMode = "owner";
+			wagmiState.walletClientLoading = false;
+			wagmiState.walletClientMissing = false;
+		}
 	});
 
 	it("ignores the Enable Trading step while the size slider is held", async () => {

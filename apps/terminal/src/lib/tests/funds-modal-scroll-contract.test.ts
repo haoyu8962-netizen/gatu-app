@@ -25,7 +25,6 @@ const UI_PACKAGE_ROOT = resolve(SOURCE_ROOT, "../../../packages/ui/src");
 const FUNDS_DIALOG_SOURCES = [
 	"components/trade/components/funds-modal-shell.tsx",
 	"components/trade/tradebox/deposit/shared-ui.tsx",
-	"components/trade/tradebox/deposit/wrong-network-screen.tsx",
 ];
 // The flow is the deposit directory plus every project file these entries reach through imports.
 const FUNDS_FLOW_ENTRIES = [
@@ -1168,7 +1167,6 @@ describe("funds modal scroll contract", () => {
 
 		expect(fixture).toContain("<FundsModalShell");
 		expect(fixture).toContain("<StatusScreen");
-		expect(fixture).toContain("<WrongNetworkScreen");
 		expect(fixture).not.toContain("<PendingActionModal");
 	});
 });

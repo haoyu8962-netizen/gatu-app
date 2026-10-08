@@ -40,9 +40,9 @@ Only create helpers when logic is reused, complex, or significantly improves rea
 
 ## hl-react Subscriptions
 
-- Use `useSubL2Book`, `useSubTrades` for real-time data
-- Use `useInfo*` hooks for one-time fetches
-- Use `useAction*` hooks for mutations
+- Use `useSubscription(method, params)` for real-time data (the order book goes through the app's feed hook and the shared `l2Book` transport pool)
+- Use `useInfo(method, params)` for one-time fetches
+- Use `useExchange(method, options)` for signed mutations
 - Process data in `lib/`, not components
 - Only memoize array transformations, not trivial calculations
 - Use literal types: `nSigFigs: 2 | 3 | 4 | 5` not `number`

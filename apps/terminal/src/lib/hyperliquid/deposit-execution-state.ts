@@ -12,6 +12,7 @@ export interface DepositExecutionState {
 	cctpRecoveryUnavailable: boolean;
 	submissionOutcomeUnknown: boolean;
 	walletResponseDelayed: boolean;
+	networkSwitchPending: boolean;
 }
 
 interface DepositExecutionEntry {
@@ -56,6 +57,7 @@ export function startDepositExecution(
 			cctpRecoveryUnavailable: false,
 			submissionOutcomeUnknown: false,
 			walletResponseDelayed: false,
+			networkSwitchPending: false,
 		},
 		operationId,
 		inFlight: true,
@@ -77,6 +79,7 @@ export function setBlockedDepositExecution(executionKey: string, error: Error): 
 			cctpRecoveryUnavailable: false,
 			submissionOutcomeUnknown: false,
 			walletResponseDelayed: false,
+			networkSwitchPending: false,
 		},
 		operationId: (current?.operationId ?? 0) + 1,
 		inFlight: false,
@@ -134,6 +137,7 @@ function createIdleDepositExecutionState(): DepositExecutionState {
 		cctpRecoveryUnavailable: false,
 		submissionOutcomeUnknown: false,
 		walletResponseDelayed: false,
+		networkSwitchPending: false,
 	};
 }
 

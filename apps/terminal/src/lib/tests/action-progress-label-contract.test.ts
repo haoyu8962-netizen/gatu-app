@@ -34,8 +34,8 @@ const REVIEWED_PROGRESS_LABELS: Record<string, { labels: string[]; reason: strin
 	"header/user-menu.tsx": { labels: ["Connecting..."], reason: "wallet handshake" },
 	"mobile/mobile-book-view.tsx": { labels: ["Waiting for order book..."], reason: "passive data placeholder" },
 	"mobile/mobile-trade-view.tsx": {
-		labels: ["Signing...", "Switching..."],
-		reason: "Enable Trading signature and chain switch, prerequisites of the order button",
+		labels: ["Signing..."],
+		reason: "Enable Trading signature, prerequisite of the order button",
 	},
 	"positions/position-pnl-share-modal.tsx": { labels: ["Saving..."], reason: "image export" },
 	"positions/position-tpsl-modal.tsx": { labels: ["Loading..."], reason: "passive mark price loading" },
@@ -45,7 +45,6 @@ const REVIEWED_PROGRESS_LABELS: Record<string, { labels: string[]; reason: strin
 	},
 	"tradebox/bridge/confirmation-screen.tsx": { labels: ["Preparing your quote..."], reason: "passive loading" },
 	"tradebox/deposit-modal.tsx": { labels: ["Creating your wallet. Please wait..."], reason: "wallet provisioning" },
-	"tradebox/deposit/wrong-network-screen.tsx": { labels: ["Switching..."], reason: "chain switch in the wallet" },
 	"tradebox/embedded-deposit-auto-bridge.tsx": {
 		labels: [
 			"Checking the current Hyperliquid deposit route...",

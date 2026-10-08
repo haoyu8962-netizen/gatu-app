@@ -1,6 +1,6 @@
 # ADR 0028：品牌色：青色与薄荷色强调，主按钮保持中性，终端画布不变
 
-- 状态：已接受并实施（2026-10-01，分支 `claude/from-dev-1001`，提交 `cf9479d0`；Logo 颜色令牌来自 `a19e7cd3`）。本 ADR 是实施后同日补写的回溯记录。分支没有推送，未合入 `dev`，也未发布。悬停色由调查者提议，仍待设计方确认。决定是用户在执行前选择的[迁移计划](../brand-migration-plan.md) D4 b1；D4 子项与 D5 沿用计划的推荐默认值。
+- 状态：已接受并实施（2026-10-01，分支 `claude/from-dev-1001`，提交 `cf9479d0`；Logo 颜色令牌来自 `a19e7cd3`）。本 ADR 是实施后同日补写的回溯记录。分支没有推送，未合入 `dev`，也未发布。悬停色由调查者提议，仍待设计方确认。决定是用户在执行前选择的[迁移计划](../brand-migration-plan.md) D4 b1；D4 子项与 D5 沿用计划的推荐默认值。 2026-10-08 补记：之后随 p24 发布（main `3ced842e`，2026-10-02）。
 - 关联：[ADR 0027](0027-brand-single-source-and-identifier-rename.md)（单一来源）；[品牌标识与素材](../brand-assets.md)「界面品牌色」；`.claude/rules/design-tokens.md`「Brand roles」；AGENTS.md「Trading terminal visual contract」；[执行记录](../work-memory/sessions/2026-10-01-sairn-brand-migration-execution.md)。
 
 ## 背景与约束

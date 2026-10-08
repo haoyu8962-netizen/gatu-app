@@ -139,4 +139,8 @@ Sairn 的状态未知指引、CCTP 跟踪与资金动作锁比官方更严格，
 
 ## 旧桥存款成功通知移除（2026-09-29）
 
-状态：已实施、未发布。上文第三步实施记录中「旧桥路径发 `Deposit submitted` 通知」一句描述的分支已删除：充值成功状态只会在执行边界放行 CCTP 路径之后写入（`use-deposit.ts` 对非 CCTP 路由在签名前抛出），所以弹层里「成功但不是当前 CCTP 充值」的分支从 2026-08-13 迁移到 CCTP 起就不可达，只有把执行路由强行设成 `bridge` 的测试能走到。同时删除自动存款里同样不可达的 Bridge2 暂停提示、`config/contracts.ts` 里只服务旧桥的网络配置（暂停存款时测试网余额改读 Circle USDC，主网地址本来相同）以及那条只测不可能状态的用例。执行边界拒绝 Bridge2 的守卫和 Hyperliquid 返回 `bridge` 路由时的暂停提示保留。
+状态：已实施、未发布（2026-10-08 补记：之后随 p24 发布，main `3ced842e`，2026-10-02）。上文第三步实施记录中「旧桥路径发 `Deposit submitted` 通知」一句描述的分支已删除：充值成功状态只会在执行边界放行 CCTP 路径之后写入（`use-deposit.ts` 对非 CCTP 路由在签名前抛出），所以弹层里「成功但不是当前 CCTP 充值」的分支从 2026-08-13 迁移到 CCTP 起就不可达，只有把执行路由强行设成 `bridge` 的测试能走到。同时删除自动存款里同样不可达的 Bridge2 暂停提示、`config/contracts.ts` 里只服务旧桥的网络配置（暂停存款时测试网余额改读 Circle USDC，主网地址本来相同）以及那条只测不可能状态的用例。执行边界拒绝 Bridge2 的守卫和 Hyperliquid 返回 `bridge` 路由时的暂停提示保留。
+
+## 存款前按需切链（2026-10-08）
+
+状态：已实施、未发布。手机外部钱包点击「存款」报「钱包未连接到 Arbitrum One」。已确认的缺陷：`use-deposit.ts` 把 `eth_chainId` 的返回值与十六进制字面量按字符串比较，而 WalletConnect 的 provider 返回数字，于是经 WalletConnect 连接的钱包在 Arbitrum 上也被判为不在；这与报告的现象一致（表单正常、点击才报错），但报告所用钱包的连接器类型没有记录，钱包内置浏览器注入的 provider 返回十六进制串、不会触发这条缺陷，所以它是最可能而非已证实的事故原因。对照官方终端打包代码（2026-10-08 取证，见任务记录）：已登录 Privy 会话时官方不显示「切换网络」预拦截，而是在发交易前 `switchChainAsync` 再 `writeContractAsync`，按钮显示 Switching Network。Sairn 据此删除了存款弹层的 WrongNetworkScreen 预拦截；提交路径按数字比较链 ID，需要时发出切链请求（未知链时按 EIP-3085 加链后再切一次），切链请求被接受后不再因链尚未更新而重复请求，而是以 `chainChanged` 加轮询、独立计时的截止等钱包真正报告 Arbitrum，期间状态屏标题显示「正在切换网络」；签名前和广播前各复核一次链；拒绝与超时都走存款失败通知。细则见 [docs/cctp-deposits.md](cctp-deposits.md) 的 Wallet Network 一节。订单按钮的「切换到 Arbitrum」阶段随后也按官方做法删除，交易签名改在钱包当前链进行（见 [docs/trading-onboarding.md](trading-onboarding.md) 第 4 步）。

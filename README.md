@@ -11,9 +11,9 @@ This repo is a pnpm monorepo. `apps/terminal` is the trading product, `apps/webs
 ## Monorepo map
 
 ```
-gatu/
+gatu-app/
 ├── apps/
-│   ├── terminal/                         # the web app (TanStack Start + Vite + SSR)
+│   ├── terminal/                         # the web app (TanStack Start SPA shell + Vite)
 │   │   └── README.md  ───────────────▶   apps/terminal/README.md
 │   └── website/                          # static marketing site (Astro)
 ├── packages/
@@ -33,17 +33,18 @@ gatu/
 ```
 ┌──────────────────────────────────────────────────────────────────┐
 │ apps/terminal                                                    │
-│   React 19 + TanStack Start (SSR) + Vite 7 + Tailwind v4         │
+│   React 19 + TanStack Start (SPA shell) + Vite 7 + Tailwind v4   │
 │   Routes · Stores (Zustand) · Order entry · Chart · Orderbook    │
 └──────────┬──────────────────────────────────────────┬────────────┘
            │ imports hooks                            │ imports primitives
            ▼                                          ▼
 ┌─────────────────────────────────────┐   ┌──────────────────────────────┐
-│ @sairn/hl-react              │   │ @sairn/ui             │
+│ @sairn/hl-react                     │   │ @sairn/ui                    │
 │ ─ HttpTransport + WebSocketTransport│   │ ─ Base UI primitives         │
-│ ─ useInfo / useSub / useExchange    │   │ ─ CVA variants               │
-│ ─ Agent-wallet lifecycle            │   │ ─ Tailwind v4 `@theme` tokens│
-│ ─ WS reliability + payload guards   │   │ ─ Phosphor icons             │
+│ ─ useInfo · useSubscription         │   │ ─ CVA variants               │
+│ ─ useExchange (signed actions)      │   │ ─ Tailwind v4 `@theme` tokens│
+│ ─ Agent-wallet lifecycle            │   │ ─ Phosphor icons             │
+│ ─ WS reliability + payload guards   │   │                              │
 └─────────────┬───────────────────────┘   └──────────────────────────────┘
               │ wraps
               ▼
@@ -90,7 +91,7 @@ Per-package commands live in each subpackage — see their READMEs.
 
 ## Conventions
 
-All project rules live in `.claude/rules/` and apply across packages:
+Durable product contracts live in [AGENTS.md](AGENTS.md), the implementation map in [agent.md](agent.md), and how agents work with the operator in the [agent handbook](docs/agent-handbook.md). Coding rules live in `.claude/rules/` and apply across packages:
 
 | File | Scope |
 |---|---|
@@ -99,10 +100,11 @@ All project rules live in `.claude/rules/` and apply across packages:
 | `ui-library.md` | `packages/ui` is design-system only; app components live in `apps/terminal/src/components/` |
 | `design-tokens.md` | Semantic tokens only (no hex); background elevation model (sunken→base→raised→overlay) |
 | `style-ui-guide.md` | Border / focus conventions |
-| `ssr.md` | SSR-safe module boundaries (no `window`/`document` at import time) |
+| `ssr.md` | Module boundaries that stay safe for the build-time prerender and dev server (no `window`/`document` at import time) |
+| `startup-rendering.md` | Blank-until-ready startup: empty fallback, persisted locale and fonts before the first real render |
 | `git.md` | Commits: `type(scope): subject`, ≤72 chars, lowercase, imperative |
 
-Commit types: `feat`, `fix`, `refactor`, `perf`, `style`, `test`, `build`, `ci`, `docs`, `chore`, `revert`, `i18n`.
+Commit types: `feat`, `fix`, `refactor`, `perf`, `style`, `test`, `build`, `ci`, `docs`, `chore`, `revert`; commitlint also requires a scope.
 
 ## Further reading
 

@@ -127,6 +127,12 @@ changes, not evidence that a build has been deployed or accepted on real devices
   embedded wallet address; move funds from the old address before the switch. See
   [ADR 0032](docs/adr/0032-gatu-offline-cutover-to-sairn.md) and the
   [cutover plan](docs/sairn-domain-cutover-plan.md).
+- The terminal no longer recognises the retired `gatu.ai` hosts. `gatu.ai` has served no pages
+  since 2026-10-02, so visitors see no change; on those hostnames the network would no longer be
+  fixed by the hostname and `/join/<code>` links would not resolve. The transitional
+  `x-gatu-forwarded-host` header and `x-gatu-route` marker are no longer written or read, and
+  `pnpm brand:check` fails when a `gatu.ai` host returns to `brand/brand.json` or the legal text.
+  AWS resource names and the repository keep the `gatu` name.
 - Notices on the Staking page and in the Staking, Referral, API wallet and Vault dialogs are rounded
   8px like the other notices; they were 4px to 10px.
 
@@ -526,6 +532,19 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Fixed
 
+- The order button no longer asks an external wallet to "Switch to Arbitrum" before Enable
+  Trading, and an external wallet on a network the terminal does not list can now enable
+  trading, approve the builder fee and send other wallet-signed requests instead of failing
+  with a wallet mismatch: those requests are signed on the network the wallet is already on,
+  as on the official terminal. Only a USDC deposit needs Arbitrum, and that dialog asks for
+  the switch when you press Deposit.
+- Depositing from an external wallet on a phone no longer fails with "Wallet is not connected to
+  Arbitrum One" when the wallet is already on Arbitrum. The deposit dialog no longer opens on a
+  "Switch to Arbitrum" screen: as on the official terminal, a wallet on another network is asked
+  to switch when you press Deposit (the status screen says "Switching network"), the terminal
+  waits for the wallet to report Arbitrum instead of re-reading immediately, and a declined
+  switch, or a wallet that still reports another network ten seconds after accepting the
+  request, is reported through the deposit failure notification.
 - On iPhone and iPad Safari, the chart no longer stays on the loading mark and then shows
   "Something went wrong" after you leave the trade page and come back, switch back to a language
   the chart had already shown, change the number format or press Retry. The TradingView loader

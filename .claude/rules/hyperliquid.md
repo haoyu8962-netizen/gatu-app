@@ -9,6 +9,7 @@
 3. **No wrapper types** - use SDK types directly
 4. **Use Big.cmp() for sorting/comparison** - keeps precision without converting to number
 5. **Inline simple logic** - don't create functions to access fields
+6. **`toString()` can switch to exponent notation** - the repo keeps Big.js's default `Big.NE = -7`, so `Big("0.0000001").toString()` is `"1e-7"`. A string that is sent to the protocol or checked by a decimal pattern comes from `toFixed()` instead (register the call in `decimal-display-contract`, like every other `toFixed`)
 
 ### Helpers
 

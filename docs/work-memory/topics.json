@@ -46,7 +46,7 @@
 	{
 		"id": "docs-governance",
 		"title": "Agent 规则与文档治理",
-		"documents": ["AGENTS.md", "docs/documentation-system.md", "docs/README.md"]
+		"documents": ["AGENTS.md", "docs/documentation-system.md", "docs/README.md", "docs/agent-handbook.md"]
 	},
 	{
 		"id": "i18n-runtime",

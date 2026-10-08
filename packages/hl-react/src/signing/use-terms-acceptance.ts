@@ -1,8 +1,8 @@
 import type { AbstractWallet } from "@nktkas/hyperliquid/signing";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRef } from "react";
-import { useWalletClient } from "wagmi";
 import { WalletAccountMismatchError } from "../errors";
+import { useConnectionWalletClient } from "../hooks/useConnectionWalletClient";
 import { infoKey } from "../hooks/useInfo";
 import { useHttpTransport } from "../hooks/useTransport";
 import {
@@ -33,7 +33,7 @@ export interface UseTermsAcceptanceOptions {
 export function useTermsAcceptance({ resolveWallet, assertSigningSessionCurrent }: UseTermsAcceptanceOptions = {}) {
 	const { clientKey, env, info } = useHyperliquid();
 	const address = clientKey === "disconnected" ? undefined : (clientKey as `0x${string}`);
-	const { data: walletClient } = useWalletClient();
+	const { data: walletClient } = useConnectionWalletClient();
 	const transport = useHttpTransport();
 	const queryClient = useQueryClient();
 	const identityRef = useRef({ address, env });

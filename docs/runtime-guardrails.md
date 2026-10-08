@@ -537,6 +537,21 @@ mobile regressions.
   giving a price equal to a band limit that band's tick, which unit tests can
   only mirror: re-check after every library upgrade with
   `node apps/terminal/tests/browser/chart-price-format-probe.mjs <origin>`.
+- Candle history goes through `apps/terminal/src/lib/chart/candle-gate.ts`, the
+  only gate for `candleSnapshot`. It is keyed per network, shares identical
+  in-flight requests, and backs off only on HTTP 429 (`Retry-After`, otherwise
+  10 to 60 seconds, never under one second), with a single probe request while
+  the gate is half open. Keep the three invariants of the 2026-08-20
+  rate-limit fix: a consumer never aborts the shared HTTP request (a sent
+  request counts against the limit anyway); closing and reopening the gate go
+  through the episode guard, so a late response from an earlier rate-limit
+  episode cannot reopen or re-escalate a newer one; failures other than 429
+  never enter the cooldown. Recovery is event-driven: the chart re-arms a
+  pending data reset and lifecycle or gate events flush it; there is no retry
+  timer, so a non-429 failure followed by no event is not retried. Not built:
+  a cooldown shared across tabs, scheduling for all info requests, and a
+  backend proxy. `candle-gate.test.ts` and `chart-datafeed.test.ts` pin the
+  behavior.
 - Fonts are scoped to a document, so the `@font-face` rules in the application
   stylesheet do not reach the chart iframe. `CHART_CUSTOM_FONT_FAMILY` and the
   theme stylesheets use a system font stack and must not name an application
@@ -551,6 +566,7 @@ mobile regressions.
 - `apps/terminal/src/components/trade/chart/chart-panel.tsx`
 - `apps/terminal/src/components/trade/chart/datafeed.ts`
 - `apps/terminal/src/lib/chart/price-format.ts`
+- `apps/terminal/src/lib/chart/candle-gate.ts`
 - `apps/terminal/src/config/chart.ts`
 - `apps/terminal/src/config/security-headers.ts`
 - `apps/terminal/vite.config.ts`

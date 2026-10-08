@@ -75,7 +75,7 @@ export function switchNetwork(
 	const currentNetwork = getNetwork(hostname);
 	if (getCanonicalNetworkForHostname(hostname)) {
 		if (currentNetwork === network) return "unchanged";
-		navigate(getPublicOrigin(network, hostname));
+		navigate(getPublicOrigin(network));
 		return "navigating";
 	}
 

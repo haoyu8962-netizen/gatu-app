@@ -103,7 +103,7 @@ const testState = vi.hoisted(() => ({
 		available: boolean;
 		onBeforeStart: () => void;
 	},
-	isArbitrum: true,
+	networkSwitchPending: false,
 	exchangeGuards: new Map<string, ((params?: unknown, signal?: AbortSignal) => Promise<void>) | undefined>(),
 	exchangeFinalWait: vi.fn(),
 	exchangeErrors: new Map<string, unknown>(),
@@ -450,8 +450,6 @@ vi.mock("@/lib/hyperliquid/use-deposit", () => ({
 			executionAmount: testState.depositExecutionAmount,
 			executionRoute: testState.depositExecutionRoute,
 			hash: testState.depositHash,
-			isArbitrum: testState.isArbitrum,
-			isSwitching: false,
 			maxAmount: "10",
 			maxDepositRaw: testState.depositMaxRaw,
 			networkName: "Arbitrum",
@@ -463,12 +461,11 @@ vi.mock("@/lib/hyperliquid/use-deposit", () => ({
 				status: testState.sponsoredReadinessStatus,
 			},
 			status: testState.depositStatus,
-			switchError: null,
-			switchToArbitrum: vi.fn(),
 			validate: () => ({ error: null, valid: true }),
 			walletProviderError: testState.walletProviderError,
 			walletProviderStatus: testState.walletProviderStatus,
 			walletResponseDelayed: false,
+			networkSwitchPending: testState.networkSwitchPending,
 			cctpRecoveryUnavailable: false,
 			submissionOutcomeUnknown: testState.submissionOutcomeUnknown,
 		};
@@ -663,15 +660,6 @@ vi.mock("@/components/trade/tradebox/deposit/withdraw-form", () => ({
 	},
 }));
 
-vi.mock("@/components/trade/tradebox/deposit/wrong-network-screen", () => ({
-	WrongNetworkScreen: ({ onBack }: { onBack?: () => void }) =>
-		createElement(
-			"div",
-			{ "data-testid": "wrong-network-screen" },
-			onBack ? createElement("button", { onClick: onBack, type: "button" }, "Back to deposit methods") : null,
-		),
-}));
-
 describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 	let container: HTMLDivElement;
 	let queryClient: QueryClient;
@@ -713,7 +701,7 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 		testState.fiatOffer = null;
 		testState.fiatOfferOptions = null;
 		testState.isTestnet = false;
-		testState.isArbitrum = true;
+		testState.networkSwitchPending = false;
 		testState.modalOpen = false;
 		testState.modalOnOpenChange = null;
 		testState.modalHeader = null;
@@ -2436,18 +2424,16 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 			expect(methods()).not.toBeNull();
 		});
 
-		it("offers the choice before asking an external wallet to switch to Arbitrum", async () => {
+		it("opens the transfer form for an external wallet without a network gate", async () => {
 			offerCardFunding("external");
-			testState.isArbitrum = false;
 			testState.walletProviderStatus = "ready";
 			testState.modalOpen = true;
 			await rerender();
 			expect(methods()).not.toBeNull();
-			expect(container.querySelector('[data-testid="wrong-network-screen"]')).toBeNull();
 
 			chooseMethod("transfer");
 
-			expect(container.querySelector('[data-testid="wrong-network-screen"]')).not.toBeNull();
+			expect(depositForm()).not.toBeNull();
 		});
 
 		it("closes the deposit dialog before the card purchase starts", async () => {
@@ -2506,18 +2492,19 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 			expect(fiat?.disabled).toBe(true);
 		});
 
-		it("lets an external wallet go back from the network switch to the method choice", async () => {
-			offerCardFunding("external");
-			testState.isArbitrum = false;
-			testState.walletProviderStatus = "ready";
+		it("names the network switch while the wallet is asked to move to Arbitrum", async () => {
 			testState.modalOpen = true;
+			testState.activeTab = "deposit";
+			testState.depositStatus = "pending";
+			testState.networkSwitchPending = true;
 			await rerender();
-			chooseMethod("transfer");
 
-			act(() => getButton("Back to deposit methods").click());
+			expect(container.querySelector('[data-testid="status-heading"]')?.textContent).toBe("Switching network");
 
-			expect(methods()).not.toBeNull();
-			expect(container.querySelector('[data-testid="wrong-network-screen"]')).toBeNull();
+			testState.networkSwitchPending = false;
+			await rerender();
+
+			expect(container.querySelector('[data-testid="status-heading"]')?.textContent).toBe("Confirm in wallet");
 		});
 
 		it("warms the purchase host while the purchase entry is on screen", async () => {

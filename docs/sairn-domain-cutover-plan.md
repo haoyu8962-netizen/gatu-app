@@ -1,6 +1,6 @@
 # gatu.ai 下线、切换到 sairn.ai：执行方案
 
-> **状态：已上线（2026-10-02）。** sairn.ai 终端（主网、测试网）与官网已上线，gatu.ai 网页已下线；执行记录见[任务记录](work-memory/sessions/2026-10-01-sairn-domain-cutover-plan.md)「上线执行」。用户要求简化：没有先把 p24 发布到 gatu 验证，也没有做 DNS 快照。真实钱包冒烟与主网小额赞助充值由用户进行，p25 清理待做。以下为原方案文字： 2026-10-01 用户决定「旧的直接下线、替换为新的」：不设新旧并存期，不做 301 跳转。同日用户答复了第 7 节的问题：gatu.ai 不永久续费；gatu.ai 的邮件与 SES 等品牌替换完成后再处理；另登记一个 sairn 推荐码；不做告别 Service Worker；权限按方案 A，由用户在控制台给 `gatu-edge` 挂上了临时策略。2026-10-02 用户决定主网赞助充值保持开启，切换当天做带资金验证。切换顺序起初选先接后断，开始执行时用户改为「直接下线 gatu，跟着替换新的域名」，即先断后接（第 3.2 节）。本文据此替换 [ADR 0031](adr/0031-domain-move-to-sairn-ai.md) 决策 5、7 与 [品牌标识与素材](brand-assets.md)「域名切换到 sairn.ai」中的并存与跳转步骤。已执行的步骤在步骤表里写明结果，其余命令都没有执行；执行前在 PR-A 新增 ADR 0032 记录这些决定，执行后补执行记录。标注：【核实】有命令或文件依据；【推断】未实测。
+> **状态：已上线（2026-10-02）。** sairn.ai 终端（主网、测试网）与官网已上线，gatu.ai 网页已下线；执行记录见[任务记录](work-memory/sessions/2026-10-01-sairn-domain-cutover-plan.md)「上线执行」。用户要求简化：没有先把 p24 发布到 gatu 验证，也没有做 DNS 快照。真实钱包冒烟与主网小额赞助充值由用户进行，p25 清理待做。2026-10-03 追记：p25 的代码（4.2 PR-B）已写成 PR #73，未合入、未发布，用户决定 2026-10-09 之后再合入；阶段 5 的线上步骤都没有做。以下为原方案文字： 2026-10-01 用户决定「旧的直接下线、替换为新的」：不设新旧并存期，不做 301 跳转。同日用户答复了第 7 节的问题：gatu.ai 不永久续费；gatu.ai 的邮件与 SES 等品牌替换完成后再处理；另登记一个 sairn 推荐码；不做告别 Service Worker；权限按方案 A，由用户在控制台给 `gatu-edge` 挂上了临时策略。2026-10-02 用户决定主网赞助充值保持开启，切换当天做带资金验证。切换顺序起初选先接后断，开始执行时用户改为「直接下线 gatu，跟着替换新的域名」，即先断后接（第 3.2 节）。本文据此替换 [ADR 0031](adr/0031-domain-move-to-sairn-ai.md) 决策 5、7 与 [品牌标识与素材](brand-assets.md)「域名切换到 sairn.ai」中的并存与跳转步骤。已执行的步骤在步骤表里写明结果，其余命令都没有执行；执行前在 PR-A 新增 ADR 0032 记录这些决定，执行后补执行记录。标注：【核实】有命令或文件依据；【推断】未实测。
 
 ## 1. 目标与约束
 
@@ -89,6 +89,8 @@ p24 发布到窗口之间，站内推荐链接、法律页链接、站点地图�
 
 `brand/brand.json` 删除 `domains.legacy`；`scripts/brand.mjs` 只校验主组，并新增退役名单让 `gatu.ai` 一旦再出现就报错；`config/brand.ts`、`config/public-origins.ts`、`lib/network.ts` 只认主组；删除 `LEGACY_FORWARDED_HOST_HEADER` 回退（`edge/lambda-handler.ts`）、请求函数的旧头双写与旧路由标记 `x-gatu-route`（`deploy/cloudfront/functions/terminal-request.js` 的 `tagRoute` 与删除语句），以及响应函数对旧标记的回退（`terminal-response.template.js`，重新渲染）；`distribution-config.mjs` 的白名单删除 `X-Gatu-Forwarded-Host`，p25 验证后再按 5.2 更新线上策略；测试改为断言 gatu 主机返回 null、只带旧头被忽略（`public-origins`、`network-storage`、`referral-join`、`lambda-handler`、`functions.test.mjs`）；文档同步（`docs/brand-assets.md` 旧域名组一段、`brand/README.md`、ADR 0027/0031 追加「已退役」）。
 
+> **2026-10-03**：已按本节实现，分支 `claude/retire-gatu-domain-group`，PR #73，未合入、未发布。除本节列出的文件外，还同步了 `AGENTS.md` 的品牌契约、`CHANGELOG.md`、两份部署说明和 ADR 0032。发布间隙的行为与本地验证见 [ADR 0032](adr/0032-gatu-offline-cutover-to-sairn.md) 的补充与[任务记录](work-memory/sessions/2026-10-03-retire-gatu-domain-group.md)。
+
 ## 5. 执行步骤
 
 角色：**[你]** 在 Cloudflare、Privy、钱包与 AWS 控制台操作；**[E]** `gatu-edge` 命令行（由我执行，需要你确认）；**[仓库]** 代码与构建。
@@ -162,7 +164,7 @@ p24 发布到窗口之间，站内推荐链接、法律页链接、站点地图�
 
 | # | 步骤 | 前提 |
 |---|---|---|
-| 5.1 | PR-B 合入、发布 p25（`--origin https://app.sairn.ai`），`verify` 的签名 POST 返回 200 | 0.6 的读回输出证明策略含 `X-Sairn-Forwarded-Host` |
+| 5.1 | PR-B（PR #73，2026-10-03 已开，未合入）合入、发布 p25（`--origin https://app.sairn.ai`），`verify` 的签名 POST 返回 200 | 0.6 的读回输出证明策略含 `X-Sairn-Forwarded-Host` |
 | 5.2 | 源站请求策略删除 `X-Gatu-Forwarded-Host`；选 A 时之后由你摘除并删除临时策略 `gatu-edge-domain-cutover` | p25 已验证 |
 | 5.3 | Lambda：**在控制台**删除 `GATU_TRUST_VIEWER_ADDRESS`，可显式设 `SAIRN_TRUST_VIEWER_ADDRESS=true`（命令行更新会整表替换，漏写会丢掉 `IPDATA_API_KEY`） | `verify` 的 geo 返回真实国家 |
 | 5.4 | 30 天后删除两张 gatu 证书 `548ac30d…`、`ff5677c6…`，再删 gatu 区的 `_…acm-validations`（之后旧主机名才会是 NXDOMAIN）；证书删除不可恢复，需你确认 | 无回滚需要 |
@@ -176,7 +178,7 @@ p24 发布到窗口之间，站内推荐链接、法律页链接、站点地图�
 |---|---|
 | 阶段 2、3（4.1 之前） | 只恢复别名、证书与 DNS；p24 内容不动 |
 | 4.1 之后（新 Privy 应用已删 gatu origin） | 在**新** Privy 应用里重新加入 `https://app.gatu.ai`、`https://testnet.gatu.ai`，自建 Reown 项目同理。不要换回旧 App ID：那会再次改变邮箱用户的内嵌钱包地址 |
-| 5.1 之后（线上是 p25，不再识别 gatu 主机） | 先用 1.1 保留的 p24 产物按 functions → lambda → sync → invalidate 重新发布 p24，再做上面两行 |
+| 5.1 之后（线上是 p25，不再识别 gatu 主机） | 先用 1.1 保留的 p24 产物按 functions → lambda → sync → invalidate 重新发布 p24，再做上面两行。2026-10-04 更正：2026-10-03 起线上是 p24b（银行卡入金主网、测试网打开），回滚应重新发布 p24b 的产物；重新发布 p24 会同时关掉卡入金。p24b 的产物在工作树 `gatu-release-p25` 里（见 [p24b 发布记录](work-memory/sessions/2026-10-03-cloudfront-release-p24b.md)），构建 p25 要用另一个工作树，不能覆盖它 |
 | 5.2 之后（白名单已删 `X-Gatu-Forwarded-Host`） | p24 同时写新旧头、Lambda 先读新头，不受影响；只有退回 p23 时才要先把旧头加回白名单 |
 | 5.4 之后（gatu 证书与验证记录已删） | 先为 gatu 名字重新申请证书，在 gatu.ai 区加回验证 CNAME，签发后才能挂回别名 |
 

@@ -7,7 +7,7 @@
 | Signing Type | Chain ID | Domain | Use Case | Network Required |
 |--------------|----------|--------|----------|------------------|
 | **L1 Actions** | 1337 | "Exchange" | Trading operations | None (API only) |
-| **User-Signed** | 0x66eee (421614) | "HyperliquidSignTransaction" | Transfers, agent approval | None (API only) |
+| **User-Signed** | Signer's chain: external wallet → its current chain; Privy embedded owner → the environment's Arbitrum (42161 / 421614); SDK examples use 0x66eee | "HyperliquidSignTransaction" | Transfers, agent approval | None (API only) |
 | **Arbitrum EVM** | 42161 | USDC EIP-3009 + contract call | CCTP deposits from Arbitrum | Arbitrum network |
 
 ---
@@ -23,7 +23,7 @@
 │  │   L1 Actions         │  │   User-Signed        │  │  Arbitrum EVM │  │
 │  │   (Trading)          │  │   (Admin/Transfers)  │  │  (Deposits)   │  │
 │  ├──────────────────────┤  ├──────────────────────┤  ├───────────────┤  │
-│  │ Chain ID: 1337       │  │ Chain ID: 0x66eee    │  │ Chain ID:     │  │
+│  │ Chain ID: 1337       │  │ Chain ID: signer's   │  │ Chain ID:     │  │
 │  │ Domain: "Exchange"   │  │ Domain: "Hyperliquid │  │ 42161         │  │
 │  │                      │  │ SignTransaction"     │  │               │  │
 │  ├──────────────────────┤  ├──────────────────────┤  ├───────────────┤  │
@@ -125,7 +125,7 @@ Administrative operations that use EIP-712 typed data with Hyperliquid's signatu
 
 | Property | Value |
 |----------|-------|
-| Chain ID | 0x66eee (421614 decimal) |
+| Chain ID | `signatureChainId` of the signer: hl-react configures none, so the SDK's `resolveSignatureChainId` reads the wallet's `getChainId()`. An external wallet therefore signs with whatever chain it is on (via `useConnectionWalletClient`, which never requires a switch); the Privy embedded owner reports the environment's Arbitrum chain (42161 Mainnet, 421614 Testnet); the SDK's own examples show 0x66eee (421614). Hyperliquid accepts any value here as long as the EIP-712 domain and the action agree |
 | Domain Name | "HyperliquidSignTransaction" |
 | Serialization | Direct EIP-712 typed data |
 | Signed By | Master wallet (wagmi walletClient or viem account) |
@@ -158,7 +158,7 @@ const client = new ExchangeClient({
   wallet: masterAccount,
 });
 
-// SDK handles user-signed action internally (chainId 0x66eee)
+// SDK signs the user-signed action with the signer's chain id (see "Chain ID" above); a bare private key with no configured signatureChainId falls back to the SDK default, not 0x66eee
 await client.withdraw3({
   destination: "0x...",
   amount: "100.0",
@@ -203,7 +203,7 @@ Withdrawals use **User-Signed Actions** (not Arbitrum EVM).
 
 | Step | Action | Signing Type |
 |------|--------|--------------|
-| 1 | Call `exchange.withdraw3()` | User-Signed (0x66eee) |
+| 1 | Call `exchange.withdraw3()` | User-Signed (signer's chain) |
 | 2 | Hyperliquid processes | Automatic |
 | 3 | USDC arrives on Arbitrum | ~10 min |
 
@@ -233,7 +233,7 @@ await exchangeClient.withdraw3({
 | **Staking (L1)** | `cDeposit`, `cWithdraw`, `linkStakingUser`, `cSignerAction`, `cValidatorAction` |
 | **Advanced** | `evmUserModify`, `perpDeploy`, `spotDeploy`, `reserveRequestWeight`, `agentEnableDexAbstraction`, `convertToMultiSigUser`, `noop` |
 
-### User-Signed Actions (Chain ID: 0x66eee)
+### User-Signed Actions (Chain ID: the signer's chain)
 
 | Category | Methods |
 |----------|---------|
@@ -291,14 +291,14 @@ await exchangeClient.withdraw3({
 │  │ HyperCore│───▶│ withdraw3│───▶│ Arbitrum │                           │
 │  │ Balance  │    │ API Call │    │ USDC     │                           │
 │  └──────────┘    └──────────┘    └──────────┘                           │
-│  Signing: User-Signed (0x66eee)                                          │
+│  Signing: User-Signed (signer's chain)                                   │
 │                                                                          │
 │  HYPERCORE → HYPEREVM (Internal Bridge)                                  │
 │  ┌──────────┐    ┌──────────┐    ┌──────────┐                           │
 │  │ HyperCore│───▶│ spotSend │───▶│ HyperEVM │                           │
 │  │ Spot     │    │ to 0x200.│    │ USDC     │                           │
 │  └──────────┘    └──────────┘    └──────────┘                           │
-│  Signing: User-Signed (0x66eee)                                          │
+│  Signing: User-Signed (signer's chain)                                   │
 │                                                                          │
 │  HYPEREVM → HYPERCORE (Internal Bridge)                                  │
 │  ┌──────────┐    ┌──────────┐    ┌──────────┐                           │
@@ -340,7 +340,7 @@ Solution: Two-wallet pattern
 │  │ • spotSend           │         │ • All L1 Actions     │              │
 │  └──────────────────────┘         └──────────────────────┘              │
 │           │                                  │                           │
-│           │ Chain ID: 0x66eee               │ Chain ID: 1337            │
+│           │ Chain ID: signer's chain        │ Chain ID: 1337            │
 │           │ (No network switch needed)       │ (No network needed)       │
 │           │                                  │                           │
 │           ▼                                  ▼                           │
@@ -378,7 +378,7 @@ const register = async (options: { persistConnection: boolean }) => {
   const privateKey = generatePrivateKey();
   const account = privateKeyToAccount(privateKey);
 
-  // 2. Master wallet signs approveAgent (User-Signed, 0x66eee)
+  // 2. Master wallet signs approveAgent (User-Signed, the signer's chain)
   await exchangeClient.approveAgent({
     agentAddress: account.address,
     agentName,
@@ -424,7 +424,7 @@ the product decisions and the official comparison are in
 [ADR 0015](adr/0015-link-device-alignment.md).
 
 - The desktop generates the Agent private key locally and the exact owner
-  wallet signs `approveAgent` (User-Signed, `0x66eee`) with the name
+  wallet signs `approveAgent` (User-Signed, with the signer's chain id: the external wallet's current chain, or the embedded owner's environment Arbitrum chain) with the name
   `Mobile valid_until <ms>`, where `<ms>` is the expiry 30 days after approval
   (`packages/hl-react/src/signing/mobile-agent.ts`, `MOBILE_AGENT_VALIDITY_MS`).
   Approval is the dialog's single explicit action and its only signing action;
@@ -525,122 +525,23 @@ export function toHyperliquidWallet(
 | Purpose | Chain ID | Decimal |
 |---------|----------|---------|
 | L1 Actions | 1337 | 1337 |
-| User-Signed | 0x66eee | 421614 |
+| User-Signed (external wallet) | wallet's current chain | — |
+| User-Signed (Privy embedded owner) | 0xa4b1 Mainnet / 0x66eee Testnet | 42161 / 421614 |
 | Arbitrum One | 42161 | 42161 |
 | Arbitrum Sepolia | 421614 | 421614 |
 
 ---
 
-## Implementation Strategy
+## Where the signers live today
 
-> See [signing-architecture-proposal.md](./signing-architecture-proposal.md) for full details.
+An earlier version of this page ended with an app-local refactoring proposal: a `src/lib/hyperliquid/{signing,trading,admin,deposits}` layout, per-method hooks such as `useExchangeOrder` and `useExchangeWithdraw3`, `useTradingClient`/`useAdminClient`, and an unchecked migration checklist. That proposal was superseded when the signer model moved into `@sairn/hl-react`; [signing-architecture-proposal.md](./signing-architecture-proposal.md) keeps it as a historical record. The current split (2026-10-08):
 
-### Current State Issues
+| Concern | Implementation |
+|---------|----------------|
+| Signer choice per action | `useExchange(method, options)` in `packages/hl-react/src/hooks/useExchange.ts`. `packages/hl-react/src/registries/exchange.ts` routes the user-signed methods (`withdraw3`, `usdSend`, `spotSend`, `usdClassTransfer`, `sendAsset`, `approveAgent`, `approveBuilderFee`, staking and account-mode actions) to the exact owner and every other method, an L1 action, to the trading signer; only `order` gets the builder code injected. |
+| Trading signer | Email sessions sign L1 actions with the exact active Privy embedded owner (`signing/owner-signer-client.ts`, `signing/owner-signer-provider.tsx`, supplied by `apps/terminal/src/providers/hyperliquid-owner-signer-bridge.tsx`); external-wallet and Agent-only sessions use a verified Agent (`signing/use-agent-registration.ts`, `agent-storage.ts`, `use-agent-status.ts`). |
+| Decision record | [ADR 0002](adr/0002-exact-owner-trading-signers.md) for the signer model; [trading onboarding](trading-onboarding.md) and [email trading signing](email-trading-signing.md) for the first-use sequence. |
 
-| Issue | Description |
-|-------|-------------|
-| **Wrong client for withdrawals** | `withdraw3`, `usdSend`, `spotSend` use agent client but need master wallet |
-| **Two ExchangeClients confusion** | Context has master wallet client, `useSignedExchange` has agent client |
-| **Overlapping hooks** | 6+ hooks with unclear responsibilities |
-| **Naming confusion** | `useSignedExchange` returns client, not signing function |
-
-### Proposed Module Structure
-
-```
-src/lib/hyperliquid/
-├── signing/              # Agent + master wallet management
-│   ├── use-agent-status.ts
-│   ├── use-agent-registration.ts
-│   └── use-master-wallet.ts
-│
-├── trading/              # L1 Actions (agent wallet)
-│   ├── use-trading-client.ts
-│   └── use-trading-status.ts
-│
-├── admin/                # User-Signed Actions (master wallet)
-│   ├── use-admin-client.ts
-│   ├── use-withdraw.ts        # withdraw3
-│   ├── use-transfer.ts        # usdSend, spotSend
-│   ├── use-usd-class-transfer.ts  # usdClassTransfer (perp↔spot)
-│   ├── use-send-asset.ts      # sendAsset (DEX/sub-account transfers)
-│   └── use-staking.ts         # tokenDelegate
-│
-└── deposits/             # Arbitrum CCTP (viem + Privy Smart Wallet)
-    └── use-deposit.ts
-```
-
-### Hook → Signing Type → Client Mapping
-
-| Hook | Signing Type | Client | Wallet |
-|------|--------------|--------|--------|
-| `useExchangeOrder` | L1 Action | Trading | Agent |
-| `useExchangeCancel` | L1 Action | Trading | Agent |
-| `useExchangeUpdateLeverage` | L1 Action | Trading | Agent |
-| `useExchangeVaultTransfer` | L1 Action | Trading | Agent |
-| `useExchangeSubAccountTransfer` | L1 Action | Trading | Agent |
-| `useWithdraw` | User-Signed | Admin | **Master** |
-| `useTransfer` (usdSend) | User-Signed | Admin | **Master** |
-| `useTransfer` (spotSend) | User-Signed | Admin | **Master** |
-| `useUsdClassTransfer` | User-Signed | Admin | **Master** |
-| `useSendAsset` | User-Signed | Admin | **Master** |
-| `useAgentRegistration` | User-Signed | Admin | **Master** |
-| `useDeposit` | EIP-3009 + Arbitrum EVM | viem / Privy Smart Wallet | **Exact master or embedded EOA** |
-
-### Key Implementation Details
-
-#### Trading Client (Agent Wallet)
-```typescript
-// trading/use-trading-client.ts
-export function useTradingClient() {
-  const { env } = useHyperliquid();
-  const { address } = useConnection();
-  const { status, agentAddress } = useAgentStatus();
-
-  const client = useMemo(() => {
-    if (status !== "ready") return null;
-    const agent = readAgentFromStorage(env, address);
-    if (!agent) return null;
-    const signer = privateKeyToAccount(agent.privateKey);
-    return createExchangeClient(signer);
-  }, [status, env, address]);
-
-  return { client, isReady: client !== null };
-}
-```
-
-#### Admin Client (Master Wallet)
-```typescript
-// admin/use-admin-client.ts
-export function useAdminClient() {
-  const { data: walletClient } = useWalletClient();
-  const { address } = useConnection();
-
-  const client = useMemo(() => {
-    if (!walletClient || !address) return null;
-    const wallet = toHyperliquidWallet(walletClient, address);
-    if (!wallet) return null;
-    return createExchangeClient(wallet);
-  }, [walletClient, address]);
-
-  return { client, isReady: client !== null };
-}
-```
-
-#### Deposit (CCTP-only)
+### Deposit (CCTP-only)
 
 `useDeposit` requires an explicit CCTP route. The exact owner signs the USDC EIP-3009 authorization; external wallets submit CctpExtension directly, while email-wallet sessions submit CctpExtensionV2 through the already configured Privy Smart Wallet Paymaster/Bundler. Neither path may fall back to Bridge2 when routing, fee, allowance, owner, or receipt validation fails.
-
-### Migration Checklist
-
-- [ ] Create `signing/` module with agent status hooks
-- [ ] Create `trading/` module with `useTradingClient`
-- [ ] Create `admin/` module with `useAdminClient`
-- [x] Keep CCTP execution in `lib/hyperliquid/use-deposit.ts` and pure validation in `lib/trade/cctp-deposit.ts`
-- [ ] Update `useExchangeWithdraw3` to use admin client
-- [ ] Update `useExchangeUsdSend` to use admin client
-- [ ] Update `useExchangeSpotSend` to use admin client
-- [ ] Update `useExchangeUsdClassTransfer` to use admin client
-- [ ] Update `useExchangeSendAsset` to use admin client (if exists)
-- [ ] Update exchange hooks to explicitly use trading client
-- [ ] Deprecate `useSignedExchange`, `useTradingAgent`, etc.
-- [ ] Update all component consumers

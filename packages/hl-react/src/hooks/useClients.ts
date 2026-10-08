@@ -1,6 +1,5 @@
 import type { ExchangeClient, InfoClient } from "@nktkas/hyperliquid";
 import { useMemo } from "react";
-import { useWalletClient } from "wagmi";
 import { createExchangeClient, getTradingClient } from "../clients";
 import { useHyperliquid } from "../provider";
 import { getOwnerSignerClient } from "../signing/owner-signer-client";
@@ -8,6 +7,7 @@ import { useHyperliquidOwnerSigner } from "../signing/owner-signer-provider";
 import { useAgentWallet } from "../signing/use-agent-wallet";
 import type { CompactSubscriptionClient } from "../subscriptions/compact-subscription-client";
 import { toHyperliquidWallet, walletClientMatchesAddress } from "../wallet";
+import { useConnectionWalletClient } from "./useConnectionWalletClient";
 
 export interface HyperliquidClients {
 	info: InfoClient;
@@ -23,7 +23,7 @@ export function useHyperliquidClients(): HyperliquidClients {
 	const { info, subscription, isTestnet, clientKey, sessionMode } = useHyperliquid();
 	const ownerSigner = useHyperliquidOwnerSigner();
 	const { signer, address: agentPublicKey, isReady: agentReady } = useAgentWallet();
-	const { data: walletClient } = useWalletClient();
+	const { data: walletClient } = useConnectionWalletClient();
 	const hasUserSession = clientKey !== "disconnected";
 	const address = hasUserSession ? (clientKey as `0x${string}`) : undefined;
 

@@ -4,13 +4,14 @@ import {
 	FORWARDED_HOST_HEADER,
 	type LambdaEnvironment,
 	type LambdaFunctionUrlEvent,
-	LEGACY_FORWARDED_HOST_HEADER,
 	resolveClientIp,
 	resolveRequestOrigin,
 	stripViewerAddressPort,
 	toRequest,
 	VIEWER_ADDRESS_HEADER,
 } from "@/edge/lambda-handler";
+
+const RETIRED_FORWARDED_HOST_HEADER = "x-gatu-forwarded-host";
 
 const ALLOWED_IPDATA_RESPONSE = {
 	country_code: "GB",
@@ -58,15 +59,6 @@ describe("lambda function url adapter", () => {
 		expect(resolveRequestOrigin(forwarded, undefined)).toBe("https://app.sairn.ai");
 		expect(resolveRequestOrigin(event(), "https://testnet.sairn.ai/")).toBe("https://testnet.sairn.ai");
 		expect(resolveRequestOrigin(event(), undefined)).toBe("https://abc.lambda-url.ap-northeast-1.on.aws");
-		expect(
-			resolveRequestOrigin(event({ headers: { [LEGACY_FORWARDED_HOST_HEADER]: "app.sairn.ai" } }), undefined),
-		).toBe("https://app.sairn.ai");
-		expect(
-			resolveRequestOrigin(
-				event({ headers: { [FORWARDED_HOST_HEADER]: "app.sairn.ai", [LEGACY_FORWARDED_HOST_HEADER]: "app.sairn.ai" } }),
-				undefined,
-			),
-		).toBe("https://app.sairn.ai");
 		const request = toRequest(forwarded, environment({ trustViewerAddress: false }));
 		expect(request.url).toBe("https://app.sairn.ai/api/geo");
 		expect(request.headers.get("x-sairn-client-ip")).toBe("198.51.100.7");
@@ -110,50 +102,41 @@ describe("lambda function url adapter", () => {
 		expect(JSON.parse(sameOrigin.body)).toMatchObject({ status: "allowed", country: "GB", ttlMs: 60_000 });
 	});
 
-	it("prefers the renamed forwarded-host header and still restores either domain group from the legacy one", () => {
+	it("ignores the retired x-gatu-forwarded-host header", () => {
+		const retired = { [RETIRED_FORWARDED_HOST_HEADER]: "testnet.gatu.ai" };
+		expect(resolveRequestOrigin(event({ headers: retired }), undefined)).toBe(
+			"https://abc.lambda-url.ap-northeast-1.on.aws",
+		);
+		expect(resolveRequestOrigin(event({ headers: retired }), "https://app.sairn.ai")).toBe("https://app.sairn.ai");
 		expect(
-			resolveRequestOrigin(
-				event({ headers: { [FORWARDED_HOST_HEADER]: "app.sairn.ai", [LEGACY_FORWARDED_HOST_HEADER]: "app.gatu.ai" } }),
-				undefined,
-			),
-		).toBe("https://app.sairn.ai");
-		expect(
-			resolveRequestOrigin(event({ headers: { [LEGACY_FORWARDED_HOST_HEADER]: "testnet.gatu.ai" } }), undefined),
-		).toBe("https://testnet.gatu.ai");
+			resolveRequestOrigin(event({ headers: { ...retired, [FORWARDED_HOST_HEADER]: "testnet.sairn.ai" } }), undefined),
+		).toBe("https://testnet.sairn.ai");
 	});
 
 	it.each([
-		["app.sairn.ai", "https://app.gatu.ai"],
-		["testnet.sairn.ai", "https://testnet.gatu.ai"],
-		["app.gatu.ai", "https://app.sairn.ai"],
-		["testnet.gatu.ai", "https://testnet.sairn.ai"],
-	])("accepts same-origin referral checks on %s from either header and rejects %s", async (host, otherOrigin) => {
+		["app.sairn.ai", "https://testnet.sairn.ai"],
+		["testnet.sairn.ai", "https://app.sairn.ai"],
+	])("accepts same-origin referral checks on %s and rejects %s", async (host, otherOrigin) => {
 		const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ALLOWED_IPDATA_RESPONSE } as Response);
-		const handler = createLambdaHandler(environment({ fetch: fetchMock }));
-		const forwardedHeaderSets = [
-			{ [FORWARDED_HOST_HEADER]: host },
-			{ [LEGACY_FORWARDED_HOST_HEADER]: host },
-			{ [FORWARDED_HOST_HEADER]: host, [LEGACY_FORWARDED_HOST_HEADER]: host },
-		];
-		for (const forwarded of forwardedHeaderSets) {
-			const post = (origin: string) =>
-				handler(
-					event({
-						rawPath: "/api/referral-geo",
-						method: "POST",
-						body: JSON.stringify({ override: null }),
-						headers: {
-							origin,
-							"sec-fetch-site": "same-origin",
-							"content-type": "application/json",
-							[VIEWER_ADDRESS_HEADER]: "203.0.113.9:1",
-							...forwarded,
-						},
-					}),
-				);
-			expect((await post(`https://${host}`)).statusCode, JSON.stringify(forwarded)).toBe(200);
-			expect((await post(otherOrigin)).statusCode, JSON.stringify(forwarded)).toBe(403);
-		}
+		const handler = createLambdaHandler(environment({ fetch: fetchMock, publicOrigin: undefined }));
+		const post = (origin: string, forwarded: Record<string, string>) =>
+			handler(
+				event({
+					rawPath: "/api/referral-geo",
+					method: "POST",
+					body: JSON.stringify({ override: null }),
+					headers: {
+						origin,
+						"sec-fetch-site": "same-origin",
+						"content-type": "application/json",
+						[VIEWER_ADDRESS_HEADER]: "203.0.113.9:1",
+						...forwarded,
+					},
+				}),
+			);
+		expect((await post(`https://${host}`, { [FORWARDED_HOST_HEADER]: host })).statusCode).toBe(200);
+		expect((await post(otherOrigin, { [FORWARDED_HOST_HEADER]: host })).statusCode).toBe(403);
+		expect((await post(`https://${host}`, { [RETIRED_FORWARDED_HOST_HEADER]: host })).statusCode).toBe(403);
 	});
 
 	it("accepts client error reports on both paths and answers everything else without rendering", async () => {
