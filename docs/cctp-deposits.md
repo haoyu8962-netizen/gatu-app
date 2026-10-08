@@ -151,6 +151,16 @@ same work in `getDepositProviderForChain`:
    the fresh legal check, so a wallet that moved away in between still fails
    closed.
 
+Device acceptance for this flow has not been recorded yet. It needs a phone with
+a real external wallet and a small USDC balance on Arbitrum, and covers three
+cases: a wallet already on Arbitrum must see no switch prompt at all and go
+straight to the transaction request; a wallet on another network must see
+exactly one switch prompt, then the transaction request, with the status screen
+reading "Switching network" in between; and declining the switch must close the
+attempt with the "Arbitrum network switch was rejected" notification and no
+transaction request. Record the wallet, its connection path (WalletConnect or
+in-app browser) and the outcome in the task record before relying on this flow.
+
 `useDepositWalletProvider` only reports whether the wallet provider answers at
 all (the "Wallet connection unavailable" screen); it no longer interprets the
 chain. `use-deposit-routing-guard.test.tsx` ("wallet network") pins the numeric

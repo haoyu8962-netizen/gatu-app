@@ -1,6 +1,5 @@
 export type OrderActionStage =
 	| "connect"
-	| "switchChain"
 	| "agent"
 	| "balanceError"
 	| "balanceLoading"
@@ -10,7 +9,6 @@ export type OrderActionStage =
 
 interface OrderActionStageInput {
 	isConnected: boolean;
-	needsChainSwitch: boolean;
 	needsApproval: boolean;
 	isSignerReady: boolean;
 	hasBalanceError: boolean;
@@ -21,7 +19,6 @@ interface OrderActionStageInput {
 
 export function getOrderActionStage(input: OrderActionStageInput): OrderActionStage {
 	if (!input.isConnected) return "connect";
-	if (input.needsChainSwitch) return "switchChain";
 	if (input.needsApproval && !input.isSignerReady) return "agent";
 	if (input.hasBalanceError) return "balanceError";
 	if (input.isBalanceLoading) return "balanceLoading";

@@ -90,6 +90,23 @@ The terminal must preserve this ordering:
    and sign only after the explicit confirmation click, so they pass the same
    flag; their progress copy tells email users the wallet signs automatically
    instead of asking them to confirm in a wallet.
+   **No EVM network switch.** Enable Trading, every L1 action and every
+   user-signed action sign on whatever EVM network the wallet is on at that
+   moment: the SDK's exchange client resolves `signatureChainId` from the
+   wallet's own `getChainId()` when none is configured (hl-react configures
+   none), and the official terminal does the same (its `approveAgent` builder
+   takes `chainId` from wagmi's `useAccount()` and falls back to Arbitrum only
+   when that is undefined; its chain-mismatch helper returns false for every
+   authenticated Privy session). The order button therefore has no network
+   stage: `getOrderActionStage` goes from `connect` straight to `agent`, the
+   Enable Trading control is available whenever the session has wallet access
+   (`useWalletSession().hasWalletAccess`), and "Loading wallet..." means the
+   exact owner signer is still being established, not a wagmi client for a
+   particular chain. Only the Arbitrum USDC deposit needs a network, and it
+   switches on demand at submit ([CCTP deposits](cctp-deposits.md), Wallet
+   Network). `trade-panel-open-interest-cap` and
+   `mobile-trade-size-validation-a11y` pin that a wagmi chain-mismatch error
+   leaves Enable Trading available and never asks for a switch.
    Page load and status checks never sign. Agent registration is separate from
    builder-fee approval.
 5. **Verify a requested new Agent (external-wallet flow).** Before opening the

@@ -8577,8 +8577,8 @@ msgstr "التبديل إلى سوق {marketName}، أمر {sideLabel}"
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/config/ui-text.ts
 #: src/lib/trade/use-button-content.ts
-msgid "Switch to Arbitrum"
-msgstr "التبديل إلى Arbitrum"
+#~ msgid "Switch to Arbitrum"
+#~ msgstr "التبديل إلى Arbitrum"
 
 #: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
 #~ msgid "Switch to Arbitrum to deposit USDC to Hyperliquid"
@@ -8631,8 +8631,8 @@ msgstr "جارٍ تبديل الشبكة"
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/config/ui-text.ts
 #: src/lib/trade/use-button-content.ts
-msgid "Switching..."
-msgstr "جاري التبديل..."
+#~ msgid "Switching..."
+#~ msgstr "جاري التبديل..."
 
 #: src/components/staking/staking-view.tsx
 msgid "System finalization · hash unavailable"

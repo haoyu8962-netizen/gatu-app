@@ -108,12 +108,6 @@ export const UI_TEXT = {
 		get BUTTON_CONNECT() {
 			return t`Connect Wallet`;
 		},
-		get BUTTON_SWITCHING() {
-			return t`Switching...`;
-		},
-		get BUTTON_SWITCH_CHAIN() {
-			return t`Switch to Arbitrum`;
-		},
 		get BUTTON_DEPOSIT() {
 			return t`Deposit`;
 		},

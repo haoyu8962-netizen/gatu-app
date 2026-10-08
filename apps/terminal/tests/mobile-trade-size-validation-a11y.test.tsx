@@ -61,9 +61,14 @@ vi.mock("@sairn/ui", async (importOriginal) => ({
 	Tooltip: ({ children }: { children: ReactNode }) => children,
 }));
 
+const wagmiState = vi.hoisted(() => ({
+	walletClientError: null as Error | null,
+	switchChain: vi.fn(),
+}));
+
 vi.mock("wagmi", () => ({
-	useSwitchChain: () => ({ isPending: false, switchChain: vi.fn() }),
-	useWalletClient: () => ({ data: {}, error: null, isLoading: false }),
+	useSwitchChain: () => ({ isPending: false, switchChain: wagmiState.switchChain }),
+	useWalletClient: () => ({ data: wagmiState.walletClientError ? undefined : {}, error: wagmiState.walletClientError, isLoading: false }),
 }));
 
 vi.mock("@/components/trade/chart/token-selector", () => ({ TokenSelector: () => null }));
@@ -200,7 +205,7 @@ vi.mock("@/hooks/use-geo-restriction", () => ({
 }));
 
 vi.mock("@/hooks/wallet/use-wallet-session", () => ({
-	useWalletSession: () => ({ address: "0xabc", isConnected: true }),
+	useWalletSession: () => ({ address: "0xabc", isConnected: true, hasWalletAccess: true }),
 }));
 
 vi.mock("@/lib/hyperliquid", () => ({
@@ -405,6 +410,26 @@ describe("MobileTradeView order-size validation accessibility", () => {
 		expect(control.dataset.dragging).toBeUndefined();
 		await act(async () => getOrderButton(container).click());
 		expect(testState.requestSubmit).toHaveBeenCalledTimes(1);
+	});
+
+	it("offers Enable Trading on the wallet's current network instead of a switch to Arbitrum", async () => {
+		activateLocale("en");
+		testState.tradingReady = false;
+		wagmiState.walletClientError = new Error(
+			"The current chain of the connector (id: 1) does not match the connection's chain (id: 42161).",
+		);
+		try {
+			await renderView(root);
+			const enable = getCtaButton(container, "Enable Trading");
+			expect(enable.disabled).toBe(false);
+
+			await act(async () => enable.click());
+
+			expect(testState.authorize).toHaveBeenCalledTimes(1);
+			expect(wagmiState.switchChain).not.toHaveBeenCalled();
+		} finally {
+			wagmiState.walletClientError = null;
+		}
 	});
 
 	it("ignores the Enable Trading step while the size slider is held", async () => {

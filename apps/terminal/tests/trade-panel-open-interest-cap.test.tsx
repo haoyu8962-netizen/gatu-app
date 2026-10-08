@@ -35,9 +35,14 @@ const testState = vi.hoisted(() => ({
 	},
 }));
 
+const wagmiState = vi.hoisted(() => ({
+	walletClientError: null as Error | null,
+	switchChain: vi.fn(),
+}));
+
 vi.mock("wagmi", () => ({
-	useSwitchChain: () => ({ isPending: false, mutate: vi.fn() }),
-	useWalletClient: () => ({ data: {}, error: null, isLoading: false }),
+	useSwitchChain: () => ({ isPending: false, mutate: wagmiState.switchChain }),
+	useWalletClient: () => ({ data: wagmiState.walletClientError ? undefined : {}, error: wagmiState.walletClientError, isLoading: false }),
 }));
 
 vi.mock("@/components/trade/tradebox/trade-form-fields", () => ({ TradeFormFields: () => null }));
@@ -153,7 +158,7 @@ vi.mock("@/hooks/use-geo-restriction", () => ({
 	useGeoRestriction: () => ({ actionsBlocked: false, isError: false, isResolved: true, tradeRestricted: false }),
 }));
 vi.mock("@/hooks/wallet/use-wallet-session", () => ({
-	useWalletSession: () => ({ address: "0xabc", isConnected: true }),
+	useWalletSession: () => ({ address: "0xabc", isConnected: true, hasWalletAccess: true }),
 }));
 
 vi.mock("@/lib/hyperliquid", () => ({
@@ -438,6 +443,25 @@ describe("desktop TradePanel trading approval errors", () => {
 		vi.clearAllMocks();
 		testState.isReady = true;
 		activateLocale("en");
+	});
+
+	it("offers Enable Trading on the wallet's current network instead of a switch to Arbitrum", async () => {
+		wagmiState.walletClientError = new Error(
+			"The current chain of the connector (id: 1) does not match the connection's chain (id: 42161).",
+		);
+		try {
+			await renderPanel(root);
+			const button = getOrderButton(container);
+			expect(button.textContent?.trim()).toBe("Enable Trading");
+			expect(button.disabled).toBe(false);
+
+			await act(async () => button.click());
+
+			expect(testState.authorize).toHaveBeenCalledTimes(1);
+			expect(wagmiState.switchChain).not.toHaveBeenCalled();
+		} finally {
+			wagmiState.walletClientError = null;
+		}
 	});
 
 	it.each([

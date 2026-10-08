@@ -498,6 +498,10 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Fixed
 
+- The order button no longer asks an external wallet to "Switch to Arbitrum" before Enable
+  Trading. Trading signatures are made on the network the wallet is already on, as on the
+  official terminal, so a wallet on any network can enable trading and place orders; only a
+  USDC deposit needs Arbitrum, and that dialog asks for the switch when you press Deposit.
 - Depositing from an external wallet on a phone no longer fails with "Wallet is not connected to
   Arbitrum One" when the wallet is already on Arbitrum. The deposit dialog no longer opens on a
   "Switch to Arbitrum" screen: as on the official terminal, a wallet on another network is asked

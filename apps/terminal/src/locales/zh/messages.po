@@ -8577,8 +8577,8 @@ msgstr "切换到 {marketName} 市场，{sideLabel}委托"
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/config/ui-text.ts
 #: src/lib/trade/use-button-content.ts
-msgid "Switch to Arbitrum"
-msgstr "切换到 Arbitrum"
+#~ msgid "Switch to Arbitrum"
+#~ msgstr "切换到 Arbitrum"
 
 #: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
 #~ msgid "Switch to Arbitrum to deposit USDC to Hyperliquid"
@@ -8631,8 +8631,8 @@ msgstr "正在切换网络"
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/config/ui-text.ts
 #: src/lib/trade/use-button-content.ts
-msgid "Switching..."
-msgstr "切换中..."
+#~ msgid "Switching..."
+#~ msgstr "切换中..."
 
 #: src/components/staking/staking-view.tsx
 msgid "System finalization · hash unavailable"

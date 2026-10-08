@@ -79,8 +79,14 @@
 - 未做：真实手机钱包（WalletConnect 与钱包内置浏览器）的存款验收。
 - 翻译：「Switching network」已补 zh/es/fr/hi/ar；其余四种语言此前缺失的 43 条与本次无关。
 
+## 订单按钮对齐官方（同日后续）
+
+用户要求把「未做」里收益大的一起做并对齐实践。订单按钮的「Switch to Arbitrum」阶段来自 wagmi `useWalletClient()` 的链不匹配错误（`ConnectorChainMismatchError`，只在钱包处于未配置链时出现），而 Enable Trading 与所有 L1 / 用户签名动作走 Privy owner signer；SDK 0.33.3 的 `resolveSignatureChainId` 在未配置时回退到钱包自身 `getChainId()`，官方终端的 `approveAgent` 构造也取 `useAccount().chainId`（缺省才用 Arbitrum），且已登录 Privy 时链不匹配助手恒返回 false。因此删除该阶段：`order-action-stage.ts` 去掉 `switchChain`，桌面与手机面板不再读 wagmi 的 `useWalletClient` / `useSwitchChain`；`canApprove` 改为 `useWalletSession().hasWalletAccess && !!address`（Agent-only 会话仍不可点，与原先 wagmi 无客户端时一致）；`isWalletLoading`（「Loading wallet...」校验）改为 owner 模式下 `isSignerLoading`；删除 `BUTTON_SWITCHING` / `BUTTON_SWITCH_CHAIN` 文案与手机标签；进度标签契约去掉「Switching...」。`docs/trading-onboarding.md` 第 4 步新增「No EVM network switch」段，CHANGELOG 新增条目。
+- 回归：`trade-panel-open-interest-cap` 与 `mobile-trade-size-validation-a11y` 各加一例，wagmi 报链不匹配时 Enable Trading 仍可点、点击调用 authorize、不调用 switchChain；`deposit-order-cta`、`trading-onboarding-domain`、`reduce-only`、`order-validation`、`action-progress-label-contract` 更新后通过（139 项）；两组件套件 73 项通过；typecheck、Biome 通过。
+- 另在 `docs/cctp-deposits.md` 写明存款切链的真机验收三种情形与记录要求。
+
 ## 后续与替代关系
 
 - 待在真实手机钱包上走一遍：钱包已在 Arbitrum（不应出现任何切换提示）、钱包在其他链（一次切换提示后继续）、拒绝切换（通知「已拒绝切换」）。
-- 订单按钮的「切换到 Arbitrum」阶段（`lib/trade/use-button-content.ts`、`mobile-trade-view.tsx`）仍是预拦截，不在本次范围内；若要对齐官方需单独决定。
+- 订单按钮的「切换到 Arbitrum」阶段已在同日后续中按官方做法删除（见上节）。
 - 下次先查：`docs/cctp-deposits.md` Wallet Network 一节、`use-deposit.ts` 的 `getDepositProviderForChain` 与 `waitForDepositChain`。

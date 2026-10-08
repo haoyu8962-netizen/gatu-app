@@ -1,12 +1,10 @@
 import { useLingui } from "@lingui/react/macro";
 import { Button } from "@sairn/ui";
 import { type ChangeEvent, Suspense, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
-import { useSwitchChain, useWalletClient } from "wagmi";
 import { ButtonLoading } from "@/components/brand/button-loading";
 import { LazyDialogHost } from "@/components/ui/lazy-dialog-host";
 import { getFormattedMidPrice } from "@/components/ui/price-input";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
-import { ARBITRUM_CHAIN_ID } from "@/config/contracts";
 import { TRADE_PANEL_LABELS } from "@/config/trade-panel-labels";
 import { get24hChange, getPositionDex } from "@/domain/market";
 import { getFundsAvailabilityNotice } from "@/domain/trade/data-presentation";
@@ -152,12 +150,8 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 	const { formatPrice, formatSlippageBps, formatToken, formatUSD } = numberFormat;
 	const { t } = useLingui();
 	const validationErrorId = useId();
-	const { address, isConnected } = useWalletSession();
+	const { address, isConnected, hasWalletAccess } = useWalletSession();
 	const depositAvailability = useDepositAvailability();
-	const { data: walletClient, isLoading: isWalletLoading, error: walletClientError } = useWalletClient();
-	const { switchChain, isPending: isSwitchingChain } = useSwitchChain();
-
-	const needsChainSwitch = !!walletClientError && walletClientError.message.includes("does not match");
 
 	const { data: market } = useSelectedMarketInfo();
 	const crossMarginSnapshot = useProspectiveCrossMarginAccount(market);
@@ -178,8 +172,9 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 	const requiresBuilderFee = !twapOrder;
 	const { isReady, isSignerReady, isSignerLoading, isBuilderFeeLoading, signerMode } = useTradingStatus();
 	const isTradingAuthorized = requiresBuilderFee ? isReady : isSignerReady;
+	const isWalletLoading = isConnected && signerMode === "owner" && isSignerLoading;
 	const { authorize, status: registerStatus } = useTradingAuthorization({ requiresBuilderFee });
-	const canApprove = !!walletClient && !!address;
+	const canApprove = hasWalletAccess && !!address;
 	const isRegistering =
 		registerStatus === "approving_fee" || registerStatus === "approving_agent" || registerStatus === "verifying";
 	const isApprovalLoading = isSignerReady ? requiresBuilderFee && isBuilderFeeLoading : isSignerLoading;
@@ -598,10 +593,6 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 		setSizeInput(event.target.value);
 	}
 
-	function handleSwitchChain() {
-		switchChain({ chainId: ARBITRUM_CHAIN_ID });
-	}
-
 	function handleMarginSettingsOpen() {
 		setMarginDialogView("margin");
 		setSettingsTab("margin");
@@ -782,8 +773,6 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 
 	const buttonContent = getMobileOrderButtonContent({
 		isConnected,
-		needsChainSwitch,
-		isSwitchingChain,
 		availableBalance,
 		reduceOnly,
 		isBalanceLoading: isAvailabilityLoading || isAvailabilityStale || isAvailabilityBlocked,
@@ -802,14 +791,11 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 		sideLabel: sideLabels[side],
 		labels: {
 			connect: t`Connect Wallet`,
-			switching: t`Switching...`,
-			switchChain: t`Switch to Arbitrum`,
 			deposit: t`Deposit`,
 			signing: t`Signing...`,
 			enableTrading: t`Enable Trading`,
 		},
 		onConnect: () => setWalletModalOpen(true),
-		onSwitchChain: handleSwitchChain,
 		onDeposit: () => openDepositModal("deposit"),
 		onApprove: handleApprove,
 		onSubmit: handleSubmit,
@@ -1194,8 +1180,6 @@ function formatSummaryPrice(
 
 interface MobileButtonContentInput {
 	isConnected: boolean;
-	needsChainSwitch: boolean;
-	isSwitchingChain: boolean;
 	availableBalance: number;
 	reduceOnly?: boolean;
 	isBalanceLoading: boolean;
@@ -1214,7 +1198,6 @@ interface MobileButtonContentInput {
 	sideLabel: string;
 	labels: MobileOrderButtonLabels;
 	onConnect: () => void;
-	onSwitchChain: () => void;
 	onDeposit: () => void;
 	onApprove: () => void;
 	onSubmit: () => void;
@@ -1222,8 +1205,6 @@ interface MobileButtonContentInput {
 
 interface MobileOrderButtonLabels {
 	connect: string;
-	switching: string;
-	switchChain: string;
 	deposit: string;
 	signing: string;
 	enableTrading: string;
@@ -1232,7 +1213,6 @@ interface MobileOrderButtonLabels {
 export function getMobileOrderButtonContent(input: MobileButtonContentInput): ButtonContent {
 	const stage = getOrderActionStage({
 		isConnected: input.isConnected,
-		needsChainSwitch: input.needsChainSwitch,
 		needsApproval: input.needsApproval,
 		isSignerReady: input.isSignerReady,
 		hasBalanceError: input.hasBalanceError,
@@ -1246,14 +1226,6 @@ export function getMobileOrderButtonContent(input: MobileButtonContentInput): Bu
 			text: input.labels.connect,
 			action: input.onConnect,
 			disabled: false,
-			variant: "cyan",
-		};
-	}
-	if (stage === "switchChain") {
-		return {
-			text: input.isSwitchingChain ? input.labels.switching : input.labels.switchChain,
-			action: input.onSwitchChain,
-			disabled: input.isSwitchingChain,
 			variant: "cyan",
 		};
 	}

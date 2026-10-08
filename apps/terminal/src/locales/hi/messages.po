@@ -8577,8 +8577,8 @@ msgstr "{marketName} बाज़ार पर स्विच करें, {si
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/config/ui-text.ts
 #: src/lib/trade/use-button-content.ts
-msgid "Switch to Arbitrum"
-msgstr "Arbitrum पर स्विच करें"
+#~ msgid "Switch to Arbitrum"
+#~ msgstr "Arbitrum पर स्विच करें"
 
 #: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
 #~ msgid "Switch to Arbitrum to deposit USDC to Hyperliquid"
@@ -8631,8 +8631,8 @@ msgstr "नेटवर्क बदला जा रहा है"
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/config/ui-text.ts
 #: src/lib/trade/use-button-content.ts
-msgid "Switching..."
-msgstr "स्विच हो रहा है..."
+#~ msgid "Switching..."
+#~ msgstr "स्विच हो रहा है..."
 
 #: src/components/staking/staking-view.tsx
 msgid "System finalization · hash unavailable"

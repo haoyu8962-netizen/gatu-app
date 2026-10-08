@@ -8577,8 +8577,8 @@ msgstr "Switch to {marketName} market, {sideLabel} order"
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/config/ui-text.ts
 #: src/lib/trade/use-button-content.ts
-msgid "Switch to Arbitrum"
-msgstr "Switch to Arbitrum"
+#~ msgid "Switch to Arbitrum"
+#~ msgstr "Switch to Arbitrum"
 
 #: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
 #~ msgid "Switch to Arbitrum to deposit USDC to Hyperliquid"
@@ -8631,8 +8631,8 @@ msgstr "Switching network"
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/config/ui-text.ts
 #: src/lib/trade/use-button-content.ts
-msgid "Switching..."
-msgstr "Switching..."
+#~ msgid "Switching..."
+#~ msgstr "Switching..."
 
 #: src/components/staking/staking-view.tsx
 msgid "System finalization · hash unavailable"
