@@ -11,7 +11,6 @@ import {
 	getChartApiSymbol,
 	getChartMarketKeys,
 	getChartMarketLookupKey,
-	getChartPriceScale,
 	getChartSymbolInfo,
 	isChartMarketSymbol,
 } from "@/lib/chart/market-symbol";
@@ -977,12 +976,6 @@ export function TradingViewChart({
 			return currentMarket?.name === coin ? true : undefined;
 		}
 
-		function getSelectedMarketPriceScale(coin: string): number | undefined {
-			const currentMarket = getMarketForChartSymbol(coin, coin);
-			if (currentMarket?.name !== coin) return undefined;
-			return getChartPriceScale(currentMarket);
-		}
-
 		function getSelectedMarketSymbolInfo(symbolName: string, coin: string) {
 			const currentMarket = getMarketForChartSymbol(symbolName, coin);
 			if (!currentMarket) return undefined;
@@ -1328,7 +1321,6 @@ export function TradingViewChart({
 				setInitError(null);
 
 				const datafeed = createDatafeed({
-					getPriceScale: getSelectedMarketPriceScale,
 					getSymbolInfo: getSelectedMarketSymbolInfo,
 					isKnownCoin: isSelectedMarketCoin,
 					getHistoryTargetGeneration: () => historyTargetGenerationRef.current,

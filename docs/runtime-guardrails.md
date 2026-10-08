@@ -40,11 +40,20 @@ Do not collapse these states into one boolean.
   keyed by environment and exact owner identity.
 - Do not classify an account as empty until both complete all-DEX perpetual
   and spot snapshots have loaded successfully.
-- Normal wallet disconnect must clear only the active agent-only owner
-  (`hyperliquid_active_agent_owner`). It must not delete
-  `hyperliquid_agent_{env}_{owner}`.
-- Delete a local agent key only for explicit reset/revoke/rotation flows, not
-  for ordinary disconnect.
+- An explicit wallet disconnect closes the owner's Agent registration session,
+  removes that owner's local Agent key (`hyperliquid_agent_{env}_{owner}`) and
+  clears the matching active agent-only owner (`hyperliquid_active_agent_owner`)
+  before logging out of Privy (`use-wallet-session.ts`,
+  `closeAgentRegistrationSessionAndRemove`). If the key cannot be removed, the
+  disconnect fails and does not log out. The next connection generates and
+  approves a new Agent, which follows Hyperliquid's advice never to reuse API
+  wallet addresses; a same-name approval deregisters the previous one. Ordinary
+  email trading keeps no local Agent, so this affects external-wallet and
+  Agent-only sessions. (Decided 2026-10-04: the code is authoritative; this
+  section used to say the opposite.)
+- Apart from explicit disconnect, delete a local Agent key only for explicit
+  reset, revocation or rotation, never during transient signer restoration
+  (`docs/trading-onboarding.md`).
 - Connected wallet sessions always win over agent-only sessions. Agent-only is
   only for imported mobile access or explicitly active local-agent sessions.
 - L1 trading actions (`order`, `cancel`, `updateLeverage`, etc.) must use the
@@ -116,16 +125,22 @@ Do not collapse these states into one boolean.
   `wallet_connect` for Privy's long-tail catalog; do not substitute
   `wallet_connect_qr` or label an unrelated catalog identifier as SafePal.
 - Login methods remain `wallet` and `email`; Passkey login is intentionally
-  disabled. Embedded Ethereum wallets are created only for users without a
-  wallet, and Privy's embedded wallet UI remains hidden.
+  disabled. Privy's login window never creates a wallet (`createOnLogin:
+  "off"`): after login, `EmailEmbeddedWalletProvider` creates the embedded
+  Ethereum wallet of an email session that has none, once per session through
+  Privy's `createWallet()`
+  ([ADR 0033](adr/0033-silent-email-wallet-creation.md)). That call shows no
+  Privy screen only while the wallet proxy is ready and the Privy application
+  keeps user-owned recovery on creation off. External-wallet sessions never
+  get one, and Privy's embedded wallet UI remains hidden.
 - Dark/light Privy configuration changes appearance, accent color and the
   login-window logo only. The logo is the brand lockup for that theme, a
   same-origin file (`/brand/lockup-on-dark.svg`, `/brand/lockup-on-light.svg`)
   that `pnpm brand:sync` copies from `brand/svg`; it overrides the dashboard
   `logo_url`, so the dashboard logo is never the source of truth. Wallet ordering and authentication behavior stay identical across themes,
   and the authentication provider is never remounted merely to change theme.
-  Preserve `PwaInstallProvider > PrivyProvider > SmartWalletsProvider >`
-  `PersistQueryClientProvider > @privy-io/wagmi WagmiProvider`, keep
+  Preserve `PwaInstallProvider > PrivyProvider > EmailEmbeddedWalletProvider >`
+  `SmartWalletsProvider > PersistQueryClientProvider > @privy-io/wagmi WagmiProvider`, keep
   Ethereum-only wallet selection, and customize radius through Privy's
   supported public CSS variables rather than generated DOM classes.
 - `ClientRootProvider` passes `PRIVY_CONFIG_BY_THEME[theme]` from the live
@@ -456,6 +471,27 @@ mobile regressions.
   `pointer-events: none` to the loaded TradingView iframe.
 - CSP changes must keep the main document strict while allowing the
   charting-library same-origin iframe mode.
+- The vendored loader (`charting_library.js` and its esm/cjs/standalone
+  copies) carries one local patch in `_create`: the `innerWindowLoad`
+  listener is registered after `document.open()` and before
+  `document.write(...)` through `_listenInnerWindowLoad`; the blob-iframe
+  branch, which writes nothing, and the missing-`contentWindow` warning branch
+  call the same helper where the upstream code registered it, so those paths
+  keep their behaviour (the warning branch still throws on the null window).
+  The upstream order (listener after `document.close()`) loses the event on WebKit whenever every inner bundle is
+  already in the page's memory cache, which is the second widget of a page on
+  production (immutable bundles, ADR 0006): the inner document dispatches the
+  event synchronously during the write, `onChartReady` never fires and the
+  chart ends in "Something went wrong" after the ready watchdog. The listener
+  cannot move before `document.open()`, which removes every listener on the
+  inner window. `chart-library-loader-handshake-contract` pins the source
+  order in all four copies and `chart-library-loader-handshake` runs the real
+  loader against a stub iframe whose write dispatches the event synchronously
+  (with the upstream order as a negative control); both are in the CI
+  TradingView step through its `chart-*` glob. Re-apply the patch and
+  regenerate `deploy/manifests/tradingview-charting-library.json` on every
+  library upgrade; `chart-rebuild-webkit-probe.mjs` with
+  `serve-immutable-build.mjs` reproduces the failure on a local build.
 - The vendored library samples 2% of chart loads to insert a Google Analytics
   loader from inside the iframe, gated by its internal feature flag `14851`.
   Keep `"14851"` in `CHART_DISABLED_FEATURES` and never add
@@ -487,6 +523,20 @@ mobile regressions.
   second creation-option change in the same commit is collapsed by the
   not-ready branch rather than merged into a pending save;
   `docs/number-format-setting.md` owns the rule.
+- Chart price precision is a function of the market, never of the digits a
+  price string happens to have. `getChartSymbolInfo` derives `pricescale` and
+  `variable_tick_size` from `szDecimals` and the market kind under
+  Hyperliquid's tick rules (`apps/terminal/src/lib/chart/price-format.ts`).
+  `variable_tick_size` gives every value the decimals of its rounding to five
+  significant figures, so a price crossing a power of ten never rebuilds the
+  widget. `pricescale` is the band of the reference price: it does not format
+  values in the default price format, but it sets the smallest price-axis step
+  and the drawing price step, and TradingView caches it per symbol for the
+  widget's lifetime. `docs/adr/0035-chart-price-precision-from-market-rules.md`
+  owns the band limits and the tradeoffs. The limits rely on the vendored library
+  giving a price equal to a band limit that band's tick, which unit tests can
+  only mirror: re-check after every library upgrade with
+  `node apps/terminal/tests/browser/chart-price-format-probe.mjs <origin>`.
 - Fonts are scoped to a document, so the `@font-face` rules in the application
   stylesheet do not reach the chart iframe. `CHART_CUSTOM_FONT_FAMILY` and the
   theme stylesheets use a system font stack and must not name an application
@@ -500,6 +550,7 @@ mobile regressions.
 - `apps/terminal/src/components/trade/chart/tradingview-chart.tsx`
 - `apps/terminal/src/components/trade/chart/chart-panel.tsx`
 - `apps/terminal/src/components/trade/chart/datafeed.ts`
+- `apps/terminal/src/lib/chart/price-format.ts`
 - `apps/terminal/src/config/chart.ts`
 - `apps/terminal/src/config/security-headers.ts`
 - `apps/terminal/vite.config.ts`
@@ -1098,7 +1149,7 @@ Before merging any change that touches the areas above:
 
 ## Known Anti-Patterns
 
-- Deleting local agent keys on normal disconnect.
+- Deleting a local Agent key during transient signer restoration instead of on explicit disconnect, reset, revocation or rotation.
 - Falling back from trading actions to wallet signatures.
 - Passing display symbols directly to Hyperliquid candle/orderbook APIs.
 - Recreating TradingView because of theme, locale, tab, or small layout changes.

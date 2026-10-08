@@ -70,7 +70,13 @@ const budgets = {
 	// branch's own build against 04469b52 had measured +1,216.
 	// Merged with dev a0c05740 on 2026-10-03: the three raises above were measured before dev's Privy upgrade and card
 	// funding and are added to its 3,281,171. The fixed-metadata build of the merge 0944584d measured 3,293,592 (+5,941).
-	totalGzipBaselineBytes: 3_287_651,
+	// Re-baselined 2026-10-08 before release p26 to the fixed-metadata Node 22.15.0 build of dev 54235298 (3,296,759,
+	// no .env.local, pairing off; docs/terminal-performance-baseline.md). It folds in the +6,684 the shipped p24b main
+	// 6da4c15a already used (3,294,335) and the +2,570 of PR #77 (chart price precision, silent email wallet; dev
+	// 345a2143 measured 3,296,905); PR #81 (the TradingView loader patch and its tests) changed no client asset
+	// (3,296,759, -146 of build noise). The pairing-on build that only pull requests into main run measures about
+	// 2,200 more (CI read 3,298,948 for the same head) and had exceeded the previous allowance by 1,297.
+	totalGzipBaselineBytes: 3_296_759,
 	totalGzipAllowedIncreaseBytes: 10_000,
 	tradeStartup: {
 		requiredRouteIds: ["__root__", "/trade/$symbol"],

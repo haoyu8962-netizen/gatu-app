@@ -591,11 +591,6 @@ export function DepositModal() {
 	const canSubmitWithdraw = withdrawValidation.valid && isWithdrawDestinationValid && withdrawalPrerequisitesReady;
 
 	useEffect(() => {
-		if (!open || visibleTab !== "deposit" || !depositAvailability.available || !needsEmbeddedWallet) return;
-		void ensureEmailEmbeddedWallet().catch(() => {});
-	}, [depositAvailability.available, ensureEmailEmbeddedWallet, needsEmbeddedWallet, open, visibleTab]);
-
-	useEffect(() => {
 		if (!open) {
 			observedWithdrawalRouteRef.current = null;
 			return;

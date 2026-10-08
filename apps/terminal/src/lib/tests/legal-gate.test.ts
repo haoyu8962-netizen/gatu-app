@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { deriveLegalGateSession, deriveLegalGateState } from "@/hooks/trade/use-legal-gate";
+import { deriveEmailOwnerSetup, deriveLegalGateSession, deriveLegalGateState } from "@/hooks/trade/use-legal-gate";
 
 const READY = {
 	hasSession: true,
 	isSessionPending: false,
+	authenticationModalOpen: false,
 	hasOwnerIdentity: true,
+	ownerSetup: "settled" as const,
 	hasWalletAccess: true,
 	hasStatusError: false,
 	isPending: false,
@@ -129,5 +131,79 @@ describe("legal gate state", () => {
 
 	it("allows normal modals only after acceptance is confirmed", () => {
 		expect(deriveLegalGateState(READY)).toBe("accepted");
+	});
+
+	it("waits for an email owner wallet that is still being set up instead of asking to reconnect", () => {
+		const missingOwner = { ...READY, hasOwnerIdentity: false, hasWalletAccess: false, acceptedTerms: undefined };
+
+		expect(deriveLegalGateState({ ...missingOwner, ownerSetup: "pending" })).toBe("checking");
+		expect(deriveLegalGateState({ ...missingOwner, ownerSetup: "failed" })).toBe("wallet_setup_failed");
+		expect(deriveLegalGateState({ ...missingOwner, ownerSetup: "settled" })).toBe("wallet_required");
+	});
+
+	it("holds every policy dialog state that is not being submitted while the Privy modal is visible", () => {
+		const behindPrivy = { ...READY, authenticationModalOpen: true };
+
+		expect(deriveLegalGateState({ ...behindPrivy, acceptedTerms: false })).toBe("checking");
+		expect(deriveLegalGateState({ ...behindPrivy, userAllowed: false })).toBe("checking");
+		expect(deriveLegalGateState({ ...behindPrivy, hasStatusError: true })).toBe("checking");
+		expect(
+			deriveLegalGateState({ ...behindPrivy, hasOwnerIdentity: false, hasWalletAccess: false, ownerSetup: "failed" }),
+		).toBe("checking");
+		expect(deriveLegalGateState({ ...behindPrivy, hasOwnerIdentity: false, hasWalletAccess: false })).toBe("checking");
+	});
+
+	it("keeps accepted and inactive sessions, and a dialog whose acceptance is being submitted, as they are", () => {
+		const behindPrivy = { ...READY, authenticationModalOpen: true };
+
+		expect(deriveLegalGateState(behindPrivy)).toBe("accepted");
+		expect(deriveLegalGateState({ ...behindPrivy, hasSession: false, hasOwnerIdentity: false })).toBe("inactive");
+		expect(deriveLegalGateState({ ...behindPrivy, acceptedTerms: false, isSubmitting: true })).toBe("submitting");
+	});
+});
+
+describe("email owner setup", () => {
+	const EMAIL_SESSION = {
+		walletIntent: "embedded" as const,
+		hasOwnerIdentity: false,
+		needsEmbeddedWallet: false,
+		isCreatingEmbeddedWallet: false,
+		hasEmbeddedWalletError: false,
+		withinActivationGrace: false,
+	};
+
+	it("is pending while the wallet is missing or being created", () => {
+		expect(deriveEmailOwnerSetup({ ...EMAIL_SESSION, needsEmbeddedWallet: true })).toBe("pending");
+		expect(deriveEmailOwnerSetup({ ...EMAIL_SESSION, needsEmbeddedWallet: true, isCreatingEmbeddedWallet: true })).toBe(
+			"pending",
+		);
+	});
+
+	it("reports a failed creation until a retry starts", () => {
+		expect(deriveEmailOwnerSetup({ ...EMAIL_SESSION, needsEmbeddedWallet: true, hasEmbeddedWalletError: true })).toBe(
+			"failed",
+		);
+		expect(
+			deriveEmailOwnerSetup({
+				...EMAIL_SESSION,
+				needsEmbeddedWallet: true,
+				hasEmbeddedWalletError: true,
+				isCreatingEmbeddedWallet: true,
+			}),
+		).toBe("pending");
+	});
+
+	it("waits for activation of an existing wallet only during the grace period", () => {
+		expect(deriveEmailOwnerSetup({ ...EMAIL_SESSION, withinActivationGrace: true })).toBe("pending");
+		expect(deriveEmailOwnerSetup(EMAIL_SESSION)).toBe("settled");
+	});
+
+	it("does not apply to an active owner or to sessions that are not email sessions", () => {
+		expect(deriveEmailOwnerSetup({ ...EMAIL_SESSION, needsEmbeddedWallet: true, hasOwnerIdentity: true })).toBe(
+			"settled",
+		);
+		for (const walletIntent of ["external", "ambiguous", "unavailable"] as const) {
+			expect(deriveEmailOwnerSetup({ ...EMAIL_SESSION, walletIntent, needsEmbeddedWallet: true })).toBe("settled");
+		}
 	});
 });

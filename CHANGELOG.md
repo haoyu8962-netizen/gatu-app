@@ -498,6 +498,11 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Fixed
 
+- On iPhone and iPad Safari, the chart no longer stays on the loading mark and then shows
+  "Something went wrong" after you leave the trade page and come back, switch back to a language
+  the chart had already shown, change the number format or press Retry. The TradingView loader
+  registered its ready listener a moment too late when Safari replayed the chart files from
+  memory; the loader is patched to listen first.
 - Switching the number format in the language menu (for example `1,234.56` to `1.234,56`) now
   rewrites at once the figures in positions, open orders, balances, trade, funding and order
   histories, TWAP, the order book, desktop and mobile account summaries, order entry summaries and
@@ -546,6 +551,24 @@ changes, not evidence that a build has been deployed or accepted on real devices
 - A notification that waited behind others and came back to the front while the pointer was
   holding the stack open (or while the page was hidden) no longer disappears the moment the
   pointer leaves; it now gets its full time on screen. This affected order results as well.
+- The chart now formats prices by Hyperliquid's price rules for the market: each price is shown with
+  at most five significant figures and no more decimals than the market allows, and whole-number
+  prices are never cut, so HYPE around $90 reads `90.086` and BTC at its current price shows whole
+  dollars.
+  Each chart load or rebuild (first load, language or number-format change, recovery) used to take
+  its precision from whatever digits the mark price had at that moment, so the same market could
+  show 2, 3 or 4 decimals. When a price crosses a power of ten, its precision changes without
+  reloading the chart. See [ADR 0035](docs/adr/0035-chart-price-precision-from-market-rules.md).
+- Signing up with email no longer shows Privy's "Creating your wallet" and welcome screens next to
+  the terms dialog. The wallet is now created in the background after the email code is accepted,
+  and the terms dialog opens only after the login window has closed and the new wallet is ready.
+  While the wallet is being created the page waits instead of asking you to reconnect. If it is
+  not ready after 20 seconds, a "Wallet not ready" dialog offers Retry and Disconnect, Reconnect
+  wallet also retries, and Disconnect now works for an email login that has no wallet yet. The
+  terms dialog's reconnect and verification-error states offer Disconnect as well. Privy can still
+  show its own creation screen when its wallet service does not start within 30 seconds; until
+  that service is ready, Reload page remains the only recovery. See
+  [ADR 0033](docs/adr/0033-silent-email-wallet-creation.md).
 - In the light theme, browsers that tint their toolbar or status bar from the page's theme color
   (Safari 15 and later, Chrome on Android) now use white like the page header instead of the dark
   terminal teal. The theme color follows the theme chosen in Settings from the first paint and on
