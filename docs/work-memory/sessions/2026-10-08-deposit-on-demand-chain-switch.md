@@ -72,7 +72,9 @@
 ### 验证结果（第三轮修复）
 
 - `pnpm --filter @sairn/terminal typecheck` 通过；`pnpm exec biome check` 对改动文件通过。
-- `vitest run`：`use-deposit-routing-guard`（「wallet network」十七例）、`deposit-modal-withdrawal-routing-guard`、`deposit-execution-state` 通过；十六个变异全部被抓到。全量套件只在 422d8408 跑过。
+- `vitest run`：`use-deposit-routing-guard`（「wallet network」十七例）、`deposit-modal-withdrawal-routing-guard`、`deposit-execution-state` 通过；十六个变异全部被抓到。
+- 窄范围第四轮 Codex 复核（只审 9519c7f6，C 路口径）：10.0，无发现。
+- 9519c7f6 上的 `pnpm --filter @sairn/terminal test -- --maxWorkers=4`：8560 项中 8545 通过、7 跳过、8 失败。失败项：`vite-development-cache`（沙箱禁止监听本地端口，EPERM，与 422d8408 时相同）；`chart-store`（2）、`global-modals-hip3-disclaimer`（3）、`positions-panel-preload`（1）、`root-route-transition`（2）均为测试或钩子超时，与本次改动无关，四个文件单独重跑 76 项全部通过。
 
 - 未做：真实手机钱包（WalletConnect 与钱包内置浏览器）的存款验收。
 - 翻译：「Switching network」已补 zh/es/fr/hi/ar；其余四种语言此前缺失的 43 条与本次无关。
