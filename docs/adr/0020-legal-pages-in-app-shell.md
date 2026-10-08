@@ -1,6 +1,6 @@
 # ADR 0020：文档与法律页并入应用外壳
 
-- 状态：已接受并实施，2026-09-27；尚未发布。本记录不代表已部署，也不代表已在真机上验收。
+- 状态：已接受并实施，2026-09-27；尚未发布。本记录不代表已部署，也不代表已在真机上验收。 2026-10-08 补记：之后随 p24 发布（main `3ced842e`，2026-10-02）。
 - 取代：[ADR 0005](0005-spa-static-shell.md) 中“文档路由单独预渲染真实 HTML、边缘函数把它们改写到 `index.html`”的部分；[ADR 0006](0006-startup-preloads-and-edge-caching.md) 中文档页按 URL 缓存（`documents-v9`）和“文档路由不预取地区”的部分；[ADR 0010](0010-blank-until-ready-startup.md) 决策 2 中保留文档路由分类与文档预渲染的部分。这些 ADR 的其余决策不变。
 - 关联：[运行时约束](../runtime-guardrails.md)、[启动渲染规则](../../.claude/rules/startup-rendering.md)、[CloudFront 部署](../../deploy/cloudfront/README.md)。
 

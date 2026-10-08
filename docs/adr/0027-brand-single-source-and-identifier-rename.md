@@ -1,6 +1,6 @@
 # ADR 0027：品牌迁移总则：单一来源、显示名、内部标识与历史记录
 
-- 状态：已接受并实施（2026-10-01，分支 `claude/from-dev-1001`，提交 `c2d47191` 至 `94175c1c`，记录提交 `f440fa1b`）。本 ADR 是实施后同日补写的回溯记录。分支没有推送，未合入 `dev`，也未发布。决定由用户在执行前给出，见[执行记录](../work-memory/sessions/2026-10-01-sairn-brand-migration-execution.md)的「背景与范围」。其中「内部标识全部改为 sairn」推翻了[迁移计划](../brand-migration-plan.md) D8、D9 的推荐默认值。
+- 状态：已接受并实施（2026-10-01，分支 `claude/from-dev-1001`，提交 `c2d47191` 至 `94175c1c`，记录提交 `f440fa1b`）。本 ADR 是实施后同日补写的回溯记录。分支没有推送，未合入 `dev`，也未发布。决定由用户在执行前给出，见[执行记录](../work-memory/sessions/2026-10-01-sairn-brand-migration-execution.md)的「背景与范围」。其中「内部标识全部改为 sairn」推翻了[迁移计划](../brand-migration-plan.md) D8、D9 的推荐默认值。 2026-10-08 补记：之后随 p24 发布（main `3ced842e`，2026-10-02）。
 - 关联：[品牌标识与素材](../brand-assets.md)（现行 Reference）；[迁移计划](../brand-migration-plan.md)（D1–D24、阶段、风险）；[规划记录](../work-memory/sessions/2026-10-01-sairn-brand-migration-plan.md)；[ADR 0028](0028-brand-accent-colors.md)（品牌色）、[ADR 0029](0029-brand-status-motion.md)（品牌动效与状态符号）、[ADR 0030](0030-pnl-share-card-brand-rendering.md)（盈亏分享卡）、[ADR 0031](0031-domain-move-to-sairn-ai.md)（域名迁移）。
 
 ## 背景与约束

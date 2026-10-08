@@ -1,6 +1,6 @@
 # Sairn — AI Agent Guide
 
-This is the implementation map for this checkout. Read [AGENTS.md](AGENTS.md) first for durable product and safety contracts, and use the [documentation index](docs/README.md) to find design decisions, working records and delivery documentation. Update the relevant documentation alongside behavior changes.
+This is the implementation map for this checkout. Read [AGENTS.md](AGENTS.md) first for durable product and safety contracts, the [agent handbook](docs/agent-handbook.md) for working with the operator, shared worktrees, reviews and releases, and use the [documentation index](docs/README.md) to find design decisions, working records and delivery documentation. Update the relevant documentation alongside behavior changes.
 
 ## Repository boundaries
 
@@ -60,7 +60,7 @@ Detailed conventions live in [code-style.md](.claude/rules/code-style.md), [hype
 
 ### Adding data, actions and state
 
-Prefer existing typed exports from `@sairn/hl-react`: `useInfo*` for requests, `useSub*` for subscriptions and `useAction*` for mutations. Shared implementations live in [packages/hl-react/src/hooks](packages/hl-react/src/hooks), with behavior declared in [registries](packages/hl-react/src/registries). Add app-specific composition under `apps/terminal/src/hooks/` or `lib/`; do not recreate the former app-local info/subscription/exchange directories or bypass shared execution guards.
+Use the typed generic hooks from `@sairn/hl-react`: `useInfo(method, params)` for requests, `useSubscription(method, params)` for WebSocket subscriptions and `useExchange(method, options)` for signed actions; the method name selects the SDK call, its types and, for actions, the signer (`registries/exchange.ts`). Shared implementations live in [packages/hl-react/src/hooks](packages/hl-react/src/hooks), with behavior declared in [registries](packages/hl-react/src/registries). Add app-specific composition under `apps/terminal/src/hooks/` or `lib/`; do not recreate the former app-local info/subscription/exchange directories or bypass shared execution guards.
 
 Draft and preference stores live in `apps/terminal/src/stores/`. Add persistence only where the lifecycle requires it; validate persisted data with [validated storage](apps/terminal/src/lib/storage/validated-storage.ts). Financial action execution must recheck current identity, market, legal status and required snapshot availability, not merely trust displayed component values. Requested-action feedback follows the [global notification contract](docs/trading-notifications.md): use the shared Sonner host and owner/environment-scoped task updates without making presentation state an execution guard.
 
@@ -95,6 +95,6 @@ Choose checks for the touched surface using [AGENTS.md](AGENTS.md#verification) 
 
 ## Completing work
 
-Update the relevant design/reference/tutorial when implementation changes its contract, and record evidence and remaining limits in working documentation rather than adding temporary findings to `AGENTS.md`. Historical verification is not proof that this checkout or a production release passed the same checks.
+Update the relevant design/reference/tutorial when implementation changes its contract, and record evidence and remaining limits in working documentation rather than adding temporary findings to `AGENTS.md`. Historical verification is not proof that this checkout or a production release passed the same checks. Lessons that future tasks need (workflow pitfalls, operator preferences, environment facts) go into the [agent handbook](docs/agent-handbook.md) or the owning topic document, not into an agent's private memory.
 
 Follow [git.md](.claude/rules/git.md) and the [auto-commit skill](.agents/skills/auto-commit/SKILL.md). Preserve unrelated changes, stage only current-task paths and create a validated Conventional Commit before the final response unless an explicit exception applies. Never push without the user's request. [Lefthook](lefthook.yml) runs Biome on staged code, extracts Lingui catalogs when terminal source changes, and validates the commit message; inspect any hook-generated changes before including them.

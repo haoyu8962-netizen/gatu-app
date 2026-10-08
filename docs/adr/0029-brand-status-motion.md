@@ -1,6 +1,6 @@
 # ADR 0029：品牌动效与状态符号的接入
 
-- 状态：已接受并实施（2026-10-01）；未合入 `dev`、未发布，未做真机与真实钱包验收。
+- 状态：已接受并实施（2026-10-01）；未合入 `dev`、未发布，未做真机与真实钱包验收。 2026-10-08 补记：之后随 p24 发布（main `3ced842e`，2026-10-02）。
 - 相关：[品牌标识与素材](../brand-assets.md)「状态动效」、[交易通知](../trading-notifications.md)、[确认面契约](../confirmation-surfaces.md)、[移动端数据展示](../mobile-data-presentation.md)、[ADR 0010](0010-blank-until-ready-startup.md)、[ADR 0019](0019-global-trading-notifications.md)、[品牌迁移计划](../brand-migration-plan.md)（本编号由其「ADR 编号」一节预留）。
 
 ## 上下文

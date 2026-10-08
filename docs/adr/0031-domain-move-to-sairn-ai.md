@@ -1,6 +1,6 @@
 # ADR 0031：域名迁移到 sairn.ai：两组域名并存识别与上线顺序
 
-- 状态：代码部分已接受并实施（2026-10-01，分支 `claude/from-dev-1001`，提交 `5cd45ab8`；请求头与环境变量改名在 `7e228768`）。本 ADR 是实施后同日补写的回溯记录。分支没有推送，未合入 `dev`，也未发布。按执行记录，仓库外的步骤（注册、DNS、证书、CloudFront 别名、源站请求策略、Privy、邮件）一项都没有执行。撰写本 ADR 时观察到 `sairn.ai` 已委派给 Cloudflare 名称服务器，但归属没有记录，详见「背景与约束」。
+- 状态：代码部分已接受并实施（2026-10-01，分支 `claude/from-dev-1001`，提交 `5cd45ab8`；请求头与环境变量改名在 `7e228768`）。本 ADR 是实施后同日补写的回溯记录。分支没有推送，未合入 `dev`，也未发布。按执行记录，仓库外的步骤（注册、DNS、证书、CloudFront 别名、源站请求策略、Privy、邮件）一项都没有执行。撰写本 ADR 时观察到 `sairn.ai` 已委派给 Cloudflare 名称服务器，但归属没有记录，详见「背景与约束」。 2026-10-08 补记：之后随 p24 发布（main `3ced842e`，2026-10-02）。
 - 关联：[ADR 0027](0027-brand-single-source-and-identifier-rename.md)（单一来源、内部标识）；[ADR 0005](0005-spa-static-shell.md)（CloudFront 托管）；[迁移计划](../brand-migration-plan.md) D2、D9、D17、D23、阶段 7、§4.2、风险 #14–#18、#23–#26；[品牌标识与素材](../brand-assets.md)「域名切换到 sairn.ai」；[部署说明](../../deploy/cloudfront/README.md)顶部的过渡说明；[首次交易](../trading-onboarding.md)；[执行记录](../work-memory/sessions/2026-10-01-sairn-brand-migration-execution.md)。
 
 ## 背景与约束

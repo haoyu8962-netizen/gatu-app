@@ -1,6 +1,6 @@
 # 跨交易所资金费率对比页
 
-状态：已实现，2026-09-28 经 [PR #50](https://github.com/zora4523-bot/gatu-app/pull/50) 合入 `dev`（合并提交 `ac11f81b`），未晋升 `main`、未发布。集成头经三轮 Codex 只读对抗审查，并通过类型检查、完整终端测试与 Node 22.15 生产构建（含包体预算）；批次验证结果与遗留问题见[接入规划](sdk-feature-integration-plan.md)的实施记录。2026-09-27 在本分支开发服务器上用内置浏览器核对了桌面与手机 375px 宽度并与原始 `predictedFundings` 数据逐项对照，未做真机验收。日期：2026-09-27，2026-09-28 更新。范围：`/fundingComparison` 路由、桌面「更多」菜单与手机抽屉入口、`predictedFundings` 数据、费率换算与差值计算、页面状态和回归入口。本文是该页的归属文档；批次范围与取舍见 [SDK 未接入接口的接入规划](sdk-feature-integration-plan.md) 第 3 项。
+状态：已实现，2026-09-28 经 [PR #50](https://github.com/zora4523-bot/gatu-app/pull/50) 合入 `dev`（合并提交 `ac11f81b`），未晋升 `main`、未发布（2026-10-08 补记：之后随 p24 发布，main `3ced842e`，2026-10-02）。集成头经三轮 Codex 只读对抗审查，并通过类型检查、完整终端测试与 Node 22.15 生产构建（含包体预算）；批次验证结果与遗留问题见[接入规划](sdk-feature-integration-plan.md)的实施记录。2026-09-27 在本分支开发服务器上用内置浏览器核对了桌面与手机 375px 宽度并与原始 `predictedFundings` 数据逐项对照，未做真机验收。日期：2026-09-27，2026-09-28 更新。范围：`/fundingComparison` 路由、桌面「更多」菜单与手机抽屉入口、`predictedFundings` 数据、费率换算与差值计算、页面状态和回归入口。本文是该页的归属文档；批次范围与取舍见 [SDK 未接入接口的接入规划](sdk-feature-integration-plan.md) 第 3 项。
 
 ## 1. 目标与非目标
 

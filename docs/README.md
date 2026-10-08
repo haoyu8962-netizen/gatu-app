@@ -1,6 +1,6 @@
 # 文档地图
 
-从任务进入文档，而不是靠文件名猜当前方案。维护方法见[文档体系](documentation-system.md)。本轮导航整理于 2026-09-12；这里区分当前契约、历史材料和外部参考，不表示所有旧资料已逐行验证。
+从任务进入文档，而不是靠文件名猜当前方案。维护方法见[文档体系](documentation-system.md)。导航最初整理于 2026-09-12，2026-10-08 补充了 Agent 工作手册并刷新各项的发布状态；这里区分当前契约、历史材料和外部参考，不表示所有旧资料已逐行验证。
 
 ## 开始使用与交付
 
@@ -8,6 +8,7 @@
 | --- | --- |
 | 了解项目并启动本地环境 | [仓库 README](../README.md)、[本地开发教程](tutorials/local-development.md) |
 | 查目录、路由、Provider、命令 | [Terminal Reference](../apps/terminal/README.md)、[开发约定](../agent.md) |
+| Agent 协作、工作树、审查与交接 | [Agent 工作手册](agent-handbook.md)：与运营方的协作约定、共享检出与工作树、Codex 对抗审查、发布要点与更换账号清单；当前状态看工作记忆里最新的交接与发布记录 |
 | 查共享包与营销站点 | [hl-react](../packages/hl-react/README.md)、[UI](../packages/ui/README.md)、[Website](../apps/website/README.md) |
 | 看用户可见变化 | [Changelog / Unreleased](../CHANGELOG.md)，不代表已经发布 |
 | 部署、入口保护与回滚 | [CloudFront 发布](../deploy/cloudfront/README.md)（现行宿主；移动配对为纯客户端传输、无服务端路由，配对开关在真机清单记录前保持关闭，见 [ADR 0015](adr/0015-link-device-alignment.md) D7 与 D8）、[产物清单](../deploy/manifests/README.md)、[部署夹具](../deploy/fixtures/README.md) |
@@ -23,11 +24,11 @@
 | 产品稳定约束与运行边界 | [AGENTS](../AGENTS.md)、[Runtime guardrails](runtime-guardrails.md) |
 | 钱包身份与首次交易 | [首次交易](trading-onboarding.md)、[邮箱签名](email-trading-signing.md)、[签名机制](hyperliquid-signing.md)、[签名 ADR](adr/0002-exact-owner-trading-signers.md)、[邮箱钱包静默创建 ADR 0033](adr/0033-silent-email-wallet-creation.md) |
 | 钱包调试与桌面配对 | [初始化调试](wallet-initialization-debugging.md)、[Privy 主题与钱包稳定性](adr/0026-privy-follows-theme-after-upgrade.md)、[手机访问与扫码设计](mobile-phone-access-scanner-prd.md)、[设备验证清单](mobile-phone-access-device-validation.md) |
-| 充值、提现与资金 | [CCTP 充值](cctp-deposits.md)、[Privy 升级与法币入金规划](privy-upgrade-and-funding-plan.md)、[银行卡入金 ADR 0034](adr/0034-privy-card-funding.md)（默认关闭；[上线验收清单](privy-card-funding-launch-checklist.md)、[法律文本待审草案](privy-card-funding-legal-draft.md)）、[提现路由](withdrawals.md)、[账户概要](account-overview.md)、[Portfolio 统计](portfolio-statistics.md) |
+| 充值、提现与资金 | [CCTP 充值](cctp-deposits.md)、[Privy 升级与法币入金规划](privy-upgrade-and-funding-plan.md)、[银行卡入金 ADR 0034](adr/0034-privy-card-funding.md)（构建开关默认关闭，2026-10-03 起线上主网与测试网都已打开；[上线验收清单](privy-card-funding-launch-checklist.md)、[法律文本待审草案](privy-card-funding-legal-draft.md)）、[提现路由](withdrawals.md)、[账户概要](account-overview.md)、[Portfolio 统计](portfolio-statistics.md) |
 | Earn 借贷储备池 | [Earn](earn.md)、[ADR 0021](adr/0021-earn-borrow-lend-page.md)：数据来源、Max 与清算价公式、按钮门控、提交核验、与官方终端的偏差；未做真实钱包验收 |
 | 账户共享模型 | [账户 ADR](adr/0001-account-overview-cross-shell-model.md)；账户概要与 Portfolio 的就绪条件不同 |
 | 市场身份、路由与展示价格 | [单交易路由迁移](architecture/trade-single-route-migration.md)、[价格来源审查](price-source-audit.md)、[资产资料来源](spot-asset-information.md)、[图表价格精度 ADR 0035](adr/0035-chart-price-precision-from-market-rules.md) |
-| 下单状态与桌面/移动表单 | [草稿生命周期](order-draft-lifecycle.md)、[双端一致性](order-entry-surface-parity.md)、[表单布局](order-entry-layout-audit.md)、[TWAP 回归](twap-regression-tests.md)（含 TWAP 成交 CSV 导出）、[未平仓量上限拦截](open-interest-cap.md)（[ADR 0023](adr/0023-open-interest-cap-advisory-check.md)）；[只减仓修复方案](reduce-only-repair-plan.md)记录已实施设计、官方有仓位表单观察与验收矩阵 |
+| 下单状态与桌面/移动表单 | [草稿生命周期](order-draft-lifecycle.md)、[双端一致性](order-entry-surface-parity.md)、[表单布局](order-entry-layout-audit.md)、[TWAP 回归](twap-regression-tests.md)（含 TWAP 成交 CSV 导出）、[未平仓量上限拦截](open-interest-cap.md)（[ADR 0023](adr/0023-open-interest-cap-advisory-check.md)）；[只减仓修复方案](reduce-only-repair-plan.md)记录已实施设计、官方有仓位表单观察与验收矩阵；[手续费展示](fee-display.md)记录官方公式、实现位置与两项未修偏差 |
 | 确认弹窗：展示与执行 | [确认面契约](confirmation-surfaces.md)、[ADR 0017](adr/0017-market-close-confirmed-size-ceiling.md)、[ADR 0014](adr/0014-market-close-submit-and-dismiss.md)；当前实施状态与保留例外见契约。[TP/SL 大额滑点提示](position-tpsl-slippage-warning.md)与[杠杆弹窗仓位上限](leverage-position-limit.md)是只读提示，不参与提交 |
 | HIP-3 部署者免责声明 | [行为、出口与官方对照](hip3-deployer-disclaimer.md)：交易页只能确认或「离开此市场」，四个平仓流程先显示可取消的声明，全部平仓在接受时重新生成快照 |
 | 交易通知与订单队列 | [全局操作通知规范](trading-notifications.md)、[ADR 0019](adr/0019-global-trading-notifications.md)：已实现单一 Sonner 宿主、带身份任务、批次明细与 pending 恢复；[反馈组件审查](trading-feedback-review.md)保留修复前证据与替代说明。通知不是完整交易历史，实际验证范围见[交付记录](work-memory/sessions/2026-09-21-global-sonner-notifications.md) |
@@ -49,15 +50,15 @@
 | 数字格式与图表翻译对齐官方 | [规划](number-format-and-chart-translation-plan.md)：图表传 `numeric_formatting` 并随数字格式设置重建、日期/排序规则收口、输入框与阿拉伯语数字系统待决策；图表库内错译用 `custom_translate_function` 定点修补，先审计后收录、每条绑定库条目；数字格式四项（A-1/A-2a/A-3/A-4）已实施，归属见[数字格式设置](number-format-setting.md)，方案 B 待 zh + ar 审计 |
 | 移动持仓全部平仓 | [入口审查与实施说明](mobile-close-all-plan.md)：持仓工具栏已接入共享全账户市价链路；确认面列出实际目标并明示包含筛选隐藏仓位，后台提交跨页签和断点保持；批量限价和 TP/SL 清理仍为后续专项 |
 | Across 持久充值地址 | [接入设计](across-deposit-addresses.md)、[ADR 0004](adr/0004-across-deposit-addresses.md)：邮箱用户独立入口；生产权限、服务端身份/持久化、账户模式及资金验收待完成 |
-| 静态 SPA 壳与无服务器托管 | [ADR 0005](adr/0005-spa-static-shell.md)：运行时不再 SSR，Node 进程用预渲染的 `_shell.html` 回答导航（文档页自 [ADR 0020](adr/0020-legal-pages-in-app-shell.md) 起并入应用外壳），只执行可移植的 `/api/*` 处理器；发布健康检查含真实 geo 探针；把 `public/` 搬到 CDN 与边缘运行时挂载待完成 |
+| 静态 SPA 壳与无服务器托管 | [ADR 0005](adr/0005-spa-static-shell.md)：运行时不再 SSR，Node 进程用预渲染的 `_shell.html` 回答导航（文档页自 [ADR 0020](adr/0020-legal-pages-in-app-shell.md) 起并入应用外壳），只执行可移植的 `/api/*` 处理器；发布健康检查含真实 geo 探针。已实施：2026-09-15 起生产由 CloudFront + S3 + Lambda 承载，EC2 已于 2026-09-17 退役（[CloudFront 发布](../deploy/cloudfront/README.md)） |
 | 启动渲染 | [ADR 0010](adr/0010-blank-until-ready-startup.md)、[规则](../.claude/rules/startup-rendering.md)：统一空播报 → 持久语言真实 chrome → 市场内容；[ADR 0009](adr/0009-startup-placeholder-single-source.md) 的纯 runtime view 决策保留，占位决策已被部分取代 |
 | 启动性能对齐官方站 | [修复计划](terminal-startup-performance-plan.md)：壳内预加载交易页静态闭包、壳与图表包边缘缓存、地区判定预取与 Lambda 保温、分块整理；含同环境冷缓存对比数据与需要决策的事项；各项状态见文内 |
 | CSP 第二步：内联脚本哈希 | [计划](csp-inline-script-hashes-plan.md)：`script-src` 去掉 `'unsafe-inline'`，哈希随发布轮换并保留上一版集合，先 report-only 观察再强制；含现状数据、备选方案与需要决策的事项；B、C、D 阶段均已执行 |
 | 桌面 md 断点右列堆叠 | [计划](desktop-grid-stacked-right-column-plan.md)：1001–1420 px 时下单面板在上、订单簿在下、账户信息再下，图表列 10/14；含官方 fiber 实测几何、新默认几何、边界规则、v12 迁移与回归套件清单；已实施，决策见 ADR 0011 |
-| 资金类弹层的结果反馈 | [方案](funds-dialog-outcome-plan.md)：划转、发送、提现、充值对照官方终端的做法（保持打开到请求结束、无论成败都关闭、结果走通知、长时间状态放在通知与持久化的待处理列表）；分三步，含官方前端包取证、Sairn 现状、三项需要决策的事项与验收标准；三步均已实施，未发布，未做真实钱包验收，偏差见文内「实施记录」 |
+| 资金类弹层的结果反馈 | [方案](funds-dialog-outcome-plan.md)：划转、发送、提现、充值对照官方终端的做法（保持打开到请求结束、无论成败都关闭、结果走通知、长时间状态放在通知与持久化的待处理列表）；分三步，含官方前端包取证、Sairn 现状、三项需要决策的事项与验收标准；三步均已实施并随 p22 发布（旧桥成功通知的移除随 p24 发布），未做真实钱包验收，偏差见文内「实施记录」 |
 | 公告功能 | [方案](announcements-plan.md)：参照官方终端的静态公告源，Sairn 自有内容放在同源 `/feeds/announcements/`，Markdown 正文不注入 HTML，桌面提示走共享通知宿主、手机只显示圆点；含官方做法对照、分步实施、四项需要决定的事项与验收标准；未实施 |
-| SDK 未接入接口 | [覆盖审查的收益排序](hyperliquid-sdk-coverage-review.md#收益排序)：第一批六项已在集成分支实现（见[接入规划](sdk-feature-integration-plan.md)的实施记录，未合入 `dev`、未发布）；服务端账户通知、子账户、HIP-4 预测市场与 Agent 代签资金操作需先有设计与 ADR，未排期 |
-| 品牌迁移 gatu → Sairn | [品牌标识与素材](brand-assets.md)（唯一来源 `brand/brand.json`、读取方与校验）；[计划](brand-migration-plan.md)：设计交付物核验、改名范围、需要用户决定的 24 项、分阶段实施（单一来源、Logo 与图标、动效、分享卡、名称与多语言、品牌色、域名切换）、仓库外清单与风险；已按用户决定实施（内部标识、Agent 槽位名、包作用域与域名都改为 sairn），过程见[执行记录](work-memory/sessions/2026-10-01-sairn-brand-migration-execution.md)，域名切换按用户决定改为 gatu.ai 直接下线，执行方案见 [gatu.ai 下线、切换到 sairn.ai](sairn-domain-cutover-plan.md)（2026-10-02 已上线，决策见 [ADR 0032](adr/0032-gatu-offline-cutover-to-sairn.md)）；旧域名组与过渡请求头的代码退役在 PR #73（未合入），过程见[任务记录](work-memory/sessions/2026-10-03-retire-gatu-domain-group.md) |
+| SDK 未接入接口 | [覆盖审查的收益排序](hyperliquid-sdk-coverage-review.md#收益排序)：第一批六项已实现并随 p24 发布（见[接入规划](sdk-feature-integration-plan.md)的实施记录）；服务端账户通知、子账户、HIP-4 预测市场与 Agent 代签资金操作需先有设计与 ADR，未排期 |
+| 品牌迁移 gatu → Sairn | [品牌标识与素材](brand-assets.md)（唯一来源 `brand/brand.json`、读取方与校验）；[计划](brand-migration-plan.md)：设计交付物核验、改名范围、需要用户决定的 24 项、分阶段实施（单一来源、Logo 与图标、动效、分享卡、名称与多语言、品牌色、域名切换）、仓库外清单与风险；已按用户决定实施（内部标识、Agent 槽位名、包作用域与域名都改为 sairn），过程见[执行记录](work-memory/sessions/2026-10-01-sairn-brand-migration-execution.md)，域名切换按用户决定改为 gatu.ai 直接下线，执行方案见 [gatu.ai 下线、切换到 sairn.ai](sairn-domain-cutover-plan.md)（2026-10-02 已上线，决策见 [ADR 0032](adr/0032-gatu-offline-cutover-to-sairn.md)） |
 
 ## 历史设计、调查与交付证据
 
