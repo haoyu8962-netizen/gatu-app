@@ -456,6 +456,22 @@ mobile regressions.
   `pointer-events: none` to the loaded TradingView iframe.
 - CSP changes must keep the main document strict while allowing the
   charting-library same-origin iframe mode.
+- The vendored loader (`charting_library.js` and its esm/cjs/standalone
+  copies) carries one local patch in `_create`: the `innerWindowLoad`
+  listener is registered after `document.open()` and before
+  `document.write(...)` through `_listenInnerWindowLoad`, and only after the
+  write in the blob-iframe branch. The upstream order (listener after
+  `document.close()`) loses the event on WebKit whenever every inner bundle is
+  already in the page's memory cache, which is the second widget of a page on
+  production (immutable bundles, ADR 0006): the inner document dispatches the
+  event synchronously during the write, `onChartReady` never fires and the
+  chart ends in "Something went wrong" after the ready watchdog. The listener
+  cannot move before `document.open()`, which removes every listener on the
+  inner window. `charting-library-loader-handshake-contract` pins the order in
+  all four copies; re-apply the patch and regenerate
+  `deploy/manifests/tradingview-charting-library.json` on every library
+  upgrade (`node apps/terminal/tests/browser/chart-rebuild-webkit-probe.mjs
+  webkit <origin> route` reproduces the failure against a deployed origin).
 - The vendored library samples 2% of chart loads to insert a Google Analytics
   loader from inside the iframe, gated by its internal feature flag `14851`.
   Keep `"14851"` in `CHART_DISABLED_FEATURES` and never add

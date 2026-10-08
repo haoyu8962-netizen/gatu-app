@@ -5780,8 +5780,8 @@
     },
     {
       "path": "charting_library.cjs.js",
-      "sha256": "f01c4ba3588e35fe25a9b199f36a2a8a1e430dd31acfb06b5918dfd87bbe39be",
-      "size": 52932
+      "sha256": "d8362d178d896b3436087d834fc63271c00374e73b97561d5d3001cafcb71bc0",
+      "size": 53006
     },
     {
       "path": "charting_library.d.ts",
@@ -5790,18 +5790,18 @@
     },
     {
       "path": "charting_library.esm.js",
-      "sha256": "97f0024afa496c23ecdd98ef09350d6000a4970c9882e0f12ca13650749b7d56",
-      "size": 52303
+      "sha256": "bf23fe79c181c9e27e66545aec520e0eb7b349ff75eadc6fc2ef9ea0d4a249d2",
+      "size": 52377
     },
     {
       "path": "charting_library.js",
-      "sha256": "2925de328d845fd517994e806e04f1a857e01ee41ab2a06387e807477ca0c9a6",
-      "size": 52724
+      "sha256": "0651d91393c672d541eda793fec8130c42be13bccebfdf3b534b4ef8272156af",
+      "size": 52798
     },
     {
       "path": "charting_library.standalone.js",
-      "sha256": "0b0e7d540d185b101631ddd49f47b830db0548ce25821f0f9d845730b0200342",
-      "size": 52484
+      "sha256": "49f5edd808e81926a8c5533006744af6fc9407802fff05b48131a823e4d2c27b",
+      "size": 52558
     },
     {
       "path": "datafeed-api.d.ts",

@@ -14,4 +14,6 @@ node deploy/verify-chart-build.mjs --generate-manifest apps/terminal/public /tmp
 ```
 
 Review the package provenance, version, file-set diff, and digest diff independently before replacing the checked-in manifest.
+
+The checked-in digest covers the official v28.3.0 tree plus one local patch to the loader entry and its esm/cjs/standalone copies (`_create` registers the `innerWindowLoad` listener before `document.write`; see `docs/runtime-guardrails.md` §4 and `charting-library-loader-handshake-contract`). After re-applying that patch to an upgraded package, regenerate the manifest with the command above so the four loader digests match the patched files.
 The manifest contains metadata only and must never contain TradingView source code or credentials.

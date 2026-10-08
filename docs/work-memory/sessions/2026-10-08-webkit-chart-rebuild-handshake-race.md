@@ -7,12 +7,15 @@
   "kind": "task",
   "status": "verified",
   "topics": ["market-recovery", "static-hosting"],
-  "summary": "用户在 iPhone Safari 上从交易页去任意仪表盘页再回到 Markets 视图，图表停在品牌加载动画，约 30 秒后变成「出错了 / 重试」，重试无效。根因不在应用代码：vendored 的 TradingView 加载器 charting_library.js（v28.3，`_create`）在 iframe 里 `document.write` 完图表文档之后才注册 `innerWindowLoad` 监听；线上 `charting_library/bundles/` 是 immutable，WebKit 对同一页面里第二次创建的 iframe 直接从内存缓存同步执行全部脚本，内层在 `document.write` 期间就派发了 `innerWindowLoad`，监听晚 1 ms 注册，`onChartReady` 永不触发，15 秒就绪看门狗重试一次后报错；重试、语言切回已缓存语言包的语言、数字格式变化走的是同一条重建路径。Playwright WebKit（iPhone 13）对 app.sairn.ai 复现并记录事件顺序，Chromium 同路径正常；本地开发服务器（无 immutable 缓存）与 iOS 模拟器不复现；官方站用同一份 v28.5 加载器，切页面同样销毁重建 iframe，但其 bundle 每次重新验证，不触发。未改代码；修复方案待用户选择。",
+  "summary": "用户在 iPhone Safari 上从交易页去任意仪表盘页再回到 Markets 视图，图表停在品牌加载动画，约 30 秒后变成「出错了 / 重试」，重试无效。根因不在应用代码：vendored 的 TradingView 加载器 charting_library.js（v28.3，`_create`）在 iframe 里 `document.write` 完图表文档之后才注册 `innerWindowLoad` 监听；线上 `charting_library/bundles/` 是 immutable，WebKit 对同一页面里第二次创建的 iframe 直接从内存缓存同步执行全部脚本，内层在 `document.write` 期间就派发了 `innerWindowLoad`，监听晚 1 ms 注册，`onChartReady` 永不触发，15 秒就绪看门狗重试一次后报错；重试、语言切回已缓存语言包的语言、数字格式变化走的是同一条重建路径。Playwright WebKit（iPhone 13）对 app.sairn.ai 复现并记录事件顺序，Chromium 同路径正常；本地开发服务器（无 immutable 缓存）与 iOS 模拟器不复现；官方站用同一份 v28.5 加载器，切页面同样销毁重建 iframe，但其 bundle 每次重新验证，不触发。用户选定方案 1：补丁四份加载器副本（`_create` 里把监听挪到 `document.open()` 之后、`document.write` 之前，blob 分支保持在写入之后），新增 `charting-library-loader-handshake-contract` 钉住顺序，重新生成 TradingView 摘要清单，更新 guardrails §4、清单 README、CHANGELOG 与 AGENTS 回归清单；验证见正文。",
   "thread": null,
   "baseCommit": "6da4c15a",
   "commits": [],
   "sources": [
     { "path": "apps/terminal/tests/browser/chart-rebuild-webkit-probe.mjs" },
+    { "path": "apps/terminal/src/lib/tests/charting-library-loader-handshake-contract.test.ts" },
+    { "path": "deploy/manifests/tradingview-charting-library.json" },
+    { "path": "deploy/manifests/README.md" },
     { "path": "apps/terminal/public/charting_library/charting_library.js" },
     { "path": "apps/terminal/src/components/trade/chart/tradingview-chart.tsx" },
     { "path": "apps/terminal/src/components/trade/mobile/mobile-terminal.tsx" },
@@ -80,7 +83,14 @@ Playwright WebKit（`devices["iPhone 13"]`）对 `https://app.sairn.ai` 的事�
 - 官方第二次创建没有触发竞争，因为其 bundle 没有 immutable：第二次加载大量 `200`/`304` 回包（重新验证），脚本异步执行。本次没有验证官方外层 `onChartReady` 是否真的触发（官方没有可读的就绪标记），只验证了 iframe 重建与内层数据正常。
 - 官方切语言不重建图表（图表语言到刷新才变），数字格式变化整页 reload（`2026-09-24-official-terminal-language-switch-trace`），所以这两条路径官方不会遇到。
 
-### 可选修复（未实施，待用户决定）
+### 修复（方案 1，用户选定后实施）
+
+- `apps/terminal/public/charting_library/charting_library.js` 及 esm / cjs / standalone 三份副本的 `_create`：新增 `_listenInnerWindowLoad=()=>this._innerWindow().addEventListener("innerWindowLoad", …, {once:true})`，注入分支改为 `document.open(), _listenInnerWindowLoad(), document.write(s), document.close()`，blob iframe 分支（不写入文档）在原位置调用；其余字节不变。第一版补丁把 `const` 声明插进了逗号表达式中间导致语法错误，`node --check` 发现后改为与 `const c=this._iFrame` 合并声明。
+- `src/lib/tests/charting-library-loader-handshake-contract.test.ts`：对四份副本的 `_create` 片段断言 helper 定义在 `sameOriginLoad` 等待之前、`document.open(),_listenInnerWindowLoad(),` 紧接着 `document.write(`、blob 分支的调用在 `document.close()` 之后、helper 之外没有第二处原始注册。对未补丁的入口文件（git stash 回退单个文件）4 项全红，补丁后 4 项通过。
+- `deploy/manifests/tradingview-charting-library.json` 用 `node deploy/verify-chart-build.mjs --generate-manifest apps/terminal/public <候选>` 重新生成：与旧清单比较只有四个加载器条目的 size/sha256 变化（各 +74 字节），其余 1159 个文件与元数据相同；`chart-build-assets.test.ts` 17 项通过。清单 README 补充了「官方树 + 本地补丁」的说明。
+- `docs/runtime-guardrails.md` §4 新增规则条目；`CHANGELOG.md` Fixed 条目；`AGENTS.md` 把新契约与 `chart-build-assets.test.ts` 加进「Trading terminal visual contract」回归组。
+
+### 历史上的可选修复（记录当时的比较，方案 1 已采用）
 
 1. **修补 vendored 加载器**：把 `_create` 里的 `addEventListener("innerWindowLoad", …)` 移到 `document.open()` 之后、`document.write(s)` 之前（`document.open` 会清掉 Window 上的监听，所以不能放在 open 之前）。改动一处、机制精确；需要契约测试钉住补丁顺序，并在 `deploy/manifests/tradingview-charting-library.json`、`docs/runtime-guardrails.md` §4 记录；构建发出的哈希副本会随内容变化自动换名。库升级时要重新打补丁（官方 v28.5 同样未修）。
 2. **应用侧补发信号**：创建 widget 后轮询 `iframe.contentWindow.widgetReady`/`tradingViewApi`，若内层已就绪而外层 `widget._ready` 仍为 false，对内层窗口再 `dispatchEvent(new Event("innerWindowLoad"))`。不改 vendored 文件，但依赖同样的私有事件名与 `_ready` 字段，并多一个看门狗。
@@ -99,6 +109,7 @@ Playwright WebKit（`devices["iPhone 13"]`）对 `https://app.sairn.ai` 的事�
 
 ## 后续与替代关系
 
-- 待用户选择修复方案后另开任务；修复须附「在同一页面创建两个 widget 且 bundle 命中内存缓存」的 WebKit 复现（本探针）作为验收，并更新 `docs/runtime-guardrails.md` §4 与 ADR 0006 里关于 immutable bundle 的说明。
+- 修复已随本记录提交，未推送、未发布；发布后应在真机 iOS Safari 上按用户路径（抽屉 → Funding Comparison → Trade → Markets，以及中文界面切页回来）确认，并在发布记录里引用本记录。
+- 库升级流程：重新打补丁 → `charting-library-loader-handshake-contract` 变绿 → 重新生成摘要清单（`deploy/manifests/README.md`）。
 - 顺带发现（未处理）：线上手机页头标记价格在本次探针与模拟器里一直显示「-」而图表与订单簿正常，开发服务器正常；未排查。
 - 不替代任何记录；补充 `2026-09-17-mobile-chart-retention`（标签切换保留图表）与 `docs/terminal-startup-performance-plan.md` P9 的「WebKit 热缓存回归」待办：那条待办描述的就是本缺陷。

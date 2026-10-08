@@ -6,15 +6,18 @@
 // `onChartReady` never fires and the chart ends in "Something went wrong" after the ready watchdog.
 // Chromium executes the cached scripts asynchronously and never hits it.
 //
-// node apps/terminal/tests/browser/chart-rebuild-webkit-probe.mjs [webkit|chromium] [origin] [route|locale]
+// node apps/terminal/tests/browser/chart-rebuild-webkit-probe.mjs [webkit|chromium] [origin] [route|locale] [--immutable-bundles]
 //   route  — Markets → drawer → Funding Comparison → drawer → Trade → Markets (second widget)
 //   locale — Markets → switch the language to 中文 (new language bundles) → back to English (cached)
+//   --immutable-bundles — rewrite the Cache-Control of charting_library/bundles/* responses to the
+//     production value, so a dev server (which revalidates every file) shows the production behaviour.
 // Playwright WebKit cannot launch inside the Claude sandbox; run it from a normal shell.
 import { chromium, devices, webkit } from "@playwright/test";
 
 const engine = process.argv[2] ?? "webkit";
 const origin = (process.argv[3] ?? "https://app.sairn.ai").replace(/\/+$/, "");
 const scenario = process.argv[4] ?? "route";
+const immutableBundles = process.argv.includes("--immutable-bundles");
 const browser = await (engine === "chromium" ? chromium : webkit).launch({ headless: true });
 const context = await browser.newContext({ ...devices["iPhone 13"], locale: "en-US" });
 await context.addInitScript(() => {
@@ -51,6 +54,12 @@ await context.addInitScript(() => {
 			}
 	}).observe(document, { childList: true, subtree: true });
 });
+if (immutableBundles) {
+	await context.route(/\/charting_library\/bundles\//, async (route) => {
+		const response = await route.fetch();
+		await route.fulfill({ response, headers: { ...response.headers(), "cache-control": "public, max-age=31536000, immutable" } });
+	});
+}
 const page = await context.newPage();
 const lines = [];
 const started = Date.now();
