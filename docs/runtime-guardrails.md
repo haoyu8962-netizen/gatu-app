@@ -459,19 +459,24 @@ mobile regressions.
 - The vendored loader (`charting_library.js` and its esm/cjs/standalone
   copies) carries one local patch in `_create`: the `innerWindowLoad`
   listener is registered after `document.open()` and before
-  `document.write(...)` through `_listenInnerWindowLoad`, and only after the
-  write in the blob-iframe branch. The upstream order (listener after
-  `document.close()`) loses the event on WebKit whenever every inner bundle is
+  `document.write(...)` through `_listenInnerWindowLoad`; the blob-iframe
+  branch, which writes nothing, and the missing-`contentWindow` warning branch
+  call the same helper where the upstream code registered it, so those paths
+  keep their behaviour (the warning branch still throws on the null window).
+  The upstream order (listener after `document.close()`) loses the event on WebKit whenever every inner bundle is
   already in the page's memory cache, which is the second widget of a page on
   production (immutable bundles, ADR 0006): the inner document dispatches the
   event synchronously during the write, `onChartReady` never fires and the
   chart ends in "Something went wrong" after the ready watchdog. The listener
   cannot move before `document.open()`, which removes every listener on the
-  inner window. `charting-library-loader-handshake-contract` pins the order in
-  all four copies; re-apply the patch and regenerate
-  `deploy/manifests/tradingview-charting-library.json` on every library
-  upgrade (`node apps/terminal/tests/browser/chart-rebuild-webkit-probe.mjs
-  webkit <origin> route` reproduces the failure against a deployed origin).
+  inner window. `chart-library-loader-handshake-contract` pins the source
+  order in all four copies and `chart-library-loader-handshake` runs the real
+  loader against a stub iframe whose write dispatches the event synchronously
+  (with the upstream order as a negative control); both are in the CI
+  TradingView step through its `chart-*` glob. Re-apply the patch and
+  regenerate `deploy/manifests/tradingview-charting-library.json` on every
+  library upgrade; `chart-rebuild-webkit-probe.mjs` with
+  `serve-immutable-build.mjs` reproduces the failure on a local build.
 - The vendored library samples 2% of chart loads to insert a Google Analytics
   loader from inside the iframe, gated by its internal feature flag `14851`.
   Keep `"14851"` in `CHART_DISABLED_FEATURES` and never add

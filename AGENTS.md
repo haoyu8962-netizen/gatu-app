@@ -203,7 +203,8 @@ pnpm --dir apps/terminal exec vitest run \
 # Trading terminal visual contract
 pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/chart-theme-colors.test.ts \
-  src/lib/tests/charting-library-loader-handshake-contract.test.ts \
+  src/lib/tests/chart-library-loader-handshake-contract.test.ts \
+  src/lib/tests/chart-library-loader-handshake.test.ts \
   src/lib/tests/chart-build-assets.test.ts \
   src/lib/tests/tradingview-chart.test.tsx \
   src/lib/tests/modal-surface-contract.test.ts \
