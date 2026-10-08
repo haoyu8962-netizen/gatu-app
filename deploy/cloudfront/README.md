@@ -9,7 +9,7 @@
 > - 线上的 API 源站请求策略（`gatu-terminal-api`）白名单里仍有 `X-Gatu-Forwarded-Host`：2026-10-02 按方案 0.6 加入 `X-Sairn-Forwarded-Host` 后共 10 个头，正好是 CloudFront 的上限。`node deploy/cloudfront/distribution-config.mjs --api-origin-request-policy-config` 现在输出退役后的 9 个头。**p25 发布并验证之后**，再按方案 5.2 把线上策略更新成这 9 个头。
 > - p25 发布并验证之前，不要从白名单删除旧头，也不要退回 p23：p23 只写、只读旧头，缺了它 Lambda 还原不出公网 origin，同源 POST 会返回 403。2026-10-03 起线上是 p24b，它和 p24 一样同时写新旧两个头、Lambda 先读新头，所以从 p25 回滚到 p24b 不依赖旧头。回滚目标是 p24b，不是 p24：重新发布 p24 会关掉银行卡入金。
 > - Lambda 当前设置的 `GATU_TRUST_VIEWER_ADDRESS=true` 与留空的 `GATU_PUBLIC_ORIGIN` 都等于新代码的默认值，改名后行为不变；下次在控制台调整配置时把变量名改成 `SAIRN_*`。
-> - 构建环境变量 `GATU_BUILD_SHA`、`GATU_RELEASE_ID`、`GATU_BUILD_TIME` 改为 `SAIRN_*`；生产 Agent 槽位改为 `VITE_HYPERLIQUID_AGENT_NAME=sairn`（现有外部钱包用户需要重新授权）。
+> - 构建环境变量 `GATU_BUILD_SHA`、`GATU_RELEASE_ID`、`GATU_BUILD_TIME` 改为 `SAIRN_*`；生产 Agent 槽位改为 `VITE_HYPERLIQUID_AGENT_NAME=sairn`（现有外部钱包用户需要重新授权）。2026-10-09 补记：[ADR 0038](../../docs/adr/0038-unnamed-default-agent-for-trading-connection.md) 起普通交易连接改用无名默认 Agent，`VITE_HYPERLIQUID_AGENT_NAME` 已删除，构建不再需要它。
 > - AWS 资源名（S3 桶、分发、CloudFront 函数与策略、Lambda、IAM 用户 `gatu-edge`）保持不变，它们只是现有资源的标识。
 
 ## 官方终端的托管实践（2026-09-13 只读调试 `app.hyperliquid.xyz/trade/HYPE`）
@@ -143,7 +143,7 @@ node deploy/cloudfront/deploy.mjs verify --origin https://testnet.sairn.ai --net
 
 规则是双向精确匹配：构建打开了闸门而没有带参数，拒绝；带了参数而构建没有打开，也拒绝（说明运营方以为在发的版本和实际产物不一致）；`build-meta.json` 没有这些字段（旧构建）同样拒绝，需用当前源码重新构建。`sync` 每次都会打印一行 `release gates: …`；不带 `--execute` 的演练只给出警告。`verify` 会比较线上与本地构建的闸门状态。测试网的两个充值开关与测试网银行卡入金开关只记录、不需要确认。
 
-未从旧 EC2 校验器移植的部分：`VITE_PRIVY_APP_ID` 非空、`VITE_HYPERLIQUID_AGENT_NAME=sairn`、`VITE_HYPERLIQUID_TESTNET` 为空、禁止 `.env.production*` 这几条属于环境文件拼写检查而不是暴露确认；其中「哪个文件生效」已由读取构建产物覆盖，其余仍靠发布前人工核对 [`env.build.example`](../env.build.example)。
+未从旧 EC2 校验器移植的部分：`VITE_PRIVY_APP_ID` 非空、`VITE_HYPERLIQUID_TESTNET` 为空、禁止 `.env.production*` 这几条（`VITE_HYPERLIQUID_AGENT_NAME` 自 ADR 0038 起不再存在）属于环境文件拼写检查而不是暴露确认；其中「哪个文件生效」已由读取构建产物覆盖，其余仍靠发布前人工核对 [`env.build.example`](../env.build.example)。
 
 顺序说明：CloudFront 函数最先发布，因为新页面的内联脚本哈希必须先进入线上策略（`sync` 会核对，见 4c），失效完成前的旧页面由函数里保留的上一版集合覆盖；Lambda 先于静态文件更新，因为新壳可能依赖新的 API 行为；`sync` 从不删除旧对象，正在打开旧壳的浏览器仍能取到旧资源；`invalidate` 用 `/*` 是为了让 `no-cache` 的壳与文档页立即刷新，资源本身是内容哈希不受影响。
 

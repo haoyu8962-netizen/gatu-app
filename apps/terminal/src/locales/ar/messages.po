@@ -9322,6 +9322,10 @@ msgstr "لا توجد مكافآت غير مطالب بها متاحة للمط�
 msgid "This account already has a referral code and cannot apply another one."
 msgstr "لدى هذا الحساب رمز إحالة بالفعل، ولا يمكنه تطبيق رمز آخر."
 
+#: src/lib/errors/exchange-error-text.ts
+msgid "This account already has the {limit} named API wallets its trading volume allows. Remove one on the API Wallet page before approving another."
+msgstr ""
+
 #: src/components/trade/components/legal-acceptance-modal.tsx
 #: src/lib/errors/action-error.ts
 msgid "This account is not currently permitted to perform trading actions on Hyperliquid."

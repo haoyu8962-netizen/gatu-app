@@ -94,6 +94,10 @@ const DOCUMENTED_EXCHANGE_ERRORS = [
 	"Order was never placed, already canceled, or filled.",
 ];
 
+const NAMED_AGENT_CAP_ERROR = "Too many extra agents for cumulative volume traded. Current limit is 3";
+const NAMED_AGENT_CAP_MESSAGE =
+	"This account already has the 3 named API wallets its trading volume allows. Remove one on the API Wallet page before approving another.";
+
 const LEVERAGE_DECREASE_ERROR =
 	"Cross position does not have sufficient margin available to decrease leverage. To decrease leverage, deposit more collateral.";
 const LEVERAGE_DECREASE_MESSAGE =
@@ -114,6 +118,17 @@ describe("exchange rejection texts", () => {
 
 	it("recognises the leverage decrease rejection a user reported", () => {
 		expect(formatExchangeErrorText(LEVERAGE_DECREASE_ERROR, translate)).toBe(LEVERAGE_DECREASE_MESSAGE);
+	});
+
+	it("recognises the named Agent cap rejection a user reported and keeps the reported limit", () => {
+		expect(formatExchangeErrorText(NAMED_AGENT_CAP_ERROR, translate)).toBe(NAMED_AGENT_CAP_MESSAGE);
+		expect(formatExchangeErrorText(`${NAMED_AGENT_CAP_ERROR}.`, translate)).toBe(NAMED_AGENT_CAP_MESSAGE);
+		expect(
+			formatExchangeErrorText("Too many extra agents for cumulative volume traded. Current limit is 5", translate),
+		).toBe(NAMED_AGENT_CAP_MESSAGE.replace("the 3 named", "the 5 named"));
+		const unknown = "Too many extra agents for cumulative volume traded.";
+		expect(describeExchangeErrorText(unknown)).toBeNull();
+		expect(formatExchangeErrorText(unknown, translate)).toBe(unknown);
 	});
 
 	it("keeps the values the exchange reported", () => {
@@ -222,6 +237,7 @@ describe("production Chinese catalog", () => {
 		const descriptors = [
 			...DOCUMENTED_EXCHANGE_ERRORS,
 			LEVERAGE_DECREASE_ERROR,
+			NAMED_AGENT_CAP_ERROR,
 			"Action already expired",
 			"Must deposit before performing actions.",
 			"Must deposit before performing actions. User: 0x1111111111111111111111111111111111111111",

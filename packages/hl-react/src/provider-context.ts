@@ -23,7 +23,6 @@ export interface HyperliquidTransportContextValue {
 export interface HyperliquidSessionContextValue {
 	clientKey: string;
 	sessionMode: SessionMode;
-	agentName: string;
 	builderConfig: BuilderConfig;
 	exchangeLifecycle: ExchangeProviderLifecycleLease;
 	exchangeSession: HyperliquidExchangeSessionLease;

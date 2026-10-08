@@ -282,6 +282,8 @@ export {
 	useAgentRegistration,
 } from "./signing/use-agent-registration";
 export {
+	type AgentApprovalEvidence,
+	type AgentKeyRole,
 	type AgentMissingReason,
 	type AgentRequirements,
 	AgentStatusError,
@@ -293,6 +295,7 @@ export {
 	deriveAgentRequirements,
 	deriveAgentVerificationStatus,
 	getDefinitiveMobileAgentStaleReason,
+	isAgentKeyApprovedForOwner,
 	type UseAgentStatusResult,
 	useAgentStatus,
 } from "./signing/use-agent-status";

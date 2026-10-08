@@ -129,7 +129,7 @@ CI 中，`Terminal Tests` 在 `brand/**`、`legal/**` 变化时运行 `pnpm bran
   - 客服邮箱 `support@sairn.ai`。
 - 2026-10-02 上线，`gatu.ai` 的网页同时下线，没有并存期，也没有 301。执行步骤、结果和还没做完的清理（阶段 5）见[切换方案](sairn-domain-cutover-plan.md)。
 - 代码不再识别 `gatu.ai` 主机，也不再读写过渡期的旧转发头 `x-gatu-forwarded-host` 与旧路由标记 `x-gatu-route`（切换方案 PR-B，对应发布 p25）。这部分代码的合入与发布状态见 ADR 0032 的补充。
-- 换域名等于换浏览器存储的 origin：旧域名上的设置、登录状态、Stay Connected 的 Agent 私钥和进行中操作的本地记录都不会带到新域名。外部钱包在新域名上需要重新授权，Agent 槽位名是 `sairn`。
+- 换域名等于换浏览器存储的 origin：旧域名上的设置、登录状态、Stay Connected 的 Agent 私钥和进行中操作的本地记录都不会带到新域名。外部钱包在新域名上需要重新授权。（2026-10-09 补记：[ADR 0038](adr/0038-unnamed-default-agent-for-trading-connection.md) 起普通交易连接改用无名默认 Agent，不再有 `sairn` 槽位名。）
 - `gatu.ai` 的注册、邮件与旧证书怎么处理，由切换方案的阶段 5 和第 7 节负责。AWS 资源名与仓库名保留 `gatu`，清单见 [ADR 0027](adr/0027-brand-single-source-and-identifier-rename.md) 决策 5。
 
 ## 改名时的约定

@@ -22,7 +22,6 @@ import { STORAGE_KEYS } from "@/config/app";
 import { DEFAULT_BUILDER_CONFIG } from "@/config/hyperliquid";
 import { PORTFOLIO_MARGIN_FEATURES } from "@/config/portfolio-margin";
 import { PRIVY_APP_ID, PRIVY_CONFIG_BY_THEME } from "@/config/privy";
-import { TRADING_AGENT_NAME } from "@/config/trading-agent";
 import { config } from "@/config/wagmi";
 import { useExplicitAgentApproval } from "@/hooks/wallet/use-explicit-agent-approval";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
@@ -68,7 +67,6 @@ function HyperliquidBridge({ children }: { children: ReactNode }) {
 				allowAgentOnlySession={ready && !authenticated}
 				enforceLegalActions
 				builderConfig={DEFAULT_BUILDER_CONFIG}
-				agentName={TRADING_AGENT_NAME}
 				onAgentCleanupFailure={() => {
 					toast.error(
 						t`The previous wallet disconnected, but its local trading key could not be removed. Clear this site's data before reconnecting it.`,

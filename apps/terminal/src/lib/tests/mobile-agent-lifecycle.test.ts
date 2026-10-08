@@ -16,7 +16,14 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { deriveAgentRequirements, getDefinitiveMobileAgentStaleReason } from "@/lib/hyperliquid";
 
 const NOW_MS = 1_779_364_227_000;
-const USER_ADDRESS = "0x1111111111111111111111111111111111111111";
+const USER_ADDRESS = "0x1111111111111111111111111111111111111111" as const;
+
+function mobileEvidence(
+	localAgent: AgentWallet,
+	extraAgents: Array<{ address: `0x${string}`; name: string; validUntil: number | null }>,
+) {
+	return { owner: USER_ADDRESS, localAgent, keyRole: undefined, extraAgents };
+}
 const OLD_PRIVATE_KEY = `0x${"11".repeat(32)}` as const;
 const NEW_PRIVATE_KEY = `0x${"22".repeat(32)}` as const;
 
@@ -414,8 +421,9 @@ describe("mobile agent lifecycle", () => {
 
 		const ready = deriveAgentRequirements(
 			undefined,
-			[{ address: approval.publicKey, name: MOBILE_AGENT_NAME_BASE, validUntil: approval.agentValidUntilMs }],
-			localAgent,
+			mobileEvidence(localAgent, [
+				{ address: approval.publicKey, name: MOBILE_AGENT_NAME_BASE, validUntil: approval.agentValidUntilMs },
+			]),
 			undefined,
 			NOW_MS,
 		);
@@ -426,7 +434,9 @@ describe("mobile agent lifecycle", () => {
 			{ address: approval.publicKey, name: "Other", validUntil: approval.agentValidUntilMs },
 			{ address: approval.publicKey, name: MOBILE_AGENT_NAME_BASE, validUntil: approval.agentValidUntilMs + 1 },
 		]) {
-			expect(deriveAgentRequirements(undefined, [remoteAgent], localAgent, undefined, NOW_MS)).toMatchObject({
+			expect(
+				deriveAgentRequirements(undefined, mobileEvidence(localAgent, [remoteAgent]), undefined, NOW_MS),
+			).toMatchObject({
 				needsAgent: true,
 				isReady: false,
 			});
@@ -479,13 +489,15 @@ describe("mobile agent lifecycle", () => {
 			status: "stale",
 			reason: "invalid_local",
 		});
-		expect(deriveAgentRequirements(undefined, [remoteAgent], localAgent, undefined, NOW_MS)).toMatchObject({
+		expect(
+			deriveAgentRequirements(undefined, mobileEvidence(localAgent, [remoteAgent]), undefined, NOW_MS),
+		).toMatchObject({
 			needsAgent: true,
 			isReady: false,
 		});
 	});
 
-	it("keeps local-registration Agents on the generic address approval path", () => {
+	it("keeps local-registration Agents on the userRole approval path", () => {
 		const approval = createMobileAgentApproval(NOW_MS, OLD_PRIVATE_KEY);
 		const localAgent: AgentWallet = {
 			privateKey: approval.privateKey,
@@ -501,7 +513,25 @@ describe("mobile agent lifecycle", () => {
 		expect(verifyMobileAgent(localAgent, [remoteAgent], NOW_MS)).toMatchObject({
 			status: "not_mobile_agent",
 		});
-		expect(deriveAgentRequirements(undefined, [remoteAgent], localAgent, undefined, NOW_MS)).toMatchObject({
+		expect(
+			deriveAgentRequirements(undefined, mobileEvidence(localAgent, [remoteAgent]), undefined, NOW_MS),
+		).toMatchObject({
+			needsAgent: false,
+			isReady: false,
+		});
+		expect(
+			deriveAgentRequirements(
+				undefined,
+				{
+					owner: USER_ADDRESS,
+					localAgent,
+					keyRole: { agentAddress: approval.publicKey, role: { role: "agent", data: { user: USER_ADDRESS } } },
+					extraAgents: undefined,
+				},
+				undefined,
+				NOW_MS,
+			),
+		).toMatchObject({
 			needsAgent: false,
 			isReady: true,
 		});

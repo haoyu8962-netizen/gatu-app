@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, createElement } from "react";
 import { createRoot } from "react-dom/client";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -58,7 +59,7 @@ describe("useAgentStatus invalid storage cleanup", () => {
 		}
 
 		await act(async () => {
-			root.render(createElement(Probe));
+			root.render(createElement(QueryClientProvider, { client: new QueryClient() }, createElement(Probe)));
 		});
 
 		expect(testState.cleanupAgentRegistrationIfMatches).toHaveBeenCalledWith("Mainnet", OWNER, {

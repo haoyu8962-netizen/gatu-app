@@ -9322,6 +9322,10 @@ msgstr "没有未领取奖励可供领取。"
 msgid "This account already has a referral code and cannot apply another one."
 msgstr "此账户已绑定推荐码，无法再绑定其他推荐码。"
 
+#: src/lib/errors/exchange-error-text.ts
+msgid "This account already has the {limit} named API wallets its trading volume allows. Remove one on the API Wallet page before approving another."
+msgstr "该账户的命名 API 钱包已达到其成交量允许的 {limit} 个上限。请先在 API 钱包页面移除一个，再授权新的。"
+
 #: src/components/trade/components/legal-acceptance-modal.tsx
 #: src/lib/errors/action-error.ts
 msgid "This account is not currently permitted to perform trading actions on Hyperliquid."

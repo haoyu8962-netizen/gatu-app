@@ -47,6 +47,7 @@ This file contains durable project instructions for coding agents. Read `agent.m
 - `docs/trading-onboarding.md` and `docs/email-trading-signing.md` own this flow, including the required sequence, the `Stay Connected` storage table, the mobile wallet lifecycle and the regression checklist; keep them synchronized with any change.
 - Preserve the order: connect the exact owner wallet, verify/accept legal terms, establish the trading signer, classify complete account funding snapshots, then open deposit only for a definitively empty account. Ordinary email trading uses the exact active Privy embedded owner and never generates or approves a local Agent; external wallets and Agent-only sessions require a verified Agent/API wallet.
 - Legal status, embedded-owner signer readiness, Agent approval, local Agent key, builder-fee approval and funding state are separate gates. Errors or missing snapshots fail closed and are never treated as acceptance, approval or an empty account.
+- Ordinary external-wallet trading connections approve Hyperliquid's unnamed default Agent (`approveAgent` without `agentName`), as the official terminal does, and verify the stored key with `userRole` for the exact owner; a cached miss, a pending or failed answer, or an answer about another key never triggers an approval. Named Agents belong only to the API wallet page and Link mobile device, where the account's named-Agent cap applies and its rejection text is translated (`docs/adr/0038-unnamed-default-agent-for-trading-connection.md`).
 - Agent registration must not approve the builder fee; that approval belongs to the first trading action that requires the configured builder code. Login, refresh and status checks must never sign. The one accepted exception is the SIWE message Privy's `SmartWalletsProvider` signs without UI to link a smart wallet when an embedded wallet first appears: it is Privy's documented automatic smart-wallet creation, moves no funds and is not a terms, Agent, builder-fee or trading signature (`docs/adr/0033-silent-email-wallet-creation.md`). Do not add any other signature on those paths.
 - Email registration creates the embedded owner silently after login (`docs/adr/0033-silent-email-wallet-creation.md`): keep Privy's `createOnLogin` off and the root `EmailEmbeddedWalletProvider` the only automatic creator, with never more than one SDK creation request in flight. Keep the policy dialog closed while that wallet is pending and, unless an acceptance is being submitted, while a Privy window is visible. Once the wallet directory is ready, a session without a wallet must be able to retry and to disconnect, and its logout must not hand the device back to a stored agent-only owner.
 - `Stay Connected` is off by default, and every Agent-registration entry point honors the same `hyperliquid.persist_trading_connection` preference. Mobile wallet approval timeouts pause while the page is hidden; a late approval commits only after revalidating owner, registration epoch, stored key and server-approved Agent address.
@@ -166,7 +167,7 @@ This file contains durable project instructions for coding agents. Read `agent.m
 
 - `docs/brand-assets.md` owns the brand source, its readers, the logo, icon, accent and status-motion rules and the domain rules; ADR 0027 (single source, renamed and kept identifiers, history policy), 0028 (accent colours), 0029 (status motion), 0030 (PnL share card), 0031 (domain move) and 0032 (gatu.ai offline cutover) record the decisions.
 - Brand values (name, legal entity, domains, support email, accent and logo colours, PWA theme colour) come only from `brand/brand.json`, through `config/brand.ts`, the website config or `scripts/brand.mjs`. Name the product in messages only through `BRAND_NAME` / `{BRAND_NAME}`; never write brand names, domains or mailboxes as literals elsewhere.
-- Internal identifiers (storage keys, Web Lock names, the Hyperliquid Agent slot, headers, environment variables, package scope) are `sairn` literals, never read from `brand.json`; renaming one is a signing or data-continuity change, not a brand edit. The `gatu` names that stay (AWS resources and the repository) are listed in ADR 0027.
+- Internal identifiers (storage keys, Web Lock names, headers, environment variables, package scope) are `sairn` literals, never read from `brand.json`; renaming one is a signing or data-continuity change, not a brand edit. The `gatu` names that stay (AWS resources and the repository) are listed in ADR 0027; the named Hyperliquid Agent slot is retired (ADR 0038).
 - Generated, exported and synced files are never edited by hand: `pnpm brand:export-motion` (needs Chromium) rewrites `brand/loader`, `brand/loader-supplement/glyphs` and `brand/tokens`, `pnpm brand:derive-icons` the derived icons and e-mail logo in `brand/web`, and `pnpm brand:sync` the `lib/brand/*.gen.*` modules and the copies in `public/`. `pnpm brand:check` and `pnpm test:brand` must pass after any change to `brand/`, `legal/` or a brand reader.
 - The status of a requested action uses `StatusGlyph`, `BrandMotion` or `ButtonLoading` with semantic tones; an unknown result is never drawn as an error. Passive loading keeps the neutral spinner, and every remaining spinner is registered with its reason in `status-motion-surface-contract.test.ts`.
 - `brand.json` has one domain group, `domains.primary`: canonical URLs, the sitemap, legal text, referral links and hostname-based network detection use only it. The `gatu.ai` group and the transitional `x-gatu-forwarded-host` header and `x-gatu-route` marker are retired (ADR 0032); do not read or write them again, and `pnpm brand:check` rejects a retired host in `brand.json` or the legal text.
@@ -187,6 +188,11 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/trading-onboarding-gate.test.tsx \
   src/lib/tests/agent-registration-session.test.ts \
   src/lib/tests/agent-storage-scope.test.ts \
+  src/lib/tests/agent-verification-status.test.ts \
+  src/lib/tests/use-agent-status-verification.test.tsx \
+  src/lib/tests/use-agent-status-mobile-cleanup.test.tsx \
+  src/lib/tests/use-agent-registration-race.test.tsx \
+  src/lib/tests/owner-trading-status.test.tsx \
   src/lib/tests/external-agent-signer.test.ts \
   src/lib/tests/use-connection-wallet-client.test.tsx \
   src/lib/tests/privy-agent-signer.test.ts \
@@ -383,7 +389,6 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/referral.test.ts \
   src/lib/tests/terms-content.test.ts \
   src/lib/tests/legal-policy-contract.test.ts \
-  src/lib/tests/trading-agent-config.test.ts \
   src/lib/tests/order-summary.test.tsx \
   src/lib/tests/twap-order-summary.test.tsx \
   src/lib/tests/top-nav.test.tsx
