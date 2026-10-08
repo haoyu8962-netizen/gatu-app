@@ -79,7 +79,7 @@
 **发布与上线**
 
 1. 银行卡入金上线后的缺口：线上真实购买（验收清单 CF-11）、法律文本审阅、沙盒阶段各行、Privy 应用的 development mode、开放地区（[验收清单](../../privy-card-funding-launch-checklist.md)、[ADR 0034](../../adr/0034-privy-card-funding.md)）。
-2. p25：#73 在 2026-10-09 之后合并，然后按[切换方案](../../sairn-domain-cutover-plan.md)阶段 5 执行（发布 p25 并验证；从源站请求策略删除 `X-Gatu-Forwarded-Host`；Lambda 环境变量改为 `SAIRN_*`；30 天后删除 gatu 证书；移除临时 IAM 策略 `gatu-edge-domain-cutover`）。回滚目标是 p24b，产物在 `gatu-release-p25`，所以 p25 要在另一个工作树构建。#73 与本次改动在 `docs/README.md` 相邻两行都有修改，合并时会有一处小冲突，保留两边即可。
+2. p25：#73 在 2026-10-09 之后合并，然后按[切换方案](../../sairn-domain-cutover-plan.md)阶段 5 执行（发布 p25 并验证；从源站请求策略删除 `X-Gatu-Forwarded-Host`；Lambda 环境变量改为 `SAIRN_*`；30 天后删除 gatu 证书；移除临时 IAM 策略 `gatu-edge-domain-cutover`）。回滚目标是 p24b，产物在 `gatu-release-p25`，所以 p25 要在另一个工作树构建。2026-10-08 用 `git merge-tree` 预演：#73 与本次提交在 `docs/README.md`（相邻两行）和 `docs/adr/README.md`（0026–0033 一段）会冲突，两处都保留两边的内容即可；`INDEX.md` 用 `pnpm memory:index` 重新生成。#78 与 Codex 周整理分支只在 `INDEX.md` 冲突。
 3. `dev` 上未发布的 #77：下一次发布带上。邮箱静默建钱包的真实注册验收只能在线上域名做（2026-10-02 读到的 Privy 应用公开配置没有 localhost 来源）。
 4. #78 待审查与合并。
 5. 另一个会话 2026-10-08 诊断出手机端外部钱包（Privy 经 WalletConnect）存款时报「Wallet is not connected to Arbitrum One」的根因：`use-deposit.ts` 的 `getProviderChainId` 不认数字形式的 `eth_chainId`。只诊断、未改代码，分支 `claude/arbitrum-network-connection-issue-8325cd`，由该会话记录。
@@ -212,7 +212,7 @@
 - 写进文档的代码事实逐条对照了当前代码：hl-react 导出的 hook、`registries/exchange.ts` 的签名方路由、`StartupReadyGate`、`candle-gate.ts`、`fees.ts` 与 `use-markets.tsx`、`order-fee-quote.ts`、地区限制的 `useGeoRestriction`、`referrals.tsx` 的 SEO 文案、`i18n:extract` 脚本、commitlint 规则、TanStack Start 与 Node 版本、仓库密钥与工作流状态。
 - 发布归属用 `git merge-base --is-ancestor` 对照四次发布的 main 提交；线上状态读两个网络的 `build-meta.json`。
 
-没有运行：应用单测、类型检查、Biome（没有改代码）、构建、浏览器验证。迁移进来的协议实测行为、官方终端对照值和附录内容没有重新测量，各处已标明日期与来源。草稿 PR #73 与本次改动在 `docs/README.md` 有一处相邻修改，合并顺序在后的一方需要手工合并。
+没有运行：应用单测、类型检查、Biome（没有改代码）、构建、浏览器验证。迁移进来的协议实测行为、官方终端对照值和附录内容没有重新测量，各处已标明日期与来源。合并冲突的预演结果见待办 2。本次提交在没装依赖的工作树里完成，提交钩子没有运行；提交信息事先用主检出的 commitlint 校验通过。
 
 ## 后续与替代关系
 

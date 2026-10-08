@@ -51,6 +51,7 @@
   - `git apply --3way` 会把干净应用的文件直接暂存。之后先 `git restore --staged .`，再逐个 add。
   - `git add -- <已暂存删除的路径> <其他文件>` 会整体中止，一个文件都不暂存。暂存后一律用 `git status --short` 检查。
   - git stash 栈被所有工作树共享，不要用裸 `git stash` 或 `git stash pop`。
+  - 工作树没装依赖时，提交钩子找不到 lefthook，会打印「Can't find lefthook in PATH」后放行，commitlint 与 Biome 都没跑，钩子的后备探测还会留下 Swift 的 `.build/` 目录。这时用主检出的 `node_modules/.bin/commitlint`（在主检出目录运行）手动校验提交信息，提交后删掉 `.build/`；改了代码的提交先装依赖再提交。
 - **清理工作树前**逐项核对：`git status --porcelain` 为空；分支提交都已在 `origin/dev`（只在 `main` 上的分支先核对 `origin/main` 的祖先关系）；没有 `.worklog/`；`.env.local` 与主检出 `cmp` 相同（不打印内容）；`lsof -d cwd -Fpcn` 显示没有进程以它为工作目录（`lsof +D` 会递归扫描 `node_modules`，非常慢）；没有打开的 PR。其他会话名下的工作树，要运营方逐个同意后才清理。发布工作树放在仓库外（`gatu-release-*`），保留到下一次发布，作为回滚产物。
 - **shell 陷阱**：`| tail` 之类的管道会吞掉前一个命令的退出码，判断成败时单独取 `$?`；`pnpm build … | head` 会让构建收到 SIGPIPE 提前终止，应先写日志文件再 grep；zsh 不按空格拆分 `$var`，传文件列表要写 `${=var}`；不要用 `path`、`status` 作变量名；macOS 没有 `timeout` 命令；BSD `sed` 不认 `\|`，要用 `sed -E` 加 `|`。
 - **本机网络**：本机有 HTTP 代理（`127.0.0.1:6152`）和 fake-ip DNS（解析到 `198.18.x.x`）。核对 DNS 要问权威服务器（`dig @<权威 NS>`，看 `aa` 标志）；`curl --resolve` 要加 `--noproxy '*'`；经过代理时 `curl -I` 的第一行是 CONNECT 的 200，状态码要用 `-w '%{http_code}'` 取。经代理访问 GitHub HTTPS 偶有 TLS 重置，重试或改用 `gh api`。Claude 桌面应用的命令沙盒会拦下经 SOCKS 代理的 SSH（报 `nc: connection failed, SOCKS error 2`），`git fetch` 与 `git push` 要在沙盒外执行；运营方可以用 `/sandbox` 调整放行规则。
