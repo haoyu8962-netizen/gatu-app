@@ -154,11 +154,13 @@ same work in `getDepositProviderForChain`:
 Device acceptance for this flow has not been recorded yet. It needs a phone with
 a real external wallet and a small USDC balance on Arbitrum, and covers three
 cases: a wallet already on Arbitrum must see no switch prompt at all and go
-straight to the transaction request; a wallet on another network must see
-exactly one switch prompt, then the transaction request, with the status screen
-reading "Switching network" in between; and declining the switch must close the
-attempt with the "Arbitrum network switch was rejected" notification and no
-transaction request. Record the wallet, its connection path (WalletConnect or
+straight to the transaction request; a wallet on another network that already
+knows Arbitrum must see one switch prompt, then the transaction request, with
+the status screen reading "Switching network" in between (a wallet that does
+not know Arbitrum goes through the add-network recovery above, so record the
+exact prompt order instead); and declining the switch must close the attempt
+with the "Arbitrum network switch was rejected" notification and no transaction
+request. Record the wallet, its connection path (WalletConnect or
 in-app browser) and the outcome in the task record before relying on this flow.
 
 `useDepositWalletProvider` only reports whether the wallet provider answers at

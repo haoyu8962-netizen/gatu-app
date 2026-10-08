@@ -177,6 +177,7 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/agent-registration-session.test.ts \
   src/lib/tests/agent-storage-scope.test.ts \
   src/lib/tests/external-agent-signer.test.ts \
+  src/lib/tests/use-connection-wallet-client.test.tsx \
   src/lib/tests/privy-agent-signer.test.ts \
   src/lib/tests/mobile-agent-lifecycle.test.ts \
   src/lib/tests/legal-gate.test.ts \

@@ -57,6 +57,7 @@ export {
 export { getExplorerAddressUrl, getExplorerTokenUrl, getExplorerTxUrl } from "./explorer";
 export { type ApiStatus, type ApiStatusResult, useApiStatus } from "./hooks/useApiStatus";
 export { type HyperliquidClients, useHyperliquidClients } from "./hooks/useClients";
+export { useConnectionWalletClient } from "./hooks/useConnectionWalletClient";
 export {
 	type ExchangeExecutionGuard,
 	type ExchangeMutationOptions,

@@ -36,6 +36,7 @@ vi.mock("@sairn/hl-react/hooks/useTransport", () => ({
 }));
 
 vi.mock("wagmi", () => ({
+	useConnection: () => ({ chainId: 42161 }),
 	useWalletClient: () => ({
 		data: {
 			account: { address: testState.walletAddress },

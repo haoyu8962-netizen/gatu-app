@@ -11,7 +11,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const testState = vi.hoisted(() => ({
 	authorize: vi.fn(async () => {}),
 	availableBalance: 100,
+	hasWalletAccess: true,
 	isReady: true,
+	isSignerLoading: false,
+	signerMode: "owner" as "owner" | "agent",
 	limitPrice: "100",
 	openInterestCapped: false,
 	orderType: "limit",
@@ -158,7 +161,7 @@ vi.mock("@/hooks/use-geo-restriction", () => ({
 	useGeoRestriction: () => ({ actionsBlocked: false, isError: false, isResolved: true, tradeRestricted: false }),
 }));
 vi.mock("@/hooks/wallet/use-wallet-session", () => ({
-	useWalletSession: () => ({ address: "0xabc", isConnected: true, hasWalletAccess: true }),
+	useWalletSession: () => ({ address: "0xabc", isConnected: true, hasWalletAccess: testState.hasWalletAccess }),
 }));
 
 vi.mock("@/lib/hyperliquid", () => ({
@@ -183,9 +186,9 @@ vi.mock("@/lib/hyperliquid", () => ({
 	useTradingStatus: () => ({
 		isBuilderFeeLoading: false,
 		isReady: testState.isReady,
-		isSignerLoading: false,
-		isSignerReady: true,
-		signerMode: "wallet",
+		isSignerLoading: testState.isSignerLoading,
+		isSignerReady: !testState.isSignerLoading,
+		signerMode: testState.signerMode,
 	}),
 	useUserPositions: () => ({
 		getPosition: () => null,
@@ -442,7 +445,35 @@ describe("desktop TradePanel trading approval errors", () => {
 		container.remove();
 		vi.clearAllMocks();
 		testState.isReady = true;
+		testState.hasWalletAccess = true;
+		testState.isSignerLoading = false;
+		testState.signerMode = "owner";
 		activateLocale("en");
+	});
+
+	it("keeps Enable Trading inert for an Agent-only session without wallet access", async () => {
+		testState.hasWalletAccess = false;
+		await renderPanel(root);
+		const button = getOrderButton(container);
+		expect(button.textContent?.trim()).toBe("Enable Trading");
+		expect(button.disabled).toBe(true);
+
+		await act(async () => button.click());
+
+		expect(testState.authorize).not.toHaveBeenCalled();
+	});
+
+	it("keeps Enable Trading inert while the exact owner signer is still being established", async () => {
+		testState.isSignerLoading = true;
+		testState.signerMode = "owner";
+		await renderPanel(root);
+		const button = getOrderButton(container);
+		expect(button.textContent?.trim()).toBe("Enable Trading");
+		expect(button.disabled).toBe(true);
+
+		await act(async () => button.click());
+
+		expect(testState.authorize).not.toHaveBeenCalled();
 	});
 
 	it("offers Enable Trading on the wallet's current network instead of a switch to Arbitrum", async () => {

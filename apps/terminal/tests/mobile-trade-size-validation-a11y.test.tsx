@@ -9,6 +9,9 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const testState = vi.hoisted(() => ({
+	hasWalletAccess: true,
+	isSignerLoading: false,
+	signerMode: "owner" as "owner" | "agent",
 	availableBalance: 100,
 	baseAvailable: 100,
 	availabilityStatus: "success" as "success" | "loading" | "stale" | "error",
@@ -205,7 +208,7 @@ vi.mock("@/hooks/use-geo-restriction", () => ({
 }));
 
 vi.mock("@/hooks/wallet/use-wallet-session", () => ({
-	useWalletSession: () => ({ address: "0xabc", isConnected: true, hasWalletAccess: true }),
+	useWalletSession: () => ({ address: "0xabc", isConnected: true, hasWalletAccess: testState.hasWalletAccess }),
 }));
 
 vi.mock("@/lib/hyperliquid", () => ({
@@ -216,10 +219,11 @@ vi.mock("@/lib/hyperliquid", () => ({
 		isLeveraged: testState.kind === "perp",
 	}),
 	useTradingStatus: () => ({
-		isSignerLoading: false,
-		isSignerReady: true,
+		isSignerLoading: testState.isSignerLoading,
+		isSignerReady: !testState.isSignerLoading,
 		isBuilderFeeLoading: false,
 		isReady: testState.tradingReady,
+		signerMode: testState.signerMode,
 	}),
 	useSelectedMarketInfo: () => ({
 		data: {
@@ -410,6 +414,36 @@ describe("MobileTradeView order-size validation accessibility", () => {
 		expect(control.dataset.dragging).toBeUndefined();
 		await act(async () => getOrderButton(container).click());
 		expect(testState.requestSubmit).toHaveBeenCalledTimes(1);
+	});
+
+	it("keeps Enable Trading inert for an Agent-only session without wallet access", async () => {
+		activateLocale("en");
+		testState.tradingReady = false;
+		testState.hasWalletAccess = false;
+		try {
+			await renderView(root);
+			const enable = getCtaButton(container, "Enable Trading");
+			expect(enable.disabled).toBe(true);
+			await act(async () => enable.click());
+			expect(testState.authorize).not.toHaveBeenCalled();
+		} finally {
+			testState.hasWalletAccess = true;
+		}
+	});
+
+	it("keeps Enable Trading inert while the exact owner signer is still being established", async () => {
+		activateLocale("en");
+		testState.tradingReady = false;
+		testState.isSignerLoading = true;
+		try {
+			await renderView(root);
+			const enable = getCtaButton(container, "Enable Trading");
+			expect(enable.disabled).toBe(true);
+			await act(async () => enable.click());
+			expect(testState.authorize).not.toHaveBeenCalled();
+		} finally {
+			testState.isSignerLoading = false;
+		}
 	});
 
 	it("offers Enable Trading on the wallet's current network instead of a switch to Arbitrum", async () => {

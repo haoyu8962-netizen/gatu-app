@@ -46,7 +46,10 @@ vi.mock("@sairn/hl-react/clients", async (importOriginal) => ({
 vi.mock("../../../../../packages/hl-react/src/signing/use-agent-wallet", () => ({
 	useAgentWallet: () => ({ signer: { address: OTHER }, address: OTHER, isReady: true }),
 }));
-vi.mock("wagmi", () => ({ useWalletClient: () => ({ data: state.externalClient }) }));
+vi.mock("wagmi", () => ({
+	useConnection: () => ({ chainId: 42161 }),
+	useWalletClient: () => ({ data: state.externalClient }),
+}));
 
 function wallet() {
 	return {
