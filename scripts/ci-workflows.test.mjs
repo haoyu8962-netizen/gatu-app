@@ -99,6 +99,15 @@ function matchesAnyFile(directory, listed) {
 	return existsSync(parent) && readdirSync(parent).some((entry) => !entry.startsWith(".") && name.test(entry));
 }
 
+function pathSelectsFile(listed, file) {
+	if (dirname(listed) !== dirname(file)) return false;
+	if (!listed.includes("*")) return basename(listed) === basename(file);
+	const pattern = basename(listed)
+		.replace(/[.+?^${}()|[\]\\]/g, "\\$&")
+		.replaceAll("*", ".*");
+	return new RegExp(`^${pattern}$`).test(basename(file));
+}
+
 test("cancels superseded runs in pull request workflows and never in the comment-driven one", () => {
 	for (const name of PULL_REQUEST_WORKFLOWS) {
 		const workflow = readWorkflow(name);
@@ -289,6 +298,23 @@ test("never lists a test path that matches no file", () => {
 		[],
 		"vitest and Playwright read a path that matches no file as a filter that selects nothing, and the step still passes",
 	);
+});
+
+test("selects both TradingView loader handshake tests in the terminal TradingView step", () => {
+	const required = [
+		"src/lib/tests/chart-library-loader-handshake-contract.test.ts",
+		"src/lib/tests/chart-library-loader-handshake.test.ts",
+	];
+	const calls = workflowListItems(readWorkflow("terminal-tests.yml"))
+		.map(stepCommands)
+		.flatMap(({ directory, commands }) => commands.flatMap((command) => testRunnerCalls(directory, command)));
+	for (const file of required) {
+		assert.equal(existsSync(join(REPOSITORY_ROOT, "apps/terminal", file)), true, `${file} is missing`);
+		const selected = calls.some(
+			({ directory, paths }) => directory === "apps/terminal" && paths.some((listed) => pathSelectsFile(listed, file)),
+		);
+		assert.equal(selected, true, `terminal-tests.yml does not select ${file}; the vendored loader patch would go unchecked`);
+	}
 });
 
 test("rebuilds and re-checks chunking when a dependency patch changes", () => {

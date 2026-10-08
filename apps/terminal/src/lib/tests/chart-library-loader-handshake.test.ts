@@ -12,7 +12,9 @@ const LOADER_FILES = [
 ];
 const READY_BUDGET_MS = 50;
 
-type WidgetConstructor = new (options: Record<string, unknown>) => { onChartReady(callback: () => void): void };
+type WidgetConstructor = new (
+	options: Record<string, unknown>,
+) => { onChartReady(callback: () => void): void; remove(): void };
 type Handshake = { ready: boolean; registeredBeforeWrite: boolean; listenerCount: number };
 
 function loadWidget(file: string, source: string): WidgetConstructor {
@@ -106,31 +108,40 @@ function createContainer(mode: "sync" | "async", onHandshake: (state: Handshake)
 
 async function runHandshake(Widget: WidgetConstructor, features: string[], mode: "sync" | "async") {
 	let state: Handshake | undefined;
+	let widget: { onChartReady(callback: () => void): void; remove(): void } | undefined;
+	let budget: ReturnType<typeof setTimeout> | undefined;
 	const container = createContainer(mode, (next) => {
 		state = next;
 	});
-	const widget = new Widget({
-		container,
-		datafeed: {},
-		library_path: "/charting_library/",
-		symbol: "BTC",
-		interval: "60",
-		locale: "en",
-		enabled_features: features,
-	});
-	const frame = container.querySelector("iframe");
-	const inner = frame?.contentWindow as (Window & typeof globalThis) | null;
-	if (!state || !inner) throw new Error("widget did not create its iframe");
-	if (features.includes("iframe_loading_same_origin")) {
-		await Promise.resolve();
-		inner.dispatchEvent(new inner.Event("sameOriginLoad"));
+	try {
+		widget = new Widget({
+			container,
+			datafeed: {},
+			library_path: "/charting_library/",
+			symbol: "BTC",
+			interval: "60",
+			locale: "en",
+			enabled_features: features,
+		});
+		const frame = container.querySelector("iframe");
+		const inner = frame?.contentWindow as (Window & typeof globalThis) | null;
+		if (!state || !inner) throw new Error("widget did not create its iframe");
+		if (features.includes("iframe_loading_same_origin")) {
+			await Promise.resolve();
+			inner.dispatchEvent(new inner.Event("sameOriginLoad"));
+		}
+		const ready = await Promise.race([
+			new Promise<boolean>((resolveReady) => widget?.onChartReady(() => resolveReady(true))),
+			new Promise<boolean>((resolveReady) => {
+				budget = setTimeout(() => resolveReady(false), READY_BUDGET_MS);
+			}),
+		]);
+		return { ...state, ready };
+	} finally {
+		if (budget) clearTimeout(budget);
+		widget?.remove();
+		container.remove();
 	}
-	const ready = await Promise.race([
-		new Promise<boolean>((resolveReady) => widget.onChartReady(() => resolveReady(true))),
-		new Promise<boolean>((resolveReady) => setTimeout(() => resolveReady(false), READY_BUDGET_MS)),
-	]);
-	container.remove();
-	return { ...state, ready };
 }
 
 describe("chart library loader handshake", () => {
