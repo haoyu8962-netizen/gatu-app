@@ -69,7 +69,7 @@
 
 ## 补充（2026-10-08，p25 清理已发布）
 
-阶段 5.1 已完成：PR #73 于 2026-10-08 合入 `dev`（`d6033daf`）并随 PR #87 晋升 `main`（`d74dd616`），作为 `cloudfront-2026-10-08-p28` 发布，两网 `verify` 通过（签名 POST allowed）、`csp-coverage` 0 违规；线上自此不再识别 gatu 主机。阶段 5.2（白名单删除 `X-Gatu-Forwarded-Host`）、5.3（Lambda 环境变量改名）、5.4（删除 gatu 证书）仍未做。回滚到 p27 不需要恢复白名单（仍含旧头）。见[发布记录](../work-memory/sessions/2026-10-08-cloudfront-release-p28.md)。
+阶段 5.1 已完成：PR #73 于 2026-10-08 合入 `dev`（`d6033daf`）并随 PR #87 晋升 `main`（`d74dd616`），作为 `cloudfront-2026-10-08-p28` 发布，两网 `verify` 通过（签名 POST allowed）、`csp-coverage` 0 违规；线上自此不再识别 gatu 主机。同日稍后用户决定「gatu 相关的产物可以全部清理掉了」：5.2 已执行（策略去掉 `X-Gatu-Forwarded-Host`，ETag `E3UN6WX5RRO2AG`）；5.3、5.4 因 `gatu-edge` 没有对应权限未能执行，待用户在控制台完成（Lambda 变量改名、删除两张 gatu 证书、摘除临时 IAM 策略）。自 5.2 起回滚到 p23 及更早要先把旧头加回白名单；p24–p27 双写新旧头、Lambda 先读新头，不受影响。见[清理记录](../work-memory/sessions/2026-10-08-gatu-retirement-cleanup.md)。见[发布记录](../work-memory/sessions/2026-10-08-cloudfront-release-p28.md)。
 
 ## 补充（2026-10-03，p25 的代码部分）
 
