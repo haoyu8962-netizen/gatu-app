@@ -51,6 +51,18 @@ describe("useConnectionWalletClient", () => {
 		expect(captured?.data).toEqual({ requestedChainId: 999_999 });
 	});
 
+	it("follows the connection's chain across re-renders of one mount", () => {
+		wagmiState.chainId = 42161;
+		act(() => root.render(createElement(Probe)));
+		wagmiState.chainId = 999_999;
+		act(() => root.render(createElement(Probe, { key: "same" })));
+		wagmiState.chainId = undefined;
+		act(() => root.render(createElement(Probe, { key: "same" })));
+
+		expect(wagmiState.requests).toEqual([{ chainId: 42161 }, { chainId: 999_999 }, undefined]);
+		expect(captured?.data).toEqual({ requestedChainId: undefined });
+	});
+
 	it("falls back to wagmi's default client while no connection reports a chain", () => {
 		wagmiState.chainId = undefined;
 		act(() => root.render(createElement(Probe)));

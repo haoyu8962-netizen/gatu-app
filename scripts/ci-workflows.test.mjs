@@ -318,6 +318,8 @@ test("runs the release metadata, CSP and card funding guards on pull requests", 
 		"tests/trade-panel-open-interest-cap.test.tsx",
 		"src/lib/tests/use-explicit-agent-approval.test.tsx",
 		"src/lib/tests/use-connection-wallet-client.test.tsx",
+		"src/lib/tests/use-terms-acceptance.test.tsx",
+		"src/lib/tests/owner-trading-signer.test.tsx",
 		"src/lib/tests/dialog-notice-radius-contract.test.ts",
 		"src/lib/tests/i18n-reactivity-contract.test.ts",
 	]) {

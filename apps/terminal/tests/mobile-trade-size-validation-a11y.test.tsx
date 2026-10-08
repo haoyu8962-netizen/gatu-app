@@ -65,13 +65,25 @@ vi.mock("@sairn/ui", async (importOriginal) => ({
 }));
 
 const wagmiState = vi.hoisted(() => ({
+	connectionChainId: 42161 as number,
 	walletClientError: null as Error | null,
+	walletClientLoading: false,
+	walletClientMissing: false,
 	switchChain: vi.fn(),
 }));
 
 vi.mock("wagmi", () => ({
+	useConnection: () => ({ chainId: wagmiState.connectionChainId }),
 	useSwitchChain: () => ({ isPending: false, switchChain: wagmiState.switchChain }),
-	useWalletClient: () => ({ data: wagmiState.walletClientError ? undefined : {}, error: wagmiState.walletClientError, isLoading: false }),
+	useWalletClient: (parameters?: { chainId?: number }) => {
+		const matchesConnection = parameters?.chainId === wagmiState.connectionChainId;
+		const data =
+			matchesConnection && !wagmiState.walletClientLoading && !wagmiState.walletClientMissing
+				? { account: { address: "0xabc" } }
+				: undefined;
+		const error = matchesConnection ? null : wagmiState.walletClientError;
+		return { data, error, isLoading: wagmiState.walletClientLoading };
+	},
 }));
 
 vi.mock("@/components/trade/chart/token-selector", () => ({ TokenSelector: () => null }));
@@ -449,8 +461,10 @@ describe("MobileTradeView order-size validation accessibility", () => {
 	it("offers Enable Trading on the wallet's current network instead of a switch to Arbitrum", async () => {
 		activateLocale("en");
 		testState.tradingReady = false;
+		testState.signerMode = "agent";
+		wagmiState.connectionChainId = 999_999;
 		wagmiState.walletClientError = new Error(
-			"The current chain of the connector (id: 1) does not match the connection's chain (id: 42161).",
+			"The current chain of the connector (id: 999999) does not match the connection's chain (id: 42161).",
 		);
 		try {
 			await renderView(root);
@@ -462,7 +476,42 @@ describe("MobileTradeView order-size validation accessibility", () => {
 			expect(testState.authorize).toHaveBeenCalledTimes(1);
 			expect(wagmiState.switchChain).not.toHaveBeenCalled();
 		} finally {
+			testState.signerMode = "owner";
+			wagmiState.connectionChainId = 42161;
 			wagmiState.walletClientError = null;
+		}
+	});
+
+	it("waits for the external wallet client before offering Enable Trading", async () => {
+		activateLocale("en");
+		testState.tradingReady = false;
+		testState.signerMode = "agent";
+		wagmiState.walletClientLoading = true;
+		try {
+			await renderView(root);
+			const pending = getCtaButton(container, "Enable Trading");
+			expect(pending.disabled).toBe(true);
+			await act(async () => pending.click());
+			expect(testState.authorize).not.toHaveBeenCalled();
+
+			wagmiState.walletClientLoading = false;
+			wagmiState.walletClientMissing = true;
+			await renderView(root);
+			const missing = getCtaButton(container, "Enable Trading");
+			expect(missing.disabled).toBe(true);
+			await act(async () => missing.click());
+			expect(testState.authorize).not.toHaveBeenCalled();
+
+			wagmiState.walletClientMissing = false;
+			await renderView(root);
+			const ready = getCtaButton(container, "Enable Trading");
+			expect(ready.disabled).toBe(false);
+			await act(async () => ready.click());
+			expect(testState.authorize).toHaveBeenCalledTimes(1);
+		} finally {
+			testState.signerMode = "owner";
+			wagmiState.walletClientLoading = false;
+			wagmiState.walletClientMissing = false;
 		}
 	});
 

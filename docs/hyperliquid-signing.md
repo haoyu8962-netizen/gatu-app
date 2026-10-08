@@ -7,7 +7,7 @@
 | Signing Type | Chain ID | Domain | Use Case | Network Required |
 |--------------|----------|--------|----------|------------------|
 | **L1 Actions** | 1337 | "Exchange" | Trading operations | None (API only) |
-| **User-Signed** | 0x66eee (421614) | "HyperliquidSignTransaction" | Transfers, agent approval | None (API only) |
+| **User-Signed** | Signer's chain: external wallet → its current chain; Privy embedded owner → the environment's Arbitrum (42161 / 421614); SDK examples use 0x66eee | "HyperliquidSignTransaction" | Transfers, agent approval | None (API only) |
 | **Arbitrum EVM** | 42161 | USDC EIP-3009 + contract call | CCTP deposits from Arbitrum | Arbitrum network |
 
 ---
@@ -23,7 +23,7 @@
 │  │   L1 Actions         │  │   User-Signed        │  │  Arbitrum EVM │  │
 │  │   (Trading)          │  │   (Admin/Transfers)  │  │  (Deposits)   │  │
 │  ├──────────────────────┤  ├──────────────────────┤  ├───────────────┤  │
-│  │ Chain ID: 1337       │  │ Chain ID: 0x66eee    │  │ Chain ID:     │  │
+│  │ Chain ID: 1337       │  │ Chain ID: signer's   │  │ Chain ID:     │  │
 │  │ Domain: "Exchange"   │  │ Domain: "Hyperliquid │  │ 42161         │  │
 │  │                      │  │ SignTransaction"     │  │               │  │
 │  ├──────────────────────┤  ├──────────────────────┤  ├───────────────┤  │
@@ -125,7 +125,7 @@ Administrative operations that use EIP-712 typed data with Hyperliquid's signatu
 
 | Property | Value |
 |----------|-------|
-| Chain ID | 0x66eee (421614 decimal) |
+| Chain ID | `signatureChainId` of the signer: hl-react configures none, so the SDK's `resolveSignatureChainId` reads the wallet's `getChainId()`. An external wallet therefore signs with whatever chain it is on (via `useConnectionWalletClient`, which never requires a switch); the Privy embedded owner reports the environment's Arbitrum chain (42161 Mainnet, 421614 Testnet); the SDK's own examples show 0x66eee (421614). Hyperliquid accepts any value here as long as the EIP-712 domain and the action agree |
 | Domain Name | "HyperliquidSignTransaction" |
 | Serialization | Direct EIP-712 typed data |
 | Signed By | Master wallet (wagmi walletClient or viem account) |
@@ -525,7 +525,8 @@ export function toHyperliquidWallet(
 | Purpose | Chain ID | Decimal |
 |---------|----------|---------|
 | L1 Actions | 1337 | 1337 |
-| User-Signed | 0x66eee | 421614 |
+| User-Signed (external wallet) | wallet's current chain | — |
+| User-Signed (Privy embedded owner) | 0xa4b1 Mainnet / 0x66eee Testnet | 42161 / 421614 |
 | Arbitrum One | 42161 | 42161 |
 | Arbitrum Sepolia | 421614 | 421614 |
 

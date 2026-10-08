@@ -110,15 +110,20 @@ The terminal must preserve this ordering:
    order button therefore has no network stage: `getOrderActionStage` goes
    from `connect` to `agent` when a signer is still needed, Enable Trading is
    gated by `useWalletSession().hasWalletAccess` (so Agent-only sessions stay
-   inert) plus the unchanged approval-pending, geo and execution guards, and
+   inert), for an external session additionally by that connection client
+   being available (it stays inert, as approval-pending, while wagmi is still
+   fetching the client after a chain change), plus the unchanged
+   approval-pending, geo and execution guards, and
    "Loading wallet..." means the exact embedded owner signer is still being
    established. Only the Arbitrum USDC deposit and the LI.FI bridge need a
    specific network; the deposit switches on demand at submit
    ([CCTP deposits](cctp-deposits.md), Wallet Network).
    `trade-panel-open-interest-cap`, `mobile-trade-size-validation-a11y`
-   (a wagmi chain-mismatch error leaves Enable Trading available; Agent-only
-   and owner-loading sessions keep it inert), `use-explicit-agent-approval`
-   (approval on chain 999999) and `use-connection-wallet-client` pin this.
+   (a wagmi chain-mismatch error leaves Enable Trading available; Agent-only,
+   owner-loading and client-pending sessions keep it inert),
+   `use-explicit-agent-approval` (approval on chain 999999),
+   `use-terms-acceptance` and `owner-trading-signer` (the default client on
+   chain 999999) and `use-connection-wallet-client` pin this.
    Page load and status checks never sign. Agent registration is separate from
    builder-fee approval.
 5. **Verify a requested new Agent (external-wallet flow).** Before opening the

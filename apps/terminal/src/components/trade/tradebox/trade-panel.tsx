@@ -1,4 +1,5 @@
 import { useLingui } from "@lingui/react/macro";
+import { useConnectionWalletClient } from "@sairn/hl-react";
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { ButtonLoading } from "@/components/brand/button-loading";
 import { LazyDialogHost } from "@/components/ui/lazy-dialog-host";
@@ -130,6 +131,7 @@ function warmDesktopTradeSettingsModals() {
 export function TradePanel() {
 	const { t } = useLingui();
 	const { address, isConnected, hasWalletAccess } = useWalletSession();
+	const { data: connectionWalletClient } = useConnectionWalletClient();
 	const depositAvailability = useDepositAvailability();
 
 	const { data: market } = useSelectedMarketInfo();
@@ -427,7 +429,7 @@ export function TradePanel() {
 
 	const needsAgentApproval = !isTradingAuthorized;
 	const isReadyToTrade = isTradingAuthorized;
-	const canApprove = hasWalletAccess && !!address;
+	const canApprove = hasWalletAccess && !!address && (signerMode === "owner" || !!connectionWalletClient);
 	const isApprovalLoading = isSignerReady ? requiresBuilderFee && isBuilderFeeLoading : isSignerLoading;
 
 	const baseInput = {

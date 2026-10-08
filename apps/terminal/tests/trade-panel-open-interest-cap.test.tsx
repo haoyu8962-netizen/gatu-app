@@ -39,13 +39,25 @@ const testState = vi.hoisted(() => ({
 }));
 
 const wagmiState = vi.hoisted(() => ({
+	connectionChainId: 42161 as number,
 	walletClientError: null as Error | null,
+	walletClientLoading: false,
+	walletClientMissing: false,
 	switchChain: vi.fn(),
 }));
 
 vi.mock("wagmi", () => ({
+	useConnection: () => ({ chainId: wagmiState.connectionChainId }),
 	useSwitchChain: () => ({ isPending: false, mutate: wagmiState.switchChain }),
-	useWalletClient: () => ({ data: wagmiState.walletClientError ? undefined : {}, error: wagmiState.walletClientError, isLoading: false }),
+	useWalletClient: (parameters?: { chainId?: number }) => {
+		const matchesConnection = parameters?.chainId === wagmiState.connectionChainId;
+		const data =
+			matchesConnection && !wagmiState.walletClientLoading && !wagmiState.walletClientMissing
+				? { account: { address: "0xabc" } }
+				: undefined;
+		const error = matchesConnection ? null : wagmiState.walletClientError;
+		return { data, error, isLoading: wagmiState.walletClientLoading };
+	},
 }));
 
 vi.mock("@/components/trade/tradebox/trade-form-fields", () => ({ TradeFormFields: () => null }));
@@ -477,8 +489,10 @@ describe("desktop TradePanel trading approval errors", () => {
 	});
 
 	it("offers Enable Trading on the wallet's current network instead of a switch to Arbitrum", async () => {
+		testState.signerMode = "agent";
+		wagmiState.connectionChainId = 999_999;
 		wagmiState.walletClientError = new Error(
-			"The current chain of the connector (id: 1) does not match the connection's chain (id: 42161).",
+			"The current chain of the connector (id: 999999) does not match the connection's chain (id: 42161).",
 		);
 		try {
 			await renderPanel(root);
@@ -491,7 +505,39 @@ describe("desktop TradePanel trading approval errors", () => {
 			expect(testState.authorize).toHaveBeenCalledTimes(1);
 			expect(wagmiState.switchChain).not.toHaveBeenCalled();
 		} finally {
+			wagmiState.connectionChainId = 42161;
 			wagmiState.walletClientError = null;
+		}
+	});
+
+	it("waits for the external wallet client before offering Enable Trading", async () => {
+		testState.signerMode = "agent";
+		wagmiState.walletClientLoading = true;
+		try {
+			await renderPanel(root);
+			const pending = getOrderButton(container);
+			expect(pending.textContent?.trim()).toBe("Enable Trading");
+			expect(pending.disabled).toBe(true);
+			await act(async () => pending.click());
+			expect(testState.authorize).not.toHaveBeenCalled();
+
+			wagmiState.walletClientLoading = false;
+			wagmiState.walletClientMissing = true;
+			await renderPanel(root);
+			const missing = getOrderButton(container);
+			expect(missing.disabled).toBe(true);
+			await act(async () => missing.click());
+			expect(testState.authorize).not.toHaveBeenCalled();
+
+			wagmiState.walletClientMissing = false;
+			await renderPanel(root);
+			const ready = getOrderButton(container);
+			expect(ready.disabled).toBe(false);
+			await act(async () => ready.click());
+			expect(testState.authorize).toHaveBeenCalledTimes(1);
+		} finally {
+			wagmiState.walletClientLoading = false;
+			wagmiState.walletClientMissing = false;
 		}
 	});
 

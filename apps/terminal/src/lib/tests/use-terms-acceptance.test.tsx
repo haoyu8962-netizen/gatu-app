@@ -21,6 +21,7 @@ const testState = vi.hoisted(() => ({
 	request: vi.fn(),
 	walletAddress: "0x1111111111111111111111111111111111111111" as `0x${string}`,
 	walletSignTypedData: vi.fn(),
+	connectionChainId: 42161 as number,
 }));
 
 vi.mock("@sairn/hl-react/provider", () => ({
@@ -36,14 +37,17 @@ vi.mock("@sairn/hl-react/hooks/useTransport", () => ({
 }));
 
 vi.mock("wagmi", () => ({
-	useConnection: () => ({ chainId: 42161 }),
-	useWalletClient: () => ({
-		data: {
-			account: { address: testState.walletAddress },
-			getAddresses: async () => [testState.walletAddress],
-			getChainId: async () => 42161,
-			signTypedData: testState.walletSignTypedData,
-		},
+	useConnection: () => ({ chainId: testState.connectionChainId }),
+	useWalletClient: (parameters?: { chainId?: number }) => ({
+		data:
+			parameters?.chainId === testState.connectionChainId
+				? {
+						account: { address: testState.walletAddress },
+						getAddresses: async () => [testState.walletAddress],
+						getChainId: async () => testState.connectionChainId,
+						signTypedData: testState.walletSignTypedData,
+					}
+				: undefined,
 	}),
 }));
 
@@ -101,6 +105,23 @@ describe("useTermsAcceptance wallet resolution", () => {
 		if (!acceptance) throw new Error("Terms acceptance hook did not render");
 		return acceptance;
 	}
+
+	it("accepts the terms with the default wallet client on a chain outside the configured list", async () => {
+		testState.connectionChainId = 999_999;
+		try {
+			const hook = renderHook();
+
+			await act(async () => {
+				await hook.mutateAsync();
+			});
+
+			expect(testState.walletSignTypedData).toHaveBeenCalledOnce();
+			expect(testState.request).toHaveBeenCalledOnce();
+			expect(testState.legalCheck).toHaveBeenCalledWith({ user: OWNER }, expect.any(AbortSignal));
+		} finally {
+			testState.connectionChainId = 42161;
+		}
+	});
 
 	it("uses a resolved wallet instead of the default Wagmi client", async () => {
 		const resolverSignTypedData = vi.fn(async (_typedData: unknown) => RAW_SIGNATURE);

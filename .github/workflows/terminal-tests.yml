@@ -116,6 +116,8 @@ jobs:
           src/lib/tests/mobile-agent-lifecycle.test.ts
           src/lib/tests/use-explicit-agent-approval.test.tsx
           src/lib/tests/use-connection-wallet-client.test.tsx
+          src/lib/tests/use-terms-acceptance.test.tsx
+          src/lib/tests/owner-trading-signer.test.tsx
           src/lib/tests/privy-agent-signer.test.ts
           src/lib/tests/lambda-handler.test.ts
 

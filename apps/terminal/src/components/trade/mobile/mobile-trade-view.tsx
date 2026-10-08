@@ -1,4 +1,5 @@
 import { useLingui } from "@lingui/react/macro";
+import { useConnectionWalletClient } from "@sairn/hl-react";
 import { Button } from "@sairn/ui";
 import { type ChangeEvent, Suspense, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { ButtonLoading } from "@/components/brand/button-loading";
@@ -151,6 +152,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 	const { t } = useLingui();
 	const validationErrorId = useId();
 	const { address, isConnected, hasWalletAccess } = useWalletSession();
+	const { data: connectionWalletClient } = useConnectionWalletClient();
 	const depositAvailability = useDepositAvailability();
 
 	const { data: market } = useSelectedMarketInfo();
@@ -174,7 +176,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 	const isTradingAuthorized = requiresBuilderFee ? isReady : isSignerReady;
 	const isWalletLoading = isConnected && signerMode === "owner" && isSignerLoading;
 	const { authorize, status: registerStatus } = useTradingAuthorization({ requiresBuilderFee });
-	const canApprove = hasWalletAccess && !!address;
+	const canApprove = hasWalletAccess && !!address && (signerMode === "owner" || !!connectionWalletClient);
 	const isRegistering =
 		registerStatus === "approving_fee" || registerStatus === "approving_agent" || registerStatus === "verifying";
 	const isApprovalLoading = isSignerReady ? requiresBuilderFee && isBuilderFeeLoading : isSignerLoading;
