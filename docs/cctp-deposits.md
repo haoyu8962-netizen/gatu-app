@@ -154,8 +154,10 @@ same work in `getDepositProviderForChain`:
 `useDepositWalletProvider` only reports whether the wallet provider answers at
 all (the "Wallet connection unavailable" screen); it no longer interprets the
 chain. `use-deposit-routing-guard.test.tsx` ("wallet network") pins the numeric
-comparison, the two switch paths, the unknown-chain recovery sequence, the
-event channel, the deadline (including a query that never answers, and answers
+comparison, the two switch paths, the unknown-chain recovery sequence (in
+the direct path, and after Privy itself reports an unknown chain, while a
+rejection never falls back), the event channel (a `chainChanged` for another
+chain keeps the wait going), the deadline (including a query that never answers, and answers
 or events that arrive after it), a query that fails during the observation,
 listener and timer cleanup, the `networkSwitchPending` lifecycle as the hook
 returns it, the rejection and both pre-signing and pre-broadcast re-checks.

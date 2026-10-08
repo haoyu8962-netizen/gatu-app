@@ -59,11 +59,20 @@
 - 第二轮 Codex 三路审查（V 8.5 / B 8.3 / C 8.5）：V 与 C 指出截止后迟到的查询结果、观察期查询拒绝、成功后的定时器清理没有用例钉住；B 指出 hook 返回的 `networkSwitchPending` 没有经真实渲染断言（弹层测试 mock 了 hook）、记录未按版本分开验证范围。处理：新增四例（截止后迟到答案与事件被忽略且不再查询；观察期查询拒绝即结束、监听清空、之后不再查询；事件结束等待后轮询与截止两个定时器都被清除、不再查询；切链挂起时经 act 刷新后 hook 返回 true、完成后 false），并用五个变异验证（删查询后的 settled 检查、删查询失败的 cleanup、删 clearTimeout(pollTimer)、删 clearTimeout(deadline)、hook 固定返回 false，全部被抓到）；本节按版本拆分。
 - 本段的 typecheck、Biome 与测试结果写在下一次提交前核对后的一行里：见「验证结果（第二轮修复）」。
 
+### 第三轮修复（本段之后的提交）
+
+- 第三轮 Codex 三路审查：V 10.0、B 10.0，C 8.5。C 指出两处用例缺口：`chainChanged` 报告非目标链时应继续等待（把监听改成无条件结束不会被现有用例抓到）；Privy 自身抛 4902 后回退到直接 provider 请求的分支没有用例（删掉回退不会被抓到）。处理：新增「keeps waiting when the wallet reports a chain other than Arbitrum」（先发 `0x1` 事件并推进 250 ms，断言仍在等待、hook 返回 true、未签名；再发目标链事件后完成）、「falls back to the wallet provider when Privy itself reports an unknown chain」（Privy 4902 → 直接路径 switch → add → switch，签名并广播）、「does not fall back to the wallet provider when Privy reports a rejected switch」（4001 不进入回退、零次直接请求）；两处变异（事件无条件结束、删 Privy 回退）均被抓到。
+
 ### 验证结果（第二轮修复）
 
 - `pnpm --filter @sairn/terminal typecheck` 通过；`pnpm exec biome check` 对改动文件通过。
 - `vitest run`：`use-deposit-routing-guard`（「wallet network」十四例）、`deposit-modal-withdrawal-routing-guard`、`deposit-execution-state` 共 3 个文件 202 项通过；十四个变异全部被抓到。全量套件未在此版本重跑。
 - `pnpm memory:index` / `memory:check` / `memory:test` 在本段写入后重跑通过。
+
+### 验证结果（第三轮修复）
+
+- `pnpm --filter @sairn/terminal typecheck` 通过；`pnpm exec biome check` 对改动文件通过。
+- `vitest run`：`use-deposit-routing-guard`（「wallet network」十七例）、`deposit-modal-withdrawal-routing-guard`、`deposit-execution-state` 通过；十六个变异全部被抓到。全量套件只在 422d8408 跑过。
 
 - 未做：真实手机钱包（WalletConnect 与钱包内置浏览器）的存款验收。
 - 翻译：「Switching network」已补 zh/es/fr/hi/ar；其余四种语言此前缺失的 43 条与本次无关。
