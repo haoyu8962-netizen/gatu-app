@@ -7,7 +7,7 @@ interface Props {
 }
 
 const ROUTE_DETAIL_CLASS =
-	"min-w-0 rounded-8 border border-market-close-stroke-input bg-modal px-3 py-2 text-2sm leading-5 font-medium text-market-close-fg";
+	"relative min-w-0 rounded-8 border border-market-close-stroke-input bg-modal px-3 py-2 text-2sm leading-5 font-medium text-market-close-fg";
 const ROUTE_VALUE_CLASS = "flex min-w-0 items-center gap-2";
 const ROUTE_ICON_CLASS = "size-4.5 shrink-0 rounded-full";
 

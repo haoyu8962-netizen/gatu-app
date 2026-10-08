@@ -147,6 +147,9 @@ describe("DepositForm routing gate", () => {
 		const route = container.querySelector('[data-slot="funds-route-details"]');
 		expect(route?.textContent).toBe("AssetUSDCNetworkArbitrum");
 		expect(route?.querySelectorAll("dt.sr-only")).toHaveLength(2);
+		for (const label of route?.querySelectorAll("dt.sr-only") ?? []) {
+			expect(label.parentElement?.className.split(" ")).toContain("relative");
+		}
 		expect(route?.querySelector('img[src="/coins/USDC.svg"]')?.getAttribute("aria-hidden")).toBe("true");
 		const networkIcon = route?.querySelector<HTMLImageElement>('img[src$="/coins/ARB.svg"]');
 		expect(networkIcon?.hidden).toBe(false);
