@@ -726,7 +726,7 @@ describe("MarketAssetInfo", () => {
 		expect(classes).toContain("min-[1001px]:min-h-0");
 		expect(dialog?.getAttribute("data-handle-class")).toContain("w-9");
 		expect(dialog?.getAttribute("data-handle-class")).toContain("bg-trading-panel-stroke-input");
-		expect(dialog?.getAttribute("data-overlay-class")).toContain("bg-trading-panel-scrim");
+		expect(dialog?.getAttribute("data-overlay-class")).toBeNull();
 	});
 
 	it("uses a mobile drawer and exposes the correct retry action for HIP-3 failures", async () => {
