@@ -24,11 +24,10 @@ import {
 	useTransferModalActions,
 	useTransferModalDirection,
 } from "@/stores/use-global-modal-store";
-import { DepositModalLoadingFallback } from "./deposit-modal-loading-fallback";
+import { DepositModalHost } from "./deposit-modal-host";
 import { Hip3DeployerDisclaimer } from "./hip3-deployer-disclaimer";
 import {
 	CommandMenu,
-	DepositModal,
 	GlobalSettingsModal,
 	PositionMarketCloseModal,
 	SendModal,
@@ -240,10 +239,8 @@ function SharedGlobalModals({
 	if (!displayedModal) return null;
 
 	return (
-		<Suspense
-			fallback={displayedModal === "deposit" ? <DepositModalLoadingFallback /> : <GlobalModalLoadingFallback />}
-		>
-			{displayedModal === "deposit" && <DepositModal key={`deposit:${fundsSessionKey}`} />}
+		<Suspense fallback={<GlobalModalLoadingFallback />}>
+			{displayedModal === "deposit" && <DepositModalHost key={`deposit:${fundsSessionKey}`} />}
 			{displayedModal === "internalTransfer" && (
 				<TransferModal
 					key={`transfer:${fundsSessionKey}`}

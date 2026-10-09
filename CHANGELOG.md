@@ -550,6 +550,11 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Fixed
 
+- The Deposit / Withdraw dialog no longer flashes and jumps while it loads on a cold open. Its
+  shell, backdrop and enter transition are now mounted once; only the form loads lazily inside it,
+  on desktop and on the phone sheet. The Arbitrum USDC balance of an email wallet refreshes in the
+  background, so the Deposit button no longer flips to `--` and grey every five seconds.
+
 - The order button no longer asks an external wallet to "Switch to Arbitrum" before Enable
   Trading, and an external wallet on a network the terminal does not list can now enable
   trading, approve the builder fee and send other wallet-signed requests instead of failing

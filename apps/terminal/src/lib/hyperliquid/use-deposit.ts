@@ -881,12 +881,15 @@ function useDepositUsdcBalance(
 		requestIdRef.current = requestId;
 		const abortController = new AbortController();
 
-		setState((previous) => ({
-			key: balanceKey,
-			status: "loading",
-			raw: previous.key === balanceKey ? previous.raw : undefined,
-			error: null,
-		}));
+		setState((previous) => {
+			if (previous.key === balanceKey && previous.status === "success") return previous;
+			return {
+				key: balanceKey,
+				status: "loading",
+				raw: previous.key === balanceKey ? previous.raw : undefined,
+				error: null,
+			};
+		});
 
 		try {
 			const raw = await readDepositUsdcBalance(config, address, abortController.signal);

@@ -29,13 +29,21 @@ const FUNDS_DIALOG_SOURCES = [
 // The flow is the deposit directory plus every project file these entries reach through imports.
 const FUNDS_FLOW_ENTRIES = [
 	"components/trade/tradebox/deposit-modal.tsx",
+	"components/trade/components/deposit-modal-host.tsx",
 	"components/trade/components/deposit-modal-loading-fallback.tsx",
 ];
+// The host mounts the shell once and hands it the back button; the dialog body only reports it.
+const BACK_BUTTON_DIALOG = FUNDS_FLOW_ENTRIES[1];
 const FUNDS_FLOW_DIRECTORY = "components/trade/tradebox/deposit";
 // Where the walk stops. The wrapper is itself counted as a primitive: its popup, header and body
 // come from the shell. A dialog of another feature reached through shared code is added here with
 // its reason, never left to fail or listed above.
-const FUNDS_FLOW_BOUNDARIES = ["components/trade/components/pending-action-modal.tsx"];
+const FUNDS_FLOW_BOUNDARIES = [
+	"components/trade/components/pending-action-modal.tsx",
+	// The registry of every lazy global modal: the host takes the lazy deposit body from it by name,
+	// and following its dynamic imports would walk into the dialogs of every other feature.
+	"components/trade/components/lazy-global-modals.ts",
+];
 const UI_PACKAGE = "@sairn/ui";
 // The UI package builds dialogs in these two modules only, and its entry re-exports them by name.
 const UI_DIALOG_MODULES = ["modal.tsx", "drawer.tsx"];
@@ -627,7 +635,8 @@ describe("funds modal scroll contract", () => {
 		)?.[1];
 		const bandLayer = Number(/\bz-(\d+)\b/.exec(FUNDS_MODAL_HEADING_CLASS)?.[1]);
 
-		expect(passesBackButtonUnchanged(read(FUNDS_FLOW_ENTRIES[0]), FUNDS_FLOW_ENTRIES[0])).toBe(true);
+		expect(passesBackButtonUnchanged(read(BACK_BUTTON_DIALOG), BACK_BUTTON_DIALOG)).toBe(true);
+		expect(read(FUNDS_FLOW_ENTRIES[0])).not.toContain(BACK_BUTTON_RENDERER);
 		expect(passesBackButtonUnchanged(read(BACK_BUTTON_FIXTURE), BACK_BUTTON_FIXTURE)).toBe(true);
 		expect(closeLayer).toBe("z-10");
 		expect(Number(closeLayer?.slice(2))).toBeGreaterThan(bandLayer);
@@ -723,7 +732,7 @@ describe("funds modal scroll contract", () => {
 		expect(flow.files).toContain("components/trade/tradebox/deposit-explorer-link.tsx");
 		expect(flow.files).toContain("components/brand/status-glyph.tsx");
 		expect(flow.files).toContain("lib/ui/funds-modal-scroll.ts");
-		expect(flow.files).not.toContain(FUNDS_FLOW_BOUNDARIES[0]);
+		for (const boundary of FUNDS_FLOW_BOUNDARIES) expect(flow.files).not.toContain(boundary);
 		expect(dialogSources).toEqual([...FUNDS_DIALOG_SOURCES].sort());
 	});
 
