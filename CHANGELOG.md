@@ -58,6 +58,19 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Changed
 
+- Enable Trading with an external wallet now approves Hyperliquid's unnamed default API wallet,
+  as the official terminal does, instead of a named `sairn` API wallet. A named wallet counted
+  against the account's limit of named API wallets, which the exchange raises with trading volume
+  and reported as three for the affected account, rejecting the approval with `Too many extra
+  agents for cumulative volume traded. Current limit is 3` once other named wallets (for example
+  the retired `gatu` wallet, a Link mobile device wallet or wallets from other apps) had filled it. The
+  default wallet is shared with app.hyperliquid.xyz and any other app that uses it: establishing a
+  connection on one of them replaces the key of the others, which then ask to connect again. Named
+  wallets remain for the API Wallet page and Link mobile device, and that limit rejection is now
+  translated with the reported limit. A browser that still holds a working `sairn` key keeps
+  trading with it until it next needs a new connection. Previously approved `sairn` and `gatu`
+  wallets stay on the account until they expire or you remove them on the API Wallet page
+  (ADR 0038).
 - The deposit dialog is tidier and no longer shows a scrollbar. The close and back buttons and the
   form's title stay in place while the content scrolls underneath on short screens, and nothing scrolls on common desktop
   and phone sizes. Asset and network sit on one row with their icons, the QR code carries the USDC

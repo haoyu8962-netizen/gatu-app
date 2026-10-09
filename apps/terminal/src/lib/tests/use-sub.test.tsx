@@ -54,7 +54,6 @@ describe("useSub hook surface", () => {
 			env: "Testnet",
 			isTestnet: true,
 			builderConfig: { b: "0x0000000000000000000000000000000000000000", f: 0 },
-			agentName: "test",
 			clientKey: "0x0000000000000000000000000000000000000000",
 			sessionMode: "wallet",
 			exchangeLifecycle: { id: Symbol("use-sub-test-provider"), active: true },

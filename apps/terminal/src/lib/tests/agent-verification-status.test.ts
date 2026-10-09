@@ -1,86 +1,251 @@
 import type { ExtraAgentsResponse } from "@nktkas/hyperliquid";
-import type { AgentWallet } from "@sairn/hl-react";
+import type { AgentApprovalEvidence, AgentKeyRole, AgentWallet } from "@sairn/hl-react";
 import { createMobileAgentWalletRecord } from "@sairn/hl-react/signing/mobile-agent";
 import {
 	classifyAgentStatusError,
 	deriveAgentMissingReason,
 	deriveAgentRequirements,
 	deriveAgentVerificationStatus,
+	isAgentKeyApprovedForOwner,
 } from "@sairn/hl-react/signing/use-agent-status";
 import type { Address, Hex } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { describe, expect, it } from "vitest";
 
+const OWNER = "0x1111111111111111111111111111111111111111" as Address;
+const OTHER_OWNER = "0x4444444444444444444444444444444444444444" as Address;
 const AGENT = "0x2222222222222222222222222222222222222222" as Address;
 const OTHER_AGENT = "0x3333333333333333333333333333333333333333" as Address;
-const APPROVED_AGENTS: ExtraAgentsResponse = [{ address: AGENT, name: "sairn", validUntil: null }];
 const LOCAL_AGENT: AgentWallet = {
 	privateKey: `0x${"ab".repeat(32)}`,
 	publicKey: AGENT,
 	source: "local-registration",
 };
+const APPROVED_ROLE: AgentKeyRole = { agentAddress: AGENT, role: { role: "agent", data: { user: OWNER } } };
+const MISSING_ROLE: AgentKeyRole = { agentAddress: AGENT, role: { role: "missing" } };
 
-function requirements(extraAgents: ExtraAgentsResponse | undefined, expectedAgentName?: string) {
-	return deriveAgentRequirements(undefined, extraAgents, null, undefined, Date.now(), AGENT, expectedAgentName);
+function evidence(overrides: Partial<AgentApprovalEvidence> = {}): AgentApprovalEvidence {
+	return { owner: OWNER, localAgent: LOCAL_AGENT, keyRole: undefined, extraAgents: undefined, ...overrides };
 }
+
+function requirements(keyRole: AgentKeyRole | undefined, agentAddressOverride?: Address) {
+	return deriveAgentRequirements(undefined, evidence({ keyRole }), undefined, Date.now(), agentAddressOverride);
+}
+
+describe("default Agent key role", () => {
+	it("approves only the exact key reported as an Agent of the exact owner", () => {
+		expect(isAgentKeyApprovedForOwner(APPROVED_ROLE, AGENT, OWNER)).toBe(true);
+		expect(
+			isAgentKeyApprovedForOwner(APPROVED_ROLE, AGENT.toUpperCase() as Address, OWNER.toUpperCase() as Address),
+		).toBe(true);
+		expect(isAgentKeyApprovedForOwner(APPROVED_ROLE, OTHER_AGENT, OWNER)).toBe(false);
+		expect(isAgentKeyApprovedForOwner(APPROVED_ROLE, AGENT, OTHER_OWNER)).toBe(false);
+		expect(isAgentKeyApprovedForOwner(MISSING_ROLE, AGENT, OWNER)).toBe(false);
+		expect(isAgentKeyApprovedForOwner({ agentAddress: AGENT, role: { role: "user" } }, AGENT, OWNER)).toBe(false);
+		expect(isAgentKeyApprovedForOwner(undefined, AGENT, OWNER)).toBe(false);
+		expect(isAgentKeyApprovedForOwner(APPROVED_ROLE, undefined, OWNER)).toBe(false);
+		expect(isAgentKeyApprovedForOwner(APPROVED_ROLE, AGENT, undefined)).toBe(false);
+	});
+
+	it("needs an Agent only after the exchange answered for the stored key", () => {
+		expect(requirements(undefined)).toMatchObject({ needsAgent: false, isAgentReady: false, isReady: false });
+		expect(requirements(MISSING_ROLE)).toMatchObject({ needsAgent: true, isAgentReady: false, signaturesRequired: 1 });
+		expect(requirements(APPROVED_ROLE)).toMatchObject({ needsAgent: false, isAgentReady: true, isReady: true });
+	});
+
+	it("ignores an answer about another key", () => {
+		expect(requirements({ agentAddress: OTHER_AGENT, role: { role: "agent", data: { user: OWNER } } })).toMatchObject({
+			needsAgent: false,
+			isAgentReady: false,
+		});
+		expect(requirements(APPROVED_ROLE, OTHER_AGENT)).toMatchObject({ needsAgent: false, isAgentReady: false });
+		expect(
+			requirements({ agentAddress: OTHER_AGENT, role: { role: "agent", data: { user: OWNER } } }, OTHER_AGENT),
+		).toMatchObject({ needsAgent: false, isAgentReady: true });
+	});
+
+	it("keeps using a stored key the exchange still reports as this owner's Agent, including a legacy record", () => {
+		const legacyAgent: AgentWallet = { privateKey: LOCAL_AGENT.privateKey, publicKey: AGENT };
+		expect(
+			deriveAgentRequirements(undefined, evidence({ localAgent: legacyAgent, keyRole: APPROVED_ROLE }), undefined),
+		).toMatchObject({ needsAgent: false, isAgentReady: true, isReady: true });
+		expect(
+			deriveAgentRequirements(undefined, evidence({ localAgent: legacyAgent, keyRole: MISSING_ROLE }), undefined),
+		).toMatchObject({ needsAgent: true, isAgentReady: false });
+	});
+
+	it("treats an Agent approved for another owner as not approved", () => {
+		expect(requirements({ agentAddress: AGENT, role: { role: "agent", data: { user: OTHER_OWNER } } })).toMatchObject({
+			needsAgent: true,
+			isAgentReady: false,
+		});
+	});
+
+	it("needs a new Agent for a connected owner without a local key, and knows nothing without an owner", () => {
+		expect(deriveAgentRequirements(undefined, evidence({ localAgent: null }), undefined)).toMatchObject({
+			needsAgent: true,
+			isAgentReady: false,
+			signaturesRequired: 1,
+		});
+		expect(
+			deriveAgentRequirements(undefined, evidence({ owner: undefined, localAgent: null }), undefined),
+		).toMatchObject({
+			needsAgent: false,
+			isAgentReady: false,
+			signaturesRequired: 0,
+		});
+	});
+
+	it("never counts an extraAgents entry as approval of a default key", () => {
+		const extraAgents: ExtraAgentsResponse = [{ address: AGENT, name: "sairn", validUntil: null }];
+		expect(deriveAgentRequirements(undefined, evidence({ extraAgents }), undefined)).toMatchObject({
+			needsAgent: false,
+			isAgentReady: false,
+		});
+	});
+
+	it("adds the builder fee as a separate requirement", () => {
+		const builderConfig = { b: "0x5555555555555555555555555555555555555555" as Address, f: 10 };
+		expect(deriveAgentRequirements(0, evidence({ keyRole: APPROVED_ROLE }), builderConfig)).toMatchObject({
+			needsAgent: false,
+			needsBuilderFee: true,
+			isAgentReady: true,
+			isBuilderFeeReady: false,
+			isReady: false,
+			signaturesRequired: 1,
+		});
+		expect(deriveAgentRequirements(10, evidence({ keyRole: MISSING_ROLE }), builderConfig)).toMatchObject({
+			needsAgent: true,
+			needsBuilderFee: false,
+			isReady: false,
+			signaturesRequired: 1,
+		});
+	});
+});
 
 describe("Agent verification status", () => {
 	it("does not turn a cached miss into a definitive missing state while refreshing", () => {
-		expect(deriveAgentVerificationStatus(true, [], null, true, requirements([]))).toBe("loading");
+		expect(
+			deriveAgentVerificationStatus(true, evidence({ keyRole: MISSING_ROLE }), null, true, requirements(MISSING_ROLE)),
+		).toBe("loading");
 	});
 
 	it("keeps an exactly verified cached Agent ready during a background refresh", () => {
-		expect(deriveAgentVerificationStatus(true, APPROVED_AGENTS, null, true, requirements(APPROVED_AGENTS))).toBe(
-			"ready",
-		);
+		expect(
+			deriveAgentVerificationStatus(
+				true,
+				evidence({ keyRole: APPROVED_ROLE }),
+				null,
+				true,
+				requirements(APPROVED_ROLE),
+			),
+		).toBe("ready");
 	});
 
 	it("fails closed when refresh returns an error even if cached data matched", () => {
 		expect(
 			deriveAgentVerificationStatus(
 				true,
-				APPROVED_AGENTS,
+				evidence({ keyRole: APPROVED_ROLE }),
 				new Error("network unavailable"),
 				false,
-				requirements(APPROVED_AGENTS),
+				requirements(APPROVED_ROLE),
 			),
 		).toBe("error");
 	});
 
-	it("marks only a settled successful miss as missing", () => {
-		expect(deriveAgentVerificationStatus(true, [], null, false, requirements([]))).toBe("missing");
+	it("marks only a settled answer about the stored key as missing", () => {
+		expect(
+			deriveAgentVerificationStatus(true, evidence({ keyRole: MISSING_ROLE }), null, false, requirements(MISSING_ROLE)),
+		).toBe("missing");
+		expect(
+			deriveAgentVerificationStatus(
+				true,
+				evidence({ keyRole: { agentAddress: OTHER_AGENT, role: { role: "missing" } } }),
+				null,
+				false,
+				requirements({ agentAddress: OTHER_AGENT, role: { role: "missing" } }),
+			),
+		).toBe("unknown");
 	});
 
-	it("marks an exact unexpired match as ready", () => {
-		expect(deriveAgentVerificationStatus(true, APPROVED_AGENTS, null, false, requirements(APPROVED_AGENTS))).toBe(
-			"ready",
-		);
+	it("marks an exact approved key as ready", () => {
+		expect(
+			deriveAgentVerificationStatus(
+				true,
+				evidence({ keyRole: APPROVED_ROLE }),
+				null,
+				false,
+				requirements(APPROVED_ROLE),
+			),
+		).toBe("ready");
 	});
 
-	it("requires the deployment Agent name as well as the local public key", () => {
-		expect(requirements(APPROVED_AGENTS, "sairn-dev")).toMatchObject({
-			isAgentReady: false,
-			needsAgent: true,
+	it("is missing without a local key and unknown without an owner or an answer", () => {
+		const noKey = evidence({ localAgent: null });
+		expect(
+			deriveAgentVerificationStatus(true, noKey, null, false, deriveAgentRequirements(undefined, noKey, undefined)),
+		).toBe("missing");
+		expect(deriveAgentVerificationStatus(false, evidence(), null, false, requirements(undefined))).toBe("unknown");
+		expect(deriveAgentVerificationStatus(true, evidence(), null, false, requirements(undefined))).toBe("unknown");
+	});
+
+	it("verifies a Mobile Agent through extraAgents instead of userRole", () => {
+		const privateKey = `0x${"11".repeat(32)}` as Hex;
+		const publicKey = privateKeyToAccount(privateKey).address;
+		const mobileAgent = createMobileAgentWalletRecord({
+			privateKey,
+			publicKey,
+			agentName: "Mobile valid_until 10000",
+			agentValidUntilMs: 10_000,
+			importedAtMs: 100,
 		});
-		expect(requirements(APPROVED_AGENTS, "sairn")).toMatchObject({
-			isAgentReady: true,
-			needsAgent: false,
-		});
-	});
+		const approvedRemote: ExtraAgentsResponse = [{ address: publicKey, name: "Mobile", validUntil: 10_000 }];
+		const roleForMobileKey: AgentKeyRole = { agentAddress: publicKey, role: { role: "agent", data: { user: OWNER } } };
 
-	it("keeps absent owners and absent results unknown", () => {
-		expect(deriveAgentVerificationStatus(false, undefined, null, false, requirements(undefined))).toBe("unknown");
-		expect(deriveAgentVerificationStatus(true, undefined, null, false, requirements(undefined))).toBe("unknown");
+		expect(
+			deriveAgentRequirements(
+				undefined,
+				evidence({ localAgent: mobileAgent, extraAgents: approvedRemote }),
+				undefined,
+				1_000,
+			),
+		).toMatchObject({ needsAgent: false, isAgentReady: true });
+		expect(
+			deriveAgentRequirements(undefined, evidence({ localAgent: mobileAgent, extraAgents: [] }), undefined, 1_000),
+		).toMatchObject({ needsAgent: true, isAgentReady: false });
+		expect(
+			deriveAgentRequirements(
+				undefined,
+				evidence({ localAgent: mobileAgent, keyRole: roleForMobileKey }),
+				undefined,
+				1_000,
+			),
+		).toMatchObject({ needsAgent: false, isAgentReady: false });
+		expect(
+			deriveAgentVerificationStatus(
+				true,
+				evidence({ localAgent: mobileAgent, keyRole: roleForMobileKey }),
+				null,
+				false,
+				deriveAgentRequirements(
+					undefined,
+					evidence({ localAgent: mobileAgent, keyRole: roleForMobileKey }),
+					undefined,
+					1_000,
+				),
+				1_000,
+			),
+		).toBe("unknown");
 	});
 });
 
 describe("Agent missing reason", () => {
 	const baseOptions = {
 		agentVerificationStatus: "missing" as const,
-		extraAgentsData: [] as ExtraAgentsResponse,
+		extraAgentsData: undefined as ExtraAgentsResponse | undefined,
 		localAgent: LOCAL_AGENT,
 		hasInvalidStorageRecord: false,
-		expectedAgentName: "sairn-dev",
 		nowMs: 1_000,
 	};
 
@@ -102,34 +267,6 @@ describe("Agent missing reason", () => {
 		expect(deriveAgentMissingReason({ ...baseOptions, localAgent: null })).toBe("no_local_key");
 	});
 
-	it("warns when an absent local key would replace an existing deployment-named Agent", () => {
-		expect(
-			deriveAgentMissingReason({
-				...baseOptions,
-				localAgent: null,
-				extraAgentsData: [{ address: OTHER_AGENT, name: "sairn-dev", validUntil: null }],
-			}),
-		).toBe("remote_named_agent_exists");
-	});
-
-	it("detects when the deployment-named remote key replaced the local key", () => {
-		expect(
-			deriveAgentMissingReason({
-				...baseOptions,
-				extraAgentsData: [{ address: OTHER_AGENT, name: "sairn-dev", validUntil: null }],
-			}),
-		).toBe("remote_key_replaced");
-	});
-
-	it("detects when the local key remains approved under a different name", () => {
-		expect(
-			deriveAgentMissingReason({
-				...baseOptions,
-				extraAgentsData: [{ address: AGENT, name: "sairn", validUntil: null }],
-			}),
-		).toBe("agent_name_mismatch");
-	});
-
 	it("keeps an unconfirmed approval distinct from a stale local key", () => {
 		expect(
 			deriveAgentMissingReason({
@@ -139,21 +276,22 @@ describe("Agent missing reason", () => {
 		).toBe("approval_unconfirmed");
 	});
 
-	it("uses a generic not-approved reason for absent and expired approvals", () => {
+	it("uses the generic not-approved reason for a default key the exchange no longer knows", () => {
 		expect(deriveAgentMissingReason(baseOptions)).toBe("local_key_not_approved");
 		expect(
 			deriveAgentMissingReason({
 				...baseOptions,
-				extraAgentsData: [{ address: AGENT, name: "sairn-dev", validUntil: 999 }],
+				extraAgentsData: [{ address: OTHER_AGENT, name: "sairn", validUntil: null }],
 			}),
 		).toBe("local_key_not_approved");
 	});
 
-	it("uses the stored Mobile Agent base name instead of the deployment name", () => {
+	it("explains a replaced or renamed Mobile Agent from extraAgents", () => {
 		const privateKey = `0x${"11".repeat(32)}` as Hex;
+		const publicKey = privateKeyToAccount(privateKey).address;
 		const mobileAgent = createMobileAgentWalletRecord({
 			privateKey,
-			publicKey: privateKeyToAccount(privateKey).address,
+			publicKey,
 			agentName: "Mobile valid_until 10000",
 			agentValidUntilMs: 10_000,
 			importedAtMs: 100,
@@ -166,6 +304,27 @@ describe("Agent missing reason", () => {
 				extraAgentsData: [{ address: OTHER_AGENT, name: "Mobile", validUntil: 10_000 }],
 			}),
 		).toBe("remote_key_replaced");
+		expect(
+			deriveAgentMissingReason({
+				...baseOptions,
+				localAgent: mobileAgent,
+				extraAgentsData: [{ address: publicKey, name: "Other", validUntil: 10_000 }],
+			}),
+		).toBe("agent_name_mismatch");
+		expect(
+			deriveAgentMissingReason({
+				...baseOptions,
+				localAgent: mobileAgent,
+				extraAgentsData: [{ address: OTHER_AGENT, name: "Mobile", validUntil: 999 }],
+			}),
+		).toBe("local_key_not_approved");
+		expect(deriveAgentMissingReason({ ...baseOptions, localAgent: mobileAgent })).toBe("local_key_not_approved");
+		expect(
+			deriveAgentMissingReason({
+				...baseOptions,
+				localAgent: { ...mobileAgent, agentName: "Mobile valid_until 10001" },
+			}),
+		).toBe("invalid_local_record");
 	});
 });
 

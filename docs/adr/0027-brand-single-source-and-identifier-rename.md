@@ -82,9 +82,9 @@
 
 ## 后果与边界
 
-- 外部钱包用户必须为 `sairn` 槽位重新授权 Agent。旧的 `gatu` 命名 Agent 不会因此失效，仍占用一个命名槽位；每个账户只有 3 个命名槽位，槽位已满时授权会失败（计划 D9；[首次交易](../trading-onboarding.md)）。
+- 外部钱包用户必须为 `sairn` 槽位重新授权 Agent。旧的 `gatu` 命名 Agent 不会因此失效，仍占用一个命名槽位；每个账户只有 3 个命名槽位，槽位已满时授权会失败（计划 D9；[首次交易](../trading-onboarding.md)）。2026-10-09 补记：这个失败在 2026-10-08 发生过一次；[ADR 0038](0038-unnamed-default-agent-for-trading-connection.md) 起普通交易连接改用无名默认 Agent，`sairn` 命名槽位退役，旧的 `gatu` 与 `sairn` 命名 Agent 仍占位到过期或在 API 钱包页移除。
 - 在同一个 origin 内，旧键下的待处理记录不再被读取，包括资金动作标记、CCTP 跟踪与授权意图、下单资产占位、LI.FI 执行记录和登录意图。新旧版本同时打开时，两者的锁互相看不见。因为目前没有用户，这次没有做迁移。换域名造成的同类失效见 ADR 0031。
-- Agent 槽位是 `build-meta.ts` 里的字面量，不读 `brand.json`。但计划阶段 1b 提议的源码扫描断言没有实现，所以没有测试能阻止以后改成从 `brand.json` 读取。生产槽位靠构建变量 `VITE_HYPERLIQUID_AGENT_NAME=sairn`（`deploy/env.build.example`），发布前仍靠人工核对。
+- Agent 槽位是 `build-meta.ts` 里的字面量，不读 `brand.json`。但计划阶段 1b 提议的源码扫描断言没有实现，所以没有测试能阻止以后改成从 `brand.json` 读取。生产槽位靠构建变量 `VITE_HYPERLIQUID_AGENT_NAME=sairn`（`deploy/env.build.example`），发布前仍靠人工核对。2026-10-09 补记：槽位、该变量与 `config/trading-agent.ts` 已随 ADR 0038 删除。
 - 法律文本按用户决定改成了 Sairn Corp.。计划 D16 建议先做法律审阅，并确认是否需要用户重新接受条款，执行记录里两者都没有结论。
 - 状态动效（计划阶段 3）不在执行记录的范围内，由 ADR 0029 记录。`designs/mockups.pen` 里的字母徽标仍是旧样式（见 [brand-assets.md](../brand-assets.md)「设计稿」）。
 - 回访用户第一次打开时，Service Worker 先返回缓存的旧壳，第二次打开才是新品牌（计划 §1.4 第 12 条）。

@@ -124,6 +124,15 @@ jobs:
           src/lib/tests/mobile-pairing-feature-gate.test.ts
           src/lib/tests/qr-classification.test.ts
           src/lib/tests/mobile-agent-lifecycle.test.ts
+          src/lib/tests/agent-verification-status.test.ts
+          src/lib/tests/use-agent-status-verification.test.tsx
+          src/lib/tests/use-agent-status-mobile-cleanup.test.tsx
+          src/lib/tests/use-agent-registration-race.test.tsx
+          src/lib/tests/owner-trading-status.test.tsx
+          src/lib/tests/trading-authorization.test.tsx
+          src/lib/tests/use-agent-status-cache.test.tsx
+          src/lib/tests/use-agent-wallet.test.tsx
+          src/lib/tests/establish-connection-modal.test.tsx
           src/lib/tests/use-explicit-agent-approval.test.tsx
           src/lib/tests/use-connection-wallet-client.test.tsx
           src/lib/tests/use-terms-acceptance.test.tsx
@@ -361,7 +370,6 @@ jobs:
           src/lib/tests/referral.test.ts
           src/lib/tests/terms-content.test.ts
           src/lib/tests/legal-policy-contract.test.ts
-          src/lib/tests/trading-agent-config.test.ts
           src/lib/tests/order-summary.test.tsx
           src/lib/tests/twap-order-summary.test.tsx
           src/lib/tests/status-motion-contract.test.ts

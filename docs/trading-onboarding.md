@@ -75,11 +75,17 @@ The terminal must preserve this ordering:
    Agent-only sessions retain the Agent flow below.
 
    **Establish an external-wallet trading connection.** A user must explicitly invoke
-   **Enable Trading** before the connection dialog is presented. Only a
-   completed `extraAgents` response may establish that no locally available
-   Agent is approved for this exact owner and environment. Loading, refreshing,
-   absent, and failed responses remain non-definitive and must not trigger
-   `approveAgent`. This onboarding dialog applies to external-wallet trading.
+   **Enable Trading** before the connection dialog is presented. The connection
+   approves Hyperliquid's unnamed default Agent (`approveAgent` without
+   `agentName`), as the official terminal's Establish Connection does
+   ([ADR 0038](adr/0038-unnamed-default-agent-for-trading-connection.md)); named Agents belong only to the API wallet page and
+   Link mobile device, where the account's named-Agent cap applies. Only a
+   settled `userRole` answer for the stored key (role `agent` for this exact
+   owner, or not) may establish whether the locally stored key is approved;
+   the default Agent never appears in `extraAgents`. Loading, refreshing,
+   absent, and failed answers remain non-definitive and must not trigger
+   `approveAgent`. A connected owner without any local key needs a new
+   connection and asks the exchange nothing. This onboarding dialog applies to external-wallet trading.
    Explicit API-wallet management and desktop linking remain separate
    owner-approved operations. An embedded wallet may hide a duplicate Privy
    confirmation only when that entry point already completed its own application
@@ -132,9 +138,9 @@ The terminal must preserve this ordering:
 5. **Verify a requested new Agent (external-wallet flow).** Before opening the
    wallet signing request, persist
    the generated key in the selected storage scope as approval-pending and
-   therefore unverified. Refetch the server-side Agent status after approval,
-   confirm the exact generated public address and deployment-scoped Agent name,
-   and only then clear the pending marker and report success.
+   therefore unverified. Fetch a fresh `userRole` answer for the exact
+   generated public address after approval, confirm it is an Agent of this
+   exact owner, and only then clear the pending marker and report success.
 6. **Classify account funding.** Wait for both the complete all-DEX perpetual
    snapshot and the spot-state snapshot. Any positive perpetual account value
    or spot balance means funded. Missing or failed snapshots never mean empty.
@@ -234,20 +240,27 @@ environments.
 The persistent choice does not synchronize an Agent private key between
 origins (including a different host or port), browser profiles, or devices.
 The matching owner/master EOA authorizes the Agent but cannot reconstruct its
-locally generated private key. Runtime verification must therefore match both
-the stored public key and the exact deployment Agent name returned by
-`extraAgents`.
+locally generated private key. Runtime verification must therefore ask
+`userRole` for the stored public key and accept only an Agent of the exact
+owner; the unnamed default Agent never appears in `extraAgents`.
 
-Hyperliquid deregisters an existing named Agent when another `approveAgent`
-uses the same name. Production reserves `sairn`; local development defaults to
-`sairn-dev`. A mainnet preview or staging build must set its own stable
-`VITE_HYPERLIQUID_AGENT_NAME` (maximum 16 characters) and must not reuse the
-production slot. Names are finite deployment slots, not random per-session
-identifiers, because an account supports only three named Agents.
-When the expected name points to another public key, the connection dialog
-must distinguish a replaced local key from a browser that has no local key.
-Both cases warn that reconnecting here will replace the other same-name
-connection before requesting approval.
+An account has exactly one unnamed default Agent: every `approveAgent` without
+a name replaces the previous default Agent, on whichever site or browser it
+was approved. Establishing a connection here therefore invalidates the trading
+key of another browser or of the official terminal, and theirs invalidates
+this one ([ADR 0038](adr/0038-unnamed-default-agent-for-trading-connection.md)). Named Agents (`name valid_until <ms>`) are
+reserved for the API wallet page and the Link mobile device transfer. An
+account supports one unnamed Agent and, at low trading volume, three named
+Agents; the exchange rejects a further named approval with
+`Too many extra agents for cumulative volume traded. Current limit is N`,
+which the terminal translates with the reported limit. Local development,
+previews and production share the account's default Agent; there are no
+deployment slots. A browser whose stored key the exchange still reports as this
+owner's Agent keeps using it, named or not (`userRole` does not distinguish);
+only the next new approval requests the unnamed default Agent. When the stored key is no longer the account's Agent, the
+connection dialog reports a missing connection (`local_key_not_approved`) and
+says that reconnecting creates or replaces the trading key; a browser without
+a key reports `no_local_key`.
 
 Both the onboarding dialog and direct trading-action authorization must honor
 the same preference. A future entry point must not call Agent registration
@@ -330,8 +343,9 @@ only network, timeout, 408, 429, and 5xx failures receive bounded retries.
   required. Verification failure must not report onboarding success. A key
   whose approval write succeeded but cannot yet be confirmed remains stored
   but inert; only a later successful exact-address check may make it usable.
-- An `extraAgents` error, absent response, or cached miss being refreshed is
-  not proof that an Agent is missing and must not initiate Agent approval.
+- A `userRole` error (for a Mobile Agent, an `extraAgents` error), absent
+  response, or cached miss being refreshed is not proof that an Agent is
+  missing and must not initiate Agent approval.
 - Agent-status failures preserve their underlying cause and the registration
   phase. A preflight failure states that no signature was requested; a
   post-approval verification failure warns that approval may already have
@@ -525,7 +539,10 @@ At minimum, changes to this flow must cover:
   wallet selection, and silent Privy terms signing after explicit application confirmation;
 - both policy checkboxes and the non-dismissible blocking dialog;
 - an existing approved Agent without a redundant signature;
-- new Agent verification using the newly generated address;
+- an unnamed approval (no `agentName`) and new Agent verification using the
+  newly generated address through a fresh `userRole` answer for the exact
+  owner, with an answer about another key or another owner rejected;
+- the named-Agent cap rejection translated with its reported limit;
 - Agent status errors, unknown results, and cached misses during refresh;
 - page load, refresh, and route remount never automatically presenting Agent
   approval, with an explicitly requested dialog remaining mounted through

@@ -17,7 +17,16 @@ const AGENT = "0x2222222222222222222222222222222222222222";
 const BUILDER = "0x3333333333333333333333333333333333333333";
 const state = vi.hoisted(() => ({
 	fee: 0,
-	agents: undefined as Array<{ address: string; name: string; validUntil: number | null }> | undefined,
+	keyRole: undefined as { role: "missing" } | { role: "agent"; data: { user: string } } | undefined,
+	localAgent: {
+		publicKey: "0x2222222222222222222222222222222222222222",
+		privateKey: "0x01",
+		source: "local-registration",
+	} as {
+		publicKey: string;
+		privateKey: string;
+		source: "local-registration";
+	} | null,
 	queryCalls: [] as Array<{ method: string; enabled: boolean }>,
 	refetchAgent: vi.fn(),
 	refetchFee: vi.fn(),
@@ -30,22 +39,24 @@ vi.mock("@sairn/hl-react/provider", () => ({
 		env: "Mainnet",
 		sessionMode: "wallet",
 		clientKey: OWNER,
-		agentName: "sairn-dev",
 		builderConfig: { b: BUILDER, f: 10 },
+		info: { userRole: async () => state.keyRole ?? { role: "missing" } },
 	}),
 }));
 vi.mock("@sairn/hl-react/hooks/useInfo", () => ({
 	useInfo: (method: string, _params: unknown, options: { enabled: boolean }) => {
 		state.queryCalls.push({ method, enabled: options.enabled });
-		if (method === "extraAgents")
+		if (method === "userRole")
 			return {
-				data: state.agents,
-				error: state.agents ? null : new Error("Unavailable Agent endpoint"),
-				isLoading: !state.agents,
+				data: state.keyRole,
+				error: state.keyRole ? null : new Error("Unavailable Agent endpoint"),
+				isLoading: !state.keyRole,
 				isFetching: false,
 				dataUpdatedAt: 0,
 				refetch: state.refetchAgent,
 			};
+		if (method === "extraAgents")
+			return { data: undefined, error: null, isLoading: false, isFetching: false, dataUpdatedAt: 0, refetch: vi.fn() };
 		return {
 			data: state.fee,
 			error: null,
@@ -58,9 +69,9 @@ vi.mock("@sairn/hl-react/hooks/useInfo", () => ({
 }));
 vi.mock("@sairn/hl-react/signing/agent-storage", async (importOriginal) => ({
 	...(await importOriginal<typeof import("@sairn/hl-react/signing/agent-storage")>()),
-	useAgentWalletStorage: () => ({ publicKey: AGENT, privateKey: "0x01", source: "local-registration" }),
+	useAgentWalletStorage: () => state.localAgent,
 	useInvalidAgentStorageRecord: () => false,
-	readAgentFromStorage: () => ({ publicKey: AGENT, privateKey: "0x01", source: "local-registration" }),
+	readAgentFromStorage: () => state.localAgent,
 }));
 vi.mock("@sairn/hl-react/signing/use-agent-registration", () => ({
 	useAgentRegistration: () => ({ register: state.registerAgent, status: "idle", error: null }),
@@ -105,9 +116,10 @@ describe("owner and Agent trading readiness", () => {
 		root = createRoot(container);
 		queryClient = new QueryClient({ defaultOptions: { mutations: { retry: false } } });
 		state.fee = 0;
-		state.agents = undefined;
+		state.keyRole = undefined;
+		state.localAgent = { publicKey: AGENT, privateKey: "0x01", source: "local-registration" };
 		state.queryCalls = [];
-		state.refetchAgent.mockReset().mockImplementation(async () => ({ data: state.agents, error: null }));
+		state.refetchAgent.mockReset().mockImplementation(async () => ({ data: state.keyRole, error: null }));
 		state.refetchFee.mockReset().mockImplementation(async () => ({ data: state.fee, error: null }));
 		state.registerAgent.mockReset();
 		state.approveFee.mockReset().mockImplementation(async () => {
@@ -130,9 +142,11 @@ describe("owner and Agent trading readiness", () => {
 			isReady: true,
 			signerAddress: OWNER,
 		});
-		expect(state.queryCalls.filter(({ method }) => method === "extraAgents").every(({ enabled }) => !enabled)).toBe(
-			true,
-		);
+		expect(
+			state.queryCalls
+				.filter(({ method }) => method === "extraAgents" || method === "userRole")
+				.every(({ enabled }) => !enabled),
+		).toBe(true);
 		expect(assertCurrent).not.toHaveBeenCalled();
 	});
 
@@ -182,13 +196,34 @@ describe("owner and Agent trading readiness", () => {
 		await expect(observed.refetchBuilderFee()).rejects.toThrow("Owner changed");
 	});
 
+	it("needs one Agent signature for an external owner without a local key, plus the builder fee", () => {
+		state.localAgent = null;
+		render(null);
+		expect(observed).toMatchObject({
+			signerMode: "agent",
+			isSignerReady: false,
+			needsAgent: true,
+			needsBuilderFee: true,
+			signaturesRequired: 2,
+			signerAddress: null,
+		});
+		expect(state.queryCalls.filter(({ method }) => method === "userRole").every(({ enabled }) => !enabled)).toBe(true);
+
+		state.fee = 10;
+		render(null);
+		expect(observed).toMatchObject({ needsAgent: true, needsBuilderFee: false, signaturesRequired: 1 });
+	});
+
 	it("keeps external trading dependent on an actual approved Agent", () => {
 		render(null);
 		expect(observed).toMatchObject({ signerMode: "agent", isSignerReady: false, isReady: false });
 		state.fee = 10;
-		state.agents = [{ address: AGENT, name: "sairn-dev", validUntil: null }];
+		state.keyRole = { role: "agent", data: { user: OWNER } };
 		render(null);
 		expect(observed).toMatchObject({ signerMode: "agent", isSignerReady: true, isReady: true, signerAddress: AGENT });
-		expect(state.queryCalls.some(({ method, enabled }) => method === "extraAgents" && enabled)).toBe(true);
+		expect(state.queryCalls.some(({ method, enabled }) => method === "userRole" && enabled)).toBe(true);
+		expect(state.queryCalls.filter(({ method }) => method === "extraAgents").every(({ enabled }) => !enabled)).toBe(
+			true,
+		);
 	});
 });

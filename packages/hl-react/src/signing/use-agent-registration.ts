@@ -111,7 +111,7 @@ function deriveRegistrationStatus(
 
 export function useAgentRegistration(options: { enabled?: boolean } = {}): UseAgentRegistrationResult {
 	const enabled = options.enabled !== false;
-	const { env, agentName, clientKey } = useHyperliquid();
+	const { env, clientKey } = useHyperliquid();
 	const address = clientKey === "disconnected" ? undefined : (clientKey as Address);
 	const identityRef = useRef({ address, env });
 
@@ -407,10 +407,7 @@ export function useAgentRegistration(options: { enabled?: boolean } = {}): UseAg
 					phase = "approval";
 					safeSetStep(registrationIdentity, "agent");
 
-					const approvalParams = {
-						agentAddress: publicKey,
-						agentName,
-					};
+					const approvalParams = { agentAddress: publicKey };
 					const approvalController = new AbortController();
 					const approveAgentPromise = Promise.resolve().then(() =>
 						approveAgentOverride(approvalParams, {

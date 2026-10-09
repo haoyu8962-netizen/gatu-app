@@ -1,5 +1,7 @@
 export {
+	type AgentApprovalEvidence,
 	type AgentApprovalOptions,
+	type AgentKeyRole,
 	type AgentMissingReason,
 	type AgentRegistrationCaptureOptions,
 	type AgentRegistrationCleanupResult,

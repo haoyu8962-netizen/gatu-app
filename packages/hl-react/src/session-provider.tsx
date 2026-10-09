@@ -26,7 +26,6 @@ export interface HyperliquidSessionProviderProps {
 	userAddress: `0x${string}` | undefined;
 	allowAgentOnlySession?: boolean;
 	builderConfig: BuilderConfig;
-	agentName?: string;
 	enforceLegalActions?: boolean;
 	onAgentCleanupFailure?: (failure: { env: HyperliquidEnv; owner: `0x${string}`; reason: string }) => void;
 }
@@ -36,7 +35,6 @@ export function HyperliquidSessionProvider({
 	userAddress,
 	allowAgentOnlySession = true,
 	builderConfig,
-	agentName = "app",
 	enforceLegalActions = false,
 	onAgentCleanupFailure,
 }: HyperliquidSessionProviderProps) {
@@ -154,7 +152,6 @@ export function HyperliquidSessionProvider({
 	const value = {
 		clientKey,
 		sessionMode,
-		agentName,
 		builderConfig,
 		exchangeLifecycle,
 		exchangeSession,

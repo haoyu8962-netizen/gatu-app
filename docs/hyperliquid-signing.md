@@ -140,7 +140,7 @@ Administrative operations that use EIP-712 typed data with Hyperliquid's signatu
 | `spotSend` | Send spot tokens | `destination`, `token`, `amount` |
 | `usdClassTransfer` | Move USDC perp↔spot | `amount`, `toPerp` |
 | `sendAsset` | Transfer between DEXs/sub-accounts | `destination`, `sourceDex`, `destinationDex`, `token`, `amount` |
-| `approveAgent` | Approve agent wallet | `agentAddress`, `agentName?`, `nonce` |
+| `approveAgent` | Approve agent wallet; the ordinary trading connection sends no `agentName` (unnamed default Agent, [ADR 0038](adr/0038-unnamed-default-agent-for-trading-connection.md)), the API wallet page and Link mobile device send a name | `agentAddress`, `agentName?`, `nonce` |
 | `approveBuilderFee` | Approve builder fee | `builder`, `maxFeeRate`, `nonce` |
 | `tokenDelegate` | Delegate/undelegate staking | `validator`, `amount`, `isUndelegate` |
 | `userDexAbstraction` | Enable/disable HIP-3 DEX abstraction | `user`, `enabled` |
@@ -369,6 +369,22 @@ This storage is acceptable within the product's Agent-wallet threat model becaus
 
 The master wallet (hardware wallet / MetaMask) never has its keys stored - it only signs the initial agent approval and admin operations like withdrawals.
 
+### Default Agent versus named Agents
+
+Hyperliquid gives an account one unnamed default Agent and, for low trading
+volume, three named Agents. The ordinary trading connection approves the
+unnamed default Agent, as the official terminal's Establish Connection does:
+`approveAgent` carries no `agentName`, the SDK signs the EIP-712 message with
+an empty name, and the new approval replaces the account's previous default
+Agent wherever it was approved. Because the default Agent never appears in
+`extraAgents`, its approval is verified with `userRole` for the stored key,
+which must answer `{ role: "agent", data: { user: <exact owner> } }`. Named
+Agents (`name valid_until <ms>`) stay with the API wallet page and the Link
+mobile device transfer and are verified through `extraAgents`; a named
+approval beyond the account's cap is rejected with
+`Too many extra agents for cumulative volume traded. Current limit is N`
+([ADR 0038](adr/0038-unnamed-default-agent-for-trading-connection.md)).
+
 ### Current Implementation
 
 ```typescript
@@ -378,10 +394,10 @@ const register = async (options: { persistConnection: boolean }) => {
   const privateKey = generatePrivateKey();
   const account = privateKeyToAccount(privateKey);
 
-  // 2. Master wallet signs approveAgent (User-Signed, the signer's chain)
+  // 2. Master wallet signs approveAgent (User-Signed, the signer's chain).
+  //    No agentName: this is the account's unnamed default Agent (ADR 0038).
   await exchangeClient.approveAgent({
     agentAddress: account.address,
-    agentName,
   });
 
   // 3. Store in the selected scope, then verify storage and server approval
@@ -393,6 +409,7 @@ const register = async (options: { persistConnection: boolean }) => {
     { source: "local-registration" },
     { scope: storageScope },
   );
+  // userRole for the new address must answer { role: "agent", data: { user: owner } }
   const requirements = await refetchAgent(account.address);
   if (!requirements.isAgentReady) {
     throw new Error("Agent approval could not be confirmed");

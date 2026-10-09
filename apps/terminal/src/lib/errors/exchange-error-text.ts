@@ -121,6 +121,13 @@ const RULES: readonly ExchangeErrorRule[] = [
 		describe: () => msg`The request expired before the exchange processed it. Try again.`,
 	},
 	{
+		pattern: /^Too many extra agents for cumulative volume traded\. Current limit is (\d+)\.?$/i,
+		describe: (match) => {
+			const limit = match[1];
+			return msg`This account already has the ${limit} named API wallets its trading volume allows. Remove one on the API Wallet page before approving another.`;
+		},
+	},
+	{
 		pattern: /^Must deposit before performing actions\.?(?: User: (0x[0-9a-f]{40})\.?)?$/i,
 		describe: (match) => {
 			const user = match[1];

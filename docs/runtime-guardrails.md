@@ -18,7 +18,7 @@ These runtime states are separate:
 | Privy authentication | A user identity session exists | Privy |
 | Active signing wallet | The exact owner wallet is available and selected for signing | Privy + wagmi |
 | Legal access | Hyperliquid terms are accepted and the owner may perform actions | Hyperliquid `legalCheck` / `acceptTerms2` |
-| Hyperliquid agent approval | Hyperliquid has approved an agent address for the owner | Hyperliquid `approveAgent` / `extraAgents` |
+| Hyperliquid agent approval | Hyperliquid has approved an agent address for the owner | Hyperliquid `approveAgent`; verified with `userRole` for the unnamed default Agent key, `extraAgents` for a named Mobile Agent ([ADR 0038](adr/0038-unnamed-default-agent-for-trading-connection.md)) |
 | Local agent key | Browser-local private key used for trading signatures | `sessionStorage` or `localStorage` key `hyperliquid_agent_{env}_{owner}` |
 | Builder-fee approval | Owner has approved the configured builder fee | Hyperliquid builder-fee status / `approveBuilderFee` |
 | Funding classification | Complete perp and spot snapshots establish funded or empty | all-DEX clearinghouse state + spot state |

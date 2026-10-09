@@ -9322,6 +9322,10 @@ msgstr "There are no unclaimed rewards available to claim."
 msgid "This account already has a referral code and cannot apply another one."
 msgstr "This account already has a referral code and cannot apply another one."
 
+#: src/lib/errors/exchange-error-text.ts
+msgid "This account already has the {limit} named API wallets its trading volume allows. Remove one on the API Wallet page before approving another."
+msgstr "This account already has the {limit} named API wallets its trading volume allows. Remove one on the API Wallet page before approving another."
+
 #: src/components/trade/components/legal-acceptance-modal.tsx
 #: src/lib/errors/action-error.ts
 msgid "This account is not currently permitted to perform trading actions on Hyperliquid."
