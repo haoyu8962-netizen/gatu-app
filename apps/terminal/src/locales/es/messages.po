@@ -3322,6 +3322,10 @@ msgstr "Expandir detalles del mercado"
 msgid "Expired"
 msgstr "Caducado"
 
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Expires {expiresAt}"
+msgstr ""
+
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "Expires {expiresAtLabel}."
 #~ msgstr "Caduca {expiresAtLabel}."
@@ -5394,6 +5398,10 @@ msgstr "Aún no hay acciones de Rendimiento"
 msgid "No eligible leaderboard accounts"
 msgstr "No hay cuentas de clasificación elegibles"
 
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "No expiry"
+msgstr ""
+
 #: src/components/api-wallet/api-wallet-list.tsx
 msgid "No expiry reported"
 msgstr "Sin vencimiento informado"
@@ -5771,6 +5779,10 @@ msgstr "Solo esta transferencia inicia la cola de Testnet, que tarda unos cinco 
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Open"
 msgstr "Abierta"
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Open API Wallet"
+msgstr ""
 
 #: src/config/footer-links.ts
 msgid "Open command menu"
@@ -9133,7 +9145,11 @@ msgid "The public Vault feed could not be verified. No cached or cross-network r
 msgstr "No se pudo verificar el feed público de bóvedas. No se muestran en su lugar filas en caché ni procedentes de otra red."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "The QR can trade but not withdraw. Approving replaces the key on a phone that is already linked. Do not share it, screenshot it or show it while sharing your screen."
+#~ msgid "The QR can trade but not withdraw. Approving replaces the key on a phone that is already linked. Do not share it, screenshot it or show it while sharing your screen."
+#~ msgstr ""
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "The QR can trade but not withdraw. Approving replaces the mobile key of a phone that is already linked, including one linked in the Hyperliquid app. Do not share it, screenshot it or show it while sharing your screen."
 msgstr ""
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
@@ -9364,6 +9380,10 @@ msgstr "Esta cuenta ya tiene un código de referido y no puede aplicar otro."
 
 #: src/lib/errors/exchange-error-text.ts
 msgid "This account already has the {limit} named API wallets its trading volume allows. Remove one on the API Wallet page before approving another."
+msgstr ""
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "This account already uses the {limit} named API wallets Hyperliquid allows, and none of them is a mobile key, so the approval will be rejected unless your trading volume allows more. Remove one you no longer use first:"
 msgstr ""
 
 #: src/components/trade/components/legal-acceptance-modal.tsx

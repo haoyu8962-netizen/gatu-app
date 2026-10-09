@@ -3,8 +3,15 @@ import type { Address, Hex } from "viem";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
 import type { AgentWallet } from "./types";
 
-export const MOBILE_AGENT_NAME_BASE = "Mobile";
+/**
+ * The same name base as app.hyperliquid.xyz's Link Mobile Device. Hyperliquid deregisters a named
+ * agent when another approval uses the same name, so linking a phone here or there replaces one
+ * shared slot instead of taking a second of the account's named-agent slots.
+ */
+export const MOBILE_AGENT_NAME_BASE = "Mobile QR";
 export const MOBILE_AGENT_VALIDITY_MS = 30 * 24 * 60 * 60 * 1000;
+/** Exchange endpoint docs: one unnamed and up to 3 named API wallets per account (more may come with volume). */
+export const NAMED_AGENT_DOCUMENTED_LIMIT = 3;
 
 const VALID_UNTIL_SUFFIX_RE = / valid_until \d+$/u;
 
@@ -260,4 +267,21 @@ export function verifyMobileAgent(
 
 export function shouldClearMobileAgent(verification: MobileAgentVerification): boolean {
 	return verification.status === "stale";
+}
+
+export type MobileAgentSlotState =
+	| { status: "replaces"; current: ExtraAgentsResponse[number] }
+	| { status: "available" }
+	| { status: "full"; namedAgents: ExtraAgentsResponse };
+
+/**
+ * Read-only check before a Mobile Agent approval: an active agent with the Mobile name is replaced
+ * in place; otherwise the approval needs a free named slot. Expired agents no longer hold a slot.
+ */
+export function getMobileAgentSlotState(extraAgents: ExtraAgentsResponse, nowMs = Date.now()): MobileAgentSlotState {
+	const activeAgents = extraAgents.filter((agent) => agent.validUntil === null || agent.validUntil > nowMs);
+	const current = activeAgents.find((agent) => agent.name === MOBILE_AGENT_NAME_BASE);
+	if (current) return { status: "replaces", current };
+	if (activeAgents.length >= NAMED_AGENT_DOCUMENTED_LIMIT) return { status: "full", namedAgents: activeAgents };
+	return { status: "available" };
 }

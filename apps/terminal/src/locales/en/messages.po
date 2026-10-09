@@ -3322,6 +3322,10 @@ msgstr "Expand market details"
 msgid "Expired"
 msgstr "Expired"
 
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Expires {expiresAt}"
+msgstr "Expires {expiresAt}"
+
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "Expires {expiresAtLabel}."
 #~ msgstr "Expires {expiresAtLabel}."
@@ -5394,6 +5398,10 @@ msgstr "No earn actions yet"
 msgid "No eligible leaderboard accounts"
 msgstr "No eligible leaderboard accounts"
 
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "No expiry"
+msgstr "No expiry"
+
 #: src/components/api-wallet/api-wallet-list.tsx
 msgid "No expiry reported"
 msgstr "No expiry reported"
@@ -5771,6 +5779,10 @@ msgstr "Only this transfer starts the Testnet queue, which takes approximately f
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Open"
 msgstr "Open"
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Open API Wallet"
+msgstr "Open API Wallet"
 
 #: src/config/footer-links.ts
 msgid "Open command menu"
@@ -9133,8 +9145,12 @@ msgid "The public Vault feed could not be verified. No cached or cross-network r
 msgstr "The public Vault feed could not be verified. No cached or cross-network rows are shown in its place."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "The QR can trade but not withdraw. Approving replaces the key on a phone that is already linked. Do not share it, screenshot it or show it while sharing your screen."
-msgstr "The QR can trade but not withdraw. Approving replaces the key on a phone that is already linked. Do not share it, screenshot it or show it while sharing your screen."
+#~ msgid "The QR can trade but not withdraw. Approving replaces the key on a phone that is already linked. Do not share it, screenshot it or show it while sharing your screen."
+#~ msgstr "The QR can trade but not withdraw. Approving replaces the key on a phone that is already linked. Do not share it, screenshot it or show it while sharing your screen."
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "The QR can trade but not withdraw. Approving replaces the mobile key of a phone that is already linked, including one linked in the Hyperliquid app. Do not share it, screenshot it or show it while sharing your screen."
+msgstr "The QR can trade but not withdraw. Approving replaces the mobile key of a phone that is already linked, including one linked in the Hyperliquid app. Do not share it, screenshot it or show it while sharing your screen."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "The QR can trade but not withdraw. Do not share it, screenshot it or show it while sharing your screen."
@@ -9365,6 +9381,10 @@ msgstr "This account already has a referral code and cannot apply another one."
 #: src/lib/errors/exchange-error-text.ts
 msgid "This account already has the {limit} named API wallets its trading volume allows. Remove one on the API Wallet page before approving another."
 msgstr "This account already has the {limit} named API wallets its trading volume allows. Remove one on the API Wallet page before approving another."
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "This account already uses the {limit} named API wallets Hyperliquid allows, and none of them is a mobile key, so the approval will be rejected unless your trading volume allows more. Remove one you no longer use first:"
+msgstr "This account already uses the {limit} named API wallets Hyperliquid allows, and none of them is a mobile key, so the approval will be rejected unless your trading volume allows more. Remove one you no longer use first:"
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
 #: src/lib/errors/action-error.ts

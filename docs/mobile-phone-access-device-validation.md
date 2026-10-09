@@ -1,6 +1,6 @@
 # Mobile Phone Access Device Checklist
 
-Updated: 2026-09-24. Protocol: client-only transfer, payload v4 ([ADR 0015](adr/0015-link-device-alignment.md) D7 option B and D8; [simplification plan](link-mobile-device-simplification-plan.md)). There is no pairing server endpoint and no evidence validator script; this is a manual checklist.
+Updated: 2026-09-24. Protocol: client-only transfer, payload v5 ([ADR 0015](adr/0015-link-device-alignment.md) D7 option B and D8; [simplification plan](link-mobile-device-simplification-plan.md)). There is no pairing server endpoint and no evidence validator script; this is a manual checklist.
 
 > **History.** The 11-row matrix (RD-1 to RD-8, TW-1 to TW-3) and the `validate-mobile-phone-access-device-validation` script were retired on 2026-09-24 with ADR 0015 D8. No row of that matrix was ever run; the rows below replace it.
 

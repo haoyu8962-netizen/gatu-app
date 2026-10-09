@@ -3322,6 +3322,10 @@ msgstr "展开市场详情"
 msgid "Expired"
 msgstr "已过期"
 
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Expires {expiresAt}"
+msgstr "{expiresAt} 到期"
+
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "Expires {expiresAtLabel}."
 #~ msgstr "{expiresAtLabel} 到期。"
@@ -5394,6 +5398,10 @@ msgstr "暂无收益操作"
 msgid "No eligible leaderboard accounts"
 msgstr "没有符合条件的排行榜账户"
 
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "No expiry"
+msgstr "无到期时间"
+
 #: src/components/api-wallet/api-wallet-list.tsx
 msgid "No expiry reported"
 msgstr "未报告到期时间"
@@ -5771,6 +5779,10 @@ msgstr "只有此转账会启动耗时约 5 分钟的测试网队列。Hyperliqu
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Open"
 msgstr "未成交"
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Open API Wallet"
+msgstr "打开 API 钱包"
 
 #: src/config/footer-links.ts
 msgid "Open command menu"
@@ -9133,8 +9145,12 @@ msgid "The public Vault feed could not be verified. No cached or cross-network r
 msgstr "无法验证公开金库数据源。不会改为显示缓存数据或其他网络的数据行。"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "The QR can trade but not withdraw. Approving replaces the key on a phone that is already linked. Do not share it, screenshot it or show it while sharing your screen."
-msgstr "此二维码可以交易，但不能提款。授权会替换已关联手机上的密钥。请勿分享、截图，或在共享屏幕时展示它。"
+#~ msgid "The QR can trade but not withdraw. Approving replaces the key on a phone that is already linked. Do not share it, screenshot it or show it while sharing your screen."
+#~ msgstr "此二维码可以交易，但不能提款。授权会替换已关联手机上的密钥。请勿分享、截图，或在共享屏幕时展示它。"
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "The QR can trade but not withdraw. Approving replaces the mobile key of a phone that is already linked, including one linked in the Hyperliquid app. Do not share it, screenshot it or show it while sharing your screen."
+msgstr "此二维码可以交易，但不能提款。授权会替换已关联手机上的移动密钥，包括在 Hyperliquid 应用中关联的手机。请勿分享、截图，或在共享屏幕时展示它。"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "The QR can trade but not withdraw. Do not share it, screenshot it or show it while sharing your screen."
@@ -9365,6 +9381,10 @@ msgstr "此账户已绑定推荐码，无法再绑定其他推荐码。"
 #: src/lib/errors/exchange-error-text.ts
 msgid "This account already has the {limit} named API wallets its trading volume allows. Remove one on the API Wallet page before approving another."
 msgstr "该账户的命名 API 钱包已达到其成交量允许的 {limit} 个上限。请先在 API 钱包页面移除一个，再授权新的。"
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "This account already uses the {limit} named API wallets Hyperliquid allows, and none of them is a mobile key, so the approval will be rejected unless your trading volume allows more. Remove one you no longer use first:"
+msgstr "此账户已占满 Hyperliquid 允许的 {limit} 个命名 API 钱包，且其中没有移动密钥；除非你的成交量提高了上限，否则授权会被拒绝。请先移除一个不再使用的："
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
 #: src/lib/errors/action-error.ts

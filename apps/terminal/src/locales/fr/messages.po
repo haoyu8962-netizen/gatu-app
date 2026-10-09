@@ -3322,6 +3322,10 @@ msgstr "Développer les détails du marché"
 msgid "Expired"
 msgstr "Expiré"
 
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Expires {expiresAt}"
+msgstr ""
+
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "Expires {expiresAtLabel}."
 #~ msgstr "Expire {expiresAtLabel}."
@@ -5394,6 +5398,10 @@ msgstr "Aucune action Rendement pour l'instant"
 msgid "No eligible leaderboard accounts"
 msgstr "Aucun compte admissible au classement"
 
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "No expiry"
+msgstr ""
+
 #: src/components/api-wallet/api-wallet-list.tsx
 msgid "No expiry reported"
 msgstr "Aucune expiration indiquée"
@@ -5771,6 +5779,10 @@ msgstr "Seul ce transfert lance la file d’attente du Testnet, d’environ cinq
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Open"
 msgstr "Ouvert"
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Open API Wallet"
+msgstr ""
 
 #: src/config/footer-links.ts
 msgid "Open command menu"
@@ -9133,7 +9145,11 @@ msgid "The public Vault feed could not be verified. No cached or cross-network r
 msgstr "Le flux public des coffres n’a pas pu être vérifié. Aucune ligne mise en cache ou provenant d’un autre réseau n’est affichée à sa place."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "The QR can trade but not withdraw. Approving replaces the key on a phone that is already linked. Do not share it, screenshot it or show it while sharing your screen."
+#~ msgid "The QR can trade but not withdraw. Approving replaces the key on a phone that is already linked. Do not share it, screenshot it or show it while sharing your screen."
+#~ msgstr ""
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "The QR can trade but not withdraw. Approving replaces the mobile key of a phone that is already linked, including one linked in the Hyperliquid app. Do not share it, screenshot it or show it while sharing your screen."
 msgstr ""
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
@@ -9364,6 +9380,10 @@ msgstr "Ce compte dispose déjà d’un code de parrainage et ne peut pas en app
 
 #: src/lib/errors/exchange-error-text.ts
 msgid "This account already has the {limit} named API wallets its trading volume allows. Remove one on the API Wallet page before approving another."
+msgstr ""
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "This account already uses the {limit} named API wallets Hyperliquid allows, and none of them is a mobile key, so the approval will be rejected unless your trading volume allows more. Remove one you no longer use first:"
 msgstr ""
 
 #: src/components/trade/components/legal-acceptance-modal.tsx

@@ -764,7 +764,7 @@ have an install capability.
   them ([ADR 0015](adr/0015-link-device-alignment.md) D8).
 - Pairing is a client-only transfer with no server route (ADR 0015 D7 and
   D8): the payload is plain JSON in the fragment of `/mobile-agent-sync`
-  (`lib/mobile-sync/sync-core.ts`, version 4), bound to one network, one owner
+  (`lib/mobile-sync/sync-core.ts`, version 5), bound to one network, one owner
   and a 2-minute window. The phone parses it before its first paint, removes
   it from the address bar with `history.replaceState`, verifies the approval
   once through `extraAgents` and imports only on an explicit tap; a reload

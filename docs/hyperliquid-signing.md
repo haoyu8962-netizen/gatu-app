@@ -442,7 +442,15 @@ the product decisions and the official comparison are in
 
 - The desktop generates the Agent private key locally and the exact owner
   wallet signs `approveAgent` (User-Signed, with the signer's chain id: the external wallet's current chain, or the embedded owner's environment Arbitrum chain) with the name
-  `Mobile valid_until <ms>`, where `<ms>` is the expiry 30 days after approval
+  `Mobile QR valid_until <ms>`, where `<ms>` is the expiry 30 days after approval.
+  Hyperliquid stores the parsed name `Mobile QR`, the same name the official
+  terminal's Link Mobile Device approves, and deregisters a named agent when an
+  approval reuses its name, so a phone linked here or there takes one shared
+  named slot. Before signing, the dialog reads `extraAgents` once: when every
+  documented named slot (3) is taken by active agents and none is `Mobile QR`,
+  it lists them with their expiry and links to the API Wallet page, without
+  blocking the approval because the limit can grow with trading volume
+  (`getMobileAgentSlotState`, ADR 0039)
   (`packages/hl-react/src/signing/mobile-agent.ts`, `MOBILE_AGENT_VALIDITY_MS`).
   Approval is the dialog's single explicit action; the dialog never signs a
   builder fee. While the owner's builder fee is definitively unapproved (trading
@@ -452,7 +460,7 @@ the product decisions and the official comparison are in
   signs without a second Privy prompt, and the exchange's `status: "ok"` is
   the success signal. The desktop does not poll `extraAgents`.
 - The key travels as plain JSON in the URL fragment of `/mobile-agent-sync`
-  (`apps/terminal/src/lib/mobile-sync/sync-core.ts`, payload version 4, TTL
+  (`apps/terminal/src/lib/mobile-sync/sync-core.ts`, payload version 5, TTL
   `MOBILE_SYNC_PAYLOAD_TTL_MS` = 2 minutes, bound to the network and owner).
   The fragment never reaches a server and is removed from the address bar by
   the import page before its first paint. Reveal requires a 2 s hold and the
@@ -497,7 +505,8 @@ the product decisions and the official comparison are in
 For comparison, the official terminal encodes the raw Agent private key as
 base64 JSON in a `?link=` query string with no expiry, signs as soon as its
 icon is clicked, imports on the phone without an explicit step and approves a
-permanent `Mobile QR` agent that each re-link replaces. Sairn keeps the four
+`Mobile QR` agent without `valid_until` (the exchange's 90-day default
+expiry applies) that each re-link replaces. Sairn keeps the four
 differences that matter (exact owner and an explicit click, 30-day expiry,
 fragment instead of query string, one `extraAgents` verification before
 import) and otherwise matches the official entry, copy and step count.

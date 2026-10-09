@@ -13,7 +13,7 @@ export const MOBILE_SYNC_QR_VISIBLE_MS = 60 * 1000;
 export const MOBILE_SYNC_CLOCK_SKEW_MS = 60 * 1000;
 export { createMobileAgentName, MOBILE_AGENT_NAME_BASE, MOBILE_AGENT_VALIDITY_MS };
 
-const MOBILE_SYNC_VERSION = 4;
+const MOBILE_SYNC_VERSION = 5;
 const LEGACY_KEY_FRAGMENT_KEY = "k";
 const HEX_PRIVATE_KEY_RE = /^0x[0-9a-f]{64}$/i;
 

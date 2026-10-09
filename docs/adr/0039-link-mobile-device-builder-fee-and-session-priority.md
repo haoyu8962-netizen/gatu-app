@@ -54,10 +54,20 @@
    - 覆盖范围：金库存取、推荐返佣领取 / 填码 / 建码、账户模式、质押、API 钱包授权与移除、Portfolio 手机端原因列表、手机余额行 Transfer、桌面余额表的 Send / 划转 / 提款。
    - 不再隐藏这些入口，不再点了去重连，也不再提供 Connect / Reconnect / Switch 入口。
 
+6. **手机 Agent 与官方共用 `Mobile QR` 名字，签名前只读检查命名名额**（2026-10-09 追加，用户确认后实施）。
+   - 背景：一个外部钱包账户关联手机时收到交易所拒绝「Too many extra agents for cumulative volume traded. Current limit is 3」（中文已按 ADR 0038 翻译）。用公开的 `extraAgents` 查得该账户主网 3 个命名名额是 `gatu`（2026-11-02 到期）、`gatu-dev`（2026-11-16）与官方的 `Mobile QR`（2026-12-23），而我们的名字 `Mobile` 是第 4 个。
+   - 官方文档：Exchange endpoint 写明一个账户 1 个无名、最多 3 个命名 API 钱包（子账户另加 2 个），名字后可加 `valid_until <时间戳>`（最长 180 天）；Nonces and API wallets 写明同名 `approveAgent` 会注销已有的同名命名钱包，钱包到期或账户无资金时也会被清理。nktkas SDK 文档写明名字 1–16 个字符、默认 90 天到期。
+   - 官方实践（同日打包代码）：Link Mobile Device 用名字 `Mobile QR`、`validUntil: null`；API 钱包页用 `` `${名字} valid_until ${到期}` `` 拼接，名字可含空格。上表里官方 `Mobile QR` 的 12 月 23 日到期，与「默认 90 天」一致，ADR 0015 里「永久有效」的描述已更正。
+   - 实施：`MOBILE_AGENT_NAME_BASE` 改为 `Mobile QR`（9 个字符），审批名为 `Mobile QR valid_until <ms>`，交易所解析出的名字与官方相同，因此在这里或官方关联手机会互相替换，只占一个名额。手机载荷版本升到 5：新旧版本混用时，手机提示「两端都刷新」，而不是误判为「未批准」。功能未上线，没有已关联的旧手机需要迁移；浏览器里旧名字 `Mobile` 的记录会被识别为无效并清理。
+   - 名额检查：弹窗打开时只读请求一次 `extraAgents`（10 秒超时、不重试）。`getMobileAgentSlotState` 只统计未到期的命名 Agent：有 `Mobile QR` 即「替换」；否则达到文档上限 3 个即「已满」。只有成功的快照判为已满时，签名前才显示 warning 提示：列出名字与到期日，附 API 钱包页入口，并通过 `aria-describedby` 关联到授权按钮。按钮不禁用，因为交易所的回文表明上限会随成交量放宽。加载中或失败时不显示任何名额文字。
+   - 风险提示改为「授权会替换已关联手机上的移动密钥，包括在 Hyperliquid 应用中关联的手机」。
+
 ## 备选方案
 
 - **在关联弹窗里单独一步批准 builder fee**（本 ADR 初版，2026-10-09 当天实施后撤回）：把下单授权塞进关联流程，用户不理解为什么关联手机要批准费用；邮箱账户本来是静默签名，却被暴露成一个按钮；账户未存款时交易所直接拒绝，关联卡在一个无关步骤上。用户复核后否决。
 - **手机端在 builder fee 未批准时不带 builder 下单**（与官方一致）：关联后立即可交易，但这些订单不收 builder 费用；用户的判断是账号应先完成授权再激活，未采用。
+- **保留自己的 `Mobile` 名字，只加名额检查**：同时使用两边关联手机的用户会多占一个名额；未采用。
+- **名额已满时禁用授权按钮**：上限会随成交量放宽（拒绝文案写的是「for cumulative volume traded. Current limit is N」），硬拦截会误伤高成交量账户；未采用。
 - **保留钱包优先，只补保护**（登录别的账户时只隐藏、不删除；导入页检测到 Privy 会话时要求先退出）：改动小，但和官方行为相反，导入后仍要多一步。未采用。
 - **把 builder fee 并进 Agent 注册的同一次点击**：违反「Agent 注册不批准 builder fee」的契约，也让一次点击背上两个签名。未采用。
 
@@ -69,6 +79,8 @@
 - ADR 0033 的「登出前关闭被登录隐藏的 Agent-only owner」：同网络下已不会出现被隐藏的 owner，这条只在跨网络时仍可能触发，逻辑保留。
 - 桌面弹窗仍是一句说明、一条提示、一个动作；账号未激活交易时多一句激活说明，动作置灰。
 - 从未在电脑端下过单的账户不能关联手机，需要先存款并下一笔单。这是有意的顺序：授权（邮箱静默完成）在先，关联在后。
+- 在 Sairn 关联手机会注销用户在官方终端关联的手机，反之亦然；风险提示已写明。
+- 改名前在本应用开发或测试时批准过的 `Mobile` 命名 Agent 不会被新审批替换，到期（30 天）或在 API 钱包页移除前仍占一个名额；名额检查会把它列出来。
 - 「手机访问已结束」通知是已确认的会话变化，不是被动数据状态，已登记到 [移动数据展示](../mobile-data-presentation.md)。
 - 【未验证】真实设备上的手机 Agent 签名与手机首单：只有单元测试。真机清单的准备步骤已要求先在电脑端存款并下一笔单。
 - 仍未处理：读屏用户无法完成「按住 2 秒」；签名提交途中关闭弹窗可能丢掉已生效的新密钥；命名 Agent 上限仍是签名后才报错；二维码画布没有按设备像素比放大。见任务记录「后续」。
@@ -84,8 +96,9 @@
   - `mobile-agent-sync-modal`、`mobile-agent-qr-scanner`、`mobile-agent-sync-route`；
   - `agent-session`、`wallet-session`、`use-privy-owner-signer`；
   - `trading-guard-session`、`trading-action-button`、`deposit-order-cta`；
-  - `use-agent-status-mobile-ended`、`hl-react-exports`。
+  - `use-agent-status-mobile-ended`、`hl-react-exports`、`mobile-agent-lifecycle`（`getMobileAgentSlotState`）、`mobile-sync-core`（版本 5）。
 
 ## 修订记录
 
 - 2026-10-09 初版决策 1 是「电脑端单独一步批准 builder fee」。在开发服务器上实测时，弹窗出现「批准 Builder 费用」按钮；对一个零余额的邮箱账户，这一步被交易所以「账户无余额，请先存款」拒绝，没有批准任何费用，也没有资金变动。用户复核指出关联不应承担授权，且邮箱授权本来是静默的。改为现行决策 1：关联弹窗只读检查，账号未激活交易时置灰并说明先存款下单。备选方案已补记两种未采用的做法。
+- 2026-10-09 追加决策 6：一个外部钱包账户关联手机时撞上命名 API 钱包上限。经官方文档与官方打包代码核对后，手机 Agent 改用官方同名 `Mobile QR`（载荷版本 5），并在签名前只读检查命名名额。

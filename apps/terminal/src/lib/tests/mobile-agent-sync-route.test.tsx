@@ -114,7 +114,7 @@ function createLink({ env = "Mainnet", nowMs = NOW_MS }: { env?: "Mainnet" | "Te
 }
 
 function approvedRemoteAgent() {
-	return { address: AGENT_ADDRESS as `0x${string}`, name: "Mobile", validUntil: AGENT_VALID_UNTIL_MS };
+	return { address: AGENT_ADDRESS as `0x${string}`, name: "Mobile QR", validUntil: AGENT_VALID_UNTIL_MS };
 }
 
 function findButton(container: HTMLElement, text: string) {
@@ -193,8 +193,8 @@ describe("mobile agent sync route", () => {
 			AGENT_ADDRESS,
 			{
 				source: "mobile-sync",
-				agentNameBase: "Mobile",
-				agentName: `Mobile valid_until ${AGENT_VALID_UNTIL_MS}`,
+				agentNameBase: "Mobile QR",
+				agentName: `Mobile QR valid_until ${AGENT_VALID_UNTIL_MS}`,
 				agentValidUntilMs: AGENT_VALID_UNTIL_MS,
 				importedAtMs: NOW_MS + 5_000,
 			},

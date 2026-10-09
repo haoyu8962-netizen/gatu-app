@@ -46,7 +46,7 @@
 
 ## 后续修订
 
-- 2026-10-09 [ADR 0039](0039-link-mobile-device-builder-fee-and-session-priority.md)：D8 去掉签名前预检后，从未批准 builder fee 的 owner 链接的手机无法下单。现在弹窗只读检查：账号尚未激活交易（builder fee 未批准）时置灰并说明先在电脑端存款下单，关联本身不签 builder fee（同日先实施过「弹窗内单独批准 builder fee」，经用户复核撤回）；手机导入的密钥改为优先于 Privy 会话；替换提示并入风险提示；二维码绘制失败可原地重试。
+- 2026-10-09 [ADR 0039](0039-link-mobile-device-builder-fee-and-session-priority.md)：D8 去掉签名前预检后，从未批准 builder fee 的 owner 链接的手机无法下单。现在弹窗只读检查：账号尚未激活交易（builder fee 未批准）时置灰并说明先在电脑端存款下单，关联本身不签 builder fee（同日先实施过「弹窗内单独批准 builder fee」，经用户复核撤回）；手机 Agent 名字改为与官方相同的 `Mobile QR`（载荷版本 5），关联前只读检查命名名额；另更正上文：官方 `Mobile QR` 不带 `valid_until`，按交易所默认 90 天到期，并非永久；手机导入的密钥改为优先于 Privy 会话；替换提示并入风险提示；二维码绘制失败可原地重试。
 
 ## 证据
 

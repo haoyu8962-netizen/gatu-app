@@ -553,7 +553,7 @@ changes, not evidence that a build has been deployed or accepted on real devices
   one "finish trading authorization on desktop" reason instead of an Enable it cannot sign. A key
   imported on a phone now takes precedence over a wallet login on that phone, as on the official
   terminal, so logging in no longer hides or deletes it, and Disconnect removes only the imported
-  key. The dialog warns that approving again replaces the linked phone; a QR that fails to draw
+  key. The phone key now uses the same `Mobile QR` name as the official terminal's phone link, so linking in either app replaces one shared API wallet slot instead of taking another, and when all of an account's named API wallet slots are already taken the dialog lists them with their expiry and links to the API Wallet page before you sign. The dialog warns that approving again replaces the linked phone, including one linked in the Hyperliquid app; a QR that fails to draw
   can be revealed again without a new signature; the phone tells you when its access expired or
   was replaced and asks for a new scan; the scanner separates a clock mismatch and a scanner that
   failed to load from other errors; and on iOS the import page says the key stays in that

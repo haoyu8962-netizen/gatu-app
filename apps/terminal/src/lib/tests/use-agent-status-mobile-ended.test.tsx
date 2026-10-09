@@ -54,7 +54,7 @@ describe("useAgentStatus Mobile Agent removal notice", () => {
 		testState.localAgent = createMobileAgentWalletRecord({
 			privateKey: PRIVATE_KEY,
 			publicKey: privateKeyToAccount(PRIVATE_KEY).address,
-			agentName: `Mobile valid_until ${validUntil}`,
+			agentName: `Mobile QR valid_until ${validUntil}`,
 			agentValidUntilMs: validUntil,
 			importedAtMs: NOW_MS - 60_000,
 		});

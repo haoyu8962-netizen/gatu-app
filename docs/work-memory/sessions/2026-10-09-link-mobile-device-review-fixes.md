@@ -76,6 +76,14 @@
 - 官方实践（同日下载 277 个打包块）：自己的下单、平仓、Swap 等调用都是 `builder: void 0`；`approveBuilderFee` 只在隐藏的 Admin 开发页（`Admin-*.js`）里由「Approve Builder Fee」按钮触发，并配合「Set Order Builder Fee」在本地写 `hyperliquid.order_builder_info`。普通用户没有这个流程。
 - 用户结论：先完成授权，账号才算激活。现行实施：关联弹窗不再签 builder fee；账号未激活交易时「Approve mobile trading key」置灰，通过 `aria-describedby` 关联说明「此账户尚未激活交易。请先在这台电脑上存款并下第一笔订单，完成交易授权后再关联手机」。签名前的新鲜检查与查不到时不签名的行为保留；手机端文案改为「请先在电脑端下第一笔订单完成交易授权」。
 
+### 追加：命名 API 钱包名额已满（同日）
+
+- 用户在开发服务器上用外部钱包账户点「Approve mobile trading key」，看到「This account already has the 3 named API wallets…」。这是交易所拒绝 `Too many extra agents for cumulative volume traded. Current limit is 3` 的译文（ADR 0038 已登记），账户没有任何变化。
+- 用公开的 `extraAgents`（只读）查该账户主网：`gatu`（2026-11-02 到期）、`gatu-dev`（2026-11-16）、`Mobile QR`（2026-12-23，官方关联手机）。测试网为空。我们的 `Mobile` 是第 4 个名字。
+- 官方文档（Exchange endpoint；Nonces and API wallets；nktkas SDK 的 approveAgent 与 Agent wallets 指南）：1 个无名加最多 3 个命名；同名注销旧的；`valid_until` 最长 180 天；名字 1–16 个字符；默认 90 天到期。官方打包代码：Link Mobile Device 用 `Mobile QR` 且不带后缀；API 钱包页拼接 `名字 valid_until 到期`。
+- 用户确认实施：手机 Agent 改名为 `Mobile QR`（载荷版本 5），签名前只读检查名额（只提示不拦截），风险提示写明会替换在 Hyperliquid 应用中关联的手机。决定与理由见 ADR 0039 决策 6。
+- 用户可立即在 API 钱包页移除 `gatu`、`gatu-dev` 这两个旧版遗留名字（各需钱包签名一次，`gatu.ai` 已下线，旧密钥不再使用）。本次没有替用户操作。
+
 ### 实施
 
 见 [ADR 0039](../adr/0039-link-mobile-device-builder-fee-and-session-priority.md)「决策」。文档同步了以下文件：

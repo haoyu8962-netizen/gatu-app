@@ -13,12 +13,13 @@ const USER_ADDRESS = "0x1111111111111111111111111111111111111111";
 const AGENT_PRIVATE_KEY = `0x${"ab".repeat(32)}` as const;
 const AGENT_ADDRESS = "0x2222222222222222222222222222222222222222";
 const AGENT_VALID_UNTIL_MS = NOW_MS + 30 * 24 * 60 * 60 * 1000;
-const AGENT_NAME = `Mobile valid_until ${AGENT_VALID_UNTIL_MS}`;
+const AGENT_NAME = `Mobile QR valid_until ${AGENT_VALID_UNTIL_MS}`;
 const IDENTITY_CHANGED = msg`The active wallet or network changed. Review the account and try again.`;
 
 const testState = vi.hoisted(() => ({
 	approveAgent: vi.fn(),
 	builderFeeKnown: true,
+	extraAgents: undefined as Array<{ address: string; name: string; validUntil: number | null }> | undefined,
 	needsBuilderFee: false,
 	refetchBuilderFee: vi.fn(),
 	onOpenChangeComplete: undefined as ((open: boolean) => void) | undefined,
@@ -47,6 +48,7 @@ vi.mock("@phosphor-icons/react", () => ({
 	SealCheckIcon: Icon,
 	SpinnerGapIcon: Icon,
 	WarningCircleIcon: Icon,
+	WarningIcon: Icon,
 }));
 
 vi.mock("@/hooks/use-mobile", () => ({
@@ -110,7 +112,7 @@ vi.mock("@sairn/hl-react/signing/mobile-agent", async (importOriginal) => {
 	return {
 		...actual,
 		createMobileAgentApproval: () => ({
-			agentNameBase: "Mobile",
+			agentNameBase: "Mobile QR",
 			agentName: AGENT_NAME,
 			agentValidUntilMs: AGENT_VALID_UNTIL_MS,
 			privateKey: AGENT_PRIVATE_KEY,
@@ -138,7 +140,16 @@ vi.mock("@/hooks/wallet/use-wallet-session", () => ({
 	}),
 }));
 
+vi.mock("@tanstack/react-router", () => ({
+	Link: ({ children, onClick, to }: { children: ReactNode; onClick?: () => void; to: string }) =>
+		createElement("a", { href: to, onClick }, children),
+}));
+
 vi.mock("@/lib/hyperliquid", () => ({
+	useInfo: () =>
+		testState.extraAgents === undefined
+			? { data: undefined, isSuccess: false }
+			: { data: testState.extraAgents, isSuccess: true },
 	useHyperliquid: () => ({ env: "Mainnet" }),
 	useTradingStatus: () => ({
 		needsBuilderFee: testState.builderFeeKnown && testState.needsBuilderFee,
@@ -196,6 +207,7 @@ describe("MobileAgentSyncModal", () => {
 		testState.approveAgent.mockResolvedValue(undefined);
 		testState.builderFeeKnown = true;
 		testState.needsBuilderFee = false;
+		testState.extraAgents = undefined;
 		testState.refetchBuilderFee.mockReset();
 		testState.refetchBuilderFee.mockImplementation(async () => ({
 			isBuilderFeeReady: testState.builderFeeKnown && !testState.needsBuilderFee,
@@ -248,7 +260,7 @@ describe("MobileAgentSyncModal", () => {
 			"On your phone, open Sairn, tap Connect, then Link Desktop Wallet and scan this code.",
 		);
 		expect(container.textContent).toContain("The QR can trade but not withdraw.");
-		expect(container.textContent).toContain("Approving replaces the key on a phone that is already linked.");
+		expect(container.textContent).toContain("including one linked in the Hyperliquid app");
 		expect(container.querySelector("canvas")).toBeNull();
 
 		await approve();
@@ -501,5 +513,40 @@ describe("MobileAgentSyncModal", () => {
 		const [, secondUrl] = testState.qrToCanvas.mock.calls[1] as [unknown, string];
 		expect(new URL(secondUrl).pathname).toBe(new URL(firstUrl).pathname);
 		expect(testState.approveAgent).toHaveBeenCalledTimes(1);
+	});
+	it("warns before signing when every named API wallet slot is taken and none is a mobile key", async () => {
+		testState.extraAgents = [
+			{ address: "0x3333333333333333333333333333333333333333", name: "old-slot", validUntil: NOW_MS + 86_400_000 },
+			{ address: "0x4444444444444444444444444444444444444444", name: "old-slot-dev", validUntil: null },
+			{ address: "0x5555555555555555555555555555555555555555", name: "Mobile", validUntil: NOW_MS + 86_400_000 },
+		];
+		const onOpenChange = await renderModal();
+
+		expect(container.textContent).toContain("already uses the 3 named API wallets");
+		expect(container.textContent).toContain("old-slot-dev");
+		expect(container.textContent).toContain("No expiry");
+		const approveButton = getButton(container, "Approve mobile trading key");
+		expect(approveButton.hasAttribute("disabled")).toBe(false);
+		const hint = document.getElementById(approveButton.getAttribute("aria-describedby") ?? "");
+		expect(hint?.textContent).toContain("Remove one you no longer use first");
+		const link = container.querySelector('a[href="/api-wallet"]');
+		expect(link?.textContent).toBe("Open API Wallet");
+		act(() => (link as HTMLAnchorElement).click());
+		expect(onOpenChange).toHaveBeenCalledWith(false);
+	});
+
+	it("says nothing about slots when the approval replaces the shared mobile slot or the list is not loaded", async () => {
+		testState.extraAgents = [
+			{ address: "0x3333333333333333333333333333333333333333", name: "old-slot", validUntil: NOW_MS + 86_400_000 },
+			{ address: "0x4444444444444444444444444444444444444444", name: "old-slot-dev", validUntil: null },
+			{ address: "0x5555555555555555555555555555555555555555", name: "Mobile QR", validUntil: NOW_MS + 86_400_000 },
+		];
+		await renderModal();
+		expect(container.textContent).not.toContain("named API wallets");
+
+		testState.extraAgents = undefined;
+		await renderModal();
+		expect(container.textContent).not.toContain("named API wallets");
+		expect(getButton(container, "Approve mobile trading key").getAttribute("aria-describedby")).toBeNull();
 	});
 });

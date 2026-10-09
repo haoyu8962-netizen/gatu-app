@@ -1,7 +1,13 @@
 import { Trans, useLingui } from "@lingui/react/macro";
-import { DeviceMobileIcon, QrCodeIcon, WarningCircleIcon } from "@phosphor-icons/react";
-import { createMobileAgentApproval, type MobileAgentApproval } from "@sairn/hl-react/signing/mobile-agent";
+import { DeviceMobileIcon, QrCodeIcon, WarningCircleIcon, WarningIcon } from "@phosphor-icons/react";
+import {
+	createMobileAgentApproval,
+	getMobileAgentSlotState,
+	type MobileAgentApproval,
+	NAMED_AGENT_DOCUMENTED_LIMIT,
+} from "@sairn/hl-react/signing/mobile-agent";
 import { AdaptiveModal, Button, ModalContent, ModalDescription, ModalFooter, ModalHeader, ModalTitle } from "@sairn/ui";
+import { Link } from "@tanstack/react-router";
 import { useEffect, useId, useRef, useState } from "react";
 import type { Address } from "viem";
 import { ButtonLoading } from "@/components/brand/button-loading";
@@ -12,7 +18,8 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useExplicitAgentApproval } from "@/hooks/wallet/use-explicit-agent-approval";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { formatTransferError } from "@/lib/errors/format";
-import { type HyperliquidEnv, useHyperliquid, useTradingStatus } from "@/lib/hyperliquid";
+import { formatDateTime } from "@/lib/format";
+import { type HyperliquidEnv, type InfoResponse, useHyperliquid, useInfo, useTradingStatus } from "@/lib/hyperliquid";
 import { createMobileAgentSyncUrl, MOBILE_SYNC_QR_VISIBLE_MS } from "@/lib/mobile-sync/sync-core";
 
 interface MobileAgentSyncModalProps {
@@ -69,6 +76,7 @@ function MobileAgentSyncDialog({
 	const approveAgent = useExplicitAgentApproval();
 	const tradingStatus = useTradingStatus();
 	const activationHintId = useId();
+	const slotsHintId = useId();
 	const [state, setState] = useState<SyncState>({ status: "idle" });
 	const operationRef = useRef<AbortController | null>(null);
 	const onOpenChangeRef = useRef(onOpenChange);
@@ -112,6 +120,15 @@ function MobileAgentSyncDialog({
 	const canApprove = MOBILE_PAIRING_FEATURES.enabled && hasWalletAccess && !!walletAddress;
 	const isBusy = state.status === "signing";
 	const accountNotActivated = tradingStatus.needsBuilderFee;
+	const extraAgentsQuery = useInfo(
+		"extraAgents",
+		{ user: walletAddress ?? "" },
+		{ enabled: open && canApprove, requestTimeoutMs: 10_000, retry: false },
+	);
+	const slotState =
+		extraAgentsQuery.isSuccess && Array.isArray(extraAgentsQuery.data)
+			? getMobileAgentSlotState(extraAgentsQuery.data)
+			: null;
 
 	async function handleApprove() {
 		if (!canApprove || !walletAddress || isBusy) return;
@@ -173,6 +190,12 @@ function MobileAgentSyncDialog({
 
 	const showsApproveButton = state.status === "idle" || state.status === "signing" || state.status === "error";
 
+	function getApproveHintId() {
+		if (accountNotActivated) return activationHintId;
+		if (slotState?.status === "full") return slotsHintId;
+		return undefined;
+	}
+
 	return (
 		<AdaptiveModal
 			open={open}
@@ -199,8 +222,9 @@ function MobileAgentSyncDialog({
 					<WarningCircleIcon className="mt-0.5 size-4 shrink-0" weight="fill" aria-hidden />
 					<p>
 						<Trans>
-							The QR can trade but not withdraw. Approving replaces the key on a phone that is already linked. Do not
-							share it, screenshot it or show it while sharing your screen.
+							The QR can trade but not withdraw. Approving replaces the mobile key of a phone that is already linked,
+							including one linked in the Hyperliquid app. Do not share it, screenshot it or show it while sharing your
+							screen.
 						</Trans>
 					</p>
 				</div>
@@ -222,6 +246,13 @@ function MobileAgentSyncDialog({
 							trading authorization, then link your phone.
 						</Trans>
 					</p>
+				)}
+				{canApprove && showsApproveButton && !accountNotActivated && slotState?.status === "full" && (
+					<NamedSlotsFullNotice
+						id={slotsHintId}
+						namedAgents={slotState.namedAgents}
+						onOpenApiWallets={() => handleOpenChange(false)}
+					/>
 				)}
 				{state.status === "error" && (
 					<p role="alert" className="text-xs text-error">
@@ -254,7 +285,7 @@ function MobileAgentSyncDialog({
 						size="md"
 						className="w-full"
 						disabled={isBusy || accountNotActivated}
-						aria-describedby={accountNotActivated ? activationHintId : undefined}
+						aria-describedby={getApproveHintId()}
 						onClick={handleApprove}
 						iconLeft={
 							state.status === "signing" ? (
@@ -269,6 +300,59 @@ function MobileAgentSyncDialog({
 				</ModalFooter>
 			)}
 		</AdaptiveModal>
+	);
+}
+
+function NamedSlotsFullNotice({
+	id,
+	namedAgents,
+	onOpenApiWallets,
+}: {
+	id: string;
+	namedAgents: InfoResponse<"extraAgents">;
+	onOpenApiWallets: () => void;
+}) {
+	const { i18n } = useLingui();
+	const locale = i18n.locale;
+	const limit = NAMED_AGENT_DOCUMENTED_LIMIT;
+
+	return (
+		<div
+			id={id}
+			className="flex items-start gap-2 rounded-16 border border-stroke-warning-weak bg-warning-soft p-3 text-xs text-warning"
+		>
+			<WarningIcon className="mt-0.5 size-4 shrink-0 text-icon-warning" weight="fill" aria-hidden />
+			<div className="min-w-0 flex-1 space-y-2">
+				<p>
+					<Trans>
+						This account already uses the {limit} named API wallets Hyperliquid allows, and none of them is a mobile
+						key, so the approval will be rejected unless your trading volume allows more. Remove one you no longer use
+						first:
+					</Trans>
+				</p>
+				<ul className="space-y-1">
+					{namedAgents.map((agent) => {
+						const expiresAt =
+							agent.validUntil === null ? null : formatDateTime(agent.validUntil, { locale, dateStyle: "medium" });
+						return (
+							<li key={agent.address} className="flex justify-between gap-3">
+								<span className="min-w-0 break-all font-medium">{agent.name}</span>
+								<span className="shrink-0">
+									{expiresAt === null ? <Trans>No expiry</Trans> : <Trans>Expires {expiresAt}</Trans>}
+								</span>
+							</li>
+						);
+					})}
+				</ul>
+				<Link
+					to="/api-wallet"
+					onClick={onOpenApiWallets}
+					className="inline-block font-medium underline underline-offset-4"
+				>
+					<Trans>Open API Wallet</Trans>
+				</Link>
+			</div>
+		</div>
 	);
 }
 

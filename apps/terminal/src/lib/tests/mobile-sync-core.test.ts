@@ -44,7 +44,7 @@ function rejectionCode(run: () => unknown) {
 }
 
 const VALID_WIRE = {
-	v: 4,
+	v: 5,
 	env: "Mainnet",
 	owner: USER_ADDRESS,
 	key: AGENT_PRIVATE_KEY,
@@ -71,8 +71,8 @@ describe("mobile sync core", () => {
 			userAddress: USER_ADDRESS,
 			agentAddress: privateKeyToAccount(AGENT_PRIVATE_KEY).address.toLowerCase(),
 			agentPrivateKey: AGENT_PRIVATE_KEY,
-			agentNameBase: "Mobile",
-			agentName: `Mobile valid_until ${AGENT_VALID_UNTIL_MS}`,
+			agentNameBase: "Mobile QR",
+			agentName: `Mobile QR valid_until ${AGENT_VALID_UNTIL_MS}`,
 			agentValidUntilMs: AGENT_VALID_UNTIL_MS,
 			createdAtMs: NOW_MS,
 			expiresAtMs: NOW_MS + MOBILE_SYNC_PAYLOAD_TTL_MS,
@@ -93,7 +93,7 @@ describe("mobile sync core", () => {
 			"unsupported_version",
 		);
 		expect(
-			rejectionCode(() => parseMobileSyncFragment(encodeFragment({ ...VALID_WIRE, v: 3 }), { nowMs: NOW_MS })),
+			rejectionCode(() => parseMobileSyncFragment(encodeFragment({ ...VALID_WIRE, v: 4 }), { nowMs: NOW_MS })),
 		).toBe("unsupported_version");
 	});
 
