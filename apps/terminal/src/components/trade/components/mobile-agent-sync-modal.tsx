@@ -3,8 +3,8 @@ import { DeviceMobileIcon, QrCodeIcon, WarningCircleIcon, WarningIcon } from "@p
 import {
 	createMobileAgentApproval,
 	getMobileAgentSlotState,
+	getNextMobileAgentSlotChange,
 	type MobileAgentApproval,
-	type MobileAgentSlotState,
 	NAMED_AGENT_DOCUMENTED_LIMIT,
 } from "@sairn/hl-react/signing/mobile-agent";
 import { AdaptiveModal, Button, ModalContent, ModalDescription, ModalFooter, ModalHeader, ModalTitle } from "@sairn/ui";
@@ -47,6 +47,7 @@ type SyncState =
 
 const QR_REVEAL_HOLD_MS = 2_000;
 const SLOT_CHECK_TIMEOUT_MS = 10_000;
+const MAX_TIMER_DELAY_MS = 2_147_483_647;
 const QR_REVEAL_HOLD_SECONDS = QR_REVEAL_HOLD_MS / 1_000;
 const HOLD_RING_RADIUS = 10;
 const HOLD_RING_CIRCUMFERENCE = 2 * Math.PI * HOLD_RING_RADIUS;
@@ -129,7 +130,8 @@ function MobileAgentSyncDialog({
 	const isBusy = state.status === "signing";
 	const accountNotActivated = tradingStatus.needsBuilderFee || activationMissing;
 	const slotCheckOwner = open && canApprove ? walletAddress : undefined;
-	const [slotCheck, setSlotCheck] = useState<MobileAgentSlotState | null>(null);
+	const [slotSnapshot, setSlotSnapshot] = useState<{ agents: InfoResponse<"extraAgents">; atMs: number } | null>(null);
+	const slotCheck = slotSnapshot ? getMobileAgentSlotState(slotSnapshot.agents, slotSnapshot.atMs) : null;
 
 	useEffect(() => {
 		if (!slotCheckOwner) return;
@@ -139,16 +141,28 @@ function MobileAgentSyncDialog({
 			.extraAgents({ user: slotCheckOwner }, request.signal)
 			.then((agents) => {
 				if (request.signal.aborted || !isApiWalletExtraAgentSnapshot(agents)) return;
-				setSlotCheck(getMobileAgentSlotState(agents));
+				setSlotSnapshot({ agents, atMs: Date.now() });
 			})
 			.catch(() => undefined)
 			.finally(() => window.clearTimeout(timeoutId));
 		return () => {
 			request.abort();
 			window.clearTimeout(timeoutId);
-			setSlotCheck(null);
+			setSlotSnapshot(null);
 		};
 	}, [slotCheckOwner]);
+
+	useEffect(() => {
+		if (!slotSnapshot) return;
+		const nextChangeMs = getNextMobileAgentSlotChange(slotSnapshot.agents, slotSnapshot.atMs);
+		if (nextChangeMs === null) return;
+		const delayMs = Math.min(Math.max(0, nextChangeMs - Date.now()), MAX_TIMER_DELAY_MS);
+		const timeoutId = window.setTimeout(
+			() => setSlotSnapshot((current) => (current ? { agents: current.agents, atMs: Date.now() } : current)),
+			delayMs,
+		);
+		return () => window.clearTimeout(timeoutId);
+	}, [slotSnapshot]);
 
 	async function handleApprove() {
 		if (!canApprove || !walletAddress || isBusy) return;

@@ -207,6 +207,9 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/mobile-agent-sync-modal.test.tsx \
   src/lib/tests/mobile-agent-sync-route.test.tsx \
   src/lib/tests/mobile-agent-qr-scanner.test.tsx \
+  src/lib/tests/mobile-agent-qr-scanner-load.test.ts \
+  src/lib/tests/mobile-agent-ended-notifier.test.tsx \
+  src/lib/tests/trading-activation.test.ts \
   src/lib/tests/agent-session.test.ts \
   src/lib/tests/use-agent-status-mobile-ended.test.tsx \
   src/lib/tests/trading-guard-session.test.tsx \

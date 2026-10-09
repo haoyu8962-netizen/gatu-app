@@ -613,6 +613,20 @@ describe("MobileAgentSyncModal", () => {
 		expect(container.textContent).not.toContain("named API wallets");
 	});
 
+	it("withdraws the slot notice once one of the listed wallets expires while the dialog is open", async () => {
+		testState.extraAgents.mockResolvedValue([
+			{ address: "0x3333333333333333333333333333333333333333", name: "a", validUntil: NOW_MS + 60_000 },
+			{ address: "0x4444444444444444444444444444444444444444", name: "b", validUntil: null },
+			{ address: "0x5555555555555555555555555555555555555555", name: "c", validUntil: null },
+		]);
+		await renderModal();
+		expect(container.textContent).toContain("named API wallets");
+
+		await advanceTime(60_000);
+		expect(container.textContent).not.toContain("named API wallets");
+		expect(testState.extraAgents).toHaveBeenCalledTimes(1);
+	});
+
 	it("treats a malformed slot answer as no answer", async () => {
 		testState.extraAgents.mockResolvedValue([
 			{ validUntil: null },

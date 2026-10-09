@@ -287,3 +287,13 @@ export function getMobileAgentSlotState(extraAgents: ExtraAgentsResponse, nowMs 
 	if (activeAgents.length >= NAMED_AGENT_DOCUMENTED_LIMIT) return { status: "limitReached", namedAgents: activeAgents };
 	return { status: "available" };
 }
+
+/** The earliest moment after `nowMs` at which an active named agent expires and the slot state can change. */
+export function getNextMobileAgentSlotChange(extraAgents: ExtraAgentsResponse, nowMs = Date.now()): number | null {
+	let next: number | null = null;
+	for (const agent of extraAgents) {
+		if (agent.validUntil === null || agent.validUntil <= nowMs) continue;
+		if (next === null || agent.validUntil < next) next = agent.validUntil;
+	}
+	return next;
+}

@@ -7,6 +7,7 @@ import {
 	createMobileAgentWalletRecord,
 	getMobileAgentNameBase,
 	getMobileAgentSlotState,
+	getNextMobileAgentSlotChange,
 	MOBILE_AGENT_NAME_BASE,
 	MOBILE_AGENT_VALIDITY_MS,
 	shouldClearMobileAgent,
@@ -101,6 +102,19 @@ describe("mobile agent lifecycle", () => {
 		).toEqual({
 			status: "available",
 		});
+	});
+
+	it("finds the next moment an active named agent expires", () => {
+		const agent = (validUntil: number | null) => ({
+			address: "0x3333333333333333333333333333333333333333" as `0x${string}`,
+			name: "a",
+			validUntil,
+		});
+		expect(getNextMobileAgentSlotChange([], NOW_MS)).toBeNull();
+		expect(getNextMobileAgentSlotChange([agent(null), agent(NOW_MS)], NOW_MS)).toBeNull();
+		expect(getNextMobileAgentSlotChange([agent(NOW_MS + 500), agent(null), agent(NOW_MS + 100)], NOW_MS)).toBe(
+			NOW_MS + 100,
+		);
 	});
 
 	it("verifies a first linked mobile agent against extraAgents", () => {

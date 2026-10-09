@@ -157,6 +157,11 @@
 - 变异：删除金库控制器传给可用性推导的 `sessionMode`，新测试失败（期望 `agent-only-session`，实际 `null`）；删除扫码器动态导入的 `.catch` 包装，加载失败测试失败；均已恢复。第一次删金库变异时误删了文件里另一处 `sessionMode:`，测试仍通过，改删正确的那一行后才失败。
 - `scripts/ci-workflows.test.mjs` 12 项通过；按脚本核对，本分支 36 个改动或新增的终端测试文件全部被 CI 选中。
 
+### 第 4 轮修复（提交前的工作区）
+
+- 4 个文件 64 项通过：`trading-activation`（新增 5）、`owner-trading-signer`（11）、`mobile-agent-sync-modal`（25）、`mobile-agent-lifecycle`（23）。
+- 变异（改完均恢复）：激活检查的阈值改成 1、去掉 `Number.isFinite`、`useClients` 去掉 `sessionMode !== "wallet"`、名额到期重算直接返回，各自对应的测试都失败 1 项。
+
 ### Codex 对抗审查
 
 `gpt-6-astra`、medium、只读沙箱、三路并行（V 行为与安全、B 规范与记录、C 遗漏与变异），审查范围 `805ee5a1..HEAD`。
@@ -166,6 +171,7 @@
 | 1（审 `9ba297f4`） | 8.3 | 8.0 | 6.8 | 名额提示可能用到刷新中的旧缓存（V、B）→ 每次打开显式请求、只用本次结果；「3 个就满」忽略子账户与成交量（V）→ `limitReached` + 条件句；Agent-only 时账户菜单显示被屏蔽的 Privy 邮箱（C，P1）→ 改显示 owner 地址；CI 显式清单漏掉 12 个改动的测试文件（C）→ 补进清单并钉住；结束通知无身份归属（C）→ 写明账户、跨网络或新会话时撤下；桌面账户面板 Agent-only 隐藏资金按钮（C）→ 置灰加原因；验证计数未跟上最后一个提交、ADR 链接路径错误（B）→ 按提交拆分验证小节、改为 `../../adr/`；4 个变异存活点（未知 builder 应答、查询参数、通知呈现、手机按钮 `canApprove=true`）→ 补测试 |
 | 2（审 `248e5ba2`） | 8.5 | 8.3 | 8.3 | 重新打开时 `refetch()` 复用上次打开的在途请求（V）→ 改为每次打开直接请求 `info.extraAgents`、关闭即中止，补「旧请求晚到」测试并做了删除中止判断的变异（测试失败，恢复后通过）；余额表锁定取决于提示文案、地区原因优先时 Send 可点（B）→ 按 `sessionMode` 锁定，补地区优先测试；`runtime-guardrails.md`、`email-trading-signing.md` 仍写旧优先级与 v4（B）→ 更正，后者与 `trading-onboarding.md` 同节同步；新增原因行用 `market-close-*`（B，P3）→ 改 `trading-panel-*`；「只缺 builder fee」、质押控制器字段未钉住（C）→ 补测试；通知晚到竞态（C，未确认）→ 忽略已被新密钥取代的 owner 的事件并补测试 |
 | 3（审 `0985fb91`） | 8.5 | 8.3 | 7.0 | builder fee 签名前复查也会复用在途查询（V）→ 直接请求 `maxBuilderFee`（`trading-activation.ts`），补超时与非数字响应测试；名额响应未校验格式（B）→ 复用 `isApiWalletExtraAgentSnapshot`，补异常响应测试；质押控制器测试未进 CI（B、C）→ 补进 CI 与回归清单；第 2 轮余额表修复直接显示了被动地区原因（C，P1，我上一轮引入）→ 改用 `getFundsAvailabilityNotice` 过滤，测试改为地区未解析时不显示文字、已确认限制显示；金库控制器 `sessionMode` 接线与扫码器真实导入失败存活（C）→ 补测试并做变异（删除对应代码后测试失败，恢复后通过）；同一 owner 重新导入后旧事件晚到（C，未确认）→ 记为界限 |
+| 4（审 `4100c7d5`） | 9.2 | 8.5 | 8.3 | V 无发现；名额提示不随占用者到期失效（B）→ 在下一个到期时刻重新推导，补测试；AGENTS 回归清单漏两个新测试（B，P3）→ 补上；`useClients` 的 Agent-only 守卫、激活阈值与非有限数未钉住（C）→ 补 `owner-trading-signer` 用例与 `trading-activation` 单测 |
 
 ## 后续与替代关系
 

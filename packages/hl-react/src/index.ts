@@ -250,6 +250,7 @@ export {
 	type ExpectedMobileAgentVerification,
 	getMobileAgentNameBase,
 	getMobileAgentSlotState,
+	getNextMobileAgentSlotChange,
 	isMobileAgentName,
 	isStoredMobileAgent,
 	MOBILE_AGENT_NAME_BASE,

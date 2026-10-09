@@ -147,6 +147,7 @@ jobs:
           src/lib/tests/trading-guard-session.test.tsx
           src/lib/tests/use-privy-owner-signer.test.tsx
           src/lib/tests/mobile-agent-qr-scanner-load.test.ts
+          src/lib/tests/trading-activation.test.ts
 
       - name: Test route provider lifecycles
         working-directory: apps/terminal

@@ -75,6 +75,9 @@
    - 余额表的原因行经 `getFundsAvailabilityNotice` 过滤被动原因：地区尚未解析时只禁用按钮、不显示「正在检查地区」，已确认的地区限制照常显示（第 2 轮修复曾直接显示原因文案，违反移动数据展示契约）。
    - 名额检查用 API 钱包页的 `isApiWalletExtraAgentSnapshot` 校验整份响应，格式异常时不显示任何名额文字。
    - 扫码器的动态导入失败、金库控制器的 `sessionMode` 接线、质押控制器的 `agentOnlySession` 都有了测试，并进入 CI。
+10. **审查补充（第 4 轮）**：
+   - 名额提示在列出的命名钱包到期时自动重新推导（`getNextMobileAgentSlotChange` 给出下一个到期时刻，定时器延迟按浏览器上限截断），不新增轮询。
+   - `readTradingActivation` 有独立单测：等于或高于配置费率为已激活，低于为未激活，非有限数、超时与中止都失败；`useClients` 在 Agent-only 且同地址钱包仍连接时不创建用户签名客户端，也有测试。
 
 ## 备选方案
 
