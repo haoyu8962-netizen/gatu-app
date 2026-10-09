@@ -96,6 +96,7 @@ jobs:
           src/lib/tests/mobile-terminal-disclosure-state.test.tsx
           src/lib/tests/mobile-trade-layout-market-reset.test.tsx
           src/lib/tests/market-overview.test.tsx
+          src/lib/tests/market-asset-info.test.tsx
 
       - name: Test Privy theme and wallet identity
         working-directory: apps/terminal
