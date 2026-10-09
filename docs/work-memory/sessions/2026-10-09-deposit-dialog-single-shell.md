@@ -10,7 +10,7 @@
   "summary": "用户在桌面端看到存款弹窗打开后抖动、不稳定。在用户 Chrome（localhost:3005，邮箱会话）实测：点击「存款」后先出现懒加载占位对话框（高 332.5px、转圈），约 1 秒后被另一个对话框元素（高 665.9px）替换并重新开始进入过渡；开发服务器上 import 存款弹窗模块耗时 1120ms，悬停预热赶不上点击。根因是 Suspense 的 fallback 本身是一个完整对话框：代码块到达时占位壳无退场卸载、真实壳重新淡入缩放，遮罩变暗、清空、再变暗，弹窗高度翻倍并重新居中。按用户选定的方案 1+3 实施：新增 DepositModalHost 在主包里挂载唯一的 FundsModalShell，懒加载的 DepositModal 改为壳旁的无渲染主体，用 useLayoutEffect 通过 onSurfaceChange 上报 tab、isPending、返回按钮、关闭处理与内容（或状态屏，状态屏仍是替换壳的独立对话框）；加载中壳内显示转圈；memo 包住主体避免宿主重渲染回流。useDepositUsdcBalance 的轮询在已有成功余额时保持 success 状态后台刷新，不再每 5 秒把按钮闪成「Deposit -- USDC」并置灰。改后在 Chrome 冷加载实测：对话框与遮罩元素在占位与表单之间同一节点，始终只有一个 dialog。",
   "thread": null,
   "baseCommit": "8d5f9308",
-  "commits": [],
+  "commits": ["b390a5c8"],
   "sources": [
     { "path": "apps/terminal/src/components/trade/components/deposit-modal-host.tsx" },
     { "path": "apps/terminal/src/components/trade/components/deposit-modal-surface.ts" },
