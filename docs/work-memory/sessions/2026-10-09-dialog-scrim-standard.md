@@ -10,7 +10,7 @@
   "summary": "用户在深色主题手机布局下发现存款抽屉与页面融为一体，而建立连接抽屉有层次。对照 app.hyperliquid.xyz 移动端实测：弹层底色与页面同为 #0f1a1f，手机全屏抽屉无边框、顶部 16px 圆角，靠 rgba(15,18,29,0.75) 的海军蓝遮罩分层（无模糊），桌面弹窗用 rgba(15,18,29,0.6) 加 2px 模糊并保留 1px 边框。本项目原来每个弹窗各自覆盖遮罩与模糊（/60、无模糊、2px 模糊、trading-panel-scrim 混用），遮罩又是同色相近黑，所以层次不一。按用户决定执行：新增 --fill-overlay-sheet / bg-scrim-sheet，终端深色遮罩改为官方的两个值（浅色只改透明度），Modal 背景加 2px 模糊、Drawer 用 sheet 遮罩且底部抽屉无边框，删除 13 个弹窗的 overlayClassName 遮罩/模糊覆盖与 7 处 max-[1000px]:!border-0，modal-surface-contract 钉住 token 与「弹窗不得自行覆盖遮罩、模糊、opacity、!border-0」（市场选择弹层登记为唯一无遮罩例外）。design-tokens 里「拒绝海军蓝遮罩」的旧决定被取代。夹具计算样式核对通过。",
   "thread": null,
   "baseCommit": "805ee5a1",
-  "commits": [],
+  "commits": ["7dcd49ee"],
   "sources": [
     { "path": "packages/ui/src/drawer.tsx" },
     { "path": "packages/ui/src/modal.tsx" },
