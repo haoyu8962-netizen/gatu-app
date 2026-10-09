@@ -6272,8 +6272,12 @@ msgstr "合约盈亏"
 #~ msgstr "无法在此设备上保存手机访问权限。请检查浏览器存储后重试。"
 
 #: src/components/trade/components/mobile-agent-ended-notifier.tsx
-msgid "Phone access ended"
-msgstr "手机访问已结束"
+#~ msgid "Phone access ended"
+#~ msgstr "手机访问已结束"
+
+#: src/components/trade/components/mobile-agent-ended-notifier.tsx
+msgid "Phone access ended for {account}"
+msgstr "{account} 的手机访问已结束"
 
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "Phone access is ready, but the temporary QR copy could not be cleared. Close this tab and clear this site's data."
@@ -9374,6 +9378,10 @@ msgstr "钱包会话未能关闭，但本地交易密钥已移除。请再次断
 msgid "There are no unclaimed rewards available to claim."
 msgstr "没有未领取奖励可供领取。"
 
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "This account already has {count} named API wallets and none of them is a mobile key. Hyperliquid allows {limit} (more with sub-accounts or higher trading volume), so this approval may be rejected. If it is, remove one you no longer use:"
+msgstr "此账户已有 {count} 个命名 API 钱包，其中没有移动密钥。Hyperliquid 允许 {limit} 个（有子账户或成交量更高时更多），因此这次授权可能被拒绝。如果被拒绝，请先移除一个不再使用的："
+
 #: src/lib/errors/action-error.ts
 msgid "This account already has a referral code and cannot apply another one."
 msgstr "此账户已绑定推荐码，无法再绑定其他推荐码。"
@@ -9383,8 +9391,8 @@ msgid "This account already has the {limit} named API wallets its trading volume
 msgstr "该账户的命名 API 钱包已达到其成交量允许的 {limit} 个上限。请先在 API 钱包页面移除一个，再授权新的。"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "This account already uses the {limit} named API wallets Hyperliquid allows, and none of them is a mobile key, so the approval will be rejected unless your trading volume allows more. Remove one you no longer use first:"
-msgstr "此账户已占满 Hyperliquid 允许的 {limit} 个命名 API 钱包，且其中没有移动密钥；除非你的成交量提高了上限，否则授权会被拒绝。请先移除一个不再使用的："
+#~ msgid "This account already uses the {limit} named API wallets Hyperliquid allows, and none of them is a mobile key, so the approval will be rejected unless your trading volume allows more. Remove one you no longer use first:"
+#~ msgstr "此账户已占满 Hyperliquid 允许的 {limit} 个命名 API 钱包，且其中没有移动密钥；除非你的成交量提高了上限，否则授权会被拒绝。请先移除一个不再使用的："
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
 #: src/lib/errors/action-error.ts

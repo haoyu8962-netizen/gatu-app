@@ -1,16 +1,26 @@
 import { Trans } from "@lingui/react/macro";
-import { subscribeMobileAgentEnded } from "@sairn/hl-react";
-import { useEffect } from "react";
+import { subscribeMobileAgentEnded, useHyperliquid } from "@sairn/hl-react";
+import { useEffect, useRef } from "react";
 import { toast } from "sonner";
+import { shortenAddress } from "@/lib/format";
 
-const MOBILE_AGENT_ENDED_TOAST_ID = "mobile-agent-ended";
+const MOBILE_AGENT_ENDED_TOAST_PREFIX = "mobile-agent-ended";
 
 export function MobileAgentEndedNotifier() {
+	const { clientKey, env, sessionMode } = useHyperliquid();
+	const envRef = useRef(env);
+	envRef.current = env;
+	const shownRef = useRef<{ id: string; env: string } | null>(null);
+
 	useEffect(
 		() =>
-			subscribeMobileAgentEnded(() => {
-				toast.warning(<Trans>Phone access ended</Trans>, {
-					id: MOBILE_AGENT_ENDED_TOAST_ID,
+			subscribeMobileAgentEnded((event) => {
+				if (event.env !== envRef.current) return;
+				const id = `${MOBILE_AGENT_ENDED_TOAST_PREFIX}:${event.env}:${event.owner.toLowerCase()}`;
+				const account = shortenAddress(event.owner);
+				shownRef.current = { id, env: event.env };
+				toast.warning(<Trans>Phone access ended for {account}</Trans>, {
+					id,
 					description: (
 						<Trans>
 							The desktop-approved key expired or was replaced from desktop. Scan a new QR from Link mobile device.
@@ -22,6 +32,14 @@ export function MobileAgentEndedNotifier() {
 			}),
 		[],
 	);
+
+	useEffect(() => {
+		const shown = shownRef.current;
+		if (!shown) return;
+		if (shown.env === env && !(sessionMode === "agent-only" && clientKey !== "disconnected")) return;
+		toast.dismiss(shown.id);
+		shownRef.current = null;
+	}, [clientKey, env, sessionMode]);
 
 	return null;
 }

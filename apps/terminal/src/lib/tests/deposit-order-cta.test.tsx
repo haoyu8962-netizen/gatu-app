@@ -153,7 +153,7 @@ describe("Deposit order CTA", () => {
 		const desktop = renderDesktop(input);
 		expect(desktop).toMatchObject({ text: "Enable Trading", disabled: true, disabledReason: reason });
 
-		const mobile = getMobileOrderButtonContent({
+		const mobileInput = {
 			...input,
 			hasBalanceError: false,
 			isBalanceLoading: false,
@@ -163,8 +163,13 @@ describe("Deposit order CTA", () => {
 			onApprove: input.onRegister,
 			onConnect: input.onConnectWallet,
 			labels: { connect: "Connect Wallet", deposit: "Deposit", enableTrading: "Enable Trading", signing: "Signing..." },
+		};
+		expect(getMobileOrderButtonContent(mobileInput)).toMatchObject({
+			text: "Enable Trading",
+			disabled: true,
+			disabledReason: reason,
 		});
-		expect(mobile).toMatchObject({ text: "Enable Trading", disabled: true, disabledReason: reason });
+		expect(getMobileOrderButtonContent({ ...mobileInput, canApprove: true }).disabledReason).toBeUndefined();
 		expect(renderDesktop({ ...input, canApprove: true }).disabledReason).toBeUndefined();
 	});
 

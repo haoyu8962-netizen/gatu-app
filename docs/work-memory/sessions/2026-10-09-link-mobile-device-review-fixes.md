@@ -86,7 +86,7 @@
 
 ### 实施
 
-见 [ADR 0039](../adr/0039-link-mobile-device-builder-fee-and-session-priority.md)「决策」。文档同步了以下文件：
+见 [ADR 0039](../../adr/0039-link-mobile-device-builder-fee-and-session-priority.md)「决策」。文档同步了以下文件：
 
 - `AGENTS.md`：签名契约新增导入密钥优先一条；首次交易契约写明关联手机从不批准 builder fee；移动连接契约；回归清单。
 - `docs/trading-onboarding.md`、`docs/hyperliquid-signing.md`、`docs/mobile-data-presentation.md`（表格两行）、`docs/runtime-guardrails.md` §1、`docs/mobile-phone-access-device-validation.md`（Setup 第 3 步）。
@@ -96,7 +96,9 @@
 
 ## 验证与限制
 
-以下检查都在提交前的工作区上运行（2026-10-09，基线 `805ee5a1`，本机 Node 22.13.0，除非另有说明）。
+### 首批修复（提交 `bdf73939` 之前的工作区）
+
+以下检查都在这个提交之前的工作区上运行（2026-10-09，基线 `805ee5a1`，本机 Node 22.13.0，除非另有说明）。计数只适用于这一版；之后的追加修改见下面两小节。
 
 - `pnpm typecheck`（hl-react、ui、terminal）通过。`pnpm exec biome check` 对 52 个改动或新增的 TS/TSX/JSON 文件通过。`git diff --check` 通过。
 - 全量 `vitest run --maxWorkers=4`（terminal）：673 个文件、8,898 项，6 项失败。
@@ -122,13 +124,35 @@
   - 浏览器（Playwright）套件、生产构建与包体测量；
   - 真机清单 RD-1 到 RD-3；
   - 真实钱包的手机 Agent 签名与手机首单；
-  - Codex 对抗审查（本轮用户未要求）。
+  - Codex 对抗审查（当时用户未要求；之后的审查见下文）。
+
+### 撤回 builder fee 步骤（提交 `72768c6f` 之前的工作区）
+
+- `pnpm --filter @sairn/terminal typecheck` 与 `biome check`（直接调用 `./node_modules/.bin/biome`）通过；`git diff --check` 通过。
+- 10 个文件 356 项通过：`mobile-agent-sync-modal`（17）、`trading-action-button`、`deposit-order-cta` 与 i18n、Lingui 辅助函数、状态动效、按钮进度文案、弹窗提示圆角、弹窗表面、移动数据展示七个契约。
+- 在开发服务器上用 Chrome 实测邮箱账户：弹窗没有 builder 按钮，授权按钮置灰，`aria-describedby` 指向激活说明（只用元素引用点击，没有点签名按钮）。
+
+### 共用 `Mobile QR` 名字与名额检查（提交 `9ba297f4` 之前的工作区）
+
+- `pnpm typecheck` 与 `biome check` 通过；`git diff --check` 通过。
+- 12 个文件 195 项通过（关联手机、Agent 存储与校验、`hl-react-exports`），其中 `mobile-agent-sync-modal` 为 19 项，新增 2 项名额提示用例。
+- 钱包与签名、关联手机、i18n、弹窗与移动数据展示等回归组，34 个文件 884 项通过。
+- 用 Node 22.15 的 `--experimental-strip-types` 在内存里加载 `mobile-agent.ts`，对真实账户的 `extraAgents` 运行 `getMobileAgentSlotState`：当时该账户只剩 `gatu` 与 `Mobile QR`，结果为 `replaces`；构造 3 个其他名字得到满额；审批名为 `Mobile QR valid_until <ms>`，名字本体 9 个字符。
+- 「名额已满」提示没有在浏览器里看到：外部钱包会话在隐藏的内置浏览器面板里不渲染，Chrome 里的邮箱账户没有命名钱包且未激活交易。
+
+### Codex 对抗审查
+
+`gpt-6-astra`、medium、只读沙箱、三路并行（V 行为与安全、B 规范与记录、C 遗漏与变异），审查范围 `805ee5a1..HEAD`。
+
+| 轮次 | V | B | C | 主要发现与处理 |
+| --- | --- | --- | --- | --- |
+| 1（审 `9ba297f4`） | 8.3 | 8.0 | 6.8 | 名额提示可能用到刷新中的旧缓存（V、B）→ 每次打开显式请求、只用本次结果；「3 个就满」忽略子账户与成交量（V）→ `limitReached` + 条件句；Agent-only 时账户菜单显示被屏蔽的 Privy 邮箱（C，P1）→ 改显示 owner 地址；CI 显式清单漏掉 12 个改动的测试文件（C）→ 补进清单并钉住；结束通知无身份归属（C）→ 写明账户、跨网络或新会话时撤下；桌面账户面板 Agent-only 隐藏资金按钮（C）→ 置灰加原因；验证计数未跟上最后一个提交、ADR 链接路径错误（B）→ 按提交拆分验证小节、改为 `../../adr/`；4 个变异存活点（未知 builder 应答、查询参数、通知呈现、手机按钮 `canApprove=true`）→ 补测试 |
 
 ## 后续与替代关系
 
 - 真机清单 RD-1 到 RD-3 仍是 Not run。生产开关 `VITE_MOBILE_PAIRING_ENABLED` 继续关闭。准备步骤要求先在电脑端存款并下一笔单。
 - 读屏用户无法完成「按住 2 秒」：键盘可以，VoiceOver / TalkBack 只发送点击。需要另一种显示方式的设计决定。
 - 提交途中关闭弹窗：交易所可能已经替换旧手机的密钥，而界面丢掉了新密钥。重新打开后还可能出现两次钱包提示。
-- 命名 Agent 上限：签名前不检查。可以考虑按 `extraAgents` 数量给出提示，但上限按成交量变化，不能硬性拦截。
+- 命名 Agent 上限：已由 `9ba297f4` 处理（签名前只读检查、只提示不拦截，ADR 0039 决策 6）。
 - QR 密度：可以缩短载荷，并按设备像素比渲染。
 - 弹窗跨 1000px 时会重新挂载，签名会被中断。

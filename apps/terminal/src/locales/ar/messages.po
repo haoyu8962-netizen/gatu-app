@@ -6272,7 +6272,11 @@ msgstr "أرباح وخسائر العقود الدائمة"
 #~ msgstr "تعذر حفظ وصول الهاتف على هذا الجهاز. تحقق من تخزين المتصفح وأعد المحاولة."
 
 #: src/components/trade/components/mobile-agent-ended-notifier.tsx
-msgid "Phone access ended"
+#~ msgid "Phone access ended"
+#~ msgstr ""
+
+#: src/components/trade/components/mobile-agent-ended-notifier.tsx
+msgid "Phone access ended for {account}"
 msgstr ""
 
 #: src/routes/mobile-agent-sync.tsx
@@ -9374,6 +9378,10 @@ msgstr "تعذر إغلاق جلسة المحفظة، لكن تمت إزالة �
 msgid "There are no unclaimed rewards available to claim."
 msgstr "لا توجد مكافآت غير مطالب بها متاحة للمطالبة."
 
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "This account already has {count} named API wallets and none of them is a mobile key. Hyperliquid allows {limit} (more with sub-accounts or higher trading volume), so this approval may be rejected. If it is, remove one you no longer use:"
+msgstr ""
+
 #: src/lib/errors/action-error.ts
 msgid "This account already has a referral code and cannot apply another one."
 msgstr "لدى هذا الحساب رمز إحالة بالفعل، ولا يمكنه تطبيق رمز آخر."
@@ -9383,8 +9391,8 @@ msgid "This account already has the {limit} named API wallets its trading volume
 msgstr ""
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "This account already uses the {limit} named API wallets Hyperliquid allows, and none of them is a mobile key, so the approval will be rejected unless your trading volume allows more. Remove one you no longer use first:"
-msgstr ""
+#~ msgid "This account already uses the {limit} named API wallets Hyperliquid allows, and none of them is a mobile key, so the approval will be rejected unless your trading volume allows more. Remove one you no longer use first:"
+#~ msgstr ""
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
 #: src/lib/errors/action-error.ts

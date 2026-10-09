@@ -4,6 +4,7 @@ import {
 	createMobileAgentApproval,
 	getMobileAgentSlotState,
 	type MobileAgentApproval,
+	type MobileAgentSlotState,
 	NAMED_AGENT_DOCUMENTED_LIMIT,
 } from "@sairn/hl-react/signing/mobile-agent";
 import { AdaptiveModal, Button, ModalContent, ModalDescription, ModalFooter, ModalHeader, ModalTitle } from "@sairn/ui";
@@ -120,15 +121,27 @@ function MobileAgentSyncDialog({
 	const canApprove = MOBILE_PAIRING_FEATURES.enabled && hasWalletAccess && !!walletAddress;
 	const isBusy = state.status === "signing";
 	const accountNotActivated = tradingStatus.needsBuilderFee;
+	const slotCheckEnabled = open && canApprove;
 	const extraAgentsQuery = useInfo(
 		"extraAgents",
 		{ user: walletAddress ?? "" },
-		{ enabled: open && canApprove, requestTimeoutMs: 10_000, retry: false },
+		{ enabled: false, requestTimeoutMs: 10_000, retry: false },
 	);
-	const slotState =
-		extraAgentsQuery.isSuccess && Array.isArray(extraAgentsQuery.data)
-			? getMobileAgentSlotState(extraAgentsQuery.data)
-			: null;
+	const refetchExtraAgents = extraAgentsQuery.refetch;
+	const [slotCheck, setSlotCheck] = useState<MobileAgentSlotState | null>(null);
+
+	useEffect(() => {
+		if (!slotCheckEnabled) return;
+		let current = true;
+		void refetchExtraAgents().then((result) => {
+			if (!current || !result.isSuccess || !Array.isArray(result.data)) return;
+			setSlotCheck(getMobileAgentSlotState(result.data));
+		});
+		return () => {
+			current = false;
+			setSlotCheck(null);
+		};
+	}, [slotCheckEnabled, refetchExtraAgents]);
 
 	async function handleApprove() {
 		if (!canApprove || !walletAddress || isBusy) return;
@@ -192,7 +205,7 @@ function MobileAgentSyncDialog({
 
 	function getApproveHintId() {
 		if (accountNotActivated) return activationHintId;
-		if (slotState?.status === "full") return slotsHintId;
+		if (slotCheck?.status === "limitReached") return slotsHintId;
 		return undefined;
 	}
 
@@ -247,10 +260,10 @@ function MobileAgentSyncDialog({
 						</Trans>
 					</p>
 				)}
-				{canApprove && showsApproveButton && !accountNotActivated && slotState?.status === "full" && (
+				{canApprove && showsApproveButton && !accountNotActivated && slotCheck?.status === "limitReached" && (
 					<NamedSlotsFullNotice
 						id={slotsHintId}
-						namedAgents={slotState.namedAgents}
+						namedAgents={slotCheck.namedAgents}
 						onOpenApiWallets={() => handleOpenChange(false)}
 					/>
 				)}
@@ -315,6 +328,7 @@ function NamedSlotsFullNotice({
 	const { i18n } = useLingui();
 	const locale = i18n.locale;
 	const limit = NAMED_AGENT_DOCUMENTED_LIMIT;
+	const count = namedAgents.length;
 
 	return (
 		<div
@@ -325,9 +339,9 @@ function NamedSlotsFullNotice({
 			<div className="min-w-0 flex-1 space-y-2">
 				<p>
 					<Trans>
-						This account already uses the {limit} named API wallets Hyperliquid allows, and none of them is a mobile
-						key, so the approval will be rejected unless your trading volume allows more. Remove one you no longer use
-						first:
+						This account already has {count} named API wallets and none of them is a mobile key. Hyperliquid allows{" "}
+						{limit} (more with sub-accounts or higher trading volume), so this approval may be rejected. If it is,
+						remove one you no longer use:
 					</Trans>
 				</p>
 				<ul className="space-y-1">

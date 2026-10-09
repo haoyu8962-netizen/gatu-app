@@ -446,10 +446,12 @@ the product decisions and the official comparison are in
   Hyperliquid stores the parsed name `Mobile QR`, the same name the official
   terminal's Link Mobile Device approves, and deregisters a named agent when an
   approval reuses its name, so a phone linked here or there takes one shared
-  named slot. Before signing, the dialog reads `extraAgents` once: when every
-  documented named slot (3) is taken by active agents and none is `Mobile QR`,
-  it lists them with their expiry and links to the API Wallet page, without
-  blocking the approval because the limit can grow with trading volume
+  named slot. Each time the dialog opens it fetches `extraAgents` once and uses
+  only that answer: when the documented base limit of 3 active named agents is
+  reached and none is `Mobile QR`, it says the approval may be rejected, lists
+  them with their expiry and links to the API Wallet page, without blocking the
+  approval because sub-accounts (2 more each) and trading volume raise the
+  limit
   (`getMobileAgentSlotState`, ADR 0039)
   (`packages/hl-react/src/signing/mobile-agent.ts`, `MOBILE_AGENT_VALIDITY_MS`).
   Approval is the dialog's single explicit action; the dialog never signs a

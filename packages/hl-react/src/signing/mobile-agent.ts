@@ -10,7 +10,7 @@ import type { AgentWallet } from "./types";
  */
 export const MOBILE_AGENT_NAME_BASE = "Mobile QR";
 export const MOBILE_AGENT_VALIDITY_MS = 30 * 24 * 60 * 60 * 1000;
-/** Exchange endpoint docs: one unnamed and up to 3 named API wallets per account (more may come with volume). */
+/** Exchange endpoint docs: one unnamed and up to 3 named API wallets per account, plus 2 named per sub-account; the exchange also raises it with trading volume. */
 export const NAMED_AGENT_DOCUMENTED_LIMIT = 3;
 
 const VALID_UNTIL_SUFFIX_RE = / valid_until \d+$/u;
@@ -272,16 +272,18 @@ export function shouldClearMobileAgent(verification: MobileAgentVerification): b
 export type MobileAgentSlotState =
 	| { status: "replaces"; current: ExtraAgentsResponse[number] }
 	| { status: "available" }
-	| { status: "full"; namedAgents: ExtraAgentsResponse };
+	| { status: "limitReached"; namedAgents: ExtraAgentsResponse };
 
 /**
  * Read-only check before a Mobile Agent approval: an active agent with the Mobile name is replaced
  * in place; otherwise the approval needs a free named slot. Expired agents no longer hold a slot.
+ * `limitReached` only means the documented base limit is used up: sub-accounts and trading volume
+ * can raise the real limit, so callers must not treat it as a certain rejection.
  */
 export function getMobileAgentSlotState(extraAgents: ExtraAgentsResponse, nowMs = Date.now()): MobileAgentSlotState {
 	const activeAgents = extraAgents.filter((agent) => agent.validUntil === null || agent.validUntil > nowMs);
 	const current = activeAgents.find((agent) => agent.name === MOBILE_AGENT_NAME_BASE);
 	if (current) return { status: "replaces", current };
-	if (activeAgents.length >= NAMED_AGENT_DOCUMENTED_LIMIT) return { status: "full", namedAgents: activeAgents };
+	if (activeAgents.length >= NAMED_AGENT_DOCUMENTED_LIMIT) return { status: "limitReached", namedAgents: activeAgents };
 	return { status: "available" };
 }

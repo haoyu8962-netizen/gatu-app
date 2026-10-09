@@ -139,6 +139,13 @@ jobs:
           src/lib/tests/owner-trading-signer.test.tsx
           src/lib/tests/privy-agent-signer.test.ts
           src/lib/tests/lambda-handler.test.ts
+          src/lib/tests/agent-session.test.ts
+          src/lib/tests/agent-registration-session.test.ts
+          src/lib/tests/agent-snapshot-cache.test.ts
+          src/lib/tests/use-agent-status-mobile-ended.test.tsx
+          src/lib/tests/mobile-agent-ended-notifier.test.tsx
+          src/lib/tests/trading-guard-session.test.tsx
+          src/lib/tests/use-privy-owner-signer.test.tsx
 
       - name: Test route provider lifecycles
         working-directory: apps/terminal
@@ -351,6 +358,12 @@ jobs:
           src/lib/tests/use-privy-fiat-funding-offer.test.tsx
           src/lib/tests/use-usdc-routing.test.ts
           src/lib/tests/unit-deposit-info.test.tsx
+          src/lib/tests/api-wallet-view-agent-only.test.tsx
+          src/lib/tests/use-api-wallet-controller.test.tsx
+          src/lib/tests/portfolio-page-agent-only.test.tsx
+          src/lib/tests/referral-dashboard-agent-only.test.tsx
+          src/lib/tests/referral-ui-contract.test.ts
+          src/lib/tests/balances-table-visual-contract.test.ts
 
       # `pnpm test:brand` in the Website and Brand workflow also runs these, but that workflow
       # only starts when the website or a brand asset changes. Terminal changes are covered here.

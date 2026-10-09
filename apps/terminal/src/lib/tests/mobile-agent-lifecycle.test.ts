@@ -91,7 +91,7 @@ describe("mobile agent lifecycle", () => {
 		});
 
 		const full = [agent("old-slot", future), agent("old-slot-dev", null), agent("Mobile", future)];
-		expect(getMobileAgentSlotState(full, NOW_MS)).toEqual({ status: "full", namedAgents: full });
+		expect(getMobileAgentSlotState(full, NOW_MS)).toEqual({ status: "limitReached", namedAgents: full });
 
 		expect(getMobileAgentSlotState([agent("a", future), agent("bb", future), agent("ccc", NOW_MS)], NOW_MS)).toEqual({
 			status: "available",

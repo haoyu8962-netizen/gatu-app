@@ -19,7 +19,8 @@ const IDENTITY_CHANGED = msg`The active wallet or network changed. Review the ac
 const testState = vi.hoisted(() => ({
 	approveAgent: vi.fn(),
 	builderFeeKnown: true,
-	extraAgents: undefined as Array<{ address: string; name: string; validUntil: number | null }> | undefined,
+	extraAgentsCalls: [] as Array<{ params: unknown; options: unknown }>,
+	refetchExtraAgents: vi.fn(),
 	needsBuilderFee: false,
 	refetchBuilderFee: vi.fn(),
 	onOpenChangeComplete: undefined as ((open: boolean) => void) | undefined,
@@ -146,10 +147,10 @@ vi.mock("@tanstack/react-router", () => ({
 }));
 
 vi.mock("@/lib/hyperliquid", () => ({
-	useInfo: () =>
-		testState.extraAgents === undefined
-			? { data: undefined, isSuccess: false }
-			: { data: testState.extraAgents, isSuccess: true },
+	useInfo: (method: string, params: unknown, options: unknown) => {
+		if (method === "extraAgents") testState.extraAgentsCalls.push({ params, options });
+		return { refetch: testState.refetchExtraAgents };
+	},
 	useHyperliquid: () => ({ env: "Mainnet" }),
 	useTradingStatus: () => ({
 		needsBuilderFee: testState.builderFeeKnown && testState.needsBuilderFee,
@@ -207,7 +208,9 @@ describe("MobileAgentSyncModal", () => {
 		testState.approveAgent.mockResolvedValue(undefined);
 		testState.builderFeeKnown = true;
 		testState.needsBuilderFee = false;
-		testState.extraAgents = undefined;
+		testState.extraAgentsCalls.length = 0;
+		testState.refetchExtraAgents.mockReset();
+		testState.refetchExtraAgents.mockResolvedValue({ isSuccess: true, data: [] });
 		testState.refetchBuilderFee.mockReset();
 		testState.refetchBuilderFee.mockImplementation(async () => ({
 			isBuilderFeeReady: testState.builderFeeKnown && !testState.needsBuilderFee,
@@ -482,6 +485,19 @@ describe("MobileAgentSyncModal", () => {
 		expect(container.textContent).toContain("Trading is not activated on this account yet.");
 	});
 
+	it("fails closed without signing when the activation check answers without a definitive result", async () => {
+		await renderModal();
+		testState.refetchBuilderFee.mockResolvedValueOnce({ isBuilderFeeReady: false, needsBuilderFee: false });
+
+		act(() => getButton(container, "Approve mobile trading key").click());
+		await flushAsyncWork();
+
+		expect(testState.approveAgent).not.toHaveBeenCalled();
+		expect(container.querySelector('[role="alert"]')?.textContent).toBe(
+			"Could not check on Hyperliquid whether trading is activated. Nothing was signed. Try again.",
+		);
+	});
+
 	it("fails closed without signing when activation cannot be checked", async () => {
 		await renderModal();
 		testState.refetchBuilderFee.mockRejectedValueOnce(new Error("network"));
@@ -514,39 +530,77 @@ describe("MobileAgentSyncModal", () => {
 		expect(new URL(secondUrl).pathname).toBe(new URL(firstUrl).pathname);
 		expect(testState.approveAgent).toHaveBeenCalledTimes(1);
 	});
-	it("warns before signing when every named API wallet slot is taken and none is a mobile key", async () => {
-		testState.extraAgents = [
-			{ address: "0x3333333333333333333333333333333333333333", name: "old-slot", validUntil: NOW_MS + 86_400_000 },
-			{ address: "0x4444444444444444444444444444444444444444", name: "old-slot-dev", validUntil: null },
-			{ address: "0x5555555555555555555555555555555555555555", name: "Mobile", validUntil: NOW_MS + 86_400_000 },
-		];
+	it("checks named slots once per open with a bounded, read-only request and warns before signing", async () => {
+		testState.refetchExtraAgents.mockResolvedValue({
+			isSuccess: true,
+			data: [
+				{ address: "0x3333333333333333333333333333333333333333", name: "old-slot", validUntil: NOW_MS + 86_400_000 },
+				{ address: "0x4444444444444444444444444444444444444444", name: "old-slot-dev", validUntil: null },
+				{ address: "0x5555555555555555555555555555555555555555", name: "Mobile", validUntil: NOW_MS + 86_400_000 },
+			],
+		});
 		const onOpenChange = await renderModal();
 
-		expect(container.textContent).toContain("already uses the 3 named API wallets");
+		expect(testState.refetchExtraAgents).toHaveBeenCalledTimes(1);
+		expect(testState.extraAgentsCalls.at(-1)).toEqual({
+			params: { user: USER_ADDRESS },
+			options: { enabled: false, requestTimeoutMs: 10_000, retry: false },
+		});
+		expect(container.textContent).toContain("already has 3 named API wallets and none of them is a mobile key");
+		expect(container.textContent).toContain("more with sub-accounts or higher trading volume");
 		expect(container.textContent).toContain("old-slot-dev");
 		expect(container.textContent).toContain("No expiry");
 		const approveButton = getButton(container, "Approve mobile trading key");
 		expect(approveButton.hasAttribute("disabled")).toBe(false);
 		const hint = document.getElementById(approveButton.getAttribute("aria-describedby") ?? "");
-		expect(hint?.textContent).toContain("Remove one you no longer use first");
+		expect(hint?.textContent).toContain("remove one you no longer use");
 		const link = container.querySelector('a[href="/api-wallet"]');
 		expect(link?.textContent).toBe("Open API Wallet");
 		act(() => (link as HTMLAnchorElement).click());
 		expect(onOpenChange).toHaveBeenCalledWith(false);
 	});
 
-	it("says nothing about slots when the approval replaces the shared mobile slot or the list is not loaded", async () => {
-		testState.extraAgents = [
-			{ address: "0x3333333333333333333333333333333333333333", name: "old-slot", validUntil: NOW_MS + 86_400_000 },
-			{ address: "0x4444444444444444444444444444444444444444", name: "old-slot-dev", validUntil: null },
-			{ address: "0x5555555555555555555555555555555555555555", name: "Mobile QR", validUntil: NOW_MS + 86_400_000 },
-		];
+	it("never shows a slot notice from an earlier open while the next check is still running", async () => {
+		const full = {
+			isSuccess: true,
+			data: [
+				{ address: "0x3333333333333333333333333333333333333333", name: "a", validUntil: null },
+				{ address: "0x4444444444444444444444444444444444444444", name: "b", validUntil: null },
+				{ address: "0x5555555555555555555555555555555555555555", name: "c", validUntil: null },
+			],
+		};
+		testState.refetchExtraAgents.mockResolvedValueOnce(full);
+		const onOpenChange = await renderModal();
+		expect(container.textContent).toContain("named API wallets");
+
+		await renderModal(onOpenChange, false);
+		testState.refetchExtraAgents.mockImplementationOnce(() => new Promise(() => {}));
+		await renderModal(onOpenChange, true);
+		expect(testState.refetchExtraAgents).toHaveBeenCalledTimes(2);
+		expect(container.textContent).not.toContain("named API wallets");
+	});
+
+	it("says nothing about slots when the approval replaces the shared mobile slot, the check fails or is not allowed", async () => {
+		testState.refetchExtraAgents.mockResolvedValue({
+			isSuccess: true,
+			data: [
+				{ address: "0x3333333333333333333333333333333333333333", name: "old-slot", validUntil: NOW_MS + 86_400_000 },
+				{ address: "0x4444444444444444444444444444444444444444", name: "old-slot-dev", validUntil: null },
+				{ address: "0x5555555555555555555555555555555555555555", name: "Mobile QR", validUntil: NOW_MS + 86_400_000 },
+			],
+		});
 		await renderModal();
 		expect(container.textContent).not.toContain("named API wallets");
 
-		testState.extraAgents = undefined;
-		await renderModal();
+		testState.refetchExtraAgents.mockResolvedValue({ isSuccess: false, data: undefined });
+		await renderModal(vi.fn(), false);
+		await renderModal(vi.fn(), true);
 		expect(container.textContent).not.toContain("named API wallets");
 		expect(getButton(container, "Approve mobile trading key").getAttribute("aria-describedby")).toBeNull();
+
+		testState.refetchExtraAgents.mockClear();
+		testState.hasWalletAccess = false;
+		await renderModal();
+		expect(testState.refetchExtraAgents).not.toHaveBeenCalled();
 	});
 });
