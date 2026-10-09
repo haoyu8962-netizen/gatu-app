@@ -1,5 +1,5 @@
-import { readFileSync } from "node:fs";
-import { dirname, resolve } from "node:path";
+import { readdirSync, readFileSync } from "node:fs";
+import { dirname, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { drawerContentVariants, modalPopupVariants, tooltipPopupVariants } from "@sairn/ui";
 import { describe, expect, it } from "vitest";
@@ -23,6 +23,10 @@ const TOKEN_SELECTOR_POPUP_SOURCE = readTerminalComponent("trade/chart/token-sel
 const MOBILE_AGENT_QR_SCANNER_SOURCE = readTerminalComponent("trade/components/mobile-agent-qr-scanner.tsx");
 const LANGUAGE_SWITCHER_SOURCE = readTerminalComponent("trade/header/language-switcher.tsx");
 const TRADING_DROPDOWN_SOURCE = readFileSync(resolve(TEST_DIR, "../..", "lib/ui/trading-dropdown.ts"), "utf8");
+const UI_MODAL_SOURCE = readFileSync(resolve(TEST_DIR, "../../../../..", "packages/ui/src/modal.tsx"), "utf8");
+const UI_DRAWER_SOURCE = readFileSync(resolve(TEST_DIR, "../../../../..", "packages/ui/src/drawer.tsx"), "utf8");
+// The market selector popover opens without a scrim on purpose (design-tokens.md, bg-overlay).
+const OVERLAY_OVERRIDE_EXCEPTIONS = new Set(["trade/chart/token-selector-popup.tsx"]);
 
 describe("modal surface contract", () => {
 	it("uses the dedicated modal surface for blocking overlays", () => {
@@ -125,14 +129,45 @@ describe("modal surface contract", () => {
 		expect(readCssVariable(TERMINAL_THEME_CSS, "@theme inline", "--color-modal")).toBe("var(--bg-modal)");
 	});
 
-	it("keeps the terminal dark overlay and scrim in the terminal hue family instead of the shared navy defaults", () => {
+	it("keeps the terminal dark raised overlay in the terminal hue family and the scrims on the official values", () => {
 		expect(readCssVariable(SHARED_THEME_CSS, ".dark", "--bg-overlay")).toBe("#292b33");
 		expect(readCssVariable(SHARED_THEME_CSS, ".dark", "--fill-overlay")).toBe("#000626a8");
+		expect(readCssVariable(SHARED_THEME_CSS, ".dark", "--fill-overlay-sheet")).toBe("#000626bf");
+		expect(readCssVariable(SHARED_THEME_CSS, "@theme inline", "--color-scrim-sheet")).toBe("var(--fill-overlay-sheet)");
 
 		expect(readCssVariable(TERMINAL_THEME_CSS, ".dark", "--bg-overlay")).toBe("#212d33");
-		expect(readCssVariable(TERMINAL_THEME_CSS, ".dark", "--fill-overlay")).toBe("#03090ca8");
+		// app.hyperliquid.xyz: rgba(15, 18, 29, 0.6) behind a centred modal, rgba(15, 18, 29, 0.75) behind a phone sheet.
+		expect(readCssVariable(TERMINAL_THEME_CSS, ".dark", "--fill-overlay")).toBe("#0f121d99");
+		expect(readCssVariable(TERMINAL_THEME_CSS, ".dark", "--fill-overlay-sheet")).toBe("#0f121dbf");
+		expect(readCssVariable(TERMINAL_THEME_CSS, ":root", "--fill-overlay")).toBe("#000d4d99");
+		expect(readCssVariable(TERMINAL_THEME_CSS, ":root", "--fill-overlay-sheet")).toBe("#000d4dbf");
 		expect(readCssVariable(TERMINAL_THEME_CSS, "@theme inline", "--color-overlay")).toBe("var(--bg-overlay)");
 		expect(readCssVariable(TERMINAL_THEME_CSS, "@theme inline", "--color-scrim")).toBe("var(--fill-overlay)");
+		expect(readCssVariable(TERMINAL_THEME_CSS, "@theme inline", "--color-scrim-sheet")).toBe(
+			"var(--fill-overlay-sheet)",
+		);
+	});
+
+	it("lets the primitives own the scrim, the blur and the phone sheet edge", () => {
+		expect(UI_MODAL_SOURCE).toContain("fixed inset-0 bg-scrim backdrop-blur-[2px]");
+		expect(UI_DRAWER_SOURCE).toContain("fixed inset-0 z-50 bg-scrim-sheet ");
+		expect(UI_DRAWER_SOURCE).not.toContain("backdrop-blur");
+		expect(drawerContentVariants({ side: "bottom" })).toContain("border-0");
+		expect(drawerContentVariants({ side: "bottom" })).toContain("rounded-t-32");
+		expect(drawerContentVariants({ side: "right" })).not.toContain("border-0");
+		expect(modalPopupVariants()).toContain("border border-stroke-weak");
+
+		const offenders: string[] = [];
+		for (const file of listTerminalComponents()) {
+			const source = readTerminalComponent(file);
+			if (OVERLAY_OVERRIDE_EXCEPTIONS.has(file)) continue;
+			for (const match of source.matchAll(/overlayClassName=(?:"([^"]*)"|\{[^}]*\})/g)) {
+				const value = match[1] ?? match[0];
+				if (/scrim|backdrop-blur/.test(value)) offenders.push(`${file}: ${match[0]}`);
+			}
+			if (/!border-0/.test(source)) offenders.push(`${file}: !border-0`);
+		}
+		expect(offenders).toEqual([]);
 	});
 
 	it("keeps market-close status colors exact while separating action and focus roles", () => {
@@ -181,6 +216,20 @@ function readCssVariable(source: string, selector: string, variable: string): st
 
 	const declaration = new RegExp(`${variable}:\\s*([^;]+);`).exec(source.slice(blockStart + 1, blockEnd));
 	return declaration?.[1]?.trim();
+}
+
+function listTerminalComponents(): string[] {
+	const files: string[] = [];
+	const walk = (dir: string) => {
+		for (const entry of readdirSync(dir, { withFileTypes: true })) {
+			const full = resolve(dir, entry.name);
+			if (entry.isDirectory()) walk(full);
+			else if (entry.name.endsWith(".tsx") && !full.includes("__tests__"))
+				files.push(relative(TERMINAL_COMPONENTS_DIR, full));
+		}
+	};
+	walk(TERMINAL_COMPONENTS_DIR);
+	return files.sort();
 }
 
 function readTerminalComponent(relativePath: string): string {

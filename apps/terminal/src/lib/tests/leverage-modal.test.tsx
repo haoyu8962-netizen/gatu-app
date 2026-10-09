@@ -191,10 +191,10 @@ describe("LeverageModal", () => {
 		expect(onApply).toHaveBeenCalledWith(6);
 	});
 
-	it("uses the trading scrim and market-close typography on the popup only", () => {
+	it("uses the shared scrim and market-close typography on the popup only", () => {
 		renderModal();
 
-		expect(modalHarness.popupOverlayClassName).toBe("bg-trading-panel-scrim");
+		expect(modalHarness.popupOverlayClassName).toBe("");
 		expect(modalHarness.popupClassName).toContain("font-market-close");
 	});
 

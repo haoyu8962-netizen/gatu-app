@@ -286,12 +286,16 @@ describe("useDeposit fresh USDC route guard", () => {
 	});
 
 	function Probe({
+		balanceEnabled = false,
+		balancePollIntervalMs,
 		executionScope = "manual",
 		mode,
 		route = "bridge",
 		sponsoredReadinessEnabled = false,
 		walletAddress = WALLET_ADDRESS,
 	}: {
+		balanceEnabled?: boolean;
+		balancePollIntervalMs?: number;
 		executionScope?: "automatic" | "manual";
 		mode: "smart" | "wallet";
 		route?: "bridge" | "cctp";
@@ -299,7 +303,8 @@ describe("useDeposit fresh USDC route guard", () => {
 		walletAddress?: `0x${string}`;
 	}) {
 		capturedDeposit = useDeposit({
-			balanceEnabled: false,
+			balanceEnabled,
+			balancePollIntervalMs,
 			executionScope,
 			mode,
 			depositRoute: route,
@@ -1965,5 +1970,44 @@ describe("useDeposit fresh USDC route guard", () => {
 
 		expect(testState.permitSign).toHaveBeenCalledOnce();
 		expect(testState.smartSendTransaction).toHaveBeenCalledOnce();
+	});
+	it("keeps the shown balance while a poll refreshes it in the background", async () => {
+		const balanceRequests: Array<(raw: bigint) => void> = [];
+		vi.stubGlobal(
+			"fetch",
+			vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+				const body = typeof init?.body === "string" ? (JSON.parse(init.body) as { method?: string }) : null;
+				if (body?.method !== "eth_call") throw new Error("Unexpected request");
+				const raw = await new Promise<bigint>((resolve) => balanceRequests.push(resolve));
+				return new Response(JSON.stringify({ result: `0x${raw.toString(16)}` }), { status: 200 });
+			}),
+		);
+
+		act(() => {
+			root.render(
+				createElement(
+					QueryClientProvider,
+					{ client: queryClient },
+					createElement(Probe, { balanceEnabled: true, balancePollIntervalMs: 50, mode: "smart" }),
+				),
+			);
+		});
+		await vi.waitFor(() => expect(balanceRequests).toHaveLength(1));
+		expect(capturedDeposit?.balanceStatus).toBe("loading");
+		expect(capturedDeposit?.maxDepositRaw).toBeUndefined();
+
+		await act(async () => balanceRequests[0]?.(5_000_000n));
+		expect(capturedDeposit?.balanceStatus).toBe("success");
+		expect(capturedDeposit?.maxDepositRaw).toBe(5_000_000n);
+
+		await vi.waitFor(() => expect(balanceRequests.length).toBeGreaterThanOrEqual(2));
+		expect(capturedDeposit?.balanceStatus).toBe("success");
+		expect(capturedDeposit?.maxDepositRaw).toBe(5_000_000n);
+		expect(capturedDeposit?.balance).toBe("5");
+
+		const newest = balanceRequests.length;
+		await act(async () => balanceRequests[newest - 1]?.(7_000_000n));
+		expect(capturedDeposit?.balanceStatus).toBe("success");
+		expect(capturedDeposit?.maxDepositRaw).toBe(7_000_000n);
 	});
 });

@@ -26,8 +26,7 @@ export function PositionRiskDialogShell({
 			showClose={false}
 			showHandle={isMobile && dismissible}
 			handleClassName="top-2 h-1 w-9 !rounded-[2px] bg-market-close-stroke-input"
-			overlayClassName="!bg-scrim/60 !backdrop-blur-none"
-			className="font-market-close max-[1000px]:max-h-[calc(100dvh-1rem)] max-[1000px]:!rounded-t-[18px] max-[1000px]:!border-0 max-[1000px]:!bg-modal max-[1000px]:!shadow-none"
+			className="font-market-close max-[1000px]:max-h-[calc(100dvh-1rem)] max-[1000px]:!rounded-t-[18px] max-[1000px]:!bg-modal max-[1000px]:!shadow-none"
 		>
 			{children}
 		</AdaptiveModal>

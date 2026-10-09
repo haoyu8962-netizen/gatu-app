@@ -299,8 +299,7 @@ export function LegalAcceptanceModal({
 			dismissible={false}
 			presentation={isMobile ? "drawer" : "modal"}
 			layer="blocking"
-			overlayClassName="!bg-trading-panel-scrim !backdrop-blur-none duration-100"
-			className="max-h-[calc(100dvh-1rem)] !rounded-t-[18px] max-[1000px]:!border-0 !shadow-none font-market-close min-[1001px]:!max-w-[30rem] min-[1001px]:!rounded-[16px] min-[1001px]:!border min-[1001px]:!border-market-close-stroke-card min-[1001px]:!shadow-legal-acceptance"
+			className="max-h-[calc(100dvh-1rem)] !rounded-t-[18px] !shadow-none font-market-close min-[1001px]:!max-w-[30rem] min-[1001px]:!rounded-[16px] min-[1001px]:!border min-[1001px]:!border-market-close-stroke-card min-[1001px]:!shadow-legal-acceptance"
 		>
 			{content}
 		</AdaptiveModal>

@@ -52,7 +52,7 @@ const DrawerOverlay = React.forwardRef<HTMLDivElement, DrawerOverlayProps>(({ cl
 	<BaseDrawer.Backdrop
 		ref={ref}
 		className={cn(
-			"fixed inset-0 z-50 bg-scrim transition-opacity duration-200 motion-reduce:transition-none",
+			"fixed inset-0 z-50 bg-scrim-sheet transition-opacity duration-200 motion-reduce:transition-none",
 			"data-starting-style:opacity-0 data-ending-style:opacity-0",
 			className,
 		)}
@@ -82,7 +82,7 @@ const drawerContentVariants = cva(
 					"data-starting-style:-translate-y-full data-ending-style:-translate-y-full",
 				],
 				bottom: [
-					"bottom-0 left-[env(safe-area-inset-left)] right-[env(safe-area-inset-right)] max-h-[85dvh] overflow-y-auto rounded-t-32",
+					"bottom-0 left-[env(safe-area-inset-left)] right-[env(safe-area-inset-right)] max-h-[85dvh] overflow-y-auto rounded-t-32 border-0",
 					"data-starting-style:translate-y-full data-ending-style:translate-y-full",
 				],
 			},

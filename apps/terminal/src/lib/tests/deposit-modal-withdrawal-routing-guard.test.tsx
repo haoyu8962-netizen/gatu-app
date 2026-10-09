@@ -5,11 +5,11 @@ import { i18n, type Messages } from "@lingui/core";
 import { I18nProvider } from "@lingui/react";
 import { ApiRequestError, HttpRequestError } from "@nktkas/hyperliquid";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { act, type ButtonHTMLAttributes, createElement, type ReactNode } from "react";
+import { act, type ButtonHTMLAttributes, createElement, type ReactNode, useSyncExternalStore } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { DepositModalHost } from "@/components/trade/components/deposit-modal-host";
 import { renderFundsModalBackButton } from "@/components/trade/components/funds-modal-back-button";
-import { DepositModal } from "@/components/trade/tradebox/deposit-modal";
 import { AccountAbstractionExecutionError } from "@/hooks/trade/use-account-abstraction-guard";
 import { FundsActionGeoExecutionError } from "@/hooks/trade/use-funds-action-availability";
 import { UsdcDepositRouteError } from "@/hooks/trade/use-usdc-routing";
@@ -64,6 +64,8 @@ const arabicMessages: Messages = Object.fromEntries(
 );
 
 const testState = vi.hoisted(() => ({
+	renderListeners: new Set<() => void>(),
+	renderVersion: 0,
 	formatLocale: "en-US",
 	depositExecutionAmount: null as string | null,
 	accountGuard: vi.fn(),
@@ -509,6 +511,24 @@ vi.mock("@/hooks/trade/use-privy-fiat-funding-offer", () => ({
 
 vi.mock("@/lib/trade/privy-fiat-funding-launch", () => ({ warmPrivyFiatFundingHost }));
 
+// The host memoises the lazy body, so a re-render of the test root no longer reaches it. The stubs
+// below read `testState` during render; this wrapper subscribes the real body to `rerender()`.
+vi.mock("@/components/trade/components/lazy-global-modals", async () => {
+	const { DepositModal } = await import("@/components/trade/tradebox/deposit-modal");
+	return {
+		DepositModal: function RerenderableDepositModal(props: Parameters<typeof DepositModal>[0]) {
+			useSyncExternalStore(
+				(listener) => {
+					testState.renderListeners.add(listener);
+					return () => testState.renderListeners.delete(listener);
+				},
+				() => testState.renderVersion,
+			);
+			return createElement(DepositModal, props);
+		},
+	};
+});
+
 vi.mock("@/components/trade/components/pending-action-modal", () => ({
 	PendingActionModal: ({ children, onOpenChange }: { children?: ReactNode; onOpenChange: (open: boolean) => void }) => {
 		testState.modalOnOpenChange = onOpenChange;
@@ -786,7 +806,7 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 				createElement(
 					QueryClientProvider,
 					{ client: queryClient },
-					createElement(I18nProvider, { i18n }, createElement(DepositModal)),
+					createElement(I18nProvider, { i18n }, createElement(DepositModalHost)),
 				),
 			);
 		});
@@ -805,11 +825,17 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 
 	async function rerender(sessionKey?: string) {
 		await act(async () => {
+			testState.renderVersion += 1;
+			for (const listener of testState.renderListeners) listener();
 			root.render(
 				createElement(
 					QueryClientProvider,
 					{ client: queryClient },
-					createElement(I18nProvider, { i18n }, createElement(DepositModal, sessionKey ? { key: sessionKey } : null)),
+					createElement(
+						I18nProvider,
+						{ i18n },
+						createElement(DepositModalHost, sessionKey ? { key: sessionKey } : null),
+					),
 				),
 			);
 		});

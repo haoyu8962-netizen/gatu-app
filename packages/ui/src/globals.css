@@ -161,6 +161,7 @@
 		--fill-selected: var(--action);
 		--fill-disabled: #0011661a;
 		--fill-overlay: #000d4d73;
+		--fill-overlay-sheet: #000d4dbf;
 		--fill-brand-strong: var(--action);
 		--fill-brand-weak: var(--fill-weak);
 		--fill-error-strong: #c73a3a;
@@ -259,6 +260,7 @@
 		--fill-selected: var(--action);
 		--fill-disabled: #ffffff1f;
 		--fill-overlay: #000626a8;
+		--fill-overlay-sheet: #000626bf;
 		--fill-brand-strong: var(--action);
 		--fill-brand-weak: var(--fill-weak);
 		--fill-error-strong: #ff9c9c;
@@ -377,6 +379,7 @@
 	--color-fill-selected: var(--fill-selected);
 	--color-fill-disabled: var(--fill-disabled);
 	--color-scrim: var(--fill-overlay);
+	--color-scrim-sheet: var(--fill-overlay-sheet);
 	--color-fill-inverse: var(--fill-inverse-strong);
 	--color-fill-inverse-weak: var(--fill-inverse-weak);
 	--color-fill-inverse-hover: var(--fill-inverse-hover);

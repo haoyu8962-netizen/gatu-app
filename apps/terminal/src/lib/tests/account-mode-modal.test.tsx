@@ -129,7 +129,7 @@ describe("AccountModeModal", () => {
 		expect(applyButton?.disabled).toBe(true);
 	});
 
-	it("uses the trading scrim and market-close typography without changing the shared modal", () => {
+	it("uses the shared scrim and market-close typography without changing the shared modal", () => {
 		act(() =>
 			root.render(
 				<I18nProvider i18n={i18n}>
@@ -140,7 +140,8 @@ describe("AccountModeModal", () => {
 
 		const popup = document.body.querySelector<HTMLElement>('[role="dialog"]');
 		expect(popup?.className).toContain("font-market-close");
-		expect(document.body.querySelector(".bg-trading-panel-scrim")).not.toBeNull();
+		expect(document.body.querySelector(".bg-scrim")).not.toBeNull();
+		expect(document.body.querySelector(".bg-trading-panel-scrim")).toBeNull();
 	});
 
 	it("allows only one account-mode mutation and closes at the click without a progress label", async () => {

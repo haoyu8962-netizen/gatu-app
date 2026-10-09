@@ -58,6 +58,11 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Changed
 
+- Every dialog now dims the page behind it the same way, following the official terminal: a phone
+  sheet sits on a stronger navy-dark scrim without a border, and a desktop dialog keeps its thin
+  border on a lighter scrim with a slight blur. Before, each dialog chose its own scrim and the
+  Deposit, Withdraw, order confirmation and position dialogs on phones used a faint one, so in the
+  dark theme they read as part of the page instead of a layer above it.
 - Enable Trading with an external wallet now approves Hyperliquid's unnamed default API wallet,
   as the official terminal does, instead of a named `sairn` API wallet. A named wallet counted
   against the account's limit of named API wallets, which the exchange raises with trading volume
@@ -565,6 +570,10 @@ changes, not evidence that a build has been deployed or accepted on real devices
   Funds and other master-wallet actions on the phone (vaults, referrals, account mode, staking, API
   wallets, portfolio, the desktop account panel and balance rows) are shown disabled with the same
   desktop-required reason instead of being hidden, reconnecting or using other wording (ADR 0039).
+- The Deposit / Withdraw dialog no longer flashes and jumps while it loads on a cold open. Its
+  shell, backdrop and enter transition are now mounted once; only the form loads lazily inside it,
+  on desktop and on the phone sheet. The Arbitrum USDC balance of an email wallet refreshes in the
+  background, so the Deposit button no longer flips to `--` and grey every five seconds.
 
 - The order button no longer asks an external wallet to "Switch to Arbitrum" before Enable
   Trading, and an external wallet on a network the terminal does not list can now enable

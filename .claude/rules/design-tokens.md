@@ -40,7 +40,7 @@ Never cause **literal doubling** of the Tailwind property prefix. If a token is 
 
 > **Terminal dark-theme override**: `apps/terminal/src/styles.css` intentionally sets `bg-background`, `bg-surface`, `bg-alternate`, and `bg-modal` to `#0f1a1f` so the terminal, order book, chart, and blocking dialogs share one continuous background. `bg-overlay` remains a distinct raised color for tooltips, toasts, dropdown menus and selection indicators. Do not restore the shared defaults in the terminal without an explicit design change.
 
-> **Terminal dark hue family**: the terminal's raised overlay (`#212d33`) and modal scrim (`--fill-overlay: #03090ca8`) stay in the same hue family as `#0f1a1f` (≈199°). `#212d33` has the same relative luminance as the shared navy-grey default `#292b33`, so every text and raised-contrast ratio measured against the old value still holds. The shared defaults (`#292b33`, `#000626a8`) are tuned for the shared navy base `#12131a`; using them over the terminal base makes menus read purple-grey and turns the page navy behind an open modal. `modal-surface-contract` pins both pairs.
+> **Terminal dark hue family**: the terminal's raised overlay (`#212d33`) stays in the same hue family as `#0f1a1f` (≈199°) and has the same relative luminance as the shared navy-grey default `#292b33`, so every text and raised-contrast ratio measured against the old value still holds; the shared `#292b33` over the terminal base would make menus read purple-grey. The scrims are the opposite case: because `bg-modal` is the page colour, a same-hue scrim leaves a dialog and the dimmed page almost identical, so since 2026-10-09 the terminal uses the official terminal's navy scrims (`--fill-overlay: #0f121d99`, 60%, behind a centred modal with a 2px blur; `--fill-overlay-sheet: #0f121dbf`, 75%, behind a phone sheet without blur), whose hue shift against the teal page is what makes a dialog read as a layer. The light theme keeps its hue at the same two opacities. `modal-surface-contract` pins the overlay and both scrims.
 
 > **Light mode gotcha**: `bg-background` and `bg-surface` are both `#ffffff` in light mode. Use `bg-sunken` as the container whenever you need a visually distinct inset (e.g. tab switchers, pill groups) so that `bg-surface` children appear elevated.
 
@@ -68,7 +68,7 @@ For **borders / rings / outlines / dividers** using these semantic colors, use t
 - `bg-fill-hover` / `bg-fill-press` interactive state fills
 - `bg-fill-selected` selected state fill (brand color)
 - `bg-fill-disabled` disabled fill
-- `bg-scrim` scrim/backdrop
+- `bg-scrim` scrim behind a centred modal (the `Modal` backdrop adds `backdrop-blur-[2px]`); `bg-scrim-sheet` the stronger scrim behind a `Drawer` sheet, without blur. Dialogs never override either, nor the blur, through `overlayClassName` (`modal-surface-contract`)
 - `bg-fill-inverse` / `bg-fill-inverse-weak` / `bg-fill-inverse-hover` / `bg-fill-inverse-press` / `bg-fill-inverse-disabled` inverse fills
 - `bg-fill` opaque strong fill
 - `bg-white` / `bg-yellow` accent fills

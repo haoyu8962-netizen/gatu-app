@@ -45,13 +45,7 @@ export function AccountModeModal({ open, onOpenChange, ...formProps }: Props) {
 
 	return (
 		<Modal open={open} onOpenChange={onOpenChange}>
-			<ModalPopup
-				size="sm"
-				showClose
-				closeLabel={t`Close`}
-				overlayClassName="bg-trading-panel-scrim"
-				className="max-h-[min(90dvh,42rem)] font-market-close"
-			>
+			<ModalPopup size="sm" showClose closeLabel={t`Close`} className="max-h-[min(90dvh,42rem)] font-market-close">
 				<ModalHeader>
 					<ModalTitle>
 						<Trans>Account type</Trans>
