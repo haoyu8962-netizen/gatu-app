@@ -162,6 +162,10 @@
 - 4 个文件 64 项通过：`trading-activation`（新增 5）、`owner-trading-signer`（11）、`mobile-agent-sync-modal`（25）、`mobile-agent-lifecycle`（23）。
 - 变异（改完均恢复）：激活检查的阈值改成 1、去掉 `Number.isFinite`、`useClients` 去掉 `sessionMode !== "wallet"`、名额到期重算直接返回，各自对应的测试都失败 1 项。
 
+### 第 5 轮修复（提交前的工作区）
+
+- `mobile-agent-sync-modal` 26 项通过（新增 1 项）；删除定时器的上限截断后新用例失败，恢复后通过。
+
 ### Codex 对抗审查
 
 `gpt-6-astra`、medium、只读沙箱、三路并行（V 行为与安全、B 规范与记录、C 遗漏与变异），审查范围 `805ee5a1..HEAD`。
@@ -172,6 +176,7 @@
 | 2（审 `248e5ba2`） | 8.5 | 8.3 | 8.3 | 重新打开时 `refetch()` 复用上次打开的在途请求（V）→ 改为每次打开直接请求 `info.extraAgents`、关闭即中止，补「旧请求晚到」测试并做了删除中止判断的变异（测试失败，恢复后通过）；余额表锁定取决于提示文案、地区原因优先时 Send 可点（B）→ 按 `sessionMode` 锁定，补地区优先测试；`runtime-guardrails.md`、`email-trading-signing.md` 仍写旧优先级与 v4（B）→ 更正，后者与 `trading-onboarding.md` 同节同步；新增原因行用 `market-close-*`（B，P3）→ 改 `trading-panel-*`；「只缺 builder fee」、质押控制器字段未钉住（C）→ 补测试；通知晚到竞态（C，未确认）→ 忽略已被新密钥取代的 owner 的事件并补测试 |
 | 3（审 `0985fb91`） | 8.5 | 8.3 | 7.0 | builder fee 签名前复查也会复用在途查询（V）→ 直接请求 `maxBuilderFee`（`trading-activation.ts`），补超时与非数字响应测试；名额响应未校验格式（B）→ 复用 `isApiWalletExtraAgentSnapshot`，补异常响应测试；质押控制器测试未进 CI（B、C）→ 补进 CI 与回归清单；第 2 轮余额表修复直接显示了被动地区原因（C，P1，我上一轮引入）→ 改用 `getFundsAvailabilityNotice` 过滤，测试改为地区未解析时不显示文字、已确认限制显示；金库控制器 `sessionMode` 接线与扫码器真实导入失败存活（C）→ 补测试并做变异（删除对应代码后测试失败，恢复后通过）；同一 owner 重新导入后旧事件晚到（C，未确认）→ 记为界限 |
 | 4（审 `4100c7d5`） | 9.2 | 8.5 | 8.3 | V 无发现；名额提示不随占用者到期失效（B）→ 在下一个到期时刻重新推导，补测试；AGENTS 回归清单漏两个新测试（B，P3）→ 补上；`useClients` 的 Agent-only 守卫、激活阈值与非有限数未钉住（C）→ 补 `owner-trading-signer` 用例与 `trading-activation` 单测 |
+| 5（审 `997ef5e6`） | 9.3 | 9.3 | 8.5 | V、B 无发现；名额到期定时器的延迟上限截断没有测试（C）→ 补「30 天后到期按上限分段等待、到期后撤下、只请求一次」用例，删除截断的变异使其失败 |
 
 ## 后续与替代关系
 

@@ -627,6 +627,29 @@ describe("MobileAgentSyncModal", () => {
 		expect(testState.extraAgents).toHaveBeenCalledTimes(1);
 	});
 
+	it("waits for a distant expiry in timer-sized steps instead of firing early", async () => {
+		const maxTimerDelayMs = 2_147_483_647;
+		const expiresAt = NOW_MS + 30 * 24 * 60 * 60 * 1000;
+		testState.extraAgents.mockResolvedValue([
+			{ address: "0x3333333333333333333333333333333333333333", name: "a", validUntil: expiresAt },
+			{ address: "0x4444444444444444444444444444444444444444", name: "b", validUntil: null },
+			{ address: "0x5555555555555555555555555555555555555555", name: "c", validUntil: null },
+		]);
+		const setTimeoutSpy = vi.spyOn(window, "setTimeout");
+		await renderModal();
+		expect(container.textContent).toContain("named API wallets");
+		expect(setTimeoutSpy.mock.calls.some(([, delay]) => delay === maxTimerDelayMs)).toBe(true);
+		expect(setTimeoutSpy.mock.calls.every(([, delay]) => (delay ?? 0) <= maxTimerDelayMs)).toBe(true);
+
+		await advanceTime(maxTimerDelayMs);
+		expect(container.textContent).toContain("named API wallets");
+
+		await advanceTime(expiresAt - NOW_MS - maxTimerDelayMs);
+		expect(container.textContent).not.toContain("named API wallets");
+		expect(testState.extraAgents).toHaveBeenCalledTimes(1);
+		setTimeoutSpy.mockRestore();
+	});
+
 	it("treats a malformed slot answer as no answer", async () => {
 		testState.extraAgents.mockResolvedValue([
 			{ validUntil: null },
