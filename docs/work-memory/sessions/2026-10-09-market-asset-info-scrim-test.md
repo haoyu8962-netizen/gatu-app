@@ -7,7 +7,7 @@
   "kind": "task",
   "status": "recorded",
   "topics": ["docs-governance"],
-  "summary": "dev 5cc5327a 上 market-asset-info.test.tsx 的「uses a minimum mobile height…」仍断言抽屉 overlayClassName 含 bg-trading-panel-scrim，而 7dcd49ee（PR #92）已按「原语持有遮罩、弹窗不得覆盖」删掉该组件的覆盖，故红。测试过时、组件正确：断言改为 data-overlay-class 为 null（与 legal-acceptance 同改法）。该文件不在 terminal-tests.yml 任何步骤里，所以 PR #92 的 CI 没拦住；已加入「Test terminal interaction and mounting contracts」步骤。另有三个断言 overlay 类的测试也不在 CI，当前均通过，留作后续。",
+  "summary": "dev 5cc5327a 上 market-asset-info.test.tsx 的「uses a minimum mobile height…」仍断言抽屉 overlayClassName 含 bg-trading-panel-scrim，而 7dcd49ee（PR #92）已按「原语持有遮罩、弹窗不得覆盖」删掉该组件的覆盖，故红。测试过时、组件正确：断言改为 data-overlay-class 为 null（与 legal-acceptance 同改法）。该文件不在 terminal-tests.yml 任何步骤里，所以 PR #92 的 CI 没拦住；已加入「Test terminal interaction and mounting contracts」步骤。Codex 只读对抗审查一轮 9/10、无 P0–P2，唯一 P3（记录误称另外三个测试断言遮罩类）已修正。",
   "thread": null,
   "baseCommit": "5cc5327a",
   "commits": [],
@@ -36,9 +36,11 @@
 ## 验证与限制
 
 - 2026-10-09，本分支工作区（基线 5cc5327a + 本改动）：`pnpm --dir apps/terminal exec vitest run --maxWorkers=2` 跑 `market-asset-info`、`modal-surface-contract`、`leverage-dialog-risk-warning`、`position-pnl-share-modal`、`adaptive-modal-dismissal` 五个文件，56 项全过。`node --test scripts/ci-workflows.test.mjs` 12 项通过。
+- 2026-10-10 按 CI 参数补跑：`pnpm --dir apps/terminal exec vitest run --maxWorkers=1 src/lib/tests/market-asset-info.test.tsx` 1 个文件 27 项通过。`pnpm memory:index`、`memory:check`、`memory:test` 均通过，`pnpm exec biome check` 本测试文件无问题。
+- Codex 只读对抗审查（`gpt-6-astra`，medium，单路覆盖行为证伪、规范与记录、变异）：9/10，无 P0/P1/P2，三条意图均判成立；指出 `duration-200` 由原语自带（`packages/ui/src/drawer.tsx`、`modal.tsx`），删除组件覆盖不影响 200ms 过渡。唯一 P3 见「后续」一节的更正。它的变异表说明新断言只证明组件不传覆盖，原语遮罩颜色、模糊与过渡由 `modal-surface-contract` 负责，不由此测试负责。
 - 未跑全量单测，也未在浏览器里打开资产信息抽屉（本次只改测试断言与 CI 清单，没有改运行时代码）。
 
 ## 后续与替代关系
 
-- 同样断言 overlay 类却不在 CI 清单里的还有 `leverage-dialog-risk-warning.test.tsx`、`position-pnl-share-modal.test.tsx`、`adaptive-modal-dismissal.test.tsx`，目前都通过；是否纳入 CI 待决定。
+- 更正（审查 P3）：检索 `overlayClassName` 时还命中三个不在 CI 清单里的测试，但它们都不断言弹窗遮罩：`leverage-dialog-risk-warning.test.tsx` 与 `position-pnl-share-modal.test.tsx` 的桩只是解构丢弃该参数；`adaptive-modal-dismissal.test.tsx` 检查的是原语把自定义 overlay 类透传下去。它们通过不能证明遮罩正确，与本次遗漏不是同类问题，无后续事项。
 - 本记录补正 [2026-10-09-dialog-scrim-standard](2026-10-09-dialog-scrim-standard.md) 中「改了四个组件测试」的覆盖范围，不取代其结论。
