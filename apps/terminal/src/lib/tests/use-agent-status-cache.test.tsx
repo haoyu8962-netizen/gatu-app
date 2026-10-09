@@ -217,6 +217,103 @@ describe("useAgentStatus with the real query cache", () => {
 		expect(observedStatus?.isAgentReady).toBe(false);
 	});
 
+	it("returns the newest answer to a check that was overtaken while it cancelled the observer fetch", async () => {
+		const own = deferred<UserRoleResponse>();
+		testState.userRole
+			.mockResolvedValueOnce(agentRole(OWNER))
+			.mockReturnValueOnce(own.promise)
+			.mockResolvedValue({ role: "missing" });
+		renderProbe();
+		await waitForStatus("ready");
+
+		const firstCheck = observedStatus?.refetchAgent(AGENT);
+		await vi.waitFor(() => expect(testState.userRole).toHaveBeenCalledTimes(2));
+		const originalCancel = queryClient.cancelQueries.bind(queryClient);
+		let secondCheck: Promise<unknown> | undefined;
+		const cancelSpy = vi.spyOn(queryClient, "cancelQueries").mockImplementation(async (...args) => {
+			if (!secondCheck) secondCheck = observedStatus?.refetchAgent(AGENT);
+			return originalCancel(...args);
+		});
+		own.resolve(agentRole(OWNER));
+		await expect(firstCheck).resolves.toMatchObject({ isAgentReady: false, needsAgent: true });
+		await expect(secondCheck).resolves.toMatchObject({ isAgentReady: false, needsAgent: true });
+		expect(queryClient.getQueryData(KEY)).toEqual({ role: "missing" });
+		await waitForStatus("missing");
+		cancelSpy.mockRestore();
+	});
+
+	it("fails a check that was overtaken while cancelling when the newer check fails", async () => {
+		const cause = Object.assign(new Error("Service unavailable"), { response: { status: 503 } });
+		const own = deferred<UserRoleResponse>();
+		testState.userRole
+			.mockResolvedValueOnce(agentRole(OWNER))
+			.mockReturnValueOnce(own.promise)
+			.mockRejectedValue(cause);
+		renderProbe();
+		await waitForStatus("ready");
+
+		const firstCheck = observedStatus?.refetchAgent(AGENT);
+		await vi.waitFor(() => expect(testState.userRole).toHaveBeenCalledTimes(2));
+		const originalCancel = queryClient.cancelQueries.bind(queryClient);
+		let secondCheck: Promise<unknown> | undefined;
+		const cancelSpy = vi.spyOn(queryClient, "cancelQueries").mockImplementation(async (...args) => {
+			if (!secondCheck) secondCheck = observedStatus?.refetchAgent(AGENT);
+			return originalCancel(...args);
+		});
+		own.resolve(agentRole(OWNER));
+		await expect(firstCheck).rejects.toMatchObject({ name: "AgentStatusError", cause });
+		await expect(secondCheck).rejects.toMatchObject({ name: "AgentStatusError", cause });
+		cancelSpy.mockRestore();
+		await vi.waitFor(() => expect(observedStatus?.isAgentReady).toBe(false));
+	});
+
+	it("follows a chain of overtaking checks and ignores an intermediate failure", async () => {
+		const first = deferred<UserRoleResponse>();
+		const second = deferred<UserRoleResponse>();
+		testState.userRole
+			.mockResolvedValueOnce({ role: "missing" })
+			.mockReturnValueOnce(first.promise)
+			.mockReturnValueOnce(second.promise)
+			.mockResolvedValue(agentRole(OWNER));
+		renderProbe();
+		await waitForStatus("missing");
+
+		const firstCheck = observedStatus?.refetchAgent(AGENT);
+		await vi.waitFor(() => expect(testState.userRole).toHaveBeenCalledTimes(2));
+		const secondCheck = observedStatus?.refetchAgent(AGENT);
+		await vi.waitFor(() => expect(testState.userRole).toHaveBeenCalledTimes(3));
+		first.resolve({ role: "missing" });
+		await new Promise((resolve) => setTimeout(resolve, 10));
+		const thirdCheck = observedStatus?.refetchAgent(AGENT);
+		await vi.waitFor(() => expect(testState.userRole).toHaveBeenCalledTimes(4));
+		second.reject(Object.assign(new Error("Service unavailable"), { response: { status: 503 } }));
+
+		await expect(thirdCheck).resolves.toMatchObject({ isAgentReady: true });
+		await expect(secondCheck).resolves.toMatchObject({ isAgentReady: true });
+		await expect(firstCheck).resolves.toMatchObject({ isAgentReady: true });
+		expect(queryClient.getQueryData(KEY)).toEqual(agentRole(OWNER));
+		await waitForStatus("ready");
+	});
+
+	it("gives every waiter the newest check's failure when that one fails", async () => {
+		const cause = Object.assign(new Error("Too many requests"), { response: { status: 429 } });
+		const first = deferred<UserRoleResponse>();
+		testState.userRole
+			.mockResolvedValueOnce(agentRole(OWNER))
+			.mockReturnValueOnce(first.promise)
+			.mockRejectedValue(cause);
+		renderProbe();
+		await waitForStatus("ready");
+
+		const firstCheck = observedStatus?.refetchAgent(AGENT);
+		await vi.waitFor(() => expect(testState.userRole).toHaveBeenCalledTimes(2));
+		const secondCheck = observedStatus?.refetchAgent(AGENT);
+		await expect(secondCheck).rejects.toMatchObject({ name: "AgentStatusError", reason: "rate_limited", cause });
+		first.resolve(agentRole(OWNER));
+		await expect(firstCheck).rejects.toMatchObject({ name: "AgentStatusError", reason: "rate_limited", cause });
+		await waitForStatus("error");
+	});
+
 	it("keeps the definitive checks of separate QueryClients apart", async () => {
 		const otherClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 		const otherContainer = document.createElement("div");

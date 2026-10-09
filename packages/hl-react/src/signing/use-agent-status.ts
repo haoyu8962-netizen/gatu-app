@@ -116,8 +116,16 @@ async function awaitLatestDefinitiveCheck(
 	for (;;) {
 		const latest = checks.get(cacheKey);
 		if (!latest) throw new Error("Agent key check was discarded");
-		const role = await latest.promise;
-		if (checks.get(cacheKey) === latest) return role;
+		let role: UserRoleResponse | undefined;
+		let failure: unknown;
+		try {
+			role = await latest.promise;
+		} catch (error) {
+			failure = error;
+		}
+		if (checks.get(cacheKey) !== latest) continue;
+		if (role === undefined) throw failure;
+		return role;
 	}
 }
 
@@ -488,8 +496,10 @@ export function useAgentStatus(options: { enableAgent?: boolean } = {}): UseAgen
 				throw createAgentStatusError(ownError);
 			}
 			await queryClient.cancelQueries({ queryKey: options.queryKey, exact: true });
-			if (isNewest()) queryClient.setQueryData(options.queryKey, ownRole);
-			return { agentAddress, role: ownRole };
+			if (isNewest()) {
+				queryClient.setQueryData(options.queryKey, ownRole);
+				return { agentAddress, role: ownRole };
+			}
 		}
 		try {
 			return { agentAddress, role: await awaitLatestDefinitiveCheck(checks, cacheKey) };
