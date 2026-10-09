@@ -19,6 +19,7 @@ interface ButtonContentInput {
 	isApprovalLoading: boolean;
 	registerStatus: RegistrationStatus;
 	canApprove: boolean;
+	approvalUnavailableReason?: string | null;
 	side: Side;
 	sideLabel: string;
 	isSubmitting: boolean;
@@ -67,6 +68,7 @@ export function useButtonContent(input: ButtonContentInput): ButtonContent {
 				text: registerText,
 				action: input.onRegister,
 				disabled: isRegistering || !input.canApprove || input.isApprovalLoading || input.tradingBlocked === true,
+				disabledReason: input.canApprove ? undefined : (input.approvalUnavailableReason ?? undefined),
 				variant: "cyan",
 			};
 		}
@@ -109,6 +111,7 @@ export function useButtonContent(input: ButtonContentInput): ButtonContent {
 		registerText,
 		isRegistering,
 		input.canApprove,
+		input.approvalUnavailableReason,
 		input.isApprovalLoading,
 		input.onConnectWallet,
 		input.onDeposit,

@@ -137,6 +137,7 @@ export type VaultRequestUnavailableReason = "geo-checking" | "geo-restricted" | 
 
 export type VaultActionUnavailableReason =
 	| VaultRequestUnavailableReason
+	| "agent-only-session"
 	| "deposits-disabled"
 	| "detail-unavailable"
 	| "owner-disconnected"
@@ -210,13 +211,19 @@ export function deriveVaultActionsAvailability({
 	detail,
 	owner,
 	request,
+	sessionMode,
 }: {
 	detail: VaultDetail | null;
 	owner: VaultOwnerViewState;
 	request: VaultRequestAvailability;
+	sessionMode?: "wallet" | "agent-only" | "disconnected";
 }): VaultActionsAvailability {
 	if (!request.available) {
 		const unavailable = { available: false, reason: request.reason } as const;
+		return { deposit: unavailable, withdraw: unavailable };
+	}
+	if (sessionMode === "agent-only") {
+		const unavailable = { available: false, reason: "agent-only-session" } as const;
 		return { deposit: unavailable, withdraw: unavailable };
 	}
 	if (!detail) {

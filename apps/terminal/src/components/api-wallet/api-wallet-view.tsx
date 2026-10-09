@@ -55,6 +55,7 @@ export interface ApiWalletActionView {
 
 export interface ApiWalletViewProps {
 	pageState: ApiWalletPageState;
+	masterWalletReason?: string | null;
 	accountAddress?: string;
 	accountLabel?: string;
 	name: string;
@@ -84,6 +85,7 @@ export interface ApiWalletViewProps {
 
 export function ApiWalletView({
 	pageState,
+	masterWalletReason = null,
 	accountAddress,
 	accountLabel,
 	name,
@@ -183,7 +185,19 @@ export function ApiWalletView({
 				</div>
 			</div>
 
-			{pageState === "nonMaster" ? (
+			{pageState === "nonMaster" && masterWalletReason ? (
+				<div
+					className={cn(
+						"mb-3 flex items-start gap-3 rounded-16 border border-stroke-weak px-3.5 py-3",
+						isMobile ? "mx-4" : "mx-5",
+					)}
+				>
+					<InfoIcon className="mt-0.5 size-4 shrink-0 text-api-wallet-subtle" />
+					<p className="text-xs leading-5 text-api-wallet-muted">{masterWalletReason}</p>
+				</div>
+			) : null}
+
+			{pageState === "nonMaster" && !masterWalletReason ? (
 				<div
 					role="alert"
 					className={cn("mb-3 flex items-start gap-3 rounded-16 bg-error-soft px-3.5 py-3", isMobile ? "mx-4" : "mx-5")}

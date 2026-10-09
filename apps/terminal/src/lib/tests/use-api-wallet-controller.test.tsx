@@ -561,5 +561,8 @@ describe("useApiWalletController", () => {
 		expect(testState.infoEnabled).toBe(false);
 		expect(current().pageState).toBe("nonMaster");
 		expect(current().canAuthorize).toBe(false);
+		expect(current().masterWalletReason).toBe(
+			"This phone uses a desktop-approved trading key. This action needs the master wallet on desktop.",
+		);
 	});
 });

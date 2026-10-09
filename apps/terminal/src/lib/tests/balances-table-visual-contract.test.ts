@@ -57,9 +57,13 @@ describe("balances table visual contract", () => {
 		expect(BALANCES_TAB_SOURCE).toContain('row.type === "spot" || perpFundsActionsEnabled');
 		expect(BALANCES_TAB_SOURCE).toContain("Balance available to trade");
 		expect(BALANCES_TAB_SOURCE.indexOf("{t`Total`}")).toBeLessThan(BALANCES_TAB_SOURCE.indexOf("{t`Available`}"));
-		expect(BALANCES_TAB_SOURCE.match(/onClick=\{\(\) => handleTransferClick\(row\)\}/g)).toHaveLength(1);
+		expect(
+			BALANCES_TAB_SOURCE.match(/onClick=\{canTransfer \? \(\) => handleTransferClick\(row\) : undefined\}/g),
+		).toHaveLength(1);
 		expect(BALANCES_TAB_SOURCE.match(/onClick=\{\(\) => openSwapModal\(row\.asset\)\}/g)).toHaveLength(1);
-		expect(BALANCES_TAB_SOURCE.match(/onClick=\{\(\) => handleSendClick\(row\)\}/g)).toHaveLength(1);
+		expect(
+			BALANCES_TAB_SOURCE.match(/onClick=\{fundsLocked \? undefined : \(\) => handleSendClick\(row\)\}/g),
+		).toHaveLength(1);
 		expect(BALANCES_TAB_SOURCE).toContain('openDepositModal("withdraw")');
 	});
 

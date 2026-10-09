@@ -141,7 +141,9 @@ function SessionProbe() {
 		hasWalletAccess,
 		isConnected,
 		ready,
+		walletAddress,
 		walletDirectoryReady,
+		walletIntent,
 	} = useWalletSession();
 
 	return createElement("output", {
@@ -151,7 +153,9 @@ function SessionProbe() {
 		"data-has-wallet-access": String(hasWalletAccess),
 		"data-is-connected": String(isConnected),
 		"data-ready": String(ready),
+		"data-wallet-address": walletAddress ?? "",
 		"data-wallet-directory-ready": String(walletDirectoryReady),
+		"data-wallet-intent": walletIntent,
 	});
 }
 
@@ -648,6 +652,43 @@ describe("useDisconnectWallet", () => {
 		expect(testState.removeAgent).toHaveBeenCalledWith("Mainnet", USER_ADDRESS);
 		expect(window.localStorage.getItem(AGENT_STORAGE_KEY)).toBeNull();
 		expect(window.localStorage.getItem(otherStorageKey)).toBe(AGENT_STORAGE_VALUE);
+		expect(window.localStorage.getItem("hyperliquid_active_agent_owner")).toBeNull();
+		expect(testState.logout).not.toHaveBeenCalled();
+	});
+
+	it("keeps an imported agent-only key in charge while Privy still has a wallet session", () => {
+		const agentOwner = "0x4444444444444444444444444444444444444444";
+		testState.sessionMode = "agent-only";
+		testState.clientKey = agentOwner;
+		testState.walletAddress = USER_ADDRESS;
+		testState.walletConnected = true;
+		testState.embeddedWalletAddress = USER_ADDRESS;
+
+		act(() => {
+			root.render(createElement(SessionProbe));
+		});
+
+		const probe = container.querySelector("output");
+		expect(probe?.getAttribute("data-display-address")).toBe(agentOwner);
+		expect(probe?.getAttribute("data-is-connected")).toBe("true");
+		expect(probe?.getAttribute("data-has-wallet-access")).toBe("false");
+		expect(probe?.getAttribute("data-wallet-address")).toBe("");
+		expect(probe?.getAttribute("data-wallet-intent")).toBe("unavailable");
+	});
+
+	it("removes an imported agent-only key without logging out the Privy session behind it", async () => {
+		testState.sessionMode = "agent-only";
+		testState.authenticated = true;
+
+		act(() => {
+			root.render(createElement(DisconnectButton));
+		});
+		act(() => {
+			container.querySelector("button")?.click();
+		});
+		await flushAsyncWork();
+
+		expect(testState.removeAgent).toHaveBeenCalledWith("Mainnet", USER_ADDRESS);
 		expect(window.localStorage.getItem("hyperliquid_active_agent_owner")).toBeNull();
 		expect(testState.logout).not.toHaveBeenCalled();
 	});

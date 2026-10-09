@@ -236,6 +236,60 @@ describe("MobileAgentQrScanner", () => {
 		expect(container.textContent).not.toContain("invalid or incomplete");
 	});
 
+	it("points to the device clocks when the QR was created in this phone's future", async () => {
+		const onSyncReady = vi.fn();
+		const sync = await createMobileAgentSyncUrl({
+			appOrigin: window.location.origin,
+			env: "Mainnet",
+			userAddress: USER_ADDRESS,
+			agentPrivateKey: AGENT_PRIVATE_KEY,
+			agentValidUntilMs: NOW_MS + 10 * 60 * 1000 + 30 * 24 * 60 * 60 * 1000,
+			nowMs: NOW_MS + 10 * 60 * 1000,
+		});
+		const { MobileAgentQrScanner } = await import("@/components/trade/components/mobile-agent-qr-scanner");
+
+		act(() => {
+			root.render(
+				createElement(MobileAgentQrScanner, {
+					onCancel: vi.fn(),
+					onSyncReady,
+					startScanner: scannerState.startScanner,
+				}),
+			);
+		});
+		act(() => findButton(container, "Start camera")?.click());
+		await flushAsyncWork();
+
+		act(() => {
+			scannerState.callback?.(sync.url, { stop: scannerState.controlsStop });
+		});
+
+		expect(onSyncReady).not.toHaveBeenCalled();
+		expect(container.textContent).toContain("Check the date and time on both devices");
+		expect(container.textContent).not.toContain("invalid or incomplete");
+	});
+
+	it("reports a scanner that failed to load instead of a camera permission problem", async () => {
+		const { MobileAgentQrScanner, QrScannerLoadError } = await import(
+			"@/components/trade/components/mobile-agent-qr-scanner"
+		);
+		scannerState.startScanner.mockRejectedValueOnce(new QrScannerLoadError());
+
+		act(() => {
+			root.render(
+				createElement(MobileAgentQrScanner, {
+					onCancel: vi.fn(),
+					startScanner: scannerState.startScanner,
+				}),
+			);
+		});
+		act(() => findButton(container, "Start camera")?.click());
+		await flushAsyncWork();
+
+		expect(container.textContent).toContain("The QR scanner could not load.");
+		expect(container.textContent).not.toContain("Camera access failed");
+	});
+
 	it("retranslates visible scan feedback when the active locale changes", async () => {
 		const { MobileAgentQrScanner } = await import("@/components/trade/components/mobile-agent-qr-scanner");
 		act(() => {

@@ -50,7 +50,10 @@ Do not collapse these states into one boolean.
   wallet addresses; a same-name approval deregisters the previous one. Ordinary
   email trading keeps no local Agent, so this affects external-wallet and
   Agent-only sessions. (Decided 2026-10-04: the code is authoritative; this
-  section used to say the opposite.)
+  section used to say the opposite.) In an Agent-only session Disconnect
+  removes the imported key and owner but does not log out of Privy; an
+  env-matching Agent-only owner takes precedence over a wallet session and
+  masks its Privy identity ([ADR 0039](adr/0039-link-mobile-device-builder-fee-and-session-priority.md)).
 - Apart from explicit disconnect, delete a local Agent key only for explicit
   reset, revocation or rotation, never during transient signer restoration
   (`docs/trading-onboarding.md`).

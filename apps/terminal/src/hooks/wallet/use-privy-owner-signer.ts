@@ -24,11 +24,11 @@ export function usePrivyOwnerSigner(): PrivyOwnerSignerValue | null {
 	const { authenticated, ready: authenticationReady, user } = usePrivy();
 	const { ready: walletsReady, wallets } = useWallets();
 	const { signTypedData } = useSignTypedData();
-	const { clientKey, env } = useHyperliquid();
+	const { clientKey, env, sessionMode } = useHyperliquid();
 	const { connectedWalletAddress, embeddedWalletAddress, hasWalletAccess } = useWalletSession();
 	const loginIntent = usePrivyLoginIntent(user?.id);
 	const walletIntent = resolvePrivyWalletIntent(user, loginIntent);
-	const usesOwnerSigner = authenticated && walletIntent !== "external";
+	const usesOwnerSigner = authenticated && walletIntent !== "external" && sessionMode !== "agent-only";
 	const ownerAddress = getPrivyEmbeddedWalletAddress(user);
 	const userId = user?.id;
 	const hasEmail = !!getPrivyEmailAddress(user);

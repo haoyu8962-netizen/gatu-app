@@ -1,7 +1,7 @@
 import { useLingui } from "@lingui/react/macro";
 import { WalletIcon } from "@phosphor-icons/react";
 import { Button } from "@sairn/ui";
-import { useState } from "react";
+import { useId, useState } from "react";
 import { depositModalIntentProps } from "@/components/trade/components/deposit-modal-intent";
 import { DataPendingState } from "@/components/ui/data-pending-state";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
@@ -28,6 +28,7 @@ export function MobileBalancesTab() {
 	const depositAvailability = useDepositAvailability();
 	const depositNotice = getFundsAvailabilityNotice(depositAvailability);
 	const { hasWalletAccess } = useWalletSession();
+	const transferReasonId = useId();
 	const [transferState, setTransferState] = useState<{
 		open: boolean;
 		direction: TransferDirection;
@@ -52,6 +53,22 @@ export function MobileBalancesTab() {
 		hasWalletAccess,
 		internalTransfersEnabled,
 	});
+
+	const transferAgentOnlyReason =
+		fundsActionAvailability.internalTransfer.reason === "agent-only-session"
+			? fundsActionAvailability.internalTransfer.unavailableReason
+			: null;
+
+	function isTransferEligible(row: (typeof balances)[number]): boolean {
+		return (
+			internalTransfersEnabled &&
+			(row.type === "spot" || perpFundsActionsEnabled) &&
+			row.asset === DEFAULT_QUOTE_TOKEN &&
+			isTradingToolbarBalancePositive(row.transferable)
+		);
+	}
+
+	const showsTransferReason = transferAgentOnlyReason !== null && balances.some(isTransferEligible);
 
 	function handleTransfer(rowType: "perp" | "spot") {
 		setTransferState({
@@ -87,14 +104,20 @@ export function MobileBalancesTab() {
 				/>
 			) : (
 				<div className="flex min-h-0 flex-col">
+					{showsTransferReason ? (
+						<p
+							id={transferReasonId}
+							className="border-b border-market-close-stroke-card px-3.5 py-2.5 text-xs text-market-close-muted"
+						>
+							{transferAgentOnlyReason}
+						</p>
+					) : null}
 					{balances.map((row) => {
 						const decimals = row.type === "perp" ? 2 : (getToken(row.asset)?.szDecimals ?? 2);
 						const displayAvailable = getBalanceRowDisplayAvailable(row);
-						const canTransfer =
-							fundsActionAvailability.internalTransfer.available &&
-							(row.type === "spot" || perpFundsActionsEnabled) &&
-							row.asset === DEFAULT_QUOTE_TOKEN &&
-							isTradingToolbarBalancePositive(row.transferable);
+						const transferEligible = isTransferEligible(row);
+						const canTransfer = fundsActionAvailability.internalTransfer.available && transferEligible;
+						const showsDisabledTransfer = !canTransfer && transferEligible && showsTransferReason;
 
 						return (
 							<article
@@ -122,12 +145,15 @@ export function MobileBalancesTab() {
 											{t`Available`} {displayAvailable === null ? "—" : formatToken(displayAvailable, decimals)}
 										</div>
 									</div>
-									{canTransfer ? (
+									{canTransfer || showsDisabledTransfer ? (
 										<Button
 											variant="outline"
 											intent="neutral"
 											size="xs"
-											onClick={() => handleTransfer(row.type)}
+											disabled={!canTransfer}
+											focusableWhenDisabled
+											aria-describedby={showsDisabledTransfer ? transferReasonId : undefined}
+											onClick={canTransfer ? () => handleTransfer(row.type) : undefined}
 											className="min-h-11 shrink-0 rounded-[6px] border-market-close-stroke-input px-2.5 text-xs font-semibold text-market-close-fg shadow-none active:scale-100"
 										>
 											{t`Transfer`}

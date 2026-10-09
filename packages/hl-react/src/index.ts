@@ -260,6 +260,7 @@ export {
 	verifyExpectedMobileAgent,
 	verifyMobileAgent,
 } from "./signing/mobile-agent";
+export { type MobileAgentEndedEvent, subscribeMobileAgentEnded } from "./signing/mobile-agent-events";
 export {
 	type HyperliquidOwnerSigner,
 	HyperliquidOwnerSignerProvider,

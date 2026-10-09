@@ -607,11 +607,12 @@ describe("HyperliquidProvider userAddress prop", () => {
 			"@sairn/hl-react/signing/agent-session"
 		);
 		clearActiveAgentOwner();
-		expect(setActiveAgentOwnerAndVerify("Testnet", ADDRESS_A)).toBe(true);
 		const probe = await createSessionProbe();
 		try {
 			const walletLease = await probe.render(ADDRESS_A);
-			const agentLease = await probe.render(undefined);
+			expect(setActiveAgentOwnerAndVerify("Testnet", ADDRESS_A)).toBe(true);
+			const agentLease = await probe.render(ADDRESS_A);
+			clearActiveAgentOwner();
 			const restoredLease = await probe.render(ADDRESS_A);
 
 			expect(walletLease?.sessionMode).toBe("wallet");

@@ -67,6 +67,7 @@ function props(overrides: Partial<StakingViewProps> = {}): StakingViewProps {
 		accountState: "ready",
 		ownerAddress: OWNER,
 		hasExactMasterSigner: true,
+		agentOnlySession: false,
 		validators,
 		validatorViews: validators,
 		period: "week",
@@ -429,6 +430,37 @@ describe("StakingView", () => {
 				.filter((candidate) => ["Delegate", "Undelegate"].includes(candidate.textContent?.trim() ?? ""))
 				.every((candidate) => candidate.disabled),
 		).toBe(true);
+	});
+
+	it("explains an Agent-only phone session with the one desktop-required reason and no reconnect action", () => {
+		const connectMasterWallet = vi.fn();
+		act(() =>
+			root.render(
+				<StakingView
+					{...props({
+						pageState: "nonSigning",
+						hasExactMasterSigner: false,
+						agentOnlySession: true,
+						connectMasterWallet,
+					})}
+				/>,
+			),
+		);
+
+		const reason = "This phone uses a desktop-approved trading key. This action needs the master wallet on desktop.";
+		expect(container.textContent).toContain(reason);
+		expect(container.textContent).not.toContain("Reconnect master wallet");
+		expect(container.textContent).not.toContain("Master wallet required");
+		const actions = [...container.querySelectorAll<HTMLButtonElement>("button")].filter((candidate) =>
+			["Spot to staking", "Staking to Spot", "Delegate", "Undelegate"].includes(candidate.textContent?.trim() ?? ""),
+		);
+		expect(actions.length).toBeGreaterThanOrEqual(4);
+		for (const action of actions) {
+			expect(action.disabled || action.getAttribute("aria-disabled") === "true").toBe(true);
+			const reasonId = action.getAttribute("aria-describedby");
+			expect(reasonId ? document.getElementById(reasonId)?.textContent : null).toContain(reason);
+		}
+		expect(connectMasterWallet).not.toHaveBeenCalled();
 	});
 
 	it("fails closed on account errors while preserving verified public validators", () => {

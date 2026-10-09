@@ -43,6 +43,7 @@ Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 const feedbackIdentity = vi.hoisted(() => ({
 	clientKey: "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
 	env: "Mainnet",
+	sessionMode: "wallet" as "wallet" | "agent-only" | "disconnected",
 }));
 vi.mock("@/lib/hyperliquid", () => ({ useHyperliquid: () => feedbackIdentity }));
 
@@ -53,6 +54,7 @@ describe("AccountModeModal", () => {
 	beforeEach(() => {
 		feedbackIdentity.clientKey = "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
 		feedbackIdentity.env = "Mainnet";
+		feedbackIdentity.sessionMode = "wallet";
 		clearFeedback();
 		activateLocale("en");
 		container = document.createElement("div");
@@ -64,6 +66,45 @@ describe("AccountModeModal", () => {
 		clearFeedback();
 		act(() => root.unmount());
 		container.remove();
+	});
+
+	it("shows the account type disabled with the desktop-required reason in an Agent-only session", () => {
+		feedbackIdentity.sessionMode = "agent-only";
+		const onConnect = vi.fn();
+		const onApply = vi.fn();
+		const onOpenChange = vi.fn();
+		act(() =>
+			root.render(
+				<I18nProvider i18n={i18n}>
+					<AccountModeModal
+						open
+						onOpenChange={onOpenChange}
+						currentMode="unifiedAccount"
+						canChange={false}
+						onConnect={onConnect}
+						onApply={onApply}
+					/>
+				</I18nProvider>,
+			),
+		);
+
+		const options = [...document.body.querySelectorAll<HTMLButtonElement>("button[aria-pressed]")];
+		expect(options).toHaveLength(3);
+		expect(options.every((option) => option.disabled)).toBe(true);
+		const confirm = [...document.body.querySelectorAll<HTMLButtonElement>("button")].find(
+			(button) => button.textContent === "Confirm",
+		);
+		expect(confirm).toBeDefined();
+		expect(confirm?.getAttribute("aria-disabled") === "true" || confirm?.disabled).toBe(true);
+		const reasonId = confirm?.getAttribute("aria-describedby");
+		expect(reasonId ? document.getElementById(reasonId)?.textContent : null).toBe(
+			"This phone uses a desktop-approved trading key. This action needs the master wallet on desktop.",
+		);
+		expect(document.body.textContent).not.toContain("Connect");
+		act(() => confirm?.click());
+		expect(onConnect).not.toHaveBeenCalled();
+		expect(onApply).not.toHaveBeenCalled();
+		expect(onOpenChange).not.toHaveBeenCalled();
 	});
 
 	it("blocks account mode changes when the current mode is unavailable", () => {

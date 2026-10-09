@@ -5,6 +5,7 @@ import { type ReactNode, useId, useState } from "react";
 import { toast } from "sonner";
 import { EstablishConnectionModal } from "@/components/trade/components/establish-connection-modal";
 import { LegalAcceptanceModal } from "@/components/trade/components/legal-acceptance-modal";
+import { useMasterWalletActionReason } from "@/hooks/trade/use-master-wallet-action-reason";
 import { type ReferralAction, useReferralActions } from "@/hooks/trade/use-referral-actions";
 import { useReferralLegalGate } from "@/hooks/trade/use-referral-legal-gate";
 import { useReferrals } from "@/hooks/trade/use-referrals";
@@ -54,12 +55,15 @@ export function ReferralDashboard({ initialReferralCode }: Props) {
 	const { t } = useLingui();
 	const titleId = useId();
 	const claimStatusId = useId();
+	const mobileClaimStatusId = useId();
 	const [claimHistoryEnabled, setClaimHistoryEnabled] = useState(false);
 	const referrals = useReferrals({ claimHistoryEnabled });
 	const referralActions = useReferralActions(referrals);
 	const legalGate = useReferralLegalGate();
 	const tradingStatus = useTradingStatus();
-	const { hasWalletAccess } = useWalletSession();
+	const { hasWalletAccess, sessionMode } = useWalletSession();
+	const masterWalletReason = useMasterWalletActionReason();
+	const agentOnlySession = sessionMode === "agent-only";
 	const { reconnectWallet, isReconnecting } = useReconnectWallet();
 	const [activeAction, setActiveAction] = useState<ActiveAction | null>(null);
 	const [connectionIdentityKey, setConnectionIdentityKey] = useState<string | null>(null);
@@ -67,6 +71,7 @@ export function ReferralDashboard({ initialReferralCode }: Props) {
 	const [isPreparingAction, setIsPreparingAction] = useState(false);
 
 	async function requestAction(action: ReferralAction, code?: string) {
+		if (agentOnlySession) return;
 		if (!hasWalletAccess) {
 			await reconnectWallet();
 			return;
@@ -98,6 +103,7 @@ export function ReferralDashboard({ initialReferralCode }: Props) {
 	}
 
 	const actionBusy = referralActions.isPending || isPreparingAction || isReconnecting;
+	const actionsDisabled = actionBusy || agentOnlySession;
 	const actionIdentityKey = getActionIdentityKey(referralActions.identity);
 	const visibleAction = activeAction?.identityKey === actionIdentityKey ? activeAction.action : null;
 	const readyData =
@@ -123,14 +129,18 @@ export function ReferralDashboard({ initialReferralCode }: Props) {
 						size="sm"
 						className="text-2sm"
 						data-referral-claim-surface="desktop"
-						aria-describedby={!referrals.hasUnclaimedRewards ? claimStatusId : undefined}
-						disabled={actionBusy || !referrals.hasUnclaimedRewards}
+						aria-describedby={agentOnlySession || !referrals.hasUnclaimedRewards ? claimStatusId : undefined}
+						disabled={actionsDisabled || !referrals.hasUnclaimedRewards}
+						focusableWhenDisabled={agentOnlySession}
 						onClick={() => void requestAction("claim")}
 					>
 						<Trans>Claim rewards</Trans>
 					</Button>
-					<p id={claimStatusId} className="min-h-4 text-2xs text-fg-muted">
-						{!referrals.hasUnclaimedRewards ? <Trans>No unclaimed rewards are currently available.</Trans> : null}
+					<p id={claimStatusId} className="min-h-4 max-w-xs text-end text-2xs text-fg-muted">
+						{agentOnlySession ? masterWalletReason : null}
+						{!agentOnlySession && !referrals.hasUnclaimedRewards ? (
+							<Trans>No unclaimed rewards are currently available.</Trans>
+						) : null}
 					</p>
 				</div>
 			) : null}
@@ -209,7 +219,8 @@ export function ReferralDashboard({ initialReferralCode }: Props) {
 				<div className="grid grid-cols-1 gap-3 px-4 pb-4 min-[1001px]:grid-cols-[minmax(0,560px)_minmax(0,1fr)] min-[1001px]:gap-4 min-[1001px]:px-5 min-[1001px]:pb-0">
 					<div className="order-1">
 						<ReferralCodeCard
-							actionsDisabled={actionBusy}
+							actionsDisabled={actionsDisabled}
+							actionsUnavailableReason={agentOnlySession ? masterWalletReason : null}
 							data={readyData}
 							invitationCode={initialReferralCode}
 							onApplyCode={() => void requestAction("apply", initialReferralCode)}
@@ -246,11 +257,18 @@ export function ReferralDashboard({ initialReferralCode }: Props) {
 					<Button
 						className="w-full rounded-24 text-sm font-bold"
 						data-referral-claim-surface="mobile"
-						disabled={actionBusy}
+						aria-describedby={agentOnlySession ? mobileClaimStatusId : undefined}
+						disabled={actionsDisabled}
+						focusableWhenDisabled={agentOnlySession}
 						onClick={() => void requestAction("claim")}
 					>
 						<Trans>Claim rewards</Trans>
 					</Button>
+					{agentOnlySession ? (
+						<p id={mobileClaimStatusId} className="mt-1.5 text-center text-2xs leading-4 text-fg-muted">
+							{masterWalletReason}
+						</p>
+					) : null}
 				</div>
 			) : null}
 

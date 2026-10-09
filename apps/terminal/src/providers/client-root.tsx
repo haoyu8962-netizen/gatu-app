@@ -15,6 +15,7 @@ import type { QueryClient } from "@tanstack/react-query";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import type { ReactNode } from "react";
 import { toast } from "sonner";
+import { MobileAgentEndedNotifier } from "@/components/trade/components/mobile-agent-ended-notifier";
 import { OrderReconciliation } from "@/components/trade/order-reconciliation";
 import { EmbeddedDepositAutoBridge } from "@/components/trade/tradebox/embedded-deposit-auto-bridge";
 import { TwapReconciliation } from "@/components/trade/twap-reconciliation";
@@ -57,14 +58,13 @@ interface Props {
 }
 
 function HyperliquidBridge({ children }: { children: ReactNode }) {
-	const { address, authenticated, ready } = useWalletSession();
+	const { address } = useWalletSession();
 
 	return (
 		<HyperliquidExchangePolicyProvider portfolioMarginActivationEnabled={PORTFOLIO_MARGIN_FEATURES.activationEnabled}>
 			<HyperliquidProvider
 				env={env}
 				userAddress={address}
-				allowAgentOnlySession={ready && !authenticated}
 				enforceLegalActions
 				builderConfig={DEFAULT_BUILDER_CONFIG}
 				onAgentCleanupFailure={() => {
@@ -118,6 +118,7 @@ export function ClientRootProvider({ children, queryClient }: Props) {
 									<BaseUiDirectionProvider>
 										<HyperliquidBridge>
 											<EmbeddedDepositAutoBridge />
+											<MobileAgentEndedNotifier />
 											<OrderReconciliation />
 											<TwapReconciliation />
 											<ClientRuntimeProvider>{children}</ClientRuntimeProvider>

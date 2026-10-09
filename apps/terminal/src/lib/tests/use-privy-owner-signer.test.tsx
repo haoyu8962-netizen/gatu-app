@@ -21,6 +21,7 @@ const state = vi.hoisted(() => ({
 	loginIntent: undefined as PrivyLoginIntent | undefined,
 	clientKey: "" as string,
 	env: "Mainnet" as "Mainnet" | "Testnet",
+	sessionMode: "wallet" as "wallet" | "agent-only",
 	connectedWalletAddress: undefined as `0x${string}` | undefined,
 	embeddedWalletAddress: undefined as `0x${string}` | undefined,
 	hasWalletAccess: true,
@@ -35,7 +36,7 @@ vi.mock("@privy-io/react-auth", () => ({
 }));
 
 vi.mock("@/lib/hyperliquid", () => ({
-	useHyperliquid: () => ({ clientKey: state.clientKey, env: state.env }),
+	useHyperliquid: () => ({ clientKey: state.clientKey, env: state.env, sessionMode: state.sessionMode }),
 }));
 
 vi.mock("@/hooks/wallet/use-wallet-session", () => ({
@@ -108,6 +109,7 @@ describe("usePrivyOwnerSigner", () => {
 			loginIntent: { method: "email", userId: "did:privy:owner" },
 			clientKey: OWNER,
 			env: "Mainnet",
+			sessionMode: "wallet",
 			connectedWalletAddress: OWNER,
 			embeddedWalletAddress: OWNER,
 			hasWalletAccess: true,
@@ -305,6 +307,11 @@ describe("usePrivyOwnerSigner", () => {
 			linkedAccounts: [],
 		} as unknown as User;
 		state.loginIntent = { method: "wallet", userId: "did:privy:external", walletAddress: OTHER } as PrivyLoginIntent;
+		expect(renderHook()).toBeNull();
+	});
+
+	it("leaves trading to the imported Agent while an Agent-only session is active", () => {
+		state.sessionMode = "agent-only";
 		expect(renderHook()).toBeNull();
 	});
 

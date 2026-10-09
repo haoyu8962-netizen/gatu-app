@@ -38,6 +38,7 @@
 		"./signing/agent-signer-cache": "./src/signing/agent-signer-cache.ts",
 		"./signing/l1-agent-wallet": "./src/signing/l1-agent-wallet.ts",
 		"./signing/mobile-agent": "./src/signing/mobile-agent.ts",
+		"./signing/mobile-agent-events": "./src/signing/mobile-agent-events.ts",
 		"./signing/use-agent-registration": "./src/signing/use-agent-registration.ts",
 		"./signing/use-agent-status": "./src/signing/use-agent-status.ts",
 		"./signing/use-builder-fee-approval": "./src/signing/use-builder-fee-approval.ts",

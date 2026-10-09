@@ -444,8 +444,11 @@ the product decisions and the official comparison are in
   wallet signs `approveAgent` (User-Signed, with the signer's chain id: the external wallet's current chain, or the embedded owner's environment Arbitrum chain) with the name
   `Mobile valid_until <ms>`, where `<ms>` is the expiry 30 days after approval
   (`packages/hl-react/src/signing/mobile-agent.ts`, `MOBILE_AGENT_VALIDITY_MS`).
-  Approval is the dialog's single explicit action and its only signing action;
-  the dialog passes `applicationReview: "confirmed"`, so an embedded wallet
+  Approval is the dialog's explicit Agent action. While the owner's builder
+  fee is definitively unapproved, a separate explicit Approve builder fee
+  action (`useBuilderFeeApproval`, User-Signed by the same owner) comes first,
+  and a fresh `maxBuilderFee` check runs before the Agent is signed; an unknown
+  answer signs nothing (ADR 0039). The dialog passes `applicationReview: "confirmed"`, so an embedded wallet
   signs without a second Privy prompt, and the exchange's `status: "ok"` is
   the success signal. The desktop does not poll `extraAgents`.
 - The key travels as plain JSON in the URL fragment of `/mobile-agent-sync`
@@ -471,17 +474,25 @@ the product decisions and the official comparison are in
   `local`) and activates the owner in an `agent-only` session mode
   (`packages/hl-react/src/signing/agent-session.ts`), rolling back through
   `cancelAgentRegistrationEpochAndRemove` when activation or verification is
-  no longer current.
+  no longer current. An env-matching Agent-only owner takes precedence over a
+  connected wallet in `resolveSession`; while it is active the terminal masks
+  the Privy identity and builds no owner signer or user-signed client, and
+  Disconnect removes only the imported key (ADR 0039).
 - An Agent-only session can sign L1 actions only: orders, cancels, leverage,
   vault transfers and sub-account transfers. It cannot construct any
   User-Signed call, so deposit, `withdraw3`, `usdSend`, `spotSend` and other
   master-wallet actions need the master wallet on desktop; the phone surfaces
   those actions disabled with a single desktop-required reason
-  (`agent-only-session`, see `docs/mobile-data-presentation.md`).
+  (`agent-only-session`, see `docs/mobile-data-presentation.md`). Approvals it
+  cannot sign are never offered: `useTradingGuard` reports
+  `needsOwnerApproval` and the order and confirmation buttons stay disabled
+  with the desktop-required reason instead of an Enable action.
 - There is no revoke panel. Approving again from the dialog replaces the
-  phone's Agent under the same name base, and the API wallet page removes any
-  Agent; the phone clears its record at its next `extraAgents` check
-  (`use-agent-status.ts`) or when `validUntil` passes.
+  phone's Agent under the same name base (the dialog's warning says so), and
+  the API wallet page removes any Agent; the phone clears its record at its
+  next `extraAgents` check (`use-agent-status.ts`) or when `validUntil` passes,
+  and `subscribeMobileAgentEnded` lets the terminal tell the user to scan
+  again.
 
 For comparison, the official terminal encodes the raw Agent private key as
 base64 JSON in a `?link=` query string with no expiry, signs as soon as its

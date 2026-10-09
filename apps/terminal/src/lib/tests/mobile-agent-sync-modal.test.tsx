@@ -18,6 +18,10 @@ const IDENTITY_CHANGED = msg`The active wallet or network changed. Review the ac
 
 const testState = vi.hoisted(() => ({
 	approveAgent: vi.fn(),
+	approveBuilderFee: vi.fn(),
+	builderFeeKnown: true,
+	needsBuilderFee: false,
+	refetchBuilderFee: vi.fn(),
 	onOpenChangeComplete: undefined as ((open: boolean) => void) | undefined,
 	features: { enabled: true },
 	hasWalletAccess: true,
@@ -41,6 +45,7 @@ vi.mock("@lingui/react/macro", () => ({
 vi.mock("@phosphor-icons/react", () => ({
 	DeviceMobileIcon: Icon,
 	QrCodeIcon: Icon,
+	SealCheckIcon: Icon,
 	SpinnerGapIcon: Icon,
 	WarningCircleIcon: Icon,
 }));
@@ -135,7 +140,13 @@ vi.mock("@/hooks/wallet/use-wallet-session", () => ({
 }));
 
 vi.mock("@/lib/hyperliquid", () => ({
+	useBuilderFeeApproval: () => ({ approve: testState.approveBuilderFee }),
 	useHyperliquid: () => ({ env: "Mainnet" }),
+	useTradingStatus: () => ({
+		needsBuilderFee: testState.builderFeeKnown && testState.needsBuilderFee,
+		isBuilderFeeReady: testState.builderFeeKnown && !testState.needsBuilderFee,
+		refetchBuilderFee: testState.refetchBuilderFee,
+	}),
 }));
 
 vi.mock("qrcode", () => ({
@@ -185,6 +196,17 @@ describe("MobileAgentSyncModal", () => {
 		testState.features.enabled = true;
 		testState.approveAgent.mockReset();
 		testState.approveAgent.mockResolvedValue(undefined);
+		testState.builderFeeKnown = true;
+		testState.needsBuilderFee = false;
+		testState.approveBuilderFee.mockReset();
+		testState.approveBuilderFee.mockImplementation(async () => {
+			testState.needsBuilderFee = false;
+		});
+		testState.refetchBuilderFee.mockReset();
+		testState.refetchBuilderFee.mockImplementation(async () => ({
+			isBuilderFeeReady: testState.builderFeeKnown && !testState.needsBuilderFee,
+			needsBuilderFee: testState.builderFeeKnown && testState.needsBuilderFee,
+		}));
 		testState.qrToCanvas.mockReset();
 		testState.qrToCanvas.mockResolvedValue(undefined);
 	});
@@ -232,6 +254,7 @@ describe("MobileAgentSyncModal", () => {
 			"On your phone, open Sairn, tap Connect, then Link Desktop Wallet and scan this code.",
 		);
 		expect(container.textContent).toContain("The QR can trade but not withdraw.");
+		expect(container.textContent).toContain("Approving replaces the key on a phone that is already linked.");
 		expect(container.querySelector("canvas")).toBeNull();
 
 		await approve();
@@ -418,5 +441,70 @@ describe("MobileAgentSyncModal", () => {
 		act(() => resolveApproval?.());
 		await flushAsyncWork();
 		expect(container.textContent).not.toContain("Hold to reveal");
+	});
+	it("asks for the builder fee as its own explicit step before the mobile key", async () => {
+		testState.needsBuilderFee = true;
+		await renderModal();
+
+		expect(findButton(container, "Approve mobile trading key")).toBeUndefined();
+		expect(container.textContent).toContain("which only this wallet can approve");
+		expect(testState.approveBuilderFee).not.toHaveBeenCalled();
+
+		act(() => getButton(container, "Approve builder fee").click());
+		await flushAsyncWork();
+
+		expect(testState.approveBuilderFee).toHaveBeenCalledTimes(1);
+		expect(testState.approveAgent).not.toHaveBeenCalled();
+		expect(findButton(container, "Approve builder fee")).toBeUndefined();
+
+		await approve();
+		expect(testState.approveAgent).toHaveBeenCalledTimes(1);
+	});
+
+	it("does not sign the mobile key when the fresh check finds the builder fee missing", async () => {
+		await renderModal();
+		testState.refetchBuilderFee.mockImplementationOnce(async () => {
+			testState.needsBuilderFee = true;
+			return { isBuilderFeeReady: false, needsBuilderFee: true };
+		});
+
+		act(() => getButton(container, "Approve mobile trading key").click());
+		await flushAsyncWork();
+
+		expect(testState.approveAgent).not.toHaveBeenCalled();
+		expect(getButton(container, "Approve builder fee").hasAttribute("disabled")).toBe(false);
+	});
+
+	it("fails closed without signing when the builder fee cannot be checked", async () => {
+		await renderModal();
+		testState.refetchBuilderFee.mockRejectedValueOnce(new Error("network"));
+
+		act(() => getButton(container, "Approve mobile trading key").click());
+		await flushAsyncWork();
+
+		expect(testState.approveAgent).not.toHaveBeenCalled();
+		expect(container.querySelector('[role="alert"]')?.textContent).toBe(
+			"Could not check the builder fee approval on Hyperliquid. Nothing was signed. Try again.",
+		);
+	});
+
+	it("keeps the approved key and offers another reveal when the QR cannot be drawn", async () => {
+		testState.qrToCanvas.mockRejectedValueOnce(new Error("chunk"));
+		await renderModal();
+		await approve();
+		await reveal();
+		await flushAsyncWork();
+
+		expect(container.textContent).toContain("The QR could not be drawn.");
+		expect(findButton(container, "Approve mobile trading key")).toBeUndefined();
+
+		await reveal();
+		await flushAsyncWork();
+		expect(container.querySelector("canvas")).not.toBeNull();
+		expect(testState.qrToCanvas).toHaveBeenCalledTimes(2);
+		const [, firstUrl] = testState.qrToCanvas.mock.calls[0] as [unknown, string];
+		const [, secondUrl] = testState.qrToCanvas.mock.calls[1] as [unknown, string];
+		expect(new URL(secondUrl).pathname).toBe(new URL(firstUrl).pathname);
+		expect(testState.approveAgent).toHaveBeenCalledTimes(1);
 	});
 });

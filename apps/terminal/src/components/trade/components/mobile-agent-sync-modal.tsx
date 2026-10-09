@@ -1,5 +1,5 @@
 import { Trans, useLingui } from "@lingui/react/macro";
-import { DeviceMobileIcon, QrCodeIcon, WarningCircleIcon } from "@phosphor-icons/react";
+import { DeviceMobileIcon, QrCodeIcon, SealCheckIcon, WarningCircleIcon } from "@phosphor-icons/react";
 import { createMobileAgentApproval, type MobileAgentApproval } from "@sairn/hl-react/signing/mobile-agent";
 import { AdaptiveModal, Button, ModalContent, ModalDescription, ModalFooter, ModalHeader, ModalTitle } from "@sairn/ui";
 import { useEffect, useId, useRef, useState } from "react";
@@ -12,7 +12,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useExplicitAgentApproval } from "@/hooks/wallet/use-explicit-agent-approval";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { formatTransferError } from "@/lib/errors/format";
-import { type HyperliquidEnv, useHyperliquid } from "@/lib/hyperliquid";
+import { type HyperliquidEnv, useBuilderFeeApproval, useHyperliquid, useTradingStatus } from "@/lib/hyperliquid";
 import { createMobileAgentSyncUrl, MOBILE_SYNC_QR_VISIBLE_MS } from "@/lib/mobile-sync/sync-core";
 
 interface MobileAgentSyncModalProps {
@@ -26,13 +26,17 @@ interface MobileAgentSyncDialogProps extends MobileAgentSyncModalProps {
 	walletAddress: Address | undefined;
 }
 
-type SyncError = { code: "qr_render_failed" } | { code: "approval_failed"; cause: unknown };
+type SyncError =
+	| { code: "approval_failed"; cause: unknown }
+	| { code: "builder_fee_failed"; cause: unknown }
+	| { code: "builder_fee_unknown" };
 
 type SyncState =
 	| { status: "idle" }
+	| { status: "approving_fee" }
 	| { status: "signing" }
-	| { status: "ready"; approval: MobileAgentApproval }
-	| { status: "revealed"; url: string; closesAtMs: number }
+	| { status: "ready"; approval: MobileAgentApproval; renderFailed: boolean }
+	| { status: "revealed"; approval: MobileAgentApproval; url: string; closesAtMs: number }
 	| { status: "error"; error: SyncError };
 
 const QR_REVEAL_HOLD_MS = 2_000;
@@ -67,6 +71,8 @@ function MobileAgentSyncDialog({
 	const { t } = useLingui();
 	const isMobile = useIsMobile();
 	const approveAgent = useExplicitAgentApproval();
+	const tradingStatus = useTradingStatus();
+	const builderFeeApproval = useBuilderFeeApproval();
 	const [state, setState] = useState<SyncState>({ status: "idle" });
 	const operationRef = useRef<AbortController | null>(null);
 	const onOpenChangeRef = useRef(onOpenChange);
@@ -108,22 +114,54 @@ function MobileAgentSyncDialog({
 	}, [state.status]);
 
 	const canApprove = MOBILE_PAIRING_FEATURES.enabled && hasWalletAccess && !!walletAddress;
+	const isBusy = state.status === "signing" || state.status === "approving_fee";
+	const needsBuilderFee = tradingStatus.needsBuilderFee;
 
-	async function handleApprove() {
-		if (!canApprove || !walletAddress || state.status === "signing") return;
+	async function handleApproveBuilderFee() {
+		if (!canApprove || isBusy) return;
 		operationRef.current?.abort();
 		const operation = new AbortController();
 		operationRef.current = operation;
-		const approval = createMobileAgentApproval();
+		setState({ status: "approving_fee" });
+
+		try {
+			await builderFeeApproval.approve();
+			if (operation.signal.aborted) return;
+			setState({ status: "idle" });
+		} catch (error) {
+			if (operation.signal.aborted) return;
+			setState({ status: "error", error: { code: "builder_fee_failed", cause: error } });
+		} finally {
+			if (operationRef.current === operation) operationRef.current = null;
+		}
+	}
+
+	async function handleApprove() {
+		if (!canApprove || !walletAddress || isBusy) return;
+		operationRef.current?.abort();
+		const operation = new AbortController();
+		operationRef.current = operation;
 		setState({ status: "signing" });
 
 		try {
+			const requirements = await tradingStatus.refetchBuilderFee().catch(() => null);
+			if (operation.signal.aborted) return;
+			if (!requirements?.isBuilderFeeReady) {
+				setState(
+					requirements?.needsBuilderFee
+						? { status: "idle" }
+						: { status: "error", error: { code: "builder_fee_unknown" } },
+				);
+				return;
+			}
+
+			const approval = createMobileAgentApproval();
 			await approveAgent.mutateAsync(
 				{ agentAddress: approval.publicKey, agentName: approval.agentName },
 				{ signal: operation.signal, applicationReview: "confirmed" },
 			);
 			if (operation.signal.aborted) return;
-			setState({ status: "ready", approval });
+			setState({ status: "ready", approval, renderFailed: false });
 		} catch (error) {
 			if (operation.signal.aborted) return;
 			setState({
@@ -144,7 +182,7 @@ function MobileAgentSyncDialog({
 			agentPrivateKey: approval.privateKey,
 			agentValidUntilMs: approval.agentValidUntilMs,
 		});
-		setState({ status: "revealed", url, closesAtMs: Date.now() + MOBILE_SYNC_QR_VISIBLE_MS });
+		setState({ status: "revealed", approval, url, closesAtMs: Date.now() + MOBILE_SYNC_QR_VISIBLE_MS });
 	}
 
 	function handleOpenChange(nextOpen: boolean) {
@@ -156,7 +194,12 @@ function MobileAgentSyncDialog({
 		if (!nextOpen) setState({ status: "idle" });
 	}
 
-	const showsApproveButton = state.status === "idle" || state.status === "signing" || state.status === "error";
+	const showsApproveButton =
+		state.status === "idle" ||
+		state.status === "signing" ||
+		state.status === "approving_fee" ||
+		state.status === "error";
+	const showsBuilderFeeStep = state.status === "approving_fee" || (needsBuilderFee && state.status !== "signing");
 
 	return (
 		<AdaptiveModal
@@ -184,7 +227,8 @@ function MobileAgentSyncDialog({
 					<WarningCircleIcon className="mt-0.5 size-4 shrink-0" weight="fill" aria-hidden />
 					<p>
 						<Trans>
-							The QR can trade but not withdraw. Do not share it, screenshot it or show it while sharing your screen.
+							The QR can trade but not withdraw. Approving replaces the key on a phone that is already linked. Do not
+							share it, screenshot it or show it while sharing your screen.
 						</Trans>
 					</p>
 				</div>
@@ -199,9 +243,24 @@ function MobileAgentSyncDialog({
 						<Trans>Connect the selected master wallet before linking a mobile device.</Trans>
 					</p>
 				)}
+				{canApprove && showsApproveButton && showsBuilderFeeStep && (
+					<p className="text-xs text-fg-muted">
+						<Trans>
+							Orders from the phone include the {BRAND_NAME} builder fee, which only this wallet can approve. Approve it
+							once, then approve the mobile trading key.
+						</Trans>
+					</p>
+				)}
 				{state.status === "error" && (
 					<p role="alert" className="text-xs text-error">
 						<SyncErrorText error={state.error} />
+					</p>
+				)}
+				{state.status === "ready" && state.renderFailed && (
+					<p role="alert" className="text-xs text-error">
+						<Trans>
+							The QR could not be drawn. Hold to reveal to try again, or reload the page if it keeps failing.
+						</Trans>
 					</p>
 				)}
 				{state.status === "ready" && <RevealButton onReveal={() => handleReveal(state.approval)} />}
@@ -209,31 +268,52 @@ function MobileAgentSyncDialog({
 					<RevealedQrPanel
 						url={state.url}
 						closesAtMs={state.closesAtMs}
-						onRenderFailed={() => setState({ status: "error", error: { code: "qr_render_failed" } })}
+						onRenderFailed={() => setState({ status: "ready", approval: state.approval, renderFailed: true })}
 					/>
 				)}
 			</ModalContent>
 
 			{showsApproveButton && canApprove && (
 				<ModalFooter className="border-t border-stroke-weak">
-					<Button
-						type="button"
-						variant="filled"
-						intent="brand"
-						size="md"
-						className="w-full"
-						disabled={state.status === "signing"}
-						onClick={handleApprove}
-						iconLeft={
-							state.status === "signing" ? (
-								<ButtonLoading className="-m-px" />
-							) : (
-								<QrCodeIcon className="size-3.5" aria-hidden />
-							)
-						}
-					>
-						<Trans>Approve mobile trading key</Trans>
-					</Button>
+					{showsBuilderFeeStep ? (
+						<Button
+							type="button"
+							variant="filled"
+							intent="brand"
+							size="md"
+							className="w-full"
+							disabled={isBusy}
+							onClick={handleApproveBuilderFee}
+							iconLeft={
+								state.status === "approving_fee" ? (
+									<ButtonLoading className="-m-px" />
+								) : (
+									<SealCheckIcon className="size-3.5" aria-hidden />
+								)
+							}
+						>
+							<Trans>Approve builder fee</Trans>
+						</Button>
+					) : (
+						<Button
+							type="button"
+							variant="filled"
+							intent="brand"
+							size="md"
+							className="w-full"
+							disabled={isBusy}
+							onClick={handleApprove}
+							iconLeft={
+								state.status === "signing" ? (
+									<ButtonLoading className="-m-px" />
+								) : (
+									<QrCodeIcon className="size-3.5" aria-hidden />
+								)
+							}
+						>
+							<Trans>Approve mobile trading key</Trans>
+						</Button>
+					)}
 				</ModalFooter>
 			)}
 		</AdaptiveModal>
@@ -242,8 +322,9 @@ function MobileAgentSyncDialog({
 
 function SyncErrorText({ error }: { error: SyncError }) {
 	const { t } = useLingui();
-	if (error.code === "qr_render_failed")
-		return <Trans>The QR could not be drawn. Approve a new key to try again.</Trans>;
+	if (error.code === "builder_fee_unknown") {
+		return <Trans>Could not check the builder fee approval on Hyperliquid. Nothing was signed. Try again.</Trans>;
+	}
 	return <>{formatTransferError(error.cause instanceof Error ? error.cause : null, (descriptor) => t(descriptor))}</>;
 }
 

@@ -28,6 +28,7 @@ const testState = vi.hoisted(() => ({
 	importEnabled: true,
 	infoExtraAgents: vi.fn(),
 	persistAgentForRegistration: vi.fn(),
+	pwaCapability: "unsupported" as "browser-prompt" | "ios-instructions" | "installed" | "unsupported",
 	verifyAgentRegistrationOrRemove: vi.fn(),
 }));
 
@@ -58,6 +59,10 @@ vi.mock("@sairn/ui", () => ({
 		onClick?: () => void;
 		type?: "button" | "submit" | "reset";
 	}) => createElement("button", { disabled, onClick, type: type ?? "button" }, children),
+}));
+
+vi.mock("@/providers/pwa-install", () => ({
+	usePwaInstall: () => ({ capability: testState.pwaCapability, promptInstall: vi.fn() }),
 }));
 
 vi.mock("@/config/mobile-pairing", () => ({
@@ -125,6 +130,7 @@ describe("mobile agent sync route", () => {
 		i18n.loadAndActivate({ locale: "en", messages: {} });
 		vi.spyOn(Date, "now").mockReturnValue(NOW_MS + 5_000);
 		testState.importEnabled = true;
+		testState.pwaCapability = "unsupported";
 		testState.infoExtraAgents.mockReset();
 		testState.infoExtraAgents.mockResolvedValue([approvedRemoteAgent()]);
 		testState.captureAgentRegistrationEpoch.mockReset();
@@ -201,6 +207,16 @@ describe("mobile agent sync route", () => {
 		expect(container.textContent).toContain(AGENT_ADDRESS);
 		expect(container.textContent).toContain("Open terminal");
 		expect(findButton(container, "Import")).toBeUndefined();
+	});
+
+	it("tells an iOS browser user that the key stays in this browser, not the Home Screen app", async () => {
+		testState.pwaCapability = "ios-instructions";
+		renderRoute(linkHash(createLink()));
+		act(() => findButton(container, "Import")?.click());
+		await flushAsyncWork();
+
+		expect(container.textContent).toContain("Phone access ready");
+		expect(container.textContent).toContain("Access is stored in this browser only.");
 	});
 
 	it("fails closed when the desktop has not approved this key and keeps the link for a retry", async () => {

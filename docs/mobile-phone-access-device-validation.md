@@ -14,7 +14,7 @@ Never record QR screenshots, URL fragments, keys, complete signatures or credent
 
 1. Publish the build to an HTTPS origin through the [CloudFront release procedure](../deploy/cloudfront/README.md) with the flag on, and read the commit, release ID and `mobileSync.enabled` from the published `/build-meta.json`.
 2. Use the same origin on desktop and phone and an isolated Hyperliquid **Testnet** owner. On desktop connect the exact owner through Privy; do not reuse a production Agent.
-3. Desktop: click the header QR icon, approve once (one signature; an email owner sees no second Privy prompt), hold for 2 seconds, reveal. Phone: scan, tap Import, open the terminal. Place no trades and move no funds beyond what row RD-3 needs.
+3. Desktop: click the header QR icon. On a fresh owner, approve the builder fee first (its own explicit signature, ADR 0039), then approve the mobile key (one signature; an email owner sees no second Privy prompt), hold for 2 seconds, reveal. Phone: scan, tap Import, open the terminal. Place no trades and move no funds beyond what row RD-3 needs.
 
 ## Checklist
 
