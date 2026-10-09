@@ -31,7 +31,7 @@
 ## 结论与依据
 
 - 根因（代码阅读 + 官方文档）：`packages/hl-react/src/signing/use-agent-registration.ts` 的 `approveAgent` 带 `agentName`，名字来自 `apps/terminal/src/config/trading-agent.ts`（生产构建 `VITE_HYPERLIQUID_AGENT_NAME=sairn`）。Hyperliquid Exchange endpoint 文档：一个账户 1 个无名 API 钱包、最多 3 个命名 API 钱包；命名 Agent 只被同名授权替换。交易所的回文说明这个账户的命名上限是 3，而 `sairn` 不在已有名字之中。具体占位者未核实（需要完整地址查 `extraAgents`）；推测的候选是改名前的 `gatu`（ADR 0027 第 85 行当时预告了这个失败）、Link mobile device 的 `Mobile valid_until …`、API 钱包页或其他前端创建的命名钱包。预检只找同名条目不看数量，所以先签名再被拒；`exchange-error-text.ts` 没有这条规则，按 ADR 0024 原样显示。
-- 官方实践（2026-10-08 读取 `app.hyperliquid.xyz` 生产打包代码 `config-DgrJgRxr.js`，文件名随发布变化）：Establish Connection 的 `approveAgent` 动作不带 `agentName`、EIP-712 消息里为空串（无名默认 Agent）；密钥存 `localStorage` 的 `hyperliquid_agent_<地址>`，签好的请求先存 sessionStorage 的 `hyperliquid.pending_agent`；就绪判定是本地密钥地址与 `webData3.userState.agentAddress` 比对；`extraAgents` 只用于 API Wallets 页，`userRole` 只用于地址覆盖功能；官方对这条拒绝文案没有特殊处理。
+- 官方实践（2026-10-08 读取 `app.hyperliquid.xyz` 生产打包代码 `config-DgrJgRxr.js`，文件名随发布变化）：Establish Connection 的 `approveAgent` 动作不带 `agentName`、EIP-712 消息里为空串（无名默认 Agent）；密钥存在 `hyperliquid_agent_<地址>` 键下、存储由 `hyperliquid.persist_trading_connection` 决定（`localStorage` 或 `sessionStorage`），签好的请求先存 sessionStorage 的 `hyperliquid.pending_agent`；就绪判定是本地密钥地址与 `webData3.userState.agentAddress` 比对；`extraAgents` 用于 `api` 类型会话（API Wallets 页的命名钱包与手机扫码导入的密钥），`userRole` 只用于地址覆盖功能；手机链接授权的是命名 `Mobile QR` Agent；官方对这条拒绝文案没有特殊处理。
 - SDK 证据：`@nktkas/hyperliquid` 0.33.3 的 `ApproveAgentRequest` schema 把 `agentName` 定义为 `nullish(..., "")`，缺省时签名与发送都用空串；nktkas 仓库的 `tests/api/exchange/approveAgent.test.ts` 覆盖 `agentName: null` 与缺省两种写法；Python SDK 用空串签名、发送时删掉该键。
 - 采用的方案（ADR 0038）：`approveAgent` 只传 `agentAddress`；`useAgentStatus` 对 `local-registration` 密钥查询 `userRole({ user: 密钥地址 })`（`staleTime` 30 秒），只有 `{ role: "agent", data: { user: 精确 owner } }` 才算已授权，答案绑定密钥地址（`AgentKeyRole`）；授权后的核对用 `queryClient.fetchQuery(infoQueryOptions("userRole"), { staleTime: 0 })` 取新答案并写进同一缓存键；没有本地密钥时已连接的 owner 直接需要新连接、不发请求；Mobile Agent 仍按名字基底、地址、到期查 `extraAgents`，该查询只在本地记录是 Mobile Agent 时启用；去掉 `remote_named_agent_exists`；删除 `trading-agent.ts`、`TRADING_AGENT_NAME`、`VITE_HYPERLIQUID_AGENT_NAME`、Provider 的 `agentName`、`isAgentApproved`；`exchange-error-text.ts` 新增规则翻译 `Too many extra agents for cumulative volume traded. Current limit is N`（中文已补，其他四种语言回退英文）。
 - 未采用：保留命名槽位并处理上限（用户未选；上限按账户成交量变化，预检不可靠）；`webData3` 订阅做被动校验（要在每个挂交易状态钩子的页面订阅重流）；`webData2` 信息请求（载荷过大）。
@@ -68,6 +68,20 @@
 - 未采纳：审查方建议的「等待已有查询结束再强制发起」——取消在途请求更简单，且钩子的查询状态会回退而不是报错。
 
 本轮修复后的验证（提交前工作区）：`pnpm typecheck` 通过；Biome 通过；10 个相关测试文件 205 项通过（其中 `use-agent-status-verification` 与新 cache 测试 25 项）；`node --test scripts/ci-workflows.test.mjs` 12 项；变异 M8（去掉 `cancelQueries`）、M9/M10（请求前读记录）、M11（`staleTime` 30 秒）、M12（换缓存键）各自让对应测试失败，还原后通过。
+
+### 第 2 轮 Codex 对抗审查（对 87b465a1）
+
+评分：行为证伪 7.0、规范与记录 9.0、遗漏与变异 7.0。发现与处理：
+
+- P1（A/C）第 1 轮的 `cancelQueries` 方案在两个显式核对并发时会让先启动的那个拿到回退的旧缓存：TanStack `query.fetch` 在 `revert` 取消且已有 `data` 时直接返回旧 `data`。已改为每个核对用私有查询键 `[...键, { definitiveCheck: 序号 }]` 自己请求（继承宿主重试），只有本键最后启动的核对把答案写回钩子的缓存键（先取消并回退在途的观察查询，再 `setQueryData`）。新增 cache 用例：两个并发核对各得自己的答案、缓存与钩子保留后启动者的答案、较慢的旧答案不覆盖、私有查询不残留。
+- P1（A/C）`refetch()` 在角色答案返回之后、builder fee 返回之前记录被替换或删除时仍会用旧记录推导：已在 `Promise.all` 结束后再读一次记录。新增默认与 Mobile 两个用例（角色先回、换记录、fee 后回）。
+- P2（C）`refetchBuilderFee` 的用例只证明「渲染后重读」：改为 fee 请求 deferred 期间换记录，并补无 builder 配置分支。
+- P2（A）ADR 的核对次数「2 到 3 次」低估：按直接 `register()`、`authorize()` 无密钥、`authorize()` 已有失效密钥分别写明 1 / 3 / 5 次显式请求。
+- P2（B）ADR 对官方实践的两处描述与打包代码不符：`extraAgents` 用于 `api` 类型会话（含手机扫码导入），命名 Agent 还有手机链接的 `Mobile QR`；密钥存储由 `hyperliquid.persist_trading_connection` 决定而非固定 `localStorage`。ADR 与本记录已改写。
+- 另补：`owner-trading-status` 新增外部 owner 无本地密钥时需要 1 次 Agent 签名（含 builder fee 为 2）且不查询 `userRole` 的用例；`action-error` 新增中文目录按上限 5 插值的渲染断言。
+- 第 1 轮第 13 条（取消在途请求不会让观察者报错）的判断本身成立，但审查方指出它不覆盖等待同键请求的其他调用方，故改用私有键。
+
+本轮修复后的验证（提交前工作区）：`pnpm typecheck` 通过；Biome 通过；8 个相关测试文件 176 项通过（`owner-trading-status` 先因 `vi.hoisted` 内引用模块常量报 ReferenceError，改为字面量后通过）；变异 M13（每个核对都写回缓存）、M14（合并刷新沿用 fee 前的记录）、M15（写回前不取消观察查询）、M16（核对共用钩子的查询键）、M17（fee 刷新在请求前读记录）各自让对应测试失败，还原后通过。
 
 ## 后续与替代关系
 

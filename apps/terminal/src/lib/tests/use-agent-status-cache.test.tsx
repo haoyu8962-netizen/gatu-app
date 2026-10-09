@@ -133,6 +133,67 @@ describe("useAgentStatus with the real query cache", () => {
 		expect(container.querySelector("output")?.getAttribute("data-status")).toBe("ready");
 	});
 
+	it("answers each concurrent definitive check from its own request and keeps the latest started one", async () => {
+		const first = deferred<UserRoleResponse>();
+		testState.userRole
+			.mockResolvedValueOnce({ role: "missing" })
+			.mockReturnValueOnce(first.promise)
+			.mockResolvedValue(agentRole(OWNER));
+		renderProbe();
+		await waitForStatus("missing");
+
+		let firstSettled = false;
+		const firstCheck = observedStatus?.refetchAgent(AGENT).finally(() => {
+			firstSettled = true;
+		});
+		await vi.waitFor(() => expect(testState.userRole).toHaveBeenCalledTimes(2));
+		await expect(observedStatus?.refetchAgent(AGENT)).resolves.toMatchObject({ isAgentReady: true, needsAgent: false });
+		expect(testState.userRole).toHaveBeenCalledTimes(3);
+		expect(firstSettled).toBe(false);
+		expect(queryClient.getQueryData(KEY)).toEqual(agentRole(OWNER));
+		await waitForStatus("ready");
+
+		first.resolve({ role: "missing" });
+		await expect(firstCheck).resolves.toMatchObject({ isAgentReady: false, needsAgent: true });
+		expect(queryClient.getQueryData(KEY)).toEqual(agentRole(OWNER));
+		expect(container.querySelector("output")?.getAttribute("data-status")).toBe("ready");
+	});
+
+	it("does not let an earlier check's slower approval overwrite a later check that found the key gone", async () => {
+		const first = deferred<UserRoleResponse>();
+		testState.userRole
+			.mockResolvedValueOnce(agentRole(OWNER))
+			.mockReturnValueOnce(first.promise)
+			.mockResolvedValue({ role: "missing" });
+		renderProbe();
+		await waitForStatus("ready");
+
+		const firstCheck = observedStatus?.refetchAgent(AGENT);
+		await vi.waitFor(() => expect(testState.userRole).toHaveBeenCalledTimes(2));
+		await expect(observedStatus?.refetchAgent(AGENT)).resolves.toMatchObject({ isAgentReady: false, needsAgent: true });
+		await waitForStatus("missing");
+
+		first.resolve(agentRole(OWNER));
+		await expect(firstCheck).resolves.toMatchObject({ isAgentReady: true });
+		expect(queryClient.getQueryData(KEY)).toEqual({ role: "missing" });
+		expect(container.querySelector("output")?.getAttribute("data-status")).toBe("missing");
+	});
+
+	it("leaves no private check query behind in the cache", async () => {
+		testState.userRole.mockResolvedValue(agentRole(OWNER));
+		renderProbe();
+		await waitForStatus("ready");
+
+		await observedStatus?.refetchAgent(AGENT);
+		await new Promise((resolve) => setTimeout(resolve, 10));
+		expect(
+			queryClient
+				.getQueryCache()
+				.findAll({ queryKey: KEY })
+				.map((query) => query.queryKey),
+		).toEqual([KEY]);
+	});
+
 	it("inherits the host QueryClient's retry policy for the post-approval check", async () => {
 		const retryingClient = new QueryClient({ defaultOptions: { queries: { retry: 1, retryDelay: 0 } } });
 		testState.userRole

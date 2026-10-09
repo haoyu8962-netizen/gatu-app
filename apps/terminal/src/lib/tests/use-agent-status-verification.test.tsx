@@ -97,6 +97,7 @@ vi.mock("@sairn/hl-react/signing/agent-storage", () => ({
 	useInvalidAgentStorageRecord: () => false,
 }));
 
+import { infoKey } from "@sairn/hl-react/query/info";
 import { createMobileAgentWalletRecord } from "@sairn/hl-react/signing/mobile-agent";
 import { AgentStatusError, useAgentStatus } from "@sairn/hl-react/signing/use-agent-status";
 import { privateKeyToAccount } from "viem/accounts";
@@ -391,6 +392,66 @@ describe("useAgentStatus definitive verification", () => {
 			isReady: true,
 			signaturesRequired: 0,
 		});
+	});
+
+	it("rereads the local key after the builder fee request settles", async () => {
+		testState.builderConfig = { b: "0x5555555555555555555555555555555555555555", f: 10 };
+		testState.builderFee = 0;
+		testState.keyRole = agentRole(OWNER);
+		const fee = deferred<{ data: number; error: null }>();
+		testState.builderFeeRefetch.mockReturnValue(fee.promise);
+		renderProbe();
+
+		const result = observedStatus?.refetchBuilderFee();
+		testState.localAgent = { privateKey: `0x${"cd".repeat(32)}`, publicKey: NEXT_AGENT, source: "local-registration" };
+		fee.resolve({ data: 10, error: null });
+		await expect(result).resolves.toMatchObject({ isAgentReady: false, isBuilderFeeReady: true, isReady: false });
+	});
+
+	it("rereads the local key without a builder configuration", async () => {
+		testState.keyRole = agentRole(OWNER);
+		const probe = renderProbe();
+		expect(probe?.getAttribute("data-total-ready")).toBe("true");
+
+		testState.localAgent = { privateKey: `0x${"cd".repeat(32)}`, publicKey: NEXT_AGENT, source: "local-registration" };
+		await expect(observedStatus?.refetchBuilderFee()).resolves.toMatchObject({ isAgentReady: false, isReady: false });
+		expect(testState.builderFeeRefetch).not.toHaveBeenCalled();
+	});
+
+	it("does not report the merged refetch ready when the record changed between the role and fee answers", async () => {
+		testState.builderConfig = { b: "0x5555555555555555555555555555555555555555", f: 10 };
+		testState.builderFee = 0;
+		testState.userRoleAnswer.mockResolvedValue(agentRole(OWNER));
+		const fee = deferred<{ data: number; error: null }>();
+		testState.builderFeeRefetch.mockReturnValue(fee.promise);
+		renderProbe();
+
+		const result = observedStatus?.refetch();
+		await vi.waitFor(() =>
+			expect(queryClient.getQueryData(infoKey("userRole", { user: AGENT }, "Mainnet"))).toEqual(agentRole(OWNER)),
+		);
+		testState.localAgent = { privateKey: `0x${"cd".repeat(32)}`, publicKey: NEXT_AGENT, source: "local-registration" };
+		fee.resolve({ data: 10, error: null });
+		await expect(result).resolves.toMatchObject({ isAgentReady: false, isBuilderFeeReady: true, isReady: false });
+	});
+
+	it("does not report a merged Mobile refetch ready when the record changed while the fee was loading", async () => {
+		testState.builderConfig = { b: "0x5555555555555555555555555555555555555555", f: 10 };
+		testState.builderFee = 0;
+		const { localAgent, publicKey, validUntil } = mobileLocalAgent();
+		testState.localAgent = localAgent;
+		testState.extraAgents = [{ address: publicKey, name: "Mobile", validUntil }];
+		const fee = deferred<{ data: number; error: null }>();
+		testState.builderFeeRefetch.mockReturnValue(fee.promise);
+		renderProbe();
+
+		const result = observedStatus?.refetch();
+		await vi.waitFor(() => expect(testState.extraAgentsRefetch).toHaveBeenCalledOnce());
+		await new Promise((resolve) => setTimeout(resolve, 10));
+		testState.localAgent = { privateKey: `0x${"ab".repeat(32)}`, publicKey: AGENT, source: "local-registration" };
+		fee.resolve({ data: 10, error: null });
+		await expect(result).resolves.toMatchObject({ isAgentReady: false, isBuilderFeeReady: true, isReady: false });
+		expect(testState.userRoleRequests).toEqual([]);
 	});
 
 	it("does not let a rendered key role vouch for a key stored after render when only the fee is refetched", async () => {

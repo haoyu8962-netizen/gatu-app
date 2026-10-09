@@ -265,6 +265,16 @@ describe("production Chinese catalog", () => {
 		}
 	});
 
+	it("renders the named Agent cap rejection in Chinese with the reported limit", () => {
+		const template = describeExchangeErrorText(NAMED_AGENT_CAP_ERROR)?.message;
+		const chinese = productionChinese(template);
+		expect(chinese).toContain("{limit}");
+		i18n.loadAndActivate({ locale: "zh", messages: { [messageId(template as string)]: chinese as string } });
+		expect(
+			formatExchangeErrorText("Too many extra agents for cumulative volume traded. Current limit is 5", translate),
+		).toBe((chinese as string).replace("{limit}", "5"));
+	});
+
 	it("renders the reported leverage rejection in Chinese", () => {
 		const chinese = productionChinese(LEVERAGE_DECREASE_MESSAGE);
 		expect(chinese).toBe("全仓仓位的可用保证金不足，无法降低杠杆。请存入更多抵押品后再降低杠杆。");

@@ -1,5 +1,5 @@
 import type { ExtraAgentsResponse, MaxBuilderFeeResponse, UserRoleResponse } from "@nktkas/hyperliquid";
-import { useQueryClient } from "@tanstack/react-query";
+import { hashKey, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { type Address, zeroAddress } from "viem";
 import { useInfo } from "../hooks/useInfo";
@@ -88,6 +88,10 @@ export interface UseAgentStatusResult extends AgentRequirements {
 }
 
 const AGENT_KEY_ROLE_STALE_MS = 30_000;
+
+// Sequence number of the definitive checks started per cache key: only the check that started last
+// writes its answer back to the hook's cache, so a slower earlier answer cannot overwrite a fresher one.
+const definitiveCheckSequence = new Map<string, number>();
 
 export function classifyAgentStatusError(error: unknown): AgentStatusErrorReason {
 	const visited = new Set<unknown>();
@@ -418,14 +422,28 @@ export function useAgentStatus(options: { enableAgent?: boolean } = {}): UseAgen
 		return address ? readAgentFromStorage(env, address) : null;
 	}
 
-	// An answer that was already in flight when the approval completed may predate it. Cancel it
-	// (reverting the hook's query to its previous state) so the definitive check always sends its
-	// own request and the shared cache key ends up with the answer that came after the approval.
+	// A definitive check sends its own request under a private query key: TanStack would otherwise
+	// hand it a request that was already in flight (possibly from before the approval), and cancelling
+	// that shared request would resolve another caller with the reverted cache instead of an answer.
+	// The private query still inherits the host QueryClient's retry policy. The answer is then written
+	// to the hook's cache key, after cancelling (and reverting) an observer fetch still in flight, so a
+	// slower pre-approval answer cannot overwrite it; only the check started last writes back.
 	async function fetchAgentKeyRole(agentAddress: Address): Promise<AgentKeyRole> {
 		const options = infoQueryOptions(info, "userRole", agentKeyRoleParams(agentAddress), env);
+		const cacheKey = hashKey(options.queryKey);
+		const sequence = (definitiveCheckSequence.get(cacheKey) ?? 0) + 1;
+		definitiveCheckSequence.set(cacheKey, sequence);
 		try {
-			await queryClient.cancelQueries({ queryKey: options.queryKey, exact: true });
-			const role = await queryClient.fetchQuery({ ...options, staleTime: 0 });
+			const role = await queryClient.fetchQuery({
+				queryKey: [...options.queryKey, { definitiveCheck: sequence }],
+				queryFn: options.queryFn,
+				staleTime: 0,
+				gcTime: 0,
+			});
+			if (definitiveCheckSequence.get(cacheKey) === sequence) {
+				await queryClient.cancelQueries({ queryKey: options.queryKey, exact: true });
+				queryClient.setQueryData(options.queryKey, role);
+			}
 			return { agentAddress, role };
 		} catch (error) {
 			throw createAgentStatusError(error);
@@ -492,7 +510,7 @@ export function useAgentStatus(options: { enableAgent?: boolean } = {}): UseAgen
 
 		return deriveAgentRequirements(
 			builderFeeResult.data,
-			freshEvidence,
+			{ ...freshEvidence, localAgent: readLatestLocalAgent() },
 			builderConfig,
 			Date.now(),
 			agentAddressOverride,

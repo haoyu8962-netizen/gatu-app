@@ -18,6 +18,15 @@ const BUILDER = "0x3333333333333333333333333333333333333333";
 const state = vi.hoisted(() => ({
 	fee: 0,
 	keyRole: undefined as { role: "missing" } | { role: "agent"; data: { user: string } } | undefined,
+	localAgent: {
+		publicKey: "0x2222222222222222222222222222222222222222",
+		privateKey: "0x01",
+		source: "local-registration",
+	} as {
+		publicKey: string;
+		privateKey: string;
+		source: "local-registration";
+	} | null,
 	queryCalls: [] as Array<{ method: string; enabled: boolean }>,
 	refetchAgent: vi.fn(),
 	refetchFee: vi.fn(),
@@ -60,9 +69,9 @@ vi.mock("@sairn/hl-react/hooks/useInfo", () => ({
 }));
 vi.mock("@sairn/hl-react/signing/agent-storage", async (importOriginal) => ({
 	...(await importOriginal<typeof import("@sairn/hl-react/signing/agent-storage")>()),
-	useAgentWalletStorage: () => ({ publicKey: AGENT, privateKey: "0x01", source: "local-registration" }),
+	useAgentWalletStorage: () => state.localAgent,
 	useInvalidAgentStorageRecord: () => false,
-	readAgentFromStorage: () => ({ publicKey: AGENT, privateKey: "0x01", source: "local-registration" }),
+	readAgentFromStorage: () => state.localAgent,
 }));
 vi.mock("@sairn/hl-react/signing/use-agent-registration", () => ({
 	useAgentRegistration: () => ({ register: state.registerAgent, status: "idle", error: null }),
@@ -108,6 +117,7 @@ describe("owner and Agent trading readiness", () => {
 		queryClient = new QueryClient({ defaultOptions: { mutations: { retry: false } } });
 		state.fee = 0;
 		state.keyRole = undefined;
+		state.localAgent = { publicKey: AGENT, privateKey: "0x01", source: "local-registration" };
 		state.queryCalls = [];
 		state.refetchAgent.mockReset().mockImplementation(async () => ({ data: state.keyRole, error: null }));
 		state.refetchFee.mockReset().mockImplementation(async () => ({ data: state.fee, error: null }));
@@ -184,6 +194,24 @@ describe("owner and Agent trading readiness", () => {
 			return { data: 10, error: null };
 		});
 		await expect(observed.refetchBuilderFee()).rejects.toThrow("Owner changed");
+	});
+
+	it("needs one Agent signature for an external owner without a local key, plus the builder fee", () => {
+		state.localAgent = null;
+		render(null);
+		expect(observed).toMatchObject({
+			signerMode: "agent",
+			isSignerReady: false,
+			needsAgent: true,
+			needsBuilderFee: true,
+			signaturesRequired: 2,
+			signerAddress: null,
+		});
+		expect(state.queryCalls.filter(({ method }) => method === "userRole").every(({ enabled }) => !enabled)).toBe(true);
+
+		state.fee = 10;
+		render(null);
+		expect(observed).toMatchObject({ needsAgent: true, needsBuilderFee: false, signaturesRequired: 1 });
 	});
 
 	it("keeps external trading dependent on an actual approved Agent", () => {
