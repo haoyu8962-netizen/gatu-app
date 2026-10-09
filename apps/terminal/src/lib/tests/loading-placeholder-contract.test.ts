@@ -79,6 +79,8 @@ const LAZY_GLOBAL_MODALS_MODULE = /["'][^"']*\/lazy-global-modals["']/;
 /from\s+"(?:@\/components\/trade\/components|\.\.?(?:\/components)?)\/lazy-global-modals"/;
 const LAZY_GLOBAL_MODALS_IMPORTERS: Record<string, string> = {
 	"components/trade/components/global-modals.tsx": "the host that renders the lazy global modals",
+	"components/trade/components/deposit-modal-host.tsx":
+		"mounts the deposit shell once and renders the lazy body inside it",
 	"components/trade/components/position-dialog-host-gate.tsx": "the host of the lazy position dialogs",
 	"components/trade/mobile/mobile-nav-drawer.tsx": "preloads the settings modal before the drawer closes",
 };
@@ -148,24 +150,22 @@ describe("loading placeholder contract", () => {
 		expect(found).toEqual(registered);
 	});
 
-	it("keeps the deposit dialog and its chunk fallback on one shell", () => {
+	it("mounts the deposit shell once in the host and loads only the body lazily", () => {
 		const fallback = read("components/trade/components/deposit-modal-loading-fallback.tsx");
 		const dialog = read("components/trade/tradebox/deposit-modal.tsx");
-		const host = read("components/trade/components/global-modals.tsx");
+		const host = read("components/trade/components/deposit-modal-host.tsx");
+		const modals = read("components/trade/components/global-modals.tsx");
 
-		expect(fallback).toContain("<FundsModalShell");
-		expect(dialog).not.toContain("<PendingActionModal");
-		expect(dialog).toContain(
-			[
-				"<FundsModalShell",
-				"open={open}",
-				"onOpenChange={handleModalOpenChange}",
-				"isPending={isWithdrawPending || isDepositPreflighting}",
-				"presentation={presentation}",
-				"tab={visibleTab}",
-			].join("\n\t\t\t"),
-		);
-		expect(host).toContain('displayedModal === "deposit" ? <DepositModalLoadingFallback />');
+		expect(host).toContain("<FundsModalShell");
+		expect(host).toContain("{surface ? surface.content : <DepositModalLoadingFallback />}");
+		expect(host).toContain("<Suspense fallback={null}>");
+		expect(host).toContain("const DepositModalBody = memo(DepositModal);");
+		expect(fallback).not.toMatch(/FundsModalShell|PendingActionModal|AdaptiveModal|Modal\b|Drawer/);
+		expect(dialog).not.toMatch(/<FundsModalShell|<PendingActionModal/);
+		expect(dialog).toContain("onSurfaceChange(surface);");
+		expect(dialog).toContain("}, [onSurfaceChange, surface]);");
+		expect(modals).toContain('{displayedModal === "deposit" && <DepositModalHost key={');
+		expect(modals).not.toContain("DepositModalLoadingFallback");
 		expect(sources.filter(({ text }) => text.includes(FUNDS_MODAL_CHROME_MARKER)).map(({ file }) => file)).toEqual([
 			"components/trade/components/funds-modal-shell.tsx",
 		]);

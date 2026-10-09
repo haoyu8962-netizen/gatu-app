@@ -91,8 +91,7 @@ import {
 	useTransferModalActions,
 } from "@/stores/use-global-modal-store";
 import { useIsTestnet } from "@/stores/use-global-settings-store";
-import { renderFundsModalBackButton } from "../components/funds-modal-back-button";
-import { FundsModalShell } from "../components/funds-modal-shell";
+import type { DepositModalSurface } from "../components/deposit-modal-surface";
 import { DepositForm } from "./deposit/deposit-form";
 import { DepositMethodChooser } from "./deposit/deposit-method-chooser";
 import { StatusScreen, WalletNotConnected } from "./deposit/shared-ui";
@@ -126,7 +125,11 @@ function normalizeError(error: unknown, fallbackMessage: string): Error {
 	return new Error(typeof error === "string" ? error : fallbackMessage);
 }
 
-export function DepositModal() {
+interface Props {
+	onSurfaceChange: (surface: DepositModalSurface) => void;
+}
+
+export function DepositModal({ onSurfaceChange }: Props) {
 	const { t } = useLingui();
 	const numberFormat = useNumberFormat();
 	const { formatNumber } = numberFormat;
@@ -1334,244 +1337,257 @@ export function DepositModal() {
 	if (depositStatus === "confirming") depositPendingHeading = <Trans>Waiting for chain confirmation</Trans>;
 	const recoveredCctpDeposit = visibleTab === "deposit" && !depositHash ? cctpDepositTracking.recoveryRecord : null;
 
-	if (recoveredCctpDeposit) {
-		const forwardSubmitted = cctpDepositTracking.data?.status === "forward-submitted";
-		return (
-			<StatusScreen
-				open={open}
-				presentation={presentation}
-				title={<Trans>Deposit</Trans>}
-				icon={forwardSubmitted ? "success" : "awaiting"}
-				heading={forwardSubmitted ? <Trans>Deposit submitted to Hyperliquid</Trans> : <Trans>Forwarding deposit</Trans>}
-				description={
-					forwardSubmitted ? (
-						<Trans>Your balance updates once Hyperliquid credits it.</Trans>
-					) : cctpDepositTracking.isError ? (
-						<Trans>
-							The Arbitrum transaction was submitted, but Circle status is temporarily unavailable. Tracking will resume
-							when you return.
-						</Trans>
-					) : (
-						<Trans>Circle is forwarding your USDC to Hyperliquid. Do not submit this deposit again.</Trans>
-					)
-				}
-				txHash={recoveredCctpDeposit.sourceHash}
-				txChain={depositTxChain}
-				onClose={handleClose}
-			>
-				<Button onClick={handleClose} className="w-full">
-					<Trans>Close</Trans>
-				</Button>
-			</StatusScreen>
-		);
-	}
-
-	if (depositStatus === "pending" || depositStatus === "confirming") {
-		return (
-			<StatusScreen
-				open={open}
-				presentation={presentation}
-				title={<Trans>Deposit</Trans>}
-				icon={depositStatus === "confirming" ? "awaiting" : "wallet"}
-				heading={depositPendingHeading}
-				description={
-					<span className="flex flex-col gap-1">
-						<span className="tabular-nums">
-							{numberFormat.formatDecimalString(toPlainDecimal(displayedDepositAmount))} USDC → Hyperliquid
-						</span>
-						{walletResponseDelayed ? (
-							<span className="flex flex-col gap-1">
+	function buildSurface(): DepositModalSurface {
+		if (recoveredCctpDeposit) {
+			const forwardSubmitted = cctpDepositTracking.data?.status === "forward-submitted";
+			return {
+				kind: "status",
+				screen: (
+					<StatusScreen
+						open={open}
+						presentation={presentation}
+						title={<Trans>Deposit</Trans>}
+						icon={forwardSubmitted ? "success" : "awaiting"}
+						heading={
+							forwardSubmitted ? <Trans>Deposit submitted to Hyperliquid</Trans> : <Trans>Forwarding deposit</Trans>
+						}
+						description={
+							forwardSubmitted ? (
+								<Trans>Your balance updates once Hyperliquid credits it.</Trans>
+							) : cctpDepositTracking.isError ? (
 								<Trans>
-									Keep this window open and confirm or reject the request in your wallet. Do not submit another deposit.
+									The Arbitrum transaction was submitted, but Circle status is temporarily unavailable. Tracking will
+									resume when you return.
 								</Trans>
-								<Trans>Closing this dialog will not cancel it.</Trans>
-							</span>
-						) : null}
-					</span>
-				}
-				txHash={depositStatus === "confirming" ? depositHash : undefined}
-				txChain={depositTxChain}
-				closable={false}
-			>
-				{walletResponseDelayed ? (
-					<Button variant="outline" intent="neutral" onClick={handlePendingClose} className="w-full">
-						<Trans>Close</Trans>
-					</Button>
-				) : null}
-			</StatusScreen>
-		);
-	}
-
-	if (walletDepositProviderUnavailable) {
-		return (
-			<StatusScreen
-				open={open}
-				presentation={presentation}
-				title={<Trans>Deposit</Trans>}
-				icon="error"
-				heading={<Trans>Wallet connection unavailable</Trans>}
-				description={formatTransferError(
-					walletProviderError,
-					(descriptor) => t(descriptor),
-					t`Wallet connection failed. Unlock your wallet, approve the connection, then retry.`,
-				)}
-				onClose={handleClose}
-			>
-				<div className="flex w-full gap-2">
-					<Button variant="outline" intent="neutral" onClick={handleClose} className="flex-1">
-						<Trans>Cancel</Trans>
-					</Button>
-					<Button onClick={handleReconnectWallet} disabled={!walletsReady || isReconnecting} className="flex-1">
-						<Trans>Reconnect wallet</Trans>
-					</Button>
-				</div>
-			</StatusScreen>
-		);
-	}
-
-	function renderDepositContent() {
-		if (!canUseDeposit) {
-			return <WalletNotConnected onConnect={handleReconnectWallet} isConnecting={!walletsReady || isReconnecting} />;
+							) : (
+								<Trans>Circle is forwarding your USDC to Hyperliquid. Do not submit this deposit again.</Trans>
+							)
+						}
+						txHash={recoveredCctpDeposit.sourceHash}
+						txChain={depositTxChain}
+						onClose={handleClose}
+					>
+						<Button onClick={handleClose} className="w-full">
+							<Trans>Close</Trans>
+						</Button>
+					</StatusScreen>
+				),
+			};
 		}
-		if (showsDepositMethods) {
+
+		if (depositStatus === "pending" || depositStatus === "confirming") {
+			return {
+				kind: "status",
+				screen: (
+					<StatusScreen
+						open={open}
+						presentation={presentation}
+						title={<Trans>Deposit</Trans>}
+						icon={depositStatus === "confirming" ? "awaiting" : "wallet"}
+						heading={depositPendingHeading}
+						description={
+							<span className="flex flex-col gap-1">
+								<span className="tabular-nums">
+									{numberFormat.formatDecimalString(toPlainDecimal(displayedDepositAmount))} USDC → Hyperliquid
+								</span>
+								{walletResponseDelayed ? (
+									<span className="flex flex-col gap-1">
+										<Trans>
+											Keep this window open and confirm or reject the request in your wallet. Do not submit another
+											deposit.
+										</Trans>
+										<Trans>Closing this dialog will not cancel it.</Trans>
+									</span>
+								) : null}
+							</span>
+						}
+						txHash={depositStatus === "confirming" ? depositHash : undefined}
+						txChain={depositTxChain}
+						closable={false}
+					>
+						{walletResponseDelayed ? (
+							<Button variant="outline" intent="neutral" onClick={handlePendingClose} className="w-full">
+								<Trans>Close</Trans>
+							</Button>
+						) : null}
+					</StatusScreen>
+				),
+			};
+		}
+
+		if (walletDepositProviderUnavailable) {
+			return {
+				kind: "status",
+				screen: (
+					<StatusScreen
+						open={open}
+						presentation={presentation}
+						title={<Trans>Deposit</Trans>}
+						icon="error"
+						heading={<Trans>Wallet connection unavailable</Trans>}
+						description={formatTransferError(
+							walletProviderError,
+							(descriptor) => t(descriptor),
+							t`Wallet connection failed. Unlock your wallet, approve the connection, then retry.`,
+						)}
+						onClose={handleClose}
+					>
+						<div className="flex w-full gap-2">
+							<Button variant="outline" intent="neutral" onClick={handleClose} className="flex-1">
+								<Trans>Cancel</Trans>
+							</Button>
+							<Button onClick={handleReconnectWallet} disabled={!walletsReady || isReconnecting} className="flex-1">
+								<Trans>Reconnect wallet</Trans>
+							</Button>
+						</div>
+					</StatusScreen>
+				),
+			};
+		}
+
+		function renderDepositContent() {
+			if (!canUseDeposit) {
+				return <WalletNotConnected onConnect={handleReconnectWallet} isConnecting={!walletsReady || isReconnecting} />;
+			}
+			if (showsDepositMethods) {
+				return (
+					<DepositMethodChooser
+						fiat={{ walletKind: depositMethodChoice.walletKind, disabled: depositMethodChoice.disabled }}
+						notice={getFundsAvailabilityNotice(depositAvailability)}
+						onTransfer={() => setDepositStep("transfer")}
+						onBuy={depositMethodChoice.start}
+						onBuyAvailable={warmPrivyFiatFundingHost}
+					/>
+				);
+			}
 			return (
-				<DepositMethodChooser
-					fiat={{ walletKind: depositMethodChoice.walletKind, disabled: depositMethodChoice.disabled }}
-					notice={getFundsAvailabilityNotice(depositAvailability)}
-					onTransfer={() => setDepositStep("transfer")}
-					onBuy={depositMethodChoice.start}
-					onBuyAvailable={warmPrivyFiatFundingHost}
+				<DepositForm
+					amount={depositAmount}
+					onAmountChange={handleDepositAmountChange}
+					balance={depositBalance}
+					maxAmount={maxDepositAmount}
+					maxDepositRaw={maxDepositRaw}
+					balanceStatus={isDepositDataRetrying ? "loading" : depositBalanceStatus}
+					validation={depositValidation}
+					preflightError={depositCctpPreflightError}
+					onRetryData={handleDepositDataRetry}
+					amountError={cctpDepositAmountLimitError ?? cctpDepositMinimumError ?? baseDepositValidation.error}
+					isPending={isDepositPending}
+					onSubmit={handleDepositSubmit}
+					routingStatus={depositRoutingStatus}
+					routingPreflightError={depositRoutingPreflightError}
+					depositRoute={usdcRoutingQuery.data?.depositRoute ?? null}
+					onRetryRouting={handleDepositRoutingRetry}
+					networkName={depositNetworkName}
+					sponsoredCctpEnabled={sponsoredCctpEnabled}
+					sponsoredCctpReadiness={sponsoredCctpReadiness}
+					depositUnavailableReason={
+						getFundsAvailabilityNotice(depositAvailability) ??
+						(depositRouteReady && selectedDepositRoute === "cctp" && !isEmbeddedDeposit && !cctpExternalDepositEnabled
+							? t`CCTP deposits are awaiting funded end-to-end verification for this network.`
+							: null)
+					}
+					requiresExplicitFundingDeposit={isEmbeddedDeposit && !isTestnet}
+					cctpFee={cctpDepositFee}
+					minimumDepositRaw={cctpDepositMinimumRaw}
+					belowMinimumDepositRaw={cctpDepositBelowMinimumRaw}
+					cctpFeeLoading={
+						isDepositDataRetrying || (selectedDepositRoute === "cctp" && displayedCctpDepositFeeQuery.isLoading)
+					}
+					cctpFeeError={selectedDepositRoute === "cctp" && displayedCctpDepositFeeQuery.isError}
+					pendingCctpRecovery={
+						!depositHash &&
+						!!cctpDepositTracking.recoveryRecord &&
+						cctpDepositTracking.data?.status !== "forward-submitted"
+					}
+					usesFundingAddressFlow={isEmbeddedDeposit}
+					fundingAddressPending={
+						depositAvailability.available && isEmbeddedDeposit && !embeddedWalletError && !depositEmbeddedWalletAddress
+					}
+					fundingAddressError={embeddedWalletError ? embeddedWalletValidationError : null}
+					fundingAddress={
+						depositAvailability.available && isEmbeddedDeposit && sponsoredCctpReadiness.status === "ready"
+							? depositEmbeddedWalletAddress
+							: undefined
+					}
+					onRetryFundingAddress={() => {
+						void ensureEmailEmbeddedWallet().catch(() => {});
+					}}
+					onDone={handleClose}
 				/>
 			);
 		}
-		return (
-			<DepositForm
-				amount={depositAmount}
-				onAmountChange={handleDepositAmountChange}
-				balance={depositBalance}
-				maxAmount={maxDepositAmount}
-				maxDepositRaw={maxDepositRaw}
-				balanceStatus={isDepositDataRetrying ? "loading" : depositBalanceStatus}
-				validation={depositValidation}
-				preflightError={depositCctpPreflightError}
-				onRetryData={handleDepositDataRetry}
-				amountError={cctpDepositAmountLimitError ?? cctpDepositMinimumError ?? baseDepositValidation.error}
-				isPending={isDepositPending}
-				onSubmit={handleDepositSubmit}
-				routingStatus={depositRoutingStatus}
-				routingPreflightError={depositRoutingPreflightError}
-				depositRoute={usdcRoutingQuery.data?.depositRoute ?? null}
-				onRetryRouting={handleDepositRoutingRetry}
-				networkName={depositNetworkName}
-				sponsoredCctpEnabled={sponsoredCctpEnabled}
-				sponsoredCctpReadiness={sponsoredCctpReadiness}
-				depositUnavailableReason={
-					getFundsAvailabilityNotice(depositAvailability) ??
-					(depositRouteReady && selectedDepositRoute === "cctp" && !isEmbeddedDeposit && !cctpExternalDepositEnabled
-						? t`CCTP deposits are awaiting funded end-to-end verification for this network.`
-						: null)
-				}
-				requiresExplicitFundingDeposit={isEmbeddedDeposit && !isTestnet}
-				cctpFee={cctpDepositFee}
-				minimumDepositRaw={cctpDepositMinimumRaw}
-				belowMinimumDepositRaw={cctpDepositBelowMinimumRaw}
-				cctpFeeLoading={
-					isDepositDataRetrying || (selectedDepositRoute === "cctp" && displayedCctpDepositFeeQuery.isLoading)
-				}
-				cctpFeeError={selectedDepositRoute === "cctp" && displayedCctpDepositFeeQuery.isError}
-				pendingCctpRecovery={
-					!depositHash &&
-					!!cctpDepositTracking.recoveryRecord &&
-					cctpDepositTracking.data?.status !== "forward-submitted"
-				}
-				usesFundingAddressFlow={isEmbeddedDeposit}
-				fundingAddressPending={
-					depositAvailability.available && isEmbeddedDeposit && !embeddedWalletError && !depositEmbeddedWalletAddress
-				}
-				fundingAddressError={embeddedWalletError ? embeddedWalletValidationError : null}
-				fundingAddress={
-					depositAvailability.available && isEmbeddedDeposit && sponsoredCctpReadiness.status === "ready"
-						? depositEmbeddedWalletAddress
-						: undefined
-				}
-				onRetryFundingAddress={() => {
-					void ensureEmailEmbeddedWallet().catch(() => {});
-				}}
-				onDone={handleClose}
-			/>
-		);
+
+		return {
+			kind: "shell",
+			tab: visibleTab,
+			isPending: isWithdrawPending || isDepositPreflighting,
+			backButton: canReturnToDepositMethods
+				? { disabled: isDepositPending, onClick: () => setDepositStep("methods") }
+				: null,
+			onOpenChange: handleModalOpenChange,
+			content: (
+				<div className={usesFundsRedesign ? "flex flex-col" : "flex min-h-72 flex-col"}>
+					{visibleTab === "deposit" && renderDepositContent()}
+
+					{visibleTab === "withdraw" &&
+						(!canUseFundsActions ? (
+							<WalletNotConnected onConnect={handleReconnectWallet} isConnecting={!walletsReady || isReconnecting} />
+						) : (
+							<WithdrawForm
+								amount={withdrawAmount}
+								onAmountChange={setWithdrawAmount}
+								destination={requiresWithdrawDestination ? withdrawDestination : (walletAddress ?? "")}
+								onDestinationChange={setWithdrawDestination}
+								destinationRequired={requiresWithdrawDestination}
+								destinationError={withdrawDestinationError}
+								available={exactWithdrawable}
+								maxAmount={withdrawalMaxAmount}
+								route={withdrawalRoute}
+								routingStatus={withdrawalRoutingStatus}
+								routingPreflightFailed={withdrawalRoutingPreflightFailed}
+								routeChanged={withdrawalRouteChanged}
+								routeFee={withdrawalRouteFee}
+								activationFee={withdrawalActivationFee}
+								showActivationFee={isPositiveDecimal(withdrawalActivationFee)}
+								prerequisitesPending={withdrawalPrerequisitesPending}
+								prerequisiteError={withdrawalPrerequisiteError}
+								canRetryPrerequisites={canRetryWithdrawalPrerequisites}
+								onRetryPrerequisites={handleWithdrawalPrerequisiteRetry}
+								validation={{
+									...withdrawValidation,
+									error:
+										withdrawalPrerequisitesReady && !withdrawalPrerequisitesPending ? withdrawValidation.error : null,
+								}}
+								canSubmit={canSubmitWithdraw}
+								isPending={isWithdrawPending}
+								onSubmit={handleWithdrawSubmit}
+								spotAvailable={accountSummary.spotUsdcAvailable}
+								showSpotFundsNotice={showSpotFundsNotice}
+								onTransferClick={
+									fundsActionAvailability.internalTransfer.available ? handlePerpsSpotTransferClick : undefined
+								}
+							/>
+						))}
+
+					{visibleTab === "bridge" && showBridgeTab && (
+						<Suspense fallback={null}>
+							{canUseFundsActions ? (
+								<LazyBridgeTab />
+							) : (
+								<WalletNotConnected onConnect={handleReconnectWallet} isConnecting={!walletsReady || isReconnecting} />
+							)}
+						</Suspense>
+					)}
+				</div>
+			),
+		};
 	}
 
-	return (
-		<FundsModalShell
-			open={open}
-			onOpenChange={handleModalOpenChange}
-			isPending={isWithdrawPending || isDepositPreflighting}
-			presentation={presentation}
-			tab={visibleTab}
-			headerStart={
-				canReturnToDepositMethods
-					? renderFundsModalBackButton({
-							disabled: isDepositPending,
-							label: t`Back`,
-							onClick: () => setDepositStep("methods"),
-						})
-					: null
-			}
-		>
-			<div className={usesFundsRedesign ? "flex flex-col" : "flex min-h-72 flex-col"}>
-				{visibleTab === "deposit" && renderDepositContent()}
+	const surface = buildSurface();
+	useLayoutEffect(() => {
+		onSurfaceChange(surface);
+	}, [onSurfaceChange, surface]);
 
-				{visibleTab === "withdraw" &&
-					(!canUseFundsActions ? (
-						<WalletNotConnected onConnect={handleReconnectWallet} isConnecting={!walletsReady || isReconnecting} />
-					) : (
-						<WithdrawForm
-							amount={withdrawAmount}
-							onAmountChange={setWithdrawAmount}
-							destination={requiresWithdrawDestination ? withdrawDestination : (walletAddress ?? "")}
-							onDestinationChange={setWithdrawDestination}
-							destinationRequired={requiresWithdrawDestination}
-							destinationError={withdrawDestinationError}
-							available={exactWithdrawable}
-							maxAmount={withdrawalMaxAmount}
-							route={withdrawalRoute}
-							routingStatus={withdrawalRoutingStatus}
-							routingPreflightFailed={withdrawalRoutingPreflightFailed}
-							routeChanged={withdrawalRouteChanged}
-							routeFee={withdrawalRouteFee}
-							activationFee={withdrawalActivationFee}
-							showActivationFee={isPositiveDecimal(withdrawalActivationFee)}
-							prerequisitesPending={withdrawalPrerequisitesPending}
-							prerequisiteError={withdrawalPrerequisiteError}
-							canRetryPrerequisites={canRetryWithdrawalPrerequisites}
-							onRetryPrerequisites={handleWithdrawalPrerequisiteRetry}
-							validation={{
-								...withdrawValidation,
-								error:
-									withdrawalPrerequisitesReady && !withdrawalPrerequisitesPending ? withdrawValidation.error : null,
-							}}
-							canSubmit={canSubmitWithdraw}
-							isPending={isWithdrawPending}
-							onSubmit={handleWithdrawSubmit}
-							spotAvailable={accountSummary.spotUsdcAvailable}
-							showSpotFundsNotice={showSpotFundsNotice}
-							onTransferClick={
-								fundsActionAvailability.internalTransfer.available ? handlePerpsSpotTransferClick : undefined
-							}
-						/>
-					))}
-
-				{visibleTab === "bridge" && showBridgeTab && (
-					<Suspense fallback={null}>
-						{canUseFundsActions ? (
-							<LazyBridgeTab />
-						) : (
-							<WalletNotConnected onConnect={handleReconnectWallet} isConnecting={!walletsReady || isReconnecting} />
-						)}
-					</Suspense>
-				)}
-			</div>
-		</FundsModalShell>
-	);
+	return null;
 }

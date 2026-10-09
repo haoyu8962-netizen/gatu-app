@@ -29,13 +29,7 @@ function LeverageModalComponent({ open, onOpenChange, marketIdentity, ...content
 
 	return (
 		<Modal open={open} onOpenChange={onOpenChange}>
-			<ModalPopup
-				size="sm"
-				showClose
-				closeLabel={t`Close`}
-				overlayClassName="bg-trading-panel-scrim"
-				className="font-market-close"
-			>
+			<ModalPopup size="sm" showClose closeLabel={t`Close`} className="font-market-close">
 				<LeverageModalContent
 					key={marketIdentity ?? "market"}
 					{...contentProps}

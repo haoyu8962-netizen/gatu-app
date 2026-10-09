@@ -88,7 +88,7 @@ const ModalPopup = React.forwardRef<HTMLDivElement, ModalPopupProps>(
 		<Dialog.Portal>
 			<Dialog.Backdrop
 				className={cn(
-					"fixed inset-0 bg-scrim transition-opacity duration-200 ease-out motion-reduce:transition-none data-starting-style:opacity-0 data-ending-style:opacity-0",
+					"fixed inset-0 bg-scrim backdrop-blur-[2px] transition-opacity duration-200 ease-out motion-reduce:transition-none data-starting-style:opacity-0 data-ending-style:opacity-0",
 					layer === "blocking" ? "z-[var(--z-blocking-overlay)]" : "z-40",
 					overlayClassName,
 				)}
