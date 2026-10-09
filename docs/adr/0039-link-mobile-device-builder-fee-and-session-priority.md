@@ -27,7 +27,7 @@
 1. **关联只关联，不做授权；账号未激活交易时不关联。**
    - 关联弹窗不发起、也不展示任何 builder fee 签名，只保留「Approve mobile trading key」一个动作。
    - 弹窗读取 `useTradingStatus().needsBuilderFee`。确认 builder fee 未批准（账号尚未激活交易）时，这个按钮置灰，并通过 `aria-describedby` 关联一句说明：「此账户尚未激活交易。请先在这台电脑上存款并下第一笔订单，完成交易授权后再关联手机。」授权仍然属于第一笔需要 builder 的交易动作，邮箱账户静默完成。
-   - 点击时先 `refetchBuilderFee()` 再核对一次：
+   - 点击时先直接请求一次 `info.maxBuilderFee`（`lib/mobile-sync/trading-activation.ts`，不经查询缓存，随弹窗中止、10 秒超时，响应必须是数字）再核对一次。第 3 轮审查指出，若用 `refetchBuilderFee()`，TanStack 在没有数据且已有在途请求时会复用点击前的请求，所以改为直接请求：
      - 仍未批准：回到置灰状态，不签名；
      - 读不到答案：显示「无法在 Hyperliquid 上核对交易是否已激活，未签名，可重试」，不签名。
    - Agent 注册（包括手机 Agent）不批准 builder fee，契约不变。
@@ -71,6 +71,10 @@
    - 桌面与手机余额表在 Agent-only 时按 `sessionMode` 锁定资金按钮（可用性布尔值），不再取决于提示文案；地区原因优先时按钮仍禁用，原因行显示当前的地区原因。
    - 「手机访问已结束」通知忽略迟到的、属于已被新导入密钥取代的 owner 的事件。
    - 新增原因行改用 `trading-panel-*` 令牌。
+9. **审查补充（第 3 轮）**：
+   - 余额表的原因行经 `getFundsAvailabilityNotice` 过滤被动原因：地区尚未解析时只禁用按钮、不显示「正在检查地区」，已确认的地区限制照常显示（第 2 轮修复曾直接显示原因文案，违反移动数据展示契约）。
+   - 名额检查用 API 钱包页的 `isApiWalletExtraAgentSnapshot` 校验整份响应，格式异常时不显示任何名额文字。
+   - 扫码器的动态导入失败、金库控制器的 `sessionMode` 接线、质押控制器的 `agentOnlySession` 都有了测试，并进入 CI。
 
 ## 备选方案
 

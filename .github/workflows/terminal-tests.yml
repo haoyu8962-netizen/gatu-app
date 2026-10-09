@@ -146,6 +146,7 @@ jobs:
           src/lib/tests/mobile-agent-ended-notifier.test.tsx
           src/lib/tests/trading-guard-session.test.tsx
           src/lib/tests/use-privy-owner-signer.test.tsx
+          src/lib/tests/mobile-agent-qr-scanner-load.test.ts
 
       - name: Test route provider lifecycles
         working-directory: apps/terminal
@@ -233,6 +234,8 @@ jobs:
           src/lib/tests/earn-interest-history.test.ts
           src/lib/tests/earn-fresh-state.test.ts
           src/components/staking/__tests__/staking-view.test.tsx
+          src/components/staking/__tests__/use-staking-controller.test.tsx
+          src/components/vaults/__tests__/use-vault-action-controller.test.tsx
           src/lib/tests/action-progress-label-contract.test.ts
           tests/slider-effective-leverage-regression.test.tsx
           src/lib/tests/dialog-dismiss-control-contract.test.ts

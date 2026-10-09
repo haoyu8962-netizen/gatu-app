@@ -7,6 +7,7 @@ import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import { SMALL_BALANCE_THRESHOLD_USD } from "@/config/trade";
 import { isTradingToolbarBalancePositive } from "@/domain/trade/balance-toolbar";
 import { type BalanceRow, filterBalanceRowsByUsdValue, getBalanceRowDisplayAvailable } from "@/domain/trade/balances";
+import { getFundsAvailabilityNotice } from "@/domain/trade/data-presentation";
 import { useBalanceRows } from "@/hooks/trade/use-balance-rows";
 import { useDepositAvailability } from "@/hooks/trade/use-deposit-availability";
 import { useFundsActionAvailability } from "@/hooks/trade/use-funds-action-availability";
@@ -94,7 +95,7 @@ export function BalancesTab({ toolbarTarget }: Props) {
 	});
 
 	const agentOnlySession = sessionMode === "agent-only";
-	const agentOnlyFundsReason = agentOnlySession ? fundsActionAvailability.withdrawal.unavailableReason : null;
+	const agentOnlyFundsReason = agentOnlySession ? getFundsAvailabilityNotice(fundsActionAvailability.withdrawal) : null;
 
 	const filteredPerpBalances = useMemo(() => {
 		if (!hideSmallBalances) return perpBalances;
@@ -154,7 +155,11 @@ export function BalancesTab({ toolbarTarget }: Props) {
 			canWithdraw ||
 			(fundsLocked && fundsActionsEnabled && row.asset === DEFAULT_QUOTE_TOKEN && hasTransferableBalance);
 		const lockedActionProps = fundsLocked
-			? { disabled: true, focusableWhenDisabled: true, "aria-describedby": fundsReasonId }
+			? {
+					disabled: true,
+					focusableWhenDisabled: true,
+					"aria-describedby": agentOnlyFundsReason ? fundsReasonId : undefined,
+				}
 			: undefined;
 		return (
 			<TableRow key={`${row.type}-${row.asset}`} className={positionsPanelRowHoverClass}>

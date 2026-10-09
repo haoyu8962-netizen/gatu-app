@@ -55,7 +55,9 @@ export function MobileBalancesTab() {
 	});
 
 	const agentOnlySession = sessionMode === "agent-only";
-	const transferAgentOnlyReason = agentOnlySession ? fundsActionAvailability.internalTransfer.unavailableReason : null;
+	const transferAgentOnlyReason = agentOnlySession
+		? getFundsAvailabilityNotice(fundsActionAvailability.internalTransfer)
+		: null;
 
 	function isTransferEligible(row: (typeof balances)[number]): boolean {
 		return (
@@ -102,7 +104,7 @@ export function MobileBalancesTab() {
 				/>
 			) : (
 				<div className="flex min-h-0 flex-col">
-					{showsTransferReason ? (
+					{showsTransferReason && transferAgentOnlyReason ? (
 						<p
 							id={transferReasonId}
 							className="border-b border-trading-panel-stroke-card px-3.5 py-2.5 text-xs text-trading-panel-muted"
@@ -150,7 +152,7 @@ export function MobileBalancesTab() {
 											size="xs"
 											disabled={!canTransfer}
 											focusableWhenDisabled
-											aria-describedby={showsDisabledTransfer ? transferReasonId : undefined}
+											aria-describedby={showsDisabledTransfer && transferAgentOnlyReason ? transferReasonId : undefined}
 											onClick={canTransfer ? () => handleTransfer(row.type) : undefined}
 											className="min-h-11 shrink-0 rounded-[6px] border-market-close-stroke-input px-2.5 text-xs font-semibold text-market-close-fg shadow-none active:scale-100"
 										>

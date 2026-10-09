@@ -400,6 +400,9 @@ test("runs the release metadata, CSP and card funding guards on pull requests", 
 		"src/lib/tests/api-wallet-view-agent-only.test.tsx",
 		"src/lib/tests/portfolio-page-agent-only.test.tsx",
 		"src/lib/tests/referral-dashboard-agent-only.test.tsx",
+		"src/lib/tests/mobile-agent-qr-scanner-load.test.ts",
+		"src/components/staking/__tests__/use-staking-controller.test.tsx",
+		"src/components/vaults/__tests__/use-vault-action-controller.test.tsx",
 	]) {
 		assert.equal(terminalTests.includes(file), true, `${file} never runs in CI`);
 	}

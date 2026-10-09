@@ -455,6 +455,26 @@ describe("useVaultActionController", () => {
 		});
 	});
 
+	it("keeps new Vault deposits and withdrawals unavailable for an Agent-only session", async () => {
+		act(() => root.unmount());
+		controller = null;
+		mocks.sessionMode = "agent-only";
+		mocks.clientKey = OWNER;
+		mocks.wallet = { hasWalletAccess: false, walletAddress: undefined };
+		mocks.activeAgentOwner = { env: "Mainnet", address: OWNER };
+
+		root = createI18nRoot(container);
+		act(() => root.render(<Probe />));
+
+		expect(current().actionAvailability).toEqual({
+			deposit: { available: false, reason: "agent-only-session" },
+			withdraw: { available: false, reason: "agent-only-session" },
+		});
+		await act(async () => current().requestAction("deposit"));
+		expect(mocks.reconnectWallet).not.toHaveBeenCalled();
+		expect(mocks.exchangeMutate).not.toHaveBeenCalled();
+	});
+
 	it("fails closed on an unknown jurisdiction before Agent verification", async () => {
 		mocks.geoRetry.mockResolvedValueOnce({
 			data: { tradeRestricted: false, country: null, proxy: false },

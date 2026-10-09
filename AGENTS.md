@@ -345,6 +345,8 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/use-exchange-funds-action-lock.test.tsx \
   src/lib/tests/use-exchange-portfolio-margin-policy.test.tsx \
   src/components/staking/__tests__/staking-view.test.tsx \
+  src/components/staking/__tests__/use-staking-controller.test.tsx \
+  src/components/vaults/__tests__/use-vault-action-controller.test.tsx \
   src/lib/tests/action-progress-label-contract.test.ts \
   tests/slider-effective-leverage-regression.test.tsx \
   src/lib/tests/dialog-dismiss-control-contract.test.ts \

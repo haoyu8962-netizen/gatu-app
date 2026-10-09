@@ -11,6 +11,7 @@ import { AdaptiveModal, Button, ModalContent, ModalDescription, ModalFooter, Mod
 import { Link } from "@tanstack/react-router";
 import { useEffect, useId, useRef, useState } from "react";
 import type { Address } from "viem";
+import { isApiWalletExtraAgentSnapshot } from "@/components/api-wallet/api-wallet-state";
 import { ButtonLoading } from "@/components/brand/button-loading";
 import { BRAND_NAME } from "@/config/brand";
 import { MOBILE_PAIRING_FEATURES } from "@/config/mobile-pairing";
@@ -22,6 +23,7 @@ import { formatTransferError } from "@/lib/errors/format";
 import { formatDateTime } from "@/lib/format";
 import { type HyperliquidEnv, type InfoResponse, useHyperliquid, useTradingStatus } from "@/lib/hyperliquid";
 import { createMobileAgentSyncUrl, MOBILE_SYNC_QR_VISIBLE_MS } from "@/lib/mobile-sync/sync-core";
+import { readTradingActivation } from "@/lib/mobile-sync/trading-activation";
 
 interface MobileAgentSyncModalProps {
 	open: boolean;
@@ -77,7 +79,8 @@ function MobileAgentSyncDialog({
 	const isMobile = useIsMobile();
 	const approveAgent = useExplicitAgentApproval();
 	const tradingStatus = useTradingStatus();
-	const { info } = useHyperliquid();
+	const { builderConfig, info } = useHyperliquid();
+	const [activationMissing, setActivationMissing] = useState(false);
 	const infoRef = useRef(info);
 	infoRef.current = info;
 	const activationHintId = useId();
@@ -124,7 +127,7 @@ function MobileAgentSyncDialog({
 
 	const canApprove = MOBILE_PAIRING_FEATURES.enabled && hasWalletAccess && !!walletAddress;
 	const isBusy = state.status === "signing";
-	const accountNotActivated = tradingStatus.needsBuilderFee;
+	const accountNotActivated = tradingStatus.needsBuilderFee || activationMissing;
 	const slotCheckOwner = open && canApprove ? walletAddress : undefined;
 	const [slotCheck, setSlotCheck] = useState<MobileAgentSlotState | null>(null);
 
@@ -135,7 +138,7 @@ function MobileAgentSyncDialog({
 		void infoRef.current
 			.extraAgents({ user: slotCheckOwner }, request.signal)
 			.then((agents) => {
-				if (request.signal.aborted || !Array.isArray(agents)) return;
+				if (request.signal.aborted || !isApiWalletExtraAgentSnapshot(agents)) return;
 				setSlotCheck(getMobileAgentSlotState(agents));
 			})
 			.catch(() => undefined)
@@ -155,11 +158,17 @@ function MobileAgentSyncDialog({
 		setState({ status: "signing" });
 
 		try {
-			const requirements = await tradingStatus.refetchBuilderFee().catch(() => null);
+			const activation = await readTradingActivation(
+				infoRef.current,
+				walletAddress,
+				builderConfig,
+				operation.signal,
+			).catch(() => null);
 			if (operation.signal.aborted) return;
-			if (!requirements?.isBuilderFeeReady) {
+			if (activation !== "activated") {
+				if (activation === "notActivated") setActivationMissing(true);
 				setState(
-					requirements?.needsBuilderFee
+					activation === "notActivated"
 						? { status: "idle" }
 						: { status: "error", error: { code: "activation_unknown" } },
 				);
@@ -202,7 +211,9 @@ function MobileAgentSyncDialog({
 	}
 
 	function handleOpenChangeComplete(nextOpen: boolean) {
-		if (!nextOpen) setState({ status: "idle" });
+		if (nextOpen) return;
+		setState({ status: "idle" });
+		setActivationMissing(false);
 	}
 
 	const showsApproveButton = state.status === "idle" || state.status === "signing" || state.status === "error";

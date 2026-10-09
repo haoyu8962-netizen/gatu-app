@@ -14,6 +14,7 @@ const AGENT_PRIVATE_KEY = `0x${"ab".repeat(32)}` as const;
 const AGENT_ADDRESS = "0x2222222222222222222222222222222222222222";
 const AGENT_VALID_UNTIL_MS = NOW_MS + 30 * 24 * 60 * 60 * 1000;
 const AGENT_NAME = `Mobile QR valid_until ${AGENT_VALID_UNTIL_MS}`;
+const BUILDER_ADDRESS = "0x9999999999999999999999999999999999999999";
 const IDENTITY_CHANGED = msg`The active wallet or network changed. Review the account and try again.`;
 
 const testState = vi.hoisted(() => ({
@@ -21,7 +22,7 @@ const testState = vi.hoisted(() => ({
 	builderFeeKnown: true,
 	extraAgents: vi.fn(),
 	needsBuilderFee: false,
-	refetchBuilderFee: vi.fn(),
+	maxBuilderFee: vi.fn(),
 	onOpenChangeComplete: undefined as ((open: boolean) => void) | undefined,
 	features: { enabled: true },
 	hasWalletAccess: true,
@@ -146,11 +147,14 @@ vi.mock("@tanstack/react-router", () => ({
 }));
 
 vi.mock("@/lib/hyperliquid", () => ({
-	useHyperliquid: () => ({ env: "Mainnet", info: { extraAgents: testState.extraAgents } }),
+	useHyperliquid: () => ({
+		builderConfig: { b: BUILDER_ADDRESS, f: 10 },
+		env: "Mainnet",
+		info: { extraAgents: testState.extraAgents, maxBuilderFee: testState.maxBuilderFee },
+	}),
 	useTradingStatus: () => ({
 		needsBuilderFee: testState.builderFeeKnown && testState.needsBuilderFee,
 		isBuilderFeeReady: testState.builderFeeKnown && !testState.needsBuilderFee,
-		refetchBuilderFee: testState.refetchBuilderFee,
 	}),
 }));
 
@@ -205,11 +209,8 @@ describe("MobileAgentSyncModal", () => {
 		testState.needsBuilderFee = false;
 		testState.extraAgents.mockReset();
 		testState.extraAgents.mockResolvedValue([]);
-		testState.refetchBuilderFee.mockReset();
-		testState.refetchBuilderFee.mockImplementation(async () => ({
-			isBuilderFeeReady: testState.builderFeeKnown && !testState.needsBuilderFee,
-			needsBuilderFee: testState.builderFeeKnown && testState.needsBuilderFee,
-		}));
+		testState.maxBuilderFee.mockReset();
+		testState.maxBuilderFee.mockImplementation(async () => (testState.needsBuilderFee ? 0 : 10));
 		testState.qrToCanvas.mockReset();
 		testState.qrToCanvas.mockResolvedValue(undefined);
 	});
@@ -466,14 +467,15 @@ describe("MobileAgentSyncModal", () => {
 
 	it("does not sign the mobile key when the fresh check finds trading not activated", async () => {
 		await renderModal();
-		testState.refetchBuilderFee.mockImplementationOnce(async () => {
-			testState.needsBuilderFee = true;
-			return { isBuilderFeeReady: false, needsBuilderFee: true };
-		});
+		testState.maxBuilderFee.mockResolvedValueOnce(0);
 
 		act(() => getButton(container, "Approve mobile trading key").click());
 		await flushAsyncWork();
 
+		expect(testState.maxBuilderFee).toHaveBeenCalledWith(
+			{ user: USER_ADDRESS, builder: BUILDER_ADDRESS },
+			expect.any(AbortSignal),
+		);
 		expect(testState.approveAgent).not.toHaveBeenCalled();
 		expect(getButton(container, "Approve mobile trading key").hasAttribute("disabled")).toBe(true);
 		expect(container.textContent).toContain("Trading is not activated on this account yet.");
@@ -481,7 +483,7 @@ describe("MobileAgentSyncModal", () => {
 
 	it("fails closed without signing when the activation check answers without a definitive result", async () => {
 		await renderModal();
-		testState.refetchBuilderFee.mockResolvedValueOnce({ isBuilderFeeReady: false, needsBuilderFee: false });
+		testState.maxBuilderFee.mockResolvedValueOnce("10" as unknown as number);
 
 		act(() => getButton(container, "Approve mobile trading key").click());
 		await flushAsyncWork();
@@ -494,11 +496,33 @@ describe("MobileAgentSyncModal", () => {
 
 	it("fails closed without signing when activation cannot be checked", async () => {
 		await renderModal();
-		testState.refetchBuilderFee.mockRejectedValueOnce(new Error("network"));
+		testState.maxBuilderFee.mockRejectedValueOnce(new Error("network"));
 
 		act(() => getButton(container, "Approve mobile trading key").click());
 		await flushAsyncWork();
 
+		expect(testState.approveAgent).not.toHaveBeenCalled();
+		expect(container.querySelector('[role="alert"]')?.textContent).toBe(
+			"Could not check on Hyperliquid whether trading is activated. Nothing was signed. Try again.",
+		);
+	});
+
+	it("signs nothing when the activation check does not answer within ten seconds", async () => {
+		await renderModal();
+		let signal: AbortSignal | undefined;
+		testState.maxBuilderFee.mockImplementationOnce((_params: unknown, requestSignal: AbortSignal) => {
+			signal = requestSignal;
+			return new Promise((_resolve, reject) => {
+				requestSignal.addEventListener("abort", () => reject(new Error("aborted")));
+			});
+		});
+
+		act(() => getButton(container, "Approve mobile trading key").click());
+		await flushAsyncWork();
+		expect(signal?.aborted).toBe(false);
+		await advanceTime(10_000);
+
+		expect(signal?.aborted).toBe(true);
 		expect(testState.approveAgent).not.toHaveBeenCalled();
 		expect(container.querySelector('[role="alert"]')?.textContent).toBe(
 			"Could not check on Hyperliquid whether trading is activated. Nothing was signed. Try again.",
@@ -586,6 +610,17 @@ describe("MobileAgentSyncModal", () => {
 		expect(signal?.aborted).toBe(false);
 		await advanceTime(10_000);
 		expect(signal?.aborted).toBe(true);
+		expect(container.textContent).not.toContain("named API wallets");
+	});
+
+	it("treats a malformed slot answer as no answer", async () => {
+		testState.extraAgents.mockResolvedValue([
+			{ validUntil: null },
+			{ name: "b", address: "not-an-address", validUntil: null },
+			{ name: "c", address: "0x5555555555555555555555555555555555555555", validUntil: "1" },
+		]);
+		await renderModal();
+		expect(testState.extraAgents).toHaveBeenCalledTimes(1);
 		expect(container.textContent).not.toContain("named API wallets");
 	});
 

@@ -22,7 +22,7 @@ const testState = vi.hoisted(() => ({
 	depositUnavailableReason: null as string | null,
 	fundsActionAvailable: true,
 	agentOnlySession: false,
-	geoUnresolved: false,
+	geoReason: null as null | "geo-unresolved" | "geo-restricted",
 	accountDataReady: true,
 	accountModeReady: true,
 	isLoading: false,
@@ -78,16 +78,20 @@ vi.mock("@/hooks/trade/use-deposit-availability", () => ({
 const AGENT_ONLY_FUNDS_REASON =
 	"This phone uses a desktop-approved trading key. Deposits, withdrawals and transfers need the master wallet on desktop.";
 
-const REGION_UNRESOLVED_REASON = "Regional availability is unavailable.";
+const REGION_UNRESOLVED_REASON = "Checking regional availability. Funds actions are temporarily unavailable.";
+const REGION_RESTRICTED_REASON = "Funds actions are not available in your region.";
 
 function getFundsReason() {
 	if (testState.fundsActionAvailable) return null;
-	return testState.agentOnlySession && !testState.geoUnresolved ? "agent-only-session" : "geo-unresolved";
+	if (testState.geoReason) return testState.geoReason;
+	return testState.agentOnlySession ? "agent-only-session" : "geo-unresolved";
 }
 
 function getFundsUnavailableReason() {
 	if (testState.fundsActionAvailable) return null;
-	return testState.agentOnlySession && !testState.geoUnresolved ? AGENT_ONLY_FUNDS_REASON : REGION_UNRESOLVED_REASON;
+	if (testState.geoReason === "geo-restricted") return REGION_RESTRICTED_REASON;
+	if (testState.geoReason === "geo-unresolved") return REGION_UNRESOLVED_REASON;
+	return testState.agentOnlySession ? AGENT_ONLY_FUNDS_REASON : REGION_UNRESOLVED_REASON;
 }
 
 vi.mock("@/hooks/trade/use-funds-action-availability", () => ({
@@ -145,7 +149,7 @@ describe("empty balance Deposit entries", () => {
 		testState.depositUnavailableReason = null;
 		testState.fundsActionAvailable = true;
 		testState.agentOnlySession = false;
-		testState.geoUnresolved = false;
+		testState.geoReason = null;
 		testState.hasBalance = false;
 		testState.accountDataReady = true;
 		testState.accountModeReady = true;
@@ -268,30 +272,37 @@ describe("empty balance Deposit entries", () => {
 		expect(container.textContent).not.toContain("Connect");
 	});
 
-	it("keeps Agent-only funds actions disabled when a regional reason takes precedence", () => {
-		testState.hasBalance = true;
-		testState.fundsActionAvailable = false;
-		testState.agentOnlySession = true;
-		testState.geoUnresolved = true;
-		renderEntries();
+	it.each([
+		["geo-unresolved", null],
+		["geo-restricted", REGION_RESTRICTED_REASON],
+	] as const)(
+		"keeps Agent-only funds actions disabled while %s takes precedence and never shows a passive reason",
+		(geoReason, expectedReason) => {
+			testState.hasBalance = true;
+			testState.fundsActionAvailable = false;
+			testState.agentOnlySession = true;
+			testState.geoReason = geoReason;
+			renderEntries();
 
-		const fundsButtons = Array.from(container.querySelectorAll<HTMLButtonElement>("button")).filter((button) =>
-			["To Perp", "Send", "Withdraw", "Transfer"].includes(button.textContent ?? ""),
-		);
-		expect(fundsButtons.map((button) => button.textContent).sort()).toEqual([
-			"Send",
-			"To Perp",
-			"Transfer",
-			"Withdraw",
-		]);
-		for (const button of fundsButtons) {
-			expect(button.disabled || button.getAttribute("aria-disabled") === "true").toBe(true);
-			const reasonId = button.getAttribute("aria-describedby");
-			expect(reasonId ? document.getElementById(reasonId)?.textContent : null).toBe(REGION_UNRESOLVED_REASON);
-			act(() => button.click());
-		}
-		expect(container.querySelector('input[aria-label="Transfer draft"]')).toBeNull();
-	});
+			const fundsButtons = Array.from(container.querySelectorAll<HTMLButtonElement>("button")).filter((button) =>
+				["To Perp", "Send", "Withdraw", "Transfer"].includes(button.textContent ?? ""),
+			);
+			expect(fundsButtons.map((button) => button.textContent).sort()).toEqual([
+				"Send",
+				"To Perp",
+				"Transfer",
+				"Withdraw",
+			]);
+			for (const button of fundsButtons) {
+				expect(button.disabled || button.getAttribute("aria-disabled") === "true").toBe(true);
+				const reasonId = button.getAttribute("aria-describedby");
+				expect(reasonId ? document.getElementById(reasonId)?.textContent : null).toBe(expectedReason);
+				act(() => button.click());
+			}
+			expect(container.textContent).not.toContain(REGION_UNRESOLVED_REASON);
+			expect(container.querySelector('input[aria-label="Transfer draft"]')).toBeNull();
+		},
+	);
 
 	it("preserves an open transfer draft while balances reconnect", () => {
 		testState.hasBalance = true;
