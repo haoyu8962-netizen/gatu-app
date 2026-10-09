@@ -3,11 +3,11 @@
   "schemaVersion": 1,
   "id": "2026-10-09-link-mobile-device-review-fixes",
   "date": "2026-10-09",
-  "title": "Link mobile device 审查与修复：builder fee 单独批准、导入密钥优先、手机端统一「需到桌面」（ADR 0039）",
+  "title": "Link mobile device 审查与修复：只关联不授权、导入密钥优先、手机端统一「需到桌面」（ADR 0039）",
   "kind": "task",
   "status": "recorded",
   "topics": ["pairing-release", "wallet-onboarding"],
-  "summary": "用户要求审查电脑端连接手机与手机扫码连接电脑两个方向，并对照 app.hyperliquid.xyz。代码审查（两路子代理 + 本会话核对）结论：无 P0；P1 是从未批准 builder fee 的 owner 链接的手机无法下单或平仓（下单按钮置灰无原因，平仓类按钮报误导性的钱包错误）；P2 有 Privy 登录会删除或隐藏导入的密钥、再次批准会让已连接手机失效且无提示、二维码绘制失败要重新签名、手机端多个资金与主钱包入口可点后重连或文案不一致、iOS 系统相机导入存在 Safari 而非 PWA；另有若干 P3。生产配对开关关闭，功能线上不可达。用户选择：电脑端单独一步批准 builder fee；手机导入的密钥优先于钱包会话（对齐官方）。已实施并补测试与文档；真机清单未运行；未推送。",
+  "summary": "用户要求审查电脑端连接手机与手机扫码连接电脑两个方向，并对照 app.hyperliquid.xyz。代码审查（两路子代理 + 本会话核对）结论：无 P0；P1 是从未批准 builder fee 的 owner 链接的手机无法下单或平仓（下单按钮置灰无原因，平仓类按钮报误导性的钱包错误）；P2 有 Privy 登录会删除或隐藏导入的密钥、再次批准会让已连接手机失效且无提示、二维码绘制失败要重新签名、手机端多个资金与主钱包入口可点后重连或文案不一致、iOS 系统相机导入存在 Safari 而非 PWA；另有若干 P3。生产配对开关关闭，功能线上不可达。用户选择：手机导入的密钥优先于钱包会话（对齐官方）；builder fee 先按推荐在关联弹窗里单独批准，开发服务器实测后用户否决，改为关联只关联不授权：账号未激活交易时置灰并提示先在电脑端存款下单（邮箱静默授权）。官方终端自己的订单不带 builder，普通界面没有批准 builder fee 的流程。已实施并补测试与文档；真机清单未运行；未推送。",
   "thread": null,
   "baseCommit": "805ee5a1",
   "commits": [],
@@ -23,7 +23,7 @@
   "supersedes": []
 }
 -->
-# Link mobile device 审查与修复：builder fee 单独批准、导入密钥优先、手机端统一「需到桌面」（ADR 0039）
+# Link mobile device 审查与修复：只关联不授权、导入密钥优先、手机端统一「需到桌面」（ADR 0039）
 
 ## 背景与范围
 
@@ -50,7 +50,7 @@
 
 | 级别 | 发现 | 处理 |
 | --- | --- | --- |
-| P1 | 每个非 TWAP 订单都带 builder。从未批准 builder fee 的 owner 链接的手机：下单按钮置灰且无原因；平仓 / 止盈止损 / 反手等「Enable」可点，点后报 `MissingWalletError`（「钱包连接失败」）。不会签名，但无法交易或平仓 | 电脑端单独一步「Approve builder fee」，签手机 Agent 前再查一次（查不到则不签）；`useTradingGuard.needsOwnerApproval`，手机端统一显示「需到桌面」原因 |
+| P1 | 每个非 TWAP 订单都带 builder。从未批准 builder fee 的 owner 链接的手机：下单按钮置灰且无原因；平仓 / 止盈止损 / 反手等「Enable」可点，点后报 `MissingWalletError`（「钱包连接失败」）。不会签名，但无法交易或平仓 | 初版：电脑端单独一步「Approve builder fee」（已撤回，见下文修订）。现行：关联弹窗只读检查，账号未激活交易时置灰并提示先存款下单，签手机 Agent 前再查一次（查不到则不签）；`useTradingGuard.needsOwnerApproval`，手机端统一显示「请先在电脑端下第一笔订单完成交易授权」 |
 | P2 | Privy 已登录时 `allowAgentOnlySession` 为 false：导入后再登录别的账户，owner 变化会删掉导入的密钥；导入时已有 Privy 会话则显示成功，但终端仍用 Privy 账户 | 用户选择对齐官方：同网络的 Agent-only owner 优先；Agent-only 期间屏蔽 Privy 身份；断开只移除导入的密钥 |
 | P2 | 每次批准都替换同名 `Mobile` Agent，弹窗没有说明；在 ready 状态关闭或超时后，旧手机已失效、新密钥被丢弃 | 风险提示加一句「会替换已连接手机上的密钥」（仍是一条提示）；关闭后丢弃密钥的行为不变（见后续） |
 | P2 | 二维码绘制失败（如发布后旧代码块缺失）要求重新签名，可能循环 | 保留已批准的密钥，可以再次按住显示，并提示刷新 |
@@ -68,11 +68,19 @@
 - ADR 0038 之后，手机 Agent 仍走 `extraAgents` 校验，没有回归。
 - 链接片段不经过服务器；Service Worker 绕过这个路由；CSP 与 `camera=(self)` 允许扫码。
 
+### 修订：撤回关联弹窗里的 builder fee 步骤（同日，开发服务器实测后）
+
+- 在开发服务器（`terminal-pairing` 配置；预览工具从主检出启动，先跑的是主检出代码，改为临时启动配置指向本工作树，用完已还原 `.claude/launch.json`）上，用用户的 Chrome 以邮箱账户打开「关联移动设备」。弹窗出现「批准 Builder 费用」按钮和说明。
+- 弹窗随后显示交易所拒绝文案「账户 … 在 Hyperliquid 上无余额，请先存款」：说明 builder fee 授权确实被提交过一次，被交易所拒绝，没有批准任何费用，也没有资金变动。测试期间截图坐标系（1512 宽）与页面视口（1133 宽）不一致，无法排除是测试时的坐标点击误触了这个按钮。之后对签名相关控件只用元素引用点击。
+- 用户指出：关联手机不应出现批准 builder fee；邮箱账户本来是静默签名。核实 `privy-owner-signer.ts` 传 `showWalletUIs: false`，属实。
+- 官方实践（同日下载 277 个打包块）：自己的下单、平仓、Swap 等调用都是 `builder: void 0`；`approveBuilderFee` 只在隐藏的 Admin 开发页（`Admin-*.js`）里由「Approve Builder Fee」按钮触发，并配合「Set Order Builder Fee」在本地写 `hyperliquid.order_builder_info`。普通用户没有这个流程。
+- 用户结论：先完成授权，账号才算激活。现行实施：关联弹窗不再签 builder fee；账号未激活交易时「Approve mobile trading key」置灰，通过 `aria-describedby` 关联说明「此账户尚未激活交易。请先在这台电脑上存款并下第一笔订单，完成交易授权后再关联手机」。签名前的新鲜检查与查不到时不签名的行为保留；手机端文案改为「请先在电脑端下第一笔订单完成交易授权」。
+
 ### 实施
 
 见 [ADR 0039](../adr/0039-link-mobile-device-builder-fee-and-session-priority.md)「决策」。文档同步了以下文件：
 
-- `AGENTS.md`：签名契约新增导入密钥优先一条；首次交易契约补上 builder fee 例外；移动连接契约；回归清单。
+- `AGENTS.md`：签名契约新增导入密钥优先一条；首次交易契约写明关联手机从不批准 builder fee；移动连接契约；回归清单。
 - `docs/trading-onboarding.md`、`docs/hyperliquid-signing.md`、`docs/mobile-data-presentation.md`（表格两行）、`docs/runtime-guardrails.md` §1、`docs/mobile-phone-access-device-validation.md`（Setup 第 3 步）。
 - ADR 0015 的「后续修订」、`docs/adr/README.md`、`CHANGELOG.md`。
 
@@ -105,12 +113,12 @@
 - 未做：
   - 浏览器（Playwright）套件、生产构建与包体测量；
   - 真机清单 RD-1 到 RD-3；
-  - 真实钱包的 builder fee 与手机 Agent 两次签名、手机首单；
+  - 真实钱包的手机 Agent 签名与手机首单；
   - Codex 对抗审查（本轮用户未要求）。
 
 ## 后续与替代关系
 
-- 真机清单 RD-1 到 RD-3 仍是 Not run。生产开关 `VITE_MOBILE_PAIRING_ENABLED` 继续关闭。RD-3 现在包含 builder fee 步骤。
+- 真机清单 RD-1 到 RD-3 仍是 Not run。生产开关 `VITE_MOBILE_PAIRING_ENABLED` 继续关闭。准备步骤要求先在电脑端存款并下一笔单。
 - 读屏用户无法完成「按住 2 秒」：键盘可以，VoiceOver / TalkBack 只发送点击。需要另一种显示方式的设计决定。
 - 提交途中关闭弹窗：交易所可能已经替换旧手机的密钥，而界面丢掉了新密钥。重新打开后还可能出现两次钱包提示。
 - 命名 Agent 上限：签名前不检查。可以考虑按 `extraAgents` 数量给出提示，但上限按成交量变化，不能硬性拦截。

@@ -101,9 +101,7 @@ describe("TradingActionButton", () => {
 		const button = container.querySelector("button");
 		expect(button?.textContent).toBe("Market Close");
 		expect(button?.hasAttribute("disabled")).toBe(true);
-		expect(container.querySelector("output")?.textContent).toContain(
-			"Approve trading with the master wallet on desktop first",
-		);
+		expect(container.querySelector("output")?.textContent).toContain("Finish trading authorization on desktop first");
 		act(() => button?.click());
 		expect(testState.enableTrading).not.toHaveBeenCalled();
 		expect(testState.guardAction).not.toHaveBeenCalled();

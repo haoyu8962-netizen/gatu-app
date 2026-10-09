@@ -547,17 +547,18 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 - Link mobile device (still off in production builds): a phone linked from an owner that had
   never approved the builder fee could not place orders or close positions, showing a dead
-  "Enable Trading" button or a misleading wallet error. The desktop dialog now asks for the builder
-  fee as its own explicit step before the mobile key and checks it again before signing; on the
-  phone, actions that need a master-wallet approval stay disabled with one "approve on desktop"
-  reason. A key imported on a phone now takes precedence over a wallet login on that phone, as on
-  the official terminal, so logging in no longer hides or deletes it, and Disconnect removes only
-  the imported key. The dialog warns that approving again replaces the linked phone; a QR that
-  fails to draw can be revealed again without a new signature; the phone tells you when its access
-  expired or was replaced and asks for a new scan; the scanner separates a clock mismatch and a
-  scanner that failed to load from other errors; and on iOS the import page says the key stays in
-  that browser. Funds and other master-wallet actions on the phone (vaults, referrals, account
-  mode, staking, API wallets, portfolio and balance rows) are shown disabled with the same
+  "Enable Trading" button or a misleading wallet error. Linking now only links: an account that
+  has not activated trading yet is asked to deposit and place a first order on desktop before
+  linking (that order approves the builder fee, silently for email accounts), and the phone shows
+  one "finish trading authorization on desktop" reason instead of an Enable it cannot sign. A key
+  imported on a phone now takes precedence over a wallet login on that phone, as on the official
+  terminal, so logging in no longer hides or deletes it, and Disconnect removes only the imported
+  key. The dialog warns that approving again replaces the linked phone; a QR that fails to draw
+  can be revealed again without a new signature; the phone tells you when its access expired or
+  was replaced and asks for a new scan; the scanner separates a clock mismatch and a scanner that
+  failed to load from other errors; and on iOS the import page says the key stays in that
+  browser. Funds and other master-wallet actions on the phone (vaults, referrals, account mode,
+  staking, API wallets, portfolio and balance rows) are shown disabled with the same
   desktop-required reason instead of being hidden, reconnecting or using other wording (ADR 0039).
 
 - The order button no longer asks an external wallet to "Switch to Arbitrum" before Enable

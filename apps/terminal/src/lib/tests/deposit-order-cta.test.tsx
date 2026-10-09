@@ -143,7 +143,7 @@ describe("Deposit order CTA", () => {
 	});
 
 	it("keeps a pending approval inert with the desktop-required reason in an Agent-only session", () => {
-		const reason = "Approve trading with the master wallet on desktop first.";
+		const reason = "Finish trading authorization on desktop first.";
 		const input = createDesktopInput({
 			availableBalance: 100,
 			canApprove: false,

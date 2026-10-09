@@ -444,11 +444,11 @@ the product decisions and the official comparison are in
   wallet signs `approveAgent` (User-Signed, with the signer's chain id: the external wallet's current chain, or the embedded owner's environment Arbitrum chain) with the name
   `Mobile valid_until <ms>`, where `<ms>` is the expiry 30 days after approval
   (`packages/hl-react/src/signing/mobile-agent.ts`, `MOBILE_AGENT_VALIDITY_MS`).
-  Approval is the dialog's explicit Agent action. While the owner's builder
-  fee is definitively unapproved, a separate explicit Approve builder fee
-  action (`useBuilderFeeApproval`, User-Signed by the same owner) comes first,
-  and a fresh `maxBuilderFee` check runs before the Agent is signed; an unknown
-  answer signs nothing (ADR 0039). The dialog passes `applicationReview: "confirmed"`, so an embedded wallet
+  Approval is the dialog's single explicit action; the dialog never signs a
+  builder fee. While the owner's builder fee is definitively unapproved (trading
+  not activated yet) the action is disabled with an explanation to deposit and
+  place a first order on desktop, and a fresh `maxBuilderFee` check runs before
+  the Agent is signed; an unknown answer signs nothing (ADR 0039). The dialog passes `applicationReview: "confirmed"`, so an embedded wallet
   signs without a second Privy prompt, and the exchange's `status: "ok"` is
   the success signal. The desktop does not poll `extraAgents`.
 - The key travels as plain JSON in the URL fragment of `/mobile-agent-sync`

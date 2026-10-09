@@ -916,8 +916,8 @@ msgid "Approve access"
 msgstr "授权"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Approve builder fee"
-msgstr "批准 Builder 费用"
+#~ msgid "Approve builder fee"
+#~ msgstr "批准 Builder 费用"
 
 #: src/components/staking/staking-action-modal.tsx
 msgid "Approve in wallet"
@@ -2349,13 +2349,17 @@ msgstr "复制推荐链接"
 msgid "Copy token address"
 msgstr "复制代币地址"
 
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Could not check on Hyperliquid whether trading is activated. Nothing was signed. Try again."
+msgstr "无法在 Hyperliquid 上核对交易是否已激活。未签名任何内容，请重试。"
+
 #: src/routes/mobile-agent-sync.tsx
 msgid "Could not check the approval on Hyperliquid. Nothing was imported. Try again."
 msgstr "无法在 Hyperliquid 上核对授权。未导入任何内容，请重试。"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Could not check the builder fee approval on Hyperliquid. Nothing was signed. Try again."
-msgstr "无法在 Hyperliquid 上核对 Builder 费用授权。未签名任何内容，请重试。"
+#~ msgid "Could not check the builder fee approval on Hyperliquid. Nothing was signed. Try again."
+#~ msgstr "无法在 Hyperliquid 上核对 Builder 费用授权。未签名任何内容，请重试。"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Could not check this account on Hyperliquid. Nothing was signed. Retry the check."
@@ -6046,8 +6050,8 @@ msgid "Orders"
 msgstr "委托"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Orders from the phone include the {BRAND_NAME} builder fee, which only this wallet can approve. Approve it once, then approve the mobile trading key."
-msgstr "手机下的订单包含 {BRAND_NAME} 的 Builder 费用，只有这个钱包能批准。请先批准一次，再授权移动交易密钥。"
+#~ msgid "Orders from the phone include the {BRAND_NAME} builder fee, which only this wallet can approve. Approve it once, then approve the mobile trading key."
+#~ msgstr "手机下的订单包含 {BRAND_NAME} 的 Builder 费用，只有这个钱包能批准。请先批准一次，再授权移动交易密钥。"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -9565,13 +9569,17 @@ msgid "This phone could not store the trading key. Clear this site's data and sc
 msgstr "这部手机无法保存交易密钥。请清除本站数据后重新扫描。"
 
 #: src/lib/trade/owner-approval-message.ts
-msgid "This phone uses a desktop-approved trading key. Approve trading with the master wallet on desktop first: open Link mobile device there."
-msgstr "此手机使用桌面授权的交易密钥。请先在桌面用主钱包批准交易：在电脑端打开“关联移动设备”。"
+#~ msgid "This phone uses a desktop-approved trading key. Approve trading with the master wallet on desktop first: open Link mobile device there."
+#~ msgstr "此手机使用桌面授权的交易密钥。请先在桌面用主钱包批准交易：在电脑端打开“关联移动设备”。"
 
 #: src/hooks/trade/use-deposit-availability.ts
 #: src/hooks/trade/use-funds-action-availability.ts
 msgid "This phone uses a desktop-approved trading key. Deposits, withdrawals and transfers need the master wallet on desktop."
 msgstr "此手机使用桌面授权的交易密钥。存款、提款和划转需要在桌面连接主钱包。"
+
+#: src/lib/trade/owner-approval-message.ts
+msgid "This phone uses a desktop-approved trading key. Finish trading authorization on desktop first by placing a first order there."
+msgstr "此手机使用桌面授权的交易密钥。请先在电脑端下第一笔订单，完成交易授权。"
 
 #: src/hooks/trade/use-master-wallet-action-reason.ts
 msgid "This phone uses a desktop-approved trading key. This action needs the master wallet on desktop."
@@ -10035,6 +10043,10 @@ msgstr "此弹窗打开期间交易数据已发生变化。请关闭并重新打
 #: src/components/trade/components/hip3-deployer-disclaimer.tsx
 msgid "Trading in these markets may involve elevated risk, including low liquidity, high volatility, incomplete documentation, and increased liquidation risk. Carefully assess the risks and understand how each market works before proceeding."
 msgstr "交易这些市场可能涉及更高风险，包括流动性不足、高波动、文档不完整以及更高的强平风险。继续之前，请仔细评估风险并了解各市场的运作方式。"
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Trading is not activated on this account yet. Deposit and place a first order on this desktop to finish trading authorization, then link your phone."
+msgstr "此账户尚未激活交易。请先在这台电脑上存款并下第一笔订单，完成交易授权后再关联手机。"
 
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/config/trade-panel-labels.ts

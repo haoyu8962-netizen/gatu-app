@@ -18,7 +18,6 @@ const IDENTITY_CHANGED = msg`The active wallet or network changed. Review the ac
 
 const testState = vi.hoisted(() => ({
 	approveAgent: vi.fn(),
-	approveBuilderFee: vi.fn(),
 	builderFeeKnown: true,
 	needsBuilderFee: false,
 	refetchBuilderFee: vi.fn(),
@@ -140,7 +139,6 @@ vi.mock("@/hooks/wallet/use-wallet-session", () => ({
 }));
 
 vi.mock("@/lib/hyperliquid", () => ({
-	useBuilderFeeApproval: () => ({ approve: testState.approveBuilderFee }),
 	useHyperliquid: () => ({ env: "Mainnet" }),
 	useTradingStatus: () => ({
 		needsBuilderFee: testState.builderFeeKnown && testState.needsBuilderFee,
@@ -198,10 +196,6 @@ describe("MobileAgentSyncModal", () => {
 		testState.approveAgent.mockResolvedValue(undefined);
 		testState.builderFeeKnown = true;
 		testState.needsBuilderFee = false;
-		testState.approveBuilderFee.mockReset();
-		testState.approveBuilderFee.mockImplementation(async () => {
-			testState.needsBuilderFee = false;
-		});
 		testState.refetchBuilderFee.mockReset();
 		testState.refetchBuilderFee.mockImplementation(async () => ({
 			isBuilderFeeReady: testState.builderFeeKnown && !testState.needsBuilderFee,
@@ -442,26 +436,26 @@ describe("MobileAgentSyncModal", () => {
 		await flushAsyncWork();
 		expect(container.textContent).not.toContain("Hold to reveal");
 	});
-	it("asks for the builder fee as its own explicit step before the mobile key", async () => {
+	it("never signs a builder fee and keeps linking unavailable until trading is activated", async () => {
 		testState.needsBuilderFee = true;
 		await renderModal();
 
-		expect(findButton(container, "Approve mobile trading key")).toBeUndefined();
-		expect(container.textContent).toContain("which only this wallet can approve");
-		expect(testState.approveBuilderFee).not.toHaveBeenCalled();
-
-		act(() => getButton(container, "Approve builder fee").click());
+		const approveButton = getButton(container, "Approve mobile trading key");
+		expect(approveButton.hasAttribute("disabled")).toBe(true);
+		expect(container.textContent).toContain("Trading is not activated on this account yet.");
+		expect(findButton(container, "builder fee")).toBeUndefined();
+		act(() => approveButton.click());
 		await flushAsyncWork();
-
-		expect(testState.approveBuilderFee).toHaveBeenCalledTimes(1);
 		expect(testState.approveAgent).not.toHaveBeenCalled();
-		expect(findButton(container, "Approve builder fee")).toBeUndefined();
 
+		testState.needsBuilderFee = false;
+		await renderModal();
+		expect(container.textContent).not.toContain("Trading is not activated on this account yet.");
 		await approve();
 		expect(testState.approveAgent).toHaveBeenCalledTimes(1);
 	});
 
-	it("does not sign the mobile key when the fresh check finds the builder fee missing", async () => {
+	it("does not sign the mobile key when the fresh check finds trading not activated", async () => {
 		await renderModal();
 		testState.refetchBuilderFee.mockImplementationOnce(async () => {
 			testState.needsBuilderFee = true;
@@ -472,10 +466,11 @@ describe("MobileAgentSyncModal", () => {
 		await flushAsyncWork();
 
 		expect(testState.approveAgent).not.toHaveBeenCalled();
-		expect(getButton(container, "Approve builder fee").hasAttribute("disabled")).toBe(false);
+		expect(getButton(container, "Approve mobile trading key").hasAttribute("disabled")).toBe(true);
+		expect(container.textContent).toContain("Trading is not activated on this account yet.");
 	});
 
-	it("fails closed without signing when the builder fee cannot be checked", async () => {
+	it("fails closed without signing when activation cannot be checked", async () => {
 		await renderModal();
 		testState.refetchBuilderFee.mockRejectedValueOnce(new Error("network"));
 
@@ -484,7 +479,7 @@ describe("MobileAgentSyncModal", () => {
 
 		expect(testState.approveAgent).not.toHaveBeenCalled();
 		expect(container.querySelector('[role="alert"]')?.textContent).toBe(
-			"Could not check the builder fee approval on Hyperliquid. Nothing was signed. Try again.",
+			"Could not check on Hyperliquid whether trading is activated. Nothing was signed. Try again.",
 		);
 	});
 
