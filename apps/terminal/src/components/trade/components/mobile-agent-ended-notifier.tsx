@@ -8,14 +8,18 @@ const MOBILE_AGENT_ENDED_TOAST_PREFIX = "mobile-agent-ended";
 
 export function MobileAgentEndedNotifier() {
 	const { clientKey, env, sessionMode } = useHyperliquid();
-	const envRef = useRef(env);
-	envRef.current = env;
+	const sessionRef = useRef({ clientKey, env, sessionMode });
+	sessionRef.current = { clientKey, env, sessionMode };
 	const shownRef = useRef<{ id: string; env: string } | null>(null);
 
 	useEffect(
 		() =>
 			subscribeMobileAgentEnded((event) => {
-				if (event.env !== envRef.current) return;
+				const session = sessionRef.current;
+				if (event.env !== session.env) return;
+				if (session.sessionMode === "agent-only" && session.clientKey.toLowerCase() !== event.owner.toLowerCase()) {
+					return;
+				}
 				const id = `${MOBILE_AGENT_ENDED_TOAST_PREFIX}:${event.env}:${event.owner.toLowerCase()}`;
 				const account = shortenAddress(event.owner);
 				shownRef.current = { id, env: event.env };

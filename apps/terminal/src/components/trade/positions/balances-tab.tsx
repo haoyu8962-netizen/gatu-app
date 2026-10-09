@@ -50,7 +50,7 @@ export function BalancesTab({ toolbarTarget }: Props) {
 	const { setHideSmallBalances } = useGlobalSettingsActions();
 	const { open: openDepositModal } = useDepositModalActions();
 	const depositAvailability = useDepositAvailability();
-	const { hasWalletAccess } = useWalletSession();
+	const { hasWalletAccess, sessionMode } = useWalletSession();
 	const { open: openSwapModal } = useSwapModalActions();
 	const fundsReasonId = useId();
 	const [transferState, setTransferState] = useState<{
@@ -93,10 +93,8 @@ export function BalancesTab({ toolbarTarget }: Props) {
 		internalTransfersEnabled,
 	});
 
-	const agentOnlyFundsReason =
-		fundsActionAvailability.withdrawal.reason === "agent-only-session"
-			? fundsActionAvailability.withdrawal.unavailableReason
-			: null;
+	const agentOnlySession = sessionMode === "agent-only";
+	const agentOnlyFundsReason = agentOnlySession ? fundsActionAvailability.withdrawal.unavailableReason : null;
 
 	const filteredPerpBalances = useMemo(() => {
 		if (!hideSmallBalances) return perpBalances;
@@ -148,7 +146,7 @@ export function BalancesTab({ toolbarTarget }: Props) {
 			row.asset === DEFAULT_QUOTE_TOKEN &&
 			hasTransferableBalance;
 		const transferLabel = row.type === "perp" ? t`To Spot` : t`To Perp`;
-		const fundsLocked = agentOnlyFundsReason !== null;
+		const fundsLocked = agentOnlySession;
 		const transferEligible =
 			internalTransfersEnabled && fundsActionsEnabled && row.asset === DEFAULT_QUOTE_TOKEN && hasTransferableBalance;
 		const showsTransfer = canTransfer || (fundsLocked && transferEligible);
@@ -308,7 +306,7 @@ export function BalancesTab({ toolbarTarget }: Props) {
 				{placeholder ?? (
 					<div className="flex h-full min-h-0 flex-col">
 						{agentOnlyFundsReason ? (
-							<p id={fundsReasonId} className="shrink-0 px-3 py-1.5 text-xs text-market-close-muted">
+							<p id={fundsReasonId} className="shrink-0 px-3 py-1.5 text-xs text-trading-panel-muted">
 								{agentOnlyFundsReason}
 							</p>
 						) : null}

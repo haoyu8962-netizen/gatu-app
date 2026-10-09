@@ -70,6 +70,13 @@ describe("MobileAgentEndedNotifier", () => {
 		act(() => titleReactRoot.unmount());
 	});
 
+	it("ignores a late event for an owner whose phone access was already replaced by another imported key", () => {
+		testState.clientKey = OTHER;
+		render();
+		act(() => notifyMobileAgentEnded({ env: "Mainnet", owner: OWNER, reason: "missing_remote" }));
+		expect(testState.warning).not.toHaveBeenCalled();
+	});
+
 	it("ignores an event from the other network", () => {
 		render();
 		act(() => notifyMobileAgentEnded({ env: "Testnet", owner: OWNER, reason: "expired_local" }));

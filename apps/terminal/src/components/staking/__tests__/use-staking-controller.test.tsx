@@ -144,6 +144,7 @@ describe("useStakingController", () => {
 			accountState: "ready",
 			ownerAddress: OWNER,
 			hasExactMasterSigner: true,
+			agentOnlySession: false,
 			networkStakeApproximate: "1",
 			weightedApr: "0.03",
 		});
@@ -169,6 +170,7 @@ describe("useStakingController", () => {
 			accountState: "ready",
 			ownerAddress: OWNER,
 			hasExactMasterSigner: false,
+			agentOnlySession: true,
 		});
 		expect(
 			mocks.queryCalls.some((entry) => entry.params !== undefined && JSON.stringify(entry.params).includes(AGENT)),

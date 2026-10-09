@@ -27,7 +27,7 @@ export function MobileBalancesTab() {
 	const { open: openDepositModal } = useDepositModalActions();
 	const depositAvailability = useDepositAvailability();
 	const depositNotice = getFundsAvailabilityNotice(depositAvailability);
-	const { hasWalletAccess } = useWalletSession();
+	const { hasWalletAccess, sessionMode } = useWalletSession();
 	const transferReasonId = useId();
 	const [transferState, setTransferState] = useState<{
 		open: boolean;
@@ -54,10 +54,8 @@ export function MobileBalancesTab() {
 		internalTransfersEnabled,
 	});
 
-	const transferAgentOnlyReason =
-		fundsActionAvailability.internalTransfer.reason === "agent-only-session"
-			? fundsActionAvailability.internalTransfer.unavailableReason
-			: null;
+	const agentOnlySession = sessionMode === "agent-only";
+	const transferAgentOnlyReason = agentOnlySession ? fundsActionAvailability.internalTransfer.unavailableReason : null;
 
 	function isTransferEligible(row: (typeof balances)[number]): boolean {
 		return (
@@ -68,7 +66,7 @@ export function MobileBalancesTab() {
 		);
 	}
 
-	const showsTransferReason = transferAgentOnlyReason !== null && balances.some(isTransferEligible);
+	const showsTransferReason = agentOnlySession && balances.some(isTransferEligible);
 
 	function handleTransfer(rowType: "perp" | "spot") {
 		setTransferState({
@@ -107,7 +105,7 @@ export function MobileBalancesTab() {
 					{showsTransferReason ? (
 						<p
 							id={transferReasonId}
-							className="border-b border-market-close-stroke-card px-3.5 py-2.5 text-xs text-market-close-muted"
+							className="border-b border-trading-panel-stroke-card px-3.5 py-2.5 text-xs text-trading-panel-muted"
 						>
 							{transferAgentOnlyReason}
 						</p>

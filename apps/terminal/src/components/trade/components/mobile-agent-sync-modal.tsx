@@ -20,7 +20,7 @@ import { useExplicitAgentApproval } from "@/hooks/wallet/use-explicit-agent-appr
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { formatTransferError } from "@/lib/errors/format";
 import { formatDateTime } from "@/lib/format";
-import { type HyperliquidEnv, type InfoResponse, useHyperliquid, useInfo, useTradingStatus } from "@/lib/hyperliquid";
+import { type HyperliquidEnv, type InfoResponse, useHyperliquid, useTradingStatus } from "@/lib/hyperliquid";
 import { createMobileAgentSyncUrl, MOBILE_SYNC_QR_VISIBLE_MS } from "@/lib/mobile-sync/sync-core";
 
 interface MobileAgentSyncModalProps {
@@ -44,6 +44,7 @@ type SyncState =
 	| { status: "error"; error: SyncError };
 
 const QR_REVEAL_HOLD_MS = 2_000;
+const SLOT_CHECK_TIMEOUT_MS = 10_000;
 const QR_REVEAL_HOLD_SECONDS = QR_REVEAL_HOLD_MS / 1_000;
 const HOLD_RING_RADIUS = 10;
 const HOLD_RING_CIRCUMFERENCE = 2 * Math.PI * HOLD_RING_RADIUS;
@@ -76,6 +77,9 @@ function MobileAgentSyncDialog({
 	const isMobile = useIsMobile();
 	const approveAgent = useExplicitAgentApproval();
 	const tradingStatus = useTradingStatus();
+	const { info } = useHyperliquid();
+	const infoRef = useRef(info);
+	infoRef.current = info;
 	const activationHintId = useId();
 	const slotsHintId = useId();
 	const [state, setState] = useState<SyncState>({ status: "idle" });
@@ -121,27 +125,27 @@ function MobileAgentSyncDialog({
 	const canApprove = MOBILE_PAIRING_FEATURES.enabled && hasWalletAccess && !!walletAddress;
 	const isBusy = state.status === "signing";
 	const accountNotActivated = tradingStatus.needsBuilderFee;
-	const slotCheckEnabled = open && canApprove;
-	const extraAgentsQuery = useInfo(
-		"extraAgents",
-		{ user: walletAddress ?? "" },
-		{ enabled: false, requestTimeoutMs: 10_000, retry: false },
-	);
-	const refetchExtraAgents = extraAgentsQuery.refetch;
+	const slotCheckOwner = open && canApprove ? walletAddress : undefined;
 	const [slotCheck, setSlotCheck] = useState<MobileAgentSlotState | null>(null);
 
 	useEffect(() => {
-		if (!slotCheckEnabled) return;
-		let current = true;
-		void refetchExtraAgents().then((result) => {
-			if (!current || !result.isSuccess || !Array.isArray(result.data)) return;
-			setSlotCheck(getMobileAgentSlotState(result.data));
-		});
+		if (!slotCheckOwner) return;
+		const request = new AbortController();
+		const timeoutId = window.setTimeout(() => request.abort(), SLOT_CHECK_TIMEOUT_MS);
+		void infoRef.current
+			.extraAgents({ user: slotCheckOwner }, request.signal)
+			.then((agents) => {
+				if (request.signal.aborted || !Array.isArray(agents)) return;
+				setSlotCheck(getMobileAgentSlotState(agents));
+			})
+			.catch(() => undefined)
+			.finally(() => window.clearTimeout(timeoutId));
 		return () => {
-			current = false;
+			request.abort();
+			window.clearTimeout(timeoutId);
 			setSlotCheck(null);
 		};
-	}, [slotCheckEnabled, refetchExtraAgents]);
+	}, [slotCheckOwner]);
 
 	async function handleApprove() {
 		if (!canApprove || !walletAddress || isBusy) return;

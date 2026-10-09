@@ -140,6 +140,17 @@
 - 用 Node 22.15 的 `--experimental-strip-types` 在内存里加载 `mobile-agent.ts`，对真实账户的 `extraAgents` 运行 `getMobileAgentSlotState`：当时该账户只剩 `gatu` 与 `Mobile QR`，结果为 `replaces`；构造 3 个其他名字得到满额；审批名为 `Mobile QR valid_until <ms>`，名字本体 9 个字符。
 - 「名额已满」提示没有在浏览器里看到：外部钱包会话在隐藏的内置浏览器面板里不渲染，Chrome 里的邮箱账户没有命名钱包且未激活交易。
 
+### 第 1 轮修复与合并 dev 之后（`cdd6694c`、合并提交 `248e5ba2`）
+
+- 第 1 轮修复涉及的 8 个测试文件 112 项通过；`client-root-theme-lifecycle`、`mobile-agent-ended-notifier` 修复 mock 后通过；`scripts/ci-workflows.test.mjs` 12 项通过。
+- 合并 `origin/dev`（`5cc5327a`，PR #92）后，CHANGELOG 保留两边条目，工作记录索引重新生成；`pnpm typecheck` 通过。
+- 合并后的全量 `vitest run --maxWorkers=4`：675 个文件、8,920 项，3 项失败。2 项是 `chart-build-assets`（Node 22.13）；1 项是 `market-asset-info.test.tsx` 的「uses a minimum mobile height…」，在干净的 `origin/dev` 临时工作树里同样失败（PR #92 改了弹窗遮罩，测试未跟上），与本分支无关，已另开任务卡片。
+
+### 第 2 轮修复（提交前的工作区）
+
+- 9 个受影响文件全部通过：`mobile-agent-sync-modal`（22）、`trading-guard-session`（9）、`mobile-agent-ended-notifier`（4）、`deposit-empty-balances-entry`（16）、`use-staking-controller`（5）、`staking-view`（19）、`balances-table-visual-contract`、`modal-surface-contract`、`trading-action-button`。
+- 第一次运行时弹窗测试大面积超时：测试 mock 每次渲染返回新的 `info`，而它在 effect 依赖里，清理里的 `setSlotCheck(null)` 引发重渲染循环。改为用 ref 持有 `info`、effect 只依赖 owner 后通过。
+
 ### Codex 对抗审查
 
 `gpt-6-astra`、medium、只读沙箱、三路并行（V 行为与安全、B 规范与记录、C 遗漏与变异），审查范围 `805ee5a1..HEAD`。
@@ -147,6 +158,7 @@
 | 轮次 | V | B | C | 主要发现与处理 |
 | --- | --- | --- | --- | --- |
 | 1（审 `9ba297f4`） | 8.3 | 8.0 | 6.8 | 名额提示可能用到刷新中的旧缓存（V、B）→ 每次打开显式请求、只用本次结果；「3 个就满」忽略子账户与成交量（V）→ `limitReached` + 条件句；Agent-only 时账户菜单显示被屏蔽的 Privy 邮箱（C，P1）→ 改显示 owner 地址；CI 显式清单漏掉 12 个改动的测试文件（C）→ 补进清单并钉住；结束通知无身份归属（C）→ 写明账户、跨网络或新会话时撤下；桌面账户面板 Agent-only 隐藏资金按钮（C）→ 置灰加原因；验证计数未跟上最后一个提交、ADR 链接路径错误（B）→ 按提交拆分验证小节、改为 `../../adr/`；4 个变异存活点（未知 builder 应答、查询参数、通知呈现、手机按钮 `canApprove=true`）→ 补测试 |
+| 2（审 `248e5ba2`） | 8.5 | 8.3 | 8.3 | 重新打开时 `refetch()` 复用上次打开的在途请求（V）→ 改为每次打开直接请求 `info.extraAgents`、关闭即中止，补「旧请求晚到」测试并做了删除中止判断的变异（测试失败，恢复后通过）；余额表锁定取决于提示文案、地区原因优先时 Send 可点（B）→ 按 `sessionMode` 锁定，补地区优先测试；`runtime-guardrails.md`、`email-trading-signing.md` 仍写旧优先级与 v4（B）→ 更正，后者与 `trading-onboarding.md` 同节同步；新增原因行用 `market-close-*`（B，P3）→ 改 `trading-panel-*`；「只缺 builder fee」、质押控制器字段未钉住（C）→ 补测试；通知晚到竞态（C，未确认）→ 忽略已被新密钥取代的 owner 的事件并补测试 |
 
 ## 后续与替代关系
 

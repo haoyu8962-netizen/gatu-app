@@ -19,8 +19,7 @@ const IDENTITY_CHANGED = msg`The active wallet or network changed. Review the ac
 const testState = vi.hoisted(() => ({
 	approveAgent: vi.fn(),
 	builderFeeKnown: true,
-	extraAgentsCalls: [] as Array<{ params: unknown; options: unknown }>,
-	refetchExtraAgents: vi.fn(),
+	extraAgents: vi.fn(),
 	needsBuilderFee: false,
 	refetchBuilderFee: vi.fn(),
 	onOpenChangeComplete: undefined as ((open: boolean) => void) | undefined,
@@ -147,11 +146,7 @@ vi.mock("@tanstack/react-router", () => ({
 }));
 
 vi.mock("@/lib/hyperliquid", () => ({
-	useInfo: (method: string, params: unknown, options: unknown) => {
-		if (method === "extraAgents") testState.extraAgentsCalls.push({ params, options });
-		return { refetch: testState.refetchExtraAgents };
-	},
-	useHyperliquid: () => ({ env: "Mainnet" }),
+	useHyperliquid: () => ({ env: "Mainnet", info: { extraAgents: testState.extraAgents } }),
 	useTradingStatus: () => ({
 		needsBuilderFee: testState.builderFeeKnown && testState.needsBuilderFee,
 		isBuilderFeeReady: testState.builderFeeKnown && !testState.needsBuilderFee,
@@ -208,9 +203,8 @@ describe("MobileAgentSyncModal", () => {
 		testState.approveAgent.mockResolvedValue(undefined);
 		testState.builderFeeKnown = true;
 		testState.needsBuilderFee = false;
-		testState.extraAgentsCalls.length = 0;
-		testState.refetchExtraAgents.mockReset();
-		testState.refetchExtraAgents.mockResolvedValue({ isSuccess: true, data: [] });
+		testState.extraAgents.mockReset();
+		testState.extraAgents.mockResolvedValue([]);
 		testState.refetchBuilderFee.mockReset();
 		testState.refetchBuilderFee.mockImplementation(async () => ({
 			isBuilderFeeReady: testState.builderFeeKnown && !testState.needsBuilderFee,
@@ -530,22 +524,16 @@ describe("MobileAgentSyncModal", () => {
 		expect(new URL(secondUrl).pathname).toBe(new URL(firstUrl).pathname);
 		expect(testState.approveAgent).toHaveBeenCalledTimes(1);
 	});
-	it("checks named slots once per open with a bounded, read-only request and warns before signing", async () => {
-		testState.refetchExtraAgents.mockResolvedValue({
-			isSuccess: true,
-			data: [
-				{ address: "0x3333333333333333333333333333333333333333", name: "old-slot", validUntil: NOW_MS + 86_400_000 },
-				{ address: "0x4444444444444444444444444444444444444444", name: "old-slot-dev", validUntil: null },
-				{ address: "0x5555555555555555555555555555555555555555", name: "Mobile", validUntil: NOW_MS + 86_400_000 },
-			],
-		});
+	it("checks named slots once per open with a read-only request and warns before signing", async () => {
+		testState.extraAgents.mockResolvedValue([
+			{ address: "0x3333333333333333333333333333333333333333", name: "old-slot", validUntil: NOW_MS + 86_400_000 },
+			{ address: "0x4444444444444444444444444444444444444444", name: "old-slot-dev", validUntil: null },
+			{ address: "0x5555555555555555555555555555555555555555", name: "Mobile", validUntil: NOW_MS + 86_400_000 },
+		]);
 		const onOpenChange = await renderModal();
 
-		expect(testState.refetchExtraAgents).toHaveBeenCalledTimes(1);
-		expect(testState.extraAgentsCalls.at(-1)).toEqual({
-			params: { user: USER_ADDRESS },
-			options: { enabled: false, requestTimeoutMs: 10_000, retry: false },
-		});
+		expect(testState.extraAgents).toHaveBeenCalledTimes(1);
+		expect(testState.extraAgents).toHaveBeenCalledWith({ user: USER_ADDRESS }, expect.any(AbortSignal));
 		expect(container.textContent).toContain("already has 3 named API wallets and none of them is a mobile key");
 		expect(container.textContent).toContain("more with sub-accounts or higher trading volume");
 		expect(container.textContent).toContain("old-slot-dev");
@@ -560,47 +548,65 @@ describe("MobileAgentSyncModal", () => {
 		expect(onOpenChange).toHaveBeenCalledWith(false);
 	});
 
-	it("never shows a slot notice from an earlier open while the next check is still running", async () => {
-		const full = {
-			isSuccess: true,
-			data: [
-				{ address: "0x3333333333333333333333333333333333333333", name: "a", validUntil: null },
-				{ address: "0x4444444444444444444444444444444444444444", name: "b", validUntil: null },
-				{ address: "0x5555555555555555555555555555555555555555", name: "c", validUntil: null },
-			],
-		};
-		testState.refetchExtraAgents.mockResolvedValueOnce(full);
+	it("ignores a slot answer that arrives after its dialog was closed and reopened", async () => {
+		const full = [
+			{ address: "0x3333333333333333333333333333333333333333", name: "a", validUntil: null },
+			{ address: "0x4444444444444444444444444444444444444444", name: "b", validUntil: null },
+			{ address: "0x5555555555555555555555555555555555555555", name: "c", validUntil: null },
+		];
+		const requests: Array<{ resolve: (value: unknown) => void; signal: AbortSignal }> = [];
+		testState.extraAgents.mockImplementation(
+			(_params: unknown, signal: AbortSignal) =>
+				new Promise((resolve) => {
+					requests.push({ resolve, signal });
+				}),
+		);
 		const onOpenChange = await renderModal();
-		expect(container.textContent).toContain("named API wallets");
-
 		await renderModal(onOpenChange, false);
-		testState.refetchExtraAgents.mockImplementationOnce(() => new Promise(() => {}));
+		expect(requests[0]?.signal.aborted).toBe(true);
 		await renderModal(onOpenChange, true);
-		expect(testState.refetchExtraAgents).toHaveBeenCalledTimes(2);
+		expect(requests).toHaveLength(2);
+
+		await act(async () => requests[0]?.resolve(full));
+		await flushAsyncWork();
+		expect(container.textContent).not.toContain("named API wallets");
+
+		await act(async () => requests[1]?.resolve([]));
+		await flushAsyncWork();
+		expect(container.textContent).not.toContain("named API wallets");
+	});
+
+	it("gives up on a slot check after ten seconds without showing anything", async () => {
+		let signal: AbortSignal | undefined;
+		testState.extraAgents.mockImplementation((_params: unknown, requestSignal: AbortSignal) => {
+			signal = requestSignal;
+			return new Promise(() => {});
+		});
+		await renderModal();
+		expect(signal?.aborted).toBe(false);
+		await advanceTime(10_000);
+		expect(signal?.aborted).toBe(true);
 		expect(container.textContent).not.toContain("named API wallets");
 	});
 
 	it("says nothing about slots when the approval replaces the shared mobile slot, the check fails or is not allowed", async () => {
-		testState.refetchExtraAgents.mockResolvedValue({
-			isSuccess: true,
-			data: [
-				{ address: "0x3333333333333333333333333333333333333333", name: "old-slot", validUntil: NOW_MS + 86_400_000 },
-				{ address: "0x4444444444444444444444444444444444444444", name: "old-slot-dev", validUntil: null },
-				{ address: "0x5555555555555555555555555555555555555555", name: "Mobile QR", validUntil: NOW_MS + 86_400_000 },
-			],
-		});
+		testState.extraAgents.mockResolvedValue([
+			{ address: "0x3333333333333333333333333333333333333333", name: "old-slot", validUntil: NOW_MS + 86_400_000 },
+			{ address: "0x4444444444444444444444444444444444444444", name: "old-slot-dev", validUntil: null },
+			{ address: "0x5555555555555555555555555555555555555555", name: "Mobile QR", validUntil: NOW_MS + 86_400_000 },
+		]);
 		await renderModal();
 		expect(container.textContent).not.toContain("named API wallets");
 
-		testState.refetchExtraAgents.mockResolvedValue({ isSuccess: false, data: undefined });
+		testState.extraAgents.mockRejectedValue(new Error("network"));
 		await renderModal(vi.fn(), false);
 		await renderModal(vi.fn(), true);
 		expect(container.textContent).not.toContain("named API wallets");
 		expect(getButton(container, "Approve mobile trading key").getAttribute("aria-describedby")).toBeNull();
 
-		testState.refetchExtraAgents.mockClear();
+		testState.extraAgents.mockClear();
 		testState.hasWalletAccess = false;
 		await renderModal();
-		expect(testState.refetchExtraAgents).not.toHaveBeenCalled();
+		expect(testState.extraAgents).not.toHaveBeenCalled();
 	});
 });

@@ -22,6 +22,7 @@ const testState = vi.hoisted(() => ({
 	depositUnavailableReason: null as string | null,
 	fundsActionAvailable: true,
 	agentOnlySession: false,
+	geoUnresolved: false,
 	accountDataReady: true,
 	accountModeReady: true,
 	isLoading: false,
@@ -77,14 +78,16 @@ vi.mock("@/hooks/trade/use-deposit-availability", () => ({
 const AGENT_ONLY_FUNDS_REASON =
 	"This phone uses a desktop-approved trading key. Deposits, withdrawals and transfers need the master wallet on desktop.";
 
+const REGION_UNRESOLVED_REASON = "Regional availability is unavailable.";
+
 function getFundsReason() {
 	if (testState.fundsActionAvailable) return null;
-	return testState.agentOnlySession ? "agent-only-session" : "geo-unresolved";
+	return testState.agentOnlySession && !testState.geoUnresolved ? "agent-only-session" : "geo-unresolved";
 }
 
 function getFundsUnavailableReason() {
 	if (testState.fundsActionAvailable) return null;
-	return testState.agentOnlySession ? AGENT_ONLY_FUNDS_REASON : "Regional availability is unavailable.";
+	return testState.agentOnlySession && !testState.geoUnresolved ? AGENT_ONLY_FUNDS_REASON : REGION_UNRESOLVED_REASON;
 }
 
 vi.mock("@/hooks/trade/use-funds-action-availability", () => ({
@@ -104,7 +107,10 @@ vi.mock("@/hooks/trade/use-funds-action-availability", () => ({
 }));
 
 vi.mock("@/hooks/wallet/use-wallet-session", () => ({
-	useWalletSession: () => ({ hasWalletAccess: testState.isConnected }),
+	useWalletSession: () => ({
+		hasWalletAccess: testState.isConnected,
+		sessionMode: testState.agentOnlySession ? "agent-only" : "wallet",
+	}),
 }));
 
 vi.mock("@/lib/hyperliquid/markets/use-spot-tokens", () => ({
@@ -139,6 +145,7 @@ describe("empty balance Deposit entries", () => {
 		testState.depositUnavailableReason = null;
 		testState.fundsActionAvailable = true;
 		testState.agentOnlySession = false;
+		testState.geoUnresolved = false;
 		testState.hasBalance = false;
 		testState.accountDataReady = true;
 		testState.accountModeReady = true;
@@ -259,6 +266,31 @@ describe("empty balance Deposit entries", () => {
 		expect(container.querySelector('input[aria-label="Transfer draft"]')).toBeNull();
 		expect(testState.openDeposit).not.toHaveBeenCalled();
 		expect(container.textContent).not.toContain("Connect");
+	});
+
+	it("keeps Agent-only funds actions disabled when a regional reason takes precedence", () => {
+		testState.hasBalance = true;
+		testState.fundsActionAvailable = false;
+		testState.agentOnlySession = true;
+		testState.geoUnresolved = true;
+		renderEntries();
+
+		const fundsButtons = Array.from(container.querySelectorAll<HTMLButtonElement>("button")).filter((button) =>
+			["To Perp", "Send", "Withdraw", "Transfer"].includes(button.textContent ?? ""),
+		);
+		expect(fundsButtons.map((button) => button.textContent).sort()).toEqual([
+			"Send",
+			"To Perp",
+			"Transfer",
+			"Withdraw",
+		]);
+		for (const button of fundsButtons) {
+			expect(button.disabled || button.getAttribute("aria-disabled") === "true").toBe(true);
+			const reasonId = button.getAttribute("aria-describedby");
+			expect(reasonId ? document.getElementById(reasonId)?.textContent : null).toBe(REGION_UNRESOLVED_REASON);
+			act(() => button.click());
+		}
+		expect(container.querySelector('input[aria-label="Transfer draft"]')).toBeNull();
 	});
 
 	it("preserves an open transfer draft while balances reconnect", () => {

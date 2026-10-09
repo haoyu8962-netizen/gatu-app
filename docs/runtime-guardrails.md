@@ -57,8 +57,11 @@ Do not collapse these states into one boolean.
 - Apart from explicit disconnect, delete a local Agent key only for explicit
   reset, revocation or rotation, never during transient signer restoration
   (`docs/trading-onboarding.md`).
-- Connected wallet sessions always win over agent-only sessions. Agent-only is
-  only for imported mobile access or explicitly active local-agent sessions.
+- An env-matching agent-only owner (imported mobile access) wins over a
+  connected wallet session; a wallet session applies only when no such owner is
+  active ([ADR 0039](adr/0039-link-mobile-device-builder-fee-and-session-priority.md)).
+  Agent-only is only for imported mobile access or explicitly active
+  local-agent sessions.
 - L1 trading actions (`order`, `cancel`, `updateLeverage`, etc.) must use the
   trading client backed by the local agent.
 - User-signed actions (`approveAgent`, `withdraw3`, `usdSend`, `spotSend`,
