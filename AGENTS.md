@@ -193,6 +193,10 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/use-agent-status-mobile-cleanup.test.tsx \
   src/lib/tests/use-agent-registration-race.test.tsx \
   src/lib/tests/owner-trading-status.test.tsx \
+  src/lib/tests/trading-authorization.test.tsx \
+  src/lib/tests/use-agent-status-cache.test.tsx \
+  src/lib/tests/establish-connection-modal.test.tsx \
+  src/lib/tests/use-explicit-agent-approval.test.tsx \
   src/lib/tests/external-agent-signer.test.ts \
   src/lib/tests/use-connection-wallet-client.test.tsx \
   src/lib/tests/privy-agent-signer.test.ts \

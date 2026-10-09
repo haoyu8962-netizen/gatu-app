@@ -800,7 +800,7 @@ describe("useAgentRegistration logout races", () => {
 		);
 	});
 
-	it("does not report success until extraAgents confirms the newly generated public key", async () => {
+	it("does not report success until the userRole check confirms the newly generated public key", async () => {
 		registrationOptions = { persistConnection: true };
 		testState.approveAgent.mockResolvedValue(undefined);
 		testState.refetchAgent.mockResolvedValue({

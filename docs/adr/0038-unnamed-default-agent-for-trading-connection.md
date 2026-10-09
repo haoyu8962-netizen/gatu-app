@@ -24,7 +24,7 @@
 用户在两个方案（保留命名槽位并处理上限；对齐官方改用无名默认 Agent）里选了第二个。
 
 1. **普通外部钱包的建立连接申请无名默认 Agent。** `packages/hl-react/src/signing/use-agent-registration.ts` 的 `approveAgent` 只传 `agentAddress`。钉住的 SDK（`@nktkas/hyperliquid` 0.33.3）把缺省的 `agentName` 按 schema 默认值规范化为空串并签名、发送；nktkas 的集成测试覆盖 `agentName` 缺省与 `null` 两种写法，Python SDK 也用空串签名（发送时删掉该键），交易所都接受。删除 `apps/terminal/src/config/trading-agent.ts`、`TRADING_AGENT_NAME`、构建变量 `VITE_HYPERLIQUID_AGENT_NAME` 与 Provider 的 `agentName` 属性。
-2. **默认 Agent 按 `userRole` 校验，不再查 `extraAgents`。** 无名 Agent 不出现在 `extraAgents` 里。`useAgentStatus` 对本地 `local-registration` 密钥查询 `userRole({ user: 密钥地址 })`（速率权重 60，`staleTime` 30 秒），只有 `{ role: "agent", data: { user } }` 且 `user` 等于精确 owner（大小写不敏感）才算已授权（`isAgentKeyApprovedForOwner`）。答案与它回答的密钥地址绑定（`AgentKeyRole`），换密钥就换查询键，不会把旧答案套到新密钥上。授权后的确定性核对（`refetchAgent(地址)`）用 `queryClient.fetchQuery(infoQueryOptions("userRole", …), { staleTime: 0 })` 对刚生成的地址（小写）取新答案，并写进钩子使用的同一个缓存键，所以钩子下一次渲染立即与核对结果一致。
+2. **默认 Agent 按 `userRole` 校验，不再查 `extraAgents`。** 无名 Agent 不出现在 `extraAgents` 里。`useAgentStatus` 对本地 `local-registration` 密钥查询 `userRole({ user: 密钥地址 })`（速率权重 60，`staleTime` 30 秒），只有 `{ role: "agent", data: { user } }` 且 `user` 等于精确 owner（大小写不敏感）才算已授权（`isAgentKeyApprovedForOwner`）。答案与它回答的密钥地址绑定（`AgentKeyRole`），换密钥就换查询键，不会把旧答案套到新密钥上。授权后的确定性核对（`refetchAgent(地址)`）先 `queryClient.cancelQueries` 取消同键在途的旧请求（TanStack 的 `fetchQuery` 会复用在途请求，而钩子在密钥存盘后就可能已经发出授权前的查询），再用 `fetchQuery(infoQueryOptions("userRole", …), { staleTime: 0 })` 对刚生成的地址（小写）发自己的请求，并写进钩子使用的同一个缓存键，所以钩子下一次渲染立即与核对结果一致。每次核对都在请求结束后重新读取本地记录：另一个标签页在请求期间替换或删除记录时，旧答案不能让新记录就绪。
    - 没有本地密钥：已连接的 owner 直接判定需要新连接（无可向交易所询问之事，不发请求）；没有 owner 一律 `unknown`。
    - 请求出错、刷新中、还没有答案：沿用原来的 `error` / `loading` / `unknown` 语义，都不触发授权；另一把密钥的答案不算本密钥的答案。
    - Mobile Agent（`source: "mobile-sync"`）仍按名字基底、地址与到期在 `extraAgents` 里校验；`extraAgents` 查询只在本地记录是 Mobile Agent 时启用。
@@ -41,10 +41,11 @@
 ## 后果与边界
 
 - 一个账户只有一个默认 Agent：在 Sairn 建立连接会使 app.hyperliquid.xyz 或其他使用默认槽位的前端上的连接失效，反过来也一样；每次切换前端都要重新建立连接。官方终端跨浏览器本来就是这样。
-- 之前授权过的 `gatu`、`sairn`（以及 `sairn-dev`）命名 Agent 不再被使用，但仍占命名槽位直到过期或在 API 钱包页移除；本改动不自动移除它们。
+- 不再新建命名 Agent，但浏览器里已有、交易所仍认作该 owner 的 Agent 的本地密钥（包括旧的 `sairn` 命名密钥与没有 `source` 字段的更早记录）继续使用，`userRole` 不区分命名与无名；只有下一次需要新授权时才申请无名 Agent，没有强制迁移。旧的 `gatu`、`sairn`、`sairn-dev` 命名 Agent 仍占命名槽位直到过期或在 API 钱包页移除；本改动不自动移除它们。
 - 本地开发、预览构建与生产共用账户的同一个默认槽位，不再有「部署槽位」的隔离。
-- `userRole` 的速率权重是 `extraAgents` 的 3 倍；查询只在有本地密钥时启用，30 秒内不重复，每次建立连接多一次确定性核对。
-- 校验窗口：别处替换默认 Agent 后，最多 30 秒（或到下一次焦点刷新）内本地仍认为已授权，交易所会拒绝那笔操作并按 ADR 0024 显示原文；与原 `extraAgents` 方案同量级。
+- `userRole` 的速率权重是 `extraAgents` 的 3 倍。被动查询只在有本地密钥时启用，`staleTime` 30 秒只决定挂载、焦点与重连时是否复用缓存，没有定时轮询；每次确定性核对（`refetchAgent` / `refetch`）都发一次请求，建立连接流程里有 2 到 3 次（预检、授权后核对、`useTradingAuthorization` 的最终确认）。
+- 校验窗口没有上界：别处替换默认 Agent 后，持续挂载且没有焦点、重连或显式核对的页面会一直认为已授权，直到下一次重取；交易所会拒绝那笔操作并按 ADR 0024 显示原文。原 `extraAgents` 方案的复用行为相同。
+- 【推测】`userRole` 对已过期或因账户无资金被剪枝的 Agent 的过渡期返回值没有官方文档说明；代码对默认密钥没有独立的到期检查，若交易所在过渡期仍返回 `agent`，本地会继续认为已授权，由交易所拒绝那笔操作。
 - 【未验证】真实外部钱包的无名授权与首单：本 ADR 只有单元测试、SDK 源码与官方打包代码证据；验收步骤见任务记录。
 - `trading-agent-config` 测试随配置删除；`ci-workflows.test.mjs` 与 `terminal-tests.yml` 同步更新。
 

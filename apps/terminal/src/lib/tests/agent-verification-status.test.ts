@@ -64,6 +64,16 @@ describe("default Agent key role", () => {
 		).toMatchObject({ needsAgent: false, isAgentReady: true });
 	});
 
+	it("keeps using a stored key the exchange still reports as this owner's Agent, including a legacy record", () => {
+		const legacyAgent: AgentWallet = { privateKey: LOCAL_AGENT.privateKey, publicKey: AGENT };
+		expect(
+			deriveAgentRequirements(undefined, evidence({ localAgent: legacyAgent, keyRole: APPROVED_ROLE }), undefined),
+		).toMatchObject({ needsAgent: false, isAgentReady: true, isReady: true });
+		expect(
+			deriveAgentRequirements(undefined, evidence({ localAgent: legacyAgent, keyRole: MISSING_ROLE }), undefined),
+		).toMatchObject({ needsAgent: true, isAgentReady: false });
+	});
+
 	it("treats an Agent approved for another owner as not approved", () => {
 		expect(requirements({ agentAddress: AGENT, role: { role: "agent", data: { user: OTHER_OWNER } } })).toMatchObject({
 			needsAgent: true,

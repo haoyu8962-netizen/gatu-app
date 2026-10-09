@@ -6,20 +6,13 @@ import { act, createElement, type ReactNode } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, type Mock, vi } from "vitest";
 import { createActionError } from "@/lib/errors/action-error";
+import type { AgentMissingReason } from "@/lib/hyperliquid";
 import { createI18nRoot } from "./harness/react";
 
 const IDENTITY_CHANGED = msg`The active wallet or network changed. Review the account and try again.`;
 
 const testState = vi.hoisted(() => ({
-	agentMissingReason: null as
-		| "no_local_key"
-		| "remote_named_agent_exists"
-		| "approval_unconfirmed"
-		| "local_key_not_approved"
-		| "remote_key_replaced"
-		| "agent_name_mismatch"
-		| "invalid_local_record"
-		| null,
+	agentMissingReason: null as AgentMissingReason | null,
 	canResetConnection: false,
 	clientKey: "0x1111111111111111111111111111111111111111" as string,
 	env: "Mainnet" as "Mainnet" | "Testnet",
@@ -207,21 +200,17 @@ describe("EstablishConnectionModal", () => {
 		expect(onClose).toHaveBeenCalledOnce();
 	});
 
-	it("explains when another same-name connection replaced this browser key", async () => {
-		testState.agentMissingReason = "remote_key_replaced";
-		await renderModal();
+	it.each(["no_local_key", "local_key_not_approved", "remote_key_replaced"] as const satisfies AgentMissingReason[])(
+		"explains a missing connection for %s and says that reconnecting creates or replaces the key",
+		async (reason) => {
+			testState.agentMissingReason = reason;
+			await renderModal();
 
-		expect(container.textContent).toContain("Trading is not connected in this browser");
-		expect(container.textContent).toContain("create or replace its trading key");
-	});
-
-	it("warns before a browser with no local key replaces a same-name remote Agent", async () => {
-		testState.agentMissingReason = "remote_named_agent_exists";
-		await renderModal();
-
-		expect(container.textContent).toContain("Trading is not connected in this browser");
-		expect(container.textContent).toContain("create or replace its trading key");
-	});
+			expect(container.textContent).toContain("Trading is not connected in this browser");
+			expect(container.textContent).toContain("create or replace its trading key");
+			expect(container.textContent).not.toContain("still being reconciled");
+		},
+	);
 
 	it("uses the application dialog as the only confirmation for an embedded email wallet", async () => {
 		testState.status = "approving_agent";

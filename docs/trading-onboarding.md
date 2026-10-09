@@ -255,7 +255,9 @@ Agents; the exchange rejects a further named approval with
 `Too many extra agents for cumulative volume traded. Current limit is N`,
 which the terminal translates with the reported limit. Local development,
 previews and production share the account's default Agent; there are no
-deployment slots. When the stored key is no longer the account's Agent, the
+deployment slots. A browser whose stored key the exchange still reports as this
+owner's Agent keeps using it, named or not (`userRole` does not distinguish);
+only the next new approval requests the unnamed default Agent. When the stored key is no longer the account's Agent, the
 connection dialog reports a missing connection (`local_key_not_approved`) and
 says that reconnecting creates or replaces the trading key; a browser without
 a key reports `no_local_key`.

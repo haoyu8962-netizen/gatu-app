@@ -126,9 +126,14 @@ describe("exchange rejection texts", () => {
 		expect(
 			formatExchangeErrorText("Too many extra agents for cumulative volume traded. Current limit is 5", translate),
 		).toBe(NAMED_AGENT_CAP_MESSAGE.replace("the 3 named", "the 5 named"));
-		const unknown = "Too many extra agents for cumulative volume traded.";
-		expect(describeExchangeErrorText(unknown)).toBeNull();
-		expect(formatExchangeErrorText(unknown, translate)).toBe(unknown);
+		for (const unknown of [
+			"Too many extra agents for cumulative volume traded.",
+			`${NAMED_AGENT_CAP_ERROR} extra agents`,
+			`${NAMED_AGENT_CAP_ERROR}. Remove one first.`,
+		]) {
+			expect(describeExchangeErrorText(unknown)).toBeNull();
+			expect(formatExchangeErrorText(unknown, translate)).toBe(unknown);
+		}
 	});
 
 	it("keeps the values the exchange reported", () => {

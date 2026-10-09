@@ -414,34 +414,38 @@ export function useAgentStatus(options: { enableAgent?: boolean } = {}): UseAgen
 	const isLoading = isAgentLoading || isBuilderFeeLoading;
 	const requirements = deriveAgentRequirements(builderFeeQuery.data, verifiedEvidence, builderConfig, nowMs);
 
+	function readLatestLocalAgent(): AgentWallet | null {
+		return address ? readAgentFromStorage(env, address) : null;
+	}
+
+	// An answer that was already in flight when the approval completed may predate it. Cancel it
+	// (reverting the hook's query to its previous state) so the definitive check always sends its
+	// own request and the shared cache key ends up with the answer that came after the approval.
 	async function fetchAgentKeyRole(agentAddress: Address): Promise<AgentKeyRole> {
+		const options = infoQueryOptions(info, "userRole", agentKeyRoleParams(agentAddress), env);
 		try {
-			const role = await queryClient.fetchQuery({
-				...infoQueryOptions(info, "userRole", agentKeyRoleParams(agentAddress), env),
-				staleTime: 0,
-			});
+			await queryClient.cancelQueries({ queryKey: options.queryKey, exact: true });
+			const role = await queryClient.fetchQuery({ ...options, staleTime: 0 });
 			return { agentAddress, role };
 		} catch (error) {
 			throw createAgentStatusError(error);
 		}
 	}
 
+	// The stored record is read again after each request: a record another tab replaced or removed
+	// while the request was running must not be reported ready on the strength of the old answer.
 	async function loadAgentEvidence(agentAddressOverride?: Address): Promise<AgentApprovalEvidence> {
-		const latestLocalAgent = address ? readAgentFromStorage(env, address) : null;
-		if (!agentAddressOverride && latestLocalAgent?.source === "mobile-sync") {
+		const startingLocalAgent = readLatestLocalAgent();
+		if (!agentAddressOverride && startingLocalAgent?.source === "mobile-sync") {
 			const agentsResult = await extraAgentsQuery.refetch();
 			if (agentsResult.error || agentsResult.data === undefined) {
 				throw createAgentStatusError(agentsResult.error);
 			}
-			return { owner: address, localAgent: latestLocalAgent, keyRole: undefined, extraAgents: agentsResult.data };
+			return { owner: address, localAgent: readLatestLocalAgent(), keyRole: undefined, extraAgents: agentsResult.data };
 		}
-		const candidate = agentAddressOverride ?? latestLocalAgent?.publicKey;
-		return {
-			owner: address,
-			localAgent: latestLocalAgent,
-			keyRole: candidate ? await fetchAgentKeyRole(candidate) : undefined,
-			extraAgents: undefined,
-		};
+		const candidate = agentAddressOverride ?? startingLocalAgent?.publicKey;
+		const keyRole = candidate ? await fetchAgentKeyRole(candidate) : undefined;
+		return { owner: address, localAgent: readLatestLocalAgent(), keyRole, extraAgents: undefined };
 	}
 
 	async function refetchAgent(agentAddressOverride?: Address): Promise<AgentRequirements> {
@@ -457,15 +461,23 @@ export function useAgentStatus(options: { enableAgent?: boolean } = {}): UseAgen
 	}
 
 	async function refetchBuilderFee(): Promise<AgentRequirements> {
-		const latestLocalAgent = address ? readAgentFromStorage(env, address) : null;
-		const latestEvidence = { ...verifiedEvidence, localAgent: latestLocalAgent };
 		if (!hasBuilderConfig) {
-			return deriveAgentRequirements(undefined, latestEvidence, builderConfig, Date.now());
+			return deriveAgentRequirements(
+				undefined,
+				{ ...verifiedEvidence, localAgent: readLatestLocalAgent() },
+				builderConfig,
+				Date.now(),
+			);
 		}
 
 		const feeResult = await builderFeeQuery.refetch();
 		if (feeResult.error || feeResult.data === undefined) throw new Error("Could not load builder fee status");
-		return deriveAgentRequirements(feeResult.data, latestEvidence, builderConfig, Date.now());
+		return deriveAgentRequirements(
+			feeResult.data,
+			{ ...verifiedEvidence, localAgent: readLatestLocalAgent() },
+			builderConfig,
+			Date.now(),
+		);
 	}
 
 	async function refetch(agentAddressOverride?: Address): Promise<AgentRequirements> {

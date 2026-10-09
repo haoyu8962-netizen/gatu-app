@@ -67,4 +67,20 @@ describe("useAgentStatus invalid storage cleanup", () => {
 		});
 		act(() => root.unmount());
 	});
+
+	it("leaves an invalid key alone while Agent verification is disabled for owner-wallet trading", async () => {
+		const container = document.createElement("div");
+		const root = createRoot(container);
+		function Probe() {
+			useAgentStatus({ enableAgent: false });
+			return null;
+		}
+
+		await act(async () => {
+			root.render(createElement(QueryClientProvider, { client: new QueryClient() }, createElement(Probe)));
+		});
+
+		expect(testState.cleanupAgentRegistrationIfMatches).not.toHaveBeenCalled();
+		act(() => root.unmount());
+	});
 });

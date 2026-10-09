@@ -22,13 +22,23 @@ type LocalAgent = {
 };
 
 const testState = vi.hoisted(() => ({
+	builderConfig: undefined as { b: `0x${string}`; f: number } | undefined,
+	builderFee: undefined as number | undefined,
+	builderFeeRefetch: vi.fn(),
 	keyRole: undefined as UserRoleResponse | undefined,
 	keyRoleError: null as Error | null,
 	keyRoleFetching: false,
 	extraAgents: undefined as Array<{ address: `0x${string}`; name: string; validUntil: number | null }> | undefined,
+	extraAgentsError: null as Error | null,
 	extraAgentsFetching: false,
+	extraAgentsRefetch: vi.fn(),
 	localAgent: null as LocalAgent | null,
-	queries: [] as Array<{ method: string; user: string | undefined; enabled: boolean | undefined }>,
+	queries: [] as Array<{
+		method: string;
+		user: string | undefined;
+		enabled: boolean | undefined;
+		staleTime: number | undefined;
+	}>,
 	userRoleRequests: [] as Array<{ user: string }>,
 	userRoleAnswer: vi.fn(),
 }));
@@ -36,7 +46,7 @@ const testState = vi.hoisted(() => ({
 vi.mock("@sairn/hl-react/provider", () => ({
 	useHyperliquid: () => ({
 		env: "Mainnet",
-		builderConfig: undefined,
+		builderConfig: testState.builderConfig,
 		clientKey: OWNER,
 		info: {
 			userRole: async (params: { user: string }) => {
@@ -48,8 +58,8 @@ vi.mock("@sairn/hl-react/provider", () => ({
 }));
 
 vi.mock("@sairn/hl-react/hooks/useInfo", () => ({
-	useInfo: (method: string, params: { user?: string }, options: { enabled?: boolean }) => {
-		testState.queries.push({ method, user: params.user, enabled: options.enabled });
+	useInfo: (method: string, params: { user?: string }, options: { enabled?: boolean; staleTime?: number }) => {
+		testState.queries.push({ method, user: params.user, enabled: options.enabled, staleTime: options.staleTime });
 		if (method === "userRole") {
 			return {
 				data: options.enabled ? testState.keyRole : undefined,
@@ -64,19 +74,19 @@ vi.mock("@sairn/hl-react/hooks/useInfo", () => ({
 			return {
 				data: options.enabled ? testState.extraAgents : undefined,
 				dataUpdatedAt: 1,
-				error: null,
+				error: options.enabled ? testState.extraAgentsError : null,
 				isFetching: options.enabled ? testState.extraAgentsFetching : false,
 				isLoading: options.enabled ? testState.extraAgentsFetching && testState.extraAgents === undefined : false,
-				refetch: vi.fn(async () => ({ data: testState.extraAgents, error: null })),
+				refetch: testState.extraAgentsRefetch,
 			};
 		}
 		return {
-			data: undefined,
+			data: options.enabled ? testState.builderFee : undefined,
 			dataUpdatedAt: 0,
 			error: null,
 			isFetching: false,
 			isLoading: false,
-			refetch: vi.fn(),
+			refetch: testState.builderFeeRefetch,
 		};
 	},
 }));
@@ -111,6 +121,27 @@ function agentRole(user: string): UserRoleResponse {
 	return { role: "agent", data: { user: user as `0x${string}` } };
 }
 
+function deferred<T>() {
+	let resolve = (_value: T) => {};
+	const promise = new Promise<T>((promiseResolve) => {
+		resolve = promiseResolve;
+	});
+	return { promise, resolve };
+}
+
+function mobileLocalAgent(): { localAgent: LocalAgent; publicKey: `0x${string}`; validUntil: number } {
+	const publicKey = privateKeyToAccount(MOBILE_PRIVATE_KEY).address;
+	const validUntil = Date.now() + 60_000;
+	const localAgent = createMobileAgentWalletRecord({
+		privateKey: MOBILE_PRIVATE_KEY,
+		publicKey,
+		agentName: `Mobile valid_until ${validUntil}`,
+		agentValidUntilMs: validUntil,
+		importedAtMs: Date.now() - 60_000,
+	}) as LocalAgent;
+	return { localAgent, publicKey, validUntil };
+}
+
 describe("useAgentStatus definitive verification", () => {
 	let container: HTMLDivElement;
 	let root: ReturnType<typeof createRoot>;
@@ -121,11 +152,20 @@ describe("useAgentStatus definitive verification", () => {
 		document.body.appendChild(container);
 		root = createRoot(container);
 		queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+		testState.builderConfig = undefined;
+		testState.builderFee = undefined;
+		testState.builderFeeRefetch
+			.mockReset()
+			.mockImplementation(async () => ({ data: testState.builderFee, error: null }));
 		testState.keyRole = { role: "missing" };
 		testState.keyRoleError = null;
 		testState.keyRoleFetching = false;
 		testState.extraAgents = undefined;
+		testState.extraAgentsError = null;
 		testState.extraAgentsFetching = false;
+		testState.extraAgentsRefetch
+			.mockReset()
+			.mockImplementation(async () => ({ data: testState.extraAgents, error: testState.extraAgentsError }));
 		testState.localAgent = {
 			privateKey: `0x${"ab".repeat(32)}`,
 			publicKey: AGENT,
@@ -156,6 +196,7 @@ describe("useAgentStatus definitive verification", () => {
 		renderProbe();
 
 		expect(keyRoleQueries().every(({ user, enabled }) => user === AGENT && enabled === true)).toBe(true);
+		expect(keyRoleQueries().every(({ staleTime }) => staleTime === 30_000)).toBe(true);
 		expect(testState.queries.filter(({ method }) => method === "extraAgents").every(({ enabled }) => !enabled)).toBe(
 			true,
 		);
@@ -248,15 +289,8 @@ describe("useAgentStatus definitive verification", () => {
 	});
 
 	it("verifies a Mobile Agent through extraAgents only", () => {
-		const publicKey = privateKeyToAccount(MOBILE_PRIVATE_KEY).address;
-		const validUntil = Date.now() + 60_000;
-		testState.localAgent = createMobileAgentWalletRecord({
-			privateKey: MOBILE_PRIVATE_KEY,
-			publicKey,
-			agentName: `Mobile valid_until ${validUntil}`,
-			agentValidUntilMs: validUntil,
-			importedAtMs: Date.now() - 60_000,
-		}) as LocalAgent;
+		const { localAgent, publicKey, validUntil } = mobileLocalAgent();
+		testState.localAgent = localAgent;
 		testState.keyRole = agentRole(OWNER);
 		testState.extraAgents = [{ address: publicKey, name: "Mobile", validUntil }];
 		const probe = renderProbe();
@@ -264,6 +298,115 @@ describe("useAgentStatus definitive verification", () => {
 		expect(probe?.getAttribute("data-status")).toBe("ready");
 		expect(keyRoleQueries().every(({ enabled }) => enabled === false)).toBe(true);
 		expect(testState.queries.some(({ method, enabled }) => method === "extraAgents" && enabled === true)).toBe(true);
+	});
+
+	it("takes a Mobile Agent's loading and error state from extraAgents, not from the key role query", () => {
+		const { localAgent } = mobileLocalAgent();
+		testState.localAgent = localAgent;
+		testState.keyRole = agentRole(OWNER);
+		testState.extraAgents = undefined;
+		testState.extraAgentsFetching = true;
+		let probe = renderProbe();
+		expect(probe?.getAttribute("data-status")).toBe("loading");
+		expect(probe?.getAttribute("data-loading")).toBe("true");
+
+		testState.extraAgentsFetching = false;
+		testState.extraAgentsError = new Error("extra agents unavailable");
+		act(() => root.unmount());
+		root = createRoot(container);
+		probe = renderProbe();
+		expect(probe?.getAttribute("data-status")).toBe("error");
+		expect(observedStatus?.agentError).toBe(testState.extraAgentsError);
+	});
+
+	it("checks an explicit candidate key through userRole even while a Mobile Agent is stored", async () => {
+		const { localAgent, publicKey, validUntil } = mobileLocalAgent();
+		testState.localAgent = localAgent;
+		testState.extraAgents = [{ address: publicKey, name: "Mobile", validUntil }];
+		testState.userRoleAnswer.mockImplementation(async ({ user }: { user: string }) =>
+			user === NEXT_AGENT ? agentRole(OWNER) : { role: "missing" },
+		);
+		renderProbe();
+
+		await expect(observedStatus?.refetchAgent(NEXT_AGENT)).resolves.toMatchObject({
+			isAgentReady: true,
+			needsAgent: false,
+		});
+		expect(testState.userRoleRequests).toEqual([{ user: NEXT_AGENT }]);
+		expect(testState.extraAgentsRefetch).not.toHaveBeenCalled();
+	});
+
+	it("does not report a key ready when another tab replaced or removed the record during the check", async () => {
+		const answer = deferred<UserRoleResponse>();
+		testState.userRoleAnswer.mockReturnValue(answer.promise);
+		renderProbe();
+
+		const replaced = observedStatus?.refetchAgent();
+		testState.localAgent = { privateKey: `0x${"cd".repeat(32)}`, publicKey: NEXT_AGENT, source: "local-registration" };
+		answer.resolve(agentRole(OWNER));
+		await expect(replaced).resolves.toMatchObject({ isAgentReady: false, needsAgent: false });
+		expect(testState.userRoleRequests).toEqual([{ user: AGENT }]);
+
+		const removal = deferred<UserRoleResponse>();
+		testState.userRoleAnswer.mockReturnValue(removal.promise);
+		const removed = observedStatus?.refetchAgent();
+		testState.localAgent = null;
+		removal.resolve(agentRole(OWNER));
+		await expect(removed).resolves.toMatchObject({ isAgentReady: false, needsAgent: true });
+	});
+
+	it("does not report a Mobile Agent ready when the record changed while extraAgents was loading", async () => {
+		const { localAgent, publicKey, validUntil } = mobileLocalAgent();
+		testState.localAgent = localAgent;
+		const list = deferred<{ data: typeof testState.extraAgents; error: null }>();
+		testState.extraAgentsRefetch.mockReturnValue(list.promise);
+		renderProbe();
+
+		const result = observedStatus?.refetchAgent();
+		testState.localAgent = { privateKey: `0x${"ab".repeat(32)}`, publicKey: AGENT, source: "local-registration" };
+		list.resolve({ data: [{ address: publicKey, name: "Mobile", validUntil }], error: null });
+		await expect(result).resolves.toMatchObject({ isAgentReady: false, needsAgent: false });
+		expect(testState.userRoleRequests).toEqual([]);
+	});
+
+	it("refetches the builder fee and the key role together and combines the fresh answers", async () => {
+		testState.builderConfig = { b: "0x5555555555555555555555555555555555555555", f: 10 };
+		testState.builderFee = 0;
+		const fee = deferred<{ data: number; error: null }>();
+		const answer = deferred<UserRoleResponse>();
+		testState.builderFeeRefetch.mockReturnValue(fee.promise);
+		testState.userRoleAnswer.mockReturnValue(answer.promise);
+		renderProbe();
+
+		const result = observedStatus?.refetch();
+		await vi.waitFor(() => expect(testState.userRoleRequests).toEqual([{ user: AGENT }]));
+		expect(testState.builderFeeRefetch).toHaveBeenCalledOnce();
+		answer.resolve(agentRole(OWNER));
+		fee.resolve({ data: 10, error: null });
+		await expect(result).resolves.toMatchObject({
+			isAgentReady: true,
+			isBuilderFeeReady: true,
+			needsAgent: false,
+			needsBuilderFee: false,
+			isReady: true,
+			signaturesRequired: 0,
+		});
+	});
+
+	it("does not let a rendered key role vouch for a key stored after render when only the fee is refetched", async () => {
+		testState.builderConfig = { b: "0x5555555555555555555555555555555555555555", f: 10 };
+		testState.builderFee = 10;
+		testState.keyRole = agentRole(OWNER);
+		const probe = renderProbe();
+		expect(probe?.getAttribute("data-total-ready")).toBe("true");
+
+		testState.localAgent = { privateKey: `0x${"cd".repeat(32)}`, publicKey: NEXT_AGENT, source: "local-registration" };
+		await expect(observedStatus?.refetchBuilderFee()).resolves.toMatchObject({
+			isAgentReady: false,
+			isBuilderFeeReady: true,
+			isReady: false,
+		});
+		expect(testState.userRoleRequests).toEqual([]);
 	});
 
 	it("confirms a freshly approved key with a fresh userRole request for that exact key", async () => {

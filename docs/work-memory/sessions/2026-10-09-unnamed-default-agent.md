@@ -7,7 +7,7 @@
   "kind": "task",
   "status": "recorded",
   "topics": ["wallet-onboarding", "hyperliquid-api"],
-  "summary": "外部钱包在「建立连接」弹窗收到交易所原文 Too many extra agents for cumulative volume traded. Current limit is 3：根因是普通 Enable Trading 申请的是命名 Agent（sairn），而账户的命名 Agent 上限（3 个）已被改名前的 gatu、Mobile 或其他前端的命名钱包占满；官方终端的 Establish Connection 申请的是无名默认 Agent，并用 webData3 的 agentAddress 判定就绪。用户选对齐官方：approveAgent 不再带 agentName，存储的密钥改用 userRole 核对为精确 owner 的 Agent（Mobile Agent 仍查 extraAgents），删除 sairn 槽位与 VITE_HYPERLIQUID_AGENT_NAME，命名上限的拒绝文案翻译并保留上限值。类型检查、Biome、17 个相关测试文件与 7 个变异检查通过；真实外部钱包的授权与首单未验收；未推送。",
+  "summary": "外部钱包在「建立连接」弹窗收到交易所原文 Too many extra agents for cumulative volume traded. Current limit is 3：根因是普通 Enable Trading 申请的是命名 Agent（sairn），命名授权触及交易所返回的上限 3；具体占位者未核实（候选：改名前的 gatu、Mobile、其他前端的命名钱包）；官方终端的 Establish Connection 申请的是无名默认 Agent，并用 webData3 的 agentAddress 判定就绪。用户选对齐官方：approveAgent 不再带 agentName，存储的密钥改用 userRole 核对为精确 owner 的 Agent（Mobile Agent 仍查 extraAgents），删除 sairn 槽位与 VITE_HYPERLIQUID_AGENT_NAME，命名上限的拒绝文案翻译并保留上限值。类型检查、Biome、17 个相关测试文件与 7 个变异检查通过；真实外部钱包的授权与首单未验收；未推送。",
   "thread": null,
   "baseCommit": "4c5ff959",
   "commits": [],
@@ -30,7 +30,7 @@
 
 ## 结论与依据
 
-- 根因（代码阅读 + 官方文档）：`packages/hl-react/src/signing/use-agent-registration.ts` 的 `approveAgent` 带 `agentName`，名字来自 `apps/terminal/src/config/trading-agent.ts`（生产构建 `VITE_HYPERLIQUID_AGENT_NAME=sairn`）。Hyperliquid Exchange endpoint 文档：一个账户 1 个无名 API 钱包、最多 3 个命名 API 钱包；命名 Agent 只被同名授权替换。账户已有 3 个其他名字时 `sairn` 进不去。可能的占位者：改名前的 `gatu`（ADR 0027 第 85 行当时预告了这个失败）、Link mobile device 的 `Mobile valid_until …`、API 钱包页或其他前端创建的命名钱包；具体占位者未核实（需要完整地址查 `extraAgents`）。预检只找同名条目不看数量，所以先签名再被拒；`exchange-error-text.ts` 没有这条规则，按 ADR 0024 原样显示。
+- 根因（代码阅读 + 官方文档）：`packages/hl-react/src/signing/use-agent-registration.ts` 的 `approveAgent` 带 `agentName`，名字来自 `apps/terminal/src/config/trading-agent.ts`（生产构建 `VITE_HYPERLIQUID_AGENT_NAME=sairn`）。Hyperliquid Exchange endpoint 文档：一个账户 1 个无名 API 钱包、最多 3 个命名 API 钱包；命名 Agent 只被同名授权替换。交易所的回文说明这个账户的命名上限是 3，而 `sairn` 不在已有名字之中。具体占位者未核实（需要完整地址查 `extraAgents`）；推测的候选是改名前的 `gatu`（ADR 0027 第 85 行当时预告了这个失败）、Link mobile device 的 `Mobile valid_until …`、API 钱包页或其他前端创建的命名钱包。预检只找同名条目不看数量，所以先签名再被拒；`exchange-error-text.ts` 没有这条规则，按 ADR 0024 原样显示。
 - 官方实践（2026-10-08 读取 `app.hyperliquid.xyz` 生产打包代码 `config-DgrJgRxr.js`，文件名随发布变化）：Establish Connection 的 `approveAgent` 动作不带 `agentName`、EIP-712 消息里为空串（无名默认 Agent）；密钥存 `localStorage` 的 `hyperliquid_agent_<地址>`，签好的请求先存 sessionStorage 的 `hyperliquid.pending_agent`；就绪判定是本地密钥地址与 `webData3.userState.agentAddress` 比对；`extraAgents` 只用于 API Wallets 页，`userRole` 只用于地址覆盖功能；官方对这条拒绝文案没有特殊处理。
 - SDK 证据：`@nktkas/hyperliquid` 0.33.3 的 `ApproveAgentRequest` schema 把 `agentName` 定义为 `nullish(..., "")`，缺省时签名与发送都用空串；nktkas 仓库的 `tests/api/exchange/approveAgent.test.ts` 覆盖 `agentName: null` 与缺省两种写法；Python SDK 用空串签名、发送时删掉该键。
 - 采用的方案（ADR 0038）：`approveAgent` 只传 `agentAddress`；`useAgentStatus` 对 `local-registration` 密钥查询 `userRole({ user: 密钥地址 })`（`staleTime` 30 秒），只有 `{ role: "agent", data: { user: 精确 owner } }` 才算已授权，答案绑定密钥地址（`AgentKeyRole`）；授权后的核对用 `queryClient.fetchQuery(infoQueryOptions("userRole"), { staleTime: 0 })` 取新答案并写进同一缓存键；没有本地密钥时已连接的 owner 直接需要新连接、不发请求；Mobile Agent 仍按名字基底、地址、到期查 `extraAgents`，该查询只在本地记录是 Mobile Agent 时启用；去掉 `remote_named_agent_exists`；删除 `trading-agent.ts`、`TRADING_AGENT_NAME`、`VITE_HYPERLIQUID_AGENT_NAME`、Provider 的 `agentName`、`isAgentApproved`；`exchange-error-text.ts` 新增规则翻译 `Too many extra agents for cumulative volume traded. Current limit is N`（中文已补，其他四种语言回退英文）。
@@ -47,7 +47,27 @@
 - 变异检查（逐个改源码、跑对应测试、确认变红后还原）：注册重新带 `agentName`；`isAgentKeyApprovedForOwner` 不比较 owner；另一把密钥的答案当作本密钥的答案；核对请求不转小写；没有本地密钥时不判定需要 Agent；Mobile Agent 也走 `userRole`；删除上限拒绝规则。7 个变异下对应的 vitest 运行都以退出码 1 失败，还原后再次通过。
 - `lingui extract` 只新增一条消息（6 个目录各 4 行）；第一次误用 `--clean` 删掉了过时条目，已还原后重跑。
 - 未做：真实外部钱包的无名授权与首单（需要运营方用钱包操作：Enable Trading → 钱包签名 → 下一单；核对点是签名请求的 `agentName` 为空、`userRole` 对新地址返回 `agent`、首单被接受）；Codex 对抗审查（用户本轮未要求）；生产构建与包体测量；全量 `pnpm --filter @sairn/terminal test`（见后续）。
-- `userRole` 的速率权重是 60，`extraAgents` 是 20；查询只在有本地密钥时启用、30 秒内不重复。
+- `userRole` 的速率权重是 60，`extraAgents` 是 20；被动查询只在有本地密钥时启用，`staleTime` 30 秒只影响挂载、焦点与重连时的缓存复用，没有轮询，也没有失效上界；每次确定性核对都发请求。
+
+### 第 1 轮 Codex 对抗审查（gpt-6-astra，medium，只读三路并行，对 dba03dee）
+
+评分：行为证伪 7.5、规范与记录 8.5、遗漏与变异 9.0（过线标准三路 ≥ 9.5 且无 P0/P1/P2）。发现与处理：
+
+- P1（A）`loadAgentEvidence` 在请求前读取本地记录、请求后直接沿用：另一标签页在请求期间替换或删除记录时，旧答案仍可让旧记录就绪（Mobile 的 `extraAgents` 查询键只含 owner，不会因换密钥而换键）。已改为每次请求结束后重新读取本地记录（`readLatestLocalAgent`），记录变了就按新记录判定（默认密钥：答案不属于新密钥 → 不就绪；记录被删除 → 需要新连接）；`refetchBuilderFee` 同样在请求后读取。新增「请求期间记录被替换/删除」的默认与 Mobile 用例。
+- P2（A）TanStack 的 `fetchQuery` 会复用同键在途请求：钩子在密钥存盘后就可能发出授权前的 `userRole` 查询，授权后的核对若撞上它会得到旧的 `missing`。已改为先 `queryClient.cancelQueries`（默认 `revert: true`，不把钩子的查询置为错误）再 `fetchQuery({ staleTime: 0 })`。新增 `use-agent-status-cache.test.tsx`（真实 `useInfo` 与 QueryClient）：新鲜 miss 不被复用、在途旧答案不被复用且缓存与钩子最终为 ready、继承宿主 retry、失败包装为 `AgentStatusError`。
+- P2（A/B）ADR「之前授权过的命名 Agent 不再被使用」不实：`userRole` 不区分命名与无名，浏览器里仍有效的旧 `sairn` 密钥（以及无 `source` 的更早记录）会继续使用，直到下一次需要新授权。ADR、首次交易文档、CHANGELOG 已改写；新增 legacy 记录经 `userRole` 就绪的单元用例。
+- P2（A/B）「30 秒内不重复」「最多 30 秒」不实：`staleTime` 只影响挂载、焦点、重连时的缓存复用，没有轮询，没有失效上界，显式核对总是发请求。ADR 与本记录已改写。
+- P2（B）本记录摘要把槽位占位者写成事实：已改为「交易所回文的上限 3；具体占位者未核实（候选 …）」，索引重建。
+- P2（C）`refetchAgent` 的「fresh request」用例没钉住 `staleTime: 0` 与缓存键一致：由新的 cache 测试覆盖（变异 M11 把 `staleTime` 改 30 秒、M12 改缓存键，均失败）。
+- P2（C）`refetch()` 合并路径与 `refetchBuilderFee` 用最新密钥缺直接回归：已补两个用例（双 deferred 并行、渲染后换密钥）。
+- P2（C）/P3（B）`trading-authorization.test.tsx` 与 `establish-connection-modal.test.tsx` 不在 CI：已加入 `terminal-tests.yml`、`ci-workflows.test.mjs` 钉子与 AGENTS 清单（连同 `use-explicit-agent-approval` 与新的 cache 测试）。
+- P3（B）CHANGELOG「three for most accounts」无据：改为「交易所按成交量放宽、本账户回文为 3」。
+- P3（C）`establish-connection-modal.test.tsx` 仍模拟已删除的 `remote_named_agent_exists`：改用真实 `AgentMissingReason` 并参数化三个有效原因；注册竞态测试里提到 `extraAgents` 的用例名改为 `userRole`。
+- 另按变异表补：观察查询 `staleTime` 30 秒的断言、Mobile 记录的 loading/error 只取自 `extraAgents`、Mobile 记录带 override 走 `userRole`、清理 effect 在 `enableAgent: false` 时不运行、上限文案带未知后缀时保持原文。
+- 保留为推测并写进 ADR：`userRole` 对过期或被剪枝的 Agent 在过渡期的返回值没有官方文档说明。
+- 未采纳：审查方建议的「等待已有查询结束再强制发起」——取消在途请求更简单，且钩子的查询状态会回退而不是报错。
+
+本轮修复后的验证（提交前工作区）：`pnpm typecheck` 通过；Biome 通过；10 个相关测试文件 205 项通过（其中 `use-agent-status-verification` 与新 cache 测试 25 项）；`node --test scripts/ci-workflows.test.mjs` 12 项；变异 M8（去掉 `cancelQueries`）、M9/M10（请求前读记录）、M11（`staleTime` 30 秒）、M12（换缓存键）各自让对应测试失败，还原后通过。
 
 ## 后续与替代关系
 
