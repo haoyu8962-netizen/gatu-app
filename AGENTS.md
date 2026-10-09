@@ -78,6 +78,7 @@ This file contains durable project instructions for coding agents. Read `agent.m
 
 - The dark terminal and chart canvas use `#0F1A1F` (`rgb(15, 26, 31)`) as the main background; the terminal dark theme maps `bg-background`, `bg-surface`, `bg-alternate` and `bg-modal` to it (see `.claude/rules/design-tokens.md`).
 - Application modals and drawers use the dedicated `bg-modal` surface. Do not change `bg-overlay` to achieve this; tooltips, toasts and selection indicators depend on its raised contrast.
+- The `@sairn/ui` primitives own the dialog edge, following the official terminal: a centred modal keeps its border behind the `bg-scrim` backdrop with a 2px blur, a phone sheet is borderless behind the stronger `bg-scrim-sheet` backdrop without blur, and no dialog overrides the scrim, blur or sheet border itself (`.claude/rules/style-ui-guide.md`, Dialog chrome; `modal-surface-contract`).
 - TradingView runs in an iframe and cannot inherit application tokens; `docs/runtime-guardrails.md` §4 owns its theme stylesheet rules, including the `#1D1E26` raised-layer color and the single theme-aware stylesheet.
 - TradingView price precision comes from market metadata under Hyperliquid's tick rules, never from the digits of a price string, and a price crossing a power of ten never rebuilds the widget; `docs/runtime-guardrails.md` §4 and ADR 0035 own the rule and its tradeoffs.
 - Keep theme colors in shared tokens or existing style abstractions instead of scattering new literals.

@@ -45,7 +45,6 @@ export function Hip3DeployerDisclaimer({ open, documentationUrl, exit, onExit, o
 			dismissible={exit === "cancel"}
 			presentation={isMobile ? "drawer" : "modal"}
 			layer="blocking"
-			overlayClassName="backdrop-blur-[2px] duration-100"
 			className="max-h-[calc(100dvh-1rem)] !shadow-none min-[1001px]:max-w-[32.5rem]"
 		>
 			<ModalHeader divider={false} className="px-6 pt-5 pb-2">

@@ -216,7 +216,6 @@ function MarginModeModalComponent({
 				closeLabel={t`Close`}
 				showHandle
 				handleClassName="top-2 h-1 w-9 bg-trading-panel-stroke-input"
-				overlayClassName="bg-trading-panel-scrim"
 				className="max-h-[calc(100dvh-1rem)] !rounded-t-[18px] border-trading-panel-stroke-card font-market-close"
 			>
 				{mobileView === "leverage" ? (
@@ -298,13 +297,7 @@ function MarginModeModalComponent({
 
 	return (
 		<Modal open={open} onOpenChange={onOpenChange}>
-			<ModalPopup
-				size="sm"
-				showClose
-				closeLabel={t`Close`}
-				overlayClassName="bg-trading-panel-scrim"
-				className="font-market-close"
-			>
+			<ModalPopup size="sm" showClose closeLabel={t`Close`} className="font-market-close">
 				<ModalHeader>
 					<ModalTitle>
 						<Trans>Margin mode</Trans>

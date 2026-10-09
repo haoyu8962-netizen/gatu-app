@@ -37,7 +37,6 @@ export function FundsModalShell({ children, headerStart, isPending, onOpenChange
 			isPending={isPending}
 			presentation={presentation}
 			handleClassName={usesFundsRedesign ? "top-2.5 !rounded-[2px] bg-market-close-stroke-input" : undefined}
-			overlayClassName={usesFundsRedesign ? "backdrop-blur-[2px] duration-100" : undefined}
 			className={cn(
 				FUNDS_MODAL_POPUP_CLASS,
 				usesFundsRedesign &&

@@ -326,7 +326,6 @@ export function MarketAssetInfo({ market }: Props) {
 				closeLabel={t`Close`}
 				presentation={isMobile ? "drawer" : "modal"}
 				handleClassName="top-2.5 h-1 w-9 !rounded-[2px] bg-trading-panel-stroke-input"
-				overlayClassName="!bg-trading-panel-scrim backdrop-blur-[2px] duration-200"
 				className="min-h-[166px] max-h-[calc(100dvh-1rem)] border-trading-panel-stroke-card font-market-close min-[1001px]:min-h-0 min-[1001px]:max-w-[30rem] min-[1001px]:[&>button]:top-[14px] min-[1001px]:[&>button]:right-[14px] min-[1001px]:[&>button]:size-[30px]"
 			>
 				<ModalHeader divider={false} className="items-center px-12 pt-9 pb-0 min-[1001px]:px-6 min-[1001px]:pt-8">

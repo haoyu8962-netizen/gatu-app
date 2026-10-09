@@ -198,7 +198,7 @@ describe("LegalAcceptanceModal", () => {
 		expect(dialog?.getAttribute("data-show-close")).toBe("false");
 		expect(dialog?.getAttribute("data-show-handle")).toBe("false");
 		expect(dialog?.getAttribute("data-presentation")).toBe("modal");
-		expect(dialog?.getAttribute("data-overlay-class")).toContain("!bg-trading-panel-scrim");
+		expect(dialog?.getAttribute("data-overlay-class")).toBeNull();
 		expect(dialog?.className).toContain("min-[1001px]:!max-w-[30rem]");
 		expect(dialog?.className).toContain("min-[1001px]:!shadow-legal-acceptance");
 

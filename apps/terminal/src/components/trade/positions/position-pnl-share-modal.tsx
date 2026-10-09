@@ -195,7 +195,6 @@ function PositionPnlShareDialog({ position, open, onOpenChange }: PositionPnlSha
 			<ModalPopup
 				size="sm"
 				showClose={false}
-				overlayClassName="!bg-scrim/60 !backdrop-blur-none"
 				className="font-market-close !w-[calc(100vw-2rem)] !max-w-[360px] shrink-0 !overflow-visible !rounded-none !bg-transparent !shadow-none min-[1001px]:!w-[360px]"
 				data-testid="position-pnl-share-modal"
 			>
