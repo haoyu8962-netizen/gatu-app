@@ -37,7 +37,7 @@
 
 - 2026-10-09，本分支工作区（基线 5cc5327a + 本改动）：`pnpm --dir apps/terminal exec vitest run --maxWorkers=2` 跑 `market-asset-info`、`modal-surface-contract`、`leverage-dialog-risk-warning`、`position-pnl-share-modal`、`adaptive-modal-dismissal` 五个文件，56 项全过。`node --test scripts/ci-workflows.test.mjs` 12 项通过。
 - 2026-10-10 按 CI 参数补跑：`pnpm --dir apps/terminal exec vitest run --maxWorkers=1 src/lib/tests/market-asset-info.test.tsx` 1 个文件 27 项通过。`pnpm memory:index`、`memory:check`、`memory:test` 均通过，`pnpm exec biome check` 本测试文件无问题。
-- Codex 只读对抗审查（`gpt-6-astra`，medium，单路覆盖行为证伪、规范与记录、变异）：9/10，无 P0/P1/P2，三条意图均判成立；指出 `duration-200` 由原语自带（`packages/ui/src/drawer.tsx`、`modal.tsx`），删除组件覆盖不影响 200ms 过渡。唯一 P3 见「后续」一节的更正。它的变异表说明新断言只证明组件不传覆盖，原语遮罩颜色、模糊与过渡由 `modal-surface-contract` 负责，不由此测试负责。
+- Codex 只读对抗审查（`gpt-6-astra`，medium，单路覆盖行为证伪、规范与记录、变异）：9/10，无 P0/P1/P2，三条意图均判成立；指出 `duration-200` 由原语自带（`packages/ui/src/drawer.tsx`、`modal.tsx`），删除组件覆盖不影响 200ms 过渡。唯一 P3 见「后续」一节的更正。它的变异表说明新断言只证明组件不传覆盖，原语的遮罩颜色、模糊与边框由 `modal-surface-contract` 钉住；200ms 过渡（`duration-200`）只经源码核对，目前没有测试钉住。
 - 未跑全量单测，也未在浏览器里打开资产信息抽屉（本次只改测试断言与 CI 清单，没有改运行时代码）。
 
 ## 后续与替代关系
