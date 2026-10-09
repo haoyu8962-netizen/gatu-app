@@ -81,7 +81,7 @@ function MobileAgentSyncDialog({
 	const approveAgent = useExplicitAgentApproval();
 	const tradingStatus = useTradingStatus();
 	const { builderConfig, info } = useHyperliquid();
-	const [activationMissing, setActivationMissing] = useState(false);
+	const [activationMissingFor, setActivationMissingFor] = useState<string | null>(null);
 	const infoRef = useRef(info);
 	infoRef.current = info;
 	const activationHintId = useId();
@@ -128,7 +128,9 @@ function MobileAgentSyncDialog({
 
 	const canApprove = MOBILE_PAIRING_FEATURES.enabled && hasWalletAccess && !!walletAddress;
 	const isBusy = state.status === "signing";
-	const accountNotActivated = tradingStatus.needsBuilderFee || activationMissing;
+	const accountNotActivated =
+		tradingStatus.needsBuilderFee ||
+		(activationMissingFor !== null && activationMissingFor === walletAddress?.toLowerCase());
 	const slotCheckOwner = open && canApprove ? walletAddress : undefined;
 	const [slotSnapshot, setSlotSnapshot] = useState<{ agents: InfoResponse<"extraAgents">; atMs: number } | null>(null);
 	const slotCheck = slotSnapshot ? getMobileAgentSlotState(slotSnapshot.agents, slotSnapshot.atMs) : null;
@@ -180,7 +182,7 @@ function MobileAgentSyncDialog({
 			).catch(() => null);
 			if (operation.signal.aborted) return;
 			if (activation !== "activated") {
-				if (activation === "notActivated") setActivationMissing(true);
+				if (activation === "notActivated") setActivationMissingFor(walletAddress.toLowerCase());
 				setState(
 					activation === "notActivated"
 						? { status: "idle" }
@@ -227,7 +229,7 @@ function MobileAgentSyncDialog({
 	function handleOpenChangeComplete(nextOpen: boolean) {
 		if (nextOpen) return;
 		setState({ status: "idle" });
-		setActivationMissing(false);
+		setActivationMissingFor(null);
 	}
 
 	const showsApproveButton = state.status === "idle" || state.status === "signing" || state.status === "error";

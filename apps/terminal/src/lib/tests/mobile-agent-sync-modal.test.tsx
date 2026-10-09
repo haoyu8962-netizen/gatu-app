@@ -481,6 +481,19 @@ describe("MobileAgentSyncModal", () => {
 		expect(container.textContent).toContain("Trading is not activated on this account yet.");
 	});
 
+	it("does not carry one owner's failed activation check over to another wallet", async () => {
+		await renderModal();
+		testState.maxBuilderFee.mockResolvedValueOnce(0);
+		act(() => getButton(container, "Approve mobile trading key").click());
+		await flushAsyncWork();
+		expect(getButton(container, "Approve mobile trading key").hasAttribute("disabled")).toBe(true);
+
+		testState.walletAddress = "0x3333333333333333333333333333333333333333";
+		await renderModal();
+		expect(getButton(container, "Approve mobile trading key").hasAttribute("disabled")).toBe(false);
+		expect(container.textContent).not.toContain("Trading is not activated on this account yet.");
+	});
+
 	it("fails closed without signing when the activation check answers without a definitive result", async () => {
 		await renderModal();
 		testState.maxBuilderFee.mockResolvedValueOnce("10" as unknown as number);
