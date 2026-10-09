@@ -83,6 +83,18 @@
 
 本轮修复后的验证（提交前工作区）：`pnpm typecheck` 通过；Biome 通过；8 个相关测试文件 176 项通过（`owner-trading-status` 先因 `vi.hoisted` 内引用模块常量报 ReferenceError，改为字面量后通过）；变异 M13（每个核对都写回缓存）、M14（合并刷新沿用 fee 前的记录）、M15（写回前不取消观察查询）、M16（核对共用钩子的查询键）、M17（fee 刷新在请求前读记录）各自让对应测试失败，还原后通过。
 
+### 第 3 轮 Codex 对抗审查（对 b178faa0）
+
+评分：行为证伪 7.0、规范与记录 9.0、遗漏与变异 7.5。发现与处理：
+
+- P1（A/C）被后来的核对赶超的核对仍返回自己的（可能已被否定的）答案，注册的授权后核对与最终确认会接受它：已改为赶超者等待并返回最新核对的答案或失败（`awaitLatestDefinitiveCheck`）；cache 用例的两个并发场景改为断言赶超者得到最新答案，并新增「自己的请求失败但有更新的核对」用例。
+- P1（A）最新核对失败时钩子仍按缓存的旧 `agent` 就绪：失败时先 `resetQueries` 清掉共享缓存并让观察查询重新获取，再抛 `AgentStatusError`；新增用例断言缓存被清、钩子不再就绪并在观察查询失败后进入 `error`。
+- P2（A/B/C）核对序号是模块级 Map，不同 QueryClient 互相压制写回：改为 `WeakMap<QueryClient, Map>`，并在取消在途观察查询后再确认仍是最新才写回；新增两个 QueryClient 同时核对同一键、各自缓存都更新的用例。
+- 另补：合并刷新在 builder fee 答案带 error 时拒绝（C10）、上限文案大小写不敏感（C16）、`useAgentWallet` 的就绪矩阵（新文件 `use-agent-wallet.test.tsx`，已进 CI、钉子与 AGENTS 清单）。
+- 审查方「值得补」但未做：Mobile 清理 effect 的钩子级组合用例；真实 cache 套件里「禁用查询保留旧数据」的切换用例。
+
+本轮修复后的验证（提交前工作区）：`pnpm typecheck` 通过；Biome 通过；11 个相关测试文件 224 项通过；`node --test scripts/ci-workflows.test.mjs` 12 项；变异 M18（赶超者返回自己的答案）、M19（最新核对失败不清缓存）、M20（核对登记跨 QueryClient 共享）各自让对应测试失败，还原后通过。
+
 ## 后续与替代关系
 
 - 真实钱包验收后在本记录追记结果；同时核对 app.hyperliquid.xyz 在 Sairn 建立连接后是否确实要求重新 Establish Connection（默认槽位互相替换）。

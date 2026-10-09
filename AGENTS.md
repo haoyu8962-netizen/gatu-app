@@ -195,6 +195,7 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/owner-trading-status.test.tsx \
   src/lib/tests/trading-authorization.test.tsx \
   src/lib/tests/use-agent-status-cache.test.tsx \
+  src/lib/tests/use-agent-wallet.test.tsx \
   src/lib/tests/establish-connection-modal.test.tsx \
   src/lib/tests/use-explicit-agent-approval.test.tsx \
   src/lib/tests/external-agent-signer.test.ts \

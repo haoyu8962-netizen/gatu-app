@@ -418,6 +418,17 @@ describe("useAgentStatus definitive verification", () => {
 		expect(testState.builderFeeRefetch).not.toHaveBeenCalled();
 	});
 
+	it("rejects a merged refetch whose builder fee answer carries an error, even with cached data", async () => {
+		testState.builderConfig = { b: "0x5555555555555555555555555555555555555555", f: 10 };
+		testState.builderFee = 10;
+		testState.keyRole = agentRole(OWNER);
+		testState.userRoleAnswer.mockResolvedValue(agentRole(OWNER));
+		testState.builderFeeRefetch.mockResolvedValue({ data: 10, error: new Error("builder fee unavailable") });
+		renderProbe();
+
+		await expect(observedStatus?.refetch()).rejects.toThrow("Could not load builder fee status");
+	});
+
 	it("does not report the merged refetch ready when the record changed between the role and fee answers", async () => {
 		testState.builderConfig = { b: "0x5555555555555555555555555555555555555555", f: 10 };
 		testState.builderFee = 0;

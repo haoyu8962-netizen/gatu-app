@@ -1,5 +1,5 @@
 import type { ExtraAgentsResponse, MaxBuilderFeeResponse, UserRoleResponse } from "@nktkas/hyperliquid";
-import { hashKey, useQueryClient } from "@tanstack/react-query";
+import { hashKey, type QueryClient, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { type Address, zeroAddress } from "viem";
 import { useInfo } from "../hooks/useInfo";
@@ -89,9 +89,37 @@ export interface UseAgentStatusResult extends AgentRequirements {
 
 const AGENT_KEY_ROLE_STALE_MS = 30_000;
 
-// Sequence number of the definitive checks started per cache key: only the check that started last
-// writes its answer back to the hook's cache, so a slower earlier answer cannot overwrite a fresher one.
-const definitiveCheckSequence = new Map<string, number>();
+interface DefinitiveCheck {
+	sequence: number;
+	promise: Promise<UserRoleResponse>;
+}
+
+// The definitive checks started per QueryClient and cache key. The check that started last holds the
+// newest view of the exchange: it alone writes its answer back to the hook's cache, and a check that
+// was overtaken hands its caller the newest answer instead of its own, so no caller can act on an
+// answer that a later check has already contradicted.
+const definitiveChecks = new WeakMap<QueryClient, Map<string, DefinitiveCheck>>();
+
+function getDefinitiveChecks(queryClient: QueryClient): Map<string, DefinitiveCheck> {
+	let checks = definitiveChecks.get(queryClient);
+	if (!checks) {
+		checks = new Map();
+		definitiveChecks.set(queryClient, checks);
+	}
+	return checks;
+}
+
+async function awaitLatestDefinitiveCheck(
+	checks: Map<string, DefinitiveCheck>,
+	cacheKey: string,
+): Promise<UserRoleResponse> {
+	for (;;) {
+		const latest = checks.get(cacheKey);
+		if (!latest) throw new Error("Agent key check was discarded");
+		const role = await latest.promise;
+		if (checks.get(cacheKey) === latest) return role;
+	}
+}
 
 export function classifyAgentStatusError(error: unknown): AgentStatusErrorReason {
 	const visited = new Set<unknown>();
@@ -425,26 +453,46 @@ export function useAgentStatus(options: { enableAgent?: boolean } = {}): UseAgen
 	// A definitive check sends its own request under a private query key: TanStack would otherwise
 	// hand it a request that was already in flight (possibly from before the approval), and cancelling
 	// that shared request would resolve another caller with the reverted cache instead of an answer.
-	// The private query still inherits the host QueryClient's retry policy. The answer is then written
-	// to the hook's cache key, after cancelling (and reverting) an observer fetch still in flight, so a
-	// slower pre-approval answer cannot overwrite it; only the check started last writes back.
+	// The private query still inherits the host QueryClient's retry policy. The newest check writes its
+	// answer to the hook's cache key, after cancelling (and reverting) an observer fetch still in
+	// flight, so a slower pre-approval answer cannot overwrite it. When the newest check fails, the
+	// shared query is reset so the hook stops treating its cached approval as current and fetches
+	// again; a check that was overtaken returns the newest check's answer or failure.
 	async function fetchAgentKeyRole(agentAddress: Address): Promise<AgentKeyRole> {
 		const options = infoQueryOptions(info, "userRole", agentKeyRoleParams(agentAddress), env);
 		const cacheKey = hashKey(options.queryKey);
-		const sequence = (definitiveCheckSequence.get(cacheKey) ?? 0) + 1;
-		definitiveCheckSequence.set(cacheKey, sequence);
-		try {
-			const role = await queryClient.fetchQuery({
+		const checks = getDefinitiveChecks(queryClient);
+		const sequence = (checks.get(cacheKey)?.sequence ?? 0) + 1;
+		const check: DefinitiveCheck = {
+			sequence,
+			promise: queryClient.fetchQuery({
 				queryKey: [...options.queryKey, { definitiveCheck: sequence }],
 				queryFn: options.queryFn,
 				staleTime: 0,
 				gcTime: 0,
-			});
-			if (definitiveCheckSequence.get(cacheKey) === sequence) {
-				await queryClient.cancelQueries({ queryKey: options.queryKey, exact: true });
-				queryClient.setQueryData(options.queryKey, role);
+			}),
+		};
+		checks.set(cacheKey, check);
+		const isNewest = () => checks.get(cacheKey) === check;
+
+		let ownRole: UserRoleResponse | undefined;
+		let ownError: unknown;
+		try {
+			ownRole = await check.promise;
+		} catch (error) {
+			ownError = error;
+		}
+		if (isNewest()) {
+			if (ownRole === undefined) {
+				void queryClient.resetQueries({ queryKey: options.queryKey, exact: true });
+				throw createAgentStatusError(ownError);
 			}
-			return { agentAddress, role };
+			await queryClient.cancelQueries({ queryKey: options.queryKey, exact: true });
+			if (isNewest()) queryClient.setQueryData(options.queryKey, ownRole);
+			return { agentAddress, role: ownRole };
+		}
+		try {
+			return { agentAddress, role: await awaitLatestDefinitiveCheck(checks, cacheKey) };
 		} catch (error) {
 			throw createAgentStatusError(error);
 		}
