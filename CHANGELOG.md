@@ -58,6 +58,10 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Changed
 
+- The Deposit and Withdraw sheet on phones keeps its edge again: it has the same thin border, dimmed
+  and slightly blurred page behind it as the Establish Connection sheet, instead of a borderless
+  sheet over a faintly dimmed page that read as part of the page in the dark theme. The desktop
+  dialog is unchanged.
 - Enable Trading with an external wallet now approves Hyperliquid's unnamed default API wallet,
   as the official terminal does, instead of a named `sairn` API wallet. A named wallet counted
   against the account's limit of named API wallets, which the exchange raises with trading volume
