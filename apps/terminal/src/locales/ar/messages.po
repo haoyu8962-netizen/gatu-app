@@ -630,8 +630,8 @@ msgid "After removal"
 msgstr "بعد الإزالة"
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
-msgid "After the funds arrive, return here and select Deposit to move them into your trading account."
-msgstr "بعد وصول الأموال، عد إلى هنا واختر إيداع لنقلها إلى حساب التداول الخاص بك."
+#~ msgid "After the funds arrive, return here and select Deposit to move them into your trading account."
+#~ msgstr "بعد وصول الأموال، عد إلى هنا واختر إيداع لنقلها إلى حساب التداول الخاص بك."
 
 #: src/components/vaults/vaults-list.tsx
 #: src/components/vaults/vaults-list.tsx
@@ -2611,7 +2611,6 @@ msgstr "جهة النشر"
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/amount-input.tsx
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-method-chooser.tsx
 #: src/components/vaults/vault-detail-view.tsx
 #: src/components/vaults/vault-detail-view.tsx
@@ -7845,8 +7844,8 @@ msgstr "إرسال الرموز"
 #~ msgstr "أرسل الرموز إلى حساب آخر على Hyperliquid L1."
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
-msgid "Send USDC to your wallet address below."
-msgstr "أرسل USDC إلى عنوان محفظتك أدناه."
+#~ msgid "Send USDC to your wallet address below."
+#~ msgstr "أرسل USDC إلى عنوان محفظتك أدناه."
 
 #: src/components/trade/positions/send-modal.tsx
 #~ msgid "Sending..."
@@ -10689,6 +10688,10 @@ msgstr "USDC على HyperCore"
 #: src/components/referrals/referral-summary-cards.tsx
 #~ msgid "USDC rewards"
 #~ msgstr "مكافآت USDC"
+
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+msgid "USDC sent to this address is automatically deposited into your trading account."
+msgstr "يتم إيداع USDC المُرسَل إلى هذا العنوان تلقائيًا في حساب التداول الخاص بك."
 
 #: src/components/referrals/referred-traders.tsx
 msgid "USDC volume"

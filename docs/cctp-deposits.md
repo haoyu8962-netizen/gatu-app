@@ -33,10 +33,10 @@ fail-closed for the other path/environment combinations:
 - `VITE_CCTP_SPONSORED_DEPOSIT_TESTNET_ENABLED`
 
 These three flags default to disabled. A sponsored flag does not enable the
-other environment, and the Testnet external flag does not alter Mainnet. These
-flags authorize a release to expose a controlled path; they are not themselves
-user consent to move funds. In particular, enabling the sponsored Mainnet flag
-must not make the application-wide recovery host sign or broadcast a deposit.
+other environment, and the Testnet external flag does not alter Mainnet. When
+enabled, an eligible email session automatically deposits its available native
+USDC through the page-level host in either environment. The product decision
+and runtime limits are recorded in [ADR 0040](adr/0040-automatic-email-wallet-deposits.md).
 
 Production supports two Mainnet release modes. External is enabled in both. The
 sponsored Mainnet build flag selects the mode, and the release upload requires a
@@ -125,7 +125,7 @@ names the same amount, and a fee that rises between review and click so that the
 amount no longer reaches it is reported as a fee change, never as a routing
 failure. The form's "Minimum N USDC" note is `getCctpDepositMinimumRaw` of the
 current quote, the smallest amount that quote accepts, shown whenever a usable
-quote is known, and the Testnet automatic path waits for a balance that meets the rule. The
+quote is known, and the email automatic path waits for a balance that meets the rule. The
 official terminal still applies 5 USDC to its Arbitrum routes; that is its own
 choice, not a CCTP rule. The funding-address notice tells the user to send only
 native USDC on Arbitrum and that other assets or networks are not credited; it
@@ -219,8 +219,9 @@ leads to the paths below (with a back control to the choice), and "Buy USDC with
 card" buys USDC by card or bank transfer through Privy's fiat onramp. With the flag
 off, or without an exact owner, the dialog opens directly on the transfer form. The purchase only delivers native USDC on Arbitrum One to
 the exact Hyperliquid owner (the embedded EOA of an email session, or the
-connected external wallet); it is not a deposit. The user then deposits that
-USDC through the paths above, so the sponsored or external-wallet gates, the
+connected external wallet); it is not a deposit. An active eligible email session
+automatically deposits that USDC; an external wallet uses the manual deposit form.
+The sponsored or external-wallet gates, the
 routing guard and the geo check still decide whether it can reach HyperCore.
 An external wallet needs Arbitrum ETH for that second step. The entry closes
 the deposit dialog before Privy's window opens, and a provider's `confirmed` or
@@ -249,7 +250,7 @@ submission, the exact success event, matching skipped-event rejection, Circle
 attestation, forwarding, refresh recovery, and final HyperCore credit. A
 successful unrelated sponsored transaction is not release evidence for CCTP.
 The current build flag has no user or wallet allowlist: enabling it in a public
-bundle makes the explicitly confirmed mainnet path available to every eligible
+bundle makes the automatic mainnet path available to every eligible
 email-wallet user.
 
 Before the UI reveals the exact embedded-wallet funding address, it performs a
@@ -267,9 +268,9 @@ rate limits have capacity, or that the complete UserOperation-to-HyperCore path
 works. Those properties still require dashboard review, monitoring, and a
 funded end-to-end release check.
 
-The mainnet email form explains the two steps before exposing the QR: send USDC
-to the exact wallet, then return and explicitly deposit into the trading account.
-The testnet automatic path does not display these mainnet instructions. Asset and
+The email form explains in both environments that USDC sent to the displayed
+address is automatically deposited into the trading account. There is no second
+Deposit action. Asset and
 network are fixed route details, not selectable dropdowns; each shows its icon
 beside the value, and the same row is used by the withdrawal form. The email form
 and the external-wallet form both open with the USDC mark above the title, so the
@@ -279,8 +280,7 @@ so the covered modules stay recoverable; it keeps dark modules on a white field 
 both themes. The address sits in one field with its copy control. The layout
 follows the official terminal's deposit dialog (fixed header, body that scrolls
 without a visible scrollbar, one component for the desktop modal and the phone
-sheet); the two-step instructions, the explicit Deposit action and the Done exit
-are this application's own and stay.
+sheet). Done closes the form without submitting or cancelling a deposit.
 
 Passive balance, fee, wallet-readiness and route failures render numeric placeholders
 or the address skeleton, with neutral retry controls where recovery is available.
@@ -288,24 +288,25 @@ Unknown balances never enable Max or submission. Read-only data retries may show
 request feedback if they fail, never sign, and discard results from an older modal
 context. Submitted-action failures and confirmed restrictions remain visible.
 
-Sending USDC to the displayed embedded-wallet address does not by itself
-authorize a mainnet CCTP deposit. After funds arrive, the modal reviews the
-complete available native-USDC balance and current Circle fee. The user must
-explicitly select the amount-labelled `Deposit … USDC` action before the exact embedded EOA
-signs the amount- and destination-bound EIP-3009 authorization. Immediately
-before signing and broadcasting, the funds-action critical section reads the
-balance again and requires it to equal the reviewed balance exactly; a change
-aborts the attempt and requires a new review. Mainnet recovery remains mounted
-outside the modal, but it must never initiate a new signature or broadcast.
-The execution boundary independently rejects every automatic mainnet sponsored
-scope, a missing balance or fee review, and any amount that differs from the
-reviewed complete balance; the modal guard is not the only enforcement point.
+With the network's sponsored flag enabled, the application-wide
+`EmbeddedDepositAutoBridge` handles both Mainnet and Testnet. It requires the
+exact active email owner, a verified CCTP route, a current eligible balance and
+fee, and no unresolved earlier submission. Inside an exclusive browser lock it
+refreshes the native-USDC balance and submits that full refreshed amount through
+`useDeposit` with `executionScope: "automatic"`. The execution boundary retains
+fresh route, geo, legal, exact-owner, fee, allowance, amount-limit, chain and
+paymaster checks. Manual Mainnet sponsored callers still need exact reviewed
+balance and fee values; automatic deposits do not require a synthetic UI review.
 
-The funded testnet workflow intentionally retains automatic forwarding so it
-can exercise background, reload, and cross-tab recovery. Testnet automation
-rechecks the balance inside the exclusive browser lock and submits that full
-refreshed balance. This testnet behavior is not release authorization for a
-mainnet background deposit.
+The host stays mounted outside the dialog: closing Done does not cancel its
+work, and restoring an eligible email session also processes an existing balance.
+It runs only while the application page is running; closing all pages does not
+provide server-side forwarding. Submitted transactions continue through the
+protocol. Persisted recovery records and unknown-submission intents block a new
+authorization until the earlier outcome is resolved; a failed attempt is not
+blindly resubmitted. External-wallet and Agent-only sessions do not enter this
+automatic email path. Testnet automation remains independently gated and is not
+proof of successful Mainnet funding.
 
 The application never stores an EIP-3009 authorization signature in browser
 storage.
@@ -341,8 +342,8 @@ and restrict the Arbitrum One Contract Policy to the mainnet `CctpExtensionV2`
 proxy `0x3289e443a95B28Bcedacc4B33C689b0C9b84ffAB` and
 `batchSponsorDepositForBurn` selector `0x300fb2a3`. Contract policy is defense
 in depth for gas sponsorship; it does not limit the amount of USDC covered by
-an EIP-3009 authorization and does not replace the explicit mainnet user action
-above.
+an EIP-3009 authorization and does not replace the exact-owner, amount, fee and
+recovery checks above.
 
 Project and contract request, per-transaction gas, aggregate gas, and gas-price
 limits must be sized from observed production and canary traffic rather than

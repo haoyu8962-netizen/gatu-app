@@ -34,7 +34,6 @@ interface Props {
 	sponsoredCctpEnabled: boolean;
 	sponsoredCctpReadiness: SponsoredCctpReadiness;
 	depositUnavailableReason?: string | null;
-	requiresExplicitFundingDeposit: boolean;
 	cctpFee: string | null;
 	minimumDepositRaw: bigint | null;
 	belowMinimumDepositRaw: bigint | null;
@@ -70,7 +69,6 @@ export function DepositForm({
 	sponsoredCctpEnabled,
 	sponsoredCctpReadiness,
 	depositUnavailableReason = null,
-	requiresExplicitFundingDeposit,
 	cctpFee: cctpFeeAmount,
 	minimumDepositRaw,
 	belowMinimumDepositRaw,
@@ -91,24 +89,6 @@ export function DepositForm({
 		minimumDepositRaw === null ? null : `${formatDecimalString(formatUnits(minimumDepositRaw, USDC_DECIMALS))} USDC`;
 	const bridgeRoutingReady = routingStatus === "ready" && depositRoute === "bridge";
 	const cctpRoutingReady = routingStatus === "ready" && depositRoute === "cctp";
-	const explicitFundingDepositReady =
-		requiresExplicitFundingDeposit &&
-		cctpRoutingReady &&
-		sponsoredCctpEnabled &&
-		sponsoredCctpReadiness.status === "ready" &&
-		!!fundingAddress;
-	const explicitFundingDepositDisabled =
-		!explicitFundingDepositReady ||
-		!validation.valid ||
-		isPending ||
-		fundingAddressPending ||
-		!!fundingAddressError ||
-		!!depositUnavailableReason ||
-		!!routingPreflightError ||
-		balanceStatus !== "success" ||
-		cctpFeeLoading ||
-		cctpFeeError ||
-		pendingCctpRecovery;
 	const routingNotice = (() => {
 		if (!routingPreflightError && !bridgeRoutingReady) {
 			return null;
@@ -314,13 +294,6 @@ export function DepositForm({
 			(fundingAddressState.state === "loading" || fundingAddressState.state === "ready");
 		const showFundingDestinationPlaceholders =
 			!depositUnavailableReason && routingStatus === "loading" && sponsoredCctpEnabled;
-		const showExplicitFundingDepositAction =
-			requiresExplicitFundingDeposit &&
-			!depositUnavailableReason &&
-			sponsoredCctpEnabled &&
-			(showFundingDestinationDetails || showFundingDestinationPlaceholders) &&
-			maxDepositRaw !== undefined &&
-			maxDepositRaw > 0n;
 		const fundingNetworkNotice = (
 			<Trans>
 				Important: send only native USDC on Arbitrum to this address. Other assets, including USDC.e, and transfers on
@@ -351,20 +324,10 @@ export function DepositForm({
 					</h3>
 				</div>
 
-				{requiresExplicitFundingDeposit && fundingAddressState.state !== "unavailable" ? (
-					<ol
-						className="list-decimal space-y-0.5 pl-4 text-xs leading-[18px] text-market-close-muted"
-						data-slot="funding-steps"
-					>
-						<li>
-							<Trans>Send USDC to your wallet address below.</Trans>
-						</li>
-						<li>
-							<Trans>
-								After the funds arrive, return here and select Deposit to move them into your trading account.
-							</Trans>
-						</li>
-					</ol>
+				{fundingAddressState.state !== "unavailable" ? (
+					<p className="text-xs leading-[18px] text-market-close-muted">
+						<Trans>USDC sent to this address is automatically deposited into your trading account.</Trans>
+					</p>
 				) : null}
 				{transferSelectors}
 
@@ -435,19 +398,6 @@ export function DepositForm({
 					</div>
 				) : null}
 				{retryDataAction}
-				{showExplicitFundingDepositAction ? (
-					<Button
-						variant="filled"
-						intent="neutral"
-						onClick={onSubmit}
-						disabled={explicitFundingDepositDisabled}
-						aria-busy={isPending}
-						className="min-h-11 w-full rounded-[12px] bg-market-close-control text-[13px] font-bold text-market-close-on-control shadow-none hover:opacity-90 data-disabled:bg-market-close-stroke-control data-disabled:text-market-close-on-control"
-					>
-						<Trans>Deposit</Trans>{" "}
-						<span className="tabular-nums">{balanceStatus === "success" ? balance : "--"} USDC</span>
-					</Button>
-				) : null}
 
 				<Button
 					variant="filled"

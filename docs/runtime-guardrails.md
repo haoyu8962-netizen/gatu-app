@@ -303,22 +303,20 @@ implementation.
   path independently per environment, require funded testnet and small-value
   mainnet evidence, and never infer readiness from Privy authentication or an
   unrelated sponsored transaction.
-- Enabling sponsored mainnet makes the deposit path available; it is not user
-  consent to move funds. The application-wide embedded-wallet host may track
-  mainnet recovery but must never initiate a mainnet signature or broadcast.
-  A mainnet email-wallet deposit requires the user to click the amount-labelled
-  `Deposit … USDC` action in the open deposit modal after reviewing the complete
-  available native-USDC balance and current Circle fee. Enforce this again at
-  the execution boundary: reject automatic mainnet sponsored scope, missing
-  balance or fee review, and any submitted amount that differs from the exact
-  reviewed balance.
-- At the mainnet sponsored execution boundary, re-read the native-USDC balance
-  inside the owner-scoped funds-action lock and require it to equal the balance
-  the user reviewed. Revalidate the reviewed fee at the same boundary. Any
-  balance or fee change aborts before signature or broadcast and requires a
-  new review. Testnet may retain the independently gated automatic full-balance
-  flow for funded E2E and recovery testing; it is not evidence of mainnet user
-  confirmation.
+- Mainnet and Testnet email sessions share the automatic full-balance flow,
+  independently controlled by each environment's sponsored flag
+  ([ADR 0040](adr/0040-automatic-email-wallet-deposits.md)).
+  The root host checks the exact active embedded owner, route, balance, fee and
+  recovery state, then refreshes the balance inside an exclusive browser lock
+  before calling the automatic execution scope. The modal explains automatic
+  funding and has no second Deposit action; Done only closes it.
+- Automatic execution preserves the funds-action lock and fresh route, geo,
+  legal, exact-owner, fee, allowance, chain and paymaster checks. Existing
+  pending or unknown submissions must prevent a new authorization. Mainnet
+  manual sponsored callers still require exact reviewed balance and fee values
+  and fail on drift; automatic callers do not require a manual review.
+  Session restoration may process an existing eligible balance. This requires
+  the application page to be running and does not promise offline initiation.
 - ZeroDev mainnet sponsorship must use a narrow Arbitrum One contract policy
   for the official `CctpExtensionV2` proxy
   `0x3289e443a95B28Bcedacc4B33C689b0C9b84ffAB` and
@@ -335,7 +333,7 @@ implementation.
   production-candidate environment using the release commit and bundle. If
   traffic cannot be isolated, add a real runtime allowlist or equivalent access
   control before calling the run a canary. A public `both` bundle makes the
-  explicitly confirmed path available to every eligible email-wallet user.
+  automatic path available to every eligible email-wallet user.
 - The V2 authorization nonce must bind owner, amount, validity window, and full
   deposit data. Verify the receipt per `owner + amount + authNonce`; a matching
   `SponsoredDepositForBurnSkipped` is a definitive failure even if the outer
@@ -402,11 +400,13 @@ implementation.
   and sponsored receipt mismatch, matching skipped events, AA outer-transaction
   independence, version-one recovery migration, refresh recovery, and terminal
   source failure cleanup.
-- Sponsored tests prove that the testnet root host retains its automatic
-  full-balance behavior while the mainnet root host never refreshes for a new
-  deposit, signs, or broadcasts. Mainnet modal tests require the explicit
-  amount-labelled `Deposit … USDC` action and pass the exact reviewed balance and
-  fee to the execution boundary; balance or fee drift fails closed.
+- Sponsored tests exercise both environments' automatic full-balance flow:
+  disabled flags, invalid identity, route/fee/balance failures, exclusive locks,
+  StrictMode replay, persisted recovery and unknown outcomes. The real Mainnet
+  auto host is tested with the real deposit hook and simulated external clients,
+  without a modal or click; a remount must not duplicate the pending deposit.
+  Email modal/form tests require no second Deposit action. Manual execution
+  review checks and external-wallet submission regressions remain covered.
 - Withdrawals use only the protocol-selected route. A pre-submit route change
   aborts before signing and requires the user to review the updated fees and
   action.

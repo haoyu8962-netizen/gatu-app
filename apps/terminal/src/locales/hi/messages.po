@@ -630,8 +630,8 @@ msgid "After removal"
 msgstr "हटाने के बाद"
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
-msgid "After the funds arrive, return here and select Deposit to move them into your trading account."
-msgstr "राशि आने के बाद यहाँ वापस आकर जमा करें चुनें, ताकि राशि आपके ट्रेडिंग खाते में पहुँच जाए।"
+#~ msgid "After the funds arrive, return here and select Deposit to move them into your trading account."
+#~ msgstr "राशि आने के बाद यहाँ वापस आकर जमा करें चुनें, ताकि राशि आपके ट्रेडिंग खाते में पहुँच जाए।"
 
 #: src/components/vaults/vaults-list.tsx
 #: src/components/vaults/vaults-list.tsx
@@ -2611,7 +2611,6 @@ msgstr "डिप्लॉयर"
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/amount-input.tsx
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-method-chooser.tsx
 #: src/components/vaults/vault-detail-view.tsx
 #: src/components/vaults/vault-detail-view.tsx
@@ -7845,8 +7844,8 @@ msgstr "टोकन भेजें"
 #~ msgstr "Hyperliquid L1 पर किसी अन्य खाते में टोकन भेजें।"
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
-msgid "Send USDC to your wallet address below."
-msgstr "नीचे दिए गए अपने वॉलेट पते पर USDC भेजें।"
+#~ msgid "Send USDC to your wallet address below."
+#~ msgstr "नीचे दिए गए अपने वॉलेट पते पर USDC भेजें।"
 
 #: src/components/trade/positions/send-modal.tsx
 #~ msgid "Sending..."
@@ -10689,6 +10688,10 @@ msgstr "HyperCore पर USDC"
 #: src/components/referrals/referral-summary-cards.tsx
 #~ msgid "USDC rewards"
 #~ msgstr "USDC रिवॉर्ड"
+
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+msgid "USDC sent to this address is automatically deposited into your trading account."
+msgstr "इस पते पर भेजे गए USDC अपने आप आपके ट्रेडिंग खाते में जमा हो जाते हैं।"
 
 #: src/components/referrals/referred-traders.tsx
 msgid "USDC volume"

@@ -1159,12 +1159,8 @@ export function useDeposit({
 					);
 				}
 				const amountRaw = parseUnits(amount, USDC_DECIMALS);
-				if (network === "mainnet" && mode === "smart") {
-					if (
-						executionScope !== "manual" ||
-						review?.expectedBalanceRaw === undefined ||
-						review.expectedCctpMaxFeeRaw === undefined
-					) {
+				if (network === "mainnet" && mode === "smart" && executionScope === "manual") {
+					if (review?.expectedBalanceRaw === undefined || review.expectedCctpMaxFeeRaw === undefined) {
 						throw new LocalizedActionError(msg`This confirmation is required before finishing.`);
 					}
 					if (amountRaw !== review.expectedBalanceRaw) {

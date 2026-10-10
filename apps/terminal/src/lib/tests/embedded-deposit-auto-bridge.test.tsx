@@ -11,7 +11,6 @@ import { UsdcDepositRouteError } from "@/hooks/trade/use-usdc-routing";
 import { LocalizedActionError } from "@/lib/errors/localized-action-error";
 
 const USER_ADDRESS = "0x1111111111111111111111111111111111111111" as const;
-const NOTIFICATION_ID = expect.stringMatching(new RegExp(`^embedded-cctp-auto-deposit:Testnet:${USER_ADDRESS}:\\d+$`));
 const HASH = "0x0000000000000000000000000000000000000000000000000000000000000001" as const;
 const DEPOSIT_ROUTE_CHANGED =
 	"The Hyperliquid deposit route changed before signing. Review the updated route and retry.";
@@ -182,7 +181,11 @@ vi.mock("@/lib/hyperliquid/use-deposit", () => ({
 	},
 }));
 
-describe("EmbeddedDepositAutoBridge", () => {
+describe.each([
+	{ env: "Mainnet", isTestnet: false },
+	{ env: "Testnet", isTestnet: true },
+])("EmbeddedDepositAutoBridge on $env", ({ env, isTestnet }) => {
+	const NOTIFICATION_ID = expect.stringMatching(new RegExp(`^embedded-cctp-auto-deposit:${env}:${USER_ADDRESS}:\\d+$`));
 	let container: HTMLDivElement;
 	let root: Root;
 
@@ -210,7 +213,7 @@ describe("EmbeddedDepositAutoBridge", () => {
 		testState.depositHash = undefined;
 		testState.depositModalOpen = false;
 		testState.depositStatus = "idle";
-		testState.isTestnet = true;
+		testState.isTestnet = isTestnet;
 		testState.maxDepositRaw = 9_000_000n;
 		testState.routingData = { depositRoute: "cctp", withdrawalRoute: "cctp" };
 		testState.routingIsError = false;
@@ -280,22 +283,15 @@ describe("EmbeddedDepositAutoBridge", () => {
 		expect(testState.deposit).toHaveBeenCalledWith("9");
 	});
 
-	it("never initiates a mainnet deposit from the application-wide recovery host", async () => {
-		testState.isTestnet = false;
-
+	it("automatically deposits without opening the modal and retains scoped recovery", async () => {
 		await act(async () => {
 			root.render(createElement(EmbeddedDepositAutoBridge));
 		});
-
-		expect(testState.routingQueryEnabled).toBe(false);
-		expect(testState.useDepositOptions).toMatchObject({ balanceEnabled: false });
-		expect(testState.refreshBalance).not.toHaveBeenCalled();
-		expect(testState.deposit).not.toHaveBeenCalled();
-		expect(testState.trackingOptions).toMatchObject({
-			enabled: true,
-			env: "Mainnet",
-			owner: USER_ADDRESS,
-		});
+		expect(testState.routingQueryEnabled).toBe(true);
+		expect(testState.useDepositOptions).toMatchObject({ balanceEnabled: true, executionScope: "automatic" });
+		expect(testState.refreshBalance).toHaveBeenCalledOnce();
+		expect(testState.deposit).toHaveBeenCalledExactlyOnceWith("9");
+		expect(testState.trackingOptions).toMatchObject({ enabled: true, env, owner: USER_ADDRESS });
 	});
 
 	it("releases an aborted development attempt before the StrictMode effect replay", async () => {
@@ -320,7 +316,7 @@ describe("EmbeddedDepositAutoBridge", () => {
 		expect(testState.routingQueryEnabled).toBe(false);
 		expect(testState.trackingOptions).toMatchObject({
 			enabled: true,
-			env: "Testnet",
+			env,
 			owner: USER_ADDRESS,
 			removeOnForwardSubmitted: true,
 		});
@@ -655,7 +651,7 @@ describe("EmbeddedDepositAutoBridge", () => {
 
 		testState.depositStatus = "idle";
 		if (change === "account") testState.owner = "0x2222222222222222222222222222222222222222";
-		if (change === "network") testState.isTestnet = false;
+		if (change === "network") testState.isTestnet = !isTestnet;
 		if (change === "disconnect") testState.walletIntent = "unavailable";
 		await act(async () => root.render(change === "unmount" ? null : createElement(EmbeddedDepositAutoBridge)));
 		expect(testState.toastDismiss).toHaveBeenCalledWith(NOTIFICATION_ID);

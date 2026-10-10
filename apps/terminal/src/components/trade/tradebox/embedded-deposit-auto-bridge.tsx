@@ -29,8 +29,7 @@ export function EmbeddedDepositAutoBridge() {
 	const { t } = useLingui();
 	const isTestnet = useIsTestnet();
 	const depositModalOpen = useDepositModalOpen();
-	const sponsoredCctpReleaseEnabled = isCctpSponsoredDepositEnabled(isTestnet);
-	const automaticDepositEnabled = isTestnet && sponsoredCctpReleaseEnabled;
+	const automaticDepositEnabled = isCctpSponsoredDepositEnabled(isTestnet);
 	const { user, embeddedWalletAddress, walletIntent } = useWalletSession();
 	const {
 		emailAddress: emailWalletAddress,

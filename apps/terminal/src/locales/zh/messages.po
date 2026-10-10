@@ -630,8 +630,8 @@ msgid "After removal"
 msgstr "移除后"
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
-msgid "After the funds arrive, return here and select Deposit to move them into your trading account."
-msgstr "资金到账后，返回此处点击“存款”，将资金存入交易账户。"
+#~ msgid "After the funds arrive, return here and select Deposit to move them into your trading account."
+#~ msgstr "资金到账后，返回此处点击“存款”，将资金存入交易账户。"
 
 #: src/components/vaults/vaults-list.tsx
 #: src/components/vaults/vaults-list.tsx
@@ -2611,7 +2611,6 @@ msgstr "部署者"
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/amount-input.tsx
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-method-chooser.tsx
 #: src/components/vaults/vault-detail-view.tsx
 #: src/components/vaults/vault-detail-view.tsx
@@ -7845,8 +7844,8 @@ msgstr "发送代币"
 #~ msgstr "向 Hyperliquid L1 上的另一账户发送代币。"
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
-msgid "Send USDC to your wallet address below."
-msgstr "将 USDC 转入下方的钱包地址。"
+#~ msgid "Send USDC to your wallet address below."
+#~ msgstr "将 USDC 转入下方的钱包地址。"
 
 #: src/components/trade/positions/send-modal.tsx
 #~ msgid "Sending..."
@@ -10689,6 +10688,10 @@ msgstr "HyperCore 上的 USDC"
 #: src/components/referrals/referral-summary-cards.tsx
 #~ msgid "USDC rewards"
 #~ msgstr "USDC 奖励"
+
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+msgid "USDC sent to this address is automatically deposited into your trading account."
+msgstr "发送至此地址的 USDC 会自动存入您的交易账户。"
 
 #: src/components/referrals/referred-traders.tsx
 msgid "USDC volume"

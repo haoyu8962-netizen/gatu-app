@@ -1487,7 +1487,6 @@ export function DepositModal({ onSurfaceChange }: Props) {
 							? t`CCTP deposits are awaiting funded end-to-end verification for this network.`
 							: null)
 					}
-					requiresExplicitFundingDeposit={isEmbeddedDeposit && !isTestnet}
 					cctpFee={cctpDepositFee}
 					minimumDepositRaw={cctpDepositMinimumRaw}
 					belowMinimumDepositRaw={cctpDepositBelowMinimumRaw}

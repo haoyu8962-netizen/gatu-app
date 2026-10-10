@@ -154,6 +154,7 @@
 
 当前规范：[docs/account-overview.md](../../docs/account-overview.md) · [docs/withdrawals.md](../../docs/withdrawals.md) · [docs/cctp-deposits.md](../../docs/cctp-deposits.md)
 
+- [恢复邮箱主网 USDC 到账后自动存款](sessions/2026-10-10-automatic-email-deposits.md) — 2026-10-10；已验证，范围见正文。按用户要求恢复邮箱主网自动存款，删除第二次 Deposit 按钮和两步说明，保留既有资金校验与恢复。真实自动组件/Hook 联动回归先红后绿；全量 8972 通过、2 项样式计数失败已修正，最终相关 324 项和 Chrome 6 组通过，类型、六语编译及开启主网赞助的生产构建通过。未推送、发布或真实资金验收。
 - [邮箱主网存款未自动入账：手动触发限制与引入提交核对](sessions/2026-10-10-mainnet-deposit-manual-trigger-investigation.md) — 2026-10-10；已整理，验证见正文。用户要求先核对为何转入 USDC 后仍需点击 Deposit。确认 0c72fa857（2026-08-14，Git 作者与提交者 Mark）同时将自动转入限定为测试网、加入主网手动按钮和执行层拒绝自动请求的守卫；6140b378 后补两步说明。线上 p28/d74dd616 与当前 a310ade1 都有此限制，主网赞助开关已开。4 个相关测试文件 284 项通过；仅核对代码、提交、线上版本元数据及官方文档，未真实充值、未修改执行逻辑，也未取得原始授权对话或具体 agent 身份。
 - [桌面存款弹窗打开后抖动：壳层由宿主挂载一次，只有表单懒加载；余额轮询改为后台刷新](sessions/2026-10-09-deposit-dialog-single-shell.md) — 2026-10-09；已整理，验证见正文。用户在桌面端看到存款弹窗打开后抖动、不稳定。在用户 Chrome（localhost:3005，邮箱会话）实测：点击「存款」后先出现懒加载占位对话框（高 332.5px、转圈），约 1 秒后被另一个对话框元素（高 665.9px）替换并重新开始进入过渡；开发服务器上 import 存款弹窗模块耗时 1120ms，悬停预热赶不上点击。根因是 Suspense 的 fallback 本身是一个完整对话框：代码块到达时占位壳无退场卸载、真实壳重新淡入缩放，遮罩变暗、清空、再变暗，弹窗高度翻倍并重新居中。按用户选定的方案 1+3 实施：新增 DepositModalHost 在主包里挂载唯一的 FundsModalShell，懒加载的 DepositModal 改为壳旁的无渲染主体，用 useLayoutEffect 通过 onSurfaceChange 上报 tab、isPending、返回按钮、关闭处理与内容（或状态屏，状态屏仍是替换壳的独立对话框）；加载中壳内显示转圈；memo 包住主体避免宿主重渲染回流。useDepositUsdcBalance 的轮询在已有成功余额时保持 success 状态后台刷新，不再每 5 秒把按钮闪成「Deposit -- USDC」并置灰。改后在 Chrome 冷加载实测：对话框与遮罩元素在占位与表单之间同一节点，始终只有一个 dialog。
 - [弹窗遮罩与手机抽屉边缘按官方终端统一：原语持有遮罩、模糊与边框](sessions/2026-10-09-dialog-scrim-standard.md) — 2026-10-09；已整理，验证见正文。用户在深色主题手机布局下发现存款抽屉与页面融为一体，而建立连接抽屉有层次。对照 app.hyperliquid.xyz 移动端实测：弹层底色与页面同为 #0f1a1f，手机全屏抽屉无边框、顶部 16px 圆角，靠 rgba(15,18,29,0.75) 的海军蓝遮罩分层（无模糊），桌面弹窗用 rgba(15,18,29,0.6) 加 2px 模糊并保留 1px 边框。本项目原来每个弹窗各自覆盖遮罩与模糊（/60、无模糊、2px 模糊、trading-panel-scrim 混用），遮罩又是同色相近黑，所以层次不一。按用户决定执行：新增 --fill-overlay-sheet / bg-scrim-sheet，终端深色遮罩改为官方的两个值（浅色只改透明度），Modal 背景加 2px 模糊、Drawer 用 sheet 遮罩且底部抽屉无边框，删除 13 个弹窗的 overlayClassName 遮罩/模糊覆盖与 7 处 max-[1000px]:!border-0，modal-surface-contract 钉住 token 与「弹窗不得自行覆盖遮罩、模糊、opacity、!border-0」（市场选择弹层登记为唯一无遮罩例外）。design-tokens 里「拒绝海军蓝遮罩」的旧决定被取代。夹具计算样式核对通过。
@@ -378,6 +379,7 @@
 
 | 记录日期 | 任务记录 | 来源任务 | 基线提交 | 状态 |
 | --- | --- | --- | --- | --- |
+| 2026-10-10 | [恢复邮箱主网 USDC 到账后自动存款](sessions/2026-10-10-automatic-email-deposits.md) | 未取得任务标识，见正文 | `51ee48a8894d6603c85f10e83110908ce8c9897a` | 已验证，范围见正文 |
 | 2026-10-10 | [邮箱主网存款未自动入账：手动触发限制与引入提交核对](sessions/2026-10-10-mainnet-deposit-manual-trigger-investigation.md) | 未取得任务标识，见正文 | `a310ade18291e86617021a44a00c07710844965c` | 已整理，验证见正文 |
 | 2026-10-09 | [桌面存款弹窗打开后抖动：壳层由宿主挂载一次，只有表单懒加载；余额轮询改为后台刷新](sessions/2026-10-09-deposit-dialog-single-shell.md) | 未取得任务标识，见正文 | `8d5f9308` | 已整理，验证见正文 |
 | 2026-10-09 | [弹窗遮罩与手机抽屉边缘按官方终端统一：原语持有遮罩、模糊与边框](sessions/2026-10-09-dialog-scrim-standard.md) | 未取得任务标识，见正文 | `805ee5a1` | 已整理，验证见正文 |

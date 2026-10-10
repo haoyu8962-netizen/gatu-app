@@ -630,8 +630,8 @@ msgid "After removal"
 msgstr "Après la suppression"
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
-msgid "After the funds arrive, return here and select Deposit to move them into your trading account."
-msgstr "Une fois les fonds reçus, revenez ici et sélectionnez Déposer pour les transférer vers votre compte de trading."
+#~ msgid "After the funds arrive, return here and select Deposit to move them into your trading account."
+#~ msgstr "Une fois les fonds reçus, revenez ici et sélectionnez Déposer pour les transférer vers votre compte de trading."
 
 #: src/components/vaults/vaults-list.tsx
 #: src/components/vaults/vaults-list.tsx
@@ -2611,7 +2611,6 @@ msgstr "Déployeur"
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/amount-input.tsx
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-method-chooser.tsx
 #: src/components/vaults/vault-detail-view.tsx
 #: src/components/vaults/vault-detail-view.tsx
@@ -7845,8 +7844,8 @@ msgstr "Envoyer des tokens"
 #~ msgstr "Envoyez des tokens vers un autre compte sur le L1 Hyperliquid."
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
-msgid "Send USDC to your wallet address below."
-msgstr "Envoyez des USDC à l’adresse de votre portefeuille ci-dessous."
+#~ msgid "Send USDC to your wallet address below."
+#~ msgstr "Envoyez des USDC à l’adresse de votre portefeuille ci-dessous."
 
 #: src/components/trade/positions/send-modal.tsx
 #~ msgid "Sending..."
@@ -10689,6 +10688,10 @@ msgstr "USDC sur HyperCore"
 #: src/components/referrals/referral-summary-cards.tsx
 #~ msgid "USDC rewards"
 #~ msgstr "Récompenses en USDC"
+
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+msgid "USDC sent to this address is automatically deposited into your trading account."
+msgstr "Les USDC envoyés à cette adresse sont automatiquement déposés sur votre compte de trading."
 
 #: src/components/referrals/referred-traders.tsx
 msgid "USDC volume"

@@ -6,6 +6,8 @@
 
 2026-09-21 后续更新：通知已改用[全局操作通知规范](trading-notifications.md)。下文保留当日分批实施的描述；其中独立 OrderToast、持仓短 Sonner、TP/SL 未知提示会自动消失等阶段行为，已由文末「全局通知实施补充」取代。通知迁移不把其他确认面提升为完整满足展示 → 承诺契约。
 
+2026-10-10 邮箱存款调整：依据 [ADR 0040](adr/0040-automatic-email-wallet-deposits.md)，邮箱主网与测试网充值表单只展示自动转入说明、地址、费用和 Done，没有第二次 Deposit 确认。页面级自动宿主独立负责发起和恢复，关闭该说明表单不取消它；下述「关闭资金弹窗失效排队请求」仍适用于由弹窗发起的手动资金请求。外部钱包的手动存款规则不变。
+
 ## 为什么需要它
 
 项目一直有「执行不得信任展示值」的规则（`agent.md`：Financial action execution must recheck current identity, market, legal status and required snapshot availability, not merely trust displayed component values）。它的对偶规则此前没有写下来：**执行可以用更新的数据重算，但不能超出用户点击时看到的承诺。**

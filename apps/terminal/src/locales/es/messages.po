@@ -630,8 +630,8 @@ msgid "After removal"
 msgstr "Tras la eliminación"
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
-msgid "After the funds arrive, return here and select Deposit to move them into your trading account."
-msgstr "Cuando lleguen los fondos, vuelve aquí y selecciona Depositar para moverlos a tu cuenta de trading."
+#~ msgid "After the funds arrive, return here and select Deposit to move them into your trading account."
+#~ msgstr "Cuando lleguen los fondos, vuelve aquí y selecciona Depositar para moverlos a tu cuenta de trading."
 
 #: src/components/vaults/vaults-list.tsx
 #: src/components/vaults/vaults-list.tsx
@@ -2611,7 +2611,6 @@ msgstr "Desplegador"
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/amount-input.tsx
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-method-chooser.tsx
 #: src/components/vaults/vault-detail-view.tsx
 #: src/components/vaults/vault-detail-view.tsx
@@ -7845,8 +7844,8 @@ msgstr "Enviar tokens"
 #~ msgstr "Envía tokens a otra cuenta en la L1 de Hyperliquid."
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
-msgid "Send USDC to your wallet address below."
-msgstr "Envía USDC a la dirección de tu billetera que aparece abajo."
+#~ msgid "Send USDC to your wallet address below."
+#~ msgstr "Envía USDC a la dirección de tu billetera que aparece abajo."
 
 #: src/components/trade/positions/send-modal.tsx
 #~ msgid "Sending..."
@@ -10689,6 +10688,10 @@ msgstr "USDC en HyperCore"
 #: src/components/referrals/referral-summary-cards.tsx
 #~ msgid "USDC rewards"
 #~ msgstr "Recompensas en USDC"
+
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+msgid "USDC sent to this address is automatically deposited into your trading account."
+msgstr "Los USDC enviados a esta dirección se depositan automáticamente en tu cuenta de trading."
 
 #: src/components/referrals/referred-traders.tsx
 msgid "USDC volume"
