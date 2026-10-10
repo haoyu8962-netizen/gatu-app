@@ -7,10 +7,10 @@
   "kind": "task",
   "status": "recorded",
   "topics": ["account-funding"],
-  "summary": "用户要求先核对为何转入 USDC 后仍需点击 Deposit。确认 0c72fa857（2026-08-14，Git 作者与提交者 Mark）同时将自动转入限定为测试网、加入主网手动按钮和执行层拒绝自动请求的守卫；6140b378 后补两步说明。线上 p28/d74dd616 与当前 a310ade1 都有此限制，主网赞助开关已开。4 个相关测试文件 284 项通过；仅核对代码、提交、线上版本元数据及官方文档，未真实充值、未修改执行逻辑，也未取得原始授权对话或具体 agent 身份。",
+  "summary": "用户要求先核对为何转入 USDC 后仍需点击 Deposit。确认 0c72fa857（2026-08-14，Git 作者与提交者 Mark）同时将自动转入限定为测试网、加入主网手动按钮和执行层拒绝自动请求的守卫；6140b378 后补两步说明。线上 p28/d74dd616 与排查基线 a310ade1 都有此限制，主网赞助开关已开。4 个相关测试文件 284 项通过；未真实充值，也未取得原始授权对话或具体 agent 身份。后续自动流程修复另有记录；同日复核线上 Important 提醒是固定网络/资产说明，红色来自样式而非交易失败；文案由 783f50f0 调整，线上仍为 p28，尚不含本地 068f7cb2 修复。",
   "thread": null,
   "baseCommit": "a310ade18291e86617021a44a00c07710844965c",
-  "commits": ["0c72fa857687ffb789328ebeac8b2567044dd7f5", "6140b3784d9d519638c7f26e1b7c67f4ad0e5268"],
+  "commits": ["0c72fa857687ffb789328ebeac8b2567044dd7f5", "6140b3784d9d519638c7f26e1b7c67f4ad0e5268", "783f50f0d84cd7016677ceb657b55282728c7c45", "068f7cb24904935ebe2018118bed11f95e13180c"],
   "sources": [
     { "path": "apps/terminal/src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx" },
     { "path": "apps/terminal/src/components/trade/tradebox/deposit-modal.tsx" },
@@ -74,3 +74,15 @@
 本记录不替代现行资金契约，也不把历史实现理由当成用户当前产品意图。具体历史授权与实际 agent 身份仍缺证据。
 
 2026-10-10 后续：用户已明确要求恢复自动流程，实施与验证见[邮箱自动存款修复](2026-10-10-automatic-email-deposits.md)及 [ADR 0040](../../adr/0040-automatic-email-wallet-deposits.md)。本记录保留修复前事实，旧二次点击要求不再代表当前产品决定。
+
+## 同日后续：线上 Important 网络提醒复核
+
+用户继续询问线上「Important: send only native USDC on Arbitrum…」是否为报错。本次基线为干净的 `codex/deposit-auto-investigation` / `068f7cb2`，只核对并追加记录，没有修改应用代码。
+
+- 再次只读请求线上 `build-meta.json`，返回 `cloudfront-2026-10-08-p28` / `d74dd616173dd96d0106449ea2709e375db3e57e`，主网赞助开关仍为 true。本地自动存款修复尚未发布；该响应不证明用户浏览器缓存身份。
+- 直接读取该发布提交的 `deposit-form.tsx`：310–314 行的 `showFundingDestinationDetails` 只要求路由已确定为 CCTP、赞助开关已开、无存款不可用原因、地址状态为 loading 或 ready；324–329 行定义固定的 `fundingNetworkNotice`，409–416 行随目的地址详情显示。因此这段文字不由交易失败、RPC 异常或检测到错误币种触发，也不参与存款提交守卫。
+- 红色外观来自 `border-stroke-error-weak bg-error-soft text-market-close-danger`。真正的 `embeddedDepositStatus` 与 `preflightError` 是其他条件分支，并各自使用 `role="alert"`。固定提醒本身没有该角色。其视觉容易被理解为报错，但不能据此判断用户转错资产或存款失败。
+- 当前措辞来自 `783f50f0`，Git 作者/提交者 `zora4523-bot`，时间 `2026-10-04 21:07:47 +08:00`，提交 trailer 为 `Co-Authored-By: Claude Fable 5.1`。diff 将既有提醒中的旧最低额说明移除，改为当前网络/资产措辞；不是首次新增固定警示框，也不是关闭主网自动存款的提交。理由见[当时的最低额记录](2026-10-04-cctp-deposit-minimum.md)：按 CCTP 规则去掉旧桥的 5 USDC 文案，提醒只描述支持的网络和资产。记录不是原始完整对话，Git 署名也不等于本次取得了具体执行过程。
+- `068f7cb2` 保留了这条固定网络提醒；恢复自动存款不意味着提示消失。应用代码及 `docs/cctp-deposits.md` 把它定义为充值入口说明，不是某笔资金状态的证据。
+
+本次验证限于发布元数据、对应 Git 源码、历史 diff 和既有测试断言的阅读。没有登录或操作线上钱包，没有核对个人交易、运行新的应用测试或执行发布。记录追加后，`pnpm memory:index`、`pnpm memory:check`、`pnpm memory:test`（8/8）及 `git diff --check` 全部通过，环境为 Node `22.15.0`、pnpm `10.21.0`；这些是记录维护检查，不是新的应用功能验收。
