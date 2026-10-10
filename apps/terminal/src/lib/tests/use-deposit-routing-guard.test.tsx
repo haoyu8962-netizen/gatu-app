@@ -33,6 +33,8 @@ const WALLET_ADDRESS = "0x1111111111111111111111111111111111111111" as const;
 const SECOND_WALLET_ADDRESS = "0x2222222222222222222222222222222222222222" as const;
 const PERMIT_SIGNATURE = `0x${"0".repeat(128)}1b` as const;
 const SOURCE_HASH = `0x${"1".repeat(64)}` as Hash;
+const reportClientError = vi.hoisted(() => vi.fn());
+vi.mock("@/lib/error-reporting/client", () => ({ reportClientError }));
 
 function createSponsoredCctpReceipt(
 	authNonce: Hex,
@@ -237,6 +239,7 @@ describe("useDeposit fresh USDC route guard", () => {
 	let root: Root;
 
 	beforeEach(() => {
+		reportClientError.mockReset();
 		vi.clearAllMocks();
 		window.localStorage.clear();
 		testState.isTestnet = false;
@@ -1880,12 +1883,39 @@ describe("useDeposit fresh USDC route guard", () => {
 			amount: "5",
 			status: "submission-unresolved",
 		});
+		expect(reportClientError).toHaveBeenCalledExactlyOnceWith(capturedDeposit?.error, {
+			kind: "deposit_submission",
+			depositStage: "before_source_hash",
+		});
+		act(() => capturedDeposit?.reset());
+		expect(capturedDeposit?.error).toBeNull();
+		expect(reportClientError).toHaveBeenCalledOnce();
 
 		await submit("smart", "cctp");
 
 		expect(testState.permitSign).toHaveBeenCalledOnce();
 		expect(testState.smartSendTransaction).toHaveBeenCalledOnce();
-		expect(capturedDeposit?.error?.message).toContain("still pending");
+		expect(capturedDeposit?.error?.message).toContain("authorization is still active");
+		expect(reportClientError).toHaveBeenCalledOnce();
+	});
+
+	it("settles an unknown submission even if diagnostic reporting fails", async () => {
+		testState.routingResponse = { depositRoute: "cctp", withdrawalRoute: "cctp" };
+		stubSuccessfulCctpCapacity();
+		const submissionError = new Error("Bundler response was interrupted");
+		testState.smartSendTransaction.mockRejectedValue(submissionError);
+		reportClientError.mockImplementation(() => {
+			throw new Error("Reporting unavailable");
+		});
+
+		await submit("smart", "cctp");
+
+		expect(capturedDeposit?.status).toBe("error");
+		expect(capturedDeposit?.error).toBe(submissionError);
+		expect(capturedDeposit?.submissionOutcomeUnknown).toBe(true);
+		act(() => capturedDeposit?.reset());
+		expect(capturedDeposit?.status).toBe("idle");
+		expect(readCctpSponsoredAuthorizationIntent("Mainnet", WALLET_ADDRESS)).not.toBeNull();
 	});
 
 	it("fails closed before signing when unresolved sponsored authorization storage is invalid", async () => {
@@ -2019,7 +2049,7 @@ describe("useDeposit fresh USDC route guard", () => {
 
 		expect(testState.permitSign).toHaveBeenCalledOnce();
 		expect(testState.smartSendTransaction).toHaveBeenCalledOnce();
-		expect(capturedDeposit?.error?.message).toContain("still pending");
+		expect(capturedDeposit?.error?.message).toContain("authorization is still active");
 	});
 
 	it("keeps a sponsored authorization tombstone when the AA source transaction reverts", async () => {

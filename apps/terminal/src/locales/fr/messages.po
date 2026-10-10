@@ -335,6 +335,10 @@ msgstr "Un dépôt CCTP précédent est toujours en cours de suivi. Ne renvoyez 
 msgid "A previous connection attempt is still being reconciled. Retrying checks the same trading key and does not request another signature."
 msgstr "Une précédente tentative de connexion est toujours en cours de vérification. Une nouvelle tentative vérifie la même clé de trading et ne demande pas d’autre signature."
 
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "A previous deposit authorization is still active, but its submission could not be confirmed. Another deposit is blocked until that authorization is resolved or expires."
+msgstr "L’autorisation d’un dépôt précédent est toujours active, mais son envoi n’a pas pu être confirmé. Aucun autre dépôt n’est possible tant que le résultat de cette autorisation n’est pas confirmé ou qu’elle n’a pas expiré."
+
 #: src/lib/errors/exchange-error-text.ts
 msgid "A Reduce Only order cannot increase the position."
 msgstr "Un ordre en réduction uniquement ne peut pas augmenter la position."
@@ -806,7 +810,6 @@ msgstr "Une autre action pour ce marché est déjà en cours."
 msgid "Another API wallet with this exact name appeared while removal was being verified."
 msgstr "Un autre portefeuille API portant exactement ce nom est apparu pendant la vérification de la suppression."
 
-#: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Another Circle CCTP deposit is still pending for this account. Wait for it to finish before submitting another deposit."
 msgstr "Un autre dépôt Circle CCTP est encore en attente pour ce compte. Attendez qu’il soit terminé avant d’effectuer un autre dépôt."
@@ -9356,6 +9359,10 @@ msgstr "Les données du propriétaire vérifié sont en lecture seule dans cette
 #: src/lib/errors/action-error.ts
 msgid "The wallet could not sign the request. Try again."
 msgstr "Le portefeuille n'a pas pu signer la demande. Réessayez."
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "The wallet did not return a transaction hash, so the deposit could not be confirmed. A signed authorization may still be active. Check your wallet activity before retrying."
+msgstr "Le portefeuille n’a pas renvoyé de hash de transaction ; le dépôt n’a donc pas pu être confirmé. Une autorisation signée peut encore être active. Vérifiez l’activité de votre portefeuille avant de réessayer."
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "The wallet did not sign, so no request was submitted. You can review the details and try again."

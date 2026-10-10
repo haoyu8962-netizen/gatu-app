@@ -40,6 +40,7 @@ import { useFreshLegalActionGuard } from "@/hooks/trade/use-fresh-legal-action-g
 import { useAssertFreshDepositRoute } from "@/hooks/trade/use-usdc-routing";
 import { useGeoRestriction } from "@/hooks/use-geo-restriction";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
+import { reportClientError } from "@/lib/error-reporting/client";
 import { createActionError } from "@/lib/errors/action-error";
 import { LocalizedActionError } from "@/lib/errors/localized-action-error";
 import {
@@ -1232,7 +1233,7 @@ export function useDeposit({
 					}
 					if (mode === "smart" && readCctpSponsoredAuthorizationIntent(cctpTrackingEnv, ready.address)) {
 						throw new LocalizedActionError(
-							msg`Another Circle CCTP deposit is still pending for this account. Wait for it to finish before submitting another deposit.`,
+							msg`A previous deposit authorization is still active, but its submission could not be confirmed. Another deposit is blocked until that authorization is resolved or expires.`,
 						);
 					}
 					assertCctpDepositTrackingStorageWritable(cctpTrackingEnv, ready.address);
@@ -1488,6 +1489,16 @@ export function useDeposit({
 				}
 				refetch();
 			} catch (error) {
+				if (sponsoredSubmissionStarted || cctpTrackingRecord) {
+					try {
+						reportClientError(error, {
+							kind: "deposit_submission",
+							depositStage: cctpTrackingRecord ? "source_confirmation" : "before_source_hash",
+						});
+					} catch {
+						// Diagnostics must never prevent settlement or replace the original deposit failure.
+					}
+				}
 				if (cctpTrackingRecord && isDefinitiveDepositSourceFailure(error)) {
 					try {
 						removeCctpDepositTrackingRecord(

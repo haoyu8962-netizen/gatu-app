@@ -2324,6 +2324,10 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 		await rerender();
 
 		expect(toastMocks.warning).toHaveBeenCalledExactlyOnceWith("Deposit status unknown", expect.anything());
+		const description = getToastText(toastMocks.warning.mock.calls[0]);
+		expect(description).toContain("The wallet did not return a transaction hash");
+		expect(description).toContain("A signed authorization may still be active");
+		expect(description).not.toContain("The Arbitrum transaction was submitted");
 		expect(resetDeposit).toHaveBeenCalledOnce();
 		expect(closeDepositModal).toHaveBeenCalledOnce();
 		expect(toastMocks.error).not.toHaveBeenCalled();

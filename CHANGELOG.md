@@ -550,6 +550,12 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Fixed
 
+- A sponsored deposit that returns no transaction hash now says its submission is unconfirmed,
+  instead of claiming an Arbitrum transaction was submitted. An active unresolved authorization
+  has a separate retry-blocking message from an actual pending CCTP transfer. Submission errors
+  are recorded through the existing sanitized diagnostic channel before the dialog resets;
+  authorization expiry and duplicate-deposit protection remain in place.
+
 - Email wallets now automatically deposit eligible Arbitrum USDC into the trading account on
   Mainnet while the app is running, matching the existing Testnet flow. The funding dialog
   explains automatic deposits and no longer asks for a second Deposit click. Exact-wallet,

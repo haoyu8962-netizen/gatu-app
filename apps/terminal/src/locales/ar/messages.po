@@ -335,6 +335,10 @@ msgstr "لا يزال إيداع CCTP سابق قيد التتبع. لا تُع�
 msgid "A previous connection attempt is still being reconciled. Retrying checks the same trading key and does not request another signature."
 msgstr "لا تزال محاولة اتصال سابقة قيد التسوية. ستتحقق إعادة المحاولة من مفتاح التداول نفسه ولن تطلب توقيعًا آخر."
 
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "A previous deposit authorization is still active, but its submission could not be confirmed. Another deposit is blocked until that authorization is resolved or expires."
+msgstr "لا يزال تفويض الإيداع السابق سارياً، لكن تعذّر تأكيد إرساله. لا يمكن إجراء إيداع آخر حتى تتضح نتيجة ذلك التفويض أو تنتهي صلاحيته."
+
 #: src/lib/errors/exchange-error-text.ts
 msgid "A Reduce Only order cannot increase the position."
 msgstr "لا يمكن لأمر التقليل فقط زيادة المركز."
@@ -806,7 +810,6 @@ msgstr "هناك إجراء آخر لهذا السوق قيد التنفيذ ب�
 msgid "Another API wallet with this exact name appeared while removal was being verified."
 msgstr "ظهرت محفظة API أخرى بالاسم نفسه تمامًا أثناء التحقق من الإزالة."
 
-#: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Another Circle CCTP deposit is still pending for this account. Wait for it to finish before submitting another deposit."
 msgstr "لا تزال هناك عملية إيداع أخرى عبر Circle CCTP معلّقة لهذا الحساب. انتظر حتى تكتمل قبل إرسال عملية إيداع أخرى."
@@ -9356,6 +9359,10 @@ msgstr "بيانات المالك المتحقق منه للقراءة فقط ف
 #: src/lib/errors/action-error.ts
 msgid "The wallet could not sign the request. Try again."
 msgstr "تعذّر على المحفظة توقيع الطلب. حاول مرة أخرى."
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "The wallet did not return a transaction hash, so the deposit could not be confirmed. A signed authorization may still be active. Check your wallet activity before retrying."
+msgstr "لم تُرجع المحفظة معرّف المعاملة، لذا تعذّر تأكيد الإيداع. قد يظل التفويض الموقّع سارياً. تحقّق من نشاط محفظتك قبل إعادة المحاولة."
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "The wallet did not sign, so no request was submitted. You can review the details and try again."

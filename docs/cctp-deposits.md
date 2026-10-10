@@ -408,6 +408,34 @@ recovery item at this state so a completed automatic deposit cannot block the
 next deposit. The modal uses the same query key, so opening it does not create a
 second network request for the same recovery record.
 
+### Submission diagnostics and unknown outcomes
+
+Implemented locally on 2026-10-10, not released; the design was recorded before
+implementation. Verification and the unresolved live failure are tracked in the
+[work-memory investigation](work-memory/sessions/2026-10-10-deposit-unknown-submission-diagnostics.md). A wallet submission
+without a source hash is not evidence of an Arbitrum broadcast or Circle processing.
+Its notification must say that the wallet returned no transaction hash. An unresolved
+signed authorization blocks another deposit until recovery or expiry, with a distinct
+message from a deposit that has an actual source-chain tracking record.
+
+Before resetting the dialog, caught submission failures use the existing privacy-filtered
+client error reporting channel with kind `deposit_submission`, stage
+`before_source_hash` or `source_confirmation`, and an allowlisted reason derived from
+at most eight nested causes. Reasons identify error families, not verified chain outcomes:
+`paymaster`, `bundler`, `nonce_conflict`, `wallet_rejected`, `network`, `timeout`, or `unknown`.
+No wallet address, amount, nonce, signature, calldata, endpoint, or original error message
+is included. Existing reporting limits, deduplication and failure isolation apply. Deploy
+the shared server validator with the frontend: an older endpoint rejects the new report
+kind, without affecting deposit execution.
+
+This avoids a second diagnostic transport or persisting raw SDK errors. Retrying or
+clearing an authorization on a Paymaster/Bundler error alone is rejected because an
+exposed authorization may still execute. Verification must cover no-hash versus
+known-hash copy, retained authorization/retry prevention, reporting before dialog
+reset, nested-error classification and server rejection of unrecognized fields/reasons.
+These checks cannot establish the cause of a historical response that was not captured,
+or prove a real deposit was credited.
+
 ## Bridge2 Retirement
 
 No new manual or automatic Bridge2 deposit may be signed or submitted. The app

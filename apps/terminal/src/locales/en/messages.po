@@ -335,6 +335,10 @@ msgstr "A previous CCTP deposit is still being tracked. Do not resubmit the same
 msgid "A previous connection attempt is still being reconciled. Retrying checks the same trading key and does not request another signature."
 msgstr "A previous connection attempt is still being reconciled. Retrying checks the same trading key and does not request another signature."
 
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "A previous deposit authorization is still active, but its submission could not be confirmed. Another deposit is blocked until that authorization is resolved or expires."
+msgstr "A previous deposit authorization is still active, but its submission could not be confirmed. Another deposit is blocked until that authorization is resolved or expires."
+
 #: src/lib/errors/exchange-error-text.ts
 msgid "A Reduce Only order cannot increase the position."
 msgstr "A Reduce Only order cannot increase the position."
@@ -806,7 +810,6 @@ msgstr "Another action for this market is already in progress."
 msgid "Another API wallet with this exact name appeared while removal was being verified."
 msgstr "Another API wallet with this exact name appeared while removal was being verified."
 
-#: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Another Circle CCTP deposit is still pending for this account. Wait for it to finish before submitting another deposit."
 msgstr "Another Circle CCTP deposit is still pending for this account. Wait for it to finish before submitting another deposit."
@@ -9356,6 +9359,10 @@ msgstr "The verified owner data is read-only in this session. An Agent/API walle
 #: src/lib/errors/action-error.ts
 msgid "The wallet could not sign the request. Try again."
 msgstr "The wallet could not sign the request. Try again."
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "The wallet did not return a transaction hash, so the deposit could not be confirmed. A signed authorization may still be active. Check your wallet activity before retrying."
+msgstr "The wallet did not return a transaction hash, so the deposit could not be confirmed. A signed authorization may still be active. Check your wallet activity before retrying."
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "The wallet did not sign, so no request was submitted. You can review the details and try again."
