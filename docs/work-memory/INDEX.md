@@ -154,6 +154,7 @@
 
 当前规范：[docs/account-overview.md](../../docs/account-overview.md) · [docs/withdrawals.md](../../docs/withdrawals.md) · [docs/cctp-deposits.md](../../docs/cctp-deposits.md)
 
+- [ZeroDev 长期运行核对：真实 Gas、套餐容量与访问控制](sessions/2026-10-11-zerodev-budget-and-billing-audit.md) — 2026-10-11；已整理，验证见正文。只读核对修复后的首次真实主网存款：源收据及对应 UserOperation 成功并包含账户部署，Paymaster 实付约 0.00001057 ETH；ZeroDev Gas 约 $0.02651、含 8% premium 约 $0.02864。Sandbox active，月 Gas 上限 $10、10,000 credits，已用 20；现有单笔/日策略保留，来源规则为空。按该单样本每天 10 笔估算月 Gas $7.95，尚未建立监控或调整预算/套餐。
 - [恢复邮箱主网 USDC 到账后自动存款](sessions/2026-10-10-automatic-email-deposits.md) — 2026-10-10；已验证，范围见正文。按用户要求恢复邮箱主网自动存款，删除第二次 Deposit 按钮和两步说明，保留既有资金校验与恢复。真实自动组件/Hook 联动回归先红后绿；全量 8972 通过、2 项样式计数失败已修正，最终相关 324 项和 Chrome 6 组通过，类型、六语编译及开启主网赞助的生产构建通过。未推送、发布或真实资金验收。
 - [线上存款重试无哈希：未知授权提示与脱敏诊断修复](sessions/2026-10-10-deposit-unknown-submission-diagnostics.md) — 2026-10-10；已整理，验证见正文。用户重新点击线上存款后继续排查。p28/d74dd616 产生新的 submission-unresolved 授权但无源哈希，链上余额仍在且授权未用；原始失败响应已不在调试缓冲，不能认定具体上游故障。本地修正无哈希仍声称已提交和两类 pending 混用，接入现有脱敏错误上报。保留有效授权与防重复提交；随后有效期内再次点击，捕获到同一本地 pending 守卫，未重新发起交易。真实提交故障仍待到期后捕获响应，未发布。
 - [邮箱主网存款未自动入账：手动触发限制与引入提交核对](sessions/2026-10-10-mainnet-deposit-manual-trigger-investigation.md) — 2026-10-10；已整理，验证见正文。用户要求核对为何转入 USDC 后仍需点击 Deposit。0c72fa857（Git 署名 Mark）引入主网手动限制；修复另有记录。线上 p28/d74dd616 尚不含本地 068f7cb2。Important 是固定网络/资产提醒，不是报错。用户随后报告 Another Circle CCTP deposit 长时间拦截；经其指定内置浏览器，只读确认存在未到期 submission-unresolved 授权、无源交易跟踪记录，链上源钱包余额仍在且授权未使用。该文案混用了待转发交易和无哈希未知提交两种状态；原始提交失败响应缺失，未认定具体钱包/Bundler/Paymaster 故障。未清除记录、重签、广播或发布。
@@ -381,6 +382,7 @@
 
 | 记录日期 | 任务记录 | 来源任务 | 基线提交 | 状态 |
 | --- | --- | --- | --- | --- |
+| 2026-10-11 | [ZeroDev 长期运行核对：真实 Gas、套餐容量与访问控制](sessions/2026-10-11-zerodev-budget-and-billing-audit.md) | 未取得任务标识，见正文 | `73a4f24f` | 已整理，验证见正文 |
 | 2026-10-10 | [恢复邮箱主网 USDC 到账后自动存款](sessions/2026-10-10-automatic-email-deposits.md) | 未取得任务标识，见正文 | `51ee48a8894d6603c85f10e83110908ce8c9897a` | 已验证，范围见正文 |
 | 2026-10-10 | [线上存款重试无哈希：未知授权提示与脱敏诊断修复](sessions/2026-10-10-deposit-unknown-submission-diagnostics.md) | 未取得任务标识，见正文 | `82ac5c7b` | 已整理，验证见正文 |
 | 2026-10-10 | [邮箱主网存款未自动入账：手动触发限制与引入提交核对](sessions/2026-10-10-mainnet-deposit-manual-trigger-investigation.md) | 未取得任务标识，见正文 | `a310ade18291e86617021a44a00c07710844965c` | 已整理，验证见正文 |
