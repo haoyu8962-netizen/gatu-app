@@ -1,12 +1,13 @@
 import { useLingui } from "@lingui/react/macro";
 import { Button, Checkbox, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Tooltip } from "@sairn/ui";
-import { useMemo, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import { depositModalIntentProps } from "@/components/trade/components/deposit-modal-intent";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import { SMALL_BALANCE_THRESHOLD_USD } from "@/config/trade";
 import { isTradingToolbarBalancePositive } from "@/domain/trade/balance-toolbar";
 import { type BalanceRow, filterBalanceRowsByUsdValue, getBalanceRowDisplayAvailable } from "@/domain/trade/balances";
+import { getFundsAvailabilityNotice } from "@/domain/trade/data-presentation";
 import { useBalanceRows } from "@/hooks/trade/use-balance-rows";
 import { useDepositAvailability } from "@/hooks/trade/use-deposit-availability";
 import { useFundsActionAvailability } from "@/hooks/trade/use-funds-action-availability";
@@ -50,8 +51,9 @@ export function BalancesTab({ toolbarTarget }: Props) {
 	const { setHideSmallBalances } = useGlobalSettingsActions();
 	const { open: openDepositModal } = useDepositModalActions();
 	const depositAvailability = useDepositAvailability();
-	const { hasWalletAccess } = useWalletSession();
+	const { hasWalletAccess, sessionMode } = useWalletSession();
 	const { open: openSwapModal } = useSwapModalActions();
+	const fundsReasonId = useId();
 	const [transferState, setTransferState] = useState<{
 		open: boolean;
 		direction: TransferDirection;
@@ -91,6 +93,9 @@ export function BalancesTab({ toolbarTarget }: Props) {
 		hasWalletAccess,
 		internalTransfersEnabled,
 	});
+
+	const agentOnlySession = sessionMode === "agent-only";
+	const agentOnlyFundsReason = agentOnlySession ? getFundsAvailabilityNotice(fundsActionAvailability.withdrawal) : null;
 
 	const filteredPerpBalances = useMemo(() => {
 		if (!hideSmallBalances) return perpBalances;
@@ -142,6 +147,20 @@ export function BalancesTab({ toolbarTarget }: Props) {
 			row.asset === DEFAULT_QUOTE_TOKEN &&
 			hasTransferableBalance;
 		const transferLabel = row.type === "perp" ? t`To Spot` : t`To Perp`;
+		const fundsLocked = agentOnlySession;
+		const transferEligible =
+			internalTransfersEnabled && fundsActionsEnabled && row.asset === DEFAULT_QUOTE_TOKEN && hasTransferableBalance;
+		const showsTransfer = canTransfer || (fundsLocked && transferEligible);
+		const showsWithdraw =
+			canWithdraw ||
+			(fundsLocked && fundsActionsEnabled && row.asset === DEFAULT_QUOTE_TOKEN && hasTransferableBalance);
+		const lockedActionProps = fundsLocked
+			? {
+					disabled: true,
+					focusableWhenDisabled: true,
+					"aria-describedby": agentOnlyFundsReason ? fundsReasonId : undefined,
+				}
+			: undefined;
 		return (
 			<TableRow key={`${row.type}-${row.asset}`} className={positionsPanelRowHoverClass}>
 				<TableCell size="dense" className={cn(balancesTableCellClass, "font-medium text-market-close-fg")}>
@@ -177,12 +196,13 @@ export function BalancesTab({ toolbarTarget }: Props) {
 				</TableCell>
 				<TableCell size="dense" className={cn(balancesTableCellClass, "text-right")}>
 					<div className="flex flex-nowrap items-center justify-end gap-1.5 whitespace-nowrap">
-						{canTransfer && (
+						{showsTransfer && (
 							<Button
 								variant="outline"
 								intent="neutral"
 								size="xxs"
-								onClick={() => handleTransferClick(row)}
+								{...lockedActionProps}
+								onClick={canTransfer ? () => handleTransferClick(row) : undefined}
 								className={balancesTableActionClass}
 							>
 								{transferLabel}
@@ -204,19 +224,21 @@ export function BalancesTab({ toolbarTarget }: Props) {
 								variant="outline"
 								intent="neutral"
 								size="xxs"
-								onClick={() => handleSendClick(row)}
+								{...lockedActionProps}
+								onClick={fundsLocked ? undefined : () => handleSendClick(row)}
 								className={balancesTableActionClass}
 							>
 								{t`Send`}
 							</Button>
 						)}
-						{canWithdraw && (
+						{showsWithdraw && (
 							<Button
 								variant="outline"
 								intent="neutral"
 								size="xxs"
-								onClick={() => openDepositModal("withdraw")}
-								{...depositModalIntentProps}
+								{...lockedActionProps}
+								onClick={canWithdraw ? () => openDepositModal("withdraw") : undefined}
+								{...(canWithdraw ? depositModalIntentProps : undefined)}
 								className={balancesTableActionClass}
 							>
 								{t`Withdraw`}
@@ -288,6 +310,11 @@ export function BalancesTab({ toolbarTarget }: Props) {
 			<div className={positionsPanelTableShellClass}>
 				{placeholder ?? (
 					<div className="flex h-full min-h-0 flex-col">
+						{agentOnlyFundsReason ? (
+							<p id={fundsReasonId} className="shrink-0 px-3 py-1.5 text-xs text-trading-panel-muted">
+								{agentOnlyFundsReason}
+							</p>
+						) : null}
 						<ScrollArea className="min-h-0 flex-1">
 							<Table className="table-fixed min-w-[52rem] w-full">
 								<TableHeader className={balancesTableHeaderClass}>

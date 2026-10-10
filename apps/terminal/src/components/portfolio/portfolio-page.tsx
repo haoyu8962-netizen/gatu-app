@@ -82,22 +82,18 @@ export function PortfolioPage() {
 		? getFundsAvailabilityNotice(depositAvailability)
 		: depositAvailability.unavailableReason;
 	const transferDisabled = !fundsActionAvailability.internalTransfer.available;
-	const modeDependentFundsActionsDisabledReason = modeDependentFundsActionsDisabled
-		? fundsActionAvailability.withdrawal.unavailableReason
-		: null;
+	const modeDependentFundsActionsDisabledReason = modeDependentFundsActionsDisabled ? withdrawalNotice : null;
+	const transferDisabledReason = transferDisabled ? internalTransferDisabledReason : null;
+	const withdrawalDisabledReason = fundsActionAvailability.withdrawal.available ? null : withdrawalNotice;
+	const depositDisabledReason = depositDisabled ? depositNotice : null;
 	const unavailableActionGroups = groupUnavailableActions([
 		{
 			actions: [t`Swap Stablecoins`, t`Send`],
 			reason: modeDependentFundsActionsDisabledReason,
 		},
-		{ actions: [t`Perps / Spot`], reason: transferDisabled ? internalTransferDisabledReason : null },
-		{
-			actions: [t`Withdraw`],
-			reason: fundsActionAvailability.withdrawal.available
-				? null
-				: fundsActionAvailability.withdrawal.unavailableReason,
-		},
-		{ actions: [t`Deposit`], reason: depositDisabled ? depositAvailability.unavailableReason : null },
+		{ actions: [t`Perps / Spot`], reason: transferDisabledReason },
+		{ actions: [t`Withdraw`], reason: withdrawalDisabledReason },
+		{ actions: [t`Deposit`], reason: depositDisabledReason },
 	]);
 	const getUnavailableReasonId = (reason: string | null) => {
 		const index = reason ? unavailableActionGroups.findIndex((group) => group.reason === reason) : -1;
@@ -135,6 +131,7 @@ export function PortfolioPage() {
 										intent="brand"
 										size="sm"
 										disabled={modeDependentFundsActionsDisabled}
+										focusableWhenDisabled
 										aria-describedby={getUnavailableReasonId(modeDependentFundsActionsDisabledReason)}
 										onClick={openStablecoinSwapModal}
 										iconLeft={<ArrowsLeftRightIcon className="size-3.5" />}
@@ -148,7 +145,8 @@ export function PortfolioPage() {
 												intent="brand"
 												size="sm"
 												disabled={transferDisabled}
-												aria-describedby={getUnavailableReasonId(internalTransferDisabledReason)}
+												focusableWhenDisabled
+												aria-describedby={getUnavailableReasonId(transferDisabledReason)}
 												onClick={
 													fundsActionAvailability.internalTransfer.available
 														? () => openTransferModal("toPerp")
@@ -165,6 +163,7 @@ export function PortfolioPage() {
 										intent="brand"
 										size="sm"
 										disabled={modeDependentFundsActionsDisabled}
+										focusableWhenDisabled
 										aria-describedby={getUnavailableReasonId(modeDependentFundsActionsDisabledReason)}
 										onClick={() => openSendModal()}
 										iconLeft={<PaperPlaneTiltIcon className="size-3.5" />}
@@ -178,7 +177,8 @@ export function PortfolioPage() {
 												intent="brand"
 												size="sm"
 												disabled={!fundsActionAvailability.withdrawal.available}
-												aria-describedby={getUnavailableReasonId(fundsActionAvailability.withdrawal.unavailableReason)}
+												focusableWhenDisabled
+												aria-describedby={getUnavailableReasonId(withdrawalDisabledReason)}
 												onClick={
 													fundsActionAvailability.withdrawal.available ? () => openDepositModal("withdraw") : undefined
 												}
@@ -196,7 +196,8 @@ export function PortfolioPage() {
 												intent="brand"
 												size="sm"
 												disabled={depositDisabled}
-												aria-describedby={getUnavailableReasonId(depositAvailability.unavailableReason)}
+												focusableWhenDisabled
+												aria-describedby={getUnavailableReasonId(depositDisabledReason)}
 												onClick={depositAvailability.available ? () => openDepositModal("deposit") : undefined}
 												{...(depositAvailability.available ? depositModalIntentProps : undefined)}
 												aria-label={
@@ -214,7 +215,7 @@ export function PortfolioPage() {
 										</span>
 									</Tooltip>
 								</div>
-								{!isMobile && unavailableActionGroups.length ? (
+								{unavailableActionGroups.length ? (
 									<div
 										aria-live="polite"
 										className="max-w-2xl space-y-0.5 text-start text-2xs leading-4 text-fg-muted min-[1001px]:text-end"

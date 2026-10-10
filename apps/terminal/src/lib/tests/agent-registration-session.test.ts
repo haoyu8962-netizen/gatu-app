@@ -422,16 +422,16 @@ describe("Agent registration session coordination", () => {
 		expect(
 			await persistAgentForRegistration(captured.epoch, privateKey, publicKey, {
 				source: "mobile-sync",
-				agentNameBase: "Mobile",
-				agentName: `Mobile valid_until ${agentValidUntilMs}`,
+				agentNameBase: "Mobile QR",
+				agentName: `Mobile QR valid_until ${agentValidUntilMs}`,
 				agentValidUntilMs,
 				importedAtMs,
 			}),
 		).toEqual({ status: "stored" });
 		expect(JSON.parse(window.localStorage.getItem(AGENT_STORAGE_KEY) ?? "{}")).toMatchObject({
 			source: "mobile-sync",
-			agentNameBase: "Mobile",
-			agentName: `Mobile valid_until ${agentValidUntilMs}`,
+			agentNameBase: "Mobile QR",
+			agentName: `Mobile QR valid_until ${agentValidUntilMs}`,
 			agentValidUntilMs,
 			importedAtMs,
 		});
@@ -1074,8 +1074,8 @@ describe("Agent registration session coordination", () => {
 		expect(
 			await persistAgentForRegistration(captured.epoch, importedPrivateKey, importedPublicKey, {
 				source: "mobile-sync",
-				agentNameBase: "Mobile",
-				agentName: `Mobile valid_until ${agentValidUntilMs}`,
+				agentNameBase: "Mobile QR",
+				agentName: `Mobile QR valid_until ${agentValidUntilMs}`,
 				agentValidUntilMs,
 				importedAtMs,
 			}),

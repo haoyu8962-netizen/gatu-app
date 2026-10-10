@@ -35,7 +35,7 @@ export function AccountPanel() {
 	const withdrawUnavailableId = useId();
 	const { open: openDepositModal } = useDepositModalActions();
 	const { open: openTransferModal } = useTransferModalActions();
-	const { hasWalletAccess, isConnected, walletAddress } = useWalletSession();
+	const { hasWalletAccess, isConnected, sessionMode, walletAddress } = useWalletSession();
 	const depositAvailability = useDepositAvailability();
 	const {
 		accountAbstraction,
@@ -79,7 +79,7 @@ export function AccountPanel() {
 		: transferDescriptionId;
 	const depositGeoBlocked =
 		depositAvailability.reason === "geo-restricted" || depositAvailability.reason === "geo-unresolved";
-	const showsFundsActions = hasWalletAccess || depositAvailability.path === "sponsored";
+	const showsFundsActions = hasWalletAccess || sessionMode === "agent-only" || depositAvailability.path === "sponsored";
 	const showsSecondaryFundsActions = !depositGeoBlocked && showsFundsActions;
 
 	function renderMetricValue(value: ReactNode) {

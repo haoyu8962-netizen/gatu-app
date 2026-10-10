@@ -184,13 +184,13 @@ describe("agent snapshot cache", () => {
 			privateKey: VALID_PRIVATE_KEY,
 			publicKey: VALID_PUBLIC_KEY,
 			source: "mobile-sync",
-			agentNameBase: "Mobile",
-			agentName: `Mobile valid_until ${validUntilMs}`,
+			agentNameBase: "Mobile QR",
+			agentName: `Mobile QR valid_until ${validUntilMs}`,
 			agentValidUntilMs: validUntilMs,
 			importedAtMs: validUntilMs - 1_000,
 		};
 		const invalidRecords = [
-			{ ...canonical, agentName: `Mobile valid_until ${validUntilMs + 1}` },
+			{ ...canonical, agentName: `Mobile QR valid_until ${validUntilMs + 1}` },
 			{ ...canonical, publicKey: MISMATCHED_PUBLIC_KEY },
 			{ ...canonical, agentValidUntilMs: null },
 		];
@@ -213,8 +213,8 @@ describe("agent snapshot cache", () => {
 				privateKey: VALID_PRIVATE_KEY,
 				publicKey: VALID_PUBLIC_KEY,
 				source: "mobile-sync",
-				agentNameBase: "Mobile",
-				agentName: "Mobile valid_until 2",
+				agentNameBase: "Mobile QR",
+				agentName: "Mobile QR valid_until 2",
 				agentValidUntilMs: 2,
 				importedAtMs: 1,
 			}),

@@ -550,6 +550,26 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Fixed
 
+- Link mobile device (still off in production builds): a phone linked from an owner that had never
+  approved the builder fee could not place orders or close positions, showing a dead "Enable
+  Trading" button or a misleading wallet error. Linking now only links: an account that has not
+  activated trading yet is asked to deposit and place a first order on desktop before linking (that
+  order approves the builder fee, silently for email accounts), and the phone shows one "finish
+  trading authorization on desktop" reason instead of an Enable it cannot sign. A key imported on a
+  phone now takes precedence over a wallet login on that phone, as on the official terminal, so
+  logging in no longer hides or deletes it, and Disconnect removes only the imported key. The phone
+  key now uses the same `Mobile QR` name as the official terminal's phone link, so linking in either
+  app replaces one shared API wallet slot instead of taking another, and when an account's base
+  named API wallet slots are used up the dialog says before you sign that the approval may be
+  rejected, lists them with their expiry and links to the API Wallet page. The dialog warns that
+  approving again replaces the linked phone, including one linked in the Hyperliquid app; a QR that
+  fails to draw can be revealed again without a new signature; the phone tells you which account's
+  access expired or was replaced and asks for a new scan; the account menu shows the imported
+  account instead of a masked email login; the scanner separates a clock mismatch and a scanner that
+  failed to load from other errors; and on iOS the import page says the key stays in that browser.
+  Funds and other master-wallet actions on the phone (vaults, referrals, account mode, staking, API
+  wallets, portfolio, the desktop account panel and balance rows) are shown disabled with the same
+  desktop-required reason instead of being hidden, reconnecting or using other wording (ADR 0039).
 - The Deposit / Withdraw dialog no longer flashes and jumps while it loads on a cold open. Its
   shell, backdrop and enter transition are now mounted once; only the form loads lazily inside it,
   on desktop and on the phone sheet. The Arbitrum USDC balance of an email wallet refreshes in the

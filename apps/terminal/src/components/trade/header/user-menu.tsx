@@ -61,7 +61,8 @@ export function UserMenu({ variant = "default" }: Props) {
 	} = useWalletSession();
 	const { disconnectWallet, isDisconnecting } = useDisconnectWallet();
 	const { reconnectWallet, isReconnecting } = useReconnectWallet();
-	const emailAddress = authenticationReady && authenticated ? getPrivyEmailAddress(user) : undefined;
+	const emailAddress =
+		authenticationReady && authenticated && sessionMode !== "agent-only" ? getPrivyEmailAddress(user) : undefined;
 	const { data: ensName } = useEnsName({ address: emailAddress ? undefined : displayAddress });
 	const mobileSyncOpen = useMobileSyncModalOpen();
 	const { open: openMobileSync, close: closeMobileSync } = useMobileSyncModalActions();

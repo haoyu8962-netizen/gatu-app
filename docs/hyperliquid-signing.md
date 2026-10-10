@@ -442,14 +442,27 @@ the product decisions and the official comparison are in
 
 - The desktop generates the Agent private key locally and the exact owner
   wallet signs `approveAgent` (User-Signed, with the signer's chain id: the external wallet's current chain, or the embedded owner's environment Arbitrum chain) with the name
-  `Mobile valid_until <ms>`, where `<ms>` is the expiry 30 days after approval
+  `Mobile QR valid_until <ms>`, where `<ms>` is the expiry 30 days after approval.
+  Hyperliquid stores the parsed name `Mobile QR`, the same name the official
+  terminal's Link Mobile Device approves, and deregisters a named agent when an
+  approval reuses its name, so a phone linked here or there takes one shared
+  named slot. Each time the dialog opens it fetches `extraAgents` once and uses
+  only that answer: when the documented base limit of 3 active named agents is
+  reached and none is `Mobile QR`, it says the approval may be rejected, lists
+  them with their expiry and links to the API Wallet page, without blocking the
+  approval because sub-accounts (2 more each) and trading volume raise the
+  limit
+  (`getMobileAgentSlotState`, ADR 0039)
   (`packages/hl-react/src/signing/mobile-agent.ts`, `MOBILE_AGENT_VALIDITY_MS`).
-  Approval is the dialog's single explicit action and its only signing action;
-  the dialog passes `applicationReview: "confirmed"`, so an embedded wallet
+  Approval is the dialog's single explicit action; the dialog never signs a
+  builder fee. While the owner's builder fee is definitively unapproved (trading
+  not activated yet) the action is disabled with an explanation to deposit and
+  place a first order on desktop, and a fresh `maxBuilderFee` check runs before
+  the Agent is signed; an unknown answer signs nothing (ADR 0039). The dialog passes `applicationReview: "confirmed"`, so an embedded wallet
   signs without a second Privy prompt, and the exchange's `status: "ok"` is
   the success signal. The desktop does not poll `extraAgents`.
 - The key travels as plain JSON in the URL fragment of `/mobile-agent-sync`
-  (`apps/terminal/src/lib/mobile-sync/sync-core.ts`, payload version 4, TTL
+  (`apps/terminal/src/lib/mobile-sync/sync-core.ts`, payload version 5, TTL
   `MOBILE_SYNC_PAYLOAD_TTL_MS` = 2 minutes, bound to the network and owner).
   The fragment never reaches a server and is removed from the address bar by
   the import page before its first paint. Reveal requires a 2 s hold and the
@@ -471,22 +484,31 @@ the product decisions and the official comparison are in
   `local`) and activates the owner in an `agent-only` session mode
   (`packages/hl-react/src/signing/agent-session.ts`), rolling back through
   `cancelAgentRegistrationEpochAndRemove` when activation or verification is
-  no longer current.
+  no longer current. An env-matching Agent-only owner takes precedence over a
+  connected wallet in `resolveSession`; while it is active the terminal masks
+  the Privy identity and builds no owner signer or user-signed client, and
+  Disconnect removes only the imported key (ADR 0039).
 - An Agent-only session can sign L1 actions only: orders, cancels, leverage,
   vault transfers and sub-account transfers. It cannot construct any
   User-Signed call, so deposit, `withdraw3`, `usdSend`, `spotSend` and other
   master-wallet actions need the master wallet on desktop; the phone surfaces
   those actions disabled with a single desktop-required reason
-  (`agent-only-session`, see `docs/mobile-data-presentation.md`).
+  (`agent-only-session`, see `docs/mobile-data-presentation.md`). Approvals it
+  cannot sign are never offered: `useTradingGuard` reports
+  `needsOwnerApproval` and the order and confirmation buttons stay disabled
+  with the desktop-required reason instead of an Enable action.
 - There is no revoke panel. Approving again from the dialog replaces the
-  phone's Agent under the same name base, and the API wallet page removes any
-  Agent; the phone clears its record at its next `extraAgents` check
-  (`use-agent-status.ts`) or when `validUntil` passes.
+  phone's Agent under the same name base (the dialog's warning says so), and
+  the API wallet page removes any Agent; the phone clears its record at its
+  next `extraAgents` check (`use-agent-status.ts`) or when `validUntil` passes,
+  and `subscribeMobileAgentEnded` lets the terminal tell the user to scan
+  again.
 
 For comparison, the official terminal encodes the raw Agent private key as
 base64 JSON in a `?link=` query string with no expiry, signs as soon as its
 icon is clicked, imports on the phone without an explicit step and approves a
-permanent `Mobile QR` agent that each re-link replaces. Sairn keeps the four
+`Mobile QR` agent without `valid_until` (the exchange's 90-day default
+expiry applies) that each re-link replaces. Sairn keeps the four
 differences that matter (exact owner and an explicit click, 30-day expiry,
 fragment instead of query string, one `extraAgents` verification before
 import) and otherwise matches the official entry, copy and step count.

@@ -136,7 +136,7 @@ function mobileLocalAgent(): { localAgent: LocalAgent; publicKey: `0x${string}`;
 	const localAgent = createMobileAgentWalletRecord({
 		privateKey: MOBILE_PRIVATE_KEY,
 		publicKey,
-		agentName: `Mobile valid_until ${validUntil}`,
+		agentName: `Mobile QR valid_until ${validUntil}`,
 		agentValidUntilMs: validUntil,
 		importedAtMs: Date.now() - 60_000,
 	}) as LocalAgent;
@@ -293,7 +293,7 @@ describe("useAgentStatus definitive verification", () => {
 		const { localAgent, publicKey, validUntil } = mobileLocalAgent();
 		testState.localAgent = localAgent;
 		testState.keyRole = agentRole(OWNER);
-		testState.extraAgents = [{ address: publicKey, name: "Mobile", validUntil }];
+		testState.extraAgents = [{ address: publicKey, name: "Mobile QR", validUntil }];
 		const probe = renderProbe();
 
 		expect(probe?.getAttribute("data-status")).toBe("ready");
@@ -323,7 +323,7 @@ describe("useAgentStatus definitive verification", () => {
 	it("checks an explicit candidate key through userRole even while a Mobile Agent is stored", async () => {
 		const { localAgent, publicKey, validUntil } = mobileLocalAgent();
 		testState.localAgent = localAgent;
-		testState.extraAgents = [{ address: publicKey, name: "Mobile", validUntil }];
+		testState.extraAgents = [{ address: publicKey, name: "Mobile QR", validUntil }];
 		testState.userRoleAnswer.mockImplementation(async ({ user }: { user: string }) =>
 			user === NEXT_AGENT ? agentRole(OWNER) : { role: "missing" },
 		);
@@ -365,7 +365,7 @@ describe("useAgentStatus definitive verification", () => {
 
 		const result = observedStatus?.refetchAgent();
 		testState.localAgent = { privateKey: `0x${"ab".repeat(32)}`, publicKey: AGENT, source: "local-registration" };
-		list.resolve({ data: [{ address: publicKey, name: "Mobile", validUntil }], error: null });
+		list.resolve({ data: [{ address: publicKey, name: "Mobile QR", validUntil }], error: null });
 		await expect(result).resolves.toMatchObject({ isAgentReady: false, needsAgent: false });
 		expect(testState.userRoleRequests).toEqual([]);
 	});
@@ -451,7 +451,7 @@ describe("useAgentStatus definitive verification", () => {
 		testState.builderFee = 0;
 		const { localAgent, publicKey, validUntil } = mobileLocalAgent();
 		testState.localAgent = localAgent;
-		testState.extraAgents = [{ address: publicKey, name: "Mobile", validUntil }];
+		testState.extraAgents = [{ address: publicKey, name: "Mobile QR", validUntil }];
 		const fee = deferred<{ data: number; error: null }>();
 		testState.builderFeeRefetch.mockReturnValue(fee.promise);
 		renderProbe();

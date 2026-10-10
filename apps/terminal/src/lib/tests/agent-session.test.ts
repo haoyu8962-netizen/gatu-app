@@ -34,8 +34,13 @@ describe("resolveSession", () => {
 		expect(resolveSession(WALLET, null, "Mainnet")).toEqual({ clientKey: WALLET, sessionMode: "wallet" });
 	});
 
-	it("connected wallet always wins, even if an agent-only owner exists", () => {
+	it("lets an imported agent-only owner win over a connected wallet, as on the official terminal", () => {
 		const agentOwner: AgentOwner = { env: "Mainnet", address: OWNER };
+		expect(resolveSession(WALLET, agentOwner, "Mainnet")).toEqual({ clientKey: OWNER, sessionMode: "agent-only" });
+	});
+
+	it("keeps the connected wallet when the agent-only owner belongs to another env", () => {
+		const agentOwner: AgentOwner = { env: "Testnet", address: OWNER };
 		expect(resolveSession(WALLET, agentOwner, "Mainnet")).toEqual({ clientKey: WALLET, sessionMode: "wallet" });
 	});
 

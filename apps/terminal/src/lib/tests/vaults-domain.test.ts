@@ -233,6 +233,17 @@ describe("Vault detail runtime validation", () => {
 			deposit: { available: false, reason: "geo-checking" },
 			withdraw: { available: false, reason: "geo-checking" },
 		});
+		expect(
+			deriveVaultActionsAvailability({
+				detail: parsed.detail,
+				owner: { status: "disconnected" },
+				request,
+				sessionMode: "agent-only",
+			}),
+		).toEqual({
+			deposit: { available: false, reason: "agent-only-session" },
+			withdraw: { available: false, reason: "agent-only-session" },
+		});
 	});
 
 	it("distinguishes valid, not-found, and malformed responses", () => {

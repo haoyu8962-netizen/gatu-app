@@ -26,6 +26,7 @@ import {
 import { type ReactNode, useEffect, useId, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { FUNDS_OUTCOME_TOAST_DURATION_MS } from "@/config/time";
+import { useMasterWalletRequiredMessage } from "@/hooks/trade/use-master-wallet-action-reason";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { formatDateTime, shortenAddress, useNumberFormat } from "@/lib/format";
 import { getExplorerTxUrl } from "@/lib/hyperliquid";
@@ -67,6 +68,8 @@ export function StakingView(props: StakingViewProps) {
 	const numberFormat = useNumberFormat();
 	const isMobile = useIsMobile();
 	const titleId = useId();
+	const masterWalletReasonId = useId();
+	const actionReasonId = props.agentOnlySession ? masterWalletReasonId : undefined;
 	const [activeTab, setActiveTab] = useState<StakingTab>("validators");
 	const [validatorFilter, setValidatorFilter] = useState<ValidatorFilter>("all");
 	const [activeAction, setActiveAction] = useState<StakingActionRequest | null>(null);
@@ -111,6 +114,7 @@ export function StakingView(props: StakingViewProps) {
 	const canOpenActions = Boolean(
 		account &&
 			props.hasExactMasterSigner &&
+			!props.agentOnlySession &&
 			props.onActionSubmit &&
 			(props.actionsEnabled ?? true) &&
 			!props.hasPendingAction,
@@ -179,6 +183,8 @@ export function StakingView(props: StakingViewProps) {
 							variant="outline"
 							intent="neutral"
 							disabled={!canOpenActions || account?.spotHypeAvailable === "0"}
+							focusableWhenDisabled={props.agentOnlySession}
+							aria-describedby={actionReasonId}
 							onClick={() => account && openAction({ kind: "cDeposit", maxAmount: account.spotHypeAvailable })}
 						>
 							<Trans>Spot to staking</Trans>
@@ -191,6 +197,8 @@ export function StakingView(props: StakingViewProps) {
 								account?.summary.undelegated === "0" ||
 								(account?.summary.nPendingWithdrawals ?? 0) >= 5
 							}
+							focusableWhenDisabled={props.agentOnlySession}
+							aria-describedby={actionReasonId}
 							title={
 								(account?.summary.nPendingWithdrawals ?? 0) >= 5
 									? t`The address already has five pending withdrawals.`
@@ -257,7 +265,7 @@ export function StakingView(props: StakingViewProps) {
 				</section>
 
 				<section className="rounded-24 bg-surface p-4 shadow-raised" aria-label={t`Account staking status`}>
-					<AccountStatePanel {...props} />
+					<AccountStatePanel {...props} masterWalletReasonId={masterWalletReasonId} />
 					{account ? (
 						<>
 							<div className="mt-3 rounded-16 border border-stroke-warning-weak bg-warning-soft p-3">
@@ -336,6 +344,7 @@ export function StakingView(props: StakingViewProps) {
 							publicState={props.publicState}
 							validators={visibleValidators}
 							canOpenActions={canOpenActions}
+							actionReasonId={actionReasonId}
 							availableToDelegate={account?.summary.undelegated ?? "0"}
 							onRetry={props.retryPublic}
 							onOpenAction={openAction}
@@ -404,9 +413,10 @@ export function StakingView(props: StakingViewProps) {
 	);
 }
 
-function AccountStatePanel(props: StakingViewProps) {
+function AccountStatePanel(props: StakingViewProps & { masterWalletReasonId: string }) {
 	const { t } = useLingui();
-	if (props.accountState === "disconnected") {
+	const masterWalletRequiredMessage = useMasterWalletRequiredMessage();
+	if (props.accountState === "disconnected" && !props.agentOnlySession) {
 		return (
 			<div className="py-3 text-center">
 				<h2 className="text-sm font-semibold text-fg">
@@ -446,6 +456,9 @@ function AccountStatePanel(props: StakingViewProps) {
 			</div>
 		);
 	}
+	if (props.agentOnlySession) {
+		return <Alert id={props.masterWalletReasonId} tone="neutral" size="xs" description={masterWalletRequiredMessage} />;
+	}
 	if (!props.hasExactMasterSigner) {
 		return (
 			<Alert
@@ -482,6 +495,7 @@ function ValidatorContent({
 	publicState,
 	validators,
 	canOpenActions,
+	actionReasonId,
 	availableToDelegate,
 	onRetry,
 	onOpenAction,
@@ -489,6 +503,7 @@ function ValidatorContent({
 	publicState: StakingController["publicState"];
 	validators: StakingController["validatorViews"];
 	canOpenActions: boolean;
+	actionReasonId: string | undefined;
 	availableToDelegate: string;
 	onRetry: () => void;
 	onOpenAction: (request: StakingActionRequest) => void;
@@ -595,6 +610,8 @@ function ValidatorContent({
 										variant="outline"
 										intent="brand"
 										disabled={!canOpenActions || !mayDelegate}
+										focusableWhenDisabled={actionReasonId !== undefined}
+										aria-describedby={actionReasonId}
 										onClick={() =>
 											onOpenAction({
 												kind: "delegate",
@@ -611,6 +628,8 @@ function ValidatorContent({
 										variant="ghost"
 										intent="neutral"
 										disabled={!canOpenActions || !mayUndelegate}
+										focusableWhenDisabled={actionReasonId !== undefined}
+										aria-describedby={actionReasonId}
 										onClick={() =>
 											onOpenAction({
 												kind: "undelegate",

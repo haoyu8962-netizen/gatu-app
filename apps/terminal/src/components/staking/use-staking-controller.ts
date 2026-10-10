@@ -57,6 +57,7 @@ export interface StakingController {
 	accountState: StakingAccountDataState;
 	ownerAddress: `0x${string}` | undefined;
 	hasExactMasterSigner: boolean;
+	agentOnlySession: boolean;
 	validators: StakingValidator[];
 	validatorViews: StakingValidatorView[];
 	period: StakingPeriod;
@@ -169,6 +170,7 @@ export function useStakingController(): StakingController {
 		accountState,
 		ownerAddress,
 		hasExactMasterSigner,
+		agentOnlySession: wallet.sessionMode === "agent-only",
 		validators: resolvedValidators,
 		validatorViews,
 		period,

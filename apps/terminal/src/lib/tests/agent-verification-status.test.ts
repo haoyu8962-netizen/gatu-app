@@ -196,11 +196,11 @@ describe("Agent verification status", () => {
 		const mobileAgent = createMobileAgentWalletRecord({
 			privateKey,
 			publicKey,
-			agentName: "Mobile valid_until 10000",
+			agentName: "Mobile QR valid_until 10000",
 			agentValidUntilMs: 10_000,
 			importedAtMs: 100,
 		});
-		const approvedRemote: ExtraAgentsResponse = [{ address: publicKey, name: "Mobile", validUntil: 10_000 }];
+		const approvedRemote: ExtraAgentsResponse = [{ address: publicKey, name: "Mobile QR", validUntil: 10_000 }];
 		const roleForMobileKey: AgentKeyRole = { agentAddress: publicKey, role: { role: "agent", data: { user: OWNER } } };
 
 		expect(
@@ -292,7 +292,7 @@ describe("Agent missing reason", () => {
 		const mobileAgent = createMobileAgentWalletRecord({
 			privateKey,
 			publicKey,
-			agentName: "Mobile valid_until 10000",
+			agentName: "Mobile QR valid_until 10000",
 			agentValidUntilMs: 10_000,
 			importedAtMs: 100,
 		});
@@ -301,7 +301,7 @@ describe("Agent missing reason", () => {
 			deriveAgentMissingReason({
 				...baseOptions,
 				localAgent: mobileAgent,
-				extraAgentsData: [{ address: OTHER_AGENT, name: "Mobile", validUntil: 10_000 }],
+				extraAgentsData: [{ address: OTHER_AGENT, name: "Mobile QR", validUntil: 10_000 }],
 			}),
 		).toBe("remote_key_replaced");
 		expect(
@@ -315,14 +315,14 @@ describe("Agent missing reason", () => {
 			deriveAgentMissingReason({
 				...baseOptions,
 				localAgent: mobileAgent,
-				extraAgentsData: [{ address: OTHER_AGENT, name: "Mobile", validUntil: 999 }],
+				extraAgentsData: [{ address: OTHER_AGENT, name: "Mobile QR", validUntil: 999 }],
 			}),
 		).toBe("local_key_not_approved");
 		expect(deriveAgentMissingReason({ ...baseOptions, localAgent: mobileAgent })).toBe("local_key_not_approved");
 		expect(
 			deriveAgentMissingReason({
 				...baseOptions,
-				localAgent: { ...mobileAgent, agentName: "Mobile valid_until 10001" },
+				localAgent: { ...mobileAgent, agentName: "Mobile QR valid_until 10001" },
 			}),
 		).toBe("invalid_local_record");
 	});

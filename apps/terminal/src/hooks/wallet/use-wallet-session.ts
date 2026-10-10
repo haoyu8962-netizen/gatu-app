@@ -93,10 +93,12 @@ export function useWalletSession() {
 	const hyperliquid = useHyperliquidOptional();
 	const sessionReady = ready && walletsReady;
 	const signerReady = sessionReady && walletConnected && !isConnecting && !isReconnecting;
-	const loginIntent = usePrivyLoginIntent(sessionReady && authenticated ? user?.id : undefined);
-	const walletIntent = sessionReady && authenticated ? resolvePrivyWalletIntent(user, loginIntent) : "unavailable";
+	const agentOnlySession = hyperliquid?.sessionMode === "agent-only";
+	const privyWalletVisible = sessionReady && authenticated && !agentOnlySession;
+	const loginIntent = usePrivyLoginIntent(privyWalletVisible ? user?.id : undefined);
+	const walletIntent = privyWalletVisible ? resolvePrivyWalletIntent(user, loginIntent) : "unavailable";
 
-	const embeddedWalletAddress = sessionReady && authenticated ? getPrivyEmbeddedWalletAddress(user) : undefined;
+	const embeddedWalletAddress = privyWalletVisible ? getPrivyEmbeddedWalletAddress(user) : undefined;
 	const selectedPrivyWallet =
 		sessionReady && (walletIntent === "embedded" || walletIntent === "external")
 			? selectPrivyWagmiWallet({ loginIntent, wallets, user })
@@ -113,11 +115,9 @@ export function useWalletSession() {
 		embeddedWalletAddress,
 		connectedWalletAddress,
 	});
-	const hasWalletSession = signerReady && authenticated && !!walletAddress;
+	const hasWalletSession = signerReady && privyWalletVisible && !!walletAddress;
 	const agentAddress =
-		hyperliquid?.sessionMode === "agent-only" && hyperliquid.clientKey !== "disconnected"
-			? (hyperliquid.clientKey as `0x${string}`)
-			: undefined;
+		agentOnlySession && hyperliquid.clientKey !== "disconnected" ? (hyperliquid.clientKey as `0x${string}`) : undefined;
 	const address = hasWalletSession ? walletAddress : agentAddress;
 	const displayAddress = address;
 	const sessionMode = hyperliquid?.sessionMode ?? (hasWalletSession ? "wallet" : "disconnected");
@@ -302,7 +302,7 @@ export function useDisconnectWallet() {
 			}
 
 			clearVerifiedExternalWalletOwner();
-			if (sessionMode === "agent-only" && !authenticated) {
+			if (sessionMode === "agent-only") {
 				return;
 			}
 			try {

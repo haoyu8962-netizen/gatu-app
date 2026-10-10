@@ -3,8 +3,15 @@ import type { Address, Hex } from "viem";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
 import type { AgentWallet } from "./types";
 
-export const MOBILE_AGENT_NAME_BASE = "Mobile";
+/**
+ * The same name base as app.hyperliquid.xyz's Link Mobile Device. Hyperliquid deregisters a named
+ * agent when another approval uses the same name, so linking a phone here or there replaces one
+ * shared slot instead of taking a second of the account's named-agent slots.
+ */
+export const MOBILE_AGENT_NAME_BASE = "Mobile QR";
 export const MOBILE_AGENT_VALIDITY_MS = 30 * 24 * 60 * 60 * 1000;
+/** Exchange endpoint docs: one unnamed and up to 3 named API wallets per account, plus 2 named per sub-account; the exchange also raises it with trading volume. */
+export const NAMED_AGENT_DOCUMENTED_LIMIT = 3;
 
 const VALID_UNTIL_SUFFIX_RE = / valid_until \d+$/u;
 
@@ -260,4 +267,33 @@ export function verifyMobileAgent(
 
 export function shouldClearMobileAgent(verification: MobileAgentVerification): boolean {
 	return verification.status === "stale";
+}
+
+export type MobileAgentSlotState =
+	| { status: "replaces"; current: ExtraAgentsResponse[number] }
+	| { status: "available" }
+	| { status: "limitReached"; namedAgents: ExtraAgentsResponse };
+
+/**
+ * Read-only check before a Mobile Agent approval: an active agent with the Mobile name is replaced
+ * in place; otherwise the approval needs a free named slot. Expired agents no longer hold a slot.
+ * `limitReached` only means the documented base limit is used up: sub-accounts and trading volume
+ * can raise the real limit, so callers must not treat it as a certain rejection.
+ */
+export function getMobileAgentSlotState(extraAgents: ExtraAgentsResponse, nowMs = Date.now()): MobileAgentSlotState {
+	const activeAgents = extraAgents.filter((agent) => agent.validUntil === null || agent.validUntil > nowMs);
+	const current = activeAgents.find((agent) => agent.name === MOBILE_AGENT_NAME_BASE);
+	if (current) return { status: "replaces", current };
+	if (activeAgents.length >= NAMED_AGENT_DOCUMENTED_LIMIT) return { status: "limitReached", namedAgents: activeAgents };
+	return { status: "available" };
+}
+
+/** The earliest moment after `nowMs` at which an active named agent expires and the slot state can change. */
+export function getNextMobileAgentSlotChange(extraAgents: ExtraAgentsResponse, nowMs = Date.now()): number | null {
+	let next: number | null = null;
+	for (const agent of extraAgents) {
+		if (agent.validUntil === null || agent.validUntil <= nowMs) continue;
+		if (next === null || agent.validUntil < next) next = agent.validUntil;
+	}
+	return next;
 }

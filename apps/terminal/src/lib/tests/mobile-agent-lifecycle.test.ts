@@ -6,6 +6,8 @@ import {
 	createMobileAgentStorageMetadata,
 	createMobileAgentWalletRecord,
 	getMobileAgentNameBase,
+	getMobileAgentSlotState,
+	getNextMobileAgentSlotChange,
 	MOBILE_AGENT_NAME_BASE,
 	MOBILE_AGENT_VALIDITY_MS,
 	shouldClearMobileAgent,
@@ -65,6 +67,54 @@ describe("mobile agent lifecycle", () => {
 		vi.useRealTimers();
 		vi.unstubAllGlobals();
 		vi.restoreAllMocks();
+	});
+
+	it("shares the official Link Mobile Device name so linking replaces one slot", () => {
+		expect(MOBILE_AGENT_NAME_BASE).toBe("Mobile QR");
+		expect(getMobileAgentNameBase(createMobileAgentApproval(NOW_MS).agentName)).toBe("Mobile QR");
+	});
+
+	it("reports whether a Mobile approval replaces a slot, has a free one or finds every named slot taken", () => {
+		const agent = (name: string, validUntil: number | null) => ({
+			address: `0x${String(name.length).padStart(40, "0")}` as `0x${string}`,
+			name,
+			validUntil,
+		});
+		const future = NOW_MS + 86_400_000;
+
+		expect(getMobileAgentSlotState([], NOW_MS)).toEqual({ status: "available" });
+		expect(getMobileAgentSlotState([agent("a", future), agent("bb", null)], NOW_MS)).toEqual({ status: "available" });
+
+		const official = agent("Mobile QR", future);
+		expect(getMobileAgentSlotState([agent("a", future), agent("bb", future), official], NOW_MS)).toEqual({
+			status: "replaces",
+			current: official,
+		});
+
+		const full = [agent("old-slot", future), agent("old-slot-dev", null), agent("Mobile", future)];
+		expect(getMobileAgentSlotState(full, NOW_MS)).toEqual({ status: "limitReached", namedAgents: full });
+
+		expect(getMobileAgentSlotState([agent("a", future), agent("bb", future), agent("ccc", NOW_MS)], NOW_MS)).toEqual({
+			status: "available",
+		});
+		expect(
+			getMobileAgentSlotState([agent("a", future), agent("bb", future), agent("Mobile QR", NOW_MS - 1)], NOW_MS),
+		).toEqual({
+			status: "available",
+		});
+	});
+
+	it("finds the next moment an active named agent expires", () => {
+		const agent = (validUntil: number | null) => ({
+			address: "0x3333333333333333333333333333333333333333" as `0x${string}`,
+			name: "a",
+			validUntil,
+		});
+		expect(getNextMobileAgentSlotChange([], NOW_MS)).toBeNull();
+		expect(getNextMobileAgentSlotChange([agent(null), agent(NOW_MS)], NOW_MS)).toBeNull();
+		expect(getNextMobileAgentSlotChange([agent(NOW_MS + 500), agent(null), agent(NOW_MS + 100)], NOW_MS)).toBe(
+			NOW_MS + 100,
+		);
 	});
 
 	it("verifies a first linked mobile agent against extraAgents", () => {

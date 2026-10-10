@@ -6,6 +6,7 @@ import { usePressAndHold } from "@/hooks/ui/use-press-and-hold";
 import { cn } from "@/lib/cn";
 import { formatTransferError } from "@/lib/errors/format";
 import { useTradingGuard } from "@/lib/hyperliquid";
+import { AGENT_ONLY_OWNER_APPROVAL_MESSAGE } from "@/lib/trade/owner-approval-message";
 
 type ButtonProps = ComponentProps<typeof Button>;
 
@@ -45,7 +46,7 @@ export function TradingActionButton({
 	...buttonProps
 }: Props) {
 	const { t } = useLingui();
-	const { isReady, isEnabling, needsTrading, enableTrading, guardAction, error } = useTradingGuard({
+	const { isReady, isEnabling, needsTrading, needsOwnerApproval, enableTrading, guardAction, error } = useTradingGuard({
 		requiresBuilderFee,
 	});
 	const holdEnabled = typeof holdDurationMs === "number" && Number.isFinite(holdDurationMs) && holdDurationMs > 0;
@@ -194,6 +195,9 @@ export function TradingActionButton({
 				<p role="alert" className="w-full text-xs leading-normal text-error">
 					{formatTransferError(error, (descriptor) => t(descriptor))}
 				</p>
+			)}
+			{!error && needsOwnerApproval && (
+				<output className="w-full text-xs leading-normal text-fg-muted">{t(AGENT_ONLY_OWNER_APPROVAL_MESSAGE)}</output>
 			)}
 		</div>
 	);

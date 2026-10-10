@@ -392,6 +392,18 @@ test("runs the release metadata, CSP and card funding guards on pull requests", 
 		"src/lib/tests/global-modals-hip3-disclaimer.test.tsx",
 		"src/lib/tests/deposit-modal-warm.test.ts",
 		"src/lib/tests/i18n-reactivity-contract.test.ts",
+		"src/lib/tests/agent-session.test.ts",
+		"src/lib/tests/use-agent-status-mobile-ended.test.tsx",
+		"src/lib/tests/mobile-agent-ended-notifier.test.tsx",
+		"src/lib/tests/trading-guard-session.test.tsx",
+		"src/lib/tests/use-privy-owner-signer.test.tsx",
+		"src/lib/tests/api-wallet-view-agent-only.test.tsx",
+		"src/lib/tests/portfolio-page-agent-only.test.tsx",
+		"src/lib/tests/referral-dashboard-agent-only.test.tsx",
+		"src/lib/tests/mobile-agent-qr-scanner-load.test.ts",
+		"src/lib/tests/trading-activation.test.ts",
+		"src/components/staking/__tests__/use-staking-controller.test.tsx",
+		"src/components/vaults/__tests__/use-vault-action-controller.test.tsx",
 	]) {
 		assert.equal(terminalTests.includes(file), true, `${file} never runs in CI`);
 	}

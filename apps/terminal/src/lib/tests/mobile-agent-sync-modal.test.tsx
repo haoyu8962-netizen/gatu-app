@@ -13,11 +13,16 @@ const USER_ADDRESS = "0x1111111111111111111111111111111111111111";
 const AGENT_PRIVATE_KEY = `0x${"ab".repeat(32)}` as const;
 const AGENT_ADDRESS = "0x2222222222222222222222222222222222222222";
 const AGENT_VALID_UNTIL_MS = NOW_MS + 30 * 24 * 60 * 60 * 1000;
-const AGENT_NAME = `Mobile valid_until ${AGENT_VALID_UNTIL_MS}`;
+const AGENT_NAME = `Mobile QR valid_until ${AGENT_VALID_UNTIL_MS}`;
+const BUILDER_ADDRESS = "0x9999999999999999999999999999999999999999";
 const IDENTITY_CHANGED = msg`The active wallet or network changed. Review the account and try again.`;
 
 const testState = vi.hoisted(() => ({
 	approveAgent: vi.fn(),
+	builderFeeKnown: true,
+	extraAgents: vi.fn(),
+	needsBuilderFee: false,
+	maxBuilderFee: vi.fn(),
 	onOpenChangeComplete: undefined as ((open: boolean) => void) | undefined,
 	features: { enabled: true },
 	hasWalletAccess: true,
@@ -41,8 +46,10 @@ vi.mock("@lingui/react/macro", () => ({
 vi.mock("@phosphor-icons/react", () => ({
 	DeviceMobileIcon: Icon,
 	QrCodeIcon: Icon,
+	SealCheckIcon: Icon,
 	SpinnerGapIcon: Icon,
 	WarningCircleIcon: Icon,
+	WarningIcon: Icon,
 }));
 
 vi.mock("@/hooks/use-mobile", () => ({
@@ -106,7 +113,7 @@ vi.mock("@sairn/hl-react/signing/mobile-agent", async (importOriginal) => {
 	return {
 		...actual,
 		createMobileAgentApproval: () => ({
-			agentNameBase: "Mobile",
+			agentNameBase: "Mobile QR",
 			agentName: AGENT_NAME,
 			agentValidUntilMs: AGENT_VALID_UNTIL_MS,
 			privateKey: AGENT_PRIVATE_KEY,
@@ -134,8 +141,21 @@ vi.mock("@/hooks/wallet/use-wallet-session", () => ({
 	}),
 }));
 
+vi.mock("@tanstack/react-router", () => ({
+	Link: ({ children, onClick, to }: { children: ReactNode; onClick?: () => void; to: string }) =>
+		createElement("a", { href: to, onClick }, children),
+}));
+
 vi.mock("@/lib/hyperliquid", () => ({
-	useHyperliquid: () => ({ env: "Mainnet" }),
+	useHyperliquid: () => ({
+		builderConfig: { b: BUILDER_ADDRESS, f: 10 },
+		env: "Mainnet",
+		info: { extraAgents: testState.extraAgents, maxBuilderFee: testState.maxBuilderFee },
+	}),
+	useTradingStatus: () => ({
+		needsBuilderFee: testState.builderFeeKnown && testState.needsBuilderFee,
+		isBuilderFeeReady: testState.builderFeeKnown && !testState.needsBuilderFee,
+	}),
 }));
 
 vi.mock("qrcode", () => ({
@@ -185,6 +205,12 @@ describe("MobileAgentSyncModal", () => {
 		testState.features.enabled = true;
 		testState.approveAgent.mockReset();
 		testState.approveAgent.mockResolvedValue(undefined);
+		testState.builderFeeKnown = true;
+		testState.needsBuilderFee = false;
+		testState.extraAgents.mockReset();
+		testState.extraAgents.mockResolvedValue([]);
+		testState.maxBuilderFee.mockReset();
+		testState.maxBuilderFee.mockImplementation(async () => (testState.needsBuilderFee ? 0 : 10));
 		testState.qrToCanvas.mockReset();
 		testState.qrToCanvas.mockResolvedValue(undefined);
 	});
@@ -232,6 +258,7 @@ describe("MobileAgentSyncModal", () => {
 			"On your phone, open Sairn, tap Connect, then Link Desktop Wallet and scan this code.",
 		);
 		expect(container.textContent).toContain("The QR can trade but not withdraw.");
+		expect(container.textContent).toContain("including one linked in the Hyperliquid app");
 		expect(container.querySelector("canvas")).toBeNull();
 
 		await approve();
@@ -418,5 +445,253 @@ describe("MobileAgentSyncModal", () => {
 		act(() => resolveApproval?.());
 		await flushAsyncWork();
 		expect(container.textContent).not.toContain("Hold to reveal");
+	});
+	it("never signs a builder fee and keeps linking unavailable until trading is activated", async () => {
+		testState.needsBuilderFee = true;
+		await renderModal();
+
+		const approveButton = getButton(container, "Approve mobile trading key");
+		expect(approveButton.hasAttribute("disabled")).toBe(true);
+		expect(container.textContent).toContain("Trading is not activated on this account yet.");
+		expect(findButton(container, "builder fee")).toBeUndefined();
+		act(() => approveButton.click());
+		await flushAsyncWork();
+		expect(testState.approveAgent).not.toHaveBeenCalled();
+
+		testState.needsBuilderFee = false;
+		await renderModal();
+		expect(container.textContent).not.toContain("Trading is not activated on this account yet.");
+		await approve();
+		expect(testState.approveAgent).toHaveBeenCalledTimes(1);
+	});
+
+	it("does not sign the mobile key when the fresh check finds trading not activated", async () => {
+		await renderModal();
+		testState.maxBuilderFee.mockResolvedValueOnce(0);
+
+		act(() => getButton(container, "Approve mobile trading key").click());
+		await flushAsyncWork();
+
+		expect(testState.maxBuilderFee).toHaveBeenCalledWith(
+			{ user: USER_ADDRESS, builder: BUILDER_ADDRESS },
+			expect.any(AbortSignal),
+		);
+		expect(testState.approveAgent).not.toHaveBeenCalled();
+		expect(getButton(container, "Approve mobile trading key").hasAttribute("disabled")).toBe(true);
+		expect(container.textContent).toContain("Trading is not activated on this account yet.");
+	});
+
+	it("does not carry one owner's failed activation check over to another wallet", async () => {
+		await renderModal();
+		testState.maxBuilderFee.mockResolvedValueOnce(0);
+		act(() => getButton(container, "Approve mobile trading key").click());
+		await flushAsyncWork();
+		expect(getButton(container, "Approve mobile trading key").hasAttribute("disabled")).toBe(true);
+
+		testState.walletAddress = "0x3333333333333333333333333333333333333333";
+		await renderModal();
+		expect(getButton(container, "Approve mobile trading key").hasAttribute("disabled")).toBe(false);
+		expect(container.textContent).not.toContain("Trading is not activated on this account yet.");
+	});
+
+	it("fails closed without signing when the activation check answers without a definitive result", async () => {
+		await renderModal();
+		testState.maxBuilderFee.mockResolvedValueOnce("10" as unknown as number);
+
+		act(() => getButton(container, "Approve mobile trading key").click());
+		await flushAsyncWork();
+
+		expect(testState.approveAgent).not.toHaveBeenCalled();
+		expect(container.querySelector('[role="alert"]')?.textContent).toBe(
+			"Could not check on Hyperliquid whether trading is activated. Nothing was signed. Try again.",
+		);
+	});
+
+	it("fails closed without signing when activation cannot be checked", async () => {
+		await renderModal();
+		testState.maxBuilderFee.mockRejectedValueOnce(new Error("network"));
+
+		act(() => getButton(container, "Approve mobile trading key").click());
+		await flushAsyncWork();
+
+		expect(testState.approveAgent).not.toHaveBeenCalled();
+		expect(container.querySelector('[role="alert"]')?.textContent).toBe(
+			"Could not check on Hyperliquid whether trading is activated. Nothing was signed. Try again.",
+		);
+	});
+
+	it("signs nothing when the activation check does not answer within ten seconds", async () => {
+		await renderModal();
+		let signal: AbortSignal | undefined;
+		testState.maxBuilderFee.mockImplementationOnce((_params: unknown, requestSignal: AbortSignal) => {
+			signal = requestSignal;
+			return new Promise((_resolve, reject) => {
+				requestSignal.addEventListener("abort", () => reject(new Error("aborted")));
+			});
+		});
+
+		act(() => getButton(container, "Approve mobile trading key").click());
+		await flushAsyncWork();
+		expect(signal?.aborted).toBe(false);
+		await advanceTime(10_000);
+
+		expect(signal?.aborted).toBe(true);
+		expect(testState.approveAgent).not.toHaveBeenCalled();
+		expect(container.querySelector('[role="alert"]')?.textContent).toBe(
+			"Could not check on Hyperliquid whether trading is activated. Nothing was signed. Try again.",
+		);
+	});
+
+	it("keeps the approved key and offers another reveal when the QR cannot be drawn", async () => {
+		testState.qrToCanvas.mockRejectedValueOnce(new Error("chunk"));
+		await renderModal();
+		await approve();
+		await reveal();
+		await flushAsyncWork();
+
+		expect(container.textContent).toContain("The QR could not be drawn.");
+		expect(findButton(container, "Approve mobile trading key")).toBeUndefined();
+
+		await reveal();
+		await flushAsyncWork();
+		expect(container.querySelector("canvas")).not.toBeNull();
+		expect(testState.qrToCanvas).toHaveBeenCalledTimes(2);
+		const [, firstUrl] = testState.qrToCanvas.mock.calls[0] as [unknown, string];
+		const [, secondUrl] = testState.qrToCanvas.mock.calls[1] as [unknown, string];
+		expect(new URL(secondUrl).pathname).toBe(new URL(firstUrl).pathname);
+		expect(testState.approveAgent).toHaveBeenCalledTimes(1);
+	});
+	it("checks named slots once per open with a read-only request and warns before signing", async () => {
+		testState.extraAgents.mockResolvedValue([
+			{ address: "0x3333333333333333333333333333333333333333", name: "old-slot", validUntil: NOW_MS + 86_400_000 },
+			{ address: "0x4444444444444444444444444444444444444444", name: "old-slot-dev", validUntil: null },
+			{ address: "0x5555555555555555555555555555555555555555", name: "Mobile", validUntil: NOW_MS + 86_400_000 },
+		]);
+		const onOpenChange = await renderModal();
+
+		expect(testState.extraAgents).toHaveBeenCalledTimes(1);
+		expect(testState.extraAgents).toHaveBeenCalledWith({ user: USER_ADDRESS }, expect.any(AbortSignal));
+		expect(container.textContent).toContain("already has 3 named API wallets and none of them is a mobile key");
+		expect(container.textContent).toContain("more with sub-accounts or higher trading volume");
+		expect(container.textContent).toContain("old-slot-dev");
+		expect(container.textContent).toContain("No expiry");
+		const approveButton = getButton(container, "Approve mobile trading key");
+		expect(approveButton.hasAttribute("disabled")).toBe(false);
+		const hint = document.getElementById(approveButton.getAttribute("aria-describedby") ?? "");
+		expect(hint?.textContent).toContain("remove one you no longer use");
+		const link = container.querySelector('a[href="/api-wallet"]');
+		expect(link?.textContent).toBe("Open API Wallet");
+		act(() => (link as HTMLAnchorElement).click());
+		expect(onOpenChange).toHaveBeenCalledWith(false);
+	});
+
+	it("ignores a slot answer that arrives after its dialog was closed and reopened", async () => {
+		const full = [
+			{ address: "0x3333333333333333333333333333333333333333", name: "a", validUntil: null },
+			{ address: "0x4444444444444444444444444444444444444444", name: "b", validUntil: null },
+			{ address: "0x5555555555555555555555555555555555555555", name: "c", validUntil: null },
+		];
+		const requests: Array<{ resolve: (value: unknown) => void; signal: AbortSignal }> = [];
+		testState.extraAgents.mockImplementation(
+			(_params: unknown, signal: AbortSignal) =>
+				new Promise((resolve) => {
+					requests.push({ resolve, signal });
+				}),
+		);
+		const onOpenChange = await renderModal();
+		await renderModal(onOpenChange, false);
+		expect(requests[0]?.signal.aborted).toBe(true);
+		await renderModal(onOpenChange, true);
+		expect(requests).toHaveLength(2);
+
+		await act(async () => requests[0]?.resolve(full));
+		await flushAsyncWork();
+		expect(container.textContent).not.toContain("named API wallets");
+
+		await act(async () => requests[1]?.resolve([]));
+		await flushAsyncWork();
+		expect(container.textContent).not.toContain("named API wallets");
+	});
+
+	it("gives up on a slot check after ten seconds without showing anything", async () => {
+		let signal: AbortSignal | undefined;
+		testState.extraAgents.mockImplementation((_params: unknown, requestSignal: AbortSignal) => {
+			signal = requestSignal;
+			return new Promise(() => {});
+		});
+		await renderModal();
+		expect(signal?.aborted).toBe(false);
+		await advanceTime(10_000);
+		expect(signal?.aborted).toBe(true);
+		expect(container.textContent).not.toContain("named API wallets");
+	});
+
+	it("withdraws the slot notice once one of the listed wallets expires while the dialog is open", async () => {
+		testState.extraAgents.mockResolvedValue([
+			{ address: "0x3333333333333333333333333333333333333333", name: "a", validUntil: NOW_MS + 60_000 },
+			{ address: "0x4444444444444444444444444444444444444444", name: "b", validUntil: null },
+			{ address: "0x5555555555555555555555555555555555555555", name: "c", validUntil: null },
+		]);
+		await renderModal();
+		expect(container.textContent).toContain("named API wallets");
+
+		await advanceTime(60_000);
+		expect(container.textContent).not.toContain("named API wallets");
+		expect(testState.extraAgents).toHaveBeenCalledTimes(1);
+	});
+
+	it("waits for a distant expiry in timer-sized steps instead of firing early", async () => {
+		const maxTimerDelayMs = 2_147_483_647;
+		const expiresAt = NOW_MS + 30 * 24 * 60 * 60 * 1000;
+		testState.extraAgents.mockResolvedValue([
+			{ address: "0x3333333333333333333333333333333333333333", name: "a", validUntil: expiresAt },
+			{ address: "0x4444444444444444444444444444444444444444", name: "b", validUntil: null },
+			{ address: "0x5555555555555555555555555555555555555555", name: "c", validUntil: null },
+		]);
+		const setTimeoutSpy = vi.spyOn(window, "setTimeout");
+		await renderModal();
+		expect(container.textContent).toContain("named API wallets");
+		expect(setTimeoutSpy.mock.calls.some(([, delay]) => delay === maxTimerDelayMs)).toBe(true);
+		expect(setTimeoutSpy.mock.calls.every(([, delay]) => (delay ?? 0) <= maxTimerDelayMs)).toBe(true);
+
+		await advanceTime(maxTimerDelayMs);
+		expect(container.textContent).toContain("named API wallets");
+
+		await advanceTime(expiresAt - NOW_MS - maxTimerDelayMs);
+		expect(container.textContent).not.toContain("named API wallets");
+		expect(testState.extraAgents).toHaveBeenCalledTimes(1);
+		setTimeoutSpy.mockRestore();
+	});
+
+	it("treats a malformed slot answer as no answer", async () => {
+		testState.extraAgents.mockResolvedValue([
+			{ validUntil: null },
+			{ name: "b", address: "not-an-address", validUntil: null },
+			{ name: "c", address: "0x5555555555555555555555555555555555555555", validUntil: "1" },
+		]);
+		await renderModal();
+		expect(testState.extraAgents).toHaveBeenCalledTimes(1);
+		expect(container.textContent).not.toContain("named API wallets");
+	});
+
+	it("says nothing about slots when the approval replaces the shared mobile slot, the check fails or is not allowed", async () => {
+		testState.extraAgents.mockResolvedValue([
+			{ address: "0x3333333333333333333333333333333333333333", name: "old-slot", validUntil: NOW_MS + 86_400_000 },
+			{ address: "0x4444444444444444444444444444444444444444", name: "old-slot-dev", validUntil: null },
+			{ address: "0x5555555555555555555555555555555555555555", name: "Mobile QR", validUntil: NOW_MS + 86_400_000 },
+		]);
+		await renderModal();
+		expect(container.textContent).not.toContain("named API wallets");
+
+		testState.extraAgents.mockRejectedValue(new Error("network"));
+		await renderModal(vi.fn(), false);
+		await renderModal(vi.fn(), true);
+		expect(container.textContent).not.toContain("named API wallets");
+		expect(getButton(container, "Approve mobile trading key").getAttribute("aria-describedby")).toBeNull();
+
+		testState.extraAgents.mockClear();
+		testState.hasWalletAccess = false;
+		await renderModal();
+		expect(testState.extraAgents).not.toHaveBeenCalled();
 	});
 });

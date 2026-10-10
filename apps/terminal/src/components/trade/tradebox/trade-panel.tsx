@@ -65,6 +65,7 @@ import {
 	usesLimitPrice as usesLimitPriceForOrder,
 } from "@/lib/trade/order-types";
 import { getOrderValidationPresentation, isInlineTpSlValidationError } from "@/lib/trade/order-validation-presentation";
+import { AGENT_ONLY_OWNER_APPROVAL_MESSAGE } from "@/lib/trade/owner-approval-message";
 import { getTpSlCollateralSymbol } from "@/lib/trade/tpsl";
 import type { ActiveModal } from "@/lib/trade/types";
 import { useButtonContent } from "@/lib/trade/use-button-content";
@@ -131,7 +132,7 @@ function warmDesktopTradeSettingsModals() {
 
 export function TradePanel() {
 	const { t } = useLingui();
-	const { address, isConnected, hasWalletAccess } = useWalletSession();
+	const { address, isConnected, hasWalletAccess, sessionMode } = useWalletSession();
 	const { data: connectionWalletClient } = useConnectionWalletClient();
 	const depositAvailability = useDepositAvailability();
 
@@ -431,6 +432,7 @@ export function TradePanel() {
 	const needsAgentApproval = !isTradingAuthorized;
 	const isReadyToTrade = isTradingAuthorized;
 	const canApprove = hasWalletAccess && !!address && (signerMode === "owner" || !!connectionWalletClient);
+	const ownerApprovalReason = sessionMode === "agent-only" ? t(AGENT_ONLY_OWNER_APPROVAL_MESSAGE) : null;
 	const isApprovalLoading = isSignerReady ? requiresBuilderFee && isBuilderFeeLoading : isSignerLoading;
 
 	const baseInput = {
@@ -715,6 +717,7 @@ export function TradePanel() {
 		isApprovalLoading,
 		registerStatus,
 		canApprove,
+		approvalUnavailableReason: ownerApprovalReason,
 		side,
 		sideLabel: sideLabels[side],
 		isSubmitting,

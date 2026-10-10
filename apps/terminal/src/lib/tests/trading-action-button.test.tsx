@@ -14,6 +14,7 @@ const testState = vi.hoisted(() => ({
 	guardOptions: [] as Array<{ requiresBuilderFee?: boolean }>,
 	isEnabling: false,
 	isReady: false,
+	needsOwnerApproval: false,
 	needsTrading: true,
 }));
 
@@ -24,6 +25,7 @@ vi.mock("@/lib/hyperliquid", () => ({
 			isReady: testState.isReady,
 			isEnabling: testState.isEnabling,
 			needsTrading: testState.needsTrading,
+			needsOwnerApproval: testState.needsOwnerApproval,
 			enableTrading: testState.enableTrading,
 			guardAction: testState.guardAction,
 			error: testState.error,
@@ -51,6 +53,7 @@ describe("TradingActionButton", () => {
 		testState.isEnabling = false;
 		testState.isReady = false;
 		testState.needsTrading = true;
+		testState.needsOwnerApproval = false;
 	});
 
 	afterEach(() => {
@@ -84,6 +87,24 @@ describe("TradingActionButton", () => {
 		const alert = container.querySelector('[role="alert"]');
 		expect(alert?.textContent).toContain("Selected wallet does not match");
 		expect(testState.guardOptions.at(-1)).toEqual({ requiresBuilderFee: true });
+	});
+
+	it("stays disabled with the desktop-required reason when an Agent-only session lacks an approval", () => {
+		testState.needsTrading = false;
+		testState.needsOwnerApproval = true;
+		const onClick = vi.fn();
+
+		act(() => {
+			root.render(<TradingActionButton onClick={onClick}>Market Close</TradingActionButton>);
+		});
+
+		const button = container.querySelector("button");
+		expect(button?.textContent).toBe("Market Close");
+		expect(button?.hasAttribute("disabled")).toBe(true);
+		expect(container.querySelector("output")?.textContent).toContain("Finish trading authorization on desktop first");
+		act(() => button?.click());
+		expect(testState.enableTrading).not.toHaveBeenCalled();
+		expect(testState.guardAction).not.toHaveBeenCalled();
 	});
 
 	it("can guard an Agent-only action without requiring builder fee approval", () => {

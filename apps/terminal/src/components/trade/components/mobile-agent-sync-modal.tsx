@@ -1,9 +1,17 @@
 import { Trans, useLingui } from "@lingui/react/macro";
-import { DeviceMobileIcon, QrCodeIcon, WarningCircleIcon } from "@phosphor-icons/react";
-import { createMobileAgentApproval, type MobileAgentApproval } from "@sairn/hl-react/signing/mobile-agent";
+import { DeviceMobileIcon, QrCodeIcon, WarningCircleIcon, WarningIcon } from "@phosphor-icons/react";
+import {
+	createMobileAgentApproval,
+	getMobileAgentSlotState,
+	getNextMobileAgentSlotChange,
+	type MobileAgentApproval,
+	NAMED_AGENT_DOCUMENTED_LIMIT,
+} from "@sairn/hl-react/signing/mobile-agent";
 import { AdaptiveModal, Button, ModalContent, ModalDescription, ModalFooter, ModalHeader, ModalTitle } from "@sairn/ui";
+import { Link } from "@tanstack/react-router";
 import { useEffect, useId, useRef, useState } from "react";
 import type { Address } from "viem";
+import { isApiWalletExtraAgentSnapshot } from "@/components/api-wallet/api-wallet-state";
 import { ButtonLoading } from "@/components/brand/button-loading";
 import { BRAND_NAME } from "@/config/brand";
 import { MOBILE_PAIRING_FEATURES } from "@/config/mobile-pairing";
@@ -12,8 +20,10 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useExplicitAgentApproval } from "@/hooks/wallet/use-explicit-agent-approval";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { formatTransferError } from "@/lib/errors/format";
-import { type HyperliquidEnv, useHyperliquid } from "@/lib/hyperliquid";
+import { formatDateTime } from "@/lib/format";
+import { type HyperliquidEnv, type InfoResponse, useHyperliquid, useTradingStatus } from "@/lib/hyperliquid";
 import { createMobileAgentSyncUrl, MOBILE_SYNC_QR_VISIBLE_MS } from "@/lib/mobile-sync/sync-core";
+import { readTradingActivation } from "@/lib/mobile-sync/trading-activation";
 
 interface MobileAgentSyncModalProps {
 	open: boolean;
@@ -26,16 +36,18 @@ interface MobileAgentSyncDialogProps extends MobileAgentSyncModalProps {
 	walletAddress: Address | undefined;
 }
 
-type SyncError = { code: "qr_render_failed" } | { code: "approval_failed"; cause: unknown };
+type SyncError = { code: "approval_failed"; cause: unknown } | { code: "activation_unknown" };
 
 type SyncState =
 	| { status: "idle" }
 	| { status: "signing" }
-	| { status: "ready"; approval: MobileAgentApproval }
-	| { status: "revealed"; url: string; closesAtMs: number }
+	| { status: "ready"; approval: MobileAgentApproval; renderFailed: boolean }
+	| { status: "revealed"; approval: MobileAgentApproval; url: string; closesAtMs: number }
 	| { status: "error"; error: SyncError };
 
 const QR_REVEAL_HOLD_MS = 2_000;
+const SLOT_CHECK_TIMEOUT_MS = 10_000;
+const MAX_TIMER_DELAY_MS = 2_147_483_647;
 const QR_REVEAL_HOLD_SECONDS = QR_REVEAL_HOLD_MS / 1_000;
 const HOLD_RING_RADIUS = 10;
 const HOLD_RING_CIRCUMFERENCE = 2 * Math.PI * HOLD_RING_RADIUS;
@@ -67,6 +79,13 @@ function MobileAgentSyncDialog({
 	const { t } = useLingui();
 	const isMobile = useIsMobile();
 	const approveAgent = useExplicitAgentApproval();
+	const tradingStatus = useTradingStatus();
+	const { builderConfig, info } = useHyperliquid();
+	const [activationMissingFor, setActivationMissingFor] = useState<string | null>(null);
+	const infoRef = useRef(info);
+	infoRef.current = info;
+	const activationHintId = useId();
+	const slotsHintId = useId();
 	const [state, setState] = useState<SyncState>({ status: "idle" });
 	const operationRef = useRef<AbortController | null>(null);
 	const onOpenChangeRef = useRef(onOpenChange);
@@ -108,22 +127,77 @@ function MobileAgentSyncDialog({
 	}, [state.status]);
 
 	const canApprove = MOBILE_PAIRING_FEATURES.enabled && hasWalletAccess && !!walletAddress;
+	const isBusy = state.status === "signing";
+	const accountNotActivated =
+		tradingStatus.needsBuilderFee ||
+		(activationMissingFor !== null && activationMissingFor === walletAddress?.toLowerCase());
+	const slotCheckOwner = open && canApprove ? walletAddress : undefined;
+	const [slotSnapshot, setSlotSnapshot] = useState<{ agents: InfoResponse<"extraAgents">; atMs: number } | null>(null);
+	const slotCheck = slotSnapshot ? getMobileAgentSlotState(slotSnapshot.agents, slotSnapshot.atMs) : null;
+
+	useEffect(() => {
+		if (!slotCheckOwner) return;
+		const request = new AbortController();
+		const timeoutId = window.setTimeout(() => request.abort(), SLOT_CHECK_TIMEOUT_MS);
+		void infoRef.current
+			.extraAgents({ user: slotCheckOwner }, request.signal)
+			.then((agents) => {
+				if (request.signal.aborted || !isApiWalletExtraAgentSnapshot(agents)) return;
+				setSlotSnapshot({ agents, atMs: Date.now() });
+			})
+			.catch(() => undefined)
+			.finally(() => window.clearTimeout(timeoutId));
+		return () => {
+			request.abort();
+			window.clearTimeout(timeoutId);
+			setSlotSnapshot(null);
+		};
+	}, [slotCheckOwner]);
+
+	useEffect(() => {
+		if (!slotSnapshot) return;
+		const nextChangeMs = getNextMobileAgentSlotChange(slotSnapshot.agents, slotSnapshot.atMs);
+		if (nextChangeMs === null) return;
+		const delayMs = Math.min(Math.max(0, nextChangeMs - Date.now()), MAX_TIMER_DELAY_MS);
+		const timeoutId = window.setTimeout(
+			() => setSlotSnapshot((current) => (current ? { agents: current.agents, atMs: Date.now() } : current)),
+			delayMs,
+		);
+		return () => window.clearTimeout(timeoutId);
+	}, [slotSnapshot]);
 
 	async function handleApprove() {
-		if (!canApprove || !walletAddress || state.status === "signing") return;
+		if (!canApprove || !walletAddress || isBusy) return;
 		operationRef.current?.abort();
 		const operation = new AbortController();
 		operationRef.current = operation;
-		const approval = createMobileAgentApproval();
 		setState({ status: "signing" });
 
 		try {
+			const activation = await readTradingActivation(
+				infoRef.current,
+				walletAddress,
+				builderConfig,
+				operation.signal,
+			).catch(() => null);
+			if (operation.signal.aborted) return;
+			if (activation !== "activated") {
+				if (activation === "notActivated") setActivationMissingFor(walletAddress.toLowerCase());
+				setState(
+					activation === "notActivated"
+						? { status: "idle" }
+						: { status: "error", error: { code: "activation_unknown" } },
+				);
+				return;
+			}
+
+			const approval = createMobileAgentApproval();
 			await approveAgent.mutateAsync(
 				{ agentAddress: approval.publicKey, agentName: approval.agentName },
 				{ signal: operation.signal, applicationReview: "confirmed" },
 			);
 			if (operation.signal.aborted) return;
-			setState({ status: "ready", approval });
+			setState({ status: "ready", approval, renderFailed: false });
 		} catch (error) {
 			if (operation.signal.aborted) return;
 			setState({
@@ -144,7 +218,7 @@ function MobileAgentSyncDialog({
 			agentPrivateKey: approval.privateKey,
 			agentValidUntilMs: approval.agentValidUntilMs,
 		});
-		setState({ status: "revealed", url, closesAtMs: Date.now() + MOBILE_SYNC_QR_VISIBLE_MS });
+		setState({ status: "revealed", approval, url, closesAtMs: Date.now() + MOBILE_SYNC_QR_VISIBLE_MS });
 	}
 
 	function handleOpenChange(nextOpen: boolean) {
@@ -153,10 +227,18 @@ function MobileAgentSyncDialog({
 	}
 
 	function handleOpenChangeComplete(nextOpen: boolean) {
-		if (!nextOpen) setState({ status: "idle" });
+		if (nextOpen) return;
+		setState({ status: "idle" });
+		setActivationMissingFor(null);
 	}
 
 	const showsApproveButton = state.status === "idle" || state.status === "signing" || state.status === "error";
+
+	function getApproveHintId() {
+		if (accountNotActivated) return activationHintId;
+		if (slotCheck?.status === "limitReached") return slotsHintId;
+		return undefined;
+	}
 
 	return (
 		<AdaptiveModal
@@ -184,7 +266,9 @@ function MobileAgentSyncDialog({
 					<WarningCircleIcon className="mt-0.5 size-4 shrink-0" weight="fill" aria-hidden />
 					<p>
 						<Trans>
-							The QR can trade but not withdraw. Do not share it, screenshot it or show it while sharing your screen.
+							The QR can trade but not withdraw. Approving replaces the mobile key of a phone that is already linked,
+							including one linked in the Hyperliquid app. Do not share it, screenshot it or show it while sharing your
+							screen.
 						</Trans>
 					</p>
 				</div>
@@ -199,9 +283,31 @@ function MobileAgentSyncDialog({
 						<Trans>Connect the selected master wallet before linking a mobile device.</Trans>
 					</p>
 				)}
+				{canApprove && showsApproveButton && accountNotActivated && (
+					<p id={activationHintId} className="text-xs text-fg-muted">
+						<Trans>
+							Trading is not activated on this account yet. Deposit and place a first order on this desktop to finish
+							trading authorization, then link your phone.
+						</Trans>
+					</p>
+				)}
+				{canApprove && showsApproveButton && !accountNotActivated && slotCheck?.status === "limitReached" && (
+					<NamedSlotsFullNotice
+						id={slotsHintId}
+						namedAgents={slotCheck.namedAgents}
+						onOpenApiWallets={() => handleOpenChange(false)}
+					/>
+				)}
 				{state.status === "error" && (
 					<p role="alert" className="text-xs text-error">
 						<SyncErrorText error={state.error} />
+					</p>
+				)}
+				{state.status === "ready" && state.renderFailed && (
+					<p role="alert" className="text-xs text-error">
+						<Trans>
+							The QR could not be drawn. Hold to reveal to try again, or reload the page if it keeps failing.
+						</Trans>
 					</p>
 				)}
 				{state.status === "ready" && <RevealButton onReveal={() => handleReveal(state.approval)} />}
@@ -209,7 +315,7 @@ function MobileAgentSyncDialog({
 					<RevealedQrPanel
 						url={state.url}
 						closesAtMs={state.closesAtMs}
-						onRenderFailed={() => setState({ status: "error", error: { code: "qr_render_failed" } })}
+						onRenderFailed={() => setState({ status: "ready", approval: state.approval, renderFailed: true })}
 					/>
 				)}
 			</ModalContent>
@@ -222,7 +328,8 @@ function MobileAgentSyncDialog({
 						intent="brand"
 						size="md"
 						className="w-full"
-						disabled={state.status === "signing"}
+						disabled={isBusy || accountNotActivated}
+						aria-describedby={getApproveHintId()}
 						onClick={handleApprove}
 						iconLeft={
 							state.status === "signing" ? (
@@ -240,10 +347,65 @@ function MobileAgentSyncDialog({
 	);
 }
 
+function NamedSlotsFullNotice({
+	id,
+	namedAgents,
+	onOpenApiWallets,
+}: {
+	id: string;
+	namedAgents: InfoResponse<"extraAgents">;
+	onOpenApiWallets: () => void;
+}) {
+	const { i18n } = useLingui();
+	const locale = i18n.locale;
+	const limit = NAMED_AGENT_DOCUMENTED_LIMIT;
+	const count = namedAgents.length;
+
+	return (
+		<div
+			id={id}
+			className="flex items-start gap-2 rounded-16 border border-stroke-warning-weak bg-warning-soft p-3 text-xs text-warning"
+		>
+			<WarningIcon className="mt-0.5 size-4 shrink-0 text-icon-warning" weight="fill" aria-hidden />
+			<div className="min-w-0 flex-1 space-y-2">
+				<p>
+					<Trans>
+						This account already has {count} named API wallets and none of them is a mobile key. Hyperliquid allows{" "}
+						{limit} (more with sub-accounts or higher trading volume), so this approval may be rejected. If it is,
+						remove one you no longer use:
+					</Trans>
+				</p>
+				<ul className="space-y-1">
+					{namedAgents.map((agent) => {
+						const expiresAt =
+							agent.validUntil === null ? null : formatDateTime(agent.validUntil, { locale, dateStyle: "medium" });
+						return (
+							<li key={agent.address} className="flex justify-between gap-3">
+								<span className="min-w-0 break-all font-medium">{agent.name}</span>
+								<span className="shrink-0">
+									{expiresAt === null ? <Trans>No expiry</Trans> : <Trans>Expires {expiresAt}</Trans>}
+								</span>
+							</li>
+						);
+					})}
+				</ul>
+				<Link
+					to="/api-wallet"
+					onClick={onOpenApiWallets}
+					className="inline-block font-medium underline underline-offset-4"
+				>
+					<Trans>Open API Wallet</Trans>
+				</Link>
+			</div>
+		</div>
+	);
+}
+
 function SyncErrorText({ error }: { error: SyncError }) {
 	const { t } = useLingui();
-	if (error.code === "qr_render_failed")
-		return <Trans>The QR could not be drawn. Approve a new key to try again.</Trans>;
+	if (error.code === "activation_unknown") {
+		return <Trans>Could not check on Hyperliquid whether trading is activated. Nothing was signed. Try again.</Trans>;
+	}
 	return <>{formatTransferError(error.cause instanceof Error ? error.cause : null, (descriptor) => t(descriptor))}</>;
 }
 

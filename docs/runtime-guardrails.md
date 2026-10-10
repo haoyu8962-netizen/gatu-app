@@ -50,12 +50,18 @@ Do not collapse these states into one boolean.
   wallet addresses; a same-name approval deregisters the previous one. Ordinary
   email trading keeps no local Agent, so this affects external-wallet and
   Agent-only sessions. (Decided 2026-10-04: the code is authoritative; this
-  section used to say the opposite.)
+  section used to say the opposite.) In an Agent-only session Disconnect
+  removes the imported key and owner but does not log out of Privy; an
+  env-matching Agent-only owner takes precedence over a wallet session and
+  masks its Privy identity ([ADR 0039](adr/0039-link-mobile-device-builder-fee-and-session-priority.md)).
 - Apart from explicit disconnect, delete a local Agent key only for explicit
   reset, revocation or rotation, never during transient signer restoration
   (`docs/trading-onboarding.md`).
-- Connected wallet sessions always win over agent-only sessions. Agent-only is
-  only for imported mobile access or explicitly active local-agent sessions.
+- An env-matching agent-only owner (imported mobile access) wins over a
+  connected wallet session; a wallet session applies only when no such owner is
+  active ([ADR 0039](adr/0039-link-mobile-device-builder-fee-and-session-priority.md)).
+  Agent-only is only for imported mobile access or explicitly active
+  local-agent sessions.
 - L1 trading actions (`order`, `cancel`, `updateLeverage`, etc.) must use the
   trading client backed by the local agent.
 - User-signed actions (`approveAgent`, `withdraw3`, `usdSend`, `spotSend`,
@@ -761,7 +767,7 @@ have an install capability.
   them ([ADR 0015](adr/0015-link-device-alignment.md) D8).
 - Pairing is a client-only transfer with no server route (ADR 0015 D7 and
   D8): the payload is plain JSON in the fragment of `/mobile-agent-sync`
-  (`lib/mobile-sync/sync-core.ts`, version 4), bound to one network, one owner
+  (`lib/mobile-sync/sync-core.ts`, version 5), bound to one network, one owner
   and a 2-minute window. The phone parses it before its first paint, removes
   it from the address bar with `history.replaceState`, verifies the approval
   once through `extraAgents` and imports only on an explicit tap; a reload

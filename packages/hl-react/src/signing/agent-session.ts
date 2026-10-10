@@ -38,19 +38,20 @@ const STORAGE_KEY = "hyperliquid_active_agent_owner";
 const ACTIVE_OWNER_LOCK_NAME = `${STORAGE_KEY}:lock`;
 
 /**
- * Resolve the effective session identity. A connected master wallet (`userAddress`) always wins,
- * keeping the connected-wallet path byte-for-byte identical to before. Only when no wallet is
- * connected does an env-matching agent-only owner take over.
+ * Resolve the effective session identity. An env-matching agent-only owner (a desktop-approved key
+ * imported on this device) wins over a connected wallet, as on app.hyperliquid.xyz, so a later
+ * wallet login cannot hide or replace it; disconnecting removes the key and hands the device back to
+ * the wallet. Without one, a connected master wallet (`userAddress`) is the session.
  */
 export function resolveSession(
 	userAddress: Address | undefined,
 	activeAgentOwner: AgentOwner | null,
 	env: HyperliquidEnv,
 ): ResolvedSession {
-	if (userAddress) return { clientKey: userAddress, sessionMode: "wallet" };
 	if (activeAgentOwner && activeAgentOwner.env === env) {
 		return { clientKey: activeAgentOwner.address, sessionMode: "agent-only" };
 	}
+	if (userAddress) return { clientKey: userAddress, sessionMode: "wallet" };
 	return { clientKey: "disconnected", sessionMode: "disconnected" };
 }
 

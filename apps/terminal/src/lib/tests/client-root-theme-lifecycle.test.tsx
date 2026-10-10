@@ -20,6 +20,8 @@ vi.mock("@sairn/hl-react", () => ({
 	HyperliquidExchangePolicyProvider: ({ children }: { children: React.ReactNode }) => children,
 	HyperliquidOwnerSignerProvider: ({ children }: { children: React.ReactNode }) => children,
 	HyperliquidProvider: ({ children }: { children: React.ReactNode }) => children,
+	subscribeMobileAgentEnded: () => () => undefined,
+	useHyperliquid: () => ({ clientKey: "disconnected", env: "Mainnet", sessionMode: "disconnected" }),
 	useLegalStatusLifecycle: () => undefined,
 }));
 

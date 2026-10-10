@@ -392,6 +392,10 @@ msgstr "تم قبول {accepted}/{total} · راجع الأوامر"
 msgid "Access disabled"
 msgstr "الوصول معطّل"
 
+#: src/routes/mobile-agent-sync.tsx
+msgid "Access is stored in this browser only. If you use {BRAND_NAME} from your Home Screen, scan the QR from that app instead: Connect, then Link Desktop Wallet."
+msgstr ""
+
 #: src/components/trade/components/legal-acceptance-modal.tsx
 msgid "Access restricted"
 msgstr "الوصول مقيّد"
@@ -910,6 +914,10 @@ msgstr "يتطلب التفويض والإزالة المحفظة الرئيسي
 #: src/hooks/wallet/use-explicit-agent-approval.ts
 msgid "Approve access"
 msgstr "الموافقة على الوصول"
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+#~ msgid "Approve builder fee"
+#~ msgstr ""
 
 #: src/components/staking/staking-action-modal.tsx
 msgid "Approve in wallet"
@@ -2341,9 +2349,17 @@ msgstr "نسخ رابط الإحالة"
 msgid "Copy token address"
 msgstr "نسخ عنوان الرمز"
 
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Could not check on Hyperliquid whether trading is activated. Nothing was signed. Try again."
+msgstr ""
+
 #: src/routes/mobile-agent-sync.tsx
 msgid "Could not check the approval on Hyperliquid. Nothing was imported. Try again."
 msgstr ""
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+#~ msgid "Could not check the builder fee approval on Hyperliquid. Nothing was signed. Try again."
+#~ msgstr ""
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Could not check this account on Hyperliquid. Nothing was signed. Retry the check."
@@ -3305,6 +3321,10 @@ msgstr "توسيع تفاصيل السوق"
 #: src/components/api-wallet/api-wallet-list.tsx
 msgid "Expired"
 msgstr "منتهي الصلاحية"
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Expires {expiresAt}"
+msgstr ""
 
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "Expires {expiresAtLabel}."
@@ -5378,6 +5398,10 @@ msgstr "لا توجد إجراءات عوائد بعد"
 msgid "No eligible leaderboard accounts"
 msgstr "لا توجد حسابات مؤهلة للوحة المتصدرين"
 
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "No expiry"
+msgstr ""
+
 #: src/components/api-wallet/api-wallet-list.tsx
 msgid "No expiry reported"
 msgstr "لم يتم الإبلاغ عن انتهاء صلاحية"
@@ -5756,6 +5780,10 @@ msgstr "هذا التحويل وحده يبدأ طابور شبكة الاختب
 msgid "Open"
 msgstr "مفتوح"
 
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Open API Wallet"
+msgstr ""
+
 #: src/config/footer-links.ts
 msgid "Open command menu"
 msgstr "فتح قائمة الأوامر"
@@ -6033,6 +6061,10 @@ msgstr "سيبقى الأمر قائماً حتى يُنفَّذ أو يُلغى
 msgid "Orders"
 msgstr "الأوامر"
 
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+#~ msgid "Orders from the phone include the {BRAND_NAME} builder fee, which only this wallet can approve. Approve it once, then approve the mobile trading key."
+#~ msgstr ""
+
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Orders with a client order ID cannot be modified here. Cancel and replace the order instead."
@@ -6238,6 +6270,14 @@ msgstr "أرباح وخسائر العقود الدائمة"
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "Phone access could not be saved on this device. Check browser storage and retry."
 #~ msgstr "تعذر حفظ وصول الهاتف على هذا الجهاز. تحقق من تخزين المتصفح وأعد المحاولة."
+
+#: src/components/trade/components/mobile-agent-ended-notifier.tsx
+#~ msgid "Phone access ended"
+#~ msgstr ""
+
+#: src/components/trade/components/mobile-agent-ended-notifier.tsx
+msgid "Phone access ended for {account}"
+msgstr ""
 
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "Phone access is ready, but the temporary QR copy could not be cleared. Close this tab and clear this site's data."
@@ -8905,6 +8945,10 @@ msgstr "تعذر إكمال الاتصال. ربما تمت الموافقة ع�
 msgid "The desktop has not approved this key. Create a new QR on desktop."
 msgstr ""
 
+#: src/components/trade/components/mobile-agent-ended-notifier.tsx
+msgid "The desktop-approved key expired or was replaced from desktop. Scan a new QR from Link mobile device."
+msgstr ""
+
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "The exact name and public address are now present in fresh extraAgents data."
 msgstr "الاسم الدقيق والعنوان العام موجودان الآن في بيانات extraAgents الجديدة."
@@ -9105,15 +9149,31 @@ msgid "The public Vault feed could not be verified. No cached or cross-network r
 msgstr "تعذر التحقق من موجز الخزائن العام. لا تُعرض بدلًا منه صفوف مخزنة مؤقتًا أو من شبكة أخرى."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "The QR can trade but not withdraw. Do not share it, screenshot it or show it while sharing your screen."
+#~ msgid "The QR can trade but not withdraw. Approving replaces the key on a phone that is already linked. Do not share it, screenshot it or show it while sharing your screen."
+#~ msgstr ""
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "The QR can trade but not withdraw. Approving replaces the mobile key of a phone that is already linked, including one linked in the Hyperliquid app. Do not share it, screenshot it or show it while sharing your screen."
 msgstr ""
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+#~ msgid "The QR can trade but not withdraw. Do not share it, screenshot it or show it while sharing your screen."
+#~ msgstr ""
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "The QR closes automatically in about {announcedSeconds} seconds"
 #~ msgstr ""
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "The QR could not be drawn. Approve a new key to try again."
+#~ msgid "The QR could not be drawn. Approve a new key to try again."
+#~ msgstr ""
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "The QR could not be drawn. Hold to reveal to try again, or reload the page if it keeps failing."
+msgstr ""
+
+#: src/components/trade/components/mobile-agent-qr-scanner.tsx
+msgid "The QR scanner could not load. Check your connection, reload the page and try again."
 msgstr ""
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
@@ -9318,6 +9378,10 @@ msgstr "تعذر إغلاق جلسة المحفظة، لكن تمت إزالة �
 msgid "There are no unclaimed rewards available to claim."
 msgstr "لا توجد مكافآت غير مطالب بها متاحة للمطالبة."
 
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "This account already has {count} named API wallets and none of them is a mobile key. Hyperliquid allows {limit} (more with sub-accounts or higher trading volume), so this approval may be rejected. If it is, remove one you no longer use:"
+msgstr ""
+
 #: src/lib/errors/action-error.ts
 msgid "This account already has a referral code and cannot apply another one."
 msgstr "لدى هذا الحساب رمز إحالة بالفعل، ولا يمكنه تطبيق رمز آخر."
@@ -9325,6 +9389,10 @@ msgstr "لدى هذا الحساب رمز إحالة بالفعل، ولا يم�
 #: src/lib/errors/exchange-error-text.ts
 msgid "This account already has the {limit} named API wallets its trading volume allows. Remove one on the API Wallet page before approving another."
 msgstr ""
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+#~ msgid "This account already uses the {limit} named API wallets Hyperliquid allows, and none of them is a mobile key, so the approval will be rejected unless your trading volume allows more. Remove one you no longer use first:"
+#~ msgstr ""
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
 #: src/lib/errors/action-error.ts
@@ -9528,10 +9596,22 @@ msgstr "تعذّر تحميل هذه اللوحة. أعد المحاولة أو 
 msgid "This phone could not store the trading key. Clear this site's data and scan again."
 msgstr ""
 
+#: src/lib/trade/owner-approval-message.ts
+#~ msgid "This phone uses a desktop-approved trading key. Approve trading with the master wallet on desktop first: open Link mobile device there."
+#~ msgstr ""
+
 #: src/hooks/trade/use-deposit-availability.ts
 #: src/hooks/trade/use-funds-action-availability.ts
 msgid "This phone uses a desktop-approved trading key. Deposits, withdrawals and transfers need the master wallet on desktop."
 msgstr "يستخدم هذا الهاتف مفتاح تداول معتمدًا من سطح المكتب. تتطلب الإيداعات والسحوبات والتحويلات المحفظة الرئيسية على سطح المكتب."
+
+#: src/lib/trade/owner-approval-message.ts
+msgid "This phone uses a desktop-approved trading key. Finish trading authorization on desktop first by placing a first order there."
+msgstr ""
+
+#: src/hooks/trade/use-master-wallet-action-reason.ts
+msgid "This phone uses a desktop-approved trading key. This action needs the master wallet on desktop."
+msgstr ""
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-market-close-modal.tsx
@@ -9558,7 +9638,11 @@ msgid "This position is no longer using isolated margin."
 msgstr "لم يعد هذا المركز يستخدم الهامش المعزول."
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "This QR belongs to a different network. Switch networks or create a new QR on desktop."
+#~ msgid "This QR belongs to a different network. Switch networks or create a new QR on desktop."
+#~ msgstr ""
+
+#: src/routes/mobile-agent-sync.tsx
+msgid "This QR belongs to a different network. Use the same network on both devices, then scan a new QR from desktop."
 msgstr ""
 
 #: src/routes/mobile-agent-sync.tsx
@@ -9595,6 +9679,7 @@ msgstr "رمز QR هذا ليس رابط محفظة سطح مكتب صالحًا
 #~ msgid "This QR was created for a different site."
 #~ msgstr "أُنشئ رمز QR هذا لموقع مختلف."
 
+#: src/components/trade/components/mobile-agent-qr-scanner.tsx
 #: src/routes/mobile-agent-sync.tsx
 msgid "This QR's time does not match this phone. Check the date and time on both devices, then create a new QR."
 msgstr "وقت رمز QR هذا لا يتطابق مع وقت هذا الهاتف. تحقق من التاريخ والوقت على الجهازين، ثم أنشئ رمز QR جديدًا."
@@ -9986,6 +10071,10 @@ msgstr "تغيرت بيانات التداول أثناء فتح مربع الح
 #: src/components/trade/components/hip3-deployer-disclaimer.tsx
 msgid "Trading in these markets may involve elevated risk, including low liquidity, high volatility, incomplete documentation, and increased liquidation risk. Carefully assess the risks and understand how each market works before proceeding."
 msgstr "قد ينطوي التداول في هذه الأسواق على مخاطر مرتفعة، بما في ذلك انخفاض السيولة وارتفاع التقلبات وعدم اكتمال الوثائق وزيادة مخاطر التصفية. قيّم المخاطر بعناية وافهم آلية عمل كل سوق قبل المتابعة."
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Trading is not activated on this account yet. Deposit and place a first order on this desktop to finish trading authorization, then link your phone."
+msgstr ""
 
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/config/trade-panel-labels.ts

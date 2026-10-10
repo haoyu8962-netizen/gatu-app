@@ -64,6 +64,7 @@ const testState = {
 	hasWalletAccess: true,
 	hideFundsDisabledReasons: false,
 	isConnected: true,
+	sessionMode: "wallet" as "wallet" | "agent-only" | "disconnected",
 	isDataStale: false,
 	isLoading: false,
 	perpStateStatus: "success",
@@ -170,6 +171,7 @@ vi.mock("@/hooks/wallet/use-wallet-session", () => ({
 	useWalletSession: () => ({
 		hasWalletAccess: testState.hasWalletAccess,
 		isConnected: testState.isConnected,
+		sessionMode: testState.sessionMode,
 		walletAddress: "0x1111111111111111111111111111111111111111",
 	}),
 }));
@@ -256,6 +258,7 @@ describe("desktop account panel", () => {
 		testState.hasWalletAccess = true;
 		testState.hideFundsDisabledReasons = false;
 		testState.isConnected = true;
+		testState.sessionMode = "wallet";
 		testState.isDataStale = false;
 		testState.isLoading = false;
 		testState.perpStateStatus = "success";
@@ -360,12 +363,22 @@ describe("desktop account panel", () => {
 		},
 	);
 
-	it("keeps Agent-only sessions on the connected overview with their funding guards", () => {
+	it("keeps Agent-only funds actions visible, disabled and explained on the connected overview", () => {
+		const agentOnlyReason =
+			"This phone uses a desktop-approved trading key. Deposits, withdrawals and transfers need the master wallet on desktop.";
 		testState.hasWalletAccess = false;
+		testState.sessionMode = "agent-only";
+		testState.depositAvailable = false;
+		testState.depositUnavailableReason = agentOnlyReason;
 		renderPanel();
 		expect(container.querySelector('[data-slot="disconnected-account-overview"]')).toBeNull();
 		expect(getMetricRowText(container, "Account Value")).toContain("$115.75");
-		expect(container.textContent).toContain("Deposits and withdrawals are not allowed.");
+		expect(container.textContent).not.toContain("Deposits and withdrawals are not allowed.");
+		expect(container.querySelector('[data-slot="account-panel-actions"] output')?.textContent).toBe(agentOnlyReason);
+		expectActionDisabled(findButton(container, "Deposit"));
+		expectActionDisabled(findButton(container, "Withdraw"));
+		act(() => findButton(container, "Deposit").click());
+		act(() => findButton(container, "Withdraw").click());
 		expect(modalActions.openDeposit).not.toHaveBeenCalled();
 	});
 

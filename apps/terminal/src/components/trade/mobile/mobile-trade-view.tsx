@@ -71,6 +71,7 @@ import {
 	usesTriggerPrice as usesTriggerPriceForOrder,
 } from "@/lib/trade/order-types";
 import { getOrderValidationPresentation, isInlineTpSlValidationError } from "@/lib/trade/order-validation-presentation";
+import { AGENT_ONLY_OWNER_APPROVAL_MESSAGE } from "@/lib/trade/owner-approval-message";
 import { getTpSlCollateralSymbol } from "@/lib/trade/tpsl";
 import type { ButtonContent, Side, SizeMode } from "@/lib/trade/types";
 import { perpInput, spotInput, useOrderValidation } from "@/lib/trade/use-order-validation";
@@ -152,7 +153,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 	const { formatPrice, formatSlippageBps, formatToken, formatUSD } = numberFormat;
 	const { t } = useLingui();
 	const validationErrorId = useId();
-	const { address, isConnected, hasWalletAccess } = useWalletSession();
+	const { address, isConnected, hasWalletAccess, sessionMode } = useWalletSession();
 	const { data: connectionWalletClient } = useConnectionWalletClient();
 	const depositAvailability = useDepositAvailability();
 
@@ -178,6 +179,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 	const isWalletLoading = isConnected && signerMode === "owner" && isSignerLoading;
 	const { authorize, status: registerStatus } = useTradingAuthorization({ requiresBuilderFee });
 	const canApprove = hasWalletAccess && !!address && (signerMode === "owner" || !!connectionWalletClient);
+	const ownerApprovalReason = sessionMode === "agent-only" ? t(AGENT_ONLY_OWNER_APPROVAL_MESSAGE) : null;
 	const isRegistering =
 		registerStatus === "approving_fee" || registerStatus === "approving_agent" || registerStatus === "verifying";
 	const isApprovalLoading = isSignerReady ? requiresBuilderFee && isBuilderFeeLoading : isSignerLoading;
@@ -789,6 +791,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 		canSubmit: validation.canSubmit && !isAvailabilityBlocked,
 		isRegistering,
 		canApprove,
+		approvalUnavailableReason: ownerApprovalReason,
 		isSubmitting,
 		side,
 		sideLabel: sideLabels[side],
@@ -1197,6 +1200,7 @@ interface MobileButtonContentInput {
 	canSubmit: boolean;
 	isRegistering: boolean;
 	canApprove: boolean;
+	approvalUnavailableReason?: string | null;
 	isSubmitting: boolean;
 	side: Side;
 	sideLabel: string;
@@ -1238,6 +1242,7 @@ export function getMobileOrderButtonContent(input: MobileButtonContentInput): Bu
 			text: input.isRegistering ? input.labels.signing : input.labels.enableTrading,
 			action: input.onApprove,
 			disabled: input.isRegistering || input.isApprovalLoading || !input.canApprove || input.tradingBlocked === true,
+			disabledReason: input.canApprove ? undefined : (input.approvalUnavailableReason ?? undefined),
 			variant: "cyan",
 		};
 	}

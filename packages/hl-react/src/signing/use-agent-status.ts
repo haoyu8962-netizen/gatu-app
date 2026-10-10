@@ -9,6 +9,7 @@ import { cleanupAgentRegistrationIfMatches } from "./agent-registration-session"
 import { readAgentFromStorage, useAgentWalletStorage, useInvalidAgentStorageRecord } from "./agent-storage";
 import { isBuilderFeeApproved } from "./agent-utils";
 import { isStoredMobileAgent, type MobileAgentStaleReason, verifyMobileAgent } from "./mobile-agent";
+import { notifyMobileAgentEnded } from "./mobile-agent-events";
 import { useHyperliquidOwnerSigner } from "./owner-signer-provider";
 import type { AgentWallet, BuilderConfig } from "./types";
 
@@ -416,7 +417,12 @@ export function useAgentStatus(options: { enableAgent?: boolean } = {}): UseAgen
 				? ({ kind: "public-key", publicKey: localAgent.publicKey } as const)
 				: null;
 		if (!target) return;
-		void cleanupAgentRegistrationIfMatches(env, address, target);
+		const reason = staleMobileReason;
+		void cleanupAgentRegistrationIfMatches(env, address, target).then((result) => {
+			if (result.status === "cleaned" && target.kind === "public-key") {
+				notifyMobileAgentEnded({ env, owner: address, reason });
+			}
+		});
 	}, [address, enableAgent, env, hasInvalidStorageRecord, localAgent, staleMobileReason]);
 
 	const nowMs = Date.now();

@@ -249,17 +249,22 @@ export {
 	type ExpectedMobileAgent,
 	type ExpectedMobileAgentVerification,
 	getMobileAgentNameBase,
+	getMobileAgentSlotState,
+	getNextMobileAgentSlotChange,
 	isMobileAgentName,
 	isStoredMobileAgent,
 	MOBILE_AGENT_NAME_BASE,
 	MOBILE_AGENT_VALIDITY_MS,
 	type MobileAgentApproval,
+	type MobileAgentSlotState,
 	type MobileAgentStorageMetadata,
 	type MobileAgentVerification,
+	NAMED_AGENT_DOCUMENTED_LIMIT,
 	shouldClearMobileAgent,
 	verifyExpectedMobileAgent,
 	verifyMobileAgent,
 } from "./signing/mobile-agent";
+export { type MobileAgentEndedEvent, subscribeMobileAgentEnded } from "./signing/mobile-agent-events";
 export {
 	type HyperliquidOwnerSigner,
 	HyperliquidOwnerSignerProvider,
