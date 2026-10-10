@@ -359,6 +359,10 @@ observed gas-only responses without Paymaster data on the default route even
 after adding the required contract policy; the same project's explicit
 `?provider=PIMLICO` route returned Paymaster data through both standard
 `pm_getPaymasterStubData` and `pm_getPaymasterData` preparation calls.
+The operator subsequently reported a successful real deposit on the unchanged
+production frontend; a read-only UI check confirmed credited account value and
+cleared pending records. The task record distinguishes that acceptance from
+an independently captured source receipt or production-capacity verification.
 
 The repair goal is to restore the existing Privy Smart Wallet submission path
 through dashboard routing, preserving the project, chain, narrow policy and
