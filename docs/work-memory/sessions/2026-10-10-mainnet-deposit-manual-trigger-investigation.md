@@ -7,7 +7,7 @@
   "kind": "task",
   "status": "recorded",
   "topics": ["account-funding"],
-  "summary": "用户要求先核对为何转入 USDC 后仍需点击 Deposit。确认 0c72fa857（2026-08-14，Git 作者与提交者 Mark）同时将自动转入限定为测试网、加入主网手动按钮和执行层拒绝自动请求的守卫；6140b378 后补两步说明。线上 p28/d74dd616 与排查基线 a310ade1 都有此限制，主网赞助开关已开。4 个相关测试文件 284 项通过；未真实充值，也未取得原始授权对话或具体 agent 身份。后续自动流程修复另有记录；同日复核线上 Important 提醒是固定网络/资产说明，红色来自样式而非交易失败；文案由 783f50f0 调整，线上仍为 p28，尚不含本地 068f7cb2 修复。",
+  "summary": "用户要求核对为何转入 USDC 后仍需点击 Deposit。0c72fa857（Git 署名 Mark）引入主网手动限制；修复另有记录。线上 p28/d74dd616 尚不含本地 068f7cb2。Important 是固定网络/资产提醒，不是报错。用户随后报告 Another Circle CCTP deposit 长时间拦截；经其指定内置浏览器，只读确认存在未到期 submission-unresolved 授权、无源交易跟踪记录，链上源钱包余额仍在且授权未使用。该文案混用了待转发交易和无哈希未知提交两种状态；原始提交失败响应缺失，未认定具体钱包/Bundler/Paymaster 故障。未清除记录、重签、广播或发布。",
   "thread": null,
   "baseCommit": "a310ade18291e86617021a44a00c07710844965c",
   "commits": ["0c72fa857687ffb789328ebeac8b2567044dd7f5", "6140b3784d9d519638c7f26e1b7c67f4ad0e5268", "783f50f0d84cd7016677ceb657b55282728c7c45", "068f7cb24904935ebe2018118bed11f95e13180c"],
@@ -86,3 +86,17 @@
 - `068f7cb2` 保留了这条固定网络提醒；恢复自动存款不意味着提示消失。应用代码及 `docs/cctp-deposits.md` 把它定义为充值入口说明，不是某笔资金状态的证据。
 
 本次验证限于发布元数据、对应 Git 源码、历史 diff 和既有测试断言的阅读。没有登录或操作线上钱包，没有核对个人交易、运行新的应用测试或执行发布。记录追加后，`pnpm memory:index`、`pnpm memory:check`、`pnpm memory:test`（8/8）及 `git diff --check` 全部通过，环境为 Node `22.15.0`、pnpm `10.21.0`；这些是记录维护检查，不是新的应用功能验收。
+
+## 同日后续：另一笔 CCTP 存款待处理的实际拦截
+
+用户补充「Another Circle CCTP deposit is still pending for this account…」，并说明持续很久、一直无法入账。本轮基线为干净的 `5919efe8`。用户明确指定「直接检查当前内置浏览器」后，才读取已有生产页面；未在其他浏览器重建会话。账户地址、金额、授权 nonce 及具体账户请求不写入仓库。
+
+- 线上版本再次核对仍为 p28 / `d74dd616`。该版本 `use-deposit.ts` 1229–1238 行将两个情况映射到同一句提示：存在源链交易跟踪记录；或 smart 模式存在尚未过期的 `CctpSponsoredAuthorizationIntent`。检查发生在新签名与广播前，不能把文案理解为 Circle 返回了该笔交易仍在处理的状态。
+- 页面只读证据：只存在一份 `submission-unresolved` 授权意向，没有 source-submitted 跟踪记录或源交易哈希；该意向创建约 41 分钟，观察时仍在有效期内。它在 `smartClient.sendTransaction` 之前写入；未返回哈希的异常、未知结果或页面中断会保留它。因此定位到的直接拦截原因是未知提交的本地授权保护，而非已证明 CCTP 转发很慢。
+- 通过代码配置的 Arbitrum 公共 RPC，在同一块 `513507793`（2026-10-10 12:07:09 UTC）只读查询原生 USDC `balanceOf` 与 `authorizationState`：源钱包余额仍与待存款金额一致，授权状态为 false。该授权在查询时未被使用/取消，不能由此断言仍有效的签名以后不会执行。未发起链上写入。
+- `CCTP_AUTHORIZATION_WINDOW_SECONDS` 为 3,600；`readCctpSponsoredAuthorizationIntent` 在下次读取发现 `validBefore` 已到时删除过期意向。保留中的源交易记录则走独立恢复流程，不适用一小时授权过期规则；不得笼统承诺一小时后所有待处理存款都会解除。
+- 正常恢复会先核对源链精确事件，再查询 Circle。纯意向没有源哈希，当前恢复 Hook 无法按源哈希跟踪它；没有实现按该意向主动查找源交易的恢复。现有提示也没有区分这两种情况或显示授权到期时间。这些是代码能力与呈现的事实，不是本轮已实施的修复。
+- 原始提交的异常未保留在当前可读取的页面日志；当前页面资源状态不能反推旧提交失败原因。因此无法认定具体 Privy、Bundler、Paymaster 策略、RPC 或网络故障。已为该页启用只读 Network 调试观察，便于用户后续操作时核对失败响应；没有让 agent 点击 Deposit、清除存储或生成新授权。
+- 提交历史：待处理拦截始于 `209471a0`，`69b10403` 加入当前记录检查和 sponsored intent 分支，Git 均署名 Mark；`eaa6567f` 后续替换为本地化错误类型。它们与主网自动执行限制的 `0c72fa857` 不同，自动流程修复保留这些去重/未知结果保护。
+
+本轮只追加诊断记录及索引，不修改应用逻辑；尚未复现并取得最初无哈希提交的错误响应，也未证明资金已进入 HyperCore。下一步由用户在旧授权失效后操作存款，观察具体失败响应或交易哈希；失败原因确认前不以清空记录或删除保护作为修复。`pnpm memory:index`、`pnpm memory:check`、`pnpm memory:test`（8/8）及 `git diff --check` 通过；未重跑应用测试或构建，因为应用代码未变。
