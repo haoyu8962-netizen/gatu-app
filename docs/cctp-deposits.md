@@ -336,6 +336,12 @@ client build variable, or copied into this document.
 
 ## Paymaster Production Policy
 
+Resolve the active Arbitrum Smart Wallet Bundler and Paymaster URLs from the
+deployed Privy app configuration before checking ZeroDev. A migrated app can
+point to a different project than a previously inspected dashboard. A nonempty
+Paymaster URL, enabled CCTP build flag, or registered contract ABI does not prove
+that sponsorship is available; the active project needs an applicable policy.
+
 The ZeroDev project used by the sponsored mainnet path must not sponsor every
 transaction. Before any mainnet candidate, disable `Sponsor all transactions`
 and restrict the Arbitrum One Contract Policy to the mainnet `CctpExtensionV2`
@@ -344,6 +350,26 @@ proxy `0x3289e443a95B28Bcedacc4B33C689b0C9b84ffAB` and
 in depth for gas sponsorship; it does not limit the amount of USDC covered by
 an EIP-3009 authorization and does not replace the exact-owner, amount, fee and
 recovery checks above.
+
+The Bundler and Paymaster must use compatible provider routes. ZeroDev supports
+an explicit provider query and recommends the same provider for both URLs
+([RPC documentation](https://docs.zerodev.app/api-and-toolings/infrastructure/rpcs)).
+The [2026-10-10 investigation](work-memory/sessions/2026-10-10-zerodev-deposit-sponsorship-policy.md)
+observed gas-only responses without Paymaster data on the default route even
+after adding the required contract policy; the same project's explicit
+`?provider=PIMLICO` route returned Paymaster data through both standard
+`pm_getPaymasterStubData` and `pm_getPaymasterData` preparation calls.
+
+The repair goal is to restore the existing Privy Smart Wallet submission path
+through dashboard routing, preserving the project, chain, narrow policy and
+approved budget. It does not require an SDK fork, a self-funded gas fallback,
+or relaxed authorization guards. Apply the same explicit route to both
+Arbitrum URLs only after operator approval. Verify the saved public app
+configuration and a fresh client's standard Paymaster preparation; then obtain
+a user-submitted source confirmation and final HyperCore credit. An unsigned
+zero-balance probe exercises the contract's skip path, so it cannot validate
+actual USDC burn cost, the chosen gas budget, or successful credit. `AA21`
+alone does not identify a billing, quota, or CCTP feature-flag problem.
 
 Project and contract request, per-transaction gas, aggregate gas, and gas-price
 limits must be sized from observed production and canary traffic rather than
