@@ -90,7 +90,6 @@ export function FundsFormsFixture() {
 							networkName="Arbitrum"
 							sponsoredCctpEnabled
 							sponsoredCctpReadiness={{ status: "ready", failure: null, retry: noop }}
-							requiresExplicitFundingDeposit={email}
 							cctpFee="0.2"
 							minimumDepositRaw={400_000n}
 							belowMinimumDepositRaw={null}

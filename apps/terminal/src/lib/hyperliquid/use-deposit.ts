@@ -40,6 +40,7 @@ import { useFreshLegalActionGuard } from "@/hooks/trade/use-fresh-legal-action-g
 import { useAssertFreshDepositRoute } from "@/hooks/trade/use-usdc-routing";
 import { useGeoRestriction } from "@/hooks/use-geo-restriction";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
+import { reportClientError } from "@/lib/error-reporting/client";
 import { createActionError } from "@/lib/errors/action-error";
 import { LocalizedActionError } from "@/lib/errors/localized-action-error";
 import {
@@ -1159,12 +1160,8 @@ export function useDeposit({
 					);
 				}
 				const amountRaw = parseUnits(amount, USDC_DECIMALS);
-				if (network === "mainnet" && mode === "smart") {
-					if (
-						executionScope !== "manual" ||
-						review?.expectedBalanceRaw === undefined ||
-						review.expectedCctpMaxFeeRaw === undefined
-					) {
+				if (network === "mainnet" && mode === "smart" && executionScope === "manual") {
+					if (review?.expectedBalanceRaw === undefined || review.expectedCctpMaxFeeRaw === undefined) {
 						throw new LocalizedActionError(msg`This confirmation is required before finishing.`);
 					}
 					if (amountRaw !== review.expectedBalanceRaw) {
@@ -1236,14 +1233,16 @@ export function useDeposit({
 					}
 					if (mode === "smart" && readCctpSponsoredAuthorizationIntent(cctpTrackingEnv, ready.address)) {
 						throw new LocalizedActionError(
-							msg`Another Circle CCTP deposit is still pending for this account. Wait for it to finish before submitting another deposit.`,
+							msg`A previous deposit authorization is still active, but its submission could not be confirmed. Another deposit is blocked until that authorization is resolved or expires.`,
 						);
 					}
 					assertCctpDepositTrackingStorageWritable(cctpTrackingEnv, ready.address);
+					const lockedBalanceRaw =
+						review?.expectedBalanceRaw ?? (mode === "smart" && executionScope === "automatic" ? amountRaw : undefined);
 					async function assertReviewedBalanceUnchanged() {
-						if (review?.expectedBalanceRaw === undefined) return;
+						if (lockedBalanceRaw === undefined) return;
 						const freshBalanceRaw = await readDepositUsdcBalance(cctpDepositConfig, ready.address);
-						if (amountRaw !== review.expectedBalanceRaw || freshBalanceRaw !== review.expectedBalanceRaw) {
+						if (amountRaw !== lockedBalanceRaw || freshBalanceRaw !== lockedBalanceRaw) {
 							throw new LocalizedActionError(msg`Available amount is not verified`);
 						}
 					}
@@ -1310,6 +1309,7 @@ export function useDeposit({
 					await assertReviewedBalanceUnchanged();
 					await assertFreshSelectedDepositRoute();
 					if (provider) await assertDepositChainStillActive(provider, cctpDepositConfig);
+					if (executionScope === "automatic") await verifyFreshLegalAction({ env: cctpTrackingEnv });
 					const authorizationSignature = await ready.walletClient.signTypedData({
 						account: ready.address,
 						...parameters.typedData,
@@ -1492,6 +1492,16 @@ export function useDeposit({
 				}
 				refetch();
 			} catch (error) {
+				if (sponsoredSubmissionStarted || cctpTrackingRecord) {
+					try {
+						reportClientError(error, {
+							kind: "deposit_submission",
+							depositStage: cctpTrackingRecord ? "source_confirmation" : "before_source_hash",
+						});
+					} catch {
+						// Diagnostics must never prevent settlement or replace the original deposit failure.
+					}
+				}
 				if (cctpTrackingRecord && isDefinitiveDepositSourceFailure(error)) {
 					try {
 						removeCctpDepositTrackingRecord(

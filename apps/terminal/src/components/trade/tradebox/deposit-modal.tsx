@@ -1290,7 +1290,9 @@ export function DepositModal({ onSurfaceChange }: Props) {
 				description: (
 					<span className="flex flex-col gap-1">
 						<span>
-							{t`The Arbitrum transaction was submitted, but its final status could not be verified. Check the transaction before retrying.`}
+							{hasSubmittedDeposit
+								? t`The Arbitrum transaction was submitted, but its final status could not be verified. Check the transaction before retrying.`
+								: t`The wallet did not return a transaction hash, so the deposit could not be confirmed. A signed authorization may still be active. Check your wallet activity before retrying.`}
 						</span>
 						{explorerLink}
 					</span>
@@ -1487,7 +1489,6 @@ export function DepositModal({ onSurfaceChange }: Props) {
 							? t`CCTP deposits are awaiting funded end-to-end verification for this network.`
 							: null)
 					}
-					requiresExplicitFundingDeposit={isEmbeddedDeposit && !isTestnet}
 					cctpFee={cctpDepositFee}
 					minimumDepositRaw={cctpDepositMinimumRaw}
 					belowMinimumDepositRaw={cctpDepositBelowMinimumRaw}

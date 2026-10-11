@@ -94,6 +94,53 @@ describe("client error report privacy", () => {
 		expect(serialized).not.toContain(PRIVATE_KEY);
 	});
 
+	it.each([
+		["Paymaster policy rejected sponsored call", "paymaster"],
+		["Bundler response was interrupted", "bundler"],
+		["AA25 invalid account nonce", "nonce_conflict"],
+		["User rejected request", "wallet_rejected"],
+		["Failed to fetch", "network"],
+		["Request timed out", "timeout"],
+		["Unrecognized failure", "unknown"],
+	])("classifies nested deposit errors without retaining private payloads: %s", (message, reason) => {
+		const error = new Error("Transaction could not be sent", {
+			cause: new Error(`${message}; wallet=${WALLET_ADDRESS}; signature=${PRIVATE_KEY}`),
+		});
+		const report = createClientErrorReport(error, {
+			kind: "deposit_submission",
+			depositStage: "before_source_hash",
+			pathname: "/portfolio",
+			origin: "https://sairn.ai",
+		});
+		expect(report.depositReason).toBe(reason);
+		expect(parseClientErrorReport(report)).toEqual(report);
+		expect(parseClientErrorReport({ ...report, depositReason: "private_payload" })).toBeNull();
+		expect(parseClientErrorReport({ ...report, depositStage: "private_payload" })).toBeNull();
+		expect(parseClientErrorReport({ ...report, kind: "window_error" })).toBeNull();
+		expect(parseClientErrorReport({ ...report, depositReason: undefined })).toBeNull();
+		expect(JSON.stringify(report)).not.toContain(WALLET_ADDRESS);
+		expect(JSON.stringify(report)).not.toContain(PRIVATE_KEY);
+		expect(JSON.stringify(report)).not.toContain(message);
+	});
+
+	it("bounds cyclic or throwing deposit error causes", () => {
+		const error = new Error("opaque error");
+		error.cause = error;
+		const options = {
+			kind: "deposit_submission",
+			depositStage: "source_confirmation",
+			pathname: "/",
+			origin: "https://sairn.ai",
+		} as const;
+		expect(createClientErrorReport(error, options).depositReason).toBe("unknown");
+		Object.defineProperty(error, "cause", {
+			get() {
+				throw new Error("private getter");
+			},
+		});
+		expect(createClientErrorReport(error, options).depositReason).toBe("unknown");
+	});
+
 	it("keeps the legal status reason vocabulary explicit and bounded", () => {
 		expect(LEGAL_STATUS_CHECK_REASONS).toEqual([
 			"invalid_response",
@@ -193,6 +240,19 @@ describe("client error transport", () => {
 		expect(body).not.toContain(PRIVATE_KEY);
 	});
 
+	it("reports caught deposit failures through the existing sanitized transport", async () => {
+		const { reportClientError } = await import("@/lib/error-reporting/client");
+		const error = new Error("Smart wallet transaction failed", { cause: new Error(`Paymaster error ${PRIVATE_KEY}`) });
+		expect(reportClientError(error, { kind: "deposit_submission", depositStage: "before_source_hash" })).toBe(true);
+		const [, init] = vi.mocked(fetch).mock.calls[0] ?? [];
+		expect(JSON.parse(String(init?.body))).toMatchObject({
+			kind: "deposit_submission",
+			depositStage: "before_source_hash",
+			depositReason: "paymaster",
+		});
+		expect(String(init?.body)).not.toContain(PRIVATE_KEY);
+	});
+
 	it("limits client reports to five per minute", async () => {
 		const { reportClientError } = await import("@/lib/error-reporting/client");
 
@@ -203,6 +263,8 @@ describe("client error transport", () => {
 				reportClientError(error, { kind, fallbackReason: "snapshot_timeout" });
 			} else if (kind === "legal_status_check") {
 				reportClientError(error, { kind, legalReason: "network" });
+			} else if (kind === "deposit_submission") {
+				reportClientError(error, { kind, depositStage: "before_source_hash" });
 			} else {
 				reportClientError(error, { kind });
 			}

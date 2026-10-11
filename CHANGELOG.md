@@ -12,8 +12,8 @@ changes, not evidence that a build has been deployed or accepted on real devices
   separate choices, as on the official terminal: transfer USDC on Arbitrum, or buy USDC by card or
   bank transfer through Privy's payment providers (the amount is prefilled with 100 US dollars and
   can be changed). The USDC goes only to your own trading wallet on Arbitrum (your email wallet, or
-  the external wallet you are connected with), and you then deposit it as usual; external wallets
-  need a little Arbitrum ETH for that step. Notifications say a purchase was confirmed, is still
+  the external wallet you are connected with), and the active email session deposits it automatically.
+  External wallets deposit manually and need a little Arbitrum ETH for that step. Notifications say a purchase was confirmed, is still
   processing or has an unknown status (the last two stay until you dismiss them), never that USDC
   has arrived; they are shown only to the account and network that made the purchase and follow
   the interface language. On Testnet the purchase is a provider sandbox test, and its notification
@@ -549,6 +549,22 @@ changes, not evidence that a build has been deployed or accepted on real devices
   says so, together with the expiry date and the desktop revoke path.
 
 ### Fixed
+
+- A sponsored deposit that returns no transaction hash now says its submission is unconfirmed,
+  instead of claiming an Arbitrum transaction was submitted. An active unresolved authorization
+  has a separate retry-blocking message from an actual pending CCTP transfer. Submission errors
+  are recorded through the existing sanitized diagnostic channel before the dialog resets;
+  authorization expiry and duplicate-deposit protection remain in place.
+
+- Email wallets now automatically deposit eligible Arbitrum USDC into the trading account on
+  Mainnet while the app is running, matching the existing Testnet flow. The funding dialog
+  explains automatic deposits and no longer asks for a second Deposit click. Exact-wallet,
+  current fee, duplicate-submission and recovery checks remain in place, and the automatic
+  deposit re-reads the wallet balance right before signing and before broadcasting, so a
+  transfer that arrives mid-attempt is deposited in full on the next attempt instead of
+  leaving a remainder behind. It checks your legal status before signing, and when the
+  wallet returns no transaction hash, or a submitted transaction cannot be confirmed, the
+  notification says the status is unknown instead of reporting a failure.
 
 - Link mobile device (still off in production builds): a phone linked from an owner that had never
   approved the builder fee could not place orders or close positions, showing a dead "Enable

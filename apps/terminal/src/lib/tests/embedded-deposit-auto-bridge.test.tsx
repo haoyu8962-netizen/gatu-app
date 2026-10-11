@@ -11,7 +11,6 @@ import { UsdcDepositRouteError } from "@/hooks/trade/use-usdc-routing";
 import { LocalizedActionError } from "@/lib/errors/localized-action-error";
 
 const USER_ADDRESS = "0x1111111111111111111111111111111111111111" as const;
-const NOTIFICATION_ID = expect.stringMatching(new RegExp(`^embedded-cctp-auto-deposit:Testnet:${USER_ADDRESS}:\\d+$`));
 const HASH = "0x0000000000000000000000000000000000000000000000000000000000000001" as const;
 const DEPOSIT_ROUTE_CHANGED =
 	"The Hyperliquid deposit route changed before signing. Review the updated route and retry.";
@@ -51,6 +50,8 @@ const testState = vi.hoisted(() => ({
 	toastError: vi.fn(),
 	toastLoading: vi.fn(),
 	toastSuccess: vi.fn(),
+	toastWarning: vi.fn(),
+	submissionOutcomeUnknown: false,
 	useDepositOptions: null as null | Record<string, unknown>,
 	trackingOptions: null as null | Record<string, unknown>,
 	trackingRecoveryRecord: null as null | { sourceHash: `0x${string}` },
@@ -81,6 +82,7 @@ vi.mock("sonner", () => ({
 		error: testState.toastError,
 		loading: testState.toastLoading,
 		success: testState.toastSuccess,
+		warning: testState.toastWarning,
 	},
 }));
 
@@ -173,6 +175,7 @@ vi.mock("@/lib/hyperliquid/use-deposit", () => ({
 			status: testState.depositStatus,
 			error: testState.depositError,
 			hash: testState.depositHash,
+			submissionOutcomeUnknown: testState.submissionOutcomeUnknown,
 			deposit: testState.deposit,
 			refreshBalance: testState.refreshBalance,
 			reset: testState.resetDeposit,
@@ -182,7 +185,11 @@ vi.mock("@/lib/hyperliquid/use-deposit", () => ({
 	},
 }));
 
-describe("EmbeddedDepositAutoBridge", () => {
+describe.each([
+	{ env: "Mainnet", isTestnet: false },
+	{ env: "Testnet", isTestnet: true },
+])("EmbeddedDepositAutoBridge on $env", ({ env, isTestnet }) => {
+	const NOTIFICATION_ID = expect.stringMatching(new RegExp(`^embedded-cctp-auto-deposit:${env}:${USER_ADDRESS}:\\d+$`));
 	let container: HTMLDivElement;
 	let root: Root;
 
@@ -206,11 +213,13 @@ describe("EmbeddedDepositAutoBridge", () => {
 		testState.toastError.mockReset();
 		testState.toastLoading.mockReset();
 		testState.toastSuccess.mockReset();
+		testState.toastWarning.mockReset();
+		testState.submissionOutcomeUnknown = false;
 		testState.depositError = null;
 		testState.depositHash = undefined;
 		testState.depositModalOpen = false;
 		testState.depositStatus = "idle";
-		testState.isTestnet = true;
+		testState.isTestnet = isTestnet;
 		testState.maxDepositRaw = 9_000_000n;
 		testState.routingData = { depositRoute: "cctp", withdrawalRoute: "cctp" };
 		testState.routingIsError = false;
@@ -280,22 +289,15 @@ describe("EmbeddedDepositAutoBridge", () => {
 		expect(testState.deposit).toHaveBeenCalledWith("9");
 	});
 
-	it("never initiates a mainnet deposit from the application-wide recovery host", async () => {
-		testState.isTestnet = false;
-
+	it("automatically deposits without opening the modal and retains scoped recovery", async () => {
 		await act(async () => {
 			root.render(createElement(EmbeddedDepositAutoBridge));
 		});
-
-		expect(testState.routingQueryEnabled).toBe(false);
-		expect(testState.useDepositOptions).toMatchObject({ balanceEnabled: false });
-		expect(testState.refreshBalance).not.toHaveBeenCalled();
-		expect(testState.deposit).not.toHaveBeenCalled();
-		expect(testState.trackingOptions).toMatchObject({
-			enabled: true,
-			env: "Mainnet",
-			owner: USER_ADDRESS,
-		});
+		expect(testState.routingQueryEnabled).toBe(true);
+		expect(testState.useDepositOptions).toMatchObject({ balanceEnabled: true, executionScope: "automatic" });
+		expect(testState.refreshBalance).toHaveBeenCalledOnce();
+		expect(testState.deposit).toHaveBeenCalledExactlyOnceWith("9");
+		expect(testState.trackingOptions).toMatchObject({ enabled: true, env, owner: USER_ADDRESS });
 	});
 
 	it("releases an aborted development attempt before the StrictMode effect replay", async () => {
@@ -320,7 +322,7 @@ describe("EmbeddedDepositAutoBridge", () => {
 		expect(testState.routingQueryEnabled).toBe(false);
 		expect(testState.trackingOptions).toMatchObject({
 			enabled: true,
-			env: "Testnet",
+			env,
 			owner: USER_ADDRESS,
 			removeOnForwardSubmitted: true,
 		});
@@ -545,6 +547,44 @@ describe("EmbeddedDepositAutoBridge", () => {
 		expect(testState.toastError.mock.calls.flat().join(" ")).not.toContain("callData");
 	});
 
+	it("shows a persistent unknown-status warning when the sponsored submission returned no hash", async () => {
+		testState.depositStatus = "error";
+		testState.depositError = new Error("RPC Request failed. Details: AA21 didn't pay prefund");
+		testState.submissionOutcomeUnknown = true;
+
+		await act(async () => {
+			root.render(createElement(EmbeddedDepositAutoBridge));
+		});
+
+		expect(testState.toastWarning).toHaveBeenCalledWith(
+			"Deposit status unknown",
+			expect.objectContaining({
+				id: NOTIFICATION_ID,
+				description: expect.stringContaining("did not return a transaction hash"),
+				duration: Number.POSITIVE_INFINITY,
+				closeButton: true,
+			}),
+		);
+		expect(testState.toastError).not.toHaveBeenCalled();
+		expect(testState.deposit).not.toHaveBeenCalled();
+	});
+
+	it("shows a persistent unknown-status warning when a submitted deposit could not be confirmed", async () => {
+		testState.depositStatus = "error";
+		testState.depositError = new Error("receipt lookup failed");
+		testState.depositHash = "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef";
+
+		await act(async () => {
+			root.render(createElement(EmbeddedDepositAutoBridge));
+		});
+
+		expect(testState.toastWarning).toHaveBeenCalledWith(
+			"Deposit status unknown",
+			expect.objectContaining({ id: NOTIFICATION_ID, description: expect.stringContaining("was submitted") }),
+		);
+		expect(testState.toastError).not.toHaveBeenCalled();
+	});
+
 	it("localizes typed deposit-route failures instead of exposing their fixed English message", async () => {
 		i18n.loadAndActivate({ locale: "ar", messages: arabicMessages });
 		testState.depositStatus = "error";
@@ -655,7 +695,7 @@ describe("EmbeddedDepositAutoBridge", () => {
 
 		testState.depositStatus = "idle";
 		if (change === "account") testState.owner = "0x2222222222222222222222222222222222222222";
-		if (change === "network") testState.isTestnet = false;
+		if (change === "network") testState.isTestnet = !isTestnet;
 		if (change === "disconnect") testState.walletIntent = "unavailable";
 		await act(async () => root.render(change === "unmount" ? null : createElement(EmbeddedDepositAutoBridge)));
 		expect(testState.toastDismiss).toHaveBeenCalledWith(NOTIFICATION_ID);

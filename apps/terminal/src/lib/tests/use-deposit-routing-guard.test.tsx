@@ -1,5 +1,7 @@
 // @vitest-environment jsdom
 
+import { i18n } from "@lingui/core";
+import { I18nProvider } from "@lingui/react";
 import { getFundsActionLockName } from "@sairn/hl-react/internal/exchange/funds-action-lock";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, createElement, StrictMode } from "react";
@@ -13,6 +15,7 @@ import {
 	type TransactionReceipt,
 } from "viem";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { EmbeddedDepositAutoBridge } from "@/components/trade/tradebox/embedded-deposit-auto-bridge";
 import { CCTP_DEPOSIT_NETWORKS } from "@/config/cctp-deposit";
 import { useCctpDepositTracking } from "@/hooks/trade/use-cctp-deposit-tracking";
 import { LocalizedActionError } from "@/lib/errors/localized-action-error";
@@ -30,6 +33,8 @@ const WALLET_ADDRESS = "0x1111111111111111111111111111111111111111" as const;
 const SECOND_WALLET_ADDRESS = "0x2222222222222222222222222222222222222222" as const;
 const PERMIT_SIGNATURE = `0x${"0".repeat(128)}1b` as const;
 const SOURCE_HASH = `0x${"1".repeat(64)}` as Hash;
+const reportClientError = vi.hoisted(() => vi.fn());
+vi.mock("@/lib/error-reporting/client", () => ({ reportClientError }));
 
 function createSponsoredCctpReceipt(
 	authNonce: Hex,
@@ -86,6 +91,9 @@ function stubSuccessfulCctpCapacity(balanceRaw = 5_000_000n, balanceBeforeSubmis
 				const currentBalanceRaw = balanceRequestCount === 0 ? balanceRaw : balanceBeforeSubmissionRaw;
 				balanceRequestCount += 1;
 				return new Response(JSON.stringify({ result: `0x${currentBalanceRaw.toString(16)}` }), { status: 200 });
+			}
+			if (body?.method === "eth_getTransactionReceipt") {
+				return new Response(JSON.stringify({ result: null }), { status: 200 });
 			}
 			if (String(input).includes("/fastBurn/USDC/allowance")) {
 				return new Response(JSON.stringify({ allowance: 1_000_000 }), { status: 200 });
@@ -157,7 +165,7 @@ vi.mock("@sairn/hl-react", () => ({
 		info: { legalCheck: vi.fn(), usdcRouting: testState.fetchRouting },
 		sessionMode: "wallet",
 	}),
-	useInfo: vi.fn(),
+	useInfo: vi.fn(() => ({ data: testState.routingResponse, isError: false, isFetching: false })),
 	verifyLegalActionAllowed: (options: unknown) => testState.verifyLegalAction(options),
 }));
 
@@ -170,7 +178,23 @@ vi.mock("@privy-io/react-auth/smart-wallets", () => ({
 }));
 
 vi.mock("@/hooks/wallet/use-wallet-session", () => ({
-	useWalletSession: () => ({ walletAddress: WALLET_ADDRESS }),
+	useWalletSession: () => ({
+		walletAddress: WALLET_ADDRESS,
+		embeddedWalletAddress: WALLET_ADDRESS,
+		walletIntent: "embedded",
+		user: { email: { address: "user@example.com" } },
+	}),
+}));
+
+vi.mock("@/hooks/wallet/use-email-embedded-wallet", () => ({
+	useEmailEmbeddedWallet: () => ({
+		emailAddress: "user@example.com",
+		embeddedWalletAddress: WALLET_ADDRESS,
+		shouldUseEmbeddedWallet: true,
+		needsEmbeddedWallet: false,
+		isCreatingEmbeddedWallet: false,
+		embeddedWalletError: null,
+	}),
 }));
 
 vi.mock("@/hooks/use-geo-restriction", () => ({
@@ -179,6 +203,10 @@ vi.mock("@/hooks/use-geo-restriction", () => ({
 
 vi.mock("@/stores/use-global-settings-store", () => ({
 	useIsTestnet: () => testState.isTestnet,
+}));
+
+vi.mock("@/stores/use-global-modal-store", () => ({
+	useDepositModalOpen: () => false,
 }));
 
 vi.mock("@/config/cctp-deposit", async (importOriginal) => {
@@ -211,6 +239,7 @@ describe("useDeposit fresh USDC route guard", () => {
 	let root: Root;
 
 	beforeEach(() => {
+		reportClientError.mockReset();
 		vi.clearAllMocks();
 		window.localStorage.clear();
 		testState.isTestnet = false;
@@ -1613,14 +1642,103 @@ describe("useDeposit fresh USDC route guard", () => {
 		expect(testState.smartSendTransaction).toHaveBeenCalledOnce();
 	});
 
-	it("rejects an automatic mainnet sponsored deposit at the execution boundary", async () => {
+	it("allows an automatic mainnet sponsored deposit without a manual review", async () => {
 		testState.routingResponse = { depositRoute: "cctp", withdrawalRoute: "cctp" };
+		stubSuccessfulCctpCapacity();
 
-		await submit("smart", "cctp", { expectedBalanceRaw: 5_000_000n, expectedCctpMaxFeeRaw: 200_000n }, "automatic");
+		await submit("smart", "cctp", null, "automatic");
+
+		expect(testState.permitSign).toHaveBeenCalledOnce();
+		expect(testState.smartSendTransaction).toHaveBeenCalledOnce();
+	});
+
+	it("verifies the owner's legal status before an automatic authorization is signed", async () => {
+		testState.routingResponse = { depositRoute: "cctp", withdrawalRoute: "cctp" };
+		stubSuccessfulCctpCapacity();
+		testState.verifyLegalAction.mockRejectedValue(
+			new Error("Hyperliquid access could not be verified before this action"),
+		);
+
+		await submit("smart", "cctp", null, "automatic");
+
+		expect(testState.verifyLegalAction).toHaveBeenCalledWith(
+			expect.objectContaining({ env: "Mainnet", forceFresh: true, owner: WALLET_ADDRESS }),
+		);
+		expect(testState.permitSign).not.toHaveBeenCalled();
+		expect(testState.smartSendTransaction).not.toHaveBeenCalled();
+		expect(capturedDeposit?.error?.message).toBe("Hyperliquid access could not be verified before this action");
+	});
+
+	it("aborts an automatic mainnet sponsored deposit before signing when the locked balance differs", async () => {
+		testState.routingResponse = { depositRoute: "cctp", withdrawalRoute: "cctp" };
+		stubSuccessfulCctpCapacity(6_000_000n);
+
+		await submit("smart", "cctp", null, "automatic");
 
 		expect(testState.permitSign).not.toHaveBeenCalled();
 		expect(testState.smartSendTransaction).not.toHaveBeenCalled();
-		expect(capturedDeposit?.error?.message).toContain("confirmation is required");
+		expect(capturedDeposit?.error?.message).toContain("amount is not verified");
+	});
+
+	it("does not broadcast an automatic mainnet deposit when the balance changes after signing", async () => {
+		testState.routingResponse = { depositRoute: "cctp", withdrawalRoute: "cctp" };
+		stubSuccessfulCctpCapacity(5_000_000n, 6_000_000n);
+
+		await submit("smart", "cctp", null, "automatic");
+
+		expect(testState.permitSign).toHaveBeenCalledOnce();
+		expect(testState.smartSendTransaction).not.toHaveBeenCalled();
+		expect(capturedDeposit?.error?.message).toContain("amount is not verified");
+	});
+
+	it("automatically submits a mainnet wallet balance through the real deposit hook without a modal or click", async () => {
+		testState.routingResponse = { depositRoute: "cctp", withdrawalRoute: "cctp" };
+		stubSuccessfulCctpCapacity();
+		testState.smartSendTransaction.mockImplementation(async ({ data }: { data: Hex }) => {
+			const decoded = decodeFunctionData({ abi: CCTP_EXTENSION_V2_ABI, data });
+			expect(decoded.functionName).toBe("batchSponsorDepositForBurn");
+			expect(decoded.args[0][0]).toMatchObject({ from: WALLET_ADDRESS, amount: 5_000_000n });
+			testState.publicClient.getTransactionReceipt.mockResolvedValue(
+				createSponsoredCctpReceipt(decoded.args[0][0].authNonce),
+			);
+			return SOURCE_HASH;
+		});
+
+		await act(async () => {
+			root.render(
+				createElement(
+					QueryClientProvider,
+					{ client: queryClient },
+					createElement(I18nProvider, { i18n }, createElement(EmbeddedDepositAutoBridge)),
+				),
+			);
+		});
+		await vi.waitFor(() => {
+			expect(readCctpDepositTrackingRecords("Mainnet", WALLET_ADDRESS)).toEqual([
+				expect.objectContaining({ mode: "sponsored", amount: "5", owner: WALLET_ADDRESS, sourceHash: SOURCE_HASH }),
+			]);
+		});
+		expect(testState.permitSign).toHaveBeenCalledOnce();
+		expect(testState.smartSendTransaction).toHaveBeenCalledWith(
+			expect.objectContaining({ to: CCTP_DEPOSIT_NETWORKS.mainnet.cctpExtensionV2 }),
+			{ uiOptions: { showWalletUIs: false } },
+		);
+		expect(testState.walletWriteContract).not.toHaveBeenCalled();
+		expect(testState.geoRefetch).toHaveBeenCalled();
+		expect(testState.verifyLegalAction).toHaveBeenCalled();
+		expect(container.querySelector("button")).toBeNull();
+		await act(async () => root.unmount());
+		root = createRoot(container);
+		await act(async () => {
+			root.render(
+				createElement(
+					QueryClientProvider,
+					{ client: queryClient },
+					createElement(I18nProvider, { i18n }, createElement(EmbeddedDepositAutoBridge)),
+				),
+			);
+		});
+		expect(testState.smartSendTransaction).toHaveBeenCalledOnce();
 	});
 
 	it.each([
@@ -1804,12 +1922,39 @@ describe("useDeposit fresh USDC route guard", () => {
 			amount: "5",
 			status: "submission-unresolved",
 		});
+		expect(reportClientError).toHaveBeenCalledExactlyOnceWith(capturedDeposit?.error, {
+			kind: "deposit_submission",
+			depositStage: "before_source_hash",
+		});
+		act(() => capturedDeposit?.reset());
+		expect(capturedDeposit?.error).toBeNull();
+		expect(reportClientError).toHaveBeenCalledOnce();
 
 		await submit("smart", "cctp");
 
 		expect(testState.permitSign).toHaveBeenCalledOnce();
 		expect(testState.smartSendTransaction).toHaveBeenCalledOnce();
-		expect(capturedDeposit?.error?.message).toContain("still pending");
+		expect(capturedDeposit?.error?.message).toContain("authorization is still active");
+		expect(reportClientError).toHaveBeenCalledOnce();
+	});
+
+	it("settles an unknown submission even if diagnostic reporting fails", async () => {
+		testState.routingResponse = { depositRoute: "cctp", withdrawalRoute: "cctp" };
+		stubSuccessfulCctpCapacity();
+		const submissionError = new Error("Bundler response was interrupted");
+		testState.smartSendTransaction.mockRejectedValue(submissionError);
+		reportClientError.mockImplementation(() => {
+			throw new Error("Reporting unavailable");
+		});
+
+		await submit("smart", "cctp");
+
+		expect(capturedDeposit?.status).toBe("error");
+		expect(capturedDeposit?.error).toBe(submissionError);
+		expect(capturedDeposit?.submissionOutcomeUnknown).toBe(true);
+		act(() => capturedDeposit?.reset());
+		expect(capturedDeposit?.status).toBe("idle");
+		expect(readCctpSponsoredAuthorizationIntent("Mainnet", WALLET_ADDRESS)).not.toBeNull();
 	});
 
 	it("fails closed before signing when unresolved sponsored authorization storage is invalid", async () => {
@@ -1943,7 +2088,7 @@ describe("useDeposit fresh USDC route guard", () => {
 
 		expect(testState.permitSign).toHaveBeenCalledOnce();
 		expect(testState.smartSendTransaction).toHaveBeenCalledOnce();
-		expect(capturedDeposit?.error?.message).toContain("still pending");
+		expect(capturedDeposit?.error?.message).toContain("authorization is still active");
 	});
 
 	it("keeps a sponsored authorization tombstone when the AA source transaction reverts", async () => {

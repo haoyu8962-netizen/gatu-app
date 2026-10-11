@@ -335,6 +335,10 @@ msgstr "पिछले CCTP जमा को अभी भी ट्रैक �
 msgid "A previous connection attempt is still being reconciled. Retrying checks the same trading key and does not request another signature."
 msgstr "पिछला कनेक्शन प्रयास अभी भी मिलान किया जा रहा है। दोबारा प्रयास करने पर उसी ट्रेडिंग कुंजी की जाँच होगी और किसी अन्य हस्ताक्षर का अनुरोध नहीं किया जाएगा।"
 
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "A previous deposit authorization is still active, but its submission could not be confirmed. Another deposit is blocked until that authorization is resolved or expires."
+msgstr "पिछले जमा का प्राधिकरण अभी भी सक्रिय है, लेकिन उसे भेजे जाने की पुष्टि नहीं हो सकी। उस प्राधिकरण का परिणाम स्पष्ट होने या उसकी अवधि समाप्त होने तक दूसरा जमा नहीं किया जा सकता।"
+
 #: src/lib/errors/exchange-error-text.ts
 msgid "A Reduce Only order cannot increase the position."
 msgstr "केवल कम करें ऑर्डर पोज़िशन नहीं बढ़ा सकता।"
@@ -630,8 +634,8 @@ msgid "After removal"
 msgstr "हटाने के बाद"
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
-msgid "After the funds arrive, return here and select Deposit to move them into your trading account."
-msgstr "राशि आने के बाद यहाँ वापस आकर जमा करें चुनें, ताकि राशि आपके ट्रेडिंग खाते में पहुँच जाए।"
+#~ msgid "After the funds arrive, return here and select Deposit to move them into your trading account."
+#~ msgstr "राशि आने के बाद यहाँ वापस आकर जमा करें चुनें, ताकि राशि आपके ट्रेडिंग खाते में पहुँच जाए।"
 
 #: src/components/vaults/vaults-list.tsx
 #: src/components/vaults/vaults-list.tsx
@@ -806,7 +810,6 @@ msgstr "इस बाज़ार के लिए एक अन्य कार
 msgid "Another API wallet with this exact name appeared while removal was being verified."
 msgstr "हटाने का सत्यापन चल रहा था, उसी दौरान इसी सटीक नाम वाला दूसरा API वॉलेट दिखाई दिया।"
 
-#: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Another Circle CCTP deposit is still pending for this account. Wait for it to finish before submitting another deposit."
 msgstr "इस खाते के लिए एक अन्य Circle CCTP जमा अभी भी लंबित है। दूसरा जमा सबमिट करने से पहले उसके पूरा होने की प्रतीक्षा करें।"
@@ -2611,7 +2614,6 @@ msgstr "डिप्लॉयर"
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/amount-input.tsx
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-method-chooser.tsx
 #: src/components/vaults/vault-detail-view.tsx
 #: src/components/vaults/vault-detail-view.tsx
@@ -2651,6 +2653,7 @@ msgid "Deposit native USDC on Arbitrum from your connected wallet."
 msgstr "अपने कनेक्ट किए गए वॉलेट से Arbitrum पर नेटिव USDC जमा करें।"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
 msgid "Deposit status unknown"
 msgstr "जमा की स्थिति अज्ञात है"
 
@@ -7845,8 +7848,8 @@ msgstr "टोकन भेजें"
 #~ msgstr "Hyperliquid L1 पर किसी अन्य खाते में टोकन भेजें।"
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
-msgid "Send USDC to your wallet address below."
-msgstr "नीचे दिए गए अपने वॉलेट पते पर USDC भेजें।"
+#~ msgid "Send USDC to your wallet address below."
+#~ msgstr "नीचे दिए गए अपने वॉलेट पते पर USDC भेजें।"
 
 #: src/components/trade/positions/send-modal.tsx
 #~ msgid "Sending..."
@@ -8910,6 +8913,7 @@ msgid "The Arbitrum transaction was submitted, but Circle status is temporarily 
 msgstr "Arbitrum ट्रांज़ैक्शन सबमिट हो गया है, लेकिन Circle की स्थिति अस्थायी रूप से उपलब्ध नहीं है। आपके लौटने पर ट्रैकिंग फिर शुरू हो जाएगी।"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
 msgid "The Arbitrum transaction was submitted, but its final status could not be verified. Check the transaction before retrying."
 msgstr "Arbitrum ट्रांज़ैक्शन सबमिट हो गया है, लेकिन उसकी अंतिम स्थिति सत्यापित नहीं की जा सकी। फिर से कोशिश करने से पहले ट्रांज़ैक्शन जाँचें।"
 
@@ -9357,6 +9361,11 @@ msgstr "इस सत्र में सत्यापित मालिक �
 #: src/lib/errors/action-error.ts
 msgid "The wallet could not sign the request. Try again."
 msgstr "वॉलेट अनुरोध पर हस्ताक्षर नहीं कर सका। फिर से प्रयास करें।"
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
+msgid "The wallet did not return a transaction hash, so the deposit could not be confirmed. A signed authorization may still be active. Check your wallet activity before retrying."
+msgstr "वॉलेट ने ट्रांज़ैक्शन हैश नहीं लौटाया, इसलिए जमा की पुष्टि नहीं हो सकी। हस्ताक्षरित प्राधिकरण अभी भी सक्रिय हो सकता है। दोबारा कोशिश करने से पहले अपने वॉलेट की गतिविधि जाँचें।"
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "The wallet did not sign, so no request was submitted. You can review the details and try again."
@@ -10689,6 +10698,10 @@ msgstr "HyperCore पर USDC"
 #: src/components/referrals/referral-summary-cards.tsx
 #~ msgid "USDC rewards"
 #~ msgstr "USDC रिवॉर्ड"
+
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+msgid "USDC sent to this address is automatically deposited into your trading account."
+msgstr "इस पते पर भेजे गए USDC अपने आप आपके ट्रेडिंग खाते में जमा हो जाते हैं।"
 
 #: src/components/referrals/referred-traders.tsx
 msgid "USDC volume"

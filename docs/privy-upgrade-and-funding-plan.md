@@ -2,6 +2,8 @@
 
 状态：用户已于 2026-10-02 决定（见「决定」）；阶段一已提交（分支 `claude/privy-sdk-upgrade-funding-feac6f`），阶段二已实施在其上的分支 `claude/privy-fiat-funding`，默认关闭；均未推送。日期：2026-10-02。分支 `claude/privy-sdk-upgrade-funding-feac6f`（基于 `origin/dev` 682430ba），完成后按 `.claude/rules/git.md` 开 PR 到 `dev`。取证与规划阶段没有改代码、没有登录真实账户；各阶段的实际验证见对应任务记录。任何阶段都没有改 Privy 控制台。
 
+2026-10-10 后续决定：[ADR 0040](adr/0040-automatic-email-wallet-deposits.md) 恢复邮箱主网自动存款，取代本文 2026-10-02 取证及阶段二中「到账后手动 CCTP、不新增自动划转」的历史描述。当前行为见 [CCTP 充值](cctp-deposits.md)：应用运行时按精确邮箱 owner 余额自动转入，外部钱包仍手动确认；购买结果本身仍不代表到账。
+
 ## 目标
 
 1. 把 `@privy-io/react-auth` 从精确锁定的 3.32.2 升到 3.46.0（2026-09-28 发布的最新版），`@privy-io/wagmi` 从 4.0.13 升到 4.0.17，不改变身份、签名、登录方式和 Provider 层级。

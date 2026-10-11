@@ -2,6 +2,8 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const cctpMessages = [
+	"A previous deposit authorization is still active, but its submission could not be confirmed. Another deposit is blocked until that authorization is resolved or expires.",
+	"The wallet did not return a transaction hash, so the deposit could not be confirmed. A signed authorization may still be active. Check your wallet activity before retrying.",
 	"~2 minutes",
 	"Available {balance} USDC is below the minimum deposit. Send at least {minimumDeposit}.",
 	"Gas-sponsored CCTP deposits are not enabled for this network.",

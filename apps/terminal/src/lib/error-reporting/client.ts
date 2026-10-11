@@ -68,6 +68,12 @@ export function reportClientError(error: unknown, options: ReportClientErrorOpti
 			kind: options.kind,
 			legalReason: options.legalReason,
 		});
+	} else if (options.kind === "deposit_submission") {
+		report = createClientErrorReport(error, {
+			...sharedReportOptions,
+			kind: options.kind,
+			depositStage: options.depositStage,
+		});
 	} else {
 		report = createClientErrorReport(error, {
 			...sharedReportOptions,

@@ -335,6 +335,10 @@ msgstr "Un dépôt CCTP précédent est toujours en cours de suivi. Ne renvoyez 
 msgid "A previous connection attempt is still being reconciled. Retrying checks the same trading key and does not request another signature."
 msgstr "Une précédente tentative de connexion est toujours en cours de vérification. Une nouvelle tentative vérifie la même clé de trading et ne demande pas d’autre signature."
 
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "A previous deposit authorization is still active, but its submission could not be confirmed. Another deposit is blocked until that authorization is resolved or expires."
+msgstr "L’autorisation d’un dépôt précédent est toujours active, mais son envoi n’a pas pu être confirmé. Aucun autre dépôt n’est possible tant que le résultat de cette autorisation n’est pas confirmé ou qu’elle n’a pas expiré."
+
 #: src/lib/errors/exchange-error-text.ts
 msgid "A Reduce Only order cannot increase the position."
 msgstr "Un ordre en réduction uniquement ne peut pas augmenter la position."
@@ -630,8 +634,8 @@ msgid "After removal"
 msgstr "Après la suppression"
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
-msgid "After the funds arrive, return here and select Deposit to move them into your trading account."
-msgstr "Une fois les fonds reçus, revenez ici et sélectionnez Déposer pour les transférer vers votre compte de trading."
+#~ msgid "After the funds arrive, return here and select Deposit to move them into your trading account."
+#~ msgstr "Une fois les fonds reçus, revenez ici et sélectionnez Déposer pour les transférer vers votre compte de trading."
 
 #: src/components/vaults/vaults-list.tsx
 #: src/components/vaults/vaults-list.tsx
@@ -806,7 +810,6 @@ msgstr "Une autre action pour ce marché est déjà en cours."
 msgid "Another API wallet with this exact name appeared while removal was being verified."
 msgstr "Un autre portefeuille API portant exactement ce nom est apparu pendant la vérification de la suppression."
 
-#: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Another Circle CCTP deposit is still pending for this account. Wait for it to finish before submitting another deposit."
 msgstr "Un autre dépôt Circle CCTP est encore en attente pour ce compte. Attendez qu’il soit terminé avant d’effectuer un autre dépôt."
@@ -2611,7 +2614,6 @@ msgstr "Déployeur"
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/amount-input.tsx
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-method-chooser.tsx
 #: src/components/vaults/vault-detail-view.tsx
 #: src/components/vaults/vault-detail-view.tsx
@@ -2651,6 +2653,7 @@ msgid "Deposit native USDC on Arbitrum from your connected wallet."
 msgstr "Déposez des USDC natifs sur Arbitrum depuis votre portefeuille connecté."
 
 #: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
 msgid "Deposit status unknown"
 msgstr "Statut du dépôt inconnu"
 
@@ -7845,8 +7848,8 @@ msgstr "Envoyer des tokens"
 #~ msgstr "Envoyez des tokens vers un autre compte sur le L1 Hyperliquid."
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
-msgid "Send USDC to your wallet address below."
-msgstr "Envoyez des USDC à l’adresse de votre portefeuille ci-dessous."
+#~ msgid "Send USDC to your wallet address below."
+#~ msgstr "Envoyez des USDC à l’adresse de votre portefeuille ci-dessous."
 
 #: src/components/trade/positions/send-modal.tsx
 #~ msgid "Sending..."
@@ -8910,6 +8913,7 @@ msgid "The Arbitrum transaction was submitted, but Circle status is temporarily 
 msgstr "La transaction Arbitrum a été soumise, mais le statut Circle est temporairement indisponible. Le suivi reprendra à votre retour."
 
 #: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
 msgid "The Arbitrum transaction was submitted, but its final status could not be verified. Check the transaction before retrying."
 msgstr "La transaction Arbitrum a été soumise, mais son statut final n’a pas pu être vérifié. Vérifiez la transaction avant de réessayer."
 
@@ -9357,6 +9361,11 @@ msgstr "Les données du propriétaire vérifié sont en lecture seule dans cette
 #: src/lib/errors/action-error.ts
 msgid "The wallet could not sign the request. Try again."
 msgstr "Le portefeuille n'a pas pu signer la demande. Réessayez."
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
+msgid "The wallet did not return a transaction hash, so the deposit could not be confirmed. A signed authorization may still be active. Check your wallet activity before retrying."
+msgstr "Le portefeuille n’a pas renvoyé de hash de transaction ; le dépôt n’a donc pas pu être confirmé. Une autorisation signée peut encore être active. Vérifiez l’activité de votre portefeuille avant de réessayer."
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "The wallet did not sign, so no request was submitted. You can review the details and try again."
@@ -10689,6 +10698,10 @@ msgstr "USDC sur HyperCore"
 #: src/components/referrals/referral-summary-cards.tsx
 #~ msgid "USDC rewards"
 #~ msgstr "Récompenses en USDC"
+
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+msgid "USDC sent to this address is automatically deposited into your trading account."
+msgstr "Les USDC envoyés à cette adresse sont automatiquement déposés sur votre compte de trading."
 
 #: src/components/referrals/referred-traders.tsx
 msgid "USDC volume"

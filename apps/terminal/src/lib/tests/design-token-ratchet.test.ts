@@ -11,8 +11,8 @@ const ARBITRARY_RADIUS = /(?<![\w-])!?rounded(?:-[a-z]{1,2})?-\[\d+(?:\.\d+)?px\
 const IMPORTANT_MENU_OR_DIALOG_SURFACE = /(?<![\w-])!(?:bg-modal|bg-overlay|shadow-overlay)(?![\w-])/g;
 const RELATIVE_FONT_SIZE = /(?<![\w-])!?text-\[\d+(?:\.\d+)?(?:em|rem)\]/g;
 
-const ARBITRARY_FONT_SIZE_BASELINE = 112;
-const ARBITRARY_RADIUS_BASELINE = 200;
+const ARBITRARY_FONT_SIZE_BASELINE = 111;
+const ARBITRARY_RADIUS_BASELINE = 199;
 const IMPORTANT_SURFACE_BASELINE = 12;
 const RELATIVE_FONT_SIZE_BASELINE = 1;
 

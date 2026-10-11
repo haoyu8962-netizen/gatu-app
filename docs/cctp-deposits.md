@@ -33,10 +33,10 @@ fail-closed for the other path/environment combinations:
 - `VITE_CCTP_SPONSORED_DEPOSIT_TESTNET_ENABLED`
 
 These three flags default to disabled. A sponsored flag does not enable the
-other environment, and the Testnet external flag does not alter Mainnet. These
-flags authorize a release to expose a controlled path; they are not themselves
-user consent to move funds. In particular, enabling the sponsored Mainnet flag
-must not make the application-wide recovery host sign or broadcast a deposit.
+other environment, and the Testnet external flag does not alter Mainnet. When
+enabled, an eligible email session automatically deposits its available native
+USDC through the page-level host in either environment. The product decision
+and runtime limits are recorded in [ADR 0040](adr/0040-automatic-email-wallet-deposits.md).
 
 Production supports two Mainnet release modes. External is enabled in both. The
 sponsored Mainnet build flag selects the mode, and the release upload requires a
@@ -125,7 +125,7 @@ names the same amount, and a fee that rises between review and click so that the
 amount no longer reaches it is reported as a fee change, never as a routing
 failure. The form's "Minimum N USDC" note is `getCctpDepositMinimumRaw` of the
 current quote, the smallest amount that quote accepts, shown whenever a usable
-quote is known, and the Testnet automatic path waits for a balance that meets the rule. The
+quote is known, and the email automatic path waits for a balance that meets the rule. The
 official terminal still applies 5 USDC to its Arbitrum routes; that is its own
 choice, not a CCTP rule. The funding-address notice tells the user to send only
 native USDC on Arbitrum and that other assets or networks are not credited; it
@@ -219,8 +219,9 @@ leads to the paths below (with a back control to the choice), and "Buy USDC with
 card" buys USDC by card or bank transfer through Privy's fiat onramp. With the flag
 off, or without an exact owner, the dialog opens directly on the transfer form. The purchase only delivers native USDC on Arbitrum One to
 the exact Hyperliquid owner (the embedded EOA of an email session, or the
-connected external wallet); it is not a deposit. The user then deposits that
-USDC through the paths above, so the sponsored or external-wallet gates, the
+connected external wallet); it is not a deposit. An active eligible email session
+automatically deposits that USDC; an external wallet uses the manual deposit form.
+The sponsored or external-wallet gates, the
 routing guard and the geo check still decide whether it can reach HyperCore.
 An external wallet needs Arbitrum ETH for that second step. The entry closes
 the deposit dialog before Privy's window opens, and a provider's `confirmed` or
@@ -249,7 +250,7 @@ submission, the exact success event, matching skipped-event rejection, Circle
 attestation, forwarding, refresh recovery, and final HyperCore credit. A
 successful unrelated sponsored transaction is not release evidence for CCTP.
 The current build flag has no user or wallet allowlist: enabling it in a public
-bundle makes the explicitly confirmed mainnet path available to every eligible
+bundle makes the automatic mainnet path available to every eligible
 email-wallet user.
 
 Before the UI reveals the exact embedded-wallet funding address, it performs a
@@ -267,9 +268,9 @@ rate limits have capacity, or that the complete UserOperation-to-HyperCore path
 works. Those properties still require dashboard review, monitoring, and a
 funded end-to-end release check.
 
-The mainnet email form explains the two steps before exposing the QR: send USDC
-to the exact wallet, then return and explicitly deposit into the trading account.
-The testnet automatic path does not display these mainnet instructions. Asset and
+The email form explains in both environments that USDC sent to the displayed
+address is automatically deposited into the trading account. There is no second
+Deposit action. Asset and
 network are fixed route details, not selectable dropdowns; each shows its icon
 beside the value, and the same row is used by the withdrawal form. The email form
 and the external-wallet form both open with the USDC mark above the title, so the
@@ -279,8 +280,7 @@ so the covered modules stay recoverable; it keeps dark modules on a white field 
 both themes. The address sits in one field with its copy control. The layout
 follows the official terminal's deposit dialog (fixed header, body that scrolls
 without a visible scrollbar, one component for the desktop modal and the phone
-sheet); the two-step instructions, the explicit Deposit action and the Done exit
-are this application's own and stay.
+sheet). Done closes the form without submitting or cancelling a deposit.
 
 Passive balance, fee, wallet-readiness and route failures render numeric placeholders
 or the address skeleton, with neutral retry controls where recovery is available.
@@ -288,24 +288,38 @@ Unknown balances never enable Max or submission. Read-only data retries may show
 request feedback if they fail, never sign, and discard results from an older modal
 context. Submitted-action failures and confirmed restrictions remain visible.
 
-Sending USDC to the displayed embedded-wallet address does not by itself
-authorize a mainnet CCTP deposit. After funds arrive, the modal reviews the
-complete available native-USDC balance and current Circle fee. The user must
-explicitly select the amount-labelled `Deposit … USDC` action before the exact embedded EOA
-signs the amount- and destination-bound EIP-3009 authorization. Immediately
-before signing and broadcasting, the funds-action critical section reads the
-balance again and requires it to equal the reviewed balance exactly; a change
-aborts the attempt and requires a new review. Mainnet recovery remains mounted
-outside the modal, but it must never initiate a new signature or broadcast.
-The execution boundary independently rejects every automatic mainnet sponsored
-scope, a missing balance or fee review, and any amount that differs from the
-reviewed complete balance; the modal guard is not the only enforcement point.
+With the network's sponsored flag enabled, the application-wide
+`EmbeddedDepositAutoBridge` handles both Mainnet and Testnet. It requires the
+exact active email owner, a verified CCTP route, a current eligible balance and
+fee, and no unresolved earlier submission. Inside an exclusive browser lock it
+refreshes the native-USDC balance and submits that full refreshed amount through
+`useDeposit` with `executionScope: "automatic"`. The execution boundary retains
+fresh route, geo, legal, exact-owner, fee, allowance, amount-limit, chain and
+paymaster checks. Manual Mainnet sponsored callers still need exact reviewed
+balance and fee values; automatic deposits do not require a synthetic UI review,
+but the submitted full balance is treated as the locked value: the execution
+boundary re-reads the native-USDC balance inside the funds-action lock before
+signing and again before broadcasting, and a balance that no longer equals the
+submitted amount aborts the attempt. The host then observes the refreshed
+balance and retries with it, so a transfer that lands mid-attempt is deposited
+in one authorization instead of a stale smaller one. Because no dialog gate
+precedes an automatic attempt, the execution boundary also verifies the exact
+owner's fresh legal status before `signTypedData` (manual callers pass that gate
+in the dialog), and keeps the pre-broadcast verification. The host's
+notification follows the dialog's outcome rules: a submission that returned no
+hash, or a submitted one whose failure is not a definitive source failure, is a
+persistent `Deposit status unknown` warning with the no-hash or submitted
+explanation, never `Automatic USDC deposit failed`.
 
-The funded testnet workflow intentionally retains automatic forwarding so it
-can exercise background, reload, and cross-tab recovery. Testnet automation
-rechecks the balance inside the exclusive browser lock and submits that full
-refreshed balance. This testnet behavior is not release authorization for a
-mainnet background deposit.
+The host stays mounted outside the dialog: closing Done does not cancel its
+work, and restoring an eligible email session also processes an existing balance.
+It runs only while the application page is running; closing all pages does not
+provide server-side forwarding. Submitted transactions continue through the
+protocol. Persisted recovery records and unknown-submission intents block a new
+authorization until the earlier outcome is resolved; a failed attempt is not
+blindly resubmitted. External-wallet and Agent-only sessions do not enter this
+automatic email path. Testnet automation remains independently gated and is not
+proof of successful Mainnet funding.
 
 The application never stores an EIP-3009 authorization signature in browser
 storage.
@@ -335,14 +349,44 @@ client build variable, or copied into this document.
 
 ## Paymaster Production Policy
 
+Resolve the active Arbitrum Smart Wallet Bundler and Paymaster URLs from the
+deployed Privy app configuration before checking ZeroDev. A migrated app can
+point to a different project than a previously inspected dashboard. A nonempty
+Paymaster URL, enabled CCTP build flag, or registered contract ABI does not prove
+that sponsorship is available; the active project needs an applicable policy.
+
 The ZeroDev project used by the sponsored mainnet path must not sponsor every
 transaction. Before any mainnet candidate, disable `Sponsor all transactions`
 and restrict the Arbitrum One Contract Policy to the mainnet `CctpExtensionV2`
 proxy `0x3289e443a95B28Bcedacc4B33C689b0C9b84ffAB` and
 `batchSponsorDepositForBurn` selector `0x300fb2a3`. Contract policy is defense
 in depth for gas sponsorship; it does not limit the amount of USDC covered by
-an EIP-3009 authorization and does not replace the explicit mainnet user action
-above.
+an EIP-3009 authorization and does not replace the exact-owner, amount, fee and
+recovery checks above.
+
+The Bundler and Paymaster must use compatible provider routes. ZeroDev supports
+an explicit provider query and recommends the same provider for both URLs
+([RPC documentation](https://docs.zerodev.app/api-and-toolings/infrastructure/rpcs)).
+The [2026-10-10 investigation](work-memory/sessions/2026-10-10-zerodev-deposit-sponsorship-policy.md)
+observed gas-only responses without Paymaster data on the default route even
+after adding the required contract policy; the same project's explicit
+`?provider=PIMLICO` route returned Paymaster data through both standard
+`pm_getPaymasterStubData` and `pm_getPaymasterData` preparation calls.
+The operator subsequently reported a successful real deposit on the unchanged
+production frontend; a read-only UI check confirmed credited account value and
+cleared pending records. The task record distinguishes that acceptance from
+an independently captured source receipt or production-capacity verification.
+
+The repair goal is to restore the existing Privy Smart Wallet submission path
+through dashboard routing, preserving the project, chain, narrow policy and
+approved budget. It does not require an SDK fork, a self-funded gas fallback,
+or relaxed authorization guards. Apply the same explicit route to both
+Arbitrum URLs only after operator approval. Verify the saved public app
+configuration and a fresh client's standard Paymaster preparation; then obtain
+a user-submitted source confirmation and final HyperCore credit. An unsigned
+zero-balance probe exercises the contract's skip path, so it cannot validate
+actual USDC burn cost, the chosen gas budget, or successful credit. `AA21`
+alone does not identify a billing, quota, or CCTP feature-flag problem.
 
 Project and contract request, per-transaction gas, aggregate gas, and gas-price
 limits must be sized from observed production and canary traffic rather than
@@ -351,6 +395,15 @@ UserOperation fail. It must never fall back to an unrelated contract or to a
 browser-managed email wallet paying gas. Capacity exhaustion therefore needs
 monitoring and alerting with enough headroom for wallet deployment, estimation,
 Bundler, and Paymaster request patterns.
+
+The account plan's monthly gas sponsorship limit is independent of a contract
+policy's daily gas limit; increasing the latter does not raise the former or
+upgrade the subscription. A zero subscription price does not mean sponsored
+gas is free. Included request credits and prepaid gas credits are also separate
+from the gas limit; included request credits can incur overage charges rather
+than acting as a hard transaction-count cap. Record approved budgets and their
+verification scope in task records, as in the
+[2026-10-11 budget adjustment](work-memory/sessions/2026-10-11-zerodev-budget-adjustment.md).
 
 After those policies and production-sized limits are active, operators should
 run the smallest Mainnet E2E in an access-controlled production-candidate
@@ -406,6 +459,34 @@ tracker remains active when the deposit modal is closed and removes the local
 recovery item at this state so a completed automatic deposit cannot block the
 next deposit. The modal uses the same query key, so opening it does not create a
 second network request for the same recovery record.
+
+### Submission diagnostics and unknown outcomes
+
+Implemented locally on 2026-10-10, not released; the design was recorded before
+implementation. Verification and the unresolved live failure are tracked in the
+[work-memory investigation](work-memory/sessions/2026-10-10-deposit-unknown-submission-diagnostics.md). A wallet submission
+without a source hash is not evidence of an Arbitrum broadcast or Circle processing.
+Its notification must say that the wallet returned no transaction hash. An unresolved
+signed authorization blocks another deposit until recovery or expiry, with a distinct
+message from a deposit that has an actual source-chain tracking record.
+
+Before resetting the dialog, caught submission failures use the existing privacy-filtered
+client error reporting channel with kind `deposit_submission`, stage
+`before_source_hash` or `source_confirmation`, and an allowlisted reason derived from
+at most eight nested causes. Reasons identify error families, not verified chain outcomes:
+`paymaster`, `bundler`, `nonce_conflict`, `wallet_rejected`, `network`, `timeout`, or `unknown`.
+No wallet address, amount, nonce, signature, calldata, endpoint, or original error message
+is included. Existing reporting limits, deduplication and failure isolation apply. Deploy
+the shared server validator with the frontend: an older endpoint rejects the new report
+kind, without affecting deposit execution.
+
+This avoids a second diagnostic transport or persisting raw SDK errors. Retrying or
+clearing an authorization on a Paymaster/Bundler error alone is rejected because an
+exposed authorization may still execute. Verification must cover no-hash versus
+known-hash copy, retained authorization/retry prevention, reporting before dialog
+reset, nested-error classification and server rejection of unrecognized fields/reasons.
+These checks cannot establish the cause of a historical response that was not captured,
+or prove a real deposit was credited.
 
 ## Bridge2 Retirement
 

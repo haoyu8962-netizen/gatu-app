@@ -335,6 +335,10 @@ msgstr "先前的 CCTP 存款仍在跟踪中。请勿重复提交同一笔转账
 msgid "A previous connection attempt is still being reconciled. Retrying checks the same trading key and does not request another signature."
 msgstr "上一次连接尝试仍在核对中。重试只会检查同一个交易密钥，不会再次请求签名。"
 
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "A previous deposit authorization is still active, but its submission could not be confirmed. Another deposit is blocked until that authorization is resolved or expires."
+msgstr "上一次存款授权仍然有效，但无法确认是否已提交。在确认该授权的处理结果或授权到期前，暂时不能再次存款。"
+
 #: src/lib/errors/exchange-error-text.ts
 msgid "A Reduce Only order cannot increase the position."
 msgstr "只减仓订单不能增加仓位。"
@@ -630,8 +634,8 @@ msgid "After removal"
 msgstr "移除后"
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
-msgid "After the funds arrive, return here and select Deposit to move them into your trading account."
-msgstr "资金到账后，返回此处点击“存款”，将资金存入交易账户。"
+#~ msgid "After the funds arrive, return here and select Deposit to move them into your trading account."
+#~ msgstr "资金到账后，返回此处点击“存款”，将资金存入交易账户。"
 
 #: src/components/vaults/vaults-list.tsx
 #: src/components/vaults/vaults-list.tsx
@@ -806,7 +810,6 @@ msgstr "该市场的另一项操作正在进行中。"
 msgid "Another API wallet with this exact name appeared while removal was being verified."
 msgstr "验证移除结果时，出现了另一个同名的 API 钱包。"
 
-#: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Another Circle CCTP deposit is still pending for this account. Wait for it to finish before submitting another deposit."
 msgstr "此账户仍有另一笔 Circle CCTP 存款待处理。请等待其完成后再提交新的存款。"
@@ -2611,7 +2614,6 @@ msgstr "部署者"
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/amount-input.tsx
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-method-chooser.tsx
 #: src/components/vaults/vault-detail-view.tsx
 #: src/components/vaults/vault-detail-view.tsx
@@ -2651,6 +2653,7 @@ msgid "Deposit native USDC on Arbitrum from your connected wallet."
 msgstr "从已连接的钱包存入 Arbitrum 上的原生 USDC。"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
 msgid "Deposit status unknown"
 msgstr "存款状态未知"
 
@@ -7845,8 +7848,8 @@ msgstr "发送代币"
 #~ msgstr "向 Hyperliquid L1 上的另一账户发送代币。"
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
-msgid "Send USDC to your wallet address below."
-msgstr "将 USDC 转入下方的钱包地址。"
+#~ msgid "Send USDC to your wallet address below."
+#~ msgstr "将 USDC 转入下方的钱包地址。"
 
 #: src/components/trade/positions/send-modal.tsx
 #~ msgid "Sending..."
@@ -8910,6 +8913,7 @@ msgid "The Arbitrum transaction was submitted, but Circle status is temporarily 
 msgstr "Arbitrum 交易已提交，但暂时无法获取 Circle 状态。返回时将继续跟踪。"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
 msgid "The Arbitrum transaction was submitted, but its final status could not be verified. Check the transaction before retrying."
 msgstr "Arbitrum 交易已提交，但无法验证其最终状态。重试前请检查该交易。"
 
@@ -9357,6 +9361,11 @@ msgstr "本次会话中，已验证的所有者数据为只读。Agent/API 钱�
 #: src/lib/errors/action-error.ts
 msgid "The wallet could not sign the request. Try again."
 msgstr "钱包未能签署该请求，请重试。"
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
+msgid "The wallet did not return a transaction hash, so the deposit could not be confirmed. A signed authorization may still be active. Check your wallet activity before retrying."
+msgstr "钱包未返回交易哈希，因此无法确认存款。已签署的授权可能仍然有效。重试前请检查钱包活动记录。"
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "The wallet did not sign, so no request was submitted. You can review the details and try again."
@@ -10689,6 +10698,10 @@ msgstr "HyperCore 上的 USDC"
 #: src/components/referrals/referral-summary-cards.tsx
 #~ msgid "USDC rewards"
 #~ msgstr "USDC 奖励"
+
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+msgid "USDC sent to this address is automatically deposited into your trading account."
+msgstr "发送至此地址的 USDC 会自动存入您的交易账户。"
 
 #: src/components/referrals/referred-traders.tsx
 msgid "USDC volume"
