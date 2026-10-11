@@ -6,6 +6,8 @@ Updated: 2026-09-24. Protocol: client-only transfer, payload v5 ([ADR 0015](adr/
 
 ## Release Rule
 
+> **Operator decision (2026-10-11).** The operator opened all three release gates by default from release p30, so production builds now carry `VITE_MOBILE_PAIRING_ENABLED=true` before the rows below are recorded. The rule below stays as the acceptance requirement: run and record the checklist against the published build.
+
 The three rows below must be recorded as Pass on a published build before `VITE_MOBILE_PAIRING_ENABLED` is set to `true` for a production build (`deploy.mjs sync --execute` additionally requires `--allow-mobile-pairing`). A release with the flag off does not need this file and does not claim device acceptance. Automated tests and simulated cameras cannot mark a row Pass.
 
 Never record QR screenshots, URL fragments, keys, complete signatures or credential-bearing HAR files. Keep the filled checklist outside Git; this file stays at Not run.

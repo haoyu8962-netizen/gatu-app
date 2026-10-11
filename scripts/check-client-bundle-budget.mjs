@@ -83,7 +83,14 @@ const budgets = {
 	// and the skeleton chunk merged into the account panel chunk (-329 net). Measured as the fixed-metadata Node 22.15.0
 	// build of f9bae822 (3,297,328) minus that of dev 345a2143 (3,296,988); the +9,337 dev had already used stays
 	// counted. Merged with dev 508ff73d on 2026-10-08: the +340 is added to its re-baselined 3,296,759.
-	totalGzipBaselineBytes: 3_297_099,
+	// Re-baselined 2026-10-11 before release p30 to the fixed-metadata Node 22.15.0 build of dev ee4aab99 with the
+	// extra-agent snapshot guard moved out of api-wallet-state (3,304,479, no .env.local, pairing off;
+	// docs/terminal-performance-baseline.md). It folds in the +7,380 that dev had used since p26 across PR #91 (unnamed
+	// default Agent), #92 (single-shell deposit dialog, official scrims), #94 (Link mobile device fixes, ADR 0039) and
+	// #97 (automatic email deposits, ADR 0040; unknown-submission diagnostics). The pairing-on build that only pull
+	// requests into main run had read 3,307,744 in CI (+10,645) and also split api-wallet-state into a second
+	// api-wallet-*.js chunk shared with the pairing dialog; both are fixed by this baseline and by that move.
+	totalGzipBaselineBytes: 3_304_479,
 	totalGzipAllowedIncreaseBytes: 10_000,
 	tradeStartup: {
 		requiredRouteIds: ["__root__", "/trade/$symbol"],
