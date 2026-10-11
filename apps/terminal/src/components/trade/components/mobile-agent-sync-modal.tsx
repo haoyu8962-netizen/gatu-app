@@ -11,7 +11,6 @@ import { AdaptiveModal, Button, ModalContent, ModalDescription, ModalFooter, Mod
 import { Link } from "@tanstack/react-router";
 import { useEffect, useId, useRef, useState } from "react";
 import type { Address } from "viem";
-import { isApiWalletExtraAgentSnapshot } from "@/components/api-wallet/api-wallet-state";
 import { ButtonLoading } from "@/components/brand/button-loading";
 import { BRAND_NAME } from "@/config/brand";
 import { MOBILE_PAIRING_FEATURES } from "@/config/mobile-pairing";
@@ -22,6 +21,7 @@ import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { formatTransferError } from "@/lib/errors/format";
 import { formatDateTime } from "@/lib/format";
 import { type HyperliquidEnv, type InfoResponse, useHyperliquid, useTradingStatus } from "@/lib/hyperliquid";
+import { isApiWalletExtraAgentSnapshot } from "@/lib/hyperliquid/extra-agent-snapshot";
 import { createMobileAgentSyncUrl, MOBILE_SYNC_QR_VISIBLE_MS } from "@/lib/mobile-sync/sync-core";
 import { readTradingActivation } from "@/lib/mobile-sync/trading-activation";
 

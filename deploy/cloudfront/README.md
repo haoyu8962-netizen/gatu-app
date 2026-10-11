@@ -133,13 +133,13 @@ node deploy/cloudfront/deploy.mjs verify --origin https://testnet.sairn.ai --net
 
 ### 发布闸门
 
-会暴露资金或凭证路径的构建开关，上传时需要运营方再确认一次；只在 `apps/terminal/.env.local` 里打开不算确认。构建把实际生效的值写进 `build-meta.json`（`cctpDeposits`、`mobileSync`、`privyFiatFunding`，与应用运行时用同一个解析函数），`sync` 读的是构建产物而不是环境文件，所以构建之后再改环境文件不会影响判断。
+会暴露资金或凭证路径的构建开关，上传时由 `--allow-…` 参数再确认一次；只在 `apps/terminal/.env.local` 里打开不算确认。**现行规则（运营方 2026-10-11 决定，取代下表「何时可以打开」里作为发布前提的验收条件）：三个闸门默认全开，发布前不再逐次询问运营方，发布人员直接带上全部三个 `--allow-…` 参数；只有运营方明确要求关闭某个闸门时才改。下表的验收条件保留为上线后仍要完成的验收事项，不再阻断发布。**构建把实际生效的值写进 `build-meta.json`（`cctpDeposits`、`mobileSync`、`privyFiatFunding`，与应用运行时用同一个解析函数），`sync` 读的是构建产物而不是环境文件，所以构建之后再改环境文件不会影响判断。
 
 | 闸门 | `build-meta.json` 字段 | 确认参数 | 何时可以打开 |
 | --- | --- | --- | --- |
 | 主网赞助充值 | `cctpDeposits.mainnetSponsoredWallet` | `--allow-sponsored-mainnet-deposits` | 见 [CCTP 充值](../../docs/cctp-deposits.md) 的发布模式 |
-| 移动配对 | `mobileSync.enabled`（2026-09-24 之前的构建为 `importFromQr` 或 `createAndReveal`，两种形状都能读） | `--allow-mobile-pairing` | 仅在 [真机清单](../../docs/mobile-phone-access-device-validation.md) 记录完成之后；此前开关必须保持关闭 |
-| 主网银行卡入金 | `privyFiatFunding.mainnet` | `--allow-mainnet-card-funding` | 仅在[上线验收清单](../../docs/privy-card-funding-launch-checklist.md)的前两个阶段全部通过之后（[ADR 0034](../../docs/adr/0034-privy-card-funding.md)「上线前提」）：Privy 控制台开启入金方式、审阅后的法律文本已发布、新的响应函数（含 Stripe 的 CSP 来源）已用 `functions --execute` 发布、本地的沙盒与最低金额真实购买已通过、只打开测试网开关的沙盒发布已在测试网站点验收。2026-10-03 的 p24b 是运营方知情后跳过前两个阶段打开两网开关的，见[发布记录](../../docs/work-memory/sessions/2026-10-03-cloudfront-release-p24b.md) |
+| 移动配对 | `mobileSync.enabled`（2026-09-24 之前的构建为 `importFromQr` 或 `createAndReveal`，两种形状都能读） | `--allow-mobile-pairing` | 原前提（自 2026-10-11 起不再阻断发布，见上）：[真机清单](../../docs/mobile-phone-access-device-validation.md) 记录完成；清单仍待在已发布构建上记录 |
+| 主网银行卡入金 | `privyFiatFunding.mainnet` | `--allow-mainnet-card-funding` | 原前提（自 2026-10-11 起不再阻断发布，见上）：仅在[上线验收清单](../../docs/privy-card-funding-launch-checklist.md)的前两个阶段全部通过之后（[ADR 0034](../../docs/adr/0034-privy-card-funding.md)「上线前提」）：Privy 控制台开启入金方式、审阅后的法律文本已发布、新的响应函数（含 Stripe 的 CSP 来源）已用 `functions --execute` 发布、本地的沙盒与最低金额真实购买已通过、只打开测试网开关的沙盒发布已在测试网站点验收。2026-10-03 的 p24b 是运营方知情后跳过前两个阶段打开两网开关的，见[发布记录](../../docs/work-memory/sessions/2026-10-03-cloudfront-release-p24b.md) |
 
 规则是双向精确匹配：构建打开了闸门而没有带参数，拒绝；带了参数而构建没有打开，也拒绝（说明运营方以为在发的版本和实际产物不一致）；`build-meta.json` 没有这些字段（旧构建）同样拒绝，需用当前源码重新构建。`sync` 每次都会打印一行 `release gates: …`；不带 `--execute` 的演练只给出警告。`verify` 会比较线上与本地构建的闸门状态。测试网的两个充值开关与测试网银行卡入金开关只记录、不需要确认。
 
@@ -151,7 +151,7 @@ node deploy/cloudfront/deploy.mjs verify --origin https://testnet.sairn.ai --net
 
 ## 与已退役 EC2 部署的差异
 
-- 移动配对已改为纯客户端片段信封传输（[ADR 0015](../../docs/adr/0015-link-device-alignment.md) D7 方案 B），不再有票据端点：viewer-request 函数对 `/mobile-agent-sync-ticket*` 直接返回 404，Lambda 不再接收该路径，`build-meta.json` 的 `mobileSync` 只保留一个 `enabled` 开关（ADR 0015 D8）。`VITE_MOBILE_PAIRING_ENABLED` 在真机清单记录完成前保持关闭。
+- 移动配对已改为纯客户端片段信封传输（[ADR 0015](../../docs/adr/0015-link-device-alignment.md) D7 方案 B），不再有票据端点：viewer-request 函数对 `/mobile-agent-sync-ticket*` 直接返回 404，Lambda 不再接收该路径，`build-meta.json` 的 `mobileSync` 只保留一个 `enabled` 开关（ADR 0015 D8）。`VITE_MOBILE_PAIRING_ENABLED` 自 p30 起按运营方决定在生产构建中打开（见「发布闸门」），真机清单仍待记录。
 - `verify_geo_provider` 的等价检查是 `deploy.mjs verify` 的 geo 项：它从执行机的公网 IP 发起，要求 200 与两位国家码。
 - referral 深链的标记从 HTML meta 变为 `x-sairn-route` 响应头；客户端路由仍在水合后写入 meta。
 - 错误上报进入 Lambda 的 CloudWatch 日志；`/api/leaderboard` 的缓存是每个执行实例内存级的。
