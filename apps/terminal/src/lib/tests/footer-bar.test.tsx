@@ -127,12 +127,13 @@ describe("FooterBar", () => {
 		expect(testState.openCommandMenu).toHaveBeenCalledTimes(1);
 	});
 
-	it("retains both divider rules and supplies a visible runtime clock", () => {
+	it("keeps one divider rule before a visible runtime clock and shows no build version", () => {
 		renderFooter("default");
-		expect(container.querySelectorAll("footer .border-l")).toHaveLength(2);
+		expect(container.querySelectorAll("footer .border-l")).toHaveLength(1);
 		const clock = container.querySelector("footer .tabular-nums");
 		expect(clock?.classList.contains("invisible")).toBe(false);
 		expect(clock?.textContent).toMatch(/\d/);
+		expect(container.querySelector("footer")?.textContent).not.toMatch(/v\d+\.\d+\.\d+/);
 	});
 
 	describe("clock", () => {

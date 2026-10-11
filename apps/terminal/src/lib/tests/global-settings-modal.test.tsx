@@ -123,6 +123,7 @@ vi.mock("@/stores/use-global-settings-store", () => ({
 }));
 
 import { GlobalSettingsModal } from "@/components/trade/components/global-settings-modal";
+import { APP_BUILD_COMMIT, APP_RELEASE_ID, APP_RELEASE_LABEL, APP_RELEASE_TAG, APP_VERSION } from "@/config/app";
 import { notifyNumberFormatChange } from "@/lib/number-format-reactivity";
 
 describe("GlobalSettingsModal", () => {
@@ -332,6 +333,20 @@ describe("GlobalSettingsModal", () => {
 			"Order book animations",
 			"Order book in quote asset",
 		]);
+	});
+
+	it("shows the build version under About and copies the full version on click", async () => {
+		const writeText = vi.fn().mockResolvedValue(undefined);
+		Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
+		expect(container.textContent).toContain("About");
+		expect(container.textContent).toContain("Version");
+		const button = container.querySelector<HTMLButtonElement>('button[aria-label="Copy version"]');
+		expect(button?.textContent).toBe(APP_RELEASE_LABEL);
+		expect(container.textContent?.includes(`Release ${APP_RELEASE_ID}`)).toBe(APP_RELEASE_TAG !== APP_RELEASE_ID);
+		await act(async () => {
+			button?.click();
+		});
+		expect(writeText).toHaveBeenCalledWith(`${APP_VERSION} ${APP_RELEASE_ID} ${APP_BUILD_COMMIT}`);
 	});
 
 	it("hides the order book unit setting on the desktop layout", () => {

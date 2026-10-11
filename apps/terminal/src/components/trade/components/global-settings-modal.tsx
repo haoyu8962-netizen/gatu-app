@@ -16,8 +16,10 @@ import type { ChangeEvent, ReactNode } from "react";
 import { useId, useReducer, useState } from "react";
 import { toast } from "sonner";
 import { NumberInput } from "@/components/ui/number-input";
+import { APP_BUILD_COMMIT, APP_RELEASE_ID, APP_RELEASE_LABEL, APP_RELEASE_TAG, APP_VERSION } from "@/config/app";
 import { resetDesktopGridLayouts } from "@/config/desktop-grid-layout";
 import { MARKET_ORDER_SLIPPAGE_MAX_PERCENT, MARKET_ORDER_SLIPPAGE_MIN_PERCENT } from "@/config/trade";
+import { useCopyToClipboard } from "@/hooks/ui/use-copy-to-clipboard";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useEmailWalletExport } from "@/hooks/wallet/use-email-wallet-export";
 import { useNumberFormat } from "@/lib/format";
@@ -49,6 +51,7 @@ export function GlobalSettingsModal() {
 	const { t } = useLingui();
 	const { formatNumber } = useNumberFormat();
 	const walletExport = useEmailWalletExport();
+	const { copy: copyVersion } = useCopyToClipboard();
 	const slippagePercent = useMarketOrderSlippagePercent();
 	const { showOrderbookInQuote } = useGlobalSettings();
 	const animateOrderbook = useAnimateOrderbook();
@@ -237,6 +240,21 @@ export function GlobalSettingsModal() {
 								<SegmentedControlItem value="mainnet">{t`Mainnet`}</SegmentedControlItem>
 								<SegmentedControlItem value="testnet">{t`Testnet`}</SegmentedControlItem>
 							</SegmentedControls>
+						</SettingRow>
+					</SettingsGroup>
+					<SettingsGroup label={t`About`}>
+						<SettingRow
+							label={t`Version`}
+							hint={APP_RELEASE_TAG === APP_RELEASE_ID ? undefined : t`Release ${APP_RELEASE_ID}`}
+						>
+							<button
+								type="button"
+								onClick={() => void copyVersion(`${APP_VERSION} ${APP_RELEASE_ID} ${APP_BUILD_COMMIT}`)}
+								aria-label={t`Copy version`}
+								className="rounded-6 font-mono text-xs text-fg-muted transition-colors hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
+							>
+								{APP_RELEASE_LABEL}
+							</button>
 						</SettingRow>
 					</SettingsGroup>
 				</ModalContent>
