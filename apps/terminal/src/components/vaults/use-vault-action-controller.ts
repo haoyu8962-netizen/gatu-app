@@ -345,6 +345,7 @@ export function useVaultActionController({
 		detail,
 		owner,
 		request: getVaultRequestAvailability(geo),
+		sessionMode: hyperliquid.sessionMode,
 	});
 
 	function updateAction(next: ActiveVaultAction | null) {

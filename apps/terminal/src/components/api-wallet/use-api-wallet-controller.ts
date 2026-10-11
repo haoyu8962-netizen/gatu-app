@@ -3,6 +3,7 @@ import { useLingui } from "@lingui/react/macro";
 import { useActiveAgentOwner } from "@sairn/hl-react";
 import { useEffect, useRef, useState } from "react";
 import type { Address, Hex } from "viem";
+import { useMasterWalletActionReason } from "@/hooks/trade/use-master-wallet-action-reason";
 import { useExplicitAgentApproval } from "@/hooks/wallet/use-explicit-agent-approval";
 import { useReconnectWallet, useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { type ActionFailure, classifyActionErrorOr, formatActionFailure } from "@/lib/errors/action-error";
@@ -86,6 +87,7 @@ export function useApiWalletController({
 	const activeAgentOwner = useActiveAgentOwner();
 	const approvalMutation = useExplicitAgentApproval();
 	const { reconnectWallet } = useReconnectWallet();
+	const masterWalletReason = useMasterWalletActionReason();
 	const accountAddress =
 		wallet.sessionMode === "agent-only"
 			? activeAgentOwner?.env === env
@@ -455,6 +457,7 @@ export function useApiWalletController({
 
 	return {
 		pageState,
+		masterWalletReason,
 		accountAddress,
 		accountLabel: env === "Testnet" ? t`Hyperliquid testnet account` : t`Hyperliquid account`,
 		name,

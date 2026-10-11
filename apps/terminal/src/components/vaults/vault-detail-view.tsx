@@ -3,6 +3,7 @@ import { ArrowLeftIcon, ArrowSquareOutIcon, LockKeyIcon, WarningCircleIcon } fro
 import { Button, Table } from "@sairn/ui";
 import { Link } from "@tanstack/react-router";
 import { useId, useState } from "react";
+import { useMasterWalletRequiredMessage } from "@/hooks/trade/use-master-wallet-action-reason";
 import { cn } from "@/lib/cn";
 import { formatDateTime, shortenAddress, useNumberFormat } from "@/lib/format";
 import { getExplorerAddressUrl } from "@/lib/hyperliquid";
@@ -58,6 +59,7 @@ export function VaultDetailView({
 	const ownerEquity = owner.status === "ready" ? owner.equity : null;
 	const ownerPnl = owner.status === "ready" ? owner.allTimePnl : null;
 	const ownerPnlTone = getVaultValueTone(ownerPnl);
+	const masterWalletRequiredMessage = useMasterWalletRequiredMessage();
 
 	function getUnavailableReason(reason: VaultActionUnavailableReason): string {
 		if (reason === "geo-checking") return t`Checking regional availability. Vault actions are temporarily unavailable.`;
@@ -65,6 +67,7 @@ export function VaultDetailView({
 		if (reason === "geo-unavailable") {
 			return t`Unable to verify regional availability. Vault actions are temporarily unavailable.`;
 		}
+		if (reason === "agent-only-session") return masterWalletRequiredMessage;
 		if (reason === "detail-unavailable") return t`Verified Vault details are unavailable.`;
 		if (reason === "vault-closed") return t`This Vault is closed and no longer accepts deposits.`;
 		if (reason === "deposits-disabled") return t`This Vault is not accepting deposits.`;

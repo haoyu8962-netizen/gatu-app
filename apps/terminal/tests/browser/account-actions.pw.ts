@@ -349,7 +349,8 @@ for (const width of [375, 393, 1363]) {
 			await expect(dialog.getByLabel("目标地址", { exact: true })).toHaveValue(address);
 			await dialog.getByRole("button", { name: "关闭", exact: true }).click();
 			await page.getByRole("button", { name: "Open deposit", exact: true }).click();
-			await expect(dialog.locator('[data-slot="funding-steps"] li')).toHaveCount(2);
+			await expect(dialog.getByText("发送至此地址的 USDC 会自动存入您的交易账户。", { exact: true })).toBeVisible();
+			await expect(dialog.getByRole("button", { name: /^存款/ })).toHaveCount(0);
 			await expect(dialog.locator("canvas")).toBeVisible();
 			await expect
 				.poll(() =>

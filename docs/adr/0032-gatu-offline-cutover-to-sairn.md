@@ -67,6 +67,10 @@
 - 官网发布后检查；
 - p25。
 
+## 补充（2026-10-08，p25 清理已发布）
+
+阶段 5.1 已完成：PR #73 于 2026-10-08 合入 `dev`（`d6033daf`）并随 PR #87 晋升 `main`（`d74dd616`），作为 `cloudfront-2026-10-08-p28` 发布，两网 `verify` 通过（签名 POST allowed）、`csp-coverage` 0 违规；线上自此不再识别 gatu 主机。同日稍后用户决定「gatu 相关的产物可以全部清理掉了」：5.2 已执行（策略去掉 `X-Gatu-Forwarded-Host`，ETag `E3UN6WX5RRO2AG`）；5.3（Lambda 变量改名）、5.4（删除两张 gatu 证书）同日在控制台完成；Cloudflare 的 gatu 记录与临时 IAM 策略 `gatu-edge-domain-cutover` 的摘除仍待用户。自 5.2 起回滚到 p23 及更早要先把旧头加回白名单；p24–p27 双写新旧头、Lambda 先读新头，不受影响。见[清理记录](../work-memory/sessions/2026-10-08-gatu-retirement-cleanup.md)。见[发布记录](../work-memory/sessions/2026-10-08-cloudfront-release-p28.md)。
+
 ## 补充（2026-10-03，p25 的代码部分）
 
 决策 3 的 p25 清理已写成代码，范围与[切换方案](../sairn-domain-cutover-plan.md) 4.2（PR-B）一致：

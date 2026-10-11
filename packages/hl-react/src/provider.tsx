@@ -34,7 +34,6 @@ export interface HyperliquidProviderProps {
 	userAddress: `0x${string}` | undefined;
 	allowAgentOnlySession?: boolean;
 	builderConfig: BuilderConfig;
-	agentName?: string;
 	enforceLegalActions?: boolean;
 	onAgentCleanupFailure?: (failure: { env: HyperliquidEnv; owner: `0x${string}`; reason: string }) => void;
 }
@@ -45,7 +44,6 @@ export function HyperliquidProvider({
 	userAddress,
 	allowAgentOnlySession = true,
 	builderConfig,
-	agentName = "app",
 	enforceLegalActions = false,
 	onAgentCleanupFailure,
 }: HyperliquidProviderProps) {
@@ -55,7 +53,6 @@ export function HyperliquidProvider({
 				userAddress={userAddress}
 				allowAgentOnlySession={allowAgentOnlySession}
 				builderConfig={builderConfig}
-				agentName={agentName}
 				enforceLegalActions={enforceLegalActions}
 				onAgentCleanupFailure={onAgentCleanupFailure}
 			>
@@ -88,7 +85,6 @@ function combineHyperliquidContexts(
 		env: transportContext.env,
 		isTestnet: transportContext.isTestnet,
 		builderConfig: sessionContext.builderConfig,
-		agentName: sessionContext.agentName,
 		clientKey: sessionContext.clientKey,
 		sessionMode: sessionContext.sessionMode,
 		exchangeLifecycle: sessionContext.exchangeLifecycle,

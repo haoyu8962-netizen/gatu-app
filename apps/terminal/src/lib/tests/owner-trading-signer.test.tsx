@@ -26,6 +26,7 @@ const state = vi.hoisted(() => ({
 	exchangeLifecycle: { id: Symbol("owner-trading-test"), active: true },
 	externalClient: { account: { address: "0x2222222222222222222222222222222222222222" }, signTypedData: vi.fn() },
 	connectionChainId: 42161 as number,
+	sessionMode: "wallet" as "wallet" | "agent-only",
 }));
 
 vi.mock("@sairn/hl-react/provider", () => ({
@@ -33,7 +34,7 @@ vi.mock("@sairn/hl-react/provider", () => ({
 		clientKey: state.clientKey,
 		env: "Mainnet",
 		isTestnet: false,
-		sessionMode: "wallet",
+		sessionMode: state.sessionMode,
 		exchangeLifecycle: state.exchangeLifecycle,
 		info: {},
 		subscription: {},
@@ -115,6 +116,7 @@ describe("embedded owner trading signer", () => {
 		root = createRoot(container);
 		queryClient = new QueryClient({ defaultOptions: { mutations: { retry: false } } });
 		state.clientKey = OWNER;
+		state.sessionMode = "wallet";
 		state.getTradingClient.mockReset().mockReturnValue(state.agentClient);
 		state.httpRequest.mockReset().mockResolvedValue({ status: "ok", response: { type: "default" } });
 	});
@@ -144,6 +146,26 @@ describe("embedded owner trading signer", () => {
 		expect(observed.trading).toBe(state.agentClient);
 		expect(observed.agentPublicKey).toBe(OTHER);
 		expect(state.getTradingClient).toHaveBeenCalled();
+	});
+
+	it("never builds a user-signing client while an imported key owns the session, even with the same wallet connected", () => {
+		const previousClient = state.externalClient;
+		state.externalClient = { account: { address: OWNER }, signTypedData: vi.fn() };
+		try {
+			render(null);
+			expect(observed.user).not.toBeNull();
+
+			state.sessionMode = "agent-only";
+			render(null);
+			expect(observed.user).toBeNull();
+			expect(observed.trading).toBe(state.agentClient);
+
+			state.sessionMode = "wallet";
+			render(null);
+			expect(observed.user).not.toBeNull();
+		} finally {
+			state.externalClient = previousClient;
+		}
 	});
 
 	it("builds the external user client from the connection's own chain, configured or not", () => {

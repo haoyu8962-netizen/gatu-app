@@ -1,12 +1,15 @@
-import type { ExtraAgentsResponse, MaxBuilderFeeResponse } from "@nktkas/hyperliquid";
+import type { ExtraAgentsResponse, MaxBuilderFeeResponse, UserRoleResponse } from "@nktkas/hyperliquid";
+import { hashKey, type QueryClient, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { type Address, zeroAddress } from "viem";
 import { useInfo } from "../hooks/useInfo";
 import { useHyperliquid } from "../provider";
+import { infoQueryOptions } from "../query/info";
 import { cleanupAgentRegistrationIfMatches } from "./agent-registration-session";
 import { readAgentFromStorage, useAgentWalletStorage, useInvalidAgentStorageRecord } from "./agent-storage";
-import { isAgentApproved, isBuilderFeeApproved } from "./agent-utils";
+import { isBuilderFeeApproved } from "./agent-utils";
 import { isStoredMobileAgent, type MobileAgentStaleReason, verifyMobileAgent } from "./mobile-agent";
+import { notifyMobileAgentEnded } from "./mobile-agent-events";
 import { useHyperliquidOwnerSigner } from "./owner-signer-provider";
 import type { AgentWallet, BuilderConfig } from "./types";
 
@@ -23,19 +26,40 @@ export type AgentVerificationStatus = "unknown" | "loading" | "ready" | "missing
 
 export type AgentMissingReason =
 	| "no_local_key"
-	| "remote_named_agent_exists"
 	| "approval_unconfirmed"
 	| "local_key_not_approved"
 	| "remote_key_replaced"
 	| "agent_name_mismatch"
 	| "invalid_local_record";
 
+/**
+ * Hyperliquid's `userRole` answer for one exact Agent key, kept together with
+ * the key it answers for. The unnamed default Agent that ordinary trading
+ * connections approve never appears in `extraAgents`, so its approval is
+ * verified by asking the exchange what role the key itself has.
+ */
+export interface AgentKeyRole {
+	agentAddress: Address;
+	role: UserRoleResponse;
+}
+
+/**
+ * Server evidence about the locally stored Agent or about an explicitly named
+ * candidate key: `keyRole` verifies a default (unnamed) Agent key, while
+ * `extraAgents` verifies the named Mobile Agent imported from a desktop.
+ */
+export interface AgentApprovalEvidence {
+	owner: Address | undefined;
+	localAgent: AgentWallet | null | undefined;
+	keyRole: AgentKeyRole | undefined;
+	extraAgents: ExtraAgentsResponse | undefined;
+}
+
 export interface DeriveAgentMissingReasonOptions {
 	agentVerificationStatus: AgentVerificationStatus;
 	extraAgentsData: ExtraAgentsResponse | undefined;
 	localAgent: AgentWallet | null | undefined;
 	hasInvalidStorageRecord: boolean;
-	expectedAgentName?: string;
 	nowMs?: number;
 }
 
@@ -62,6 +86,48 @@ export interface UseAgentStatusResult extends AgentRequirements {
 	refetch: (agentAddressOverride?: Address) => Promise<AgentRequirements>;
 	refetchAgent: (agentAddressOverride?: Address) => Promise<AgentRequirements>;
 	refetchBuilderFee: () => Promise<AgentRequirements>;
+}
+
+const AGENT_KEY_ROLE_STALE_MS = 30_000;
+
+interface DefinitiveCheck {
+	sequence: number;
+	promise: Promise<UserRoleResponse>;
+}
+
+// The definitive checks started per QueryClient and cache key. The check that started last holds the
+// newest view of the exchange: it alone writes its answer back to the hook's cache, and a check that
+// was overtaken hands its caller the newest answer instead of its own, so no caller can act on an
+// answer that a later check has already contradicted.
+const definitiveChecks = new WeakMap<QueryClient, Map<string, DefinitiveCheck>>();
+
+function getDefinitiveChecks(queryClient: QueryClient): Map<string, DefinitiveCheck> {
+	let checks = definitiveChecks.get(queryClient);
+	if (!checks) {
+		checks = new Map();
+		definitiveChecks.set(queryClient, checks);
+	}
+	return checks;
+}
+
+async function awaitLatestDefinitiveCheck(
+	checks: Map<string, DefinitiveCheck>,
+	cacheKey: string,
+): Promise<UserRoleResponse> {
+	for (;;) {
+		const latest = checks.get(cacheKey);
+		if (!latest) throw new Error("Agent key check was discarded");
+		let role: UserRoleResponse | undefined;
+		let failure: unknown;
+		try {
+			role = await latest.promise;
+		} catch (error) {
+			failure = error;
+		}
+		if (checks.get(cacheKey) !== latest) continue;
+		if (role === undefined) throw failure;
+		return role;
+	}
 }
 
 export function classifyAgentStatusError(error: unknown): AgentStatusErrorReason {
@@ -116,40 +182,76 @@ export function classifyAgentStatusError(error: unknown): AgentStatusErrorReason
 	return "unknown";
 }
 
+function sameAddress(left: string | undefined, right: string | undefined): boolean {
+	return left !== undefined && right !== undefined && left.toLowerCase() === right.toLowerCase();
+}
+
+/** True only when the exchange reports the exact key as an Agent of the exact owner. */
+export function isAgentKeyApprovedForOwner(
+	keyRole: AgentKeyRole | undefined,
+	agentAddress: Address | undefined,
+	owner: Address | undefined,
+): boolean {
+	if (!keyRole || !agentAddress || !owner) return false;
+	if (!sameAddress(keyRole.agentAddress, agentAddress)) return false;
+	return keyRole.role.role === "agent" && sameAddress(keyRole.role.data.user, owner);
+}
+
+interface AgentEvidenceVerification {
+	known: boolean;
+	approved: boolean;
+}
+
+/**
+ * A Mobile Agent is verified by name base, address and expiry in `extraAgents`;
+ * every other key is verified by `userRole`. Without a candidate key there is
+ * nothing to ask the exchange about: a connected owner without a local key
+ * definitively needs a new connection, while no owner means nothing is known.
+ */
+function verifyAgentEvidence(
+	evidence: AgentApprovalEvidence,
+	nowMs: number,
+	agentAddressOverride?: Address,
+): AgentEvidenceVerification {
+	const { localAgent } = evidence;
+	if (!agentAddressOverride && localAgent?.source === "mobile-sync") {
+		return {
+			known: evidence.extraAgents !== undefined,
+			approved: verifyMobileAgent(localAgent, evidence.extraAgents, nowMs).status === "approved",
+		};
+	}
+	const candidate = agentAddressOverride ?? localAgent?.publicKey;
+	if (!candidate) return { known: evidence.owner !== undefined, approved: false };
+	const known = evidence.keyRole !== undefined && sameAddress(evidence.keyRole.agentAddress, candidate);
+	return { known, approved: known && isAgentKeyApprovedForOwner(evidence.keyRole, candidate, evidence.owner) };
+}
+
 export function deriveAgentMissingReason({
 	agentVerificationStatus,
 	extraAgentsData,
 	localAgent,
 	hasInvalidStorageRecord,
-	expectedAgentName,
 	nowMs = Date.now(),
 }: DeriveAgentMissingReasonOptions): AgentMissingReason | null {
 	if (agentVerificationStatus !== "missing") return null;
 	if (hasInvalidStorageRecord) return "invalid_local_record";
-	const activeAgents = extraAgentsData?.filter((agent) => (agent.validUntil ?? Number.POSITIVE_INFINITY) > nowMs) ?? [];
-	if (!localAgent) {
-		if (expectedAgentName && activeAgents.some((agent) => agent.name === expectedAgentName)) {
-			return "remote_named_agent_exists";
+	if (!localAgent) return "no_local_key";
+	if (localAgent.source === "mobile-sync") {
+		if (!isStoredMobileAgent(localAgent)) return "invalid_local_record";
+		if (!extraAgentsData) return "local_key_not_approved";
+		const activeAgents = extraAgentsData.filter((agent) => (agent.validUntil ?? Number.POSITIVE_INFINITY) > nowMs);
+		const expectedName = localAgent.agentNameBase;
+		if (
+			activeAgents.some((agent) => agent.name === expectedName && !sameAddress(agent.address, localAgent.publicKey))
+		) {
+			return "remote_key_replaced";
 		}
-		return "no_local_key";
+		if (activeAgents.some((agent) => sameAddress(agent.address, localAgent.publicKey) && agent.name !== expectedName)) {
+			return "agent_name_mismatch";
+		}
+		return "local_key_not_approved";
 	}
-	if (localAgent.source === "mobile-sync" && !isStoredMobileAgent(localAgent)) {
-		return "invalid_local_record";
-	}
-	if (localAgent.source === "local-registration" && localAgent.approvalPendingAtMs !== undefined) {
-		return "approval_unconfirmed";
-	}
-
-	const expectedName = localAgent.source === "mobile-sync" ? localAgent.agentNameBase : expectedAgentName;
-	if (!extraAgentsData || !expectedName) return "local_key_not_approved";
-
-	const normalizedLocalKey = localAgent.publicKey.toLowerCase();
-	if (activeAgents.some((agent) => agent.name === expectedName && agent.address.toLowerCase() !== normalizedLocalKey)) {
-		return "remote_key_replaced";
-	}
-	if (activeAgents.some((agent) => agent.address.toLowerCase() === normalizedLocalKey && agent.name !== expectedName)) {
-		return "agent_name_mismatch";
-	}
+	if (localAgent.approvalPendingAtMs !== undefined) return "approval_unconfirmed";
 	return "local_key_not_approved";
 }
 
@@ -174,13 +276,18 @@ function createAgentStatusError(cause: unknown): AgentStatusError {
 	);
 }
 
+function agentKeyRoleParams(agentAddress: Address): { user: Address } {
+	return { user: agentAddress.toLowerCase() as Address };
+}
+
 /** @internal Exported for contract tests. */
 export function deriveAgentVerificationStatus(
 	hasOwner: boolean,
-	extraAgentsData: ExtraAgentsResponse | undefined,
+	evidence: AgentApprovalEvidence,
 	error: unknown,
 	isFetching: boolean,
 	currentRequirements: AgentRequirements,
+	nowMs = Date.now(),
 ): AgentVerificationStatus {
 	if (!hasOwner) return "unknown";
 	if (error) return "error";
@@ -188,7 +295,7 @@ export function deriveAgentVerificationStatus(
 	// contrast, a cached miss cannot trigger registration until refresh settles.
 	if (currentRequirements.isAgentReady) return "ready";
 	if (isFetching) return "loading";
-	if (extraAgentsData === undefined) return "unknown";
+	if (!verifyAgentEvidence(evidence, nowMs).known) return "unknown";
 	return "missing";
 }
 
@@ -225,29 +332,20 @@ export function getDefinitiveMobileAgentStaleReason(
 /** @internal Exported for contract tests. */
 export function deriveAgentRequirements(
 	builderFeeData: MaxBuilderFeeResponse | undefined,
-	extraAgentsData: ExtraAgentsResponse | undefined,
-	localAgent: AgentWallet | null | undefined,
+	evidence: AgentApprovalEvidence,
 	builderConfig: BuilderConfig | undefined,
 	nowMs = Date.now(),
 	agentAddressOverride?: Address,
-	expectedAgentName?: string,
 ): AgentRequirements {
 	const hasBuilderConfig = !!builderConfig?.b;
 	const builderFeeKnown = !hasBuilderConfig || builderFeeData !== undefined;
-	const extraAgentsKnown = extraAgentsData !== undefined;
-	const mobileAgentApproved =
-		!agentAddressOverride && localAgent?.source === "mobile-sync"
-			? verifyMobileAgent(localAgent, extraAgentsData, nowMs).status === "approved"
-			: null;
-	const agentApproved =
-		mobileAgentApproved ??
-		isAgentApproved(extraAgentsData, agentAddressOverride ?? localAgent?.publicKey, expectedAgentName);
+	const agentVerification = verifyAgentEvidence(evidence, nowMs, agentAddressOverride);
 
 	const needsBuilderFee =
 		hasBuilderConfig && builderFeeKnown && !isBuilderFeeApproved(builderFeeData, builderConfig?.f);
-	const needsAgent = extraAgentsKnown && !agentApproved;
+	const needsAgent = agentVerification.known && !agentVerification.approved;
 	const signaturesRequired = (needsBuilderFee ? 1 : 0) + (needsAgent ? 1 : 0);
-	const isAgentReady = extraAgentsKnown && !needsAgent;
+	const isAgentReady = agentVerification.known && agentVerification.approved;
 	const isBuilderFeeReady = builderFeeKnown && !needsBuilderFee;
 
 	return {
@@ -263,13 +361,16 @@ export function deriveAgentRequirements(
 export function useAgentStatus(options: { enableAgent?: boolean } = {}): UseAgentStatusResult {
 	const ownerSigner = useHyperliquidOwnerSigner();
 	const enableAgent = options.enableAgent ?? !ownerSigner;
-	const { env, builderConfig, clientKey, agentName } = useHyperliquid();
+	const { env, builderConfig, clientKey, info } = useHyperliquid();
+	const queryClient = useQueryClient();
 	const address = clientKey === "disconnected" ? undefined : (clientKey as Address);
 
 	const localAgent = useAgentWalletStorage(env, address);
 	const hasInvalidStorageRecord = useInvalidAgentStorageRecord(env, address);
 	const hasBuilderConfig = !!builderConfig?.b;
 	const userAddress = address ?? zeroAddress;
+	const isMobileAgent = localAgent?.source === "mobile-sync";
+	const defaultAgentKey = localAgent && !isMobileAgent ? localAgent.publicKey : undefined;
 
 	const builderFeeQuery = useInfo(
 		"maxBuilderFee",
@@ -277,7 +378,20 @@ export function useAgentStatus(options: { enableAgent?: boolean } = {}): UseAgen
 		{ enabled: !!address && hasBuilderConfig },
 	);
 
-	const extraAgentsQuery = useInfo("extraAgents", { user: userAddress }, { enabled: !!address && enableAgent });
+	const extraAgentsQuery = useInfo(
+		"extraAgents",
+		{ user: userAddress },
+		{ enabled: !!address && enableAgent && isMobileAgent },
+	);
+	const keyRoleQuery = useInfo("userRole", agentKeyRoleParams(defaultAgentKey ?? zeroAddress), {
+		enabled: !!address && enableAgent && defaultAgentKey !== undefined,
+		staleTime: AGENT_KEY_ROLE_STALE_MS,
+	});
+	const agentQuery = isMobileAgent ? extraAgentsQuery : keyRoleQuery;
+	const keyRole: AgentKeyRole | undefined =
+		defaultAgentKey !== undefined && keyRoleQuery.data !== undefined
+			? { agentAddress: defaultAgentKey, role: keyRoleQuery.data }
+			: undefined;
 	const staleMobileReason = hasInvalidStorageRecord
 		? "invalid_local"
 		: address
@@ -303,81 +417,138 @@ export function useAgentStatus(options: { enableAgent?: boolean } = {}): UseAgen
 				? ({ kind: "public-key", publicKey: localAgent.publicKey } as const)
 				: null;
 		if (!target) return;
-		void cleanupAgentRegistrationIfMatches(env, address, target);
+		const reason = staleMobileReason;
+		void cleanupAgentRegistrationIfMatches(env, address, target).then((result) => {
+			if (result.status === "cleaned" && target.kind === "public-key") {
+				notifyMobileAgentEnded({ env, owner: address, reason });
+			}
+		});
 	}, [address, enableAgent, env, hasInvalidStorageRecord, localAgent, staleMobileReason]);
 
 	const nowMs = Date.now();
-	const currentRequirements = deriveAgentRequirements(
-		builderFeeQuery.data,
-		extraAgentsQuery.data,
+	const evidence: AgentApprovalEvidence = {
+		owner: address,
 		localAgent,
-		builderConfig,
-		nowMs,
-		undefined,
-		agentName,
-	);
+		keyRole,
+		extraAgents: extraAgentsQuery.data,
+	};
+	const currentRequirements = deriveAgentRequirements(builderFeeQuery.data, evidence, builderConfig, nowMs);
 	const agentVerificationStatus = deriveAgentVerificationStatus(
 		!!address && enableAgent,
-		extraAgentsQuery.data,
-		extraAgentsQuery.error,
-		extraAgentsQuery.isFetching,
+		evidence,
+		agentQuery.error,
+		agentQuery.isFetching,
 		currentRequirements,
+		nowMs,
 	);
 	const agentMissingReason = deriveAgentMissingReason({
 		agentVerificationStatus,
 		extraAgentsData: extraAgentsQuery.data,
 		localAgent,
 		hasInvalidStorageRecord,
-		expectedAgentName: agentName,
 		nowMs,
 	});
-	const verifiedAgentData =
-		agentVerificationStatus === "ready" || agentVerificationStatus === "missing" ? extraAgentsQuery.data : undefined;
+	const verifiedEvidence: AgentApprovalEvidence =
+		agentVerificationStatus === "ready" || agentVerificationStatus === "missing"
+			? evidence
+			: { ...evidence, keyRole: undefined, extraAgents: undefined };
 	// Keep the action-level loading state scoped to the initial fetch. Background
 	// revalidation remains fail-closed through agentVerificationStatus without
 	// repeatedly disabling the trading action.
-	const isAgentLoading = enableAgent && extraAgentsQuery.isLoading;
+	const isAgentLoading = enableAgent && agentQuery.isLoading;
 	const isBuilderFeeLoading = hasBuilderConfig && builderFeeQuery.isLoading;
 	const isLoading = isAgentLoading || isBuilderFeeLoading;
-	const requirements = deriveAgentRequirements(
-		builderFeeQuery.data,
-		verifiedAgentData,
-		localAgent,
-		builderConfig,
-		nowMs,
-		undefined,
-		agentName,
-	);
+	const requirements = deriveAgentRequirements(builderFeeQuery.data, verifiedEvidence, builderConfig, nowMs);
+
+	function readLatestLocalAgent(): AgentWallet | null {
+		return address ? readAgentFromStorage(env, address) : null;
+	}
+
+	// A definitive check sends its own request under a private query key: TanStack would otherwise
+	// hand it a request that was already in flight (possibly from before the approval), and cancelling
+	// that shared request would resolve another caller with the reverted cache instead of an answer.
+	// The private query still inherits the host QueryClient's retry policy. The newest check writes its
+	// answer to the hook's cache key, after cancelling (and reverting) an observer fetch still in
+	// flight, so a slower pre-approval answer cannot overwrite it. When the newest check fails, the
+	// shared query is reset so the hook stops treating its cached approval as current and fetches
+	// again; a check that was overtaken returns the newest check's answer or failure.
+	async function fetchAgentKeyRole(agentAddress: Address): Promise<AgentKeyRole> {
+		const options = infoQueryOptions(info, "userRole", agentKeyRoleParams(agentAddress), env);
+		const cacheKey = hashKey(options.queryKey);
+		const checks = getDefinitiveChecks(queryClient);
+		const sequence = (checks.get(cacheKey)?.sequence ?? 0) + 1;
+		const check: DefinitiveCheck = {
+			sequence,
+			promise: queryClient.fetchQuery({
+				queryKey: [...options.queryKey, { definitiveCheck: sequence }],
+				queryFn: options.queryFn,
+				staleTime: 0,
+				gcTime: 0,
+			}),
+		};
+		checks.set(cacheKey, check);
+		const isNewest = () => checks.get(cacheKey) === check;
+
+		let ownRole: UserRoleResponse | undefined;
+		let ownError: unknown;
+		try {
+			ownRole = await check.promise;
+		} catch (error) {
+			ownError = error;
+		}
+		if (isNewest()) {
+			if (ownRole === undefined) {
+				void queryClient.resetQueries({ queryKey: options.queryKey, exact: true });
+				throw createAgentStatusError(ownError);
+			}
+			await queryClient.cancelQueries({ queryKey: options.queryKey, exact: true });
+			if (isNewest()) {
+				queryClient.setQueryData(options.queryKey, ownRole);
+				return { agentAddress, role: ownRole };
+			}
+		}
+		try {
+			return { agentAddress, role: await awaitLatestDefinitiveCheck(checks, cacheKey) };
+		} catch (error) {
+			throw createAgentStatusError(error);
+		}
+	}
+
+	// The stored record is read again after each request: a record another tab replaced or removed
+	// while the request was running must not be reported ready on the strength of the old answer.
+	async function loadAgentEvidence(agentAddressOverride?: Address): Promise<AgentApprovalEvidence> {
+		const startingLocalAgent = readLatestLocalAgent();
+		if (!agentAddressOverride && startingLocalAgent?.source === "mobile-sync") {
+			const agentsResult = await extraAgentsQuery.refetch();
+			if (agentsResult.error || agentsResult.data === undefined) {
+				throw createAgentStatusError(agentsResult.error);
+			}
+			return { owner: address, localAgent: readLatestLocalAgent(), keyRole: undefined, extraAgents: agentsResult.data };
+		}
+		const candidate = agentAddressOverride ?? startingLocalAgent?.publicKey;
+		const keyRole = candidate ? await fetchAgentKeyRole(candidate) : undefined;
+		return { owner: address, localAgent: readLatestLocalAgent(), keyRole, extraAgents: undefined };
+	}
 
 	async function refetchAgent(agentAddressOverride?: Address): Promise<AgentRequirements> {
 		if (!enableAgent) throw new Error("Agent verification is disabled for owner-wallet trading");
-		const agentsResult = await extraAgentsQuery.refetch();
-		if (agentsResult.error || agentsResult.data === undefined) {
-			throw createAgentStatusError(agentsResult.error);
-		}
-		const latestLocalAgent = address ? readAgentFromStorage(env, address) : null;
+		const freshEvidence = await loadAgentEvidence(agentAddressOverride);
 		return deriveAgentRequirements(
 			builderFeeQuery.data,
-			agentsResult.data,
-			latestLocalAgent,
+			freshEvidence,
 			builderConfig,
 			Date.now(),
 			agentAddressOverride,
-			agentName,
 		);
 	}
 
 	async function refetchBuilderFee(): Promise<AgentRequirements> {
-		const latestLocalAgent = address ? readAgentFromStorage(env, address) : null;
 		if (!hasBuilderConfig) {
 			return deriveAgentRequirements(
 				undefined,
-				verifiedAgentData,
-				latestLocalAgent,
+				{ ...verifiedEvidence, localAgent: readLatestLocalAgent() },
 				builderConfig,
 				Date.now(),
-				undefined,
-				agentName,
 			);
 		}
 
@@ -385,37 +556,28 @@ export function useAgentStatus(options: { enableAgent?: boolean } = {}): UseAgen
 		if (feeResult.error || feeResult.data === undefined) throw new Error("Could not load builder fee status");
 		return deriveAgentRequirements(
 			feeResult.data,
-			verifiedAgentData,
-			latestLocalAgent,
+			{ ...verifiedEvidence, localAgent: readLatestLocalAgent() },
 			builderConfig,
 			Date.now(),
-			undefined,
-			agentName,
 		);
 	}
 
 	async function refetch(agentAddressOverride?: Address): Promise<AgentRequirements> {
 		if (!enableAgent) throw new Error("Agent verification is disabled for owner-wallet trading");
-		const [builderFeeResult, agentsResult] = await Promise.all([
+		const [builderFeeResult, freshEvidence] = await Promise.all([
 			hasBuilderConfig ? builderFeeQuery.refetch() : Promise.resolve({ data: undefined, error: null }),
-			extraAgentsQuery.refetch(),
+			loadAgentEvidence(agentAddressOverride),
 		]);
 		if (builderFeeResult.error || (hasBuilderConfig && builderFeeResult.data === undefined)) {
 			throw new Error("Could not load builder fee status");
 		}
-		if (agentsResult.error || agentsResult.data === undefined) {
-			throw createAgentStatusError(agentsResult.error);
-		}
-		const latestLocalAgent = address ? readAgentFromStorage(env, address) : null;
 
 		return deriveAgentRequirements(
 			builderFeeResult.data,
-			agentsResult.data,
-			latestLocalAgent,
+			{ ...freshEvidence, localAgent: readLatestLocalAgent() },
 			builderConfig,
 			Date.now(),
 			agentAddressOverride,
-			agentName,
 		);
 	}
 
@@ -427,7 +589,7 @@ export function useAgentStatus(options: { enableAgent?: boolean } = {}): UseAgen
 		isBuilderFeeLoading,
 		agentVerificationStatus,
 		agentMissingReason,
-		agentError: extraAgentsQuery.error,
+		agentError: agentQuery.error,
 		agentAddress: localAgent?.publicKey ?? null,
 		refetch,
 		refetchAgent,

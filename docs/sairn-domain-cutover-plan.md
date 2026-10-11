@@ -164,10 +164,10 @@ p24 发布到窗口之间，站内推荐链接、法律页链接、站点地图�
 
 | # | 步骤 | 前提 |
 |---|---|---|
-| 5.1 | PR-B（PR #73，2026-10-03 已开，未合入）合入、发布 p25（`--origin https://app.sairn.ai`），`verify` 的签名 POST 返回 200 | 0.6 的读回输出证明策略含 `X-Sairn-Forwarded-Host` |
-| 5.2 | 源站请求策略删除 `X-Gatu-Forwarded-Host`；选 A 时之后由你摘除并删除临时策略 `gatu-edge-domain-cutover` | p25 已验证 |
-| 5.3 | Lambda：**在控制台**删除 `GATU_TRUST_VIEWER_ADDRESS`，可显式设 `SAIRN_TRUST_VIEWER_ADDRESS=true`（命令行更新会整表替换，漏写会丢掉 `IPDATA_API_KEY`） | `verify` 的 geo 返回真实国家 |
-| 5.4 | 30 天后删除两张 gatu 证书 `548ac30d…`、`ff5677c6…`，再删 gatu 区的 `_…acm-validations`（之后旧主机名才会是 NXDOMAIN）；证书删除不可恢复，需你确认 | 无回滚需要 |
+| 5.1 | PR-B（PR #73）合入、发布 p25（`--origin https://app.sairn.ai`），`verify` 的签名 POST 返回 200。**2026-10-08 已完成**：#73 于 2026-10-08 合入 `dev`（`d6033daf`），随 PR #87 晋升 `main`（`d74dd616`），作为 `cloudfront-2026-10-08-p28` 发布；发布前读回三条分发别名都不含 gatu.ai、策略含 `X-Sairn-Forwarded-Host`（ETag `ETVPDKIKX0DER`）；两网 `verify` 的签名 POST 为 allowed。见[发布记录](work-memory/sessions/2026-10-08-cloudfront-release-p28.md)。用户原定 10-09 之后再合，本次按用户指示提前 | 0.6 的读回输出证明策略含 `X-Sairn-Forwarded-Host` |
+| 5.2 | 源站请求策略删除 `X-Gatu-Forwarded-Host`；选 A 时之后由你摘除并删除临时策略 `gatu-edge-domain-cutover`。**2026-10-08 已执行**（用户决定不再等）：读回 ETag `ETVPDKIKX0DER`、10 个头，去掉 `X-Gatu-Forwarded-Host` 后 `update-origin-request-policy --if-match`，读回 9 个头、新 ETag `E3UN6WX5RRO2AG`；之后 `/api/geo` 200。临时策略 `gatu-edge-domain-cutover` 的摘除是账号级操作，待用户在控制台完成 | p25 已验证 |
+| 5.3 | Lambda：**在控制台**删除 `GATU_TRUST_VIEWER_ADDRESS`，可显式设 `SAIRN_TRUST_VIEWER_ADDRESS=true`（命令行更新会整表替换，漏写会丢掉 `IPDATA_API_KEY`）。**2026-10-08 已完成**：命令行因 `gatu-edge` 没有 `lambda:UpdateFunctionConfiguration` 被拒后，在控制台改名为 `SAIRN_TRUST_VIEWER_ADDRESS=true`、保留 `IPDATA_API_KEY`，读回成功，geo 仍返回真实国家 | `verify` 的 geo 返回真实国家 |
+| 5.4 | 30 天后删除两张 gatu 证书 `548ac30d…`、`ff5677c6…`，再删 gatu 区的 `_…acm-validations`（之后旧主机名才会是 NXDOMAIN）；证书删除不可恢复，需你确认。**2026-10-08 用户决定不再等，证书已由用户在控制台删除**（`gatu-edge` 只有 ACM 只读权限，命令行被拒），读回只剩 `sairn.ai`；Cloudflare 的验证记录与 `gatu.ai` / `app.gatu.ai` 解析记录仍在，待用户删除 | 无回滚需要 |
 | 5.5 | gatu.ai 邮件与 SES：本方案不处理，品牌替换完成后按第 7 节后续事项 1 另行处理 | — |
 
 ### 按阶段回滚

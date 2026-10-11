@@ -143,7 +143,7 @@ Light-mode values below are exact where the existing market-close tokens are use
 | `#EAF5EF`, `#EDF1F5` badge fills | Closest are `success-soft` and `fill-weak` | Not pixel-exact |
 | `#EEF1F5` desktop underlay | `bg-grid-container` is required by the desktop layout contract | Existing value differs slightly |
 | Fixed dark share card colors | `position-share-*` inverse-canvas tokens | Intentionally fixed for identical on-screen and exported PNG branding in both themes |
-| Design scrim | `bg-scrim/60` | Existing theme overlay token; modal shadows remain component-local design values |
+| Design scrim | `bg-scrim/60` | Existing theme overlay token; modal shadows remain component-local design values. 2026-10-09: superseded by the shared `bg-scrim` / `bg-scrim-sheet` backdrops owned by the dialog primitives (`.claude/rules/style-ui-guide.md`, Dialog chrome); dialogs no longer set their own scrim |
 
 The remaining non-exact badge, warning, underlay, and shadow rows continue to reuse project semantics. Adding new shared theme tokens still requires explicit approval.
 

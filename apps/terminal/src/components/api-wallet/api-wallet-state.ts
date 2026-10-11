@@ -1,20 +1,17 @@
+import { type ExtraAgent, isApiWalletExtraAgentSnapshot } from "@/lib/hyperliquid/extra-agent-snapshot";
+
+export { type ExtraAgent, isApiWalletExtraAgentSnapshot };
+
 export const API_WALLET_EXPIRY_DAYS = [30, 90, 180] as const;
 export const API_WALLET_ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 
 const API_WALLET_NAME_PATTERN = /^[A-Za-z0-9_-]{2,16}$/u;
-const API_WALLET_ADDRESS_PATTERN = /^0x[0-9a-fA-F]{40}$/u;
 const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
 
 export type ApiWalletExpiryDays = (typeof API_WALLET_EXPIRY_DAYS)[number];
 export type ApiWalletPageState = "normal" | "empty" | "loading" | "error" | "disconnected" | "nonMaster";
 export type ApiWalletAgentStatus = "active" | "expiring" | "today" | "expired" | "noExpiry";
 export type ApiWalletNameValidationError = "required" | "format" | "duplicate";
-
-export interface ExtraAgent {
-	address: string;
-	name: string;
-	validUntil: number | null;
-}
 
 export type ApiWalletExtraAgent = ExtraAgent;
 export type ApiWalletAgentTuple = ExtraAgent;
@@ -73,24 +70,6 @@ export function deriveApiWalletPageState(input: ApiWalletPageStateInput): ApiWal
 
 export function isApiWalletPageOperable(state: ApiWalletPageState): boolean {
 	return state === "normal" || state === "empty";
-}
-
-export function isApiWalletExtraAgentSnapshot(value: unknown): value is readonly ExtraAgent[] {
-	return Array.isArray(value) && value.every(isApiWalletExtraAgent);
-}
-
-function isApiWalletExtraAgent(value: unknown): value is ExtraAgent {
-	if (typeof value !== "object" || value === null) return false;
-	const agent = value as Record<string, unknown>;
-	if (typeof agent.name !== "string") return false;
-	if (typeof agent.address !== "string" || !API_WALLET_ADDRESS_PATTERN.test(agent.address)) return false;
-	if (agent.validUntil === null) return true;
-	return (
-		typeof agent.validUntil === "number" &&
-		Number.isSafeInteger(agent.validUntil) &&
-		agent.validUntil >= 0 &&
-		Number.isFinite(new Date(agent.validUntil).getTime())
-	);
 }
 
 export function validateApiWalletName(

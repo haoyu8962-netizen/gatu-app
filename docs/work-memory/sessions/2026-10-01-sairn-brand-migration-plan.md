@@ -15,7 +15,7 @@
     { "path": "docs/brand-migration-plan.md" },
     { "path": "brand/README.md" },
     { "path": "brand/brand.json" },
-    { "path": "apps/terminal/src/config/trading-agent.ts" },
+    { "path": "docs/adr/0038-unnamed-default-agent-for-trading-connection.md" },
     { "path": "apps/terminal/src/components/funds-action/funds-action-marker.ts" },
     { "path": "apps/terminal/src/lib/trade/cctp-deposit-tracking.ts" },
     { "path": "apps/terminal/src/lib/trade/order-asset-lock.ts" },
@@ -75,3 +75,5 @@
 - **ADR 编号**：计划预分配 0027–0031，动笔前要再查一次是否被占用。
 - 没有被替代的记录。
 - 修订（2026-10-01）：`brand/brand-info.yaml` 已在执行阶段由 `brand/brand.json` 取代并删除（`c2d47191`），本记录的来源随之改指 `brand/brand.json`；执行过程见 [执行记录](2026-10-01-sairn-brand-migration-execution.md)。
+
+- 2026-10-09 更正：来源列表里的 `apps/terminal/src/config/trading-agent.ts` 已随 ADR 0038（普通交易连接改用无名默认 Agent）删除，来源改指向该 ADR；正文提到的文件名保留为当时的写法。

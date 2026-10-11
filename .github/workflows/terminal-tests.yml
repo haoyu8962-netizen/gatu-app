@@ -96,6 +96,7 @@ jobs:
           src/lib/tests/mobile-terminal-disclosure-state.test.tsx
           src/lib/tests/mobile-trade-layout-market-reset.test.tsx
           src/lib/tests/market-overview.test.tsx
+          src/lib/tests/market-asset-info.test.tsx
 
       - name: Test Privy theme and wallet identity
         working-directory: apps/terminal
@@ -124,12 +125,30 @@ jobs:
           src/lib/tests/mobile-pairing-feature-gate.test.ts
           src/lib/tests/qr-classification.test.ts
           src/lib/tests/mobile-agent-lifecycle.test.ts
+          src/lib/tests/agent-verification-status.test.ts
+          src/lib/tests/use-agent-status-verification.test.tsx
+          src/lib/tests/use-agent-status-mobile-cleanup.test.tsx
+          src/lib/tests/use-agent-registration-race.test.tsx
+          src/lib/tests/owner-trading-status.test.tsx
+          src/lib/tests/trading-authorization.test.tsx
+          src/lib/tests/use-agent-status-cache.test.tsx
+          src/lib/tests/use-agent-wallet.test.tsx
+          src/lib/tests/establish-connection-modal.test.tsx
           src/lib/tests/use-explicit-agent-approval.test.tsx
           src/lib/tests/use-connection-wallet-client.test.tsx
           src/lib/tests/use-terms-acceptance.test.tsx
           src/lib/tests/owner-trading-signer.test.tsx
           src/lib/tests/privy-agent-signer.test.ts
           src/lib/tests/lambda-handler.test.ts
+          src/lib/tests/agent-session.test.ts
+          src/lib/tests/agent-registration-session.test.ts
+          src/lib/tests/agent-snapshot-cache.test.ts
+          src/lib/tests/use-agent-status-mobile-ended.test.tsx
+          src/lib/tests/mobile-agent-ended-notifier.test.tsx
+          src/lib/tests/trading-guard-session.test.tsx
+          src/lib/tests/use-privy-owner-signer.test.tsx
+          src/lib/tests/mobile-agent-qr-scanner-load.test.ts
+          src/lib/tests/trading-activation.test.ts
 
       - name: Test route provider lifecycles
         working-directory: apps/terminal
@@ -217,6 +236,8 @@ jobs:
           src/lib/tests/earn-interest-history.test.ts
           src/lib/tests/earn-fresh-state.test.ts
           src/components/staking/__tests__/staking-view.test.tsx
+          src/components/staking/__tests__/use-staking-controller.test.tsx
+          src/components/vaults/__tests__/use-vault-action-controller.test.tsx
           src/lib/tests/action-progress-label-contract.test.ts
           tests/slider-effective-leverage-regression.test.tsx
           src/lib/tests/dialog-dismiss-control-contract.test.ts
@@ -342,6 +363,12 @@ jobs:
           src/lib/tests/use-privy-fiat-funding-offer.test.tsx
           src/lib/tests/use-usdc-routing.test.ts
           src/lib/tests/unit-deposit-info.test.tsx
+          src/lib/tests/api-wallet-view-agent-only.test.tsx
+          src/lib/tests/use-api-wallet-controller.test.tsx
+          src/lib/tests/portfolio-page-agent-only.test.tsx
+          src/lib/tests/referral-dashboard-agent-only.test.tsx
+          src/lib/tests/referral-ui-contract.test.ts
+          src/lib/tests/balances-table-visual-contract.test.ts
 
       # `pnpm test:brand` in the Website and Brand workflow also runs these, but that workflow
       # only starts when the website or a brand asset changes. Terminal changes are covered here.
@@ -361,7 +388,6 @@ jobs:
           src/lib/tests/referral.test.ts
           src/lib/tests/terms-content.test.ts
           src/lib/tests/legal-policy-contract.test.ts
-          src/lib/tests/trading-agent-config.test.ts
           src/lib/tests/order-summary.test.tsx
           src/lib/tests/twap-order-summary.test.tsx
           src/lib/tests/status-motion-contract.test.ts

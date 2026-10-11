@@ -14,6 +14,7 @@ export const CLIENT_ERROR_KINDS = [
 	"orderbook_l2_fallback",
 	"market_ctxs_compact_fallback",
 	"legal_status_check",
+	"deposit_submission",
 	"window_error",
 	"unhandled_rejection",
 ] as const;
@@ -65,6 +66,18 @@ export const CLIENT_ERROR_NAMES = [
 ] as const;
 
 export type ClientErrorKind = (typeof CLIENT_ERROR_KINDS)[number];
+export const DEPOSIT_FAILURE_STAGES = ["before_source_hash", "source_confirmation"] as const;
+export const DEPOSIT_FAILURE_REASONS = [
+	"paymaster",
+	"bundler",
+	"nonce_conflict",
+	"wallet_rejected",
+	"network",
+	"timeout",
+	"unknown",
+] as const;
+export type DepositFailureStage = (typeof DEPOSIT_FAILURE_STAGES)[number];
+export type DepositFailureReason = (typeof DEPOSIT_FAILURE_REASONS)[number];
 export type ClientErrorCategory = (typeof CLIENT_ERROR_CATEGORIES)[number];
 export type ClientErrorRoute = (typeof CLIENT_ERROR_ROUTES)[number];
 export type ClientErrorName = (typeof CLIENT_ERROR_NAMES)[number];
@@ -74,6 +87,8 @@ export interface ClientErrorReport {
 	kind: ClientErrorKind;
 	fallbackReason?: L2BookStreamErrorCode;
 	legalReason?: LegalStatusCheckReason;
+	depositStage?: DepositFailureStage;
+	depositReason?: DepositFailureReason;
 	category: ClientErrorCategory;
 	errorName: ClientErrorName;
 	route: ClientErrorRoute;
@@ -93,22 +108,33 @@ export type CreateClientErrorReportOptions = CreateClientErrorReportBaseOptions 
 				kind: "orderbook_l2_fallback";
 				fallbackReason: L2BookStreamErrorCode;
 				legalReason?: never;
+				depositStage?: never;
 		  }
 		| {
 				kind: "legal_status_check";
 				fallbackReason?: never;
 				legalReason: LegalStatusCheckReason;
+				depositStage?: never;
 		  }
 		| {
-				kind: Exclude<ClientErrorKind, "orderbook_l2_fallback" | "legal_status_check">;
+				kind: "deposit_submission";
+				depositStage: DepositFailureStage;
 				fallbackReason?: never;
 				legalReason?: never;
+		  }
+		| {
+				kind: Exclude<ClientErrorKind, "orderbook_l2_fallback" | "legal_status_check" | "deposit_submission">;
+				fallbackReason?: never;
+				legalReason?: never;
+				depositStage?: never;
 		  }
 	);
 
 const CLIENT_ERROR_KIND_SET = new Set<string>(CLIENT_ERROR_KINDS);
 const L2_FALLBACK_REASON_SET = new Set<string>(L2_BOOK_STREAM_ERROR_CODES);
 const LEGAL_STATUS_CHECK_REASON_SET = new Set<string>(LEGAL_STATUS_CHECK_REASONS);
+const DEPOSIT_FAILURE_STAGE_SET = new Set<string>(DEPOSIT_FAILURE_STAGES);
+const DEPOSIT_FAILURE_REASON_SET = new Set<string>(DEPOSIT_FAILURE_REASONS);
 const CLIENT_ERROR_CATEGORY_SET = new Set<string>(CLIENT_ERROR_CATEGORIES);
 const CLIENT_ERROR_ROUTE_SET = new Set<string>(CLIENT_ERROR_ROUTES);
 const CLIENT_ERROR_NAME_SET = new Set<string>(CLIENT_ERROR_NAMES);
@@ -117,6 +143,8 @@ const REPORT_KEYS = new Set([
 	"kind",
 	"fallbackReason",
 	"legalReason",
+	"depositStage",
+	"depositReason",
 	"category",
 	"errorName",
 	"route",
@@ -136,6 +164,9 @@ export function createClientErrorReport(error: unknown, options: CreateClientErr
 		kind: options.kind,
 		...(options.kind === "orderbook_l2_fallback" ? { fallbackReason: options.fallbackReason } : {}),
 		...(options.kind === "legal_status_check" ? { legalReason: options.legalReason } : {}),
+		...(options.kind === "deposit_submission"
+			? { depositStage: options.depositStage, depositReason: classifyDepositFailure(error) }
+			: {}),
 		category: classifyError(details.name, details.message),
 		errorName: normalizeErrorName(details.name),
 		route: classifyRoute(options.pathname),
@@ -158,6 +189,12 @@ export function parseClientErrorReport(value: unknown): ClientErrorReport | null
 	} else if (value.legalReason !== undefined) {
 		return null;
 	}
+	if (value.kind === "deposit_submission") {
+		if (!isEnumValue(value.depositStage, DEPOSIT_FAILURE_STAGE_SET)) return null;
+		if (!isEnumValue(value.depositReason, DEPOSIT_FAILURE_REASON_SET)) return null;
+	} else if (value.depositStage !== undefined || value.depositReason !== undefined) {
+		return null;
+	}
 	if (!isEnumValue(value.category, CLIENT_ERROR_CATEGORY_SET)) return null;
 	if (!isEnumValue(value.errorName, CLIENT_ERROR_NAME_SET)) return null;
 	if (!isEnumValue(value.route, CLIENT_ERROR_ROUTE_SET)) return null;
@@ -170,12 +207,46 @@ export function parseClientErrorReport(value: unknown): ClientErrorReport | null
 			? { fallbackReason: value.fallbackReason as L2BookStreamErrorCode }
 			: {}),
 		...(value.kind === "legal_status_check" ? { legalReason: value.legalReason as LegalStatusCheckReason } : {}),
+		...(value.kind === "deposit_submission"
+			? {
+					depositStage: value.depositStage as DepositFailureStage,
+					depositReason: value.depositReason as DepositFailureReason,
+				}
+			: {}),
 		category: value.category as ClientErrorCategory,
 		errorName: value.errorName as ClientErrorName,
 		route: value.route as ClientErrorRoute,
 		frames: [...value.frames],
 		componentFrames: [...value.componentFrames],
 	};
+}
+
+/** Inspect bounded cause chains, but serialize only the error family, never SDK payloads. */
+function classifyDepositFailure(error: unknown): DepositFailureReason {
+	const descriptions: string[] = [];
+	let current = error;
+	const seen = new Set<unknown>();
+	for (let depth = 0; depth < 8 && !seen.has(current); depth += 1) {
+		seen.add(current);
+		if (!isRecord(current)) break;
+		try {
+			for (const key of ["name", "shortMessage", "message"] as const) {
+				if (typeof current[key] === "string") descriptions.push(current[key].slice(0, 2048));
+			}
+			if (current.code === 4001) return "wallet_rejected";
+			current = current.cause;
+		} catch {
+			break;
+		}
+	}
+	const description = descriptions.join("\n");
+	if (/\bAA25\b|invalid account nonce/i.test(description)) return "nonce_conflict";
+	if (/user rejected|user denied/i.test(description)) return "wallet_rejected";
+	if (/paymaster|sponsorship/i.test(description)) return "paymaster";
+	if (/bundler/i.test(description)) return "bundler";
+	if (/timeout|timed out/i.test(description)) return "timeout";
+	if (/failed to fetch|network|connection|fetch failed/i.test(description)) return "network";
+	return "unknown";
 }
 
 function readErrorDetails(error: unknown): { name: string; message: string; stack?: string } {

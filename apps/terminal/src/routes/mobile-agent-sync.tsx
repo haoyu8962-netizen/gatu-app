@@ -14,6 +14,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { Address } from "viem";
 import { ButtonLoading } from "@/components/brand/button-loading";
+import { BRAND_NAME } from "@/config/brand";
 import { MOBILE_PAIRING_FEATURES } from "@/config/mobile-pairing";
 import { formatDateTime } from "@/lib/format";
 import { useHyperliquid } from "@/lib/hyperliquid";
@@ -27,6 +28,7 @@ import {
 } from "@/lib/mobile-sync/sync-core";
 import { buildPageHead } from "@/lib/seo";
 import type { Translate } from "@/lib/translate";
+import { usePwaInstall } from "@/providers/pwa-install";
 
 export const Route = createFileRoute("/mobile-agent-sync")({
 	ssr: false,
@@ -236,7 +238,9 @@ function getLoadErrorMessage(code: LoadErrorCode, translate: Translate): string 
 				msg`This QR's time does not match this phone. Check the date and time on both devices, then create a new QR.`,
 			);
 		case "env_mismatch":
-			return translate(msg`This QR belongs to a different network. Switch networks or create a new QR on desktop.`);
+			return translate(
+				msg`This QR belongs to a different network. Use the same network on both devices, then scan a new QR from desktop.`,
+			);
 		case "unsupported_version":
 			return translate(msg`Refresh both devices to update phone access, then create a new QR.`);
 		case "missing_fragment":
@@ -272,6 +276,7 @@ function ErrorCallout({ message }: { message: string }) {
 
 function SuccessPanel({ agentAddress, agentValidUntilMs }: { agentAddress: string; agentValidUntilMs: number }) {
 	const { i18n } = useLingui();
+	const { capability: pwaCapability } = usePwaInstall();
 
 	return (
 		<div className="space-y-3">
@@ -288,6 +293,14 @@ function SuccessPanel({ agentAddress, agentValidUntilMs }: { agentAddress: strin
 							it from the master wallet on desktop.
 						</Trans>
 					</p>
+					{pwaCapability === "ios-instructions" && (
+						<p className="mt-1 text-xs text-fg-muted">
+							<Trans>
+								Access is stored in this browser only. If you use {BRAND_NAME} from your Home Screen, scan the QR from
+								that app instead: Connect, then Link Desktop Wallet.
+							</Trans>
+						</p>
+					)}
 				</div>
 			</output>
 			<Button

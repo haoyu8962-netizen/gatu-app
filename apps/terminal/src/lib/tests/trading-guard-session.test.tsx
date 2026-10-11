@@ -10,18 +10,20 @@ const OTHER = "0x2222222222222222222222222222222222222222";
 const state = vi.hoisted(() => ({
 	owner: "0x1111111111111111111111111111111111111111",
 	ready: false,
+	sessionMode: "wallet" as "wallet" | "agent-only",
+	builderFeeMissing: false,
 	authorize: vi.fn(),
 }));
 
 vi.mock("@sairn/hl-react/provider", () => ({
-	useHyperliquid: () => ({ clientKey: state.owner, env: "Mainnet", sessionMode: "wallet" }),
+	useHyperliquid: () => ({ clientKey: state.owner, env: "Mainnet", sessionMode: state.sessionMode }),
 }));
 vi.mock("../../../../../packages/hl-react/src/signing/use-trading-status", () => ({
 	useTradingStatus: () => ({
 		isSignerReady: state.ready,
-		isBuilderFeeReady: true,
+		isBuilderFeeReady: !state.builderFeeMissing,
 		needsAgent: !state.ready,
-		needsBuilderFee: false,
+		needsBuilderFee: state.builderFeeMissing,
 		isSignerLoading: false,
 		isBuilderFeeLoading: false,
 	}),
@@ -46,8 +48,10 @@ describe("explicit trading actions stay bound to the initiating session", () => 
 	let pending: ReturnType<typeof deferred>;
 	let mounted: boolean;
 
+	let guardOptions: Parameters<typeof useTradingGuard>[0] = {};
+
 	function Probe() {
-		guard = useTradingGuard();
+		guard = useTradingGuard(guardOptions);
 		return null;
 	}
 	function render() {
@@ -57,14 +61,72 @@ describe("explicit trading actions stay bound to the initiating session", () => 
 	beforeEach(() => {
 		root = createRoot(document.createElement("div"));
 		mounted = true;
+		guardOptions = {};
 		state.owner = OWNER;
 		state.ready = false;
+		state.sessionMode = "wallet";
+		state.builderFeeMissing = false;
 		pending = deferred();
 		state.authorize.mockReset().mockReturnValue(pending.promise);
 		render();
 	});
 	afterEach(() => {
 		if (mounted) act(() => root.unmount());
+	});
+
+	it("never asks an Agent-only session to sign the approvals it is missing", () => {
+		state.sessionMode = "agent-only";
+		render();
+		const action = vi.fn();
+
+		expect(guard.needsOwnerApproval).toBe(true);
+		expect(guard.needsTrading).toBe(false);
+		act(() => guard.guardAction(action));
+		act(() => guard.enableTrading());
+
+		expect(state.authorize).not.toHaveBeenCalled();
+		expect(action).not.toHaveBeenCalled();
+	});
+
+	it("keeps an Agent-only session out of Enable when only the builder fee is missing", async () => {
+		state.sessionMode = "agent-only";
+		state.ready = true;
+		state.builderFeeMissing = true;
+		render();
+		const action = vi.fn();
+
+		expect(guard.needsOwnerApproval).toBe(true);
+		expect(guard.needsTrading).toBe(false);
+		expect(guard.isReady).toBe(false);
+		act(() => guard.guardAction(action));
+		expect(state.authorize).not.toHaveBeenCalled();
+		expect(action).not.toHaveBeenCalled();
+
+		guardOptions = { requiresBuilderFee: false };
+		render();
+		expect(guard.needsOwnerApproval).toBe(false);
+		await act(async () => {
+			guard.guardAction(action);
+			await Promise.resolve();
+		});
+		expect(state.authorize).not.toHaveBeenCalled();
+		expect(action).toHaveBeenCalledOnce();
+	});
+
+	it("runs an Agent-only action directly once the session is ready", async () => {
+		state.sessionMode = "agent-only";
+		state.ready = true;
+		render();
+		const action = vi.fn();
+
+		expect(guard.needsOwnerApproval).toBe(false);
+		await act(async () => {
+			guard.guardAction(action);
+			await Promise.resolve();
+		});
+
+		expect(state.authorize).not.toHaveBeenCalled();
+		expect(action).toHaveBeenCalledOnce();
 	});
 
 	it("does not execute merely because a login restore changes readiness", async () => {

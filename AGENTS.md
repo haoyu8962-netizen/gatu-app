@@ -38,16 +38,19 @@ This file contains durable project instructions for coding agents. Read `agent.m
 
 - `docs/adr/0002-exact-owner-trading-signers.md` and `docs/hyperliquid-signing.md` own the signer model; `docs/runtime-guardrails.md` §1 owns the session and storage rules.
 - Treat the active wallet account as the signing identity. Before creating a user-signed Hyperliquid client, require its address to match the selected Hyperliquid user address exactly, case-insensitively; fail closed on missing or mismatched accounts.
+- A desktop-approved key imported on a phone (an env-matching Agent-only owner) takes precedence over any wallet session, as on the official terminal: while it is active the Privy identity is masked (no owner signer, no wallet intent, no user-signed client), a wallet login cannot hide or delete it, and Disconnect removes only that key (`docs/adr/0039-link-mobile-device-builder-fee-and-session-priority.md`).
 - For Privy email sessions, activate only the exact embedded wallet belonging to that user. Never fall back to the first connected or first embedded wallet when the expected address is unavailable.
 - Hyperliquid Agent/API Wallet keys may be stored locally, but Agent approval must always be signed by the matching master wallet. Missing local Agent state may trigger re-registration; it must never trigger a different browser wallet.
 - Card funding pays out only to the exact Hyperliquid owner: pass the destination resolved by `resolvePrivyFiatFundingDestination` to Privy's `useFiatOnramp`, never a Privy funding hook without an explicit destination (it defaults to the first embedded wallet). Each network keeps its own fail-closed flag, and a Mainnet release needs `--allow-mainnet-card-funding` (`docs/adr/0034-privy-card-funding.md`).
+- Email-wallet funding follows [ADR 0040](docs/adr/0040-automatic-email-wallet-deposits.md): the page-level host automatically deposits eligible native USDC for the exact active embedded owner on either network under its own sponsored flag, including after session restoration. This funds flow is separate from trading onboarding; preserve fresh route/geo/legal/fee checks, locks and pending/unknown recovery, and never require a second Deposit click or promise initiation while the app is closed. The automatic path treats the submitted full balance as the locked value and re-reads it inside the funds-action lock before signing and before broadcasting, and it verifies the exact owner's fresh legal status before the authorization is signed (and again before broadcasting). Its EIP-3009 authorization is the one signature that login or session restoration may trigger without a click, and only for this flow. An automatic submission without a source hash, or a submitted one whose outcome is not a definitive source failure, is reported as a persistent unknown status, never as a failure.
 
 ## First-use trading onboarding contract
 
 - `docs/trading-onboarding.md` and `docs/email-trading-signing.md` own this flow, including the required sequence, the `Stay Connected` storage table, the mobile wallet lifecycle and the regression checklist; keep them synchronized with any change.
 - Preserve the order: connect the exact owner wallet, verify/accept legal terms, establish the trading signer, classify complete account funding snapshots, then open deposit only for a definitively empty account. Ordinary email trading uses the exact active Privy embedded owner and never generates or approves a local Agent; external wallets and Agent-only sessions require a verified Agent/API wallet.
 - Legal status, embedded-owner signer readiness, Agent approval, local Agent key, builder-fee approval and funding state are separate gates. Errors or missing snapshots fail closed and are never treated as acceptance, approval or an empty account.
-- Agent registration must not approve the builder fee; that approval belongs to the first trading action that requires the configured builder code. Login, refresh and status checks must never sign. The one accepted exception is the SIWE message Privy's `SmartWalletsProvider` signs without UI to link a smart wallet when an embedded wallet first appears: it is Privy's documented automatic smart-wallet creation, moves no funds and is not a terms, Agent, builder-fee or trading signature (`docs/adr/0033-silent-email-wallet-creation.md`). Do not add any other signature on those paths.
+- Ordinary external-wallet trading connections approve Hyperliquid's unnamed default Agent (`approveAgent` without `agentName`), as the official terminal does, and verify the stored key with `userRole` for the exact owner; a cached miss, a pending or failed answer, or an answer about another key never triggers an approval. Named Agents belong only to the API wallet page and Link mobile device, where the account's named-Agent cap applies and its rejection text is translated (`docs/adr/0038-unnamed-default-agent-for-trading-connection.md`).
+- Agent registration must not approve the builder fee; that approval belongs to the first trading action that requires the configured builder code. Link mobile device never approves it: while the owner's builder fee is definitively unapproved the Mobile Agent approval stays disabled with an activate-trading-first explanation (ADR 0039). Trading login, refresh and status checks must never sign. Besides the automatic email-wallet deposit above (ADR 0040), the one accepted exception is the SIWE message Privy's `SmartWalletsProvider` signs without UI to link a smart wallet when an embedded wallet first appears: it is Privy's documented automatic smart-wallet creation, moves no funds and is not a terms, Agent, builder-fee or trading signature (`docs/adr/0033-silent-email-wallet-creation.md`). Do not add any other signature on those paths.
 - Email registration creates the embedded owner silently after login (`docs/adr/0033-silent-email-wallet-creation.md`): keep Privy's `createOnLogin` off and the root `EmailEmbeddedWalletProvider` the only automatic creator, with never more than one SDK creation request in flight. Keep the policy dialog closed while that wallet is pending and, unless an acceptance is being submitted, while a Privy window is visible. Once the wallet directory is ready, a session without a wallet must be able to retry and to disconnect, and its logout must not hand the device back to a stored agent-only owner.
 - `Stay Connected` is off by default, and every Agent-registration entry point honors the same `hyperliquid.persist_trading_connection` preference. Mobile wallet approval timeouts pause while the page is hidden; a late approval commits only after revalidating owner, registration epoch, stored key and server-approved Agent address.
 
@@ -63,7 +66,7 @@ This file contains durable project instructions for coding agents. Read `agent.m
 
 - `docs/runtime-guardrails.md` §8 owns these rules. Terminal layout, wallet-connection surface and PWA installation are three independent decisions: `MOBILE_MEDIA_QUERY` switches the layout; `MOBILE_QR_SURFACE_MEDIA_QUERY` (which also covers coarse pointers and standalone display mode) must never switch it.
 - Offer Link Desktop only behind its fail-closed feature flag. Email login and the Ethereum-only Privy wallet directory remain the ordinary mobile connection paths; authenticated sessions use the explicit reconnect path.
-- The desktop Link mobile device entry is the header QR icon alone: rendered only for an exact-owner session with the pairing flag on, kept visible at compact widths, and opening the single modal instance that the user menu hosts. The dialog has one instruction, one warning and one action; approving again replaces the Mobile Agent and the API wallet page removes it. The phone shows agent-only funds actions disabled with a single desktop-required reason instead of hiding them.
+- The desktop Link mobile device entry is the header QR icon alone: rendered only for an exact-owner session with the pairing flag on, kept visible at compact widths, and opening the single modal instance that the user menu hosts. The dialog has one instruction, one warning and one action, and never signs a builder fee: while the owner has not activated trading (builder fee definitively unapproved) the action stays disabled with one explanation to deposit and place a first order on desktop, and a fresh check before the Mobile Agent is signed fails closed; the warning says that approving again replaces the linked phone's Mobile Agent, which shares the official terminal's `Mobile QR` name so both apps use one named slot, and the API wallet page removes it. When a current `extraAgents` snapshot shows every documented named slot taken and none is `Mobile QR`, the dialog lists them and links to the API wallet page before signing, without blocking the approval. The phone shows agent-only funds and owner-only actions disabled with a single desktop-required reason instead of hiding them, and an Agent-only session never offers Enable for an approval it cannot sign (ADR 0039).
 - Show PWA installation only when a real browser install prompt or supported iOS instructions exist; a captured prompt is single-use, and wide desktop `beforeinstallprompt` behavior stays browser-owned.
 
 ## Mobile data presentation contract
@@ -77,10 +80,11 @@ This file contains durable project instructions for coding agents. Read `agent.m
 
 - The dark terminal and chart canvas use `#0F1A1F` (`rgb(15, 26, 31)`) as the main background; the terminal dark theme maps `bg-background`, `bg-surface`, `bg-alternate` and `bg-modal` to it (see `.claude/rules/design-tokens.md`).
 - Application modals and drawers use the dedicated `bg-modal` surface. Do not change `bg-overlay` to achieve this; tooltips, toasts and selection indicators depend on its raised contrast.
+- The `@sairn/ui` primitives own the dialog edge, following the official terminal: a centred modal keeps its border behind the `bg-scrim` backdrop with a 2px blur, a phone sheet is borderless behind the stronger `bg-scrim-sheet` backdrop without blur, and no dialog overrides the scrim, blur or sheet border itself (`.claude/rules/style-ui-guide.md`, Dialog chrome; `modal-surface-contract`).
 - TradingView runs in an iframe and cannot inherit application tokens; `docs/runtime-guardrails.md` §4 owns its theme stylesheet rules, including the `#1D1E26` raised-layer color and the single theme-aware stylesheet.
 - TradingView price precision comes from market metadata under Hyperliquid's tick rules, never from the digits of a price string, and a price crossing a power of ten never rebuilds the widget; `docs/runtime-guardrails.md` §4 and ADR 0035 own the rule and its tradeoffs.
 - Keep theme colors in shared tokens or existing style abstractions instead of scattering new literals.
-- Loading placeholders never redraw the layout they stand in for: use a blank busy region, a neutral spinner or geometry taken from the same source as the content; a chunk fallback either claims no dialog chrome or renders the same shell as the loaded dialog, as the deposit dialog does (`.claude/rules/style-ui-guide.md`, Loading placeholders; `loading-placeholder-contract.test.ts`).
+- Loading placeholders never redraw the layout they stand in for: use a blank busy region, a neutral spinner or geometry taken from the same source as the content; a chunk fallback either claims no dialog chrome or, as the deposit dialog does, keeps the one shell mounted by its host while only the body loads lazily, so the dialog never remounts around the loaded content (`.claude/rules/style-ui-guide.md`, Loading placeholders; `loading-placeholder-contract.test.ts`, `deposit-modal-host.test.tsx`).
 - Dashboard surfaces, the cards inside them and dialog notices follow the corner tiers in `.claude/rules/style-ui-guide.md` (Dashboard page gutters, Dialog content blocks). `dashboard-surface-radius-contract.test.ts` and `dialog-notice-radius-contract.test.ts` enforce them with explicit exception lists; a new visual rule follows the same pattern (Checking a visual rule).
 
 ## Order book contract
@@ -166,7 +170,7 @@ This file contains durable project instructions for coding agents. Read `agent.m
 
 - `docs/brand-assets.md` owns the brand source, its readers, the logo, icon, accent and status-motion rules and the domain rules; ADR 0027 (single source, renamed and kept identifiers, history policy), 0028 (accent colours), 0029 (status motion), 0030 (PnL share card), 0031 (domain move) and 0032 (gatu.ai offline cutover) record the decisions.
 - Brand values (name, legal entity, domains, support email, accent and logo colours, PWA theme colour) come only from `brand/brand.json`, through `config/brand.ts`, the website config or `scripts/brand.mjs`. Name the product in messages only through `BRAND_NAME` / `{BRAND_NAME}`; never write brand names, domains or mailboxes as literals elsewhere.
-- Internal identifiers (storage keys, Web Lock names, the Hyperliquid Agent slot, headers, environment variables, package scope) are `sairn` literals, never read from `brand.json`; renaming one is a signing or data-continuity change, not a brand edit. The `gatu` names that stay (AWS resources and the repository) are listed in ADR 0027.
+- Internal identifiers (storage keys, Web Lock names, headers, environment variables, package scope) are `sairn` literals, never read from `brand.json`; renaming one is a signing or data-continuity change, not a brand edit. The `gatu` names that stay (AWS resources and the repository) are listed in ADR 0027; the named Hyperliquid Agent slot is retired (ADR 0038).
 - Generated, exported and synced files are never edited by hand: `pnpm brand:export-motion` (needs Chromium) rewrites `brand/loader`, `brand/loader-supplement/glyphs` and `brand/tokens`, `pnpm brand:derive-icons` the derived icons and e-mail logo in `brand/web`, and `pnpm brand:sync` the `lib/brand/*.gen.*` modules and the copies in `public/`. `pnpm brand:check` and `pnpm test:brand` must pass after any change to `brand/`, `legal/` or a brand reader.
 - The status of a requested action uses `StatusGlyph`, `BrandMotion` or `ButtonLoading` with semantic tones; an unknown result is never drawn as an error. Passive loading keeps the neutral spinner, and every remaining spinner is registered with its reason in `status-motion-surface-contract.test.ts`.
 - `brand.json` has one domain group, `domains.primary`: canonical URLs, the sitemap, legal text, referral links and hostname-based network detection use only it. The `gatu.ai` group and the transitional `x-gatu-forwarded-host` header and `x-gatu-route` marker are retired (ADR 0032); do not read or write them again, and `pnpm brand:check` rejects a retired host in `brand.json` or the legal text.
@@ -187,10 +191,29 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/trading-onboarding-gate.test.tsx \
   src/lib/tests/agent-registration-session.test.ts \
   src/lib/tests/agent-storage-scope.test.ts \
+  src/lib/tests/agent-verification-status.test.ts \
+  src/lib/tests/use-agent-status-verification.test.tsx \
+  src/lib/tests/use-agent-status-mobile-cleanup.test.tsx \
+  src/lib/tests/use-agent-registration-race.test.tsx \
+  src/lib/tests/owner-trading-status.test.tsx \
+  src/lib/tests/trading-authorization.test.tsx \
+  src/lib/tests/use-agent-status-cache.test.tsx \
+  src/lib/tests/use-agent-wallet.test.tsx \
+  src/lib/tests/establish-connection-modal.test.tsx \
+  src/lib/tests/use-explicit-agent-approval.test.tsx \
   src/lib/tests/external-agent-signer.test.ts \
   src/lib/tests/use-connection-wallet-client.test.tsx \
   src/lib/tests/privy-agent-signer.test.ts \
   src/lib/tests/mobile-agent-lifecycle.test.ts \
+  src/lib/tests/mobile-agent-sync-modal.test.tsx \
+  src/lib/tests/mobile-agent-sync-route.test.tsx \
+  src/lib/tests/mobile-agent-qr-scanner.test.tsx \
+  src/lib/tests/mobile-agent-qr-scanner-load.test.ts \
+  src/lib/tests/mobile-agent-ended-notifier.test.tsx \
+  src/lib/tests/trading-activation.test.ts \
+  src/lib/tests/agent-session.test.ts \
+  src/lib/tests/use-agent-status-mobile-ended.test.tsx \
+  src/lib/tests/trading-guard-session.test.tsx \
   src/lib/tests/legal-gate.test.ts \
   src/lib/tests/legal-gate-hooks.test.tsx \
   src/lib/tests/legal-acceptance-modal.test.tsx \
@@ -326,6 +349,8 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/use-exchange-funds-action-lock.test.tsx \
   src/lib/tests/use-exchange-portfolio-margin-policy.test.tsx \
   src/components/staking/__tests__/staking-view.test.tsx \
+  src/components/staking/__tests__/use-staking-controller.test.tsx \
+  src/components/vaults/__tests__/use-vault-action-controller.test.tsx \
   src/lib/tests/action-progress-label-contract.test.ts \
   tests/slider-effective-leverage-regression.test.tsx \
   src/lib/tests/dialog-dismiss-control-contract.test.ts \
@@ -383,7 +408,6 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/referral.test.ts \
   src/lib/tests/terms-content.test.ts \
   src/lib/tests/legal-policy-contract.test.ts \
-  src/lib/tests/trading-agent-config.test.ts \
   src/lib/tests/order-summary.test.tsx \
   src/lib/tests/twap-order-summary.test.tsx \
   src/lib/tests/top-nav.test.tsx

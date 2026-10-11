@@ -433,6 +433,45 @@ The sixth round (commit `4af147fd`) changed one classification function in the d
 3,286,638 in total (+16), 1,626,663 static trade startup, 117,769 mobile and 201,070 desktop, with the desktop runtime
 increment 918 bytes under its allowance. Later commits on the branch change tests and documents only.
 
+## Total-client re-baseline and pairing-chunk fix before release p30 (2026-10-11)
+
+Promoting `dev` to `main` for release p30 failed the pairing-on production build that only pull requests into `main`
+run, twice: at `a310ade1` (after [PR #94](https://github.com/zora4523-bot/gatu-app/pull/94), Link mobile device
+fixes) and at `ee4aab99` (after [PR #97](https://github.com/zora4523-bot/gatu-app/pull/97), automatic email
+deposits). The second run read 3,307,744 gzip bytes with CI metadata, 10,645 over the 3,297,099 baseline against a
+10,000-byte allowance, and `expected one client chunk api-wallet-*.js but found 2`. The pairing-off builds of the same
+heads stayed under the allowance (CI read 3,304,745, +7,646, for `525f38c0`).
+
+The second chunk is a sharing artefact, not a regression: `mobile-agent-sync-modal.tsx` (ADR 0039, pairing builds
+only) imports `isApiWalletExtraAgentSnapshot` from `components/api-wallet/api-wallet-state.ts`, so with pairing on
+Rollup hoists that module into a chunk shared with the API wallet route and names it after the module, which the
+`api-wallet-*.js` surface glob then counts twice. The guard and the `ExtraAgent` type now live in
+`lib/hyperliquid/extra-agent-snapshot.ts` (re-exported by `api-wallet-state.ts` for its existing importers); the
+shared chunk is `extra-agent-snapshot-*.js` and the API wallet route is one chunk again (18,255 gzip with pairing on).
+
+Measured in one isolated worktree (`.claude/worktrees/budget-fix`, no `.env.local`, Node 22.15.0, pnpm 10.21.0)
+with the fixed identity `SAIRN_BUILD_SHA=ee4aab996ad57712063405351005ce0bf620da65 SAIRN_RELEASE_ID=p30-rebaseline
+SAIRN_BUILD_TIME=2026-10-11T00:00:00.000Z NODE_ENV=production NITRO_PRESET=node-server`, both with the chunk move:
+
+| Metric | pairing off | pairing on |
+| --- | ---: | ---: |
+| All client JS + CSS | 3,304,479 | 3,307,606 |
+| Static trade startup | 1,635,287 (100 assets) | 1,636,516 (100 assets) |
+| Mobile runtime increment | 118,415 | 118,419 |
+| Desktop runtime increment | 202,442 | 202,406 |
+| `api-wallet` chunk | 18,365 | 18,255 |
+
+The total-client baseline becomes the pairing-off build, 3,304,479: +7,380 over the previous baseline, which is what
+`dev` had used since p26 across PR #91 (unnamed default Agent), #92 (single-shell deposit dialog and official
+scrims), #94 and #97, each merged with a pairing-off CI build under the allowance. The pairing-on build sits +3,127
+over the new baseline, so the promotion build fits again; the pairing-off build in the sandbox stopped at the
+prerender step (the sandbox refuses to bind the preview port) and its figures come from running the budget script on
+its finished client assets, which the prerender does not change; the pairing-on build ran to completion.
+
+Not re-baselined: the desktop runtime increment is 9,313 over its 193,129 baseline (687 under the allowance; 9,277
+with pairing on) and the mobile runtime increment 7,835 over 110,580. Both grew by under 100 bytes since p26; the
+next desktop runtime growth still needs its own measured re-baseline rather than a larger allowance.
+
 ## Total-client re-baseline before release p26 (2026-10-08)
 
 Promoting `dev` to `main` for release p26 failed the pairing-on production build that only pull requests into `main`

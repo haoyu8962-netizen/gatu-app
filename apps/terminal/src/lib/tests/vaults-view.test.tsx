@@ -192,6 +192,37 @@ describe("Vault views", () => {
 		expect(onRequestAction).toHaveBeenCalledWith("deposit");
 	});
 
+	it("disables both Vault actions with the one desktop-required reason in an Agent-only session", () => {
+		const onRequestAction = vi.fn();
+		render(
+			<VaultDetailView
+				detail={createDetail()}
+				owner={{ status: "disconnected" }}
+				actionAvailability={{
+					deposit: { available: false, reason: "agent-only-session" },
+					withdraw: { available: false, reason: "agent-only-session" },
+				}}
+				isTestnet={false}
+				onRequestAction={onRequestAction}
+			/>,
+		);
+
+		const buttons = [...container.querySelectorAll<HTMLButtonElement>("button")].filter(
+			(button) => button.textContent === "Deposit" || button.textContent === "Withdraw",
+		);
+		expect(buttons).toHaveLength(2);
+		for (const button of buttons) {
+			expect(button.disabled).toBe(true);
+			const reasonId = button.getAttribute("aria-describedby");
+			expect(reasonId ? document.getElementById(reasonId)?.textContent : null).toBe(
+				"This phone uses a desktop-approved trading key. This action needs the master wallet on desktop.",
+			);
+			act(() => button.click());
+		}
+		expect(onRequestAction).not.toHaveBeenCalled();
+		expect(container.textContent).not.toContain("Connect");
+	});
+
 	it("labels every mobile depositor amount and includes a signed all-time PNL", () => {
 		render(
 			<VaultDetailView

@@ -77,7 +77,10 @@ describe("referral UI governance contract", () => {
 		expect(dashboard).toContain("hidden flex-col items-end gap-1.5 min-[1001px]:flex");
 		expect(dashboard).toContain("backdrop-blur min-[1001px]:hidden");
 		expect(dashboard).toContain("No unclaimed rewards are currently available.");
-		expect(dashboard).toContain("aria-describedby={!referrals.hasUnclaimedRewards ? claimStatusId : undefined}");
+		expect(dashboard).toContain(
+			"aria-describedby={agentOnlySession || !referrals.hasUnclaimedRewards ? claimStatusId : undefined}",
+		);
+		expect(dashboard).toContain("useMasterWalletActionReason()");
 		expect(dashboard).not.toContain("Claim all available rewards");
 		expect(dashboard).not.toContain("canApplyReferralCode");
 		expect(dashboard).not.toContain("<Trans>Enter code</Trans>");

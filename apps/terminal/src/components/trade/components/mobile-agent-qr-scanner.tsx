@@ -11,6 +11,8 @@ import { isMobileSyncError, parseMobileSyncUrl } from "@/lib/mobile-sync/sync-co
 type ScannerStatus = "idle" | "starting" | "scanning";
 type ScannerFeedback =
 	| "camera-access"
+	| "clock-mismatch"
+	| "scanner-unavailable"
 	| "expired"
 	| "feature-unavailable"
 	| "invalid-link"
@@ -144,11 +146,11 @@ export function MobileAgentQrScanner({
 
 			controlsRef.current = controls;
 			setStatus("scanning");
-		} catch {
+		} catch (error) {
 			if (generation !== scanGenerationRef.current) return;
 			stopScanner();
 			setStatus("idle");
-			setFeedback("camera-access");
+			setFeedback(error instanceof QrScannerLoadError ? "scanner-unavailable" : "camera-access");
 		}
 	}
 
@@ -163,6 +165,12 @@ export function MobileAgentQrScanner({
 	function getFeedbackMessage(code: ScannerFeedback): string {
 		if (code === "camera-access") {
 			return t`Camera access failed. Allow camera access and try again, or scan the QR with your system camera.`;
+		}
+		if (code === "clock-mismatch") {
+			return t`This QR's time does not match this phone. Check the date and time on both devices, then create a new QR.`;
+		}
+		if (code === "scanner-unavailable") {
+			return t`The QR scanner could not load. Check your connection, reload the page and try again.`;
 		}
 		if (code === "expired") return t`This desktop wallet QR expired. Create a new QR on desktop.`;
 		if (code === "feature-unavailable") return t`Mobile QR import is temporarily unavailable.`;
@@ -269,15 +277,25 @@ function openMobileSyncLink(url: string): void {
 function getParseFeedback(error: unknown): ScannerFeedback {
 	if (!isMobileSyncError(error)) return "invalid-payload";
 	if (error.code === "expired_payload") return "expired";
+	if (error.code === "not_yet_valid") return "clock-mismatch";
 	if (error.code === "unsupported_version") return "upgrade-required";
 	return "invalid-payload";
+}
+
+export class QrScannerLoadError extends Error {
+	constructor() {
+		super("The QR scanner module could not be loaded");
+		this.name = "QrScannerLoadError";
+	}
 }
 
 export async function startBrowserQrScanner(
 	video: HTMLVideoElement,
 	onDecode: (value: string, controls: QrScannerControls) => void,
 ): Promise<QrScannerControls> {
-	const { default: QrScanner } = await import("qr-scanner");
+	const { default: QrScanner } = await import("qr-scanner").catch(() => {
+		throw new QrScannerLoadError();
+	});
 	let scanner: InstanceType<typeof QrScanner>;
 	let stopped = false;
 	const controls: QrScannerControls = {

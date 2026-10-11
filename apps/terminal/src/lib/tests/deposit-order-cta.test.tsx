@@ -142,6 +142,37 @@ describe("Deposit order CTA", () => {
 		expect(input.onDeposit).not.toHaveBeenCalled();
 	});
 
+	it("keeps a pending approval inert with the desktop-required reason in an Agent-only session", () => {
+		const reason = "Finish trading authorization on desktop first.";
+		const input = createDesktopInput({
+			availableBalance: 100,
+			canApprove: false,
+			approvalUnavailableReason: reason,
+			validation: { canSubmit: false, errors: [], validationErrors: [], needsApproval: true, valid: false },
+		});
+		const desktop = renderDesktop(input);
+		expect(desktop).toMatchObject({ text: "Enable Trading", disabled: true, disabledReason: reason });
+
+		const mobileInput = {
+			...input,
+			hasBalanceError: false,
+			isBalanceLoading: false,
+			canSubmit: false,
+			needsApproval: true,
+			isRegistering: false,
+			onApprove: input.onRegister,
+			onConnect: input.onConnectWallet,
+			labels: { connect: "Connect Wallet", deposit: "Deposit", enableTrading: "Enable Trading", signing: "Signing..." },
+		};
+		expect(getMobileOrderButtonContent(mobileInput)).toMatchObject({
+			text: "Enable Trading",
+			disabled: true,
+			disabledReason: reason,
+		});
+		expect(getMobileOrderButtonContent({ ...mobileInput, canApprove: true }).disabledReason).toBeUndefined();
+		expect(renderDesktop({ ...input, canApprove: true }).disabledReason).toBeUndefined();
+	});
+
 	it.each(["loading", "error", "blocked"])("keeps the desktop action label quiet during %s and recovery", (state) => {
 		const input = createDesktopInput({
 			availableBalance: 100,

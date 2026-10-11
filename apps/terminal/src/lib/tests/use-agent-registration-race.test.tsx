@@ -41,7 +41,6 @@ const testState = vi.hoisted(() => ({
 
 vi.mock("@sairn/hl-react/provider", () => ({
 	useHyperliquid: () => ({
-		agentName: "sairn",
 		builderConfig: {},
 		clientKey: testState.clientKey,
 		env: testState.env,
@@ -291,10 +290,8 @@ describe("useAgentRegistration logout races", () => {
 
 		if (!registrationPromise) throw new Error("Expected registration promise");
 		const registeredAddress = await registrationPromise;
-		expect(testState.approveAgent).toHaveBeenCalledWith({
-			agentAddress: registeredAddress,
-			agentName: "sairn",
-		});
+		expect(testState.approveAgent).toHaveBeenCalledWith({ agentAddress: registeredAddress });
+		expect(testState.approveAgent.mock.calls[0]?.[0]).not.toHaveProperty("agentName");
 		expect(testState.approveBuilderFee).not.toHaveBeenCalled();
 		expect(testState.refetchAgent).toHaveBeenLastCalledWith(registeredAddress);
 		expect(JSON.parse(window.localStorage.getItem(AGENT_STORAGE_KEY) ?? "{}")).toMatchObject({
@@ -336,10 +333,7 @@ describe("useAgentRegistration logout races", () => {
 		if (!registrationPromise) throw new Error("Expected registration promise");
 		const registeredAddress = await registrationPromise;
 		expect(innerApproval).toHaveBeenCalledWith(
-			{
-				agentAddress: registeredAddress,
-				agentName: "sairn",
-			},
+			{ agentAddress: registeredAddress },
 			expect.objectContaining({
 				registrationPublicKey: registeredAddress,
 				signal: expect.any(AbortSignal),
@@ -392,10 +386,7 @@ describe("useAgentRegistration logout races", () => {
 		if (!registrationPromise) throw new Error("Expected registration promise");
 		const registeredAddress = await registrationPromise;
 		expect(approval).toHaveBeenCalledWith(
-			{
-				agentAddress: registeredAddress,
-				agentName: "sairn",
-			},
+			{ agentAddress: registeredAddress },
 			expect.objectContaining({
 				applicationReview: "confirmed",
 				registrationPublicKey: registeredAddress,
@@ -809,7 +800,7 @@ describe("useAgentRegistration logout races", () => {
 		);
 	});
 
-	it("does not report success until extraAgents confirms the newly generated public key", async () => {
+	it("does not report success until the userRole check confirms the newly generated public key", async () => {
 		registrationOptions = { persistConnection: true };
 		testState.approveAgent.mockResolvedValue(undefined);
 		testState.refetchAgent.mockResolvedValue({

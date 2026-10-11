@@ -144,3 +144,7 @@ Sairn 的状态未知指引、CCTP 跟踪与资金动作锁比官方更严格，
 ## 存款前按需切链（2026-10-08）
 
 状态：已实施、未发布。手机外部钱包点击「存款」报「钱包未连接到 Arbitrum One」。已确认的缺陷：`use-deposit.ts` 把 `eth_chainId` 的返回值与十六进制字面量按字符串比较，而 WalletConnect 的 provider 返回数字，于是经 WalletConnect 连接的钱包在 Arbitrum 上也被判为不在；这与报告的现象一致（表单正常、点击才报错），但报告所用钱包的连接器类型没有记录，钱包内置浏览器注入的 provider 返回十六进制串、不会触发这条缺陷，所以它是最可能而非已证实的事故原因。对照官方终端打包代码（2026-10-08 取证，见任务记录）：已登录 Privy 会话时官方不显示「切换网络」预拦截，而是在发交易前 `switchChainAsync` 再 `writeContractAsync`，按钮显示 Switching Network。Sairn 据此删除了存款弹层的 WrongNetworkScreen 预拦截；提交路径按数字比较链 ID，需要时发出切链请求（未知链时按 EIP-3085 加链后再切一次），切链请求被接受后不再因链尚未更新而重复请求，而是以 `chainChanged` 加轮询、独立计时的截止等钱包真正报告 Arbitrum，期间状态屏标题显示「正在切换网络」；签名前和广播前各复核一次链；拒绝与超时都走存款失败通知。细则见 [docs/cctp-deposits.md](cctp-deposits.md) 的 Wallet Network 一节。订单按钮的「切换到 Arbitrum」阶段随后也按官方做法删除，交易签名改在钱包当前链进行（见 [docs/trading-onboarding.md](trading-onboarding.md) 第 4 步）。
+
+## 2026-10-10 无源哈希存款的未知结果
+
+状态：本地已实施，未发布；真实充值故障的原始钱包响应仍待捕获。有源哈希且结果不明时，沿用“Arbitrum 已提交、确认未知”的常驻通知；赞助提交没有返回哈希时，改为“钱包未返回交易哈希、已签署授权可能仍有效”，不推断链上广播或 Circle 正在处理。此类通知关闭弹窗后，原始 SDK 错误仍会按既有 reset 清理，但提交阶段与脱敏错误类别先通过现有错误上报通道记录。无哈希授权拦截提示与真实源交易跟踪拦截分开；不删除有效授权、不自动重签。规范和诊断边界见 [CCTP recovery](cctp-deposits.md#submission-diagnostics-and-unknown-outcomes)。

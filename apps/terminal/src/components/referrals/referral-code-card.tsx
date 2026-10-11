@@ -1,6 +1,7 @@
 import { Trans, useLingui } from "@lingui/react/macro";
 import { ArrowSquareOutIcon, CheckIcon, CopyIcon, LinkSimpleIcon, ShareNetworkIcon } from "@phosphor-icons/react";
 import { Button, ButtonIcon } from "@sairn/ui";
+import { useId } from "react";
 import { BrandMotion } from "@/components/brand/brand-motion";
 import { BRAND_NAME } from "@/config/brand";
 import { useCopyToClipboard } from "@/hooks/ui/use-copy-to-clipboard";
@@ -20,16 +21,26 @@ import { isSafeReferralJoinCode } from "@/lib/trade/referral-join";
 
 interface Props {
 	actionsDisabled: boolean;
+	actionsUnavailableReason?: string | null;
 	data: ReferralData;
 	invitationCode?: string;
 	onApplyCode: () => void;
 	onCreateCode: () => void;
 }
 
-export function ReferralCodeCard({ actionsDisabled, data, invitationCode, onApplyCode, onCreateCode }: Props) {
+export function ReferralCodeCard({
+	actionsDisabled,
+	actionsUnavailableReason = null,
+	data,
+	invitationCode,
+	onApplyCode,
+	onCreateCode,
+}: Props) {
 	const { formatNumber, formatUSD } = useNumberFormat();
 	const { t } = useLingui();
 	const { env } = useHyperliquid();
+	const createReasonId = useId();
+	const applyReasonId = useId();
 	const codeCopy = useCopyToClipboard();
 	const linkCopy = useCopyToClipboard();
 	const readyState = data.referrerState.stage === "ready" ? data.referrerState : null;
@@ -150,11 +161,18 @@ export function ReferralCodeCard({ actionsDisabled, data, invitationCode, onAppl
 					<Button
 						size="sm"
 						className="mt-3 w-full min-[1001px]:w-auto"
+						aria-describedby={actionsUnavailableReason ? createReasonId : undefined}
 						disabled={actionsDisabled}
+						focusableWhenDisabled={actionsUnavailableReason !== null}
 						onClick={onCreateCode}
 					>
 						<Trans>Create referral code</Trans>
 					</Button>
+					{actionsUnavailableReason ? (
+						<p id={createReasonId} className="mt-1.5 text-2xs leading-4 text-fg-muted">
+							{actionsUnavailableReason}
+						</p>
+					) : null}
 				</div>
 			) : null}
 
@@ -258,9 +276,22 @@ export function ReferralCodeCard({ actionsDisabled, data, invitationCode, onAppl
 								)}
 							</p>
 						</div>
-						<Button variant="outline" intent="brand" size="sm" disabled={actionsDisabled} onClick={onApplyCode}>
+						<Button
+							variant="outline"
+							intent="brand"
+							size="sm"
+							aria-describedby={actionsUnavailableReason ? applyReasonId : undefined}
+							disabled={actionsDisabled}
+							focusableWhenDisabled={actionsUnavailableReason !== null}
+							onClick={onApplyCode}
+						>
 							{invitationCode ? <Trans>Review invitation</Trans> : <Trans>Enter code</Trans>}
 						</Button>
+						{actionsUnavailableReason ? (
+							<p id={applyReasonId} className="basis-full text-2xs leading-4 text-fg-muted">
+								{actionsUnavailableReason}
+							</p>
+						) : null}
 					</div>
 				) : (
 					<p className="text-xs leading-5 text-fg-muted">

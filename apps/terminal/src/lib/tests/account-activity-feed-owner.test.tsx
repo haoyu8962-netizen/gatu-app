@@ -81,7 +81,6 @@ describe("AccountActivityFeedOwner", () => {
 			env,
 			isTestnet: env === "Testnet",
 			builderConfig: { b: "0x0000000000000000000000000000000000000000", f: 0 },
-			agentName: "test",
 			clientKey,
 			sessionMode: clientKey === "disconnected" ? "disconnected" : "wallet",
 			exchangeLifecycle: { id: Symbol("account-activity-feed-owner-test"), active: true },

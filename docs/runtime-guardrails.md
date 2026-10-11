@@ -18,7 +18,7 @@ These runtime states are separate:
 | Privy authentication | A user identity session exists | Privy |
 | Active signing wallet | The exact owner wallet is available and selected for signing | Privy + wagmi |
 | Legal access | Hyperliquid terms are accepted and the owner may perform actions | Hyperliquid `legalCheck` / `acceptTerms2` |
-| Hyperliquid agent approval | Hyperliquid has approved an agent address for the owner | Hyperliquid `approveAgent` / `extraAgents` |
+| Hyperliquid agent approval | Hyperliquid has approved an agent address for the owner | Hyperliquid `approveAgent`; verified with `userRole` for the unnamed default Agent key, `extraAgents` for a named Mobile Agent ([ADR 0038](adr/0038-unnamed-default-agent-for-trading-connection.md)) |
 | Local agent key | Browser-local private key used for trading signatures | `sessionStorage` or `localStorage` key `hyperliquid_agent_{env}_{owner}` |
 | Builder-fee approval | Owner has approved the configured builder fee | Hyperliquid builder-fee status / `approveBuilderFee` |
 | Funding classification | Complete perp and spot snapshots establish funded or empty | all-DEX clearinghouse state + spot state |
@@ -50,12 +50,18 @@ Do not collapse these states into one boolean.
   wallet addresses; a same-name approval deregisters the previous one. Ordinary
   email trading keeps no local Agent, so this affects external-wallet and
   Agent-only sessions. (Decided 2026-10-04: the code is authoritative; this
-  section used to say the opposite.)
+  section used to say the opposite.) In an Agent-only session Disconnect
+  removes the imported key and owner but does not log out of Privy; an
+  env-matching Agent-only owner takes precedence over a wallet session and
+  masks its Privy identity ([ADR 0039](adr/0039-link-mobile-device-builder-fee-and-session-priority.md)).
 - Apart from explicit disconnect, delete a local Agent key only for explicit
   reset, revocation or rotation, never during transient signer restoration
   (`docs/trading-onboarding.md`).
-- Connected wallet sessions always win over agent-only sessions. Agent-only is
-  only for imported mobile access or explicitly active local-agent sessions.
+- An env-matching agent-only owner (imported mobile access) wins over a
+  connected wallet session; a wallet session applies only when no such owner is
+  active ([ADR 0039](adr/0039-link-mobile-device-builder-fee-and-session-priority.md)).
+  Agent-only is only for imported mobile access or explicitly active
+  local-agent sessions.
 - L1 trading actions (`order`, `cancel`, `updateLeverage`, etc.) must use the
   trading client backed by the local agent.
 - User-signed actions (`approveAgent`, `withdraw3`, `usdSend`, `spotSend`,
@@ -297,22 +303,27 @@ implementation.
   path independently per environment, require funded testnet and small-value
   mainnet evidence, and never infer readiness from Privy authentication or an
   unrelated sponsored transaction.
-- Enabling sponsored mainnet makes the deposit path available; it is not user
-  consent to move funds. The application-wide embedded-wallet host may track
-  mainnet recovery but must never initiate a mainnet signature or broadcast.
-  A mainnet email-wallet deposit requires the user to click the amount-labelled
-  `Deposit … USDC` action in the open deposit modal after reviewing the complete
-  available native-USDC balance and current Circle fee. Enforce this again at
-  the execution boundary: reject automatic mainnet sponsored scope, missing
-  balance or fee review, and any submitted amount that differs from the exact
-  reviewed balance.
-- At the mainnet sponsored execution boundary, re-read the native-USDC balance
-  inside the owner-scoped funds-action lock and require it to equal the balance
-  the user reviewed. Revalidate the reviewed fee at the same boundary. Any
-  balance or fee change aborts before signature or broadcast and requires a
-  new review. Testnet may retain the independently gated automatic full-balance
-  flow for funded E2E and recovery testing; it is not evidence of mainnet user
-  confirmation.
+- Mainnet and Testnet email sessions share the automatic full-balance flow,
+  independently controlled by each environment's sponsored flag
+  ([ADR 0040](adr/0040-automatic-email-wallet-deposits.md)).
+  The root host checks the exact active embedded owner, route, balance, fee and
+  recovery state, then refreshes the balance inside an exclusive browser lock
+  before calling the automatic execution scope. The modal explains automatic
+  funding and has no second Deposit action; Done only closes it.
+- Automatic execution preserves the funds-action lock and fresh route, geo,
+  legal, exact-owner, fee, allowance, chain and paymaster checks. Existing
+  pending or unknown submissions must prevent a new authorization. Mainnet
+  manual sponsored callers still require exact reviewed balance and fee values
+  and fail on drift; automatic callers do not require a manual review, but the
+  execution boundary treats the submitted full balance as the locked value:
+  it re-reads the native-USDC balance inside the funds-action lock before
+  signing and again before broadcasting, and any difference aborts (the host
+  then retries with the refreshed balance). Automatic callers also verify the
+  owner's fresh legal status before signing, because no dialog gate ran. The
+  host reports a no-hash submission or an unconfirmed submitted one as a
+  persistent unknown status, not as a failure.
+  Session restoration may process an existing eligible balance. This requires
+  the application page to be running and does not promise offline initiation.
 - ZeroDev mainnet sponsorship must use a narrow Arbitrum One contract policy
   for the official `CctpExtensionV2` proxy
   `0x3289e443a95B28Bcedacc4B33C689b0C9b84ffAB` and
@@ -329,7 +340,7 @@ implementation.
   production-candidate environment using the release commit and bundle. If
   traffic cannot be isolated, add a real runtime allowlist or equivalent access
   control before calling the run a canary. A public `both` bundle makes the
-  explicitly confirmed path available to every eligible email-wallet user.
+  automatic path available to every eligible email-wallet user.
 - The V2 authorization nonce must bind owner, amount, validity window, and full
   deposit data. Verify the receipt per `owner + amount + authNonce`; a matching
   `SponsoredDepositForBurnSkipped` is a definitive failure even if the outer
@@ -396,11 +407,13 @@ implementation.
   and sponsored receipt mismatch, matching skipped events, AA outer-transaction
   independence, version-one recovery migration, refresh recovery, and terminal
   source failure cleanup.
-- Sponsored tests prove that the testnet root host retains its automatic
-  full-balance behavior while the mainnet root host never refreshes for a new
-  deposit, signs, or broadcasts. Mainnet modal tests require the explicit
-  amount-labelled `Deposit … USDC` action and pass the exact reviewed balance and
-  fee to the execution boundary; balance or fee drift fails closed.
+- Sponsored tests exercise both environments' automatic full-balance flow:
+  disabled flags, invalid identity, route/fee/balance failures, exclusive locks,
+  StrictMode replay, persisted recovery and unknown outcomes. The real Mainnet
+  auto host is tested with the real deposit hook and simulated external clients,
+  without a modal or click; a remount must not duplicate the pending deposit.
+  Email modal/form tests require no second Deposit action. Manual execution
+  review checks and external-wallet submission regressions remain covered.
 - Withdrawals use only the protocol-selected route. A pre-submit route change
   aborts before signing and requires the user to review the updated fees and
   action.
@@ -761,15 +774,18 @@ have an install capability.
   them ([ADR 0015](adr/0015-link-device-alignment.md) D8).
 - Pairing is a client-only transfer with no server route (ADR 0015 D7 and
   D8): the payload is plain JSON in the fragment of `/mobile-agent-sync`
-  (`lib/mobile-sync/sync-core.ts`, version 4), bound to one network, one owner
+  (`lib/mobile-sync/sync-core.ts`, version 5), bound to one network, one owner
   and a 2-minute window. The phone parses it before its first paint, removes
   it from the address bar with `history.replaceState`, verifies the approval
   once through `extraAgents` and imports only on an explicit tap; a reload
   after the scrub asks for a new scan. The retired `/mobile-agent-sync-ticket`
-  path answers 404 everywhere and must not be reintroduced. The single
-  `VITE_MOBILE_PAIRING_ENABLED` build flag stays off in production until the
-  checklist in `docs/mobile-phone-access-device-validation.md` has been run
-  and recorded.
+  path answers 404 everywhere and must not be reintroduced. By the
+  operator decision of 2026-10-11 (all three release gates open by default)
+  production builds from release p30 onward set the single
+  `VITE_MOBILE_PAIRING_ENABLED` build flag on; the live `build-meta.json` and
+  the release records say what is shipped, and the checklist in
+  `docs/mobile-phone-access-device-validation.md` is still to be run and
+  recorded against a published build.
 - The service worker never answers a pairing navigation, and the edge
   functions give that page `no-store` and `no-referrer`. Both predate the
   plain-fragment payload and are harmless, so they stay until the next edge

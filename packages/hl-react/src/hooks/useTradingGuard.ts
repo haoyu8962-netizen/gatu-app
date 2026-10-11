@@ -10,6 +10,11 @@ interface UseTradingGuardResult {
 	isReady: boolean;
 	isEnabling: boolean;
 	needsTrading: boolean;
+	/**
+	 * An Agent-only session cannot sign the approvals it is missing (Agent approval and builder fee
+	 * are user-signed by the master wallet), so the action stays unavailable instead of offering Enable.
+	 */
+	needsOwnerApproval: boolean;
 	enableTrading: () => void;
 	guardAction: (action: PendingAction) => void;
 	error: Error | null;
@@ -54,7 +59,8 @@ export function useTradingGuard(options: UseTradingGuardOptions = {}): UseTradin
 		authorizationStatus === "approving_fee" ||
 		authorizationStatus === "approving_agent" ||
 		authorizationStatus === "verifying";
-	const needsTrading = !isLoading && signaturesRequired > 0;
+	const needsOwnerApproval = sessionMode === "agent-only" && !isLoading && signaturesRequired > 0;
+	const needsTrading = !isLoading && signaturesRequired > 0 && !needsOwnerApproval;
 
 	useLayoutEffect(() => {
 		mounted.current = true;
@@ -66,6 +72,7 @@ export function useTradingGuard(options: UseTradingGuardOptions = {}): UseTradin
 
 	function runExplicitAction(action?: PendingAction, requireAuthorization = true) {
 		if (isEnabling || inFlight.current) return;
+		if (requireAuthorization && identityRef.current.sessionMode === "agent-only") return;
 		const identity = identityRef.current;
 		const attempt = Symbol("explicit-trading-action");
 		inFlight.current = attempt;
@@ -102,6 +109,7 @@ export function useTradingGuard(options: UseTradingGuardOptions = {}): UseTradin
 		isReady,
 		isEnabling,
 		needsTrading,
+		needsOwnerApproval,
 		enableTrading,
 		guardAction,
 		error: localError ?? authorizationError,

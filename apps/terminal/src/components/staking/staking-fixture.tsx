@@ -49,6 +49,7 @@ export function StakingFixture({ fixture, env }: { fixture: StakingFixtureState;
 		accountState: fixture === "loading" ? "loading" : fixture === "error" ? "error" : "ready",
 		ownerAddress: OWNER,
 		hasExactMasterSigner: true,
+		agentOnlySession: false,
 		validators,
 		validatorViews: createValidatorViews(validators, account?.delegations, period),
 		period,

@@ -12,8 +12,8 @@ changes, not evidence that a build has been deployed or accepted on real devices
   separate choices, as on the official terminal: transfer USDC on Arbitrum, or buy USDC by card or
   bank transfer through Privy's payment providers (the amount is prefilled with 100 US dollars and
   can be changed). The USDC goes only to your own trading wallet on Arbitrum (your email wallet, or
-  the external wallet you are connected with), and you then deposit it as usual; external wallets
-  need a little Arbitrum ETH for that step. Notifications say a purchase was confirmed, is still
+  the external wallet you are connected with), and the active email session deposits it automatically.
+  External wallets deposit manually and need a little Arbitrum ETH for that step. Notifications say a purchase was confirmed, is still
   processing or has an unknown status (the last two stay until you dismiss them), never that USDC
   has arrived; they are shown only to the account and network that made the purchase and follow
   the interface language. On Testnet the purchase is a provider sandbox test, and its notification
@@ -58,6 +58,24 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Changed
 
+- Every dialog now dims the page behind it the same way, following the official terminal: a phone
+  sheet sits on a stronger navy-dark scrim without a border, and a desktop dialog keeps its thin
+  border on a lighter scrim with a slight blur. Before, each dialog chose its own scrim and the
+  Deposit, Withdraw, order confirmation and position dialogs on phones used a faint one, so in the
+  dark theme they read as part of the page instead of a layer above it.
+- Enable Trading with an external wallet now approves Hyperliquid's unnamed default API wallet,
+  as the official terminal does, instead of a named `sairn` API wallet. A named wallet counted
+  against the account's limit of named API wallets, which the exchange raises with trading volume
+  and reported as three for the affected account, rejecting the approval with `Too many extra
+  agents for cumulative volume traded. Current limit is 3` once other named wallets (for example
+  the retired `gatu` wallet, a Link mobile device wallet or wallets from other apps) had filled it. The
+  default wallet is shared with app.hyperliquid.xyz and any other app that uses it: establishing a
+  connection on one of them replaces the key of the others, which then ask to connect again. Named
+  wallets remain for the API Wallet page and Link mobile device, and that limit rejection is now
+  translated with the reported limit. A browser that still holds a working `sairn` key keeps
+  trading with it until it next needs a new connection. Previously approved `sairn` and `gatu`
+  wallets stay on the account until they expire or you remove them on the API Wallet page
+  (ADR 0038).
 - The deposit dialog is tidier and no longer shows a scrollbar. The close and back buttons and the
   form's title stay in place while the content scrolls underneath on short screens, and nothing scrolls on common desktop
   and phone sizes. Asset and network sit on one row with their icons, the QR code carries the USDC
@@ -531,6 +549,47 @@ changes, not evidence that a build has been deployed or accepted on real devices
   says so, together with the expiry date and the desktop revoke path.
 
 ### Fixed
+
+- A sponsored deposit that returns no transaction hash now says its submission is unconfirmed,
+  instead of claiming an Arbitrum transaction was submitted. An active unresolved authorization
+  has a separate retry-blocking message from an actual pending CCTP transfer. Submission errors
+  are recorded through the existing sanitized diagnostic channel before the dialog resets;
+  authorization expiry and duplicate-deposit protection remain in place.
+
+- Email wallets now automatically deposit eligible Arbitrum USDC into the trading account on
+  Mainnet while the app is running, matching the existing Testnet flow. The funding dialog
+  explains automatic deposits and no longer asks for a second Deposit click. Exact-wallet,
+  current fee, duplicate-submission and recovery checks remain in place, and the automatic
+  deposit re-reads the wallet balance right before signing and before broadcasting, so a
+  transfer that arrives mid-attempt is deposited in full on the next attempt instead of
+  leaving a remainder behind. It checks your legal status before signing, and when the
+  wallet returns no transaction hash, or a submitted transaction cannot be confirmed, the
+  notification says the status is unknown instead of reporting a failure.
+
+- Link mobile device (still off in production builds): a phone linked from an owner that had never
+  approved the builder fee could not place orders or close positions, showing a dead "Enable
+  Trading" button or a misleading wallet error. Linking now only links: an account that has not
+  activated trading yet is asked to deposit and place a first order on desktop before linking (that
+  order approves the builder fee, silently for email accounts), and the phone shows one "finish
+  trading authorization on desktop" reason instead of an Enable it cannot sign. A key imported on a
+  phone now takes precedence over a wallet login on that phone, as on the official terminal, so
+  logging in no longer hides or deletes it, and Disconnect removes only the imported key. The phone
+  key now uses the same `Mobile QR` name as the official terminal's phone link, so linking in either
+  app replaces one shared API wallet slot instead of taking another, and when an account's base
+  named API wallet slots are used up the dialog says before you sign that the approval may be
+  rejected, lists them with their expiry and links to the API Wallet page. The dialog warns that
+  approving again replaces the linked phone, including one linked in the Hyperliquid app; a QR that
+  fails to draw can be revealed again without a new signature; the phone tells you which account's
+  access expired or was replaced and asks for a new scan; the account menu shows the imported
+  account instead of a masked email login; the scanner separates a clock mismatch and a scanner that
+  failed to load from other errors; and on iOS the import page says the key stays in that browser.
+  Funds and other master-wallet actions on the phone (vaults, referrals, account mode, staking, API
+  wallets, portfolio, the desktop account panel and balance rows) are shown disabled with the same
+  desktop-required reason instead of being hidden, reconnecting or using other wording (ADR 0039).
+- The Deposit / Withdraw dialog no longer flashes and jumps while it loads on a cold open. Its
+  shell, backdrop and enter transition are now mounted once; only the form loads lazily inside it,
+  on desktop and on the phone sheet. The Arbitrum USDC balance of an email wallet refreshes in the
+  background, so the Deposit button no longer flips to `--` and grey every five seconds.
 
 - The order button no longer asks an external wallet to "Switch to Arbitrum" before Enable
   Trading, and an external wallet on a network the terminal does not list can now enable

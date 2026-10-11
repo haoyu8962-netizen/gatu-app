@@ -5,11 +5,11 @@ import { i18n, type Messages } from "@lingui/core";
 import { I18nProvider } from "@lingui/react";
 import { ApiRequestError, HttpRequestError } from "@nktkas/hyperliquid";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { act, type ButtonHTMLAttributes, createElement, type ReactNode } from "react";
+import { act, type ButtonHTMLAttributes, createElement, type ReactNode, useSyncExternalStore } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { DepositModalHost } from "@/components/trade/components/deposit-modal-host";
 import { renderFundsModalBackButton } from "@/components/trade/components/funds-modal-back-button";
-import { DepositModal } from "@/components/trade/tradebox/deposit-modal";
 import { AccountAbstractionExecutionError } from "@/hooks/trade/use-account-abstraction-guard";
 import { FundsActionGeoExecutionError } from "@/hooks/trade/use-funds-action-availability";
 import { UsdcDepositRouteError } from "@/hooks/trade/use-usdc-routing";
@@ -64,6 +64,8 @@ const arabicMessages: Messages = Object.fromEntries(
 );
 
 const testState = vi.hoisted(() => ({
+	renderListeners: new Set<() => void>(),
+	renderVersion: 0,
 	formatLocale: "en-US",
 	depositExecutionAmount: null as string | null,
 	accountGuard: vi.fn(),
@@ -509,6 +511,24 @@ vi.mock("@/hooks/trade/use-privy-fiat-funding-offer", () => ({
 
 vi.mock("@/lib/trade/privy-fiat-funding-launch", () => ({ warmPrivyFiatFundingHost }));
 
+// The host memoises the lazy body, so a re-render of the test root no longer reaches it. The stubs
+// below read `testState` during render; this wrapper subscribes the real body to `rerender()`.
+vi.mock("@/components/trade/components/lazy-global-modals", async () => {
+	const { DepositModal } = await import("@/components/trade/tradebox/deposit-modal");
+	return {
+		DepositModal: function RerenderableDepositModal(props: Parameters<typeof DepositModal>[0]) {
+			useSyncExternalStore(
+				(listener) => {
+					testState.renderListeners.add(listener);
+					return () => testState.renderListeners.delete(listener);
+				},
+				() => testState.renderVersion,
+			);
+			return createElement(DepositModal, props);
+		},
+	};
+});
+
 vi.mock("@/components/trade/components/pending-action-modal", () => ({
 	PendingActionModal: ({ children, onOpenChange }: { children?: ReactNode; onOpenChange: (open: boolean) => void }) => {
 		testState.modalOnOpenChange = onOpenChange;
@@ -518,13 +538,13 @@ vi.mock("@/components/trade/components/pending-action-modal", () => ({
 
 vi.mock("@/components/trade/tradebox/deposit/deposit-form", () => ({
 	DepositForm: ({
+		onAmountChange,
 		onRetryRouting,
 		onRetryData,
 		preflightError,
 		isPending,
 		balanceStatus,
 		onSubmit,
-		requiresExplicitFundingDeposit,
 		routingPreflightError,
 		routingStatus,
 		usesFundingAddressFlow,
@@ -536,6 +556,7 @@ vi.mock("@/components/trade/tradebox/deposit/deposit-form", () => ({
 		belowMinimumDepositRaw,
 		validation,
 	}: {
+		onAmountChange: (amount: string) => void;
 		amountError?: string | null;
 		minimumDepositRaw: bigint | null;
 		belowMinimumDepositRaw: bigint | null;
@@ -548,7 +569,6 @@ vi.mock("@/components/trade/tradebox/deposit/deposit-form", () => ({
 		isPending: boolean;
 		balanceStatus: string;
 		onSubmit: () => void;
-		requiresExplicitFundingDeposit?: boolean;
 		routingPreflightError?: string | null;
 		routingStatus: string;
 		sponsoredCctpReadiness: { status: string };
@@ -570,17 +590,12 @@ vi.mock("@/components/trade/tradebox/deposit/deposit-form", () => ({
 				"data-status": routingStatus,
 			},
 			createElement("p", { "data-testid": "deposit-data-error" }, preflightError),
+			createElement("button", { onClick: () => onAmountChange("0.4"), type: "button" }, "Set deposit amount"),
 			createElement("button", { onClick: onRetryData, type: "button" }, "Retry deposit data"),
 			routingPreflightError
 				? createElement("p", { "data-testid": "deposit-routing-preflight-error", role: "alert" }, routingPreflightError)
 				: null,
-			!usesFundingAddressFlow || (requiresExplicitFundingDeposit && sponsoredCctpReadiness.status === "ready")
-				? createElement(
-						"button",
-						{ onClick: onSubmit, type: "button" },
-						requiresExplicitFundingDeposit ? "Deposit 10 USDC" : "Submit deposit",
-					)
-				: null,
+			!usesFundingAddressFlow ? createElement("button", { onClick: onSubmit, type: "button" }, "Submit deposit") : null,
 			createElement("button", { onClick: onRetryRouting, type: "button" }, "Retry deposit route"),
 		),
 }));
@@ -786,7 +801,7 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 				createElement(
 					QueryClientProvider,
 					{ client: queryClient },
-					createElement(I18nProvider, { i18n }, createElement(DepositModal)),
+					createElement(I18nProvider, { i18n }, createElement(DepositModalHost)),
 				),
 			);
 		});
@@ -805,11 +820,17 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 
 	async function rerender(sessionKey?: string) {
 		await act(async () => {
+			testState.renderVersion += 1;
+			for (const listener of testState.renderListeners) listener();
 			root.render(
 				createElement(
 					QueryClientProvider,
 					{ client: queryClient },
-					createElement(I18nProvider, { i18n }, createElement(DepositModal, sessionKey ? { key: sessionKey } : null)),
+					createElement(
+						I18nProvider,
+						{ i18n },
+						createElement(DepositModalHost, sessionKey ? { key: sessionKey } : null),
+					),
 				),
 			);
 		});
@@ -1284,7 +1305,6 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 	it("does not start a deposit when the signing identity changes during routing preflight", async () => {
 		testState.modalOpen = true;
 		testState.activeTab = "deposit";
-		testState.emailAddress = "trader@example.com";
 		testState.routingResponse = { depositRoute: "cctp", withdrawalRoute: "cctp" };
 		let resolveRouting!: (value: { depositRoute: "cctp"; withdrawalRoute: "cctp" }) => void;
 		testState.fetchFreshRouting.mockReturnValueOnce(
@@ -1294,7 +1314,8 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 		);
 
 		await rerender();
-		act(() => getButton("Deposit 10 USDC").click());
+		act(() => getButton("Set deposit amount").click());
+		act(() => getButton("Submit deposit").click());
 		await vi.waitFor(() => expect(testState.fetchFreshRouting).toHaveBeenCalledOnce());
 
 		testState.walletAddress = "0x2222222222222222222222222222222222222222";
@@ -1868,7 +1889,6 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 	it("reports a fee rise that pushes the reviewed amount below the minimum as a fee change, not a route failure", async () => {
 		testState.modalOpen = true;
 		testState.activeTab = "deposit";
-		testState.emailAddress = "trader@example.com";
 		testState.routingResponse = { depositRoute: "cctp", withdrawalRoute: "cctp" };
 		testState.freshRoutingResponse = { depositRoute: "cctp", withdrawalRoute: "cctp" };
 		testState.depositMaxRaw = 400_000n;
@@ -1876,7 +1896,8 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 		testState.cctpDepositRefetchForwardFeeRaw = 210_000n;
 
 		await rerender();
-		await act(async () => getButton("Deposit 10 USDC").click());
+		act(() => getButton("Set deposit amount").click());
+		await act(async () => getButton("Submit deposit").click());
 
 		expect(testState.deposit).not.toHaveBeenCalled();
 		expect(container.querySelector('[data-testid="deposit-data-error"]')?.textContent).toBe(
@@ -2000,27 +2021,29 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 			isTestnet: false,
 		});
 
-		await act(async () => getButton("Deposit 10 USDC").click());
+		expect(
+			[...container.querySelectorAll("button")].some((button) =>
+				/^(Deposit|Submit deposit)/.test(button.textContent ?? ""),
+			),
+		).toBe(false);
 		expect(testState.deposit).not.toHaveBeenCalled();
 	});
 
-	it("submits a mainnet sponsored deposit only after the user explicitly confirms the reviewed full balance", async () => {
+	it("shows the mainnet funding address without a manual deposit action owned by the modal", async () => {
 		testState.modalOpen = true;
 		testState.activeTab = "deposit";
 		testState.emailAddress = "trader@example.com";
 		testState.routingResponse = { depositRoute: "cctp", withdrawalRoute: "cctp" };
-		testState.freshRoutingResponse = { depositRoute: "cctp", withdrawalRoute: "cctp" };
-
 		await rerender();
-
+		const form = container.querySelector('[data-testid="deposit-routing-status"]');
+		expect(form?.getAttribute("data-funding-address")).toBe(testState.walletAddress);
+		expect(form?.getAttribute("data-readiness-status")).toBe("ready");
+		expect(
+			[...container.querySelectorAll("button")].some((button) =>
+				/^(Deposit|Submit deposit)/.test(button.textContent ?? ""),
+			),
+		).toBe(false);
 		expect(testState.deposit).not.toHaveBeenCalled();
-		await act(async () => getButton("Deposit 10 USDC").click());
-
-		expect(testState.deposit).toHaveBeenCalledOnce();
-		expect(testState.deposit).toHaveBeenCalledWith("10", {
-			expectedBalanceRaw: 10_000_000n,
-			expectedCctpMaxFeeRaw: 200_000n,
-		});
 	});
 
 	it("surfaces a final withdrawal-route request failure without entering either mutation", async () => {
@@ -2301,6 +2324,10 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 		await rerender();
 
 		expect(toastMocks.warning).toHaveBeenCalledExactlyOnceWith("Deposit status unknown", expect.anything());
+		const description = getToastText(toastMocks.warning.mock.calls[0]);
+		expect(description).toContain("The wallet did not return a transaction hash");
+		expect(description).toContain("A signed authorization may still be active");
+		expect(description).not.toContain("The Arbitrum transaction was submitted");
 		expect(resetDeposit).toHaveBeenCalledOnce();
 		expect(closeDepositModal).toHaveBeenCalledOnce();
 		expect(toastMocks.error).not.toHaveBeenCalled();

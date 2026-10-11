@@ -335,6 +335,10 @@ msgstr "Un dépôt CCTP précédent est toujours en cours de suivi. Ne renvoyez 
 msgid "A previous connection attempt is still being reconciled. Retrying checks the same trading key and does not request another signature."
 msgstr "Une précédente tentative de connexion est toujours en cours de vérification. Une nouvelle tentative vérifie la même clé de trading et ne demande pas d’autre signature."
 
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "A previous deposit authorization is still active, but its submission could not be confirmed. Another deposit is blocked until that authorization is resolved or expires."
+msgstr "L’autorisation d’un dépôt précédent est toujours active, mais son envoi n’a pas pu être confirmé. Aucun autre dépôt n’est possible tant que le résultat de cette autorisation n’est pas confirmé ou qu’elle n’a pas expiré."
+
 #: src/lib/errors/exchange-error-text.ts
 msgid "A Reduce Only order cannot increase the position."
 msgstr "Un ordre en réduction uniquement ne peut pas augmenter la position."
@@ -391,6 +395,10 @@ msgstr "Acceptés {accepted}/{total} · Vérifiez les ordres"
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Access disabled"
 msgstr "Accès désactivé"
+
+#: src/routes/mobile-agent-sync.tsx
+msgid "Access is stored in this browser only. If you use {BRAND_NAME} from your Home Screen, scan the QR from that app instead: Connect, then Link Desktop Wallet."
+msgstr ""
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
 msgid "Access restricted"
@@ -626,8 +634,8 @@ msgid "After removal"
 msgstr "Après la suppression"
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
-msgid "After the funds arrive, return here and select Deposit to move them into your trading account."
-msgstr "Une fois les fonds reçus, revenez ici et sélectionnez Déposer pour les transférer vers votre compte de trading."
+#~ msgid "After the funds arrive, return here and select Deposit to move them into your trading account."
+#~ msgstr "Une fois les fonds reçus, revenez ici et sélectionnez Déposer pour les transférer vers votre compte de trading."
 
 #: src/components/vaults/vaults-list.tsx
 #: src/components/vaults/vaults-list.tsx
@@ -803,7 +811,6 @@ msgid "Another API wallet with this exact name appeared while removal was being 
 msgstr "Un autre portefeuille API portant exactement ce nom est apparu pendant la vérification de la suppression."
 
 #: src/lib/hyperliquid/use-deposit.ts
-#: src/lib/hyperliquid/use-deposit.ts
 msgid "Another Circle CCTP deposit is still pending for this account. Wait for it to finish before submitting another deposit."
 msgstr "Un autre dépôt Circle CCTP est encore en attente pour ce compte. Attendez qu’il soit terminé avant d’effectuer un autre dépôt."
 
@@ -910,6 +917,10 @@ msgstr "L’autorisation et la suppression nécessitent le portefeuille principa
 #: src/hooks/wallet/use-explicit-agent-approval.ts
 msgid "Approve access"
 msgstr "Autoriser l’accès"
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+#~ msgid "Approve builder fee"
+#~ msgstr ""
 
 #: src/components/staking/staking-action-modal.tsx
 msgid "Approve in wallet"
@@ -1128,13 +1139,13 @@ msgstr "Prix moyen {price}"
 #: src/components/referrals/referral-action-modal.tsx
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/staking/staking-action-modal.tsx
+#: src/components/trade/components/deposit-modal-host.tsx
 #: src/components/trade/components/mobile-agent-qr-scanner.tsx
 #: src/components/trade/components/wallet-modal.tsx
 #: src/components/trade/positions/cancel-all-orders-modal.tsx
 #: src/components/trade/tradebox/bridge/amount-entry-screen.tsx
 #: src/components/trade/tradebox/bridge/bridge-error-screen.tsx
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
-#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/vaults/vault-action-modal.tsx
 msgid "Back"
 msgstr "Retour"
@@ -2341,9 +2352,17 @@ msgstr "Copier le lien de parrainage"
 msgid "Copy token address"
 msgstr "Copier l’adresse du jeton"
 
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Could not check on Hyperliquid whether trading is activated. Nothing was signed. Try again."
+msgstr ""
+
 #: src/routes/mobile-agent-sync.tsx
 msgid "Could not check the approval on Hyperliquid. Nothing was imported. Try again."
 msgstr ""
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+#~ msgid "Could not check the builder fee approval on Hyperliquid. Nothing was signed. Try again."
+#~ msgstr ""
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Could not check this account on Hyperliquid. Nothing was signed. Retry the check."
@@ -2595,7 +2614,6 @@ msgstr "Déployeur"
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/amount-input.tsx
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-method-chooser.tsx
 #: src/components/vaults/vault-detail-view.tsx
 #: src/components/vaults/vault-detail-view.tsx
@@ -2635,6 +2653,7 @@ msgid "Deposit native USDC on Arbitrum from your connected wallet."
 msgstr "Déposez des USDC natifs sur Arbitrum depuis votre portefeuille connecté."
 
 #: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
 msgid "Deposit status unknown"
 msgstr "Statut du dépôt inconnu"
 
@@ -3305,6 +3324,10 @@ msgstr "Développer les détails du marché"
 #: src/components/api-wallet/api-wallet-list.tsx
 msgid "Expired"
 msgstr "Expiré"
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Expires {expiresAt}"
+msgstr ""
 
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "Expires {expiresAtLabel}."
@@ -5378,6 +5401,10 @@ msgstr "Aucune action Rendement pour l'instant"
 msgid "No eligible leaderboard accounts"
 msgstr "Aucun compte admissible au classement"
 
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "No expiry"
+msgstr ""
+
 #: src/components/api-wallet/api-wallet-list.tsx
 msgid "No expiry reported"
 msgstr "Aucune expiration indiquée"
@@ -5756,6 +5783,10 @@ msgstr "Seul ce transfert lance la file d’attente du Testnet, d’environ cinq
 msgid "Open"
 msgstr "Ouvert"
 
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Open API Wallet"
+msgstr ""
+
 #: src/config/footer-links.ts
 msgid "Open command menu"
 msgstr "Ouvrir le menu de commandes"
@@ -6033,6 +6064,10 @@ msgstr "L'ordre restera dans le carnet jusqu'à exécution ou annulation."
 msgid "Orders"
 msgstr "Ordres"
 
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+#~ msgid "Orders from the phone include the {BRAND_NAME} builder fee, which only this wallet can approve. Approve it once, then approve the mobile trading key."
+#~ msgstr ""
+
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Orders with a client order ID cannot be modified here. Cancel and replace the order instead."
@@ -6238,6 +6273,14 @@ msgstr "PnL des perpétuels"
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "Phone access could not be saved on this device. Check browser storage and retry."
 #~ msgstr "L'accès téléphone n'a pas pu être enregistré sur cet appareil. Vérifiez le stockage du navigateur et réessayez."
+
+#: src/components/trade/components/mobile-agent-ended-notifier.tsx
+#~ msgid "Phone access ended"
+#~ msgstr ""
+
+#: src/components/trade/components/mobile-agent-ended-notifier.tsx
+msgid "Phone access ended for {account}"
+msgstr ""
 
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "Phone access is ready, but the temporary QR copy could not be cleared. Close this tab and clear this site's data."
@@ -7805,8 +7848,8 @@ msgstr "Envoyer des tokens"
 #~ msgstr "Envoyez des tokens vers un autre compte sur le L1 Hyperliquid."
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
-msgid "Send USDC to your wallet address below."
-msgstr "Envoyez des USDC à l’adresse de votre portefeuille ci-dessous."
+#~ msgid "Send USDC to your wallet address below."
+#~ msgstr "Envoyez des USDC à l’adresse de votre portefeuille ci-dessous."
 
 #: src/components/trade/positions/send-modal.tsx
 #~ msgid "Sending..."
@@ -8870,6 +8913,7 @@ msgid "The Arbitrum transaction was submitted, but Circle status is temporarily 
 msgstr "La transaction Arbitrum a été soumise, mais le statut Circle est temporairement indisponible. Le suivi reprendra à votre retour."
 
 #: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
 msgid "The Arbitrum transaction was submitted, but its final status could not be verified. Check the transaction before retrying."
 msgstr "La transaction Arbitrum a été soumise, mais son statut final n’a pas pu être vérifié. Vérifiez la transaction avant de réessayer."
 
@@ -8903,6 +8947,10 @@ msgstr "La connexion n’a pas pu être finalisée. Elle est peut-être déjà a
 #: src/lib/tests/mobile-agent-sync-route.test.tsx
 #: src/routes/mobile-agent-sync.tsx
 msgid "The desktop has not approved this key. Create a new QR on desktop."
+msgstr ""
+
+#: src/components/trade/components/mobile-agent-ended-notifier.tsx
+msgid "The desktop-approved key expired or was replaced from desktop. Scan a new QR from Link mobile device."
 msgstr ""
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
@@ -9105,15 +9153,31 @@ msgid "The public Vault feed could not be verified. No cached or cross-network r
 msgstr "Le flux public des coffres n’a pas pu être vérifié. Aucune ligne mise en cache ou provenant d’un autre réseau n’est affichée à sa place."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "The QR can trade but not withdraw. Do not share it, screenshot it or show it while sharing your screen."
+#~ msgid "The QR can trade but not withdraw. Approving replaces the key on a phone that is already linked. Do not share it, screenshot it or show it while sharing your screen."
+#~ msgstr ""
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "The QR can trade but not withdraw. Approving replaces the mobile key of a phone that is already linked, including one linked in the Hyperliquid app. Do not share it, screenshot it or show it while sharing your screen."
 msgstr ""
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+#~ msgid "The QR can trade but not withdraw. Do not share it, screenshot it or show it while sharing your screen."
+#~ msgstr ""
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "The QR closes automatically in about {announcedSeconds} seconds"
 #~ msgstr ""
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "The QR could not be drawn. Approve a new key to try again."
+#~ msgid "The QR could not be drawn. Approve a new key to try again."
+#~ msgstr ""
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "The QR could not be drawn. Hold to reveal to try again, or reload the page if it keeps failing."
+msgstr ""
+
+#: src/components/trade/components/mobile-agent-qr-scanner.tsx
+msgid "The QR scanner could not load. Check your connection, reload the page and try again."
 msgstr ""
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
@@ -9298,6 +9362,11 @@ msgstr "Les données du propriétaire vérifié sont en lecture seule dans cette
 msgid "The wallet could not sign the request. Try again."
 msgstr "Le portefeuille n'a pas pu signer la demande. Réessayez."
 
+#: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
+msgid "The wallet did not return a transaction hash, so the deposit could not be confirmed. A signed authorization may still be active. Check your wallet activity before retrying."
+msgstr "Le portefeuille n’a pas renvoyé de hash de transaction ; le dépôt n’a donc pas pu être confirmé. Une autorisation signée peut encore être active. Vérifiez l’activité de votre portefeuille avant de réessayer."
+
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "The wallet did not sign, so no request was submitted. You can review the details and try again."
 msgstr "Le portefeuille n’a pas signé ; aucune demande n’a donc été soumise. Vous pouvez vérifier les détails et réessayer."
@@ -9318,9 +9387,21 @@ msgstr "La session du portefeuille n'a pas pu être fermée, mais la clé de tra
 msgid "There are no unclaimed rewards available to claim."
 msgstr "Aucune récompense non réclamée n’est disponible."
 
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "This account already has {count} named API wallets and none of them is a mobile key. Hyperliquid allows {limit} (more with sub-accounts or higher trading volume), so this approval may be rejected. If it is, remove one you no longer use:"
+msgstr ""
+
 #: src/lib/errors/action-error.ts
 msgid "This account already has a referral code and cannot apply another one."
 msgstr "Ce compte dispose déjà d’un code de parrainage et ne peut pas en appliquer un autre."
+
+#: src/lib/errors/exchange-error-text.ts
+msgid "This account already has the {limit} named API wallets its trading volume allows. Remove one on the API Wallet page before approving another."
+msgstr ""
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+#~ msgid "This account already uses the {limit} named API wallets Hyperliquid allows, and none of them is a mobile key, so the approval will be rejected unless your trading volume allows more. Remove one you no longer use first:"
+#~ msgstr ""
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
 #: src/lib/errors/action-error.ts
@@ -9524,10 +9605,22 @@ msgstr "Ce panneau n'a pas pu être chargé. Réessayez ou rechargez la page. Le
 msgid "This phone could not store the trading key. Clear this site's data and scan again."
 msgstr ""
 
+#: src/lib/trade/owner-approval-message.ts
+#~ msgid "This phone uses a desktop-approved trading key. Approve trading with the master wallet on desktop first: open Link mobile device there."
+#~ msgstr ""
+
 #: src/hooks/trade/use-deposit-availability.ts
 #: src/hooks/trade/use-funds-action-availability.ts
 msgid "This phone uses a desktop-approved trading key. Deposits, withdrawals and transfers need the master wallet on desktop."
 msgstr "Ce téléphone utilise une clé de trading approuvée sur ordinateur. Les dépôts, retraits et transferts nécessitent le portefeuille principal sur ordinateur."
+
+#: src/lib/trade/owner-approval-message.ts
+msgid "This phone uses a desktop-approved trading key. Finish trading authorization on desktop first by placing a first order there."
+msgstr ""
+
+#: src/hooks/trade/use-master-wallet-action-reason.ts
+msgid "This phone uses a desktop-approved trading key. This action needs the master wallet on desktop."
+msgstr ""
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-market-close-modal.tsx
@@ -9554,7 +9647,11 @@ msgid "This position is no longer using isolated margin."
 msgstr "Cette position n'utilise plus la marge isolée."
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "This QR belongs to a different network. Switch networks or create a new QR on desktop."
+#~ msgid "This QR belongs to a different network. Switch networks or create a new QR on desktop."
+#~ msgstr ""
+
+#: src/routes/mobile-agent-sync.tsx
+msgid "This QR belongs to a different network. Use the same network on both devices, then scan a new QR from desktop."
 msgstr ""
 
 #: src/routes/mobile-agent-sync.tsx
@@ -9591,6 +9688,7 @@ msgstr "Ce QR n'est pas un lien de portefeuille de bureau valide."
 #~ msgid "This QR was created for a different site."
 #~ msgstr "Ce QR a été créé pour un autre site."
 
+#: src/components/trade/components/mobile-agent-qr-scanner.tsx
 #: src/routes/mobile-agent-sync.tsx
 msgid "This QR's time does not match this phone. Check the date and time on both devices, then create a new QR."
 msgstr "L'heure de ce QR ne correspond pas à celle de ce téléphone. Vérifiez la date et l'heure des deux appareils, puis créez un nouveau QR."
@@ -9982,6 +10080,10 @@ msgstr "Les données de trading ont changé pendant l’ouverture de cette fenê
 #: src/components/trade/components/hip3-deployer-disclaimer.tsx
 msgid "Trading in these markets may involve elevated risk, including low liquidity, high volatility, incomplete documentation, and increased liquidation risk. Carefully assess the risks and understand how each market works before proceeding."
 msgstr "La négociation sur ces marchés peut présenter des risques élevés, notamment une faible liquidité, une forte volatilité, une documentation incomplète et un risque accru de liquidation. Évaluez soigneusement les risques et comprenez le fonctionnement de chaque marché avant de continuer."
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Trading is not activated on this account yet. Deposit and place a first order on this desktop to finish trading authorization, then link your phone."
+msgstr ""
 
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/config/trade-panel-labels.ts
@@ -10596,6 +10698,10 @@ msgstr "USDC sur HyperCore"
 #: src/components/referrals/referral-summary-cards.tsx
 #~ msgid "USDC rewards"
 #~ msgstr "Récompenses en USDC"
+
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+msgid "USDC sent to this address is automatically deposited into your trading account."
+msgstr "Les USDC envoyés à cette adresse sont automatiquement déposés sur votre compte de trading."
 
 #: src/components/referrals/referred-traders.tsx
 msgid "USDC volume"

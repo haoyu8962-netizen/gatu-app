@@ -276,15 +276,15 @@ describe("MarginModeModal", () => {
 		expect(onApply).toHaveBeenCalledWith("isolated", 7);
 	});
 
-	it("uses the trading scrim and market-close typography for desktop and mobile content", () => {
+	it("uses the shared scrim and market-close typography for desktop and mobile content", () => {
 		renderModal();
 
-		expect(modalHarness.popupOverlayClassName).toBe("bg-trading-panel-scrim");
+		expect(modalHarness.popupOverlayClassName).toBe("");
 		expect(modalHarness.popupClassName).toContain("font-market-close");
 
 		renderModal({ presentation: "drawer" });
 
-		expect(modalHarness.adaptiveOverlayClassName).toBe("bg-trading-panel-scrim");
+		expect(modalHarness.adaptiveOverlayClassName).toBe("");
 		expect(modalHarness.adaptiveClassName).toContain("font-market-close");
 	});
 

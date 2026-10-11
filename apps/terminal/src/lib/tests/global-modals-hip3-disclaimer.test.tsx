@@ -132,6 +132,7 @@ vi.mock("@/stores/use-global-modal-store", () => ({
 	discardIdlePositionMarketCloseModal: testState.discardIdlePositionMarketCloseModal,
 	useCommandMenuActions: () => ({ open: testState.openCommandMenu, close: testState.closeCommandMenu }),
 	useDepositModalActions: () => ({ close: testState.closeDepositModal }),
+	useDepositModalOpen: () => true,
 	useDepositModalTab: () => testState.depositModalTab,
 	useGlobalModalType: () =>
 		useSyncExternalStore(
@@ -218,7 +219,9 @@ describe("GlobalModals HIP-3 disclaimer priority", () => {
 		async () => {
 			const { GlobalModals } = await import("@/components/trade/components/global-modals");
 
-			act(() => root.render(createElement(GlobalModals, { enableHip3Disclaimer: true })));
+			act(() =>
+				root.render(createElement(I18nProvider, { i18n }, createElement(GlobalModals, { enableHip3Disclaimer: true }))),
+			);
 			const disclaimer = container.querySelector('[data-testid="Hip3DeployerDisclaimer"]');
 			expect(disclaimer).not.toBeNull();
 			expect(disclaimer?.getAttribute("data-props")).toContain('"open":true');
@@ -239,7 +242,9 @@ describe("GlobalModals HIP-3 disclaimer priority", () => {
 		const { GlobalModals } = await import("@/components/trade/components/global-modals");
 		vi.useFakeTimers();
 		try {
-			act(() => root.render(createElement(GlobalModals, { enableHip3Disclaimer: true })));
+			act(() =>
+				root.render(createElement(I18nProvider, { i18n }, createElement(GlobalModals, { enableHip3Disclaimer: true }))),
+			);
 			expect(container.querySelector('[data-testid="Hip3DeployerDisclaimer"]')?.getAttribute("data-props")).toContain(
 				'"open":true',
 			);
@@ -267,7 +272,15 @@ describe("GlobalModals HIP-3 disclaimer priority", () => {
 		testState.legalGate.state = "required";
 		const { GlobalModals } = await import("@/components/trade/components/global-modals");
 
-		act(() => root.render(createElement(GlobalModals, { enableHip3Disclaimer: true, enableLegalGate: true })));
+		act(() =>
+			root.render(
+				createElement(
+					I18nProvider,
+					{ i18n },
+					createElement(GlobalModals, { enableHip3Disclaimer: true, enableLegalGate: true }),
+				),
+			),
+		);
 
 		expect(container.querySelector('[data-testid="LegalAcceptanceModal"]')).not.toBeNull();
 		expect(container.querySelector('[data-testid="Hip3DeployerDisclaimer"]')).toBeNull();
@@ -280,11 +293,15 @@ describe("GlobalModals HIP-3 disclaimer priority", () => {
 
 		act(() =>
 			root.render(
-				createElement(GlobalModals, {
-					enableHip3Disclaimer: true,
-					enableLegalGate: true,
-					enableTradingOnboarding: true,
-				}),
+				createElement(
+					I18nProvider,
+					{ i18n },
+					createElement(GlobalModals, {
+						enableHip3Disclaimer: true,
+						enableLegalGate: true,
+						enableTradingOnboarding: true,
+					}),
+				),
 			),
 		);
 
@@ -297,7 +314,15 @@ describe("GlobalModals HIP-3 disclaimer priority", () => {
 		testState.activeModal = "settings";
 		const { GlobalModals } = await import("@/components/trade/components/global-modals");
 
-		act(() => root.render(createElement(GlobalModals, { enableHip3Disclaimer: true, enableLegalGate: true })));
+		act(() =>
+			root.render(
+				createElement(
+					I18nProvider,
+					{ i18n },
+					createElement(GlobalModals, { enableHip3Disclaimer: true, enableLegalGate: true }),
+				),
+			),
+		);
 
 		expect(container.querySelector('[data-testid="GlobalSettingsModal"]')).not.toBeNull();
 		expect(container.querySelector('[data-testid="DepositModal"]')).toBeNull();
@@ -309,7 +334,15 @@ describe("GlobalModals HIP-3 disclaimer priority", () => {
 		testState.activeModal = "commandMenu";
 		const { GlobalModals } = await import("@/components/trade/components/global-modals");
 
-		act(() => root.render(createElement(GlobalModals, { enableHip3Disclaimer: true, enableLegalGate: true })));
+		act(() =>
+			root.render(
+				createElement(
+					I18nProvider,
+					{ i18n },
+					createElement(GlobalModals, { enableHip3Disclaimer: true, enableLegalGate: true }),
+				),
+			),
+		);
 
 		expect(container.querySelector('[data-testid="CommandMenu"]')).not.toBeNull();
 		expect(container.querySelector('[data-testid="DepositModal"]')).toBeNull();
@@ -319,16 +352,34 @@ describe("GlobalModals HIP-3 disclaimer priority", () => {
 	it("suspends a trading modal while legal status is checking without discarding it", async () => {
 		const { GlobalModals } = await import("@/components/trade/components/global-modals");
 
-		act(() => root.render(createElement(GlobalModals, { enableLegalGate: true })));
+		act(() =>
+			root.render(createElement(I18nProvider, { i18n }, createElement(GlobalModals, { enableLegalGate: true }))),
+		);
 		expect(container.querySelector('[data-testid="DepositModal"]')).not.toBeNull();
 
 		testState.legalGate.state = "checking";
-		act(() => root.render(createElement(GlobalModals, { enableLegalGate: true, key: "legal-checking" })));
+		act(() =>
+			root.render(
+				createElement(
+					I18nProvider,
+					{ i18n },
+					createElement(GlobalModals, { enableLegalGate: true, key: "legal-checking" }),
+				),
+			),
+		);
 
 		expect(container.querySelector('[data-testid="DepositModal"]')).toBeNull();
 
 		testState.legalGate.state = "accepted";
-		act(() => root.render(createElement(GlobalModals, { enableLegalGate: true, key: "legal-accepted" })));
+		act(() =>
+			root.render(
+				createElement(
+					I18nProvider,
+					{ i18n },
+					createElement(GlobalModals, { enableLegalGate: true, key: "legal-accepted" }),
+				),
+			),
+		);
 		expect(container.querySelector('[data-testid="DepositModal"]')).not.toBeNull();
 	});
 
@@ -336,7 +387,9 @@ describe("GlobalModals HIP-3 disclaimer priority", () => {
 		testState.legalGate.state = "wallet_setup_failed";
 		const { GlobalModals } = await import("@/components/trade/components/global-modals");
 
-		act(() => root.render(createElement(GlobalModals, { enableLegalGate: true })));
+		act(() =>
+			root.render(createElement(I18nProvider, { i18n }, createElement(GlobalModals, { enableLegalGate: true }))),
+		);
 
 		const modal = container.querySelector('[data-testid="LegalAcceptanceModal"]');
 		expect(JSON.parse(modal?.getAttribute("data-props") ?? "{}").state).toBe("wallet_setup_failed");
@@ -357,7 +410,15 @@ describe("GlobalModals HIP-3 disclaimer priority", () => {
 		testState.legalGate.state = state;
 		const { GlobalModals } = await import("@/components/trade/components/global-modals");
 
-		act(() => root.render(createElement(GlobalModals, { enableLegalGate: true, enablePositionMarketClose: true })));
+		act(() =>
+			root.render(
+				createElement(
+					I18nProvider,
+					{ i18n },
+					createElement(GlobalModals, { enableLegalGate: true, enablePositionMarketClose: true }),
+				),
+			),
+		);
 
 		expect(container.querySelector('[data-testid="PositionDialogHostGate"]')).not.toBeNull();
 	});
@@ -365,7 +426,15 @@ describe("GlobalModals HIP-3 disclaimer priority", () => {
 	it("keeps an in-flight position dialog owner mounted when legal status leaves accepted", async () => {
 		const { GlobalModals } = await import("@/components/trade/components/global-modals");
 
-		act(() => root.render(createElement(GlobalModals, { enableLegalGate: true, enablePositionMarketClose: true })));
+		act(() =>
+			root.render(
+				createElement(
+					I18nProvider,
+					{ i18n },
+					createElement(GlobalModals, { enableLegalGate: true, enablePositionMarketClose: true }),
+				),
+			),
+		);
 		const host = container.querySelector('[data-testid="PositionDialogHostGate"]');
 		const marketCloseHost = container.querySelector('[data-testid="PositionMarketCloseSubmitHost"]');
 		expect(host).not.toBeNull();
@@ -373,7 +442,15 @@ describe("GlobalModals HIP-3 disclaimer priority", () => {
 
 		for (const state of ["checking", "error", "accepted"]) {
 			testState.legalGate.state = state;
-			act(() => root.render(createElement(GlobalModals, { enableLegalGate: true, enablePositionMarketClose: true })));
+			act(() =>
+				root.render(
+					createElement(
+						I18nProvider,
+						{ i18n },
+						createElement(GlobalModals, { enableLegalGate: true, enablePositionMarketClose: true }),
+					),
+				),
+			);
 			expect(container.querySelector('[data-testid="PositionDialogHostGate"]')).toBe(host);
 			expect(container.querySelector('[data-testid="PositionMarketCloseSubmitHost"]')).toBe(marketCloseHost);
 		}
@@ -387,7 +464,9 @@ describe("GlobalModals HIP-3 disclaimer priority", () => {
 		};
 		const { GlobalModals } = await import("@/components/trade/components/global-modals");
 
-		act(() => root.render(createElement(GlobalModals, { enableHip3Disclaimer: true })));
+		act(() =>
+			root.render(createElement(I18nProvider, { i18n }, createElement(GlobalModals, { enableHip3Disclaimer: true }))),
+		);
 		expect(container.querySelector('[data-testid="Hip3DeployerDisclaimer"]')).toBeNull();
 		expect(container.querySelector('[data-testid="DepositModal"]')).not.toBeNull();
 	});
@@ -470,7 +549,7 @@ describe("GlobalModals HIP-3 disclaimer priority", () => {
 		testState.activeModal = "send";
 		const { GlobalModals } = await import("@/components/trade/components/global-modals");
 
-		act(() => root.render(createElement(GlobalModals)));
+		act(() => root.render(createElement(I18nProvider, { i18n }, createElement(GlobalModals))));
 
 		const sendModal = container.querySelector('[data-testid="SendModal"]');
 		expect(sendModal).not.toBeNull();
@@ -482,7 +561,7 @@ describe("GlobalModals HIP-3 disclaimer priority", () => {
 		testState.activeModal = "send";
 		const { GlobalModals } = await import("@/components/trade/components/global-modals");
 
-		act(() => root.render(createElement(GlobalModals)));
+		act(() => root.render(createElement(I18nProvider, { i18n }, createElement(GlobalModals))));
 		act(() => window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true })));
 
 		expect(testState.openCommandMenu).not.toHaveBeenCalled();
@@ -493,13 +572,17 @@ describe("GlobalModals HIP-3 disclaimer priority", () => {
 		testState.activeModal = "positionMarketClose";
 		const { GlobalModals } = await import("@/components/trade/components/global-modals");
 
-		act(() => root.render(createElement(GlobalModals, { enablePositionMarketClose: true })));
+		act(() =>
+			root.render(
+				createElement(I18nProvider, { i18n }, createElement(GlobalModals, { enablePositionMarketClose: true })),
+			),
+		);
 		expect(container.querySelector('[data-testid="PositionMarketCloseModal"]')).not.toBeNull();
 
 		act(() => window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", ctrlKey: true })));
 		expect(testState.openCommandMenu).not.toHaveBeenCalled();
 
-		act(() => root.render(createElement(GlobalModals)));
+		act(() => root.render(createElement(I18nProvider, { i18n }, createElement(GlobalModals))));
 		expect(container.querySelector('[data-testid="PositionMarketCloseModal"]')).toBeNull();
 		expect(testState.discardIdlePositionMarketCloseModal).toHaveBeenCalledOnce();
 	});
@@ -507,10 +590,20 @@ describe("GlobalModals HIP-3 disclaimer priority", () => {
 	it("mounts the market close submit host only in enabled scopes", async () => {
 		const { GlobalModals } = await import("@/components/trade/components/global-modals");
 
-		act(() => root.render(createElement(GlobalModals, { enableLegalGate: true })));
+		act(() =>
+			root.render(createElement(I18nProvider, { i18n }, createElement(GlobalModals, { enableLegalGate: true }))),
+		);
 		expect(container.querySelector('[data-testid="PositionMarketCloseSubmitHost"]')).toBeNull();
 
-		act(() => root.render(createElement(GlobalModals, { enableLegalGate: true, enablePositionMarketClose: true })));
+		act(() =>
+			root.render(
+				createElement(
+					I18nProvider,
+					{ i18n },
+					createElement(GlobalModals, { enableLegalGate: true, enablePositionMarketClose: true }),
+				),
+			),
+		);
 		expect(container.querySelector('[data-testid="PositionMarketCloseSubmitHost"]')).not.toBeNull();
 	});
 
@@ -520,12 +613,24 @@ describe("GlobalModals HIP-3 disclaimer priority", () => {
 		testState.marketClosePhase = "reconciling";
 		const { GlobalModals } = await import("@/components/trade/components/global-modals");
 
-		act(() => root.render(createElement(GlobalModals, { enablePositionMarketClose: true })));
+		act(() =>
+			root.render(
+				createElement(I18nProvider, { i18n }, createElement(GlobalModals, { enablePositionMarketClose: true })),
+			),
+		);
 		expect(container.querySelector('[data-testid="PositionMarketCloseModal"]')).toBeNull();
 
 		testState.marketClosePresentation = "dismissed";
 		testState.marketClosePhase = "submitting";
-		act(() => root.render(createElement(GlobalModals, { key: "dismissed", enablePositionMarketClose: true })));
+		act(() =>
+			root.render(
+				createElement(
+					I18nProvider,
+					{ i18n },
+					createElement(GlobalModals, { key: "dismissed", enablePositionMarketClose: true }),
+				),
+			),
+		);
 		expect(container.querySelector('[data-testid="PositionMarketCloseModal"]')).not.toBeNull();
 	});
 
@@ -535,7 +640,7 @@ describe("GlobalModals HIP-3 disclaimer priority", () => {
 			testState.activeModal = "settings";
 			const { GlobalModals } = await import("@/components/trade/components/global-modals");
 
-			act(() => root.render(createElement(GlobalModals)));
+			act(() => root.render(createElement(I18nProvider, { i18n }, createElement(GlobalModals))));
 			expect(container.querySelector('[data-testid="GlobalSettingsModal"]')).not.toBeNull();
 
 			act(() => {
@@ -558,7 +663,13 @@ describe("GlobalModals HIP-3 disclaimer priority", () => {
 		const { GlobalModals } = await import("@/components/trade/components/global-modals");
 
 		act(() =>
-			root.render(createElement(GlobalModals, { enableHip3Disclaimer: true, enablePositionMarketClose: true })),
+			root.render(
+				createElement(
+					I18nProvider,
+					{ i18n },
+					createElement(GlobalModals, { enableHip3Disclaimer: true, enablePositionMarketClose: true }),
+				),
+			),
 		);
 
 		expect(testState.hip3RequirementHook).toHaveBeenCalledWith("xyz:CXMT");
@@ -577,11 +688,15 @@ describe("GlobalModals HIP-3 disclaimer priority", () => {
 
 		act(() =>
 			root.render(
-				createElement(GlobalModals, {
-					enableHip3Disclaimer: true,
-					enablePositionMarketClose: true,
-					enableSelectedMarketHip3Disclaimer: false,
-				}),
+				createElement(
+					I18nProvider,
+					{ i18n },
+					createElement(GlobalModals, {
+						enableHip3Disclaimer: true,
+						enablePositionMarketClose: true,
+						enableSelectedMarketHip3Disclaimer: false,
+					}),
+				),
 			),
 		);
 

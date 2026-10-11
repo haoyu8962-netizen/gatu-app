@@ -203,6 +203,19 @@ describe("useExplicitAgentApproval", () => {
 		return approval;
 	}
 
+	it("passes an unnamed default-Agent approval through without inventing a name", async () => {
+		const hook = await renderApprovalHook();
+
+		await act(async () => {
+			await hook.mutateAsync({ agentAddress: AGENT }, { registrationPublicKey: AGENT });
+		});
+
+		expect(testState.clientApproveAgent).toHaveBeenCalledOnce();
+		const [params] = testState.clientApproveAgent.mock.calls[0] ?? [];
+		expect(params).toEqual({ agentAddress: AGENT });
+		expect(params).not.toHaveProperty("agentName");
+	});
+
 	it("passes AbortSignal to the direct embedded-wallet SDK request", async () => {
 		const hook = await renderApprovalHook();
 		const controller = new AbortController();

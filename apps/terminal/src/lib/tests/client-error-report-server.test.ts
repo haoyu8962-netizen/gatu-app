@@ -106,6 +106,25 @@ describe("client error report endpoint", () => {
 		expect(write).toHaveBeenCalledWith(expect.objectContaining(legalReport));
 	});
 
+	it("stores classified deposit submission failures and rejects raw provider details", async () => {
+		const write = vi.fn();
+		const report: ClientErrorReport = {
+			...VALID_REPORT,
+			kind: "deposit_submission",
+			depositStage: "before_source_hash",
+			depositReason: "paymaster",
+		};
+		const options = { write, rateLimiter: createErrorReportRateLimiter(5, 60_000) };
+		const accepted = await handleClientErrorReport(createReportRequest(JSON.stringify(report)), options);
+		const rejected = await handleClientErrorReport(
+			createReportRequest(JSON.stringify({ ...report, depositReason: "upstream raw response" })),
+			options,
+		);
+		expect(accepted.status).toBe(202);
+		expect(rejected.status).toBe(400);
+		expect(write).toHaveBeenCalledExactlyOnceWith(expect.objectContaining(report));
+	});
+
 	it("rejects oversized streamed and declared bodies", async () => {
 		const oversizedBody = "x".repeat(CLIENT_ERROR_REPORT_MAX_BYTES + 1);
 		const streamed = await handleClientErrorReport(createReportRequest(oversizedBody), {

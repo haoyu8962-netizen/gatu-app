@@ -44,6 +44,10 @@
 - D7 实施后 Lambda 503 桩与 CloudFront 票据转发已删除，退役路径返回 404；生产开关仍未改变，需真机验收后另行打开。
 - 2026-09-24 补注：邮箱用户在弹窗里点「Approve」后仍会弹出 Privy 的「Approve mobile trading access」签名确认，原因是弹窗调用 `approveAgent.mutateAsync` 时没有声明 `applicationReview: "confirmed"`，`createPrivyAgentSigner` 按规则回退到显式 UI。官方（2026-09-24 产物 `index-58uVNh8f.js`）全局 `embeddedWallets.showWalletUIs: false`，`approveAgent` 经 Privy 钱包的 EIP-1193 provider 静默签名，应用代码没有任何按调用的 `uiOptions`；签名期间只显示转圈。现已让审批与撤销两处都传 `applicationReview: "confirmed"`（弹窗自身的审批面与「Review revoke」确认即应用层审查），行为与官方一致；同日按用户决定，API 钱包管理弹窗的授权/移除也声明 `applicationReview: "confirmed"`，进度文案对嵌入钱包改为「自动签名」而不是「在钱包里确认」。同日在开发构建（两个配对开关打开）上用真实邮箱账户走通审批 → 按住显示 → 同源第二标签导入 → 桌面撤销：审批与撤销都没有 Privy 弹窗、各约 2 秒，链上 `extraAgents` 先出现新 Mobile Agent、撤销后换成不可访问的替换密钥；撤销确认按钮对嵌入钱包改为静态的「Confirm revoke」并说明自动签名，外部钱包保留「Confirm revoke in wallet」；approving 态的「Approve QR code with wallet...」与官方签名期间文案相同、保持不变。见 [验证记录](../work-memory/sessions/2026-09-24-link-mobile-device-live-verification.md)。
 
+## 后续修订
+
+- 2026-10-09 [ADR 0039](0039-link-mobile-device-builder-fee-and-session-priority.md)：D8 去掉签名前预检后，从未批准 builder fee 的 owner 链接的手机无法下单。现在弹窗只读检查：账号尚未激活交易（builder fee 未批准）时置灰并说明先在电脑端存款下单，关联本身不签 builder fee（同日先实施过「弹窗内单独批准 builder fee」，经用户复核撤回）；手机 Agent 名字改为与官方相同的 `Mobile QR`（载荷版本 5），关联前只读检查命名名额；另更正上文：官方 `Mobile QR` 不带 `valid_until`，按交易所默认 90 天到期，并非永久；手机导入的密钥改为优先于 Privy 会话；替换提示并入风险提示；二维码绘制失败可原地重试。
+
 ## 证据
 
 - 官方机制：本地 `.worklog/2026-09-18/link-device-alignment/official-mechanism.md`（含 bundle 名与函数名），不含二维码内容。

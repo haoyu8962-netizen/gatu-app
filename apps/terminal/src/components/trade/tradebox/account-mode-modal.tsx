@@ -3,13 +3,14 @@ import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { CheckIcon } from "@phosphor-icons/react";
 import { Button, Modal, ModalContent, ModalFooter, ModalHeader, ModalPopup, ModalTitle } from "@sairn/ui";
-import { useRef, useState } from "react";
+import { useId, useRef, useState } from "react";
 import {
 	type SelectableAccountAbstraction,
 	toSelectableAccountAbstraction,
 } from "@/hooks/trade/use-account-abstraction-control";
 import type { AccountAbstraction } from "@/hooks/trade/use-account-balances";
 import { useAccountModeLabels } from "@/hooks/trade/use-account-mode-labels";
+import { useMasterWalletRequiredMessage } from "@/hooks/trade/use-master-wallet-action-reason";
 import { cn } from "@/lib/cn";
 import { classifyActionError, isAmbiguousExchangeActionError } from "@/lib/errors/action-error";
 import { useHyperliquid } from "@/lib/hyperliquid";
@@ -44,13 +45,7 @@ export function AccountModeModal({ open, onOpenChange, ...formProps }: Props) {
 
 	return (
 		<Modal open={open} onOpenChange={onOpenChange}>
-			<ModalPopup
-				size="sm"
-				showClose
-				closeLabel={t`Close`}
-				overlayClassName="bg-trading-panel-scrim"
-				className="max-h-[min(90dvh,42rem)] font-market-close"
-			>
+			<ModalPopup size="sm" showClose closeLabel={t`Close`} className="max-h-[min(90dvh,42rem)] font-market-close">
 				<ModalHeader>
 					<ModalTitle>
 						<Trans>Account type</Trans>
@@ -79,8 +74,11 @@ export function AccountModeForm({
 	onApply,
 }: AccountModeFormProps) {
 	const { t } = useLingui();
-	const { clientKey, env } = useHyperliquid();
+	const { clientKey, env, sessionMode } = useHyperliquid();
 	const modes = useAccountModeLabels();
+	const masterWalletRequiredMessage = useMasterWalletRequiredMessage();
+	const agentOnlySession = sessionMode === "agent-only";
+	const agentOnlyReasonId = useId();
 	const [selectedMode, setSelectedMode] = useState<SelectableAccountAbstraction | null>(() =>
 		toSelectableAccountAbstraction(currentMode),
 	);
@@ -108,7 +106,7 @@ export function AccountModeForm({
 	const isModeUnavailable = !!canChange && !isLoading && currentMode === null;
 	const requiresExplicitSelection = currentMode === "default" || currentMode === "dexAbstraction";
 	async function handleApply() {
-		if (applyInFlightRef.current) return;
+		if (applyInFlightRef.current || agentOnlySession) return;
 		if (!canChange) {
 			onClose();
 			onConnect?.();
@@ -143,7 +141,7 @@ export function AccountModeForm({
 						const isCurrent = currentMode === option.id;
 						const isActivationDisabled =
 							option.id === "portfolioMargin" && !isCurrent && !portfolioMarginActivationEnabled;
-						const isOptionDisabled = isBusy || isModeUnavailable || isActivationDisabled;
+						const isOptionDisabled = isBusy || isModeUnavailable || isActivationDisabled || agentOnlySession;
 
 						return (
 							<button
@@ -194,6 +192,12 @@ export function AccountModeForm({
 					})}
 				</div>
 
+				{agentOnlySession ? (
+					<p id={agentOnlyReasonId} className="text-xs text-trading-panel-muted">
+						{masterWalletRequiredMessage}
+					</p>
+				) : null}
+
 				{requiresExplicitSelection ? (
 					<p className="text-xs text-warning">
 						<Trans>Select a supported account mode before using balances or moving funds.</Trans>
@@ -207,10 +211,12 @@ export function AccountModeForm({
 					variant="filled"
 					intent="neutral"
 					onClick={handleApply}
-					disabled={canChange ? isBusy || isModeUnavailable || !isDirty : false}
+					disabled={agentOnlySession || (canChange ? isBusy || isModeUnavailable || !isDirty : false)}
+					focusableWhenDisabled={agentOnlySession}
+					aria-describedby={agentOnlySession ? agentOnlyReasonId : undefined}
 					className="min-h-11 w-full flex-1 rounded-[10px] bg-trading-panel-control font-bold text-trading-panel-on-control shadow-none hover:opacity-90"
 				>
-					{canChange ? <Trans>Confirm</Trans> : <Trans>Connect</Trans>}
+					{canChange || agentOnlySession ? <Trans>Confirm</Trans> : <Trans>Connect</Trans>}
 				</Button>
 			</ModalFooter>
 			<div className={cn("space-y-2 text-xs text-trading-panel-muted", mobileLayout ? "mx-4 mb-4" : "mx-5 mb-5")}>

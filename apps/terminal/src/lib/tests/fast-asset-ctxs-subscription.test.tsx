@@ -68,7 +68,6 @@ describe("fastAssetCtxs subscription", () => {
 			env: "Mainnet",
 			isTestnet: false,
 			builderConfig: { b: "0x0000000000000000000000000000000000000000", f: 0 },
-			agentName: "test",
 			clientKey: "disconnected",
 			sessionMode: "wallet",
 			exchangeLifecycle: { id: Symbol("fast-asset-ctxs-test"), active: true },

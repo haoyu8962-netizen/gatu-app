@@ -15,6 +15,7 @@ import type { QueryClient } from "@tanstack/react-query";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import type { ReactNode } from "react";
 import { toast } from "sonner";
+import { MobileAgentEndedNotifier } from "@/components/trade/components/mobile-agent-ended-notifier";
 import { OrderReconciliation } from "@/components/trade/order-reconciliation";
 import { EmbeddedDepositAutoBridge } from "@/components/trade/tradebox/embedded-deposit-auto-bridge";
 import { TwapReconciliation } from "@/components/trade/twap-reconciliation";
@@ -22,7 +23,6 @@ import { STORAGE_KEYS } from "@/config/app";
 import { DEFAULT_BUILDER_CONFIG } from "@/config/hyperliquid";
 import { PORTFOLIO_MARGIN_FEATURES } from "@/config/portfolio-margin";
 import { PRIVY_APP_ID, PRIVY_CONFIG_BY_THEME } from "@/config/privy";
-import { TRADING_AGENT_NAME } from "@/config/trading-agent";
 import { config } from "@/config/wagmi";
 import { useExplicitAgentApproval } from "@/hooks/wallet/use-explicit-agent-approval";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
@@ -58,17 +58,15 @@ interface Props {
 }
 
 function HyperliquidBridge({ children }: { children: ReactNode }) {
-	const { address, authenticated, ready } = useWalletSession();
+	const { address } = useWalletSession();
 
 	return (
 		<HyperliquidExchangePolicyProvider portfolioMarginActivationEnabled={PORTFOLIO_MARGIN_FEATURES.activationEnabled}>
 			<HyperliquidProvider
 				env={env}
 				userAddress={address}
-				allowAgentOnlySession={ready && !authenticated}
 				enforceLegalActions
 				builderConfig={DEFAULT_BUILDER_CONFIG}
-				agentName={TRADING_AGENT_NAME}
 				onAgentCleanupFailure={() => {
 					toast.error(
 						t`The previous wallet disconnected, but its local trading key could not be removed. Clear this site's data before reconnecting it.`,
@@ -120,6 +118,7 @@ export function ClientRootProvider({ children, queryClient }: Props) {
 									<BaseUiDirectionProvider>
 										<HyperliquidBridge>
 											<EmbeddedDepositAutoBridge />
+											<MobileAgentEndedNotifier />
 											<OrderReconciliation />
 											<TwapReconciliation />
 											<ClientRuntimeProvider>{children}</ClientRuntimeProvider>

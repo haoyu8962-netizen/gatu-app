@@ -815,6 +815,21 @@ describe("UserMenu", () => {
 		},
 	);
 
+	it("labels an imported phone key by its owner, not by the Privy email the session masks", () => {
+		testState.ready = true;
+		testState.walletsReady = true;
+		testState.authenticated = true;
+		testState.emailAddress = "privy-user@example.test";
+		testState.isConnected = true;
+		testState.sessionMode = "agent-only";
+		testState.displayAddress = "0x1234567890abcdef1234567890abcdef12345678";
+		act(() => root.render(createElement(UserMenu)));
+
+		expect(container.textContent).not.toContain("privy-user@example.test");
+		expect(container.textContent).not.toContain("privy-user");
+		expect(container.textContent).toContain("0x1234");
+	});
+
 	it("preserves agent-only account access without waiting for Privy initialization", () => {
 		vi.useFakeTimers();
 		testState.ready = false;

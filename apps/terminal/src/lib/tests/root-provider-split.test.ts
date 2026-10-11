@@ -123,7 +123,8 @@ describe("root provider startup split", () => {
 		expect(indexes.every((index) => index >= 0)).toBe(true);
 		expect(indexes).toEqual([...indexes].sort((left, right) => left - right));
 		expect(clientRootProviderSource).toContain("setActiveWalletForWagmi={selectPrivyWagmiWallet}");
-		expect(clientRootProviderSource).toContain("allowAgentOnlySession={ready && !authenticated}");
+		expect(clientRootProviderSource).not.toContain("allowAgentOnlySession");
+		expect(clientRootProviderSource).toContain("<MobileAgentEndedNotifier />");
 		const hyperliquidBridgeBody = clientRootProviderSource.slice(
 			clientRootProviderSource.indexOf("function HyperliquidBridge"),
 			clientRootProviderSource.indexOf("function HyperliquidAgentApprovalBridge"),

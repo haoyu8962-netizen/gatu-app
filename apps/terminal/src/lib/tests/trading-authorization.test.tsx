@@ -115,24 +115,45 @@ describe("trading authorization contracts", () => {
 	}
 
 	it("derives Agent and builder readiness independently", () => {
-		const remoteAgent = { address: AGENT, name: "Sairn", validUntil: Date.now() + 60_000 };
+		const owner = "0x1111111111111111111111111111111111111111" as const;
 		const localAgent = { privateKey: "0x01" as const, publicKey: AGENT, source: "local-registration" as const };
+		const approvedKey = { agentAddress: AGENT, role: { role: "agent" as const, data: { user: owner } } };
 
-		expect(deriveAgentRequirements(0, [remoteAgent], localAgent, { b: BUILDER, f: 10 })).toMatchObject({
+		expect(
+			deriveAgentRequirements(
+				0,
+				{ owner, localAgent, keyRole: approvedKey, extraAgents: undefined },
+				{ b: BUILDER, f: 10 },
+			),
+		).toMatchObject({
 			isAgentReady: true,
 			isBuilderFeeReady: false,
 			isReady: false,
 			needsAgent: false,
 			needsBuilderFee: true,
 		});
-		expect(deriveAgentRequirements(10, undefined, localAgent, { b: BUILDER, f: 10 })).toMatchObject({
+		expect(
+			deriveAgentRequirements(
+				10,
+				{ owner, localAgent, keyRole: undefined, extraAgents: undefined },
+				{ b: BUILDER, f: 10 },
+			),
+		).toMatchObject({
 			isAgentReady: false,
 			isBuilderFeeReady: true,
 			isReady: false,
 			needsAgent: false,
 			needsBuilderFee: false,
 		});
-		expect(deriveAgentRequirements(10, [remoteAgent], null, { b: BUILDER, f: 10 }, Date.now(), AGENT)).toMatchObject({
+		expect(
+			deriveAgentRequirements(
+				10,
+				{ owner, localAgent: null, keyRole: approvedKey, extraAgents: undefined },
+				{ b: BUILDER, f: 10 },
+				Date.now(),
+				AGENT,
+			),
+		).toMatchObject({
 			isAgentReady: true,
 			isBuilderFeeReady: true,
 			isReady: true,

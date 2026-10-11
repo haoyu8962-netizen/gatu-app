@@ -113,7 +113,7 @@
 
 完整手册见 [CloudFront 发布](../deploy/cloudfront/README.md)，官网见 [deploy/website](../deploy/website/README.md)。下面是 agent 视角的要点。
 
-- 发布前逐个向运营方确认闸门：主网赞助充值、移动配对、主网银行卡入金。在仓库外新建工作树检出 `origin/main` 来构建，`apps/terminal/.env.local` 只软链、不读内容。所有开关在命令行显式覆盖：`SAIRN_BUILD_SHA`、`SAIRN_RELEASE_ID`、`VITE_MOBILE_PAIRING_ENABLED`、`VITE_CCTP_*`、`VITE_PRIVY_FIAT_FUNDING_*`、`VITE_HYPERLIQUID_TESTNET=`、`VITE_HYPERLIQUID_AGENT_NAME=sairn`。用 Node 22.15.0。
+- 三个闸门（主网赞助充值、移动配对、主网银行卡入金）自 2026-10-11 起按运营方决定默认全开，发布前不再逐次询问（运营方原话「以后不要咨询了…全部开」，见 p30 发布记录）；只有运营方明确要求关闭某个闸门时才改。在仓库外新建工作树检出 `origin/main` 来构建，`apps/terminal/.env.local` 只软链、不读内容。所有开关在命令行显式覆盖：`SAIRN_BUILD_SHA`、`SAIRN_RELEASE_ID`、`VITE_MOBILE_PAIRING_ENABLED`、`VITE_CCTP_*`、`VITE_PRIVY_FIAT_FUNDING_*`、`VITE_HYPERLIQUID_TESTNET=`（`VITE_HYPERLIQUID_AGENT_NAME` 自 [ADR 0038](adr/0038-unnamed-default-agent-for-trading-connection.md) 起不再存在）。用 Node 22.15.0。
 - 顺序：`functions --execute --origin https://app.sairn.ai`，然后 `lambda`，然后 `sync` 加上对应的 `--allow-…`，再对两条分发各 `invalidate` 一次；约 80 秒后对两个网络各跑一次 `verify`，最后运行 `node apps/terminal/tests/browser/csp-coverage.mjs https://app.sairn.ai`，完整阅读输出，不要只看最后几行。上一版的发布工作树保留到下一次发布，作为回滚产物。
 - 资源名沿用 `gatu-*`（[ADR 0027](adr/0027-brand-single-source-and-identifier-rename.md)）：桶 `gatu-terminal-2026`，Lambda `gatu-terminal-api`，主网分发 `ET9CNVE6L1GWN`，测试网分发 `E3Q2SAX402CR9F`，官网分发 `EP2DIBP3T7M3G`。发布身份是 IAM 用户 `gatu-edge`，本机 AWS profile 同名，`deploy.mjs` 默认使用它并拒绝 root。账号级操作（IAM、计费）只能由运营方在控制台完成。
 - 线上状态以 `https://app.sairn.ai/build-meta.json` 为准；各次发布的开关与验证结果见工作记忆里的发布记录。

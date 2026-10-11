@@ -1,12 +1,14 @@
 # Mobile Phone Access Device Checklist
 
-Updated: 2026-09-24. Protocol: client-only transfer, payload v4 ([ADR 0015](adr/0015-link-device-alignment.md) D7 option B and D8; [simplification plan](link-mobile-device-simplification-plan.md)). There is no pairing server endpoint and no evidence validator script; this is a manual checklist.
+Updated: 2026-09-24. Protocol: client-only transfer, payload v5 ([ADR 0015](adr/0015-link-device-alignment.md) D7 option B and D8; [simplification plan](link-mobile-device-simplification-plan.md)). There is no pairing server endpoint and no evidence validator script; this is a manual checklist.
 
 > **History.** The 11-row matrix (RD-1 to RD-8, TW-1 to TW-3) and the `validate-mobile-phone-access-device-validation` script were retired on 2026-09-24 with ADR 0015 D8. No row of that matrix was ever run; the rows below replace it.
 
 ## Release Rule
 
-The three rows below must be recorded as Pass on a published build before `VITE_MOBILE_PAIRING_ENABLED` is set to `true` for a production build (`deploy.mjs sync --execute` additionally requires `--allow-mobile-pairing`). A release with the flag off does not need this file and does not claim device acceptance. Automated tests and simulated cameras cannot mark a row Pass.
+> **Operator decision (2026-10-11).** The operator opened all three release gates by default from release p30 onward, so production builds carry `VITE_MOBILE_PAIRING_ENABLED=true` before the rows below are recorded; the shipped state is whatever the live `build-meta.json` and the release record say. The rule below stays as the acceptance requirement: run and record the checklist against the published build.
+
+The three rows below are the acceptance requirement for `VITE_MOBILE_PAIRING_ENABLED=true` in a production build; since the operator decision above they no longer block a release and must be recorded against the published build (`deploy.mjs sync --execute` additionally requires `--allow-mobile-pairing`). A release with the flag off does not need this file and does not claim device acceptance. Automated tests and simulated cameras cannot mark a row Pass.
 
 Never record QR screenshots, URL fragments, keys, complete signatures or credential-bearing HAR files. Keep the filled checklist outside Git; this file stays at Not run.
 
@@ -14,7 +16,7 @@ Never record QR screenshots, URL fragments, keys, complete signatures or credent
 
 1. Publish the build to an HTTPS origin through the [CloudFront release procedure](../deploy/cloudfront/README.md) with the flag on, and read the commit, release ID and `mobileSync.enabled` from the published `/build-meta.json`.
 2. Use the same origin on desktop and phone and an isolated Hyperliquid **Testnet** owner. On desktop connect the exact owner through Privy; do not reuse a production Agent.
-3. Desktop: click the header QR icon, approve once (one signature; an email owner sees no second Privy prompt), hold for 2 seconds, reveal. Phone: scan, tap Import, open the terminal. Place no trades and move no funds beyond what row RD-3 needs.
+3. Desktop: the owner must have activated trading first (deposit and place one order, which approves the builder fee; silent for an email owner). Click the header QR icon, approve the mobile key (one signature; an email owner sees no second Privy prompt), hold for 2 seconds, reveal. On an owner that has not activated trading the action is disabled with that explanation (ADR 0039). Phone: scan, tap Import, open the terminal. Place no trades and move no funds beyond what row RD-3 needs.
 
 ## Checklist
 
