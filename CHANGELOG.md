@@ -550,6 +550,11 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Fixed
 
+- Dragging the size slider no longer makes the quantity flicker between neighbouring lots on
+  markets with a small maximum (for example HYPE): the percentage is applied to the maximum
+  and price captured when the drag starts, instead of to every price tick that arrives during
+  the drag. Validation still checks the live maximum when the order is placed.
+
 - A sponsored deposit that returns no transaction hash now says its submission is unconfirmed,
   instead of claiming an Arbitrum transaction was submitted. An active unresolved authorization
   has a separate retry-blocking message from an actual pending CCTP transfer. Submission errors
