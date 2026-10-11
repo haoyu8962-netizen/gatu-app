@@ -2653,6 +2653,7 @@ msgid "Deposit native USDC on Arbitrum from your connected wallet."
 msgstr "Deposita USDC nativo en Arbitrum desde tu billetera conectada."
 
 #: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
 msgid "Deposit status unknown"
 msgstr "Estado del depósito desconocido"
 
@@ -8912,6 +8913,7 @@ msgid "The Arbitrum transaction was submitted, but Circle status is temporarily 
 msgstr "La transacción de Arbitrum se ha enviado, pero el estado de Circle no está disponible temporalmente. El seguimiento se reanudará cuando vuelvas."
 
 #: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
 msgid "The Arbitrum transaction was submitted, but its final status could not be verified. Check the transaction before retrying."
 msgstr "La transacción de Arbitrum se ha enviado, pero no se pudo verificar su estado final. Comprueba la transacción antes de volver a intentarlo."
 
@@ -9361,6 +9363,7 @@ msgid "The wallet could not sign the request. Try again."
 msgstr "La billetera no pudo firmar la solicitud. Vuelve a intentarlo."
 
 #: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
 msgid "The wallet did not return a transaction hash, so the deposit could not be confirmed. A signed authorization may still be active. Check your wallet activity before retrying."
 msgstr "La cartera no devolvió un hash de transacción, por lo que no se pudo confirmar el depósito. Es posible que la autorización firmada siga vigente. Revisa la actividad de tu cartera antes de volver a intentarlo."
 

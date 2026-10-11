@@ -12,6 +12,7 @@ import { UsdcDepositRouteError, useUsdcRouting } from "@/hooks/trade/use-usdc-ro
 import { useEmailEmbeddedWallet } from "@/hooks/wallet/use-email-embedded-wallet";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { formatTransferError, isSmartWalletNonceConflict } from "@/lib/errors/format";
+import { isDefinitiveDepositSourceFailure } from "@/lib/hyperliquid/deposit-source-error";
 import { useDeposit } from "@/lib/hyperliquid/use-deposit";
 import { meetsCctpDepositMinimum } from "@/lib/trade/cctp-deposit";
 import { formatFundsActionFeedback } from "@/lib/trade/funds-action-feedback";
@@ -84,6 +85,8 @@ export function EmbeddedDepositAutoBridge() {
 		maxDepositRaw,
 		status: depositStatus,
 		error: depositError,
+		hash: depositHash,
+		submissionOutcomeUnknown,
 		deposit,
 		refreshBalance,
 		reset: resetDeposit,
@@ -347,6 +350,19 @@ export function EmbeddedDepositAutoBridge() {
 
 		if (depositStatus === "error") {
 			loadingToastActiveRef.current = false;
+			const depositStatusUnknown =
+				submissionOutcomeUnknown || (!!depositHash && !isDefinitiveDepositSourceFailure(depositError));
+			if (depositStatusUnknown) {
+				toast.warning(t`Deposit status unknown`, {
+					...getNotificationOptions(),
+					description: depositHash
+						? t`The Arbitrum transaction was submitted, but its final status could not be verified. Check the transaction before retrying.`
+						: t`The wallet did not return a transaction hash, so the deposit could not be confirmed. A signed authorization may still be active. Check your wallet activity before retrying.`,
+					duration: Number.POSITIVE_INFINITY,
+					closeButton: true,
+				});
+				return;
+			}
 			const depositErrorMessage =
 				depositError instanceof UsdcDepositRouteError
 					? formatFundsActionFeedback(
@@ -360,9 +376,11 @@ export function EmbeddedDepositAutoBridge() {
 		balanceEligibleKey,
 		autoCctpRouteAvailable,
 		depositError,
+		depositHash,
 		depositStatus,
 		isEmbeddedDeposit,
 		notificationIdentity,
+		submissionOutcomeUnknown,
 		usdcRoutingStatus,
 		t,
 	]);

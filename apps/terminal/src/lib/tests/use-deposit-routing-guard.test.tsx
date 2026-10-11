@@ -1652,6 +1652,23 @@ describe("useDeposit fresh USDC route guard", () => {
 		expect(testState.smartSendTransaction).toHaveBeenCalledOnce();
 	});
 
+	it("verifies the owner's legal status before an automatic authorization is signed", async () => {
+		testState.routingResponse = { depositRoute: "cctp", withdrawalRoute: "cctp" };
+		stubSuccessfulCctpCapacity();
+		testState.verifyLegalAction.mockRejectedValue(
+			new Error("Hyperliquid access could not be verified before this action"),
+		);
+
+		await submit("smart", "cctp", null, "automatic");
+
+		expect(testState.verifyLegalAction).toHaveBeenCalledWith(
+			expect.objectContaining({ env: "Mainnet", forceFresh: true, owner: WALLET_ADDRESS }),
+		);
+		expect(testState.permitSign).not.toHaveBeenCalled();
+		expect(testState.smartSendTransaction).not.toHaveBeenCalled();
+		expect(capturedDeposit?.error?.message).toBe("Hyperliquid access could not be verified before this action");
+	});
+
 	it("aborts an automatic mainnet sponsored deposit before signing when the locked balance differs", async () => {
 		testState.routingResponse = { depositRoute: "cctp", withdrawalRoute: "cctp" };
 		stubSuccessfulCctpCapacity(6_000_000n);

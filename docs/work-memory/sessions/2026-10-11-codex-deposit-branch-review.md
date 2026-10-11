@@ -62,6 +62,13 @@
 1. **自动 scope 不在资金锁内重读余额（P2）。** 宿主在浏览器锁内刷新余额后调用 `deposit(余额)`，执行边界里 `assertReviewedBalanceUnchanged` 只对带 `review` 的手动调用生效。宿主刷新与签名之间到账的转账会让一次授权只覆盖旧的较小金额，剩余部分需要第二笔赞助交易；余额减少时则会在签名后才由合约拒绝并留下一小时的授权意向。修正：自动 smart scope 把提交金额当作锁定值，签名前、广播前各重读一次余额，不等即抛 `Available amount is not verified`；宿主随余额轮询更新键后重试。新增两项回归（签名前中止、签名后不广播）。
 2. **文档一致性（P3）。** `AGENTS.md` 仍写「The one accepted exception is the SIWE message」，而 ADR 0040 新增了登录/恢复后无点击的 EIP-3009 签名；`docs/trading-onboarding.md` 两处「Page load and session restoration never sign」未限定为交易签名。已在 AGENTS 资金条目、onboarding 文档、ADR 0040、`docs/cctp-deposits.md`、`docs/runtime-guardrails.md` 与 CHANGELOG 写明余额锁定与例外关系。
 
+### PR #97 Codex 机器人审查（2026-10-11，提交 `b0a37333`）的两条 P1 与修正
+
+3. **自动宿主把无哈希提交显示为失败（P1）。** `useDeposit` 在授权意向已保存但 `sendTransaction` 未返回哈希时设置 `submissionOutcomeUnknown`，宿主没有读取，一律显示 `Automatic USDC deposit failed`。修正：宿主读取 `hash` 与 `submissionOutcomeUnknown`，按弹窗同样的规则（无哈希，或有哈希但不是确定的源链失败）显示常驻 `Deposit status unknown` 警告，描述复用弹窗的无哈希/已提交两条文案，不新增翻译。新增两项宿主回归。
+4. **自动授权签名前未核验法律状态（P1）。** 共享执行路径在 `signTypedData` 之后才调用 `verifyFreshLegalAction`；手动路径有弹窗门控，自动路径没有，登录/恢复会先签授权再停止广播。修正：`executionScope === "automatic"` 时在签名前先核验精确 owner 的最新法律状态，广播前核验保留。新增一项回归（法律核验拒绝时不签名、不广播）。
+
+两项均附变异检查：换回未修复的 `use-deposit.ts` 与宿主后对应新测试失败，恢复后通过。
+
 ### 未改动的观察
 
 - 页面刷新会丢失「失败后不重签」的内存闩锁；若后端代付持续故障，每小时授权到期后刷新页面会再签一次。授权意向本身仍阻止一小时内重复签名，与 ADR 0040「不盲目重新授权」一致，未进一步限制。
@@ -76,6 +83,8 @@
 - 变异检查：把 `use-deposit.ts` 临时换回 `eeace5db` 版本，`-t "automatic mainnet"` 下两项新回归失败、原有「allows an automatic mainnet sponsored deposit」通过；恢复修复后复测通过。
 - `pnpm --filter @sairn/terminal typecheck` 通过；`pnpm exec biome check` 对两个改动的 TS/TSX 文件在 `biome format --write` 之后通过。
 - `pnpm memory:index`、`pnpm memory:check`、`pnpm memory:test`（todo 0、skipped 0）与 `git diff --check` 通过。
+- 第二轮（Codex 机器人 P1 修正后）：`vitest run` 路由守卫、自动宿主、`cctp-deposit-catalogs`、`i18n-reactivity-contract`、`status-motion-surface-contract` 5 文件 506 项通过；typecheck 与 Biome（4 个改动文件）通过。
+- PR #97 首轮 CI：Validate / Test terminal / Browser regressions ×2 / Build (pairing false) 通过，配对开启构建按规则跳过。
 - 未运行全量 Vitest、Playwright 与生产构建；未推送、未发布；没有真实钱包、真实签名或资金操作。官方对照只基于打包文案。
 
 ## 后续与替代关系

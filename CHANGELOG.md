@@ -562,7 +562,9 @@ changes, not evidence that a build has been deployed or accepted on real devices
   current fee, duplicate-submission and recovery checks remain in place, and the automatic
   deposit re-reads the wallet balance right before signing and before broadcasting, so a
   transfer that arrives mid-attempt is deposited in full on the next attempt instead of
-  leaving a remainder behind.
+  leaving a remainder behind. It checks your legal status before signing, and when the
+  wallet returns no transaction hash, or a submitted transaction cannot be confirmed, the
+  notification says the status is unknown instead of reporting a failure.
 
 - Link mobile device (still off in production builds): a phone linked from an owner that had never
   approved the builder fee could not place orders or close positions, showing a dead "Enable

@@ -302,7 +302,14 @@ boundary re-reads the native-USDC balance inside the funds-action lock before
 signing and again before broadcasting, and a balance that no longer equals the
 submitted amount aborts the attempt. The host then observes the refreshed
 balance and retries with it, so a transfer that lands mid-attempt is deposited
-in one authorization instead of a stale smaller one.
+in one authorization instead of a stale smaller one. Because no dialog gate
+precedes an automatic attempt, the execution boundary also verifies the exact
+owner's fresh legal status before `signTypedData` (manual callers pass that gate
+in the dialog), and keeps the pre-broadcast verification. The host's
+notification follows the dialog's outcome rules: a submission that returned no
+hash, or a submitted one whose failure is not a definitive source failure, is a
+persistent `Deposit status unknown` warning with the no-hash or submitted
+explanation, never `Automatic USDC deposit failed`.
 
 The host stays mounted outside the dialog: closing Done does not cancel its
 work, and restoring an eligible email session also processes an existing balance.

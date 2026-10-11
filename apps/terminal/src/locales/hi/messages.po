@@ -2653,6 +2653,7 @@ msgid "Deposit native USDC on Arbitrum from your connected wallet."
 msgstr "अपने कनेक्ट किए गए वॉलेट से Arbitrum पर नेटिव USDC जमा करें।"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
 msgid "Deposit status unknown"
 msgstr "जमा की स्थिति अज्ञात है"
 
@@ -8912,6 +8913,7 @@ msgid "The Arbitrum transaction was submitted, but Circle status is temporarily 
 msgstr "Arbitrum ट्रांज़ैक्शन सबमिट हो गया है, लेकिन Circle की स्थिति अस्थायी रूप से उपलब्ध नहीं है। आपके लौटने पर ट्रैकिंग फिर शुरू हो जाएगी।"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
 msgid "The Arbitrum transaction was submitted, but its final status could not be verified. Check the transaction before retrying."
 msgstr "Arbitrum ट्रांज़ैक्शन सबमिट हो गया है, लेकिन उसकी अंतिम स्थिति सत्यापित नहीं की जा सकी। फिर से कोशिश करने से पहले ट्रांज़ैक्शन जाँचें।"
 
@@ -9361,6 +9363,7 @@ msgid "The wallet could not sign the request. Try again."
 msgstr "वॉलेट अनुरोध पर हस्ताक्षर नहीं कर सका। फिर से प्रयास करें।"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
 msgid "The wallet did not return a transaction hash, so the deposit could not be confirmed. A signed authorization may still be active. Check your wallet activity before retrying."
 msgstr "वॉलेट ने ट्रांज़ैक्शन हैश नहीं लौटाया, इसलिए जमा की पुष्टि नहीं हो सकी। हस्ताक्षरित प्राधिकरण अभी भी सक्रिय हो सकता है। दोबारा कोशिश करने से पहले अपने वॉलेट की गतिविधि जाँचें।"
 

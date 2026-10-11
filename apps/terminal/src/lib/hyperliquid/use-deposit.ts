@@ -1309,6 +1309,7 @@ export function useDeposit({
 					await assertReviewedBalanceUnchanged();
 					await assertFreshSelectedDepositRoute();
 					if (provider) await assertDepositChainStillActive(provider, cctpDepositConfig);
+					if (executionScope === "automatic") await verifyFreshLegalAction({ env: cctpTrackingEnv });
 					const authorizationSignature = await ready.walletClient.signTypedData({
 						account: ready.address,
 						...parameters.typedData,

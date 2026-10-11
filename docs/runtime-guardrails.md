@@ -318,7 +318,10 @@ implementation.
   execution boundary treats the submitted full balance as the locked value:
   it re-reads the native-USDC balance inside the funds-action lock before
   signing and again before broadcasting, and any difference aborts (the host
-  then retries with the refreshed balance).
+  then retries with the refreshed balance). Automatic callers also verify the
+  owner's fresh legal status before signing, because no dialog gate ran. The
+  host reports a no-hash submission or an unconfirmed submitted one as a
+  persistent unknown status, not as a failure.
   Session restoration may process an existing eligible balance. This requires
   the application page to be running and does not promise offline initiation.
 - ZeroDev mainnet sponsorship must use a narrow Arbitrum One contract policy

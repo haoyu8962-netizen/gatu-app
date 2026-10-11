@@ -50,6 +50,8 @@ const testState = vi.hoisted(() => ({
 	toastError: vi.fn(),
 	toastLoading: vi.fn(),
 	toastSuccess: vi.fn(),
+	toastWarning: vi.fn(),
+	submissionOutcomeUnknown: false,
 	useDepositOptions: null as null | Record<string, unknown>,
 	trackingOptions: null as null | Record<string, unknown>,
 	trackingRecoveryRecord: null as null | { sourceHash: `0x${string}` },
@@ -80,6 +82,7 @@ vi.mock("sonner", () => ({
 		error: testState.toastError,
 		loading: testState.toastLoading,
 		success: testState.toastSuccess,
+		warning: testState.toastWarning,
 	},
 }));
 
@@ -172,6 +175,7 @@ vi.mock("@/lib/hyperliquid/use-deposit", () => ({
 			status: testState.depositStatus,
 			error: testState.depositError,
 			hash: testState.depositHash,
+			submissionOutcomeUnknown: testState.submissionOutcomeUnknown,
 			deposit: testState.deposit,
 			refreshBalance: testState.refreshBalance,
 			reset: testState.resetDeposit,
@@ -209,6 +213,8 @@ describe.each([
 		testState.toastError.mockReset();
 		testState.toastLoading.mockReset();
 		testState.toastSuccess.mockReset();
+		testState.toastWarning.mockReset();
+		testState.submissionOutcomeUnknown = false;
 		testState.depositError = null;
 		testState.depositHash = undefined;
 		testState.depositModalOpen = false;
@@ -539,6 +545,44 @@ describe.each([
 		);
 		expect(testState.toastError.mock.calls.flat().join(" ")).not.toContain("rpc.zerodev.app");
 		expect(testState.toastError.mock.calls.flat().join(" ")).not.toContain("callData");
+	});
+
+	it("shows a persistent unknown-status warning when the sponsored submission returned no hash", async () => {
+		testState.depositStatus = "error";
+		testState.depositError = new Error("RPC Request failed. Details: AA21 didn't pay prefund");
+		testState.submissionOutcomeUnknown = true;
+
+		await act(async () => {
+			root.render(createElement(EmbeddedDepositAutoBridge));
+		});
+
+		expect(testState.toastWarning).toHaveBeenCalledWith(
+			"Deposit status unknown",
+			expect.objectContaining({
+				id: NOTIFICATION_ID,
+				description: expect.stringContaining("did not return a transaction hash"),
+				duration: Number.POSITIVE_INFINITY,
+				closeButton: true,
+			}),
+		);
+		expect(testState.toastError).not.toHaveBeenCalled();
+		expect(testState.deposit).not.toHaveBeenCalled();
+	});
+
+	it("shows a persistent unknown-status warning when a submitted deposit could not be confirmed", async () => {
+		testState.depositStatus = "error";
+		testState.depositError = new Error("receipt lookup failed");
+		testState.depositHash = "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef";
+
+		await act(async () => {
+			root.render(createElement(EmbeddedDepositAutoBridge));
+		});
+
+		expect(testState.toastWarning).toHaveBeenCalledWith(
+			"Deposit status unknown",
+			expect.objectContaining({ id: NOTIFICATION_ID, description: expect.stringContaining("was submitted") }),
+		);
+		expect(testState.toastError).not.toHaveBeenCalled();
 	});
 
 	it("localizes typed deposit-route failures instead of exposing their fixed English message", async () => {
