@@ -1237,10 +1237,12 @@ export function useDeposit({
 						);
 					}
 					assertCctpDepositTrackingStorageWritable(cctpTrackingEnv, ready.address);
+					const lockedBalanceRaw =
+						review?.expectedBalanceRaw ?? (mode === "smart" && executionScope === "automatic" ? amountRaw : undefined);
 					async function assertReviewedBalanceUnchanged() {
-						if (review?.expectedBalanceRaw === undefined) return;
+						if (lockedBalanceRaw === undefined) return;
 						const freshBalanceRaw = await readDepositUsdcBalance(cctpDepositConfig, ready.address);
-						if (amountRaw !== review.expectedBalanceRaw || freshBalanceRaw !== review.expectedBalanceRaw) {
+						if (amountRaw !== lockedBalanceRaw || freshBalanceRaw !== lockedBalanceRaw) {
 							throw new LocalizedActionError(msg`Available amount is not verified`);
 						}
 					}

@@ -1652,6 +1652,28 @@ describe("useDeposit fresh USDC route guard", () => {
 		expect(testState.smartSendTransaction).toHaveBeenCalledOnce();
 	});
 
+	it("aborts an automatic mainnet sponsored deposit before signing when the locked balance differs", async () => {
+		testState.routingResponse = { depositRoute: "cctp", withdrawalRoute: "cctp" };
+		stubSuccessfulCctpCapacity(6_000_000n);
+
+		await submit("smart", "cctp", null, "automatic");
+
+		expect(testState.permitSign).not.toHaveBeenCalled();
+		expect(testState.smartSendTransaction).not.toHaveBeenCalled();
+		expect(capturedDeposit?.error?.message).toContain("amount is not verified");
+	});
+
+	it("does not broadcast an automatic mainnet deposit when the balance changes after signing", async () => {
+		testState.routingResponse = { depositRoute: "cctp", withdrawalRoute: "cctp" };
+		stubSuccessfulCctpCapacity(5_000_000n, 6_000_000n);
+
+		await submit("smart", "cctp", null, "automatic");
+
+		expect(testState.permitSign).toHaveBeenCalledOnce();
+		expect(testState.smartSendTransaction).not.toHaveBeenCalled();
+		expect(capturedDeposit?.error?.message).toContain("amount is not verified");
+	});
+
 	it("automatically submits a mainnet wallet balance through the real deposit hook without a modal or click", async () => {
 		testState.routingResponse = { depositRoute: "cctp", withdrawalRoute: "cctp" };
 		stubSuccessfulCctpCapacity();

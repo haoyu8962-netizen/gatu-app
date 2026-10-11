@@ -314,7 +314,11 @@ implementation.
   legal, exact-owner, fee, allowance, chain and paymaster checks. Existing
   pending or unknown submissions must prevent a new authorization. Mainnet
   manual sponsored callers still require exact reviewed balance and fee values
-  and fail on drift; automatic callers do not require a manual review.
+  and fail on drift; automatic callers do not require a manual review, but the
+  execution boundary treats the submitted full balance as the locked value:
+  it re-reads the native-USDC balance inside the funds-action lock before
+  signing and again before broadcasting, and any difference aborts (the host
+  then retries with the refreshed balance).
   Session restoration may process an existing eligible balance. This requires
   the application page to be running and does not promise offline initiation.
 - ZeroDev mainnet sponsorship must use a narrow Arbitrum One contract policy

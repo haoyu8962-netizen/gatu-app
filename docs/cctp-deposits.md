@@ -296,7 +296,13 @@ refreshes the native-USDC balance and submits that full refreshed amount through
 `useDeposit` with `executionScope: "automatic"`. The execution boundary retains
 fresh route, geo, legal, exact-owner, fee, allowance, amount-limit, chain and
 paymaster checks. Manual Mainnet sponsored callers still need exact reviewed
-balance and fee values; automatic deposits do not require a synthetic UI review.
+balance and fee values; automatic deposits do not require a synthetic UI review,
+but the submitted full balance is treated as the locked value: the execution
+boundary re-reads the native-USDC balance inside the funds-action lock before
+signing and again before broadcasting, and a balance that no longer equals the
+submitted amount aborts the attempt. The host then observes the refreshed
+balance and retries with it, so a transfer that lands mid-attempt is deposited
+in one authorization instead of a stale smaller one.
 
 The host stays mounted outside the dialog: closing Done does not cancel its
 work, and restoring an eligible email session also processes an existing balance.

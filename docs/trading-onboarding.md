@@ -133,7 +133,9 @@ The terminal must preserve this ordering:
    `use-explicit-agent-approval` (approval on chain 999999),
    `use-terms-acceptance` and `owner-trading-signer` (the default client on
    chain 999999) and `use-connection-wallet-client` pin this.
-   Page load and status checks never sign. Agent registration is separate from
+   Page load and status checks never sign a trading, terms, Agent or builder-fee
+   message (the email funding host's automatic deposit is a separate flow,
+   [ADR 0040](adr/0040-automatic-email-wallet-deposits.md)). Agent registration is separate from
    builder-fee approval.
 5. **Verify a requested new Agent (external-wallet flow).** Before opening the
    wallet signing request, persist
@@ -612,7 +614,10 @@ External-wallet sessions never get a wallet. Authentication alone never
 establishes a signer. Wait for the exact wallet directory entry and active
 account, then verify legal status before allowing actions. Do not add a second
 registration form, create wallets for external-wallet users, or imitate the
-official site's signing prewarm. Page load and session restoration never sign.
+official site's signing prewarm. Page load and session restoration never sign
+for trading; the only signature they may trigger is the automatic email-wallet
+deposit authorization of [ADR 0040](adr/0040-automatic-email-wallet-deposits.md),
+which moves USDC that already belongs to the exact owner into its own account.
 
 Accepted exception (user decision, 2026-10-04): Privy's `SmartWalletsProvider`
 signs a SIWE message without UI and links a smart wallet the first time an

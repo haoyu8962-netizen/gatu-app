@@ -559,7 +559,10 @@ changes, not evidence that a build has been deployed or accepted on real devices
 - Email wallets now automatically deposit eligible Arbitrum USDC into the trading account on
   Mainnet while the app is running, matching the existing Testnet flow. The funding dialog
   explains automatic deposits and no longer asks for a second Deposit click. Exact-wallet,
-  current fee, duplicate-submission and recovery checks remain in place.
+  current fee, duplicate-submission and recovery checks remain in place, and the automatic
+  deposit re-reads the wallet balance right before signing and before broadcasting, so a
+  transfer that arrives mid-attempt is deposited in full on the next attempt instead of
+  leaving a remainder behind.
 
 - Link mobile device (still off in production builds): a phone linked from an owner that had never
   approved the builder fee could not place orders or close positions, showing a dead "Enable

@@ -154,6 +154,7 @@
 
 当前规范：[docs/account-overview.md](../../docs/account-overview.md) · [docs/withdrawals.md](../../docs/withdrawals.md) · [docs/cctp-deposits.md](../../docs/cctp-deposits.md)
 
+- [对抗审查 codex/deposit-auto-investigation 的 10 个提交并补自动存款余额锁定](sessions/2026-10-11-codex-deposit-branch-review.md) — 2026-10-11；已验证，范围见正文。审查 Codex 分支 51ee48a8..eeace5db（恢复邮箱主网自动存款、无哈希提示与脱敏诊断、ZeroDev 配置与预算记录）。对照官方终端打包代码：官方把向 Privy 钱包地址转入视为会自动触发存款，与 ADR 0040 一致。复跑分支 14 个测试文件 836 项、typecheck、Biome、memory:check 通过。发现自动 scope 在资金锁内不重读余额，已改为把提交的整笔余额当锁定值并补两项回归；补齐 AGENTS/onboarding 文档中「登录从不签名」与自动存款的关系。未推送、未发布、未做真实资金验收。
 - [ZeroDev 额度调整：保留 Sandbox，日限额提高到 0.003 ETH](sessions/2026-10-11-zerodev-budget-adjustment.md) — 2026-10-11；已整理，验证见正文。用户要求调整 Gas 代付上限，并明确暂不升级套餐；说明 $0 套餐费不代表 Gas 免费后，用户确认只调整每日上限。已保存 Arbitrum CCTP 合约策略 0.003 ETH/天，单笔仍为 0.0001 ETH；UI 返回成功并显示新值。Sandbox $0/月、月 Gas 上限 $10 保留，无套餐升级、交易或代码发布。
 - [ZeroDev 长期运行核对：真实 Gas、套餐容量与访问控制](sessions/2026-10-11-zerodev-budget-and-billing-audit.md) — 2026-10-11；已整理，验证见正文。只读核对修复后的首次真实主网存款：源收据及对应 UserOperation 成功并包含账户部署，Paymaster 实付约 0.00001057 ETH；ZeroDev Gas 约 $0.02651、含 8% premium 约 $0.02864。Sandbox active，月 Gas 上限 $10、10,000 credits，已用 20；现有单笔/日策略保留，来源规则为空。按该单样本每天 10 笔估算月 Gas $7.95，尚未建立监控或调整预算/套餐。
 - [恢复邮箱主网 USDC 到账后自动存款](sessions/2026-10-10-automatic-email-deposits.md) — 2026-10-10；已验证，范围见正文。按用户要求恢复邮箱主网自动存款，删除第二次 Deposit 按钮和两步说明，保留既有资金校验与恢复。真实自动组件/Hook 联动回归先红后绿；全量 8972 通过、2 项样式计数失败已修正，最终相关 324 项和 Chrome 6 组通过，类型、六语编译及开启主网赞助的生产构建通过。未推送、发布或真实资金验收。
@@ -383,6 +384,7 @@
 
 | 记录日期 | 任务记录 | 来源任务 | 基线提交 | 状态 |
 | --- | --- | --- | --- | --- |
+| 2026-10-11 | [对抗审查 codex/deposit-auto-investigation 的 10 个提交并补自动存款余额锁定](sessions/2026-10-11-codex-deposit-branch-review.md) | 未取得任务标识，见正文 | `eeace5db` | 已验证，范围见正文 |
 | 2026-10-11 | [ZeroDev 额度调整：保留 Sandbox，日限额提高到 0.003 ETH](sessions/2026-10-11-zerodev-budget-adjustment.md) | 未取得任务标识，见正文 | `bcd504b8` | 已整理，验证见正文 |
 | 2026-10-11 | [ZeroDev 长期运行核对：真实 Gas、套餐容量与访问控制](sessions/2026-10-11-zerodev-budget-and-billing-audit.md) | 未取得任务标识，见正文 | `73a4f24f` | 已整理，验证见正文 |
 | 2026-10-10 | [恢复邮箱主网 USDC 到账后自动存款](sessions/2026-10-10-automatic-email-deposits.md) | 未取得任务标识，见正文 | `51ee48a8894d6603c85f10e83110908ce8c9897a` | 已验证，范围见正文 |
