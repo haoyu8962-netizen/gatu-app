@@ -1,6 +1,6 @@
 # ADR 0039：Link mobile device 只关联不授权，手机导入的密钥优先于钱包会话
 
-- 状态：已接受并实施（2026-10-09，分支 `claude/link-mobile-fixes`，基于 `dev` `805ee5a1`；同日按用户复核修订决策 1，见文末「修订记录」）；2026-10-11 经 PR #94 合入 `dev`（`a310ade1`）、随 PR #96 晋升 `main`（`ff11eee5`）并随 [p30](../work-memory/sessions/2026-10-11-cloudfront-release-p30.md) 发布，生产构建的 `VITE_MOBILE_PAIRING_ENABLED` 按运营方 2026-10-11 决定打开；[真机清单](../mobile-phone-access-device-validation.md)三行仍未运行，PR #96 上 Codex 指出的切网删除导入密钥 P2 未修。
+- 状态：已接受并实施（2026-10-09，分支 `claude/link-mobile-fixes`，基于 `dev` `805ee5a1`；同日按用户复核修订决策 1，见文末「修订记录」）；2026-10-11 经 PR #94 合入 `dev`（`a310ade1`）、随 PR #96 晋升 `main`（`ff11eee5`）并随 [p30](../work-memory/sessions/2026-10-11-cloudfront-release-p30.md) 发布，生产构建的 `VITE_MOBILE_PAIRING_ENABLED` 按运营方 2026-10-11 决定打开；[真机清单](../mobile-phone-access-device-validation.md)三行仍未运行，PR #96 上 Codex 指出的「切网删除导入密钥」P2 经 2026-10-11 核对不成立：应用的 `env` 是每次页面加载的常量（`client-root.tsx`），切换网络必定 reload，`HyperliquidSessionProvider` 的跨身份清理不会跨网络触发；只有调用方在同一次挂载中原地改 `env` 才会删除另一网络的导入密钥，目前没有这样的调用方。
 - 关联：[ADR 0015](0015-link-device-alignment.md)（D8 去掉了签名前的 builder fee 预检，本 ADR 改为「账号未激活交易时不关联」的只读检查）；[ADR 0002](0002-exact-owner-trading-signers.md)；[ADR 0033](0033-silent-email-wallet-creation.md)（「登出前关闭被隐藏的 Agent-only owner」在本 ADR 后只剩跨网络情形）；[ADR 0038](0038-unnamed-default-agent-for-trading-connection.md)；[首次交易](../trading-onboarding.md)；[签名机制](../hyperliquid-signing.md)；[移动数据展示](../mobile-data-presentation.md)；[任务记录](../work-memory/sessions/2026-10-09-link-mobile-device-review-fixes.md)。
 
 ## 背景与约束
