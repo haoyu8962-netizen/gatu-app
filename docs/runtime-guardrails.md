@@ -779,11 +779,13 @@ have an install capability.
   it from the address bar with `history.replaceState`, verifies the approval
   once through `extraAgents` and imports only on an explicit tap; a reload
   after the scrub asks for a new scan. The retired `/mobile-agent-sync-ticket`
-  path answers 404 everywhere and must not be reintroduced. The single
-  `VITE_MOBILE_PAIRING_ENABLED` build flag is on in production from release
-  p30 (operator decision of 2026-10-11: all three release gates open by
-  default); the checklist in `docs/mobile-phone-access-device-validation.md`
-  is still to be run and recorded against a published build.
+  path answers 404 everywhere and must not be reintroduced. By the
+  operator decision of 2026-10-11 (all three release gates open by default)
+  production builds from release p30 onward set the single
+  `VITE_MOBILE_PAIRING_ENABLED` build flag on; the live `build-meta.json` and
+  the release records say what is shipped, and the checklist in
+  `docs/mobile-phone-access-device-validation.md` is still to be run and
+  recorded against a published build.
 - The service worker never answers a pairing navigation, and the edge
   functions give that page `no-store` and `no-referrer`. Both predate the
   plain-fragment payload and are harmless, so they stay until the next edge
