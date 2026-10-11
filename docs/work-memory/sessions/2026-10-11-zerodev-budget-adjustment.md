@@ -16,7 +16,11 @@
     {"path": "docs/agent-handbook.md"},
     {"path": "docs/work-memory/sessions/2026-10-11-zerodev-budget-and-billing-audit.md"},
     {"url": "https://dashboard.zerodev.app/account/plans"},
-    {"url": "https://dashboard.zerodev.app/projects/gas-policies?chainId=42161"}
+    {"url": "https://dashboard.zerodev.app/projects/gas-policies?chainId=42161"},
+    {"url": "https://dashboard.zerodev.app/account/gas-credits"},
+    {"url": "https://docs.zerodev.app/smart-accounts/sponsor-gas/evm"},
+    {"url": "https://docs.zerodev.app/api-and-toolings/infrastructure/intro"},
+    {"url": "https://www.pimlico.io/pricing"}
   ],
   "supersedes": []
 }
@@ -57,3 +61,15 @@
 本次日限额调整完成；用户选择保留 Sandbox，每月 Gas 上限仍为 $10。日限额提高不解决月额度耗尽，也不保证按每天 100 笔持续运行。更高套餐、告警和其他访问规则均未实施，需后续按实际流量决定。
 
 本记录补充[长期运行核对](2026-10-11-zerodev-budget-and-billing-audit.md)，不替代其真实收据证据。自动存款及未知提交提示代码的发布仍为独立事项。
+
+### 同日后续：不升级套餐的容量选择（只读）
+
+用户继续询问月 $10 用完是否会阻断存款，以及不升级套餐能否提高额度。重新读取当前账号的 Prepaid Gas Credits 页面：余额 $0，显示 `Credit Purchases Disabled` 和 `Please upgrade your plan to purchase additional gas credit`，Amount、Purchase 和快捷金额控件均禁用；页面另一条说明仍写每账期可购买 $10。因此不能把说明文字当成当前可用的充值入口，也不能绕过禁用控件直接请求购买。
+
+ZeroDev 官方文档确认策略或账户额度耗尽会使 UserOperation 提交失败；提高日限额不能解决月额度耗尽。尚无证据证明当前 Sandbox 账号可以自行提高月上限或直接购买预付额度。请求供应商单独开通充值/调整额度是待其确认的可能路径，本次未发送任何对外联系。
+
+另一项待评估方案是直接使用 Pimlico 的 Bundler/Paymaster：其当前官方价格页列出 Pay-as-you-go $0/月、需绑定卡、每月含 10,000,000 API credits，超额 $1/100,000 credits，主网代付 Gas 加价 10%；不是免费 Gas 或无限使用。当前配置的 `provider=PIMLICO` 仍通过 ZeroDev 项目端点转发，不等于直连 Pimlico，也不移除 ZeroDev 的账户上限。真正迁移需要运营方建立相应账号/计费，重新配置和验证 CCTP 代付策略、Privy 端点及标准 UserOperation 准备与真实入账；不能声称改一个 query 参数即完成。
+
+这里只核对官网计费和现有账号 UI，没有创建账号、绑定支付方式、切换服务或修改应用代码。Privy 配置文档的一次直接 URL 读取失败，未将其作为本项目可直接替换端点的验证证据；也未验证 Pimlico 账号可用额度或本项目迁移兼容性。
+
+补记完成后运行 memory:index、memory:check、memory:test（8/8）与 git diff --check，全部通过；随后只追加本条验证结果。
