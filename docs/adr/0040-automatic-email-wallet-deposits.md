@@ -1,6 +1,6 @@
 # ADR 0040：邮箱钱包主网到账后自动存款
 
-- 状态：已接受并实施（用户明确要求，2026-10-10）；本地验证完成，未发布。
+- 状态：已接受并实施（用户明确要求，2026-10-10）；2026-10-11 经 PR #97 合入 `dev`（`ee4aab99`）、随 PR #96 晋升 `main`（`ff11eee5`）并随 [p30](../work-memory/sessions/2026-10-11-cloudfront-release-p30.md) 发布，主网赞助充值开关开；真实主网自动存款与最终 HyperCore 入账验收未做。
 - 关联：[CCTP 充值](../cctp-deposits.md)、[初次排查](../work-memory/sessions/2026-10-10-mainnet-deposit-manual-trigger-investigation.md)。
 
 ## 目标与约束
