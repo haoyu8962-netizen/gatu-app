@@ -383,6 +383,15 @@ browser-managed email wallet paying gas. Capacity exhaustion therefore needs
 monitoring and alerting with enough headroom for wallet deployment, estimation,
 Bundler, and Paymaster request patterns.
 
+The account plan's monthly gas sponsorship limit is independent of a contract
+policy's daily gas limit; increasing the latter does not raise the former or
+upgrade the subscription. A zero subscription price does not mean sponsored
+gas is free. Included request credits and prepaid gas credits are also separate
+from the gas limit; included request credits can incur overage charges rather
+than acting as a hard transaction-count cap. Record approved budgets and their
+verification scope in task records, as in the
+[2026-10-11 budget adjustment](work-memory/sessions/2026-10-11-zerodev-budget-adjustment.md).
+
 After those policies and production-sized limits are active, operators should
 run the smallest Mainnet E2E in an access-controlled production-candidate
 environment using the same commit and the `both` bundle intended for release.
