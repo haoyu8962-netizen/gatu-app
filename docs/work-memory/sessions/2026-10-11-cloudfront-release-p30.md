@@ -33,7 +33,7 @@
 
 **晋升前修复。** PR #96 在 `a310ade1` 与 `ee4aab99` 两次失败于 `Build terminal (pairing true)`：总量 +10,645 超 10,000 允许量、`api-wallet-*.js` 出现两个 chunk。根因与修复见[配对构建修复记录](2026-10-11-p30-pairing-build-budget-fix.md)（PR #98，`dev` `0c8980e5`）；在该分支手动触发的 `Production Builds` 配对开/关两项均通过。
 
-**晋升。** [PR #96](https://github.com/zora4523-bot/gatu-app/pull/96)（`dev` → `main`，标题仍写 p29）在 `0c8980e5` 上七项 CI 全绿后以 merge commit 合入：`main` `ff11eee5`（15:08Z 前后）。PR 上有一条 2026-10-10 的 Codex 机器人 P2（手机已导入 Agent 且浏览器仍有 Privy 会话时切换网络会删除旧网络的 Mobile Agent，需重新扫码；`packages/hl-react/src/signing/agent-session.ts:54`，ADR 0039 代码），不涉及资金安全，未阻断发布，列入后续。
+**晋升。** [PR #96](https://github.com/zora4523-bot/gatu-app/pull/96)（`dev` → `main`，标题仍写 p29）在 `0c8980e5` 上七项 CI 全绿后以 merge commit 合入：`main` `ff11eee5`（15:08Z 前后）。PR 上有一条 2026-10-10 的 Codex 机器人 P2（手机已导入 Agent 且浏览器仍有 Privy 会话时切换网络会删除旧网络的 Mobile Agent，需重新扫码；`packages/hl-react/src/signing/agent-session.ts:54`，ADR 0039 代码），不涉及资金安全，未阻断发布。发布后核对：不成立。`session-provider.tsx` 的跨身份清理只在 `env` prop 原地变化时触发，而 `apps/terminal/src/providers/client-root.tsx:42-43` 把 `env` 算成模块级常量，切换网络一律 `window.location.reload()`（`use-global-settings-store.ts:122`、跨标签页同步 `:247`），新页面的 `previousRegistrationIdentityRef` 从 null 开始，不清理任何旧 owner；生产的主网与测试网还是不同主机名、localStorage 隔离。库层面若未来有调用方原地改 `env` 才会出现，已在 ADR 0039 注明。
 
 **闸门。** 按手册第 8 节询问三个闸门，运营方答复「以后不要咨询了 … 全部开」。据此本次与今后默认：主网赞助充值=开、移动配对=开、主网银行卡入金=开，发布前不再逐次询问；手册、发布 README、`agent.md`、runtime-guardrails §8 与真机清单已随 PR #98 更新。移动配对首次在生产打开，真机清单仍未运行。
 
@@ -50,10 +50,10 @@
 - `verify --network mainnet`：15/15 ok；`--network testnet`：16/16 ok。两网 `build metadata parity` 为 `ff11eee5 / cloudfront-2026-10-11-p30 / sponsored-mainnet-deposits=on mobile-pairing=on mainnet-card-funding=on`；签名 `POST` allowed；geo 真实国家 SG；壳预加载 114 个链接；壳与图表 bundle 边缘命中。
 - `csp-coverage.mjs https://app.sairn.ai`：33 步、2 步跳过（桌面 WalletConnect 文本与手机图表页按钮不可见，同前几次）、0 违规、0 控制台错误。
 - 发布日志在会话暂存目录，未入库；本记录不含账户、密钥或完整 RPC 地址。
-- 未做：真实邮箱钱包的主网自动存款（源链确认与 HyperCore 入账）；真实外部钱包的无名默认 Agent 建立连接；真机配对清单三行（RD-1..RD-3）；ADR 0039 的 P2（切网删除导入密钥）未修。CHANGELOG 仍在 Unreleased 下，未切版本号。
+- 未做：真实邮箱钱包的主网自动存款（源链确认与 HyperCore 入账）；真实外部钱包的无名默认 Agent 建立连接；真机配对清单三行（RD-1..RD-3）。CHANGELOG 仍在 Unreleased 下，未切版本号。
 - 发布工作树 `gatu-release-p30` 保留到下次发布供 verify 比对与回滚；`gatu-release-p28` 是回滚产物；`gatu-release-p29`（从未构建）已删除；`gatu-release-p26` 可删除。回滚到 p28 按 functions → lambda → sync → invalidate 重发其产物即可（p28 的闸门为配对关，需去掉 `--allow-mobile-pairing`）。
 
 ## 后续与替代关系
 
-- 待做：真实主网自动存款验收（ADR 0040）、真实外部钱包建立连接验收（ADR 0038）、真机配对清单（ADR 0039，开关已在生产打开）、修复 Codex 指出的切网删除导入密钥 P2。
+- 待做：真实主网自动存款验收（ADR 0040）、真实外部钱包建立连接验收（ADR 0038）、真机配对清单（ADR 0039，开关已在生产打开）。Codex 指出的切网删除导入密钥 P2 经核对不成立（见上）。
 - 上一次发布记录：[p28](2026-10-08-cloudfront-release-p28.md)。
