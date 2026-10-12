@@ -225,6 +225,9 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/privy-theme-switch-wallet-stability.test.tsx \
   src/lib/tests/privy-fiat-funding.test.ts \
   src/lib/tests/privy-fiat-funding-host.test.tsx \
+  src/lib/tests/embedded-deposit-auto-bridge.test.tsx \
+  src/lib/tests/embedded-deposit-auto-bridge-sonner.test.tsx \
+  src/lib/tests/fresh-legal-action-guard.test.tsx \
   src/lib/tests/privy-fiat-funding-host-gate.test.tsx \
   src/lib/tests/use-privy-fiat-funding-offer.test.tsx \
   src/lib/tests/deposit-method-chooser.test.tsx \
@@ -368,7 +371,8 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/leverage-editor.test.tsx \
   src/lib/tests/leverage-dialog-risk-warning.test.tsx \
   src/lib/tests/use-size-slider-interaction.test.tsx \
-  src/lib/tests/size-percent-input.test.tsx
+  src/lib/tests/size-percent-input.test.tsx \
+  src/lib/tests/order-entry-percent-basis.test.tsx
 
 # Startup rendering (see .claude/rules/startup-rendering.md)
 pnpm --dir apps/terminal exec vitest run \
