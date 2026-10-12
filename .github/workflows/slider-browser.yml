@@ -7,6 +7,10 @@ on:
       - "apps/terminal/package.json"
       - "apps/terminal/tests/browser/**"
       - "apps/terminal/src/**"
+      # A pull request that only changes unit tests cannot change what a browser fixture renders.
+      # The shared harness under src/lib/tests/harness is not a *.test file, so it still counts.
+      - "!apps/terminal/src/**/*.test.ts"
+      - "!apps/terminal/src/**/*.test.tsx"
       - "packages/ui/src/**"
       - "packages/ui/package.json"
       - "pnpm-lock.yaml"

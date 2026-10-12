@@ -184,6 +184,52 @@ test("shards every browser invocation by test, in two jobs", () => {
 	);
 });
 
+test("shards every terminal Vitest step across two jobs and runs the other steps once", () => {
+	const terminalTests = readWorkflow("terminal-tests.yml");
+	const vitestShardFlags = "--maxWorkers=1 --shard=${{ matrix.shard }}/2 --passWithNoTests";
+
+	assert.equal(terminalTests.includes("shard: [1, 2]"), true);
+	const invocations = countOccurrences(terminalTests, "exec vitest run");
+	assert.equal(invocations >= 14, true);
+	assert.equal(
+		countOccurrences(terminalTests, `exec vitest run ${vitestShardFlags}`),
+		invocations,
+		"an unsharded Vitest step runs in full in both jobs",
+	);
+
+	const steps = workflowListItems(terminalTests).filter((item) => item.lines.some((line) => /^\s*run:/.test(line)));
+	const onceOnly = steps.filter((step) => {
+		const body = step.lines.join("\n");
+		return /node --test|pnpm test:cloudfront|pnpm brand:check/.test(body);
+	});
+	assert.equal(onceOnly.length, 3, "the release validators, CloudFront tooling and brand check are three steps");
+	for (const step of onceOnly) {
+		assert.equal(
+			step.lines.some((line) => line.trim() === "if: matrix.shard == 1"),
+			true,
+			`${step.lines[0].trim()} would run in both shards`,
+		);
+	}
+	const gated = steps.filter((step) => step.lines.some((line) => line.trim().startsWith("if:")));
+	assert.equal(gated.length, onceOnly.length, "a Vitest step gated to one shard would skip half of its files");
+});
+
+test("does not start the browser regressions for a change to unit tests only", () => {
+	const browser = readWorkflow("slider-browser.yml");
+	const paths = [.../^      - "([^"]+)"$/gm[Symbol.matchAll](browser)].map((match) => match[1]);
+	const source = paths.indexOf("apps/terminal/src/**");
+
+	assert.equal(source >= 0, true);
+	for (const excluded of ["!apps/terminal/src/**/*.test.ts", "!apps/terminal/src/**/*.test.tsx"]) {
+		assert.equal(paths.indexOf(excluded) > source, true, `${excluded} must come after the pattern it narrows`);
+	}
+	assert.deepEqual(
+		paths.filter((path) => path.startsWith("!")),
+		["!apps/terminal/src/**/*.test.ts", "!apps/terminal/src/**/*.test.tsx"],
+		"only *.test files are excluded: fixtures import src/lib/tests/harness, and catalogs change rendered text",
+	);
+});
+
 test("keeps the merged static checks in one job", () => {
 	const staticChecks = readWorkflow("static-checks.yml");
 

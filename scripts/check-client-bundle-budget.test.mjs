@@ -478,7 +478,11 @@ test("runs the budget tests once from the terminal test workflow, outside the bu
 	assert.equal(tests.includes('- "scripts/check-client-bundle-budget.test.mjs"'), true);
 	assert.equal(tests.includes('- "scripts/client-chunk-graph.*"'), true);
 	assert.match(tests, /node --test\n(?:[ \t]+scripts\/\S+\n)*[ \t]+scripts\/check-client-bundle-budget\.test\.mjs/);
-	assert.equal(/\bmatrix\b/.test(tests), false);
+	assert.match(
+		tests,
+		/if: matrix\.shard == 1\n[ \t]+run: >-\n[ \t]+node --test\n/,
+		"the terminal tests run in two shards; the validators must stay in the first one only",
+	);
 
 	const builds = readFileSync(new URL("../.github/workflows/production-build.yml", import.meta.url), "utf8");
 	assert.equal(/vitest run|node --test|pnpm test:cloudfront/.test(builds), false);
