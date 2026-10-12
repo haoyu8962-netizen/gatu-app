@@ -16,6 +16,7 @@ import {
 	getReduceOnlySizeSelection,
 	getSelectedSizeDisplay,
 	getSizeForPercent as getSizeForPercentCalc,
+	getSizeStringFromInput,
 	getSizeValueForModeToggle,
 } from "@/domain/trade/order/size";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
@@ -197,8 +198,7 @@ export function useOrderEntryData({
 	const { setSize, setSizeSelection, setSizeMode } = useOrderEntryActions();
 	const effectiveReduceOnly = reduceOnly && !isSpotMarket;
 	const sizeContext = `${leverageInteractionIdentity}:${market?.assetId}:${side}:${orderType}:${effectiveReduceOnly}`;
-	const selectedBaseSize =
-		effectiveReduceOnly && sizeSource?.context === `${sizeContext}:${sizeMode}` ? sizeSource.baseSize : undefined;
+	const selectedBaseSize = sizeSource?.context === `${sizeContext}:${sizeMode}` ? sizeSource.baseSize : undefined;
 	const derived = deriveOrderEntry({
 		reduceOnly: effectiveReduceOnly,
 		positionSnapshot,
@@ -272,8 +272,20 @@ export function useOrderEntryData({
 			if (selection)
 				setSizeSelection(selection.size, { context: `${sizeContext}:${sizeMode}`, baseSize: selection.baseSize });
 		} else {
+			const basis = getSizePercentBasis();
 			const size = getSizeForPercent(pct);
-			if (size) setSize(size);
+			if (!size) return;
+			if (basis.sizeMode === "quote") {
+				const baseSize = getSizeStringFromInput({
+					sizeInput: size,
+					sizeMode: "quote",
+					price: basis.price,
+					szDecimals: basis.szDecimals,
+				});
+				setSizeSelection(size, { context: `${sizeContext}:${sizeMode}`, baseSize });
+				return;
+			}
+			setSize(size);
 		}
 	}
 	function toggleSizeDenomination() {

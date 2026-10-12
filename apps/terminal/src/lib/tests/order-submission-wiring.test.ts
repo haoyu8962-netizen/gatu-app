@@ -86,7 +86,7 @@ describe("order submission wiring", () => {
 				/function canExecuteOrder\(input\?: OrderSubmitDraftInput\) \{\s*if \(input && !isDraftResetTokenCurrent\(input\.draftResetToken\)\) return false;\s*if \(sizeInteractionRef\.current\) return false;/,
 			);
 			expect(source, path).toMatch(
-				/function handleSizeInteractionChange\(active: boolean\) \{\s*sizeInteractionRef\.current = active;\s*\}/,
+				/function handleSizeInteractionChange\(active: boolean\) \{\s*sizeInteractionRef\.current = active;/,
 			);
 			expect(source, path).toMatch(
 				/function handleCtaClick\(\) \{\s*if \(sizeInteractionRef\.current\) return;\s*buttonContent\.action\(\);\s*\}/,

@@ -33,6 +33,7 @@
 - 滑杆本身（`TradeSizeSlider`、`docs/slider-interactions.md` 的调度规则）没有问题：拖动中拇指由手势草稿持有，每 15ms 节流发布一次业务预览。
 - 缺陷在预览的业务计算：`useOrderEntryData.applySizePercent` → `getSizeForPercent` 每次都读取**当时**的 `derived.maxSize`（永续来自 `useAssetLeverage` 的 `maxTradeSzs`，即 `activeAssetData` 订阅，随标记价每个 tick 更新）和 `conversionPrice`（标记价或限价）。拇指不动时连续预览仍会因 maxSize 的微小变化得到不同的数量；`formatSizeValue` 按 `szDecimals` 向下取整后，在一手占可开数量比例大的交易对上（HYPE：手 0.01、最大约 0.31，一手≈3%）就在相邻两档之间翻，表现为闪烁。BTC 等一手占比极小的交易对几乎看不出来，所以是「个别交易对」。
 - 修复（`use-order-entry-data.ts`）：新增 `beginSizePercentGesture` / `endSizePercentGesture`，在 `onInteractionStart` 捕获 `{maxSize, price, spotBalance, szDecimals, sizeMode, reduceOnlyMaxBase}` 到 ref，手势内 `getSizeForPercent` 与 Reduce Only 选择都用该基准，`onInteractionEnd` 释放。`mobile-trade-view.tsx` 与 `trade-panel.tsx` 的 `handleSizeInteractionChange` 接入。提交的数量等于最后预览的数量；校验与执行守卫仍读实时最大值，长时间拖动期间最大值下降会在松手后显示余额不足而不是悄悄缩单。
+- PR #102 Codex 机器人 P2（成立）：报价币模式下只冻结了显示串，`deriveOrderEntry` 仍用实时价把它换回基础币，提交数量会随 tick 漂移。修正：普通订单的报价币百分比选择也像 Reduce Only 一样记录由冻结基准算出的基础币 `sizeSource`，`selectedBaseSize` 对普通订单生效；新增报价币用例（价格 86.88→90，手势内 20.73 / 0.23 不变，结束后 21.48 / 0.23）。CI 的 `order-submission-wiring` 源码契约要求 `handleSizeInteractionChange` 体只有 ref 赋值，已放宽为「ref 赋值必须是第一条语句」。
 - 键入百分比、Max 按钮和下一次手势仍用实时数据；身份（市场/方向/模式/杠杆）变化会取消手势并释放基准。
 - 文档：`docs/slider-interactions.md`「Quantity and execution boundaries」新增一段，`AGENTS.md` 滑杆契约补一句，CHANGELOG Unreleased/Fixed 记录。
 

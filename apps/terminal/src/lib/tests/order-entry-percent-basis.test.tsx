@@ -8,6 +8,7 @@ import { createI18nRoot } from "./harness/react";
 const testState = vi.hoisted(() => ({
 	maxTradeSzs: [0.31, 0.31] as [number, number],
 	setSize: vi.fn(),
+	setSizeSelection: vi.fn(),
 }));
 
 vi.mock("@/hooks/wallet/use-wallet-session", () => ({
@@ -58,7 +59,11 @@ vi.mock("@/hooks/trade/use-asset-leverage", () => ({
 }));
 
 vi.mock("@/stores/use-order-entry-store", () => ({
-	useOrderEntryActions: () => ({ setSize: testState.setSize, setSizeSelection: vi.fn(), setSizeMode: vi.fn() }),
+	useOrderEntryActions: () => ({
+		setSize: testState.setSize,
+		setSizeSelection: testState.setSizeSelection,
+		setSizeMode: vi.fn(),
+	}),
 	useOrderSizeSource: () => null,
 	useOrderType: () => "market",
 }));
@@ -80,20 +85,20 @@ describe("order entry percent basis during a slider gesture", () => {
 	let container: HTMLDivElement;
 	let latest: OrderEntry | null;
 
-	function Probe({ markPx }: { markPx: number }) {
+	function Probe({ markPx, sizeMode }: { markPx: number; sizeMode: "base" | "quote" }) {
 		latest = useOrderEntryData({
 			market: HYPE_MARKET,
 			side: "buy",
 			markPx,
-			sizeMode: "base",
+			sizeMode,
 			sizeInput: "",
 			marketOrderSizing: null,
 		});
 		return null;
 	}
 
-	function render(markPx = 86.88) {
-		act(() => root.render(createElement(Probe, { markPx })));
+	function render(markPx = 86.88, sizeMode: "base" | "quote" = "base") {
+		act(() => root.render(createElement(Probe, { markPx, sizeMode })));
 		if (!latest) throw new Error("hook not captured");
 		return latest;
 	}
@@ -102,6 +107,7 @@ describe("order entry percent basis during a slider gesture", () => {
 		latest = null;
 		testState.maxTradeSzs = [0.31, 0.31];
 		testState.setSize.mockClear();
+		testState.setSizeSelection.mockClear();
 		container = document.createElement("div");
 		document.body.appendChild(container);
 		root = createI18nRoot(container);
@@ -128,6 +134,22 @@ describe("order entry percent basis during a slider gesture", () => {
 		act(() => entry.endSizePercentGesture());
 		act(() => entry.applySizePercent(77));
 		expect(testState.setSize).toHaveBeenLastCalledWith("0.25");
+	});
+
+	it("pins the base quantity of a quote-mode percentage to the price captured at the gesture start", () => {
+		let entry = render(86.88, "quote");
+		act(() => entry.beginSizePercentGesture());
+		act(() => entry.applySizePercent(77));
+		expect(testState.setSizeSelection).toHaveBeenLastCalledWith("20.73", expect.objectContaining({ baseSize: "0.23" }));
+		expect(testState.setSize).not.toHaveBeenCalled();
+
+		entry = render(90, "quote");
+		act(() => entry.applySizePercent(77));
+		expect(testState.setSizeSelection).toHaveBeenLastCalledWith("20.73", expect.objectContaining({ baseSize: "0.23" }));
+
+		act(() => entry.endSizePercentGesture());
+		act(() => entry.applySizePercent(77));
+		expect(testState.setSizeSelection).toHaveBeenLastCalledWith("21.48", expect.objectContaining({ baseSize: "0.23" }));
 	});
 
 	it("uses the live maximum outside a gesture", () => {
