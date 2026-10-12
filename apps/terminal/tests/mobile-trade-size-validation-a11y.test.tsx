@@ -154,6 +154,8 @@ vi.mock("@/hooks/trade/use-order-entry-data", () => ({
 		currentLeverage: 10,
 		executionAvailability: { kind: "perp", maxBaseBySide: { buy: "10", sell: "10" } },
 		applySizePercent: vi.fn(),
+		beginSizePercentGesture: vi.fn(),
+		endSizePercentGesture: vi.fn(),
 		hasAvailabilityError: testState.availabilityStatus === "error",
 		hasPosition: false,
 		isAvailabilityBlocked: testState.availabilityStatus !== "success",

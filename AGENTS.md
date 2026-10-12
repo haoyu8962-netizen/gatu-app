@@ -149,7 +149,7 @@ This file contains durable project instructions for coding agents. Read `agent.m
 - Every ending is named and recorded on the control in `data-gesture-end`. Do not add a cancellation path as hardening: it needs a reason name, a real situation in which the user wants the drag discarded, evidence from physical input that ordinary drags do not reach it, and a test.
 - Script-dispatched and protocol-injected pointer events (jsdom, Playwright, DevTools, the desktop browser tools) cannot prove operating-system event order, capture or focus behaviour. State the input path in every interaction verification claim; a gesture-lifecycle change is not verified until a person has dragged the real control.
 - Diagnose a reported slider problem from the page first (`data-gesture-end`, the recorder in `docs/slider-interactions.md`), then change code. A reported defect is fixed when the reporter's scenario is confirmed, not when some defect has been found and fixed.
-- A surface must not move its slider under the pointer during a gesture; hold layout that depends on the previewed value until the gesture ends, as presentation only.
+- A surface must not move its slider under the pointer during a gesture; hold layout that depends on the previewed value until the gesture ends, as presentation only. The order forms also freeze the percentage's basis (maximum size, conversion price, spot balance, lot size) from `onInteractionStart` to `onInteractionEnd`, so a ticking maximum cannot change the quantity of an unmoved thumb; validation and execution keep reading live data.
 
 ## Operation feedback contract
 

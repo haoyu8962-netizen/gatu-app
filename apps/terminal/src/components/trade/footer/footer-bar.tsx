@@ -1,7 +1,7 @@
 import { useLingui } from "@lingui/react/macro";
 import { SpinnerGapIcon, WifiHighIcon, WifiSlashIcon } from "@phosphor-icons/react";
 import { ClientOnly, Link } from "@tanstack/react-router";
-import { APP_VERSION } from "@/config/app";
+import { APP_RELEASE_LABEL } from "@/config/app";
 import { FOOTER_LABELS, FOOTER_LINKS } from "@/config/footer-links";
 import { useMinuteClock } from "@/hooks/ui/use-minute-clock";
 import { formatTime } from "@/lib/format";
@@ -64,7 +64,7 @@ export function FooterBar({ mode = "default" }: Props) {
 		onCommand: open,
 		links: FOOTER_LINKS.map((link) => ({ id: link.id, label: t(link.label) })),
 		linksLabel: t(FOOTER_LABELS.links),
-		version: APP_VERSION,
+		buildLabel: isMarketLoading ? APP_RELEASE_LABEL : null,
 		renderLink: (link: FooterLink, className: string) => {
 			const destination = FOOTER_LINKS.find((entry) => entry.id === link.id)?.path;
 			if (!destination) return null;
