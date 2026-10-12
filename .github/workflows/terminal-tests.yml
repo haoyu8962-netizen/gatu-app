@@ -35,7 +35,16 @@ concurrency:
 
 jobs:
   terminal-tests:
-    name: Test terminal and release tooling
+    # Every Vitest step below runs with `--shard`, so each job runs about half of each step's
+    # files, still one worker at a time. Vitest shards by file, and a step whose files all land in
+    # the other shard selects nothing here, hence `--passWithNoTests`; `ci-workflows.test.mjs`
+    # checks that every listed path exists, so an empty selection is never a mistyped path. The
+    # steps that are not Vitest run once, in the first shard.
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2]
+    name: Test terminal and release tooling (${{ matrix.shard }}/2)
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -51,6 +60,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
 
       - name: Test build and release validators
+        if: matrix.shard == 1
         run: >-
           node --test
           scripts/check-client-bundle-budget.test.mjs
@@ -60,22 +70,24 @@ jobs:
           scripts/serve-spa-static.test.mjs
 
       - name: Test the CloudFront release tooling
+        if: matrix.shard == 1
         run: pnpm test:cloudfront
 
       - name: Check brand source consistency
+        if: matrix.shard == 1
         run: pnpm brand:check
 
       - name: Test Hyperliquid API resource hints
         working-directory: apps/terminal
         run: >-
-          pnpm exec vitest run --maxWorkers=1
+          pnpm exec vitest run --maxWorkers=1 --shard=${{ matrix.shard }}/2 --passWithNoTests
           src/lib/tests/seo.test.ts
           src/lib/tests/hyperliquid-resource-hints.test.ts
 
       - name: Test terminal interaction and mounting contracts
         working-directory: apps/terminal
         run: >-
-          pnpm exec vitest run --maxWorkers=1
+          pnpm exec vitest run --maxWorkers=1 --shard=${{ matrix.shard }}/2 --passWithNoTests
           src/lib/tests/user-menu.test.tsx
           src/lib/tests/top-nav.test.tsx
           src/lib/tests/desktop-nav-layout.test.ts
@@ -101,7 +113,7 @@ jobs:
       - name: Test Privy theme and wallet identity
         working-directory: apps/terminal
         run: >-
-          pnpm exec vitest run --maxWorkers=1
+          pnpm exec vitest run --maxWorkers=1 --shard=${{ matrix.shard }}/2 --passWithNoTests
           src/lib/tests/privy-config.test.ts
           src/lib/tests/client-root-theme-lifecycle.test.tsx
           src/lib/tests/privy-theme-switch-wallet-stability.test.tsx
@@ -118,7 +130,7 @@ jobs:
       - name: Test mobile pairing protocol, signing chain and import lifecycle
         working-directory: apps/terminal
         run: >-
-          pnpm exec vitest run --maxWorkers=1
+          pnpm exec vitest run --maxWorkers=1 --shard=${{ matrix.shard }}/2 --passWithNoTests
           src/lib/tests/mobile-sync-*.test.ts
           src/lib/tests/mobile-agent-sync-route.test.tsx
           src/lib/tests/mobile-agent-qr-scanner.test.tsx
@@ -153,7 +165,7 @@ jobs:
       - name: Test route provider lifecycles
         working-directory: apps/terminal
         run: >-
-          pnpm exec vitest run --maxWorkers=1
+          pnpm exec vitest run --maxWorkers=1 --shard=${{ matrix.shard }}/2 --passWithNoTests
           src/lib/tests/app-route-surface.test.ts
           src/lib/tests/document-title.test.tsx
           src/lib/tests/root-provider-split.test.ts
@@ -168,7 +180,7 @@ jobs:
       - name: Test order draft and exchange session lifecycles
         working-directory: apps/terminal
         run: >-
-          pnpm exec vitest run --maxWorkers=1
+          pnpm exec vitest run --maxWorkers=1 --shard=${{ matrix.shard }}/2 --passWithNoTests
           src/lib/tests/account-activity-feed-owner.test.tsx
           src/lib/tests/use-account-ledger.test.tsx
           src/lib/tests/funds-action-lock.test.ts
@@ -198,7 +210,7 @@ jobs:
       - name: Test confirmation surface contracts
         working-directory: apps/terminal
         run: >-
-          pnpm exec vitest run --maxWorkers=1
+          pnpm exec vitest run --maxWorkers=1 --shard=${{ matrix.shard }}/2 --passWithNoTests
           src/lib/tests/position-market-close-display-commit.test.tsx
           src/lib/tests/position-market-close-submit.test.tsx
           src/lib/tests/position-market-close-modal.test.tsx
@@ -245,7 +257,7 @@ jobs:
       - name: Test slider gesture lifecycles
         working-directory: apps/terminal
         run: >-
-          pnpm exec vitest run --maxWorkers=1
+          pnpm exec vitest run --maxWorkers=1 --shard=${{ matrix.shard }}/2 --passWithNoTests
           tests/trade-size-slider-pointer-lifecycle.test.tsx
           tests/trade-size-slider-deferred-commit-race.test.tsx
           tests/position-close-slider-effective-aria.test.tsx
@@ -258,7 +270,7 @@ jobs:
       - name: Test TradingView integration
         working-directory: apps/terminal
         run: >-
-          pnpm exec vitest run --maxWorkers=1
+          pnpm exec vitest run --maxWorkers=1 --shard=${{ matrix.shard }}/2 --passWithNoTests
           src/lib/tests/chart-*.test.ts
           src/lib/tests/chart-*.test.tsx
           src/lib/tests/load-tradingview.test.ts
@@ -269,7 +281,7 @@ jobs:
       - name: Test recent trade rendering contracts
         working-directory: apps/terminal
         run: >-
-          pnpm exec vitest run --maxWorkers=1
+          pnpm exec vitest run --maxWorkers=1 --shard=${{ matrix.shard }}/2 --passWithNoTests
           src/lib/tests/number-format-reactivity-contract.test.ts
           src/lib/tests/responsive-panel-layout.test.ts
           src/lib/tests/trade-row.test.tsx
@@ -278,7 +290,7 @@ jobs:
       - name: Test number format and runtime locale contracts
         working-directory: apps/terminal
         run: >-
-          pnpm exec vitest run --maxWorkers=1
+          pnpm exec vitest run --maxWorkers=1 --shard=${{ matrix.shard }}/2 --passWithNoTests
           src/lib/tests/format.test.ts
           src/lib/tests/number-format-settings.test.ts
           src/lib/tests/locale-format-contract.test.ts
@@ -334,7 +346,7 @@ jobs:
       - name: Test Deposit, CCTP, routing, and geo guards
         working-directory: apps/terminal
         run: >-
-          pnpm exec vitest run --maxWorkers=1
+          pnpm exec vitest run --maxWorkers=1 --shard=${{ matrix.shard }}/2 --passWithNoTests
           src/lib/tests/cctp-deposit-catalogs.test.ts
           src/lib/tests/cctp-deposit-tracking.test.ts
           src/lib/tests/cctp-deposit.test.ts
@@ -375,7 +387,7 @@ jobs:
       - name: Test terminal brand contracts
         working-directory: apps/terminal
         run: >-
-          pnpm exec vitest run --maxWorkers=1
+          pnpm exec vitest run --maxWorkers=1 --shard=${{ matrix.shard }}/2 --passWithNoTests
           src/lib/tests/brand-semantics-contract.test.ts
           src/lib/tests/brand-logo.test.tsx
           src/lib/tests/root-startup-fallback.test.tsx
@@ -399,7 +411,7 @@ jobs:
       - name: Test build configuration guards
         working-directory: apps/terminal
         run: >-
-          pnpm exec vitest run --maxWorkers=1
+          pnpm exec vitest run --maxWorkers=1 --shard=${{ matrix.shard }}/2 --passWithNoTests
           src/lib/tests/build-meta.test.ts
           src/lib/tests/security-policy-docs.test.ts
           src/lib/tests/vite-manual-chunks.test.ts

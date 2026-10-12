@@ -52,6 +52,7 @@
 - CI 的手选测试清单里 `src/lib/tests/geo-server-functions.test.ts` 已不存在（`5944465d` 删除），vitest 会静默忽略不匹配的参数。本次按原样搬移，未清理；全量单测成为闸门后这份清单应整体移除。
 - 2026-10-02 补记：上一条的失效参数已换成 `5944465d` 中取代它的 `src/lib/tests/geo-api.test.ts`（地区 API 处理器与客户端测试，此前从未进入任何工作流）。`scripts/ci-workflows.test.mjs` 新增钉子：工作流传给 vitest、Playwright 与 `node --test` 的每个路径都必须匹配到文件，文件名里的 `*` 按 shell 方式展开。手选清单由全量单测取代的计划不变。见[任务记录](../work-memory/sessions/2026-10-02-ci-listed-test-paths.md)。
 - 本地实跑两个分片时，99 个测试中有 1 个失败过一次（`drawer-interactions` 的 bottom drawer swipe，当轮分片 1 的第一个测试）；之后原始调用方式、分片方式和清空 Vite 缓存后的冷启动各重跑 2 次均全部通过，未能复现或归因。首次 CI 运行后需观察它。
+- 2026-10-12 补记：`Terminal Tests` 拆成两个分片（`shard: [1, 2]`）。它跑的是手选的十四组 Vitest 文件，此前在一个 job 里以 `--maxWorkers=1` 串行，约 15.5 分钟，是每轮 CI 的最长项。每个 Vitest 步骤加 `--shard=${{ matrix.shard }}/2 --passWithNoTests`（Vitest 按文件分片；某一步的文件全落在另一片时本片选不到文件，所以需要 `--passWithNoTests`，路径是否存在仍由「never lists a test path that matches no file」静态检查），每片仍是单 worker；三个非 Vitest 步骤（发布校验器的 `node --test`、`pnpm test:cloudfront`、`pnpm brand:check`）只在第一片跑。不改测试清单，计费分钟数基本不变（多一次检出与安装），等待时间取决于较慢的一片。同时浏览器回归的路径过滤排除 `apps/terminal/src/**/*.test.ts(x)`：只改单测的 PR 不再启动它；`src/lib/tests/harness`（浏览器夹具引用）与翻译目录（夹具断言中文文案）不在排除范围。`ci-workflows.test.mjs` 新增两条断言钉住这两点（未分片的 Vitest 步骤、被限定到单片的 Vitest 步骤、多余的排除项都会失败）。不采用的做法：按标签跳过浏览器回归（靠人判断，`order-submission-wiring` 这类契约正是「看起来很小」的改动触发的）与 `[skip ci]`。
 
 ## 证据
 

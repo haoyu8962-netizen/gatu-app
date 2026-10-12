@@ -273,6 +273,7 @@
 
 当前规范：[AGENTS.md](../../AGENTS.md) · [docs/documentation-system.md](../../docs/documentation-system.md) · [docs/README.md](../../docs/README.md) · [docs/agent-handbook.md](../../docs/agent-handbook.md)
 
+- [CI：Terminal Tests 拆两片并行，只改单测的 PR 不跑浏览器回归](sessions/2026-10-12-ci-terminal-test-shards.md) — 2026-10-12；已验证，范围见正文。运营方问小改动是否都要跑 CI、一轮多久，并同意缩短。实测一轮约 17 分钟等待、约 33 计费分钟，最长项是 Terminal Tests（十四组手选 Vitest 文件单 job 单 worker 串行，约 15.5 分钟）。改为两个分片并行（每步加 --shard 与 --passWithNoTests，三个非 Vitest 步骤只在第一片跑），浏览器回归的路径过滤排除 *.test.ts(x)。ci-workflows.test.mjs 新增两条结构断言并做了两次变异检查；本地确认一个步骤的两片互不重叠且合起来等于清单。手册写入「一个 PR 尽量只推一次」。GitHub 上的实际耗时待本 PR 的首轮运行观察。
 - [弹窗遮罩与手机抽屉边缘按官方终端统一：原语持有遮罩、模糊与边框](sessions/2026-10-09-dialog-scrim-standard.md) — 2026-10-09；已整理，验证见正文。用户在深色主题手机布局下发现存款抽屉与页面融为一体，而建立连接抽屉有层次。对照 app.hyperliquid.xyz 移动端实测：弹层底色与页面同为 #0f1a1f，手机全屏抽屉无边框、顶部 16px 圆角，靠 rgba(15,18,29,0.75) 的海军蓝遮罩分层（无模糊），桌面弹窗用 rgba(15,18,29,0.6) 加 2px 模糊并保留 1px 边框。本项目原来每个弹窗各自覆盖遮罩与模糊（/60、无模糊、2px 模糊、trading-panel-scrim 混用），遮罩又是同色相近黑，所以层次不一。按用户决定执行：新增 --fill-overlay-sheet / bg-scrim-sheet，终端深色遮罩改为官方的两个值（浅色只改透明度），Modal 背景加 2px 模糊、Drawer 用 sheet 遮罩且底部抽屉无边框，删除 13 个弹窗的 overlayClassName 遮罩/模糊覆盖与 7 处 max-[1000px]:!border-0，modal-surface-contract 钉住 token 与「弹窗不得自行覆盖遮罩、模糊、opacity、!border-0」（市场选择弹层登记为唯一无遮罩例外）。design-tokens 里「拒绝海军蓝遮罩」的旧决定被取代。夹具计算样式核对通过。
 - [资产信息手机抽屉的遮罩断言跟上原语持有遮罩的规则，并纳入 CI](sessions/2026-10-09-market-asset-info-scrim-test.md) — 2026-10-09；已整理，验证见正文。dev 5cc5327a 上 market-asset-info.test.tsx 的「uses a minimum mobile height…」仍断言抽屉 overlayClassName 含 bg-trading-panel-scrim，而 7dcd49ee（PR #92）已按「原语持有遮罩、弹窗不得覆盖」删掉该组件的覆盖，故红。测试过时、组件正确：断言改为 data-overlay-class 为 null（与 legal-acceptance 同改法）。该文件不在 terminal-tests.yml 任何步骤里，所以 PR #92 的 CI 没拦住；已加入「Test terminal interaction and mounting contracts」步骤。Codex 只读对抗审查一轮 9/10、无 P0–P2，唯一 P3（记录误称另外三个测试断言遮罩类）已修正。
 - [更换 Claude 账号的交接：私有记忆整理进仓库，新增 Agent 工作手册，清理过时的架构说法与发布状态](sessions/2026-10-08-agent-docs-handover.md) — 2026-10-08；已整理，验证见正文。用户要求整理开发文档，尤其是 agent 读的文档，保证换 Claude 账号后记忆不丢，现行文档不再引用旧架构与旧品牌。逐份核对本机 76 份 Claude 私有记忆：持久经验写进新的 docs/agent-handbook.md（协作约定、工作树、CI、Codex 审查、发布要点、换账号清单），产品知识写进手续费展示、协议实测行为、图表 K 线闸门等归属文档，AGENTS.md 加「Operator collaboration」指针节；改正 README、codex-onboard、agent.md 与代码规范里不存在的 hook 名、运行时 SSR、Node 24 等旧说法，替换签名文档里的旧实施方案，刷新 ADR 目录、文档地图和 16 份 ADR、8 份专题文档的发布状态。本文还给出 2026-10-08 的状态快照、待办汇总与每份私有记忆的去向。只做文档与链接检查，未运行应用测试。
@@ -389,6 +390,7 @@
 
 | 记录日期 | 任务记录 | 来源任务 | 基线提交 | 状态 |
 | --- | --- | --- | --- | --- |
+| 2026-10-12 | [CI：Terminal Tests 拆两片并行，只改单测的 PR 不跑浏览器回归](sessions/2026-10-12-ci-terminal-test-shards.md) | 未取得任务标识，见正文 | `2eeec75d` | 已验证，范围见正文 |
 | 2026-10-11 | [CloudFront 生产发布 p30：邮箱主网自动存款、无名默认 Agent、Link mobile device 修复，三个闸门全开](sessions/2026-10-11-cloudfront-release-p30.md) | 未取得任务标识，见正文 | `0c8980e5` | 已验证，范围见正文 |
 | 2026-10-11 | [对抗审查 codex/deposit-auto-investigation 的 10 个提交并补自动存款余额锁定](sessions/2026-10-11-codex-deposit-branch-review.md) | 未取得任务标识，见正文 | `eeace5db` | 已验证，范围见正文 |
 | 2026-10-11 | [p30 晋升前修复配对开启构建：api-wallet 双 chunk 与总量基线](sessions/2026-10-11-p30-pairing-build-budget-fix.md) | 未取得任务标识，见正文 | `ee4aab99` | 已验证，范围见正文 |
