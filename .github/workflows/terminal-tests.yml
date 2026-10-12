@@ -262,6 +262,7 @@ jobs:
           tests/trade-size-slider-deferred-commit-race.test.tsx
           tests/position-close-slider-effective-aria.test.tsx
           src/lib/tests/trade-size-slider.test.tsx
+          src/lib/tests/order-entry-percent-basis.test.tsx
           src/lib/tests/trade-size-slider-a11y.test.tsx
           src/lib/tests/leverage-slider.test.tsx
           src/lib/tests/use-size-slider-interaction.test.tsx
