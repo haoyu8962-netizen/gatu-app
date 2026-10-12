@@ -368,6 +368,10 @@ msgstr "يوجد أمر TWAP نشط لأحد هذه الأسواق."
 msgid "A valid code may unlock the active referral fee discount."
 msgstr "قد يفعّل رمز صالح خصم رسوم الإحالة النشط."
 
+#: src/components/trade/components/global-settings-modal.tsx
+msgid "About"
+msgstr "حول"
+
 #: src/components/vaults/vault-detail-view.tsx
 msgid "About this Vault"
 msgstr "حول هذه الخزنة"
@@ -2351,6 +2355,10 @@ msgstr "نسخ رابط الإحالة"
 #: src/components/trade/mobile/mobile-market-bar.tsx
 msgid "Copy token address"
 msgstr "نسخ عنوان الرمز"
+
+#: src/components/trade/components/global-settings-modal.tsx
+msgid "Copy version"
+msgstr "نسخ الإصدار"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Could not check on Hyperliquid whether trading is activated. Nothing was signed. Try again."
@@ -7114,6 +7122,10 @@ msgstr "رُفض بسبب حد العقود المفتوحة"
 msgid "Rejected due to too many open orders"
 msgstr "رُفض بسبب وجود عدد كبير جدًا من الأوامر المفتوحة"
 
+#: src/components/trade/components/global-settings-modal.tsx
+msgid "Release {APP_RELEASE_ID}"
+msgstr "الإصدار {APP_RELEASE_ID}"
+
 #: src/components/trade/header/user-menu.tsx
 #: src/components/trade/header/user-menu.tsx
 #: src/components/ui/lazy-dialog-boundary.tsx
@@ -10972,6 +10984,10 @@ msgstr "جارٍ التحقق من النتيجة"
 #: src/lib/trade/use-button-content.ts
 msgid "Verifying..."
 msgstr "جارٍ التحقق..."
+
+#: src/components/trade/components/global-settings-modal.tsx
+msgid "Version"
+msgstr "الإصدار"
 
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx

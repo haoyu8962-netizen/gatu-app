@@ -368,6 +368,10 @@ msgstr "A TWAP is active for one of these markets."
 msgid "A valid code may unlock the active referral fee discount."
 msgstr "A valid code may unlock the active referral fee discount."
 
+#: src/components/trade/components/global-settings-modal.tsx
+msgid "About"
+msgstr "About"
+
 #: src/components/vaults/vault-detail-view.tsx
 msgid "About this Vault"
 msgstr "About this Vault"
@@ -2351,6 +2355,10 @@ msgstr "Copy referral link"
 #: src/components/trade/mobile/mobile-market-bar.tsx
 msgid "Copy token address"
 msgstr "Copy token address"
+
+#: src/components/trade/components/global-settings-modal.tsx
+msgid "Copy version"
+msgstr "Copy version"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Could not check on Hyperliquid whether trading is activated. Nothing was signed. Try again."
@@ -7114,6 +7122,10 @@ msgstr "Rejected due to the open interest cap"
 msgid "Rejected due to too many open orders"
 msgstr "Rejected due to too many open orders"
 
+#: src/components/trade/components/global-settings-modal.tsx
+msgid "Release {APP_RELEASE_ID}"
+msgstr "Release {APP_RELEASE_ID}"
+
 #: src/components/trade/header/user-menu.tsx
 #: src/components/trade/header/user-menu.tsx
 #: src/components/ui/lazy-dialog-boundary.tsx
@@ -10972,6 +10984,10 @@ msgstr "Verifying the result"
 #: src/lib/trade/use-button-content.ts
 msgid "Verifying..."
 msgstr "Verifying..."
+
+#: src/components/trade/components/global-settings-modal.tsx
+msgid "Version"
+msgstr "Version"
 
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx

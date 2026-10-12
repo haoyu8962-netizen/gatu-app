@@ -58,6 +58,12 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Changed
 
+- The build version has moved from the footer to the Settings dialog: a new About section shows the
+  release and short commit (for example `p30 · ff11eee5`, or `dev` in a local build) with the full
+  release ID beneath it, and clicking it copies the complete version. The footer keeps the
+  connection status, the command-menu shortcut, the links and the clock, and shows the same
+  build label only while market data is still loading and Settings cannot be opened.
+
 - Every dialog now dims the page behind it the same way, following the official terminal: a phone
   sheet sits on a stronger navy-dark scrim without a border, and a desktop dialog keeps its thin
   border on a lighter scrim with a slight blur. Before, each dialog chose its own scrim and the

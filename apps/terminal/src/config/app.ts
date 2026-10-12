@@ -8,6 +8,10 @@ export const APP_VERSION =
 	APP_BUILD_COMMIT === "dev"
 		? `v${APP_RELEASE_VERSION}-dev`
 		: `v${APP_RELEASE_VERSION}+${APP_BUILD_COMMIT.slice(0, 8)}`;
+const RELEASE_TAG_PATTERN = /-(p\d+[a-z]?)$/;
+export const APP_RELEASE_TAG = APP_RELEASE_ID.match(RELEASE_TAG_PATTERN)?.[1] ?? APP_RELEASE_ID;
+export const APP_RELEASE_LABEL =
+	APP_BUILD_COMMIT === "dev" ? "dev" : `${APP_RELEASE_TAG} · ${APP_BUILD_COMMIT.slice(0, 8)}`;
 
 export const FALLBACK_VALUE_PLACEHOLDER = "-";
 export const FORMAT_COMPACT_THRESHOLD = 10_000;
