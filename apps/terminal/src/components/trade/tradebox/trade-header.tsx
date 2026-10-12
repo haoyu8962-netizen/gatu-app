@@ -35,6 +35,7 @@ interface Props {
 	accountMode?: AccountAbstraction;
 	isAccountModeLoading?: boolean;
 	isAccountModeUpdating?: boolean;
+	isAccountModeAutomatic?: boolean;
 	onAccountModeClick?: () => void;
 	compact?: boolean;
 	layout?: "desktop" | "mobile";
@@ -56,6 +57,7 @@ export function TradeHeader({
 	accountMode,
 	isAccountModeLoading,
 	isAccountModeUpdating,
+	isAccountModeAutomatic,
 	onAccountModeClick,
 	compact,
 	layout = "desktop",
@@ -92,24 +94,25 @@ export function TradeHeader({
 	];
 
 	const marginLabel = marginMode === "isolated" ? t`Isolated` : t(TRADE_PANEL_LABELS.cross);
+	const displayedAccountMode = accountMode === "default" && isAccountModeAutomatic ? "unifiedAccount" : accountMode;
 	const accountModeLabel =
-		accountMode === "portfolioMargin"
+		displayedAccountMode === "portfolioMargin"
 			? modes.portfolio.short
-			: accountMode === "unifiedAccount"
+			: displayedAccountMode === "unifiedAccount"
 				? modes.unified.short
-				: accountMode === "disabled"
+				: displayedAccountMode === "disabled"
 					? modes.manual.short
 					: isAccountModeLoading
 						? t(TRADE_PANEL_LABELS.account)
-						: accountMode === "default"
+						: displayedAccountMode === "default"
 							? t`Select mode`
-							: accountMode === "dexAbstraction"
+							: displayedAccountMode === "dexAbstraction"
 								? t`Legacy DEX`
 								: t(TRADE_PANEL_LABELS.account);
 	const compactAccountModeLabel =
-		accountMode === "dexAbstraction"
+		displayedAccountMode === "dexAbstraction"
 			? t`Legacy`
-			: accountMode === "default" || accountMode == null
+			: displayedAccountMode === "default" || displayedAccountMode == null
 				? t(TRADE_PANEL_LABELS.account)
 				: accountModeLabel;
 	const handleMarginModeClick = onMarginModeClick ?? onMarginLeverageClick;

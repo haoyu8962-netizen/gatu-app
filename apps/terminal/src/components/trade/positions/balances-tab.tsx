@@ -75,6 +75,7 @@ export function BalancesTab({ toolbarTarget }: Props) {
 		accountAbstraction,
 		accountDataReady,
 		accountModeReady,
+		accountModeSetup,
 		balances,
 		hasError,
 		internalTransfersEnabled,
@@ -259,7 +260,8 @@ export function BalancesTab({ toolbarTarget }: Props) {
 		}
 		if (hasError || isDataStale) return <PassiveDataPlaceholder />;
 		if (isLoading || !accountDataReady || accountAbstraction === "unknown") return <PassiveDataPlaceholder busy />;
-		if (!accountModeReady) {
+		if (!accountModeReady && accountModeSetup === "pending") return <PassiveDataPlaceholder busy />;
+		if (!accountModeReady && accountModeSetup !== "awaiting-funds") {
 			return <Placeholder variant="error">{t`Select a supported account mode to view balances.`}</Placeholder>;
 		}
 		if (balances.length === 0) {

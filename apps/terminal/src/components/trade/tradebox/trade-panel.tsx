@@ -194,6 +194,7 @@ export function TradePanel() {
 		isAvailabilityLoading,
 		isAvailabilityStale,
 		hasAvailabilityError,
+		isAwaitingFirstDeposit,
 		isOpenInterestCapped,
 		maxSize,
 		sizeValue,
@@ -713,6 +714,7 @@ export function TradePanel() {
 		reduceOnly,
 		isBalanceLoading: isAvailabilityLoading || isAvailabilityStale || isAvailabilityBlocked,
 		hasBalanceError: hasAvailabilityError,
+		isAwaitingFirstDeposit,
 		canDeposit: depositAvailability.available,
 		depositUnavailableReason: getFundsAvailabilityNotice(depositAvailability),
 		tradingBlocked: tradeActionsBlocked,
@@ -886,6 +888,7 @@ export function TradePanel() {
 					accountMode={accountModeControl.accountAbstraction}
 					isAccountModeLoading={accountModeControl.isLoading}
 					isAccountModeUpdating={accountModeControl.isUpdating}
+					isAccountModeAutomatic={accountModeControl.isAutomaticSetup}
 					onAccountModeClick={() => setActiveModal("accountMode")}
 				/>
 			}

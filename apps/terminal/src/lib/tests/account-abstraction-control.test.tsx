@@ -55,6 +55,7 @@ vi.mock("@/hooks/trade/use-account-balances", () => ({
 }));
 
 import { useAccountAbstractionControl } from "@/hooks/trade/use-account-abstraction-control";
+import { clearAccountModeSetup, publishAccountModeSetup } from "@/stores/use-account-mode-setup-store";
 
 describe("useAccountAbstractionControl portfolio margin boundary", () => {
 	let container: HTMLDivElement;
@@ -85,6 +86,7 @@ describe("useAccountAbstractionControl portfolio margin boundary", () => {
 	afterEach(() => {
 		act(() => root.unmount());
 		container.remove();
+		clearAccountModeSetup(USER_ADDRESS);
 		window.localStorage.clear();
 	});
 
@@ -109,6 +111,32 @@ describe("useAccountAbstractionControl portfolio margin boundary", () => {
 
 		expect(control?.accountAbstraction).toBe("default");
 		expect(testState.mutateAsync).not.toHaveBeenCalled();
+	});
+
+	it.each([
+		["awaiting-funds", true],
+		["pending", true],
+		["manual", false],
+	] as const)("reports a protocol default whose setup is %s as automatic: %s", async (kind, expected) => {
+		testState.resolvedAccountAbstraction = "default";
+		testState.restAccountAbstraction = "default";
+		publishAccountModeSetup(USER_ADDRESS, kind);
+		await act(async () => {
+			root.render(<Probe />);
+		});
+
+		expect(control?.isAutomaticSetup).toBe(expected);
+		expect(control?.accountAbstraction).toBe("default");
+		expect(testState.mutateAsync).not.toHaveBeenCalled();
+	});
+
+	it("never reports a selected mode as an automatic setup", async () => {
+		publishAccountModeSetup(USER_ADDRESS, "pending");
+		await act(async () => {
+			root.render(<Probe />);
+		});
+
+		expect(control?.isAutomaticSetup).toBe(false);
 	});
 
 	it("does not report a disabled account query as loading", async () => {

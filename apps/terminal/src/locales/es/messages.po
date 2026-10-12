@@ -5268,6 +5268,11 @@ msgstr "Red"
 msgid "Network stake"
 msgstr "Participación en la red"
 
+#: src/components/trade/tradebox/account-mode-modal.tsx
+#: src/hooks/trade/use-funds-action-availability.ts
+msgid "New accounts are set to Unified account automatically after the first deposit."
+msgstr "Las cuentas nuevas pasan automáticamente a Cuenta unificada tras el primer depósito."
+
 #: src/components/trade/tradebox/bridge/success-screen.tsx
 msgid "New deposit"
 msgstr "Nuevo depósito"
@@ -7123,8 +7128,8 @@ msgid "Rejected due to too many open orders"
 msgstr "Rechazada por tener demasiadas órdenes abiertas"
 
 #: src/components/trade/components/global-settings-modal.tsx
-msgid "Release {APP_RELEASE_ID}"
-msgstr "Lanzamiento {APP_RELEASE_ID}"
+#~ msgid "Release {APP_RELEASE_ID}"
+#~ msgstr "Lanzamiento {APP_RELEASE_ID}"
 
 #: src/components/trade/header/user-menu.tsx
 #: src/components/trade/header/user-menu.tsx
@@ -11353,6 +11358,10 @@ msgstr "Estás en Testnet"
 #: src/components/trade/components/hip3-deployer-disclaimer.tsx
 msgid "You are viewing markets deployed independently and permissionlessly by a third party on Hyperliquid. These markets are surfaced based on onchain activity and are not reviewed, verified, or approved."
 msgstr "Estás viendo mercados implementados de forma independiente y sin permisos por un tercero en Hyperliquid. Estos mercados se muestran en función de la actividad en cadena y no han sido revisados, verificados ni aprobados."
+
+#: src/components/trade/tradebox/account-mode-modal.tsx
+msgid "You can change the mode here afterwards."
+msgstr "Después podrás cambiar el modo aquí."
 
 #: src/components/vaults/vault-detail-view.tsx
 msgid "You can lose all deposited principal. Vault returns are not guaranteed."

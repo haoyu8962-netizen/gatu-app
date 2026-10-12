@@ -72,11 +72,16 @@
 
 - `disabled`、`unifiedAccount`、`portfolioMargin` 属于当前终端支持的模式；可操作性仍由钱包、地区、余额新鲜度和具体动作规则共同决定。
 - 明确解析出的 `default`、`dexAbstraction` 使用 `account-mode-unsupported`，保留“移动资金前请选择支持的账户模式”的限制说明。`default` 不能当成 Standard / `disabled`，也不能当成尚未收到数据。
+- `default` 是新账号的协议初始状态，页面级宿主会在入金后把它自动设为统一账户（[ADR 0041](adr/0041-automatic-unified-account-for-new-accounts.md)）。数值与可用性不变（权益与余额仍为 0，资金动作的 `available` 仍为假，下单可用性永远不是 success），只有呈现跟随宿主发布的状态：
+  - `awaiting-funds`（资金快照完整、当前且确认为空）：看起来与普通空账号相同。下单按钮为「Deposit」，但下单可用性仍为 error，表单与提交照旧阻断；余额页签为“No balances found. Deposit funds to start trading.”及存款入口；提款/划转仍禁用，原因改为“New accounts are set to Unified account automatically after the first deposit.”；交易面板的账户模式显示统一账户，账户类型弹窗预选统一账户、选项与确认禁用并显示同一句说明。这里的空账号结论来自完整快照，不是来自模式本身。
+  - `pending`（已入金，自动设置仍可能发生，含宿主尚未发布状态的首帧）：被动加载。下单可用性为 loading，桌面余额页签为忙碌占位，移动余额页签为忙碌的待定状态，不显示“请选择账户模式”。
+  - `manual`（Agent-only 会话、builder 地址、已有订单历史或读取失败、法律状态不允许、外部钱包尚未建立 Agent、尝试用尽或被交易所终局拒绝）：保留改动前的呈现与手动选择。桌面余额页签显示“请选择支持的账户模式”，手机余额页签保持静默的待定状态；弹窗预选统一账户，钱包会话可直接确认，Agent-only 会话仍禁用并显示需到桌面的原因。缓存摘要显示有余额而当前快照显示为空时也归入这一类，不会停在加载。
+  - `dexAbstraction` 不受影响：始终是手动选择，不预选。
 - 缺少模式、未识别值以及 HTTP / WebSocket 模式冲突使用 `account-mode-unresolved`，保持静默并禁用动作。当前归一化的 `unknown` 也包括来源冲突，不能把它全部当成已确认的不支持模式。
 - 两类禁用原因不改变 `available`、资金分类或提交前账户模式与身份复核。恢复和切换模式不得卸载已打开的弹窗或丢失输入草稿。
 - 桌面与移动持仓均安静展示读取状态。读取错误/过期优先于加载占位，且不标记为正在加载；订阅已 active 但首份快照未到达的保护必须保留，错误、过期和未知快照不得显示确认空持仓。
 
-依据：2026-09-09 核对 [Hyperliquid 账户模式文档](https://hyperliquid.gitbook.io/hyperliquid-docs/trading/account-abstraction-modes)，Standard / Manual、统一账户与组合保证金为当前模式，DEX abstraction 已停用；[官方 Python SDK 示例](https://github.com/hyperliquid-dex/hyperliquid-python-sdk/blob/master/examples/user_abstraction.py) 将 `default` 明确作为 Agent 设置模式前的状态。项目锁定的 [SDK 0.33.3 userAbstraction](https://github.com/nktkas/hyperliquid/blob/v0.33.3/src/api/info/_methods/userAbstraction.ts) 返回类型包含 `default`；该方法只校验请求并直接返回传输结果，因此终端仍须防御未识别响应。以上区分仅修正展示与原因分类，不新增模式支持。
+依据：2026-09-09 核对 [Hyperliquid 账户模式文档](https://hyperliquid.gitbook.io/hyperliquid-docs/trading/account-abstraction-modes)，Standard / Manual、统一账户与组合保证金为当前模式，DEX abstraction 已停用；[官方 Python SDK 示例](https://github.com/hyperliquid-dex/hyperliquid-python-sdk/blob/master/examples/user_abstraction.py) 将 `default` 明确作为 Agent 设置模式前的状态。项目锁定的 [SDK 0.33.3 userAbstraction](https://github.com/nktkas/hyperliquid/blob/v0.33.3/src/api/info/_methods/userAbstraction.ts) 返回类型包含 `default`；该方法只校验请求并直接返回传输结果，因此终端仍须防御未识别响应。以上区分仅修正展示与原因分类，不新增模式支持。2026-10-12 的 [ADR 0041](adr/0041-automatic-unified-account-for-new-accounts.md) 同样不新增对 `default` 的支持：它让新账号离开 `default`，并规定离开之前各处显示什么。
 
 ## 数据与操作边界
 

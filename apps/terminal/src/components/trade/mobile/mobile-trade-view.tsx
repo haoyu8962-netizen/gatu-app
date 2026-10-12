@@ -291,6 +291,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 		conversionPrice,
 		isAvailabilityStale,
 		hasAvailabilityError,
+		isAwaitingFirstDeposit,
 		isOpenInterestCapped,
 		availableBalanceToken,
 		spotBalance,
@@ -786,6 +787,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 		reduceOnly,
 		isBalanceLoading: isAvailabilityLoading || isAvailabilityStale || isAvailabilityBlocked,
 		hasBalanceError: hasAvailabilityError,
+		isAwaitingFirstDeposit,
 		canDeposit: depositAvailability.available,
 		depositUnavailableReason: getFundsAvailabilityNotice(depositAvailability),
 		tradingBlocked: tradeActionsBlocked,
@@ -1195,6 +1197,7 @@ interface MobileButtonContentInput {
 	reduceOnly?: boolean;
 	isBalanceLoading: boolean;
 	hasBalanceError: boolean;
+	isAwaitingFirstDeposit?: boolean;
 	canDeposit: boolean;
 	depositUnavailableReason?: string | null;
 	tradingBlocked?: boolean;
@@ -1231,6 +1234,7 @@ export function getMobileOrderButtonContent(input: MobileButtonContentInput): Bu
 		isBalanceLoading: input.isBalanceLoading,
 		availableBalance: input.availableBalance,
 		reduceOnly: input.reduceOnly,
+		isAwaitingFirstDeposit: input.isAwaitingFirstDeposit === true,
 	});
 
 	if (stage === "connect") {

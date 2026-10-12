@@ -12,6 +12,7 @@ import { TransferModal } from "@/components/trade/positions/transfer-modal";
 import { AccountAbstractionExecutionError } from "@/hooks/trade/use-account-abstraction-guard";
 import { FundsActionGeoExecutionError } from "@/hooks/trade/use-funds-action-availability";
 import { notifyNumberFormatChange } from "@/lib/number-format-reactivity";
+import { clearAccountModeSetup, publishAccountModeSetup } from "@/stores/use-account-mode-setup-store";
 import { clearSendDraft } from "@/stores/use-send-draft-store";
 import { LOADING_INDICATOR_SELECTOR } from "./harness/loading-indicator";
 import { createI18nRoot } from "./harness/react";
@@ -318,6 +319,7 @@ describe("funds action balance wiring", () => {
 	afterEach(() => {
 		act(() => root.unmount());
 		container.remove();
+		clearAccountModeSetup("0x1111111111111111111111111111111111111111");
 		vi.clearAllMocks();
 	});
 
@@ -451,6 +453,7 @@ describe("funds action balance wiring", () => {
 		"explains confirmed unsupported %s mode without enabling fund actions",
 		(mode) => {
 			testState.balances.accountAbstraction = mode;
+			publishAccountModeSetup("0x1111111111111111111111111111111111111111", "manual");
 			act(() => root.render(createElement(TransferModal, { onOpenChange: vi.fn(), open: true })));
 
 			expect(container.textContent).toContain("Select a supported account mode before moving funds.");
@@ -464,6 +467,24 @@ describe("funds action balance wiring", () => {
 			expect(container.textContent).not.toContain("40.00 USDC");
 			expect(container.textContent).not.toContain("4,964.51 USDC");
 			expect(getButton(container, "Send").disabled).toBe(true);
+		},
+	);
+
+	it.each(["awaiting-funds", "pending", undefined] as const)(
+		"tells a new account whose setup is %s that its mode is set automatically instead of asking for one",
+		(setup) => {
+			testState.balances.accountAbstraction = "default";
+			if (setup) publishAccountModeSetup("0x1111111111111111111111111111111111111111", setup);
+			act(() => root.render(createElement(TransferModal, { onOpenChange: vi.fn(), open: true })));
+
+			expect(container.textContent).toContain(
+				"New accounts are set to Unified account automatically after the first deposit.",
+			);
+			expect(container.textContent).not.toContain("Select a supported account mode before moving funds.");
+			expect(container.querySelector('input[aria-label="Amount"]')).toBeNull();
+			expect(getButton(container, "Transfer").disabled).toBe(true);
+			act(() => getButton(container, "Transfer").click());
+			expect(testState.exchangeMutations.usdClassTransfer).not.toHaveBeenCalled();
 		},
 	);
 
@@ -501,6 +522,7 @@ describe("funds action balance wiring", () => {
 		renderTransfer();
 		act(() => setInputValue(getAmountInput(container), "1"));
 		const title = container.querySelector("h2");
+		act(() => publishAccountModeSetup("0x1111111111111111111111111111111111111111", "manual"));
 		for (const mode of [null, "unknown", "default", "dexAbstraction"]) {
 			testState.balances.accountAbstraction = mode;
 			renderTransfer();
