@@ -10,7 +10,7 @@
   "summary": "图表 pricescale 此前取当前标记价字符串去掉末尾 0 后的小数位，每次创建 widget 都可能不同（HYPE 同一小时出现 2、3、4 位）。399dbbd9 新增 lib/chart/price-format.ts：variable_tick_size 逐值取档，价格跨 10 的幂不重建 widget；数据源回退改用 meta 的 szDecimals 与中间价数量级，删除按尾数推断的函数。gpt-6-astra 三路只读对抗审查发现初版档上限（该档最大合法价）把两档之间的非报价值粗档舍入（99.9991 → 100.00）、CHANGELOG 跨面板一致性说法过强、pricescale 作用范围与“切换市场即重新解析”表述不准、探针可空检查假通过且未接入库升级入口；复核全部成立并修复（3d6a8000）：档上限改为五位有效数字进位阈值前的最后一个双精度数，pricescale 按舍入后的数量级取档，探针逐字对照，库升级说明加探针。对修复的复审确认修复成立，另指出档内十进制半数按双精度舍入（16.0005 → 16.000）与参考价一个双精度分辨率内的取档差异，已收窄文档；探针改按 szDecimals 定档数。首阶段全量单测通过；修复阶段全量在高负载下有 3 个与改动无关的超时，单独重跑通过，未在空闲时重跑全量。单测、变异、无头 Chromium 实测与探针通过；未做生产构建与真人目测。",
   "thread": null,
   "baseCommit": "682430ba",
-  "commits": ["399dbbd9"],
+  "commits": ["399dbbd9", "3d6a8000", "20d0e01f", "06ed032e"],
   "sources": [
     { "path": "apps/terminal/src/lib/chart/price-format.ts" },
     { "path": "apps/terminal/src/lib/chart/market-symbol.ts" },

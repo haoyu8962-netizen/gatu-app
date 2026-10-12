@@ -10,7 +10,7 @@
   "summary": "用户要求把最新代码部署到生产。先把 #80（存款按数字比较链 ID、点击存款时按需切链；订单按钮去掉 Switch to Arbitrum 预拦截，外部钱包签名客户端按连接自身的链取用）、#73（gatu.ai 域名组与过渡头退役，p25 清理代码）、#79（agent 文档迁入仓库）合入 dev，晋升 PR #87 七项 CI 全绿合入 main（d74dd616）。发布前核对切换方案阶段 5.1 前提：三条分发都没有 gatu.ai 别名，API 源站请求策略含 X-Sairn-Forwarded-Host（ETag ETVPDKIKX0DER 未变）。在仓库外工作树 gatu-release-p28 用 Node 22.15.0 从 d74dd616 构建 cloudfront-2026-10-08-p28（开关同 p27），按 functions → lambda（版本 13）→ sync（闸门 sponsored-mainnet-deposits=on mobile-pairing=off mainnet-card-funding=on，1,643 个文件，发布标记一致）→ 两次失效 → verify 主网 15/15、测试网 16/16（签名 POST allowed）→ csp-coverage 33 步 0 违规。线上不再识别 gatu 主机；阶段 5.2–5.4 的线上步骤未做；真机验收未做。",
   "thread": null,
   "baseCommit": "90762177",
-  "commits": ["4c3041bd", "d6033daf", "90762177", "d74dd616"],
+  "commits": ["4c3041bd", "d6033daf", "90762177", "d74dd616", "602cc695"],
   "sources": [
     { "path": "deploy/cloudfront/README.md" },
     { "path": "docs/sairn-domain-cutover-plan.md" },
@@ -58,3 +58,11 @@
 
 - 阶段 5.2–5.4 待用户确认后执行；5.1 已完成，切换方案与 ADR 0032 的状态已随本记录更新。
 - 上一次发布记录：[p27](2026-10-08-cloudfront-release-p27.md)。
+
+## 周整理补注（2026-10-12）
+
+原“阶段 5.2–5.4 未做”由退役清理记录局部更新；p28 后来成为 p30 的回滚版本。旧手动 Deposit 成功的验收只能归属 p28，不能证明 p30 的自动流程。
+
+后续来源：[2026-10-08-gatu-retirement-cleanup](2026-10-08-gatu-retirement-cleanup.md)；[2026-10-11-cloudfront-release-p30](2026-10-11-cloudfront-release-p30.md)。
+
+本补注为事后核对，原正文、失败与验证版本保留。本轮只核对 Git、任务记录和相关当前规范；来源执行结果不视为本次重跑。查询时间与实际 head 见[本周整理](2026-10-12-weekly-memory-review.md)。

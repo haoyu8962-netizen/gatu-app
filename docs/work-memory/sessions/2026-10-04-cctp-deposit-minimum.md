@@ -10,7 +10,7 @@
   "summary": "用户问邮箱存款是否还有 5 USDC 限制。核对 Circle 与 Hyperliquid 文档后确认 5 USDC 是已弃用 Bridge2 的规则，CCTP 存入 HyperCore 没有最低额。用户决定同步 CCTP 规则、窗口不再展示旧桥规则，并把提醒换成只说受支持的网络与资产。实现：最低额为当前最高手续费的两倍（与 CCTP 提款同一规则），由 calculateCctpDepositFee 在审核与执行时强制，测试网自动转入按同一规则等待；提醒文案改为未入账而非丢失。同日经 Codex 审查后补充：低于最低额是带类型的失败并显示在金额输入框，提示值是同一报价会接受的最小金额，Fast 费率超过 10% 的报价按不可用处理。未做真实存款验证。",
   "thread": null,
   "baseCommit": "4191acf7",
-  "commits": ["783f50f0", "0f39c7aa", "03304a61", "c9162005", "6744499e", "cc91a87b"],
+  "commits": ["783f50f0", "0f39c7aa", "03304a61", "c9162005", "6744499e", "cc91a87b", "ab829b4c"],
   "sources": [
     { "path": "docs/cctp-deposits.md" },
     { "path": "apps/terminal/src/lib/trade/cctp-deposit.ts" },

@@ -10,7 +10,7 @@
   "summary": "手机外部钱包点击存款报「钱包未连接到 Arbitrum One」：已确认的缺陷是 use-deposit.ts 的 getProviderChainId 只接受字符串、WalletConnect provider 的 eth_chainId 返回数字，表单侧用 parseChainId 判定正常而提交侧永远不匹配；切链后又立即重读不等 chainChanged；报告所用钱包的连接器类型未记录，所以这是最可能而非已证实的事故原因。对照官方终端打包代码（已登录 Privy 时不预拦截、发交易前 switchChainAsync）后：删除 WrongNetworkScreen 预拦截，提交路径按数字比较、接受后的切链请求不重复（未知链加链后再切一次除外）、以 chainChanged 加轮询并独立计时截止、状态屏显示「正在切换网络」、签名前与广播前各复核链，拒绝与超时走存款失败通知。Codex 三路对抗审查第一轮各 8.0 分的发现（CI 残留登记、等待上限不独立计时、文档「只发一次」过强、根因写成事实、状态传递缺真实测试）已修；未在真实手机钱包上验收。",
   "thread": null,
   "baseCommit": "6da4c15a",
-  "commits": [],
+  "commits": ["422d8408", "7445dd38", "a1f0292b", "9519c7f6", "0c4faea2", "d5bbc7c0", "51364e20", "0fc0cc6b", "b7b22cd3", "605b00fa"],
   "sources": [
     { "path": "apps/terminal/src/lib/hyperliquid/use-deposit.ts" },
     { "path": "apps/terminal/src/components/trade/tradebox/deposit-modal.tsx" },

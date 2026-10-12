@@ -10,7 +10,7 @@
   "summary": "p28 发布后用户说「gatu 相关的产物可以全部清理掉了，不需要等了」。只读核对后执行：5.2 从 API 源站请求策略删除 X-Gatu-Forwarded-Host（ETag ETVPDKIKX0DER → E3UN6WX5RRO2AG，9 个头，/api/geo 仍 200）；5.3 命令行被 lambda:UpdateFunctionConfiguration 拒绝，随后按用户要求在其 Chrome 的 Lambda 控制台改名为 SAIRN_TRUST_VIEWER_ADDRESS=true（保留 IPDATA_API_KEY），读回成功、geo 正常；5.4 命令行被 acm:DeleteCertificate 拒绝、浏览器操作被安全分类器拒绝，用户自己删除了两张 gatu 证书，读回只剩 sairn.ai。删除发布工作树 gatu-release-p24、p25，保留 p26 与 p28。未做：Cloudflare 的 gatu 验证与解析记录、临时 IAM 策略 gatu-edge-domain-cutover 的摘除（无权限读取）。",
   "thread": null,
   "baseCommit": "ae220c41",
-  "commits": [],
+  "commits": ["6b1255a0", "1437eb1e"],
   "sources": [
     { "path": "docs/sairn-domain-cutover-plan.md" },
     { "path": "docs/adr/0032-gatu-offline-cutover-to-sairn.md" },

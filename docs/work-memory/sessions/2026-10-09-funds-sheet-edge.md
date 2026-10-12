@@ -10,7 +10,7 @@
   "summary": "用户在深色主题、窄视口下看到存款弹层与页面同色、看不出是弹窗。原因：资金弹层外壳在手机抽屉上去掉边框（max-[1000px]:!border-0）与阴影，遮罩又压到 bg-scrim/60（实际透明度 0.395），而终端深色主题的 bg-modal 本来就等于页面色，于是只剩 16px 暗条、20px 圆角和把手作为分界；桌面弹窗有 1px 边框与阴影，没有这个问题。按用户对照「建立连接」抽屉的要求，资金外壳改用同样的完整遮罩加 2px 模糊，手机抽屉保留 UI 原语的 1px border-stroke-weak 边框；订单确认弹窗仍用改版交接的 bg-scrim/60，未动。夹具计算样式核对通过；HIP-3 免责声明测试在本机单跑超时且与本改动无关。",
   "thread": null,
   "baseCommit": "805ee5a1",
-  "commits": [],
+  "commits": ["bb1b9652", "7dcd49ee"],
   "sources": [
     { "path": "apps/terminal/src/components/trade/components/funds-modal-shell.tsx" },
     { "path": "apps/terminal/tests/browser/funds-forms.fixture.tsx" },
