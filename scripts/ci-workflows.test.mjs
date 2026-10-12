@@ -184,6 +184,113 @@ test("shards every browser invocation by test, in two jobs", () => {
 	);
 });
 
+test("shards every terminal Vitest step across two jobs and runs the other steps once", () => {
+	const terminalTests = readWorkflow("terminal-tests.yml");
+	const vitestShardFlags = "--maxWorkers=1 --shard=${{ matrix.shard }}/2 --passWithNoTests";
+
+	assert.match(
+		terminalTests,
+		/\n    strategy:\n      fail-fast: false\n      matrix:\n        shard: \[1, 2\]\n    name: /,
+		"the matrix is exactly two shards: an include or exclude entry would drop or add a job",
+	);
+	const invocations = countOccurrences(terminalTests, "exec vitest run");
+	assert.equal(invocations >= 14, true);
+	assert.equal(
+		countOccurrences(terminalTests, `exec vitest run ${vitestShardFlags}`),
+		invocations,
+		"an unsharded Vitest step runs in full in both jobs",
+	);
+
+	const steps = workflowListItems(terminalTests).filter((item) => item.lines.some((line) => /^\s*run:/.test(line)));
+	const onceOnly = steps.filter((step) => {
+		const body = step.lines.join("\n");
+		return /node --test|pnpm test:cloudfront|pnpm brand:check/.test(body);
+	});
+	assert.equal(onceOnly.length, 3, "the release validators, CloudFront tooling and brand check are three steps");
+	for (const step of onceOnly) {
+		assert.equal(
+			step.lines.some((line) => line.trim() === "if: matrix.shard == 1"),
+			true,
+			`${step.lines[0].trim()} would run in both shards`,
+		);
+	}
+	const gated = steps.filter((step) => step.lines.some((line) => line.trim().startsWith("if:")));
+	assert.equal(gated.length, onceOnly.length, "a Vitest step gated to one shard would skip half of its files");
+
+	const allowedFlags = ["--maxWorkers=1", "--passWithNoTests", "--shard=expression/2"];
+	let vitestSteps = 0;
+	for (const { commands } of steps.map(stepCommands)) {
+		for (const command of commands) {
+			const tokens = executableCommand(command)
+				.replace(/\$\{\{.*?\}\}/g, "expression")
+				.split(/\s+/)
+				.filter(Boolean);
+			const start = tokens.findIndex((token, index) => token === "vitest" && tokens[index + 1] === "run");
+			if (start < 0) continue;
+			vitestSteps += 1;
+			const argumentsAfterRun = tokens.slice(start + 2);
+			assert.deepEqual(
+				argumentsAfterRun.filter((token) => token.startsWith("-")).sort(),
+				allowedFlags,
+				"an extra flag such as --exclude can empty a selection that --passWithNoTests then accepts",
+			);
+			const paths = argumentsAfterRun.filter((token) => !token.startsWith("-"));
+			assert.equal(paths.length > 0, true, "a Vitest step without paths runs the whole suite in both shards");
+			for (const listed of paths) {
+				assert.match(
+					listed,
+					/\.test\.tsx?$/,
+					`${listed} exists but is not a test file: Vitest would select nothing for it and still pass`,
+				);
+			}
+		}
+	}
+	assert.equal(vitestSteps, invocations, "a Vitest command behind a shell comment does not run");
+});
+
+test("does not start the browser regressions for a change to unit tests only", () => {
+	const browser = readWorkflow("slider-browser.yml");
+	const paths = [.../^      - "([^"]+)"$/gm[Symbol.matchAll](browser)].map((match) => match[1]);
+	const source = paths.indexOf("apps/terminal/src/**");
+
+	assert.equal(source >= 0, true);
+	for (const excluded of ["!apps/terminal/src/**/*.test.ts", "!apps/terminal/src/**/*.test.tsx"]) {
+		assert.equal(paths.indexOf(excluded) > source, true, `${excluded} must come after the pattern it narrows`);
+	}
+	// GitHub applies the patterns in order and the last one that matches a file decides, so a positive
+	// pattern added after the exclusions would start the workflow for unit tests again.
+	const startsFor = (file) => {
+		let started = false;
+		for (const pattern of paths) {
+			const negated = pattern.startsWith("!");
+			const expression = (negated ? pattern.slice(1) : pattern)
+				.replace(/[.+?^${}()|[\]\\]/g, "\\$&")
+				.replaceAll("**", "\u0000")
+				.replaceAll("*", "[^/]*")
+				.replaceAll("\u0000", ".*");
+			if (new RegExp(`^${expression}$`).test(file)) started = !negated;
+		}
+		return started;
+	};
+	for (const [file, expected] of [
+		["apps/terminal/src/lib/tests/format.test.ts", false],
+		["apps/terminal/src/components/staking/__tests__/staking-view.test.tsx", false],
+		["apps/terminal/src/lib/tests/harness/react.tsx", true],
+		["apps/terminal/src/locales/zh/messages.po", true],
+		["apps/terminal/src/hooks/trade/use-order-entry-data.ts", true],
+		["apps/terminal/tests/browser/account-actions.pw.ts", true],
+		["packages/ui/src/modal.tsx", true],
+		["docs/agent-handbook.md", false],
+	]) {
+		assert.equal(startsFor(file), expected, `${file} ${expected ? "must" : "must not"} start the browser regressions`);
+	}
+	assert.deepEqual(
+		paths.filter((path) => path.startsWith("!")),
+		["!apps/terminal/src/**/*.test.ts", "!apps/terminal/src/**/*.test.tsx"],
+		"only *.test files are excluded: fixtures import src/lib/tests/harness, and catalogs change rendered text",
+	);
+});
+
 test("keeps the merged static checks in one job", () => {
 	const staticChecks = readWorkflow("static-checks.yml");
 

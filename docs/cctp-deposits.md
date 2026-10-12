@@ -311,6 +311,24 @@ hash, or a submitted one whose failure is not a definitive source failure, is a
 persistent `Deposit status unknown` warning with the no-hash or submitted
 explanation, never `Automatic USDC deposit failed`.
 
+The host is eligible only while the session's legal status is known and allows
+actions (`userAllowed`, `canPerformActions` and `acceptedTerms`, from the same
+`useLegalStatus` query the policy dialog uses): before that it reads no balance,
+starts no attempt and shows no notice, and it starts by itself once the terms are
+accepted. Until 2026-10-12 it attempted first, failed the legal check, reported a
+failure and stayed latched until the balance changed. The execution-boundary legal
+check also names the account it is about to sign for (`owner: ready.address`); if the
+selected owner is a different account the check fails before any request or
+signature, for the automatic and the manual paths alike. While a sponsored
+authorization intent of an earlier attempt is unresolved the host starts no new
+attempt, so a balance change cannot replace the persistent unknown-status warning
+with the "previous authorization is still active" failure of an attempt that could
+never sign. The host checks again one second after that authorization's
+`validBefore`, so the same balance is deposited once it has expired, without waiting
+for a balance change or a reload. An attempt that is still waiting for the browser
+lock or the balance refresh is dropped if the legal status stops allowing actions
+before it submits.
+
 The host stays mounted outside the dialog: closing Done does not cancel its
 work, and restoring an eligible email session also processes an existing balance.
 It runs only while the application page is running; closing all pages does not

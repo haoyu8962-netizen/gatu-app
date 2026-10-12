@@ -1,4 +1,5 @@
 import { useLingui } from "@lingui/react/macro";
+import { useRef } from "react";
 import { SIDE_LABELS } from "@/config/trade-panel-labels";
 import type { SideLabels } from "@/config/ui-text";
 import { getSpotAvailableValue, getSpotBalance } from "@/domain/trade/balances";
@@ -41,6 +42,8 @@ interface OrderEntryData extends OrderEntryDerived {
 	sideLabels: SideLabels;
 
 	applySizePercent: (pct: number) => void;
+	beginSizePercentGesture: () => void;
+	endSizePercentGesture: () => void;
 	toggleSizeDenomination: () => void;
 
 	leverage: number;
@@ -77,6 +80,16 @@ interface UseOrderEntryDataOptions {
 	/** Limit price for limit-priced order types; when > 0 it drives size/value conversion instead of mark. */
 	limitPx?: number;
 	marketOrderSizing: MarketOrderSizingInput | null;
+}
+
+interface SizePercentBasis {
+	isSpotMarket: boolean;
+	sizeMode: SizeMode;
+	price: number;
+	maxSize: number;
+	spotBalance: OrderEntryDerived["spotBalance"];
+	szDecimals: number;
+	reduceOnlyMaxBase: string;
 }
 
 export function useOrderEntryData({
@@ -203,16 +216,37 @@ export function useOrderEntryData({
 		marketOrderSizing,
 	});
 
+	const sizePercentBasisRef = useRef<SizePercentBasis | null>(null);
+	const currentSizePercentBasis: SizePercentBasis = {
+		isSpotMarket: derived.isSpotMarket,
+		sizeMode,
+		price: conversionPrice,
+		maxSize: derived.maxSize,
+		spotBalance: derived.spotBalance,
+		szDecimals: derived.szDecimals,
+		reduceOnlyMaxBase: derived.reduceOnlyCapacity.maxBase,
+	};
+	function beginSizePercentGesture() {
+		sizePercentBasisRef.current = currentSizePercentBasis;
+	}
+	function endSizePercentGesture() {
+		sizePercentBasisRef.current = null;
+	}
+	function getSizePercentBasis(): SizePercentBasis {
+		return sizePercentBasisRef.current ?? currentSizePercentBasis;
+	}
+
 	function getSizeForPercent(pct: number): string {
+		const basis = getSizePercentBasis();
 		return getSizeForPercentCalc({
 			pct,
-			isSpotMarket: derived.isSpotMarket,
+			isSpotMarket: basis.isSpotMarket,
 			side,
-			sizeMode,
-			price: conversionPrice,
-			maxSize: derived.maxSize,
-			spotBalance: derived.spotBalance,
-			szDecimals: derived.szDecimals,
+			sizeMode: basis.sizeMode,
+			price: basis.price,
+			maxSize: basis.maxSize,
+			spotBalance: basis.spotBalance,
+			szDecimals: basis.szDecimals,
 		});
 	}
 
@@ -227,12 +261,13 @@ export function useOrderEntryData({
 
 	function applySizePercent(pct: number) {
 		if (effectiveReduceOnly) {
+			const basis = getSizePercentBasis();
 			const selection = getReduceOnlySizeSelection(
-				derived.reduceOnlyCapacity.maxBase,
+				basis.reduceOnlyMaxBase,
 				pct,
-				sizeMode,
-				conversionPrice,
-				derived.szDecimals,
+				basis.sizeMode,
+				basis.price,
+				basis.szDecimals,
 			);
 			if (selection)
 				setSizeSelection(selection.size, { context: `${sizeContext}:${sizeMode}`, baseSize: selection.baseSize });
@@ -257,6 +292,8 @@ export function useOrderEntryData({
 	}
 	return {
 		applySizePercent,
+		beginSizePercentGesture,
+		endSizePercentGesture,
 		toggleSizeDenomination,
 		accountAbstraction,
 		isConnected,

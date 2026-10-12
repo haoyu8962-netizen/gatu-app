@@ -201,6 +201,8 @@ export function TradePanel() {
 		orderValue,
 		sideLabels,
 		applySizePercent,
+		beginSizePercentGesture,
+		endSizePercentGesture,
 		toggleSizeDenomination,
 		leverage,
 		leverageInteractionIdentity,
@@ -339,6 +341,8 @@ export function TradePanel() {
 	const sizeInteractionRef = useRef(false);
 	function handleSizeInteractionChange(active: boolean) {
 		sizeInteractionRef.current = active;
+		if (active) beginSizePercentGesture();
+		else endSizePercentGesture();
 	}
 
 	const { open: openDepositModal } = useDepositModalActions();

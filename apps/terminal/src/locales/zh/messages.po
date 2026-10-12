@@ -368,6 +368,10 @@ msgstr "其中一个市场存在正在执行的 TWAP 委托。"
 msgid "A valid code may unlock the active referral fee discount."
 msgstr "有效的推荐码可能会启用当前推荐手续费折扣。"
 
+#: src/components/trade/components/global-settings-modal.tsx
+msgid "About"
+msgstr "关于"
+
 #: src/components/vaults/vault-detail-view.tsx
 msgid "About this Vault"
 msgstr "关于此金库"
@@ -2351,6 +2355,10 @@ msgstr "复制推荐链接"
 #: src/components/trade/mobile/mobile-market-bar.tsx
 msgid "Copy token address"
 msgstr "复制代币地址"
+
+#: src/components/trade/components/global-settings-modal.tsx
+msgid "Copy version"
+msgstr "复制版本"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Could not check on Hyperliquid whether trading is activated. Nothing was signed. Try again."
@@ -7114,6 +7122,10 @@ msgstr "因未平仓量上限而被拒绝"
 msgid "Rejected due to too many open orders"
 msgstr "因当前委托过多而被拒绝"
 
+#: src/components/trade/components/global-settings-modal.tsx
+msgid "Release {APP_RELEASE_ID}"
+msgstr "发布 {APP_RELEASE_ID}"
+
 #: src/components/trade/header/user-menu.tsx
 #: src/components/trade/header/user-menu.tsx
 #: src/components/ui/lazy-dialog-boundary.tsx
@@ -10972,6 +10984,10 @@ msgstr "正在验证结果"
 #: src/lib/trade/use-button-content.ts
 msgid "Verifying..."
 msgstr "验证中..."
+
+#: src/components/trade/components/global-settings-modal.tsx
+msgid "Version"
+msgstr "版本"
 
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx

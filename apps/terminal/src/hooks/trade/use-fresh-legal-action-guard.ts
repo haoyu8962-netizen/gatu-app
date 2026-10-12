@@ -10,6 +10,8 @@ import { isAddress } from "viem";
 
 interface LegalActionIdentity {
 	env: HyperliquidEnv;
+	/** The account the write is about to sign for; the selected owner must be this account. */
+	owner?: string;
 }
 
 interface CurrentLegalActionIdentity {
@@ -30,7 +32,8 @@ function createLegalIdentityUnavailableError(): LegalActionNotAllowedError {
 
 /**
  * Performs an online legal-status preflight for a funds write and rejects a
- * result if the active owner or environment changed while the request ran.
+ * result if the active owner or environment changed while the request ran,
+ * or if the selected owner is not the account the write signs for.
  */
 export function useFreshLegalActionGuard() {
 	const queryClient = useQueryClient();
@@ -39,10 +42,13 @@ export function useFreshLegalActionGuard() {
 	currentIdentityRef.current = { clientKey, env, info, sessionMode };
 
 	const verify = useCallback(
-		async ({ env: expectedEnv }: LegalActionIdentity): Promise<void> => {
+		async ({ env: expectedEnv, owner: expectedOwner }: LegalActionIdentity): Promise<void> => {
 			const before = currentIdentityRef.current;
 			const owner = getSelectedLegalOwner(before, expectedEnv);
 			if (!owner) throw createLegalIdentityUnavailableError();
+			if (expectedOwner !== undefined && owner !== expectedOwner.toLowerCase()) {
+				throw createLegalIdentityUnavailableError();
+			}
 
 			await verifyLegalActionAllowed({
 				queryClient,

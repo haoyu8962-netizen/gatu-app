@@ -216,6 +216,8 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 	const sizeInteractionRef = useRef(false);
 	function handleSizeInteractionChange(active: boolean) {
 		sizeInteractionRef.current = active;
+		if (active) beginSizePercentGesture();
+		else endSizePercentGesture();
 	}
 	const limitPriceInput = useLimitPrice();
 	const reduceOnlyChecked = useReduceOnly();
@@ -298,6 +300,8 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 		orderValue,
 		sideLabels,
 		applySizePercent,
+		beginSizePercentGesture,
+		endSizePercentGesture,
 		toggleSizeDenomination,
 		leverage,
 		leverageInteractionIdentity,

@@ -31,6 +31,7 @@
 - 分支流向见 [ADR 0016](adr/0016-dev-first-pull-requests-and-ci-tiers.md) 与 [git 规则](../.claude/rules/git.md)：功能分支进 `dev`，`dev` 用 merge commit 晋升到 `main`。任务记录与 ADR 引用分支上的提交号，所以不能 squash 或 rebase。新分支用 `git switch --no-track -c <name> origin/dev`，`--no-track` 防止误推到 `dev`。`main` 比 `dev` 多出几个晋升合并提交属于正常。
 - **合并 PR 之前**先读机器人的审查意见：`gh api repos/zora4523-bot/gatu-app/pulls/<N>/comments` 与 `.../reviews`。没有开 Auto-fix 的 PR 收到意见时不会有任何通知。逐条对照代码核实后再决定改不改，机器人也会出错：2026-10-03 PR #74 的 P2 把 `dev` 的状态当成了 `main` 的，用 `git merge-base` 核对后确认不成立。
 - **CI 成本**：GitHub Actions 额度是每月 3,000 分钟。代码 PR 每推送一次约 33 计费分钟（2026-09-20 PR #32 合入后实测）。工作流都按路径过滤，只改 `docs/`、`notes/`、`.claude/`、`.agents/` 或根目录 Markdown 的 PR 不触发任何检查，`gh pr checks` 显示 no checks reported，可以直接合并。改 `apps/**`（包括其中的 README）、`deploy/**`、`brand/**`、`legal/**` 会触发构建和测试。纯文档补记随下一个 PR 带上。进 `main` 的 PR 另外跑配对开关打开的构建。
+- **少跑一轮的做法**（2026-10-12 与运营方商定）：一个代码 PR 尽量只推一次。开 PR 前在工作树跑完改动文件的 Biome、`typecheck`、`node --test scripts/*.test.mjs`（改了工作流或脚本时）和**全量终端 Vitest**（`pnpm --filter @sairn/terminal test --maxWorkers=4`，2026-10-12 实测 678 个文件约 3 分钟；CI 只跑手选清单，定向测试两次漏掉了清单外或自己没想到的文件：#103 的预算测试、#104 的 `embedded-deposit-auto-bridge-sonner`），涉及滑杆、资金、下单的再跑对应浏览器套件；推送后先等一两分钟看 Codex 机器人的评论，成立的和 CI 失败一起改，攒成第二次推送，不要一条评论推一次。代码 PR 的 CI 跑完后如果只剩文档补记，另开一个不触发工作流的文档 PR，不要为它再推一次代码分支。`Terminal Tests` 与浏览器回归各两片并行，一轮等待约等于较慢的那一片；只改 `*.test.ts(x)` 的 PR 不跑浏览器回归（[ADR 0016](adr/0016-dev-first-pull-requests-and-ci-tiers.md) 2026-10-12 补记）。
 - **CI 秒失败**：所有 job 十几秒内失败且 steps=0 时，先看 `gh api repos/zora4523-bot/gatu-app/check-runs/<job id>/annotations`。注解如果是额度或预算拒绝（spending limit、Actions budget），就不是代码问题。预算只能由运营方在 GitHub 账户设置里调整，调整后约 3 分钟才生效，先 rerun 最便宜的工作流来探测。
 - **Claude Code 工作流**：`claude.yml` 在评论里出现 @claude 时运行，需要仓库密钥 `CLAUDE_CODE_OAUTH_TOKEN`；`Claude Code Review` 工作流已手动停用。2026-10-08 查询时仓库没有任何 Actions 密钥，所以 @claude 目前不能用；要启用，由运营方用自己的 Claude 账号生成令牌后写入。
 - **集成 PR**（把多个完成的分支合成一个 PR）：
@@ -59,7 +60,7 @@
 ## 5. 本地运行与浏览器验证
 
 - `.claude/launch.json` 定义了开发服务器：`terminal`（3005）、`terminal-card-funding` 与 `terminal-pairing`（同为 3005，分别打开对应开关）、`terminal-inspect`（3015）、`terminal-3006`、`funds-forms-fixture`（4187，不需要钱包的资金表单夹具）、`terminal-spa`（3030，构建产物的静态服务）、`website`（3010）。本地钱包登录用 3005：2026-10-03 运营方在 Chrome 里用它登录成功；3015 曾因 Privy 的 `frame-ancestors` 拒绝而登录失败；2026-10-02 读线上 Privy 应用的公开配置时还没有 localhost 来源。登录失败时先核对 Privy 控制台里的允许来源。默认的 `terminal` 不带银行卡入金开关，要看到「Buy USDC with a card」入口用 `terminal-card-funding`。
-- 会话开在主检出时，`preview_start {name}` 读主检出的 `launch.json`，跑的也是主检出的代码。要预览工作树里的改动，先在后台运行 `pnpm --dir <工作树>/apps/terminal exec vite dev --port <空闲端口> --strictPort`，再用 `preview_start {url}` 打开，并用页脚的 `v0.1.0+<sha>` 和 `lsof -a -p <pid> -d cwd` 核对跑的是哪份代码。找监听进程用 `lsof -nP -iTCP:<端口> -sTCP:LISTEN -t`；`lsof -ti :<端口>` 会把浏览器的连接也列出来，按它杀进程会误杀。
+- 会话开在主检出时，`preview_start {name}` 读主检出的 `launch.json`，跑的也是主检出的代码。要预览工作树里的改动，先在后台运行 `pnpm --dir <工作树>/apps/terminal exec vite dev --port <空闲端口> --strictPort`，再用 `preview_start {url}` 打开，并用设置弹窗「About」里的版本（`<发布号> · <sha>`，本地为 `dev`；行情尚未就绪、Settings 不可用时页脚会临时显示同一标识）和 `lsof -a -p <pid> -d cwd` 核对跑的是哪份代码。找监听进程用 `lsof -nP -iTCP:<端口> -sTCP:LISTEN -t`；`lsof -ti :<端口>` 会把浏览器的连接也列出来，按它杀进程会误杀。
 - **页面隐藏伪影**：内置浏览器面板没有显示，或 Chrome 窗口被遮挡时，`document.visibilityState` 是 `hidden`。表现为订单簿一直等待，图表图例显示 ∅ 而页头价格在动，启动闸门停在加载播报，`setTimeout` 被对齐到 1 秒，过渡动画停在半透明。原因是 hl-react 在隐藏时缓冲非用户数据流，TradingView 隐藏时不绘制。看到这些先读 `visibilityState`，不要当缺陷排查（[ADR 0005 已知局限](adr/0005-spa-static-shell.md)）。面板隐藏时 `resize_window` 也改变不了布局视口。
 - **无头取证**：面板隐藏又需要页面证据时，用仓库里的 Playwright 无头打开页面读计算样式，加载方式是 `require(require.resolve("@playwright/test", { paths: ["<仓库>/apps/terminal"] }))`。报告里写明是脚本读取，不是真人查看。仪表盘的真实路由是驼峰写法并带地址，例如 `/fundingComparison`、`/tradeHistory/<地址>`。`apps/terminal/tests/browser/` 下有现成脚本，例如 `csp-coverage.mjs`、`boot-milestones.mjs`、`dashboard-surface-audit.mjs`。
 - **弹出窗口**：Claude 桌面应用的内置浏览器不允许页面打开新窗口，所以 Privy 非 Stripe 服务商的购买窗口在面板里会报「Unable to open payment window」。钱包连接与购买流程在 Chrome 里验证（Claude in Chrome 或运营方本人操作）。
@@ -92,6 +93,8 @@
 ## 7. 对抗审查（Codex CLI）
 
 运营方常要求「用 Codex 对抗审查至少 N 轮、评分大于 X」。做法如下。
+
+- **默认做法（运营方 2026-10-12 决定）**：每个代码 PR 在推送之前先跑一轮下面的只读审查，强度用 `low`（运营方原话是「轻度」），成立的发现先改再推；针对审查意见写的修复提交也要进这一轮。纯文档 PR 不需要。原因：GitHub 上的 `chatgpt-codex-connector` 机器人只在 PR 开启时审首个提交，之后推送的提交没有人复审（2026-10-11 的 #97、#101、#102、#103 都是这样合入的，事后才补审）。运营方点名轮数或评分线时，按点名的来。
 
 - 命令（只读、非交互）：
 

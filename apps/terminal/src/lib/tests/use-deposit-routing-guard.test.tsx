@@ -166,6 +166,7 @@ vi.mock("@sairn/hl-react", () => ({
 		sessionMode: "wallet",
 	}),
 	useInfo: vi.fn(() => ({ data: testState.routingResponse, isError: false, isFetching: false })),
+	useLegalStatus: () => ({ data: { userAllowed: true, canPerformActions: true, acceptedTerms: true } }),
 	verifyLegalActionAllowed: (options: unknown) => testState.verifyLegalAction(options),
 }));
 
@@ -1667,6 +1668,18 @@ describe("useDeposit fresh USDC route guard", () => {
 		expect(testState.permitSign).not.toHaveBeenCalled();
 		expect(testState.smartSendTransaction).not.toHaveBeenCalled();
 		expect(capturedDeposit?.error?.message).toBe("Hyperliquid access could not be verified before this action");
+	});
+
+	it("does not sign an automatic authorization when the selected owner is not the wallet that would sign", async () => {
+		testState.routingResponse = { depositRoute: "cctp", withdrawalRoute: "cctp" };
+		stubSuccessfulCctpCapacity();
+		testState.selectedOwner = SECOND_WALLET_ADDRESS;
+
+		await submit("smart", "cctp", null, "automatic");
+
+		expect(testState.verifyLegalAction).not.toHaveBeenCalled();
+		expect(testState.permitSign).not.toHaveBeenCalled();
+		expect(testState.smartSendTransaction).not.toHaveBeenCalled();
 	});
 
 	it("aborts an automatic mainnet sponsored deposit before signing when the locked balance differs", async () => {

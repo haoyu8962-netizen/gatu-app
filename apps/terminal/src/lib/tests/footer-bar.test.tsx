@@ -8,6 +8,7 @@ import type { Root } from "react-dom/client";
 import { renderToString } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { FooterBar, type FooterBarMode } from "@/components/trade/footer/footer-bar";
+import { APP_RELEASE_LABEL } from "@/config/app";
 import { formatTime } from "@/lib/format";
 import { LOADING_INDICATOR_SELECTOR } from "./harness/loading-indicator";
 import { createI18nRoot } from "./harness/react";
@@ -114,6 +115,7 @@ describe("FooterBar", () => {
 		expect(document.activeElement).not.toBe(commandButton);
 		act(() => commandButton.click());
 		expect(testState.openCommandMenu).not.toHaveBeenCalled();
+		expect(container.querySelector("footer .font-mono")?.textContent).toBe(APP_RELEASE_LABEL);
 	});
 
 	it("opens the command menu once in the default mode without hiding status or legal links", () => {
@@ -127,12 +129,14 @@ describe("FooterBar", () => {
 		expect(testState.openCommandMenu).toHaveBeenCalledTimes(1);
 	});
 
-	it("retains both divider rules and supplies a visible runtime clock", () => {
+	it("keeps one divider rule before a visible runtime clock and shows no build version", () => {
 		renderFooter("default");
-		expect(container.querySelectorAll("footer .border-l")).toHaveLength(2);
+		expect(container.querySelectorAll("footer .border-l")).toHaveLength(1);
 		const clock = container.querySelector("footer .tabular-nums");
 		expect(clock?.classList.contains("invisible")).toBe(false);
 		expect(clock?.textContent).toMatch(/\d/);
+		expect(container.querySelector("footer")?.textContent).not.toMatch(/v\d+\.\d+\.\d+/);
+		expect(container.querySelector("footer .font-mono")).toBeNull();
 	});
 
 	describe("clock", () => {

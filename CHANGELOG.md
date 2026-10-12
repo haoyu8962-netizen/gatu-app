@@ -58,6 +58,12 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Changed
 
+- The build version has moved from the footer to the Settings dialog: a new About section shows the
+  release and short commit (for example `p30 · ff11eee5`, or `dev` in a local build) with the full
+  release ID beneath it, and clicking it copies the complete version. The footer keeps the
+  connection status, the command-menu shortcut, the links and the clock, and shows the same
+  build label only while market data is still loading and Settings cannot be opened.
+
 - Every dialog now dims the page behind it the same way, following the official terminal: a phone
   sheet sits on a stronger navy-dark scrim without a border, and a desktop dialog keeps its thin
   border on a lighter scrim with a slight blur. Before, each dialog chose its own scrim and the
@@ -549,6 +555,18 @@ changes, not evidence that a build has been deployed or accepted on real devices
   says so, together with the expiry date and the desktop revoke path.
 
 ### Fixed
+
+- Automatic email-wallet deposits now wait until your terms acceptance and access status are
+  confirmed instead of trying first and reporting a failure; they start by themselves once the
+  terms are accepted. The legal check before signing is tied to the exact wallet that signs, and
+  while an earlier deposit authorization is still unresolved no new attempt starts, so its
+  "status unknown" notice stays visible.
+
+- Dragging the size slider no longer makes the quantity flicker between neighbouring lots on
+  markets with a small maximum (for example HYPE): the percentage is applied to the maximum
+  and price captured when the drag starts, instead of to every price tick that arrives during
+  the drag. Validation still checks the live maximum when the order is placed. In quote
+  denomination the amount shown in the size field stays the amount the order is placed for.
 
 - A sponsored deposit that returns no transaction hash now says its submission is unconfirmed,
   instead of claiming an Arbitrum transaction was submitted. An active unresolved authorization

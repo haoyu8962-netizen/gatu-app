@@ -226,6 +226,31 @@ The official HYPE sample had maximum 0.69 at price 84.292: requesting 35% produc
 0.24 (display 35%); 63% produced 0.43 (display 62%); 1% produced zero; 100% produced
 0.69. These are precision examples, not current market data or pricing assumptions.
 
+The order forms freeze the percentage's basis for the life of a gesture. The
+maximum size of a perp comes from `activeAssetData.maxTradeSzs` and the conversion
+price from the mark price, and both tick several times a second; until 2026-10-12
+every 15ms preview multiplied the requested percentage by the basis of that moment,
+so a thumb that did not move produced different quantities as the maximum ticked,
+and on markets whose lot is a few percent of the maximum (HYPE with a 0.01 lot and a
+0.3 maximum) the displayed quantity flipped between neighbouring lots while the
+pointer was still. `useOrderEntryData` now captures `maxSize`, the conversion price,
+the spot balance, `szDecimals`, the size mode and the Reduce Only maximum at
+`onInteractionStart` and uses that basis for every preview and for the commit;
+`onInteractionEnd` releases it, so typed percentages, the Max button and the next
+gesture use live data again. In quote denomination the frozen basis keeps the displayed quote
+amount steady, and that amount is what the order commits to: `deriveOrderEntry`
+converts it to base with the live price, exactly as for a typed quote amount, so the
+size field, the order value and the submitted quantity always share one price. A
+version that also pinned the base quantity of the gesture (2026-10-12, PR #102) was
+withdrawn the same day: after release the field kept the old quote amount while the
+order used the pinned base at the new price, so the displayed amount and the order
+value drifted apart. Only Reduce Only keeps a base-quantity source, because its
+quote text is presentation of a position-bounded base size. The committed quantity is exactly the previewed one;
+validation and the execution guard still read the live maximum, so a maximum that
+fell during a long drag is reported as insufficient balance after release, not
+hidden by a silently smaller order. `order-entry-percent-basis` pins this with the
+real hook and a ticking maximum.
+
 Small maximum quantities make this rounding visible as large steps. With maximum
 `0.003` and `szDecimals = 3`, requests from 63% through 66% still produce `0.001`
 and an actual percentage of 33.33%; 67% produces `0.002`, and 20% produces zero.

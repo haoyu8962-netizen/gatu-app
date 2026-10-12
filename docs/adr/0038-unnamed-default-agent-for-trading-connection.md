@@ -1,6 +1,6 @@
 # ADR 0038：普通交易连接改用无名默认 Agent，按 `userRole` 校验
 
-- 状态：已接受并实施（2026-10-09，分支 `claude/unnamed-default-agent`，基于 `dev` `4c5ff959`）；未推送、未合入、未发布；真实外部钱包的授权与首单验收未做。
+- 状态：已接受并实施（2026-10-09，分支 `claude/unnamed-default-agent`，基于 `dev` `4c5ff959`）；2026-10-09 经 PR #91 合入 `dev`、2026-10-11 随 PR #96 晋升 `main`（`ff11eee5`）并随 p30 发布；真实外部钱包的授权与首单验收未做。
 - 关联：[首次交易](../trading-onboarding.md)「Establish an external-wallet trading connection」与「Stay Connected」；[签名机制](../hyperliquid-signing.md)「Agent Wallet Pattern」；[ADR 0027](0027-brand-single-source-and-identifier-rename.md)「后果与边界」里的 `sairn` 命名槽位（本 ADR 取代）；[ADR 0015](0015-link-device-alignment.md)（Link mobile device 的命名 `Mobile` Agent 不变）；[ADR 0024](0024-translate-action-errors-at-render.md)（交易所原文翻译规则）；[任务记录](../work-memory/sessions/2026-10-09-unnamed-default-agent.md)。
 
 ## 背景与约束

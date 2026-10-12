@@ -67,6 +67,12 @@ vi.mock("@/hooks/trade/use-cctp-deposit-fee", () => {
 vi.mock("@/lib/trade/cctp-deposit", () => ({
 	meetsCctpDepositMinimum: (amountRaw: bigint) => amountRaw >= 400_000n,
 }));
+vi.mock("@sairn/hl-react", () => ({
+	useLegalStatus: () => ({ data: { userAllowed: true, canPerformActions: true, acceptedTerms: true } }),
+}));
+vi.mock("@/lib/trade/cctp-deposit-tracking", () => ({
+	readCctpSponsoredAuthorizationIntent: () => null,
+}));
 vi.mock("@/lib/hyperliquid/use-deposit", () => ({
 	useDeposit: () => ({
 		maxDepositRaw: 0n,
