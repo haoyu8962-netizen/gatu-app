@@ -7123,8 +7123,8 @@ msgid "Rejected due to too many open orders"
 msgstr "因当前委托过多而被拒绝"
 
 #: src/components/trade/components/global-settings-modal.tsx
-msgid "Release {APP_RELEASE_ID}"
-msgstr "发布 {APP_RELEASE_ID}"
+#~ msgid "Release {APP_RELEASE_ID}"
+#~ msgstr "发布 {APP_RELEASE_ID}"
 
 #: src/components/trade/header/user-menu.tsx
 #: src/components/trade/header/user-menu.tsx

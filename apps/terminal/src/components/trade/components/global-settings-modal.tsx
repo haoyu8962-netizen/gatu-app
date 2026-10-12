@@ -16,7 +16,7 @@ import type { ChangeEvent, ReactNode } from "react";
 import { useId, useReducer, useState } from "react";
 import { toast } from "sonner";
 import { NumberInput } from "@/components/ui/number-input";
-import { APP_BUILD_COMMIT, APP_RELEASE_ID, APP_RELEASE_LABEL, APP_RELEASE_TAG, APP_VERSION } from "@/config/app";
+import { APP_BUILD_COMMIT, APP_RELEASE_ID, APP_RELEASE_LABEL, APP_VERSION } from "@/config/app";
 import { resetDesktopGridLayouts } from "@/config/desktop-grid-layout";
 import { MARKET_ORDER_SLIPPAGE_MAX_PERCENT, MARKET_ORDER_SLIPPAGE_MIN_PERCENT } from "@/config/trade";
 import { useCopyToClipboard } from "@/hooks/ui/use-copy-to-clipboard";
@@ -243,10 +243,7 @@ export function GlobalSettingsModal() {
 						</SettingRow>
 					</SettingsGroup>
 					<SettingsGroup label={t`About`}>
-						<SettingRow
-							label={t`Version`}
-							hint={APP_RELEASE_TAG === APP_RELEASE_ID ? undefined : t`Release ${APP_RELEASE_ID}`}
-						>
+						<SettingRow label={t`Version`}>
 							<button
 								type="button"
 								onClick={() => void copyVersion(`${APP_VERSION} ${APP_RELEASE_ID} ${APP_BUILD_COMMIT}`)}

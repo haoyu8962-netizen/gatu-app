@@ -9,7 +9,7 @@ export const APP_VERSION =
 		? `v${APP_RELEASE_VERSION}-dev`
 		: `v${APP_RELEASE_VERSION}+${APP_BUILD_COMMIT.slice(0, 8)}`;
 const RELEASE_TAG_PATTERN = /-(p\d+[a-z]?)$/;
-export const APP_RELEASE_TAG = APP_RELEASE_ID.match(RELEASE_TAG_PATTERN)?.[1] ?? APP_RELEASE_ID;
+const APP_RELEASE_TAG = APP_RELEASE_ID.match(RELEASE_TAG_PATTERN)?.[1] ?? APP_RELEASE_ID;
 export const APP_RELEASE_LABEL =
 	APP_BUILD_COMMIT === "dev" ? "dev" : `${APP_RELEASE_TAG} · ${APP_BUILD_COMMIT.slice(0, 8)}`;
 

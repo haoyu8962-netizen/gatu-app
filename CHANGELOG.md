@@ -59,8 +59,8 @@ changes, not evidence that a build has been deployed or accepted on real devices
 ### Changed
 
 - The build version has moved from the footer to the Settings dialog: a new About section shows the
-  release and short commit (for example `p30 · ff11eee5`, or `dev` in a local build) with the full
-  release ID beneath it, and clicking it copies the complete version. The footer keeps the
+  release and short commit (for example `p30 · ff11eee5`, or `dev` in a local build), and clicking
+  it copies the complete version with the full release ID. The footer keeps the
   connection status, the command-menu shortcut, the links and the clock, and shows the same
   build label only while market data is still loading and Settings cannot be opened.
 

@@ -88,6 +88,14 @@ vi.mock("@/components/ui/number-input", () => ({
 	},
 }));
 
+vi.mock("@/config/app", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/config/app")>()),
+	APP_BUILD_COMMIT: "74e69f77d0d154fdd48b128fc5face3a70b6bcc7",
+	APP_RELEASE_ID: "cloudfront-2026-10-12-p31",
+	APP_RELEASE_LABEL: "p31 · 74e69f77",
+	APP_VERSION: "v0.1.0+74e69f77",
+}));
+
 vi.mock("@/hooks/use-mobile", () => ({
 	useIsMobile: () => testState.isMobile,
 }));
@@ -123,7 +131,7 @@ vi.mock("@/stores/use-global-settings-store", () => ({
 }));
 
 import { GlobalSettingsModal } from "@/components/trade/components/global-settings-modal";
-import { APP_BUILD_COMMIT, APP_RELEASE_ID, APP_RELEASE_LABEL, APP_RELEASE_TAG, APP_VERSION } from "@/config/app";
+import { APP_BUILD_COMMIT, APP_RELEASE_ID, APP_RELEASE_LABEL, APP_VERSION } from "@/config/app";
 import { notifyNumberFormatChange } from "@/lib/number-format-reactivity";
 
 describe("GlobalSettingsModal", () => {
@@ -342,7 +350,8 @@ describe("GlobalSettingsModal", () => {
 		expect(container.textContent).toContain("Version");
 		const button = container.querySelector<HTMLButtonElement>('button[aria-label="Copy version"]');
 		expect(button?.textContent).toBe(APP_RELEASE_LABEL);
-		expect(container.textContent?.includes(`Release ${APP_RELEASE_ID}`)).toBe(APP_RELEASE_TAG !== APP_RELEASE_ID);
+		expect(container.textContent).not.toContain(APP_RELEASE_ID);
+		expect(container.textContent).not.toContain("Release ");
 		await act(async () => {
 			button?.click();
 		});
