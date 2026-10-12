@@ -11,6 +11,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AccountModeModal } from "@/components/trade/tradebox/account-mode-modal";
 import { LocalizedActionError } from "@/lib/errors/localized-action-error";
+import { clearAccountModeSetup, publishAccountModeSetup } from "@/stores/use-account-mode-setup-store";
 import { LOADING_INDICATOR_SELECTOR } from "./harness/loading-indicator";
 
 const zhTranslations: Record<string, string> = {
@@ -66,6 +67,7 @@ describe("AccountModeModal", () => {
 		clearFeedback();
 		act(() => root.unmount());
 		container.remove();
+		clearAccountModeSetup("0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
 	});
 
 	it("shows the account type disabled with the desktop-required reason in an Agent-only session", () => {
@@ -185,7 +187,8 @@ describe("AccountModeModal", () => {
 		expect(feedbackText("success")).toBe("Switched to Unified account");
 	});
 
-	it("requires an explicit supported selection for the protocol default", async () => {
+	it("preselects Unified account for a protocol default that needs a manual choice", async () => {
+		publishAccountModeSetup(feedbackIdentity.clientKey, "manual");
 		const onApply = vi.fn().mockResolvedValue(undefined);
 		act(() =>
 			root.render(
@@ -199,16 +202,100 @@ describe("AccountModeModal", () => {
 		expect(options.every((option) => !option.disabled)).toBe(false);
 		const unifiedOption = options.find((button) => button.textContent?.includes("Unified account"));
 		expect(unifiedOption?.disabled).toBe(false);
+		expect(options.filter((option) => option.getAttribute("aria-pressed") === "true")).toEqual([unifiedOption]);
+		expect(options.some((option) => option.textContent?.includes("Current"))).toBe(false);
+		expect(document.body.textContent).toContain(
+			"Select a supported account mode before using balances or moving funds.",
+		);
+		expect(document.body.textContent).not.toContain("New accounts are set to Unified account automatically");
+
+		const confirmButton = [...document.body.querySelectorAll<HTMLButtonElement>("button")].find(
+			(button) => button.textContent?.trim() === "Confirm",
+		);
+		expect(confirmButton?.disabled).toBe(false);
+		await act(async () => confirmButton?.click());
+		expect(onApply).toHaveBeenCalledWith("unifiedAccount");
+	});
+
+	it("still requires an explicit selection for the legacy DEX mode", () => {
+		act(() =>
+			root.render(
+				<I18nProvider i18n={i18n}>
+					<AccountModeModal open onOpenChange={() => {}} currentMode="dexAbstraction" canChange onApply={vi.fn()} />
+				</I18nProvider>,
+			),
+		);
+
+		const options = [...document.body.querySelectorAll<HTMLButtonElement>("button[aria-pressed]")];
 		expect(options.some((option) => option.getAttribute("aria-pressed") === "true")).toBe(false);
 		expect(document.body.textContent).toContain(
 			"Select a supported account mode before using balances or moving funds.",
 		);
-
-		act(() => unifiedOption?.click());
 		const confirmButton = [...document.body.querySelectorAll<HTMLButtonElement>("button")].find(
 			(button) => button.textContent?.trim() === "Confirm",
 		);
-		await act(async () => confirmButton?.click());
+		expect(confirmButton?.disabled).toBe(true);
+	});
+
+	it.each(["awaiting-funds", "pending", undefined] as const)(
+		"shows Unified account without offering a choice while the automatic setup is %s",
+		async (setup) => {
+			if (setup) publishAccountModeSetup(feedbackIdentity.clientKey, setup);
+			const onApply = vi.fn().mockResolvedValue(undefined);
+			const onOpenChange = vi.fn();
+			act(() =>
+				root.render(
+					<I18nProvider i18n={i18n}>
+						<AccountModeModal open onOpenChange={onOpenChange} currentMode="default" canChange onApply={onApply} />
+					</I18nProvider>,
+				),
+			);
+
+			const options = [...document.body.querySelectorAll<HTMLButtonElement>("button[aria-pressed]")];
+			expect(options).toHaveLength(3);
+			expect(options.every((option) => option.disabled)).toBe(true);
+			const unifiedOption = options.find((button) => button.textContent?.includes("Unified account"));
+			expect(options.filter((option) => option.getAttribute("aria-pressed") === "true")).toEqual([unifiedOption]);
+			expect(document.body.textContent).not.toContain(
+				"Select a supported account mode before using balances or moving funds.",
+			);
+
+			const confirmButton = [...document.body.querySelectorAll<HTMLButtonElement>("button")].find(
+				(button) => button.textContent?.trim() === "Confirm",
+			);
+			expect(confirmButton?.disabled).toBe(true);
+			const noteId = confirmButton?.getAttribute("aria-describedby");
+			expect(noteId ? document.getElementById(noteId)?.textContent : null).toBe(
+				"New accounts are set to Unified account automatically after the first deposit. You can change the mode here afterwards.",
+			);
+			await act(async () => confirmButton?.click());
+			expect(onApply).not.toHaveBeenCalled();
+			expect(onOpenChange).not.toHaveBeenCalled();
+		},
+	);
+
+	it("hands the choice back when the automatic setup gives up while the dialog is open", async () => {
+		publishAccountModeSetup(feedbackIdentity.clientKey, "pending");
+		const onApply = vi.fn().mockResolvedValue(undefined);
+		act(() =>
+			root.render(
+				<I18nProvider i18n={i18n}>
+					<AccountModeModal open onOpenChange={() => {}} currentMode="default" canChange onApply={onApply} />
+				</I18nProvider>,
+			),
+		);
+		const confirmButton = () =>
+			[...document.body.querySelectorAll<HTMLButtonElement>("button")].find(
+				(button) => button.textContent?.trim() === "Confirm",
+			);
+		expect(confirmButton()?.disabled).toBe(true);
+
+		act(() => publishAccountModeSetup(feedbackIdentity.clientKey, "manual"));
+		expect(confirmButton()?.disabled).toBe(false);
+		expect(document.body.textContent).toContain(
+			"Select a supported account mode before using balances or moving funds.",
+		);
+		await act(async () => confirmButton()?.click());
 		expect(onApply).toHaveBeenCalledWith("unifiedAccount");
 	});
 

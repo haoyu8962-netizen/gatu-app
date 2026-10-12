@@ -26,7 +26,8 @@ describe("TradeHeader mobile margin actions", () => {
 	});
 
 	function renderHeader(callbacks: {
-		accountMode?: "disabled" | "unifiedAccount" | "portfolioMargin" | "default" | null;
+		accountMode?: "disabled" | "unifiedAccount" | "portfolioMargin" | "default" | "dexAbstraction" | null;
+		isAccountModeAutomatic?: boolean;
 		isLeveraged?: boolean;
 		layout?: "desktop" | "mobile";
 		marketKind?: "perp" | "spot";
@@ -176,6 +177,26 @@ describe("TradeHeader mobile margin actions", () => {
 		expect(accountModeButton.title).toBe("Select mode");
 		expect(accountModeButton.querySelector(".trade-account-value-full")?.textContent).toBe("Select mode");
 		expect(accountModeButton.querySelector(".trade-account-value-compact")?.textContent).toBe("Account");
+	});
+
+	it("shows the mode a new account is being set to while the automatic setup applies", () => {
+		renderHeader({ accountMode: "default", isAccountModeAutomatic: true, layout: "desktop" });
+
+		const accountModeButton = container.querySelector<HTMLButtonElement>('button[aria-label="Account mode"]');
+		if (!accountModeButton) throw new Error("Expected desktop account mode button");
+		expect(accountModeButton.title).toBe("Unified");
+		expect(accountModeButton.querySelector(".trade-account-value-full")?.textContent).toBe("Unified");
+		expect(accountModeButton.querySelector(".trade-account-value-compact")?.textContent).toBe("Unified");
+	});
+
+	it("never presents another mode as Unified because of the automatic setup flag", () => {
+		renderHeader({ accountMode: "dexAbstraction", isAccountModeAutomatic: true, layout: "desktop" });
+		const legacyButton = container.querySelector<HTMLButtonElement>('button[aria-label="Account mode"]');
+		expect(legacyButton?.title).toBe("Legacy DEX");
+
+		renderHeader({ accountMode: "disabled", isAccountModeAutomatic: true, layout: "desktop" });
+		const manualButton = container.querySelector<HTMLButtonElement>('button[aria-label="Account mode"]');
+		expect(manualButton?.title).not.toBe("Unified");
 	});
 });
 

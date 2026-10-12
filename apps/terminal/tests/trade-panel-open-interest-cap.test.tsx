@@ -11,6 +11,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const testState = vi.hoisted(() => ({
 	authorize: vi.fn(async () => {}),
 	availableBalance: 100,
+	accountModeBlocked: false,
+	isAwaitingFirstDeposit: false,
+	openDeposit: vi.fn(),
 	hasWalletAccess: true,
 	isReady: true,
 	isSignerLoading: false,
@@ -113,16 +116,17 @@ vi.mock("@/hooks/trade/use-order-entry-data", () => ({
 		endSizePercentGesture: vi.fn(),
 		availabilityMaxAgeMs: 20_000,
 		availabilityReceivedAt: Date.now(),
-		availabilityStatus: "success",
+		availabilityStatus: testState.accountModeBlocked ? "error" : "success",
 		availableBalance: testState.availableBalance,
 		baseToken: "BTC",
 		committedLeverage: null,
 		conversionPrice: 100,
 		currentLeverage: 10,
 		executionAvailability: { kind: "perp", maxBaseBySide: { buy: "10", sell: "10" } },
-		hasAvailabilityError: false,
+		hasAvailabilityError: testState.accountModeBlocked,
 		hasPosition: false,
-		isAvailabilityBlocked: false,
+		isAvailabilityBlocked: testState.accountModeBlocked,
+		isAwaitingFirstDeposit: testState.isAwaitingFirstDeposit,
 		isAvailabilityLoading: false,
 		isAvailabilityStale: false,
 		isLeverageUpdating: false,
@@ -220,7 +224,7 @@ vi.mock("@/lib/lazy", () => ({
 }));
 
 vi.mock("@/stores/use-global-modal-store", () => ({
-	useDepositModalActions: () => ({ open: vi.fn() }),
+	useDepositModalActions: () => ({ open: testState.openDeposit }),
 	useEstablishConnectionModalActions: () => ({ open: vi.fn() }),
 	useSettingsDialogActions: () => ({ open: vi.fn() }),
 	useSwapModalActions: () => ({ open: vi.fn() }),
@@ -326,6 +330,8 @@ describe("desktop TradePanel open-interest cap restriction", () => {
 	beforeEach(() => {
 		activateLocale("en");
 		testState.availableBalance = 100;
+		testState.accountModeBlocked = false;
+		testState.isAwaitingFirstDeposit = false;
 		testState.limitPrice = "100";
 		testState.openInterestCapped = false;
 		testState.orderType = "limit";
@@ -339,6 +345,8 @@ describe("desktop TradePanel open-interest cap restriction", () => {
 		await act(async () => root.unmount());
 		container.remove();
 		vi.clearAllMocks();
+		testState.accountModeBlocked = false;
+		testState.isAwaitingFirstDeposit = false;
 		activateLocale("en");
 	});
 
@@ -438,6 +446,27 @@ describe("desktop TradePanel open-interest cap restriction", () => {
 		expect(restriction?.textContent).toBe("zh: open interest cap");
 		expect(button.textContent?.trim()).toBe("zh: place Buy order");
 		await expectSubmissionBlocked(container);
+	});
+
+	it("offers Deposit to a new account awaiting its first deposit and never submits its valid-looking draft", async () => {
+		testState.accountModeBlocked = true;
+		await renderPanel(root);
+		await expectSubmissionBlocked(container);
+		expect(getOrderButton(container).textContent?.trim()).not.toBe("Deposit");
+
+		testState.isAwaitingFirstDeposit = true;
+		await act(async () => root.unmount());
+		root = createRoot(container);
+		await renderPanel(root);
+		const button = getOrderButton(container);
+		expect(button.textContent?.trim()).toBe("Deposit");
+		expect(button.disabled).toBe(false);
+
+		await act(async () => button.click());
+
+		expect(testState.openDeposit).toHaveBeenCalledWith("deposit");
+		expect(testState.requestSubmit).not.toHaveBeenCalled();
+		expect(testState.submitOrder).not.toHaveBeenCalled();
 	});
 });
 

@@ -11,6 +11,7 @@ interface ButtonContentInput {
 	reduceOnly?: boolean;
 	isBalanceLoading?: boolean;
 	hasBalanceError?: boolean;
+	isAwaitingFirstDeposit?: boolean;
 	canDeposit: boolean;
 	depositUnavailableReason?: string | null;
 	tradingBlocked?: boolean;
@@ -53,6 +54,7 @@ export function useButtonContent(input: ButtonContentInput): ButtonContent {
 			isBalanceLoading: input.isBalanceLoading === true,
 			availableBalance: input.availableBalance,
 			reduceOnly: input.reduceOnly,
+			isAwaitingFirstDeposit: input.isAwaitingFirstDeposit === true,
 		});
 
 		if (stage === "connect") {
@@ -102,6 +104,7 @@ export function useButtonContent(input: ButtonContentInput): ButtonContent {
 		input.reduceOnly,
 		input.isBalanceLoading,
 		input.hasBalanceError,
+		input.isAwaitingFirstDeposit,
 		input.canDeposit,
 		input.depositUnavailableReason,
 		input.tradingBlocked,

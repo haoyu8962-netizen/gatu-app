@@ -135,7 +135,9 @@ The terminal must preserve this ordering:
    chain 999999) and `use-connection-wallet-client` pin this.
    Page load and status checks never sign a trading, terms, Agent or builder-fee
    message (the email funding host's automatic deposit is a separate flow,
-   [ADR 0040](adr/0040-automatic-email-wallet-deposits.md)). Agent registration is separate from
+   [ADR 0040](adr/0040-automatic-email-wallet-deposits.md), and so is the one
+   account-mode setting of a funded new account,
+   [ADR 0041](adr/0041-automatic-unified-account-for-new-accounts.md)). Agent registration is separate from
    builder-fee approval.
 5. **Verify a requested new Agent (external-wallet flow).** Before opening the
    wallet signing request, persist
@@ -146,6 +148,21 @@ The terminal must preserve this ordering:
 6. **Classify account funding.** Wait for both the complete all-DEX perpetual
    snapshot and the spot-state snapshot. Any positive perpetual account value
    or spot balance means funded. Missing or failed snapshots never mean empty.
+   A new account is in Hyperliquid's `default` account mode, which the terminal
+   does not trade in. While its snapshot is definitively empty it is presented
+   as an ordinary empty account (step 7). Once it is funded, has a ready
+   signer, accepted terms and no order history, the page-level
+   `UnifiedAccountAutoSetup` host sets it to Unified account without a click,
+   as the official terminal does: the exact embedded owner signs
+   `userSetAbstraction` in an email session, the verified Agent signs
+   `agentSetAbstraction` in an external-wallet session, and both re-read the
+   mode and the order history inside the funds-action lock and sign nothing
+   unless the mode is still `default` and the history is still empty. Order
+   entry stays blocked for a `default` account throughout; only the order
+   button's stage offers Deposit while the account is empty. An external-wallet account that has deposited but not yet
+   established its Agent keeps the manual selection until the Agent exists.
+   [ADR 0041](adr/0041-automatic-unified-account-for-new-accounts.md) owns
+   the conditions, the retry limit and what each surface shows meanwhile.
 7. **Guide an empty account to deposit.** Open the deposit dialog only after
    both snapshots definitively establish that the account is empty. When the
    card funding flag is on for the network and the session has an exact
@@ -500,6 +517,7 @@ only network, timeout, 408, 429, and 5xx failures receive bounded retries.
 | LI.FI per-transaction guard and committed-route recovery | `apps/terminal/src/lib/lifi/use-bridge.ts`, `bridge-execution-persistence.ts` |
 | Cross-tab funds serialization | `packages/hl-react/src/internal/exchange/funds-action-lock.ts` |
 | Automatic embedded-wallet deposit | `apps/terminal/src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx` |
+| Automatic Unified account for a new account | `apps/terminal/src/components/trade/components/unified-account-auto-setup.tsx`, `domain/trade/account-mode-setup.ts`, `lib/trade/account-mode-setup-attempts.ts`, `stores/use-account-mode-setup-store.ts`, `hooks/trade/use-account-mode-setup.ts` |
 | Modal precedence | `apps/terminal/src/components/trade/components/global-modals.tsx` |
 
 ## Regression Checklist
@@ -508,6 +526,26 @@ At minimum, changes to this flow must cover:
 
 - legal status: inactive, checking, required, submitting, blocked,
   wallet-required, wallet-setup-failed, error, and accepted;
+- a new account in the protocol `default` mode (ADR 0041): one owner-signed
+  `userSetAbstraction` for an email session and one Agent-signed
+  `agentSetAbstraction` for an external wallet once every condition holds, no
+  request while any condition is missing (a positive balance from a missing,
+  failed, loading or stale snapshot included), no signature when the mode read
+  inside the funds lock is no longer `default` or the order history read there
+  is not empty, order entry blocked in every state of the mode while the
+  order button offers Deposit to an empty new account, three attempts five seconds
+  apart, none after a terminal rejection, a single request under StrictMode
+  and across a remount, an earlier account's result kept out of the next
+  account's state, and the presentation of `awaiting-funds`, `pending` and
+  `manual` in order entry, both balances tabs, the funds reasons, the trading
+  panel's account-mode value and the Account type dialog
+  (`account-mode-setup`, `account-mode-setup-attempts`,
+  `unified-account-auto-setup`, `order-entry-account-mode-setup`,
+  `deposit-order-cta`, `trade-panel-open-interest-cap`,
+  `mobile-trade-size-validation-a11y`,
+  `deposit-empty-balances-entry`, `funds-action-balances`,
+  `account-mode-modal`, `trade-header-mobile-actions`,
+  `account-abstraction-control`, `use-exchange-portfolio-margin-policy`);
 - an email session waiting silently (`checking`) while its embedded wallet is
   missing or being created and during the 10-second activation grace, a
   failed or timed-out creation offering Retry and Disconnect without automatic
@@ -615,9 +653,12 @@ establishes a signer. Wait for the exact wallet directory entry and active
 account, then verify legal status before allowing actions. Do not add a second
 registration form, create wallets for external-wallet users, or imitate the
 official site's signing prewarm. Page load and session restoration never sign
-for trading; the only signature they may trigger is the automatic email-wallet
+for trading; the signatures they may trigger are the automatic email-wallet
 deposit authorization of [ADR 0040](adr/0040-automatic-email-wallet-deposits.md),
-which moves USDC that already belongs to the exact owner into its own account.
+which moves USDC that already belongs to the exact owner into its own account,
+and the one account-mode setting of a funded new account of
+[ADR 0041](adr/0041-automatic-unified-account-for-new-accounts.md), which
+moves no funds.
 
 Accepted exception (user decision, 2026-10-04): Privy's `SmartWalletsProvider`
 signs a SIWE message without UI and links a smart wallet the first time an

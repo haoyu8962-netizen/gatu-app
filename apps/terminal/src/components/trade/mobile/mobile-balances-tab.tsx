@@ -37,6 +37,7 @@ export function MobileBalancesTab() {
 		accountAbstraction,
 		accountDataReady,
 		accountModeReady,
+		accountModeSetup,
 		balances,
 		hasError,
 		internalTransfersEnabled,
@@ -90,11 +91,16 @@ export function MobileBalancesTab() {
 		}
 		return <div className="flex min-h-0 flex-1" />;
 	}
-	const isDataReady = !hasError && !isLoading && !isDataStale && accountModeReady && accountDataReady;
+	const isDataReady =
+		!hasError &&
+		!isLoading &&
+		!isDataStale &&
+		(accountModeReady || accountModeSetup === "awaiting-funds") &&
+		accountDataReady;
 	return (
 		<div className="flex min-h-0 flex-col font-market-close">
 			{!isDataReady ? (
-				<DataPendingState loading={isLoading} />
+				<DataPendingState loading={isLoading || (!accountModeReady && accountModeSetup === "pending")} />
 			) : balances.length === 0 ? (
 				<MobileBalancesState
 					label={depositNotice ?? t`No balances found. Deposit funds to start trading.`}

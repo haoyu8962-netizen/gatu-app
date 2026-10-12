@@ -11,6 +11,7 @@ import {
 	type SupportedAccountAbstraction,
 	useUserAbstraction,
 } from "./use-account-balances";
+import { useAccountModeSetupKind } from "./use-account-mode-setup";
 
 export type SelectableAccountAbstraction = SupportedAccountAbstraction;
 
@@ -35,6 +36,7 @@ export function useAccountAbstractionControl(resolvedAccountAbstraction: Account
 	const { address, hasWalletAccess } = useWalletSession();
 	const { isLoading: isAccountAbstractionLoading } = useUserAbstraction(address, hasWalletAccess);
 	const { mutateAsync: setAbstraction, isPending } = useExchange("userSetAbstraction");
+	const accountModeSetup = useAccountModeSetupKind(resolvedAccountAbstraction, address);
 
 	const canSet = hasWalletAccess && !!address && !!userExchangeClient;
 	const currentAccountAbstraction = resolvedAccountAbstraction;
@@ -70,6 +72,7 @@ export function useAccountAbstractionControl(resolvedAccountAbstraction: Account
 		accountAbstraction: currentAccountAbstraction,
 		isLoading: isAccountAbstractionLoading,
 		isUpdating: isPending,
+		isAutomaticSetup: accountModeSetup === "awaiting-funds" || accountModeSetup === "pending",
 		canSet,
 		portfolioMarginActivationEnabled: PORTFOLIO_MARGIN_FEATURES.activationEnabled,
 		setAccountAbstraction,

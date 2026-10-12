@@ -25,6 +25,7 @@ const testState = vi.hoisted(() => ({
 	geoReason: null as null | "geo-unresolved" | "geo-restricted",
 	accountDataReady: true,
 	accountModeReady: true,
+	accountModeSetup: "not-applicable" as "not-applicable" | "awaiting-funds" | "pending" | "manual",
 	isLoading: false,
 	isDataStale: false,
 	hasError: false,
@@ -52,6 +53,7 @@ vi.mock("@/hooks/trade/use-balance-rows", () => ({
 		return {
 			accountDataReady: testState.accountDataReady,
 			accountModeReady: testState.accountModeReady,
+			accountModeSetup: testState.accountModeSetup,
 			balances: rows,
 			hasError: testState.hasError,
 			internalTransfersEnabled: true,
@@ -153,6 +155,7 @@ describe("empty balance Deposit entries", () => {
 		testState.hasBalance = false;
 		testState.accountDataReady = true;
 		testState.accountModeReady = true;
+		testState.accountModeSetup = "not-applicable";
 		testState.isLoading = false;
 		testState.isDataStale = false;
 		testState.hasError = false;
@@ -245,6 +248,54 @@ describe("empty balance Deposit entries", () => {
 		expect(container.querySelector('[data-slot="data-pending"]')).toBeNull();
 		expect(container.textContent).toContain("Deposit");
 	});
+
+	it("presents a new account that has no funds yet as an ordinary empty account on both surfaces", () => {
+		testState.accountModeReady = false;
+		testState.accountModeSetup = "awaiting-funds";
+		renderEntries();
+
+		expect(container.textContent).not.toContain("Select a supported account mode to view balances.");
+		expect(container.querySelector('[data-slot="passive-data-placeholder"]')).toBeNull();
+		expect(container.querySelector('[data-slot="data-pending"]')).toBeNull();
+		expect(container.textContent?.split("No balances found. Deposit funds to start trading.")).toHaveLength(3);
+		const depositButtons = Array.from(container.querySelectorAll<HTMLButtonElement>("button")).filter(
+			(button) => button.textContent === "Deposit",
+		);
+		expect(depositButtons).toHaveLength(2);
+		for (const button of depositButtons) act(() => button.click());
+		expect(testState.openDeposit).toHaveBeenCalledTimes(2);
+		expect(testState.openDeposit).toHaveBeenCalledWith("deposit");
+	});
+
+	it("keeps both surfaces passively busy while a funded new account is being set up", () => {
+		testState.accountModeReady = false;
+		testState.accountModeSetup = "pending";
+		renderEntries();
+
+		const desktopPlaceholder = container.querySelector('[data-slot="passive-data-placeholder"]');
+		expect(desktopPlaceholder?.getAttribute("aria-busy")).toBe("true");
+		expect(container.querySelector('[data-slot="data-pending"]')?.getAttribute("aria-busy")).toBe("true");
+		expect(container.textContent).not.toMatch(/Select a supported account mode|No balances found|Deposit funds/);
+		expect(container.querySelector("button")).toBeNull();
+		expect(testState.openDeposit).not.toHaveBeenCalled();
+	});
+
+	it.each(["manual", "not-applicable"] as const)(
+		"keeps the supported-mode notice on desktop and a quiet mobile list when the setup is %s",
+		(accountModeSetup) => {
+			testState.accountModeReady = false;
+			testState.accountModeSetup = accountModeSetup;
+			renderEntries();
+
+			expect(container.textContent?.split("Select a supported account mode to view balances.")).toHaveLength(2);
+			expect(container.textContent).not.toMatch(/No balances found|Deposit funds/);
+			expect(container.querySelector('[data-slot="passive-data-placeholder"]')).toBeNull();
+			const mobilePending = container.querySelector('[data-slot="data-pending"]');
+			expect(mobilePending).not.toBeNull();
+			expect(mobilePending?.getAttribute("aria-busy")).not.toBe("true");
+			expect(testState.openDeposit).not.toHaveBeenCalled();
+		},
+	);
 
 	it("shows desktop and mobile funds actions disabled with one desktop-required reason in an Agent-only session", () => {
 		testState.hasBalance = true;

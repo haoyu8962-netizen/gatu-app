@@ -1,3 +1,4 @@
+import type { AccountModeSetupKind } from "@/domain/trade/account-mode-setup";
 import { toBig } from "@/lib/trade/numbers";
 import type { Side } from "@/lib/trade/types";
 
@@ -91,6 +92,32 @@ export function getOrderAvailabilityStatus({
 	if (!marketKind) return "loading";
 	const status = marketKind === "spot" ? spotStatus : perpStatus;
 	return status === "idle" ? "loading" : status;
+}
+
+interface GetAccountModeAvailabilityStatusInput {
+	isConnected: boolean;
+	isModeSupported: boolean;
+	areBalancesLoading: boolean;
+	accountModeSetup: AccountModeSetupKind;
+	streamStatus: AssetAvailabilityStatus;
+}
+
+/**
+ * Order availability for an account mode this terminal does not trade in: never `success`, so the
+ * submit path stays closed whatever the trade-size stream reports. A mode that is being set up
+ * automatically reads as loading (ADR 0041); the Deposit action of a new empty account is a
+ * presentation decision made by the order action stage, not by this status.
+ */
+export function getAccountModeAvailabilityStatus({
+	isConnected,
+	isModeSupported,
+	areBalancesLoading,
+	accountModeSetup,
+	streamStatus,
+}: GetAccountModeAvailabilityStatusInput): AssetAvailabilityStatus {
+	if (!isConnected || isModeSupported) return streamStatus;
+	if (areBalancesLoading || accountModeSetup === "pending") return "loading";
+	return "error";
 }
 
 export function getOrderAvailabilityFlags(

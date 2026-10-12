@@ -5268,6 +5268,11 @@ msgstr "Réseau"
 msgid "Network stake"
 msgstr "Stake du réseau"
 
+#: src/components/trade/tradebox/account-mode-modal.tsx
+#: src/hooks/trade/use-funds-action-availability.ts
+msgid "New accounts are set to Unified account automatically after the first deposit."
+msgstr "Les nouveaux comptes passent automatiquement en Compte unifié après le premier dépôt."
+
 #: src/components/trade/tradebox/bridge/success-screen.tsx
 msgid "New deposit"
 msgstr "Nouveau dépôt"
@@ -11353,6 +11358,10 @@ msgstr "Vous êtes sur le Testnet"
 #: src/components/trade/components/hip3-deployer-disclaimer.tsx
 msgid "You are viewing markets deployed independently and permissionlessly by a third party on Hyperliquid. These markets are surfaced based on onchain activity and are not reviewed, verified, or approved."
 msgstr "Vous consultez des marchés déployés de manière indépendante et sans autorisation par un tiers sur Hyperliquid. Ces marchés sont présentés en fonction de l’activité onchain et ne sont ni examinés, ni vérifiés, ni approuvés."
+
+#: src/components/trade/tradebox/account-mode-modal.tsx
+msgid "You can change the mode here afterwards."
+msgstr "Vous pourrez ensuite changer de mode ici."
 
 #: src/components/vaults/vault-detail-view.tsx
 msgid "You can lose all deposited principal. Vault returns are not guaranteed."

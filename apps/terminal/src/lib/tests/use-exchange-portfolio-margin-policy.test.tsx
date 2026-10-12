@@ -566,10 +566,13 @@ describe("useExchange portfolio margin policy", () => {
 	});
 
 	it("rejects asynchronous pre-execution guards on trading-client methods", async () => {
-		let mutateWithPreExecutionGuard: CapturedMutations["agentSetAbstraction"] | null = null;
+		let mutateWithPreExecutionGuard: CapturedMutations["updateLeverage"] | null = null;
 		const preExecutionGuard = vi.fn(async () => {});
 		function TradingGuardProbe() {
-			const mutation = useExchange("agentSetAbstraction", { preExecutionGuard });
+			const mutation = useExchange("updateLeverage", {
+				executionGuard: updateLeverageExecutionGuard,
+				preExecutionGuard,
+			});
 			mutateWithPreExecutionGuard = mutation.mutateAsync;
 			return null;
 		}
@@ -585,12 +588,54 @@ describe("useExchange portfolio margin policy", () => {
 		});
 
 		await act(async () => {
-			await expect(mutateWithPreExecutionGuard?.({ abstraction: "u" })).rejects.toThrow(
+			await expect(mutateWithPreExecutionGuard?.({ asset: 1, isCross: false, leverage: 5 })).rejects.toThrow(
 				"Pre-execution guards are supported only for user-signed methods and opted-in trading funds actions",
 			);
 		});
 		expect(preExecutionGuard).not.toHaveBeenCalled();
-		expect(clients.agentSetAbstraction).not.toHaveBeenCalled();
+		expect(updateLeverageExecutionGuard).not.toHaveBeenCalled();
+		expect(clients.updateLeverage).not.toHaveBeenCalled();
+	});
+
+	it("runs the opted-in agentSetAbstraction pre-execution guard inside the funds and session locks", async () => {
+		let setAccountMode: CapturedMutations["agentSetAbstraction"] | null = null;
+		const accountModeStillDefaultRef = { current: true };
+		const preExecutionGuard = vi.fn(async (_params: ExchangeParams<"agentSetAbstraction">) => {
+			if (!accountModeStillDefaultRef.current) throw new Error("The account mode changed inside the funds lock");
+		});
+		function AccountModeProbe() {
+			const mutation = useExchange("agentSetAbstraction", { preExecutionGuard });
+			setAccountMode = mutation.mutateAsync;
+			return null;
+		}
+
+		act(() => {
+			root.render(
+				<QueryClientProvider client={queryClient}>
+					<AccountModeProbe />
+				</QueryClientProvider>,
+			);
+		});
+
+		await act(async () => {
+			await expect(setAccountMode?.({ abstraction: "u" })).resolves.toEqual(clients.response);
+		});
+		expect(requestedLockNames).toEqual([
+			`hyperliquid_funds_action:Mainnet:${USER}`,
+			`hyperliquid_agent_registration_session:Mainnet:${USER}`,
+		]);
+		expect(preExecutionGuard).toHaveBeenCalledTimes(1);
+		expect(preExecutionGuard.mock.invocationCallOrder[0]).toBeLessThan(
+			clients.agentSetAbstraction.mock.invocationCallOrder[0] ?? Number.POSITIVE_INFINITY,
+		);
+
+		accountModeStillDefaultRef.current = false;
+		await act(async () => {
+			await expect(setAccountMode?.({ abstraction: "u" })).rejects.toThrow(
+				"The account mode changed inside the funds lock",
+			);
+		});
+		expect(clients.agentSetAbstraction).toHaveBeenCalledTimes(1);
 	});
 
 	it("runs the opted-in borrowLend pre-execution guard inside the funds and session locks", async () => {

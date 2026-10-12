@@ -58,6 +58,16 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Changed
 
+- A new account no longer has to choose an account type before it can be used. As on the official
+  terminal, once a new account has funds, has accepted the terms and has not traded yet, the
+  terminal sets it to Unified account by itself, without a prompt: an email account signs with its
+  own wallet, an external wallet with its trading key, and nothing is signed unless the account is
+  still in its initial state. Until the first deposit a new account looks like any empty account:
+  the order button offers Deposit, Balances shows the deposit entry, and Account type shows Unified
+  account selected with a note that it is set automatically after the first deposit; the mode can
+  be changed there afterwards. Accounts that already have orders, a phone session that uses a
+  desktop-approved key and accounts the exchange refuses keep the manual choice, where Unified
+  account is now preselected (ADR 0041).
 - The build version has moved from the footer to the Settings dialog: a new About section shows the
   release and short commit (for example `p30 · ff11eee5`, or `dev` in a local build), and clicking
   it copies the complete version with the full release ID. The footer keeps the
