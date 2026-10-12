@@ -22,6 +22,7 @@ interface Props {
 	linksLabel: string;
 	renderLink?: (link: FooterLink, className: string) => ReactNode;
 	clock: string | null;
+	buildLabel?: string | null;
 }
 
 export function FooterBarView({
@@ -36,6 +37,7 @@ export function FooterBarView({
 	linksLabel,
 	renderLink,
 	clock,
+	buildLabel = null,
 }: Props) {
 	return (
 		<footer
@@ -78,6 +80,12 @@ export function FooterBarView({
 				</nav>
 				<div aria-hidden="true" className="shrink-0 border-stroke-weak self-stretch border-l my-1.5 hidden md:block" />
 				<span className={cn("tabular-nums text-fg", clock === null && "invisible")}>{clock ?? "00:00 AM"}</span>
+				{buildLabel ? (
+					<Fragment>
+						<div aria-hidden="true" className="shrink-0 border-stroke-weak self-stretch border-l my-1.5" />
+						<span className="font-mono normal-case text-fg-muted">{buildLabel}</span>
+					</Fragment>
+				) : null}
 			</div>
 		</footer>
 	);
