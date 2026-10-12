@@ -10,7 +10,7 @@
   "summary": "dev 5cc5327a 上 market-asset-info.test.tsx 的「uses a minimum mobile height…」仍断言抽屉 overlayClassName 含 bg-trading-panel-scrim，而 7dcd49ee（PR #92）已按「原语持有遮罩、弹窗不得覆盖」删掉该组件的覆盖，故红。测试过时、组件正确：断言改为 data-overlay-class 为 null（与 legal-acceptance 同改法）。该文件不在 terminal-tests.yml 任何步骤里，所以 PR #92 的 CI 没拦住；已加入「Test terminal interaction and mounting contracts」步骤。Codex 只读对抗审查一轮 9/10、无 P0–P2，唯一 P3（记录误称另外三个测试断言遮罩类）已修正。",
   "thread": null,
   "baseCommit": "5cc5327a",
-  "commits": [],
+  "commits": ["0345a13c", "b0e47d17", "9b18dea4"],
   "sources": [
     { "path": "apps/terminal/src/lib/tests/market-asset-info.test.tsx" },
     { "path": "apps/terminal/src/components/trade/components/market-asset-info.tsx" },

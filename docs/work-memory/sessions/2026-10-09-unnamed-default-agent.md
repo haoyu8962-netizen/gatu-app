@@ -7,10 +7,10 @@
   "kind": "task",
   "status": "recorded",
   "topics": ["wallet-onboarding", "hyperliquid-api"],
-  "summary": "外部钱包在「建立连接」弹窗收到交易所原文 Too many extra agents for cumulative volume traded. Current limit is 3：根因是普通 Enable Trading 申请的是命名 Agent（sairn），命名授权触及交易所返回的上限 3；具体占位者未核实（候选：改名前的 gatu、Mobile、其他前端的命名钱包）；官方终端的 Establish Connection 申请的是无名默认 Agent，并用 webData3 的 agentAddress 判定就绪。用户选对齐官方：approveAgent 不再带 agentName，存储的密钥改用 userRole 核对为精确 owner 的 Agent（Mobile Agent 仍查 extraAgents），删除 sairn 槽位与 VITE_HYPERLIQUID_AGENT_NAME，命名上限的拒绝文案翻译并保留上限值。类型检查、Biome、17 个相关测试文件与 7 个变异检查通过；真实外部钱包的授权与首单未验收；未推送。",
+  "summary": "普通外部钱包交易连接改用无名默认 Agent 并按精确 owner 的 userRole 核验，后续竞争与取消修复随 PR #91 合入、p30 发布。真实外部钱包授权与首单仍未验收；命名 API 钱包和 Mobile QR 属独立槽位。",
   "thread": null,
   "baseCommit": "4c5ff959",
-  "commits": [],
+  "commits": ["dba03dee", "87b465a1", "b178faa0", "a8350c8f", "db2228dc", "e10186f1"],
   "sources": [
     { "path": "packages/hl-react/src/signing/use-agent-status.ts" },
     { "path": "packages/hl-react/src/signing/use-agent-registration.ts" },
@@ -114,3 +114,11 @@
 - 旧的 `gatu`、`sairn`、`sairn-dev` 命名 Agent 仍占账户的命名槽位；要腾出槽位得在 API 钱包页移除（每个一次主钱包签名）。可以考虑在 API 钱包页提示退役名字。
 - 官方 API Wallets 页会显示默认 Agent 并提供 `delete_default`（零地址无名授权）；Sairn 的 API 钱包页仍只列命名钱包，默认 Agent 的显示与删除未实现。
 - 本记录取代 `docs/trading-onboarding.md` 里「命名部署槽位」的说法与 ADR 0027 的 `sairn` 槽位结论（局部失效，ADR 0027 其余不变）。下次先查 ADR 0038、`use-agent-status.ts` 与 `use-agent-status-verification.test.tsx`。
+
+## 周整理补注（2026-10-12）
+
+原“未推送”是实现阶段状态；PR #91 的后续竞争、取消与最新请求核验已合入并随 p30 来源发布。已部署不证明真实外部钱包授权和首单通过，也不授权清除旧命名 Agent。
+
+后续来源：[2026-10-11-cloudfront-release-p30](2026-10-11-cloudfront-release-p30.md)。
+
+本补注为事后核对，原正文、失败与验证版本保留。本轮只核对 Git、任务记录和相关当前规范；来源执行结果不视为本次重跑。查询时间与实际 head 见[本周整理](2026-10-12-weekly-memory-review.md)。

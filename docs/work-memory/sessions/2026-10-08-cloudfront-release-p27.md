@@ -10,7 +10,7 @@
   "summary": "用户要求核对邮箱用户与钱包用户的存款弹窗样式是否一致并一并处理。线上 p26 两条路径共用无图标的 Asset/Network 方框，钱包头部有 USDC 标记、邮箱头部没有；用户记得的链上图标来自未合并的 PR #78。把 #78 与 dev 合并（包体基线 3,296,759+340=3,297,099、INDEX 重生成），给邮箱存款表单加同样的 USDC 标记与标题带类；CI 浏览器回归在 1363×260 失败，根因是 #78 的 sr-only 路由标签绝对定位且包含块落在弹窗，下移 52px 后探出弹窗 4px，给路由方框加 relative 修复并钉住。#78 五项 CI 全绿合入 dev（56bcd973），晋升 PR #85 七项全绿合入 main（6ff8ee75），从该提交构建 cloudfront-2026-10-08-p27（开关同 p26）发布：functions、lambda 版本 12、sync（首批 immutable 上传一次失败后重跑成功）、两次分发失效；verify 主网 15/15、测试网 16/16，csp-coverage 33 步 0 违规。真机验收未做；#80 由另一会话处理，#79 待对齐，#73 保持草稿。",
   "thread": null,
   "baseCommit": "c972b1f2",
-  "commits": ["d803da44", "5ba0d20f", "57b29ed9", "56bcd973", "6ff8ee75"],
+  "commits": ["d803da44", "5ba0d20f", "57b29ed9", "56bcd973", "6ff8ee75", "3b3040c2"],
   "sources": [
     { "path": "apps/terminal/src/components/trade/tradebox/deposit/deposit-form.tsx" },
     { "path": "apps/terminal/src/components/trade/tradebox/deposit/funds-route-details.tsx" },
@@ -52,3 +52,11 @@
 - #80（外部钱包按需切网络）：其分支所在工作树有另一会话在活动并已推送「merge dev」（`d8158d90`，早于 #78 合入），需要再合一次 dev；#79（agent 文档交接）等 #80 之后对齐；#73 保持草稿。
 - 桌面运行时余量 639 字节。
 - 上一次发布记录：[p26](2026-10-08-cloudfront-release-p26.md)。
+
+## 周整理补注（2026-10-12）
+
+原末尾的 #80 待处理、#79 待对齐、#73 草稿已由 p28 接续。保留本次上传失败后重跑的事实及原版本验证数字；后续发布不回填本轮真机验收。
+
+后续来源：[2026-10-08-cloudfront-release-p28](2026-10-08-cloudfront-release-p28.md)。
+
+本补注为事后核对，原正文、失败与验证版本保留。本轮只核对 Git、任务记录和相关当前规范；来源执行结果不视为本次重跑。查询时间与实际 head 见[本周整理](2026-10-12-weekly-memory-review.md)。

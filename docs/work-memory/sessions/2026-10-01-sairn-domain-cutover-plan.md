@@ -14,7 +14,8 @@
   "thread": null,
   "baseCommit": "5517ef70",
   "commits": [
-    "64d63e20"
+    "64d63e20",
+    "04394b08"
   ],
   "sources": [
     {
@@ -258,3 +259,11 @@
 - 品牌替换完成后处理 gatu.ai 的邮件与 SES（方案第 7 节后续事项 1）；2028-05-06 前做完到期前清单（后续事项 2）。
 - 执行时只由一个会话操作 AWS 与 Cloudflare。
 - 2026-10-02 补记：「Privy 控制台对比」表里「登录时自动创建内嵌钱包」一行当时建议打开，用户已照做。上线后用户报告注册时创建钱包界面与协议弹窗重叠，[ADR 0033](../../adr/0033-silent-email-wallet-creation.md) 改为客户端 `createOnLogin: "off"`、由应用在后台创建。客户端配置优先，这个控制台开关现在不再决定登录窗口是否建钱包；过程见[静默创建记录](2026-10-02-silent-email-wallet-creation.md)。
+
+## 周整理补注（2026-10-12）
+
+阶段 5.1 的代码随 PR #73 和 p28 发布；线上 5.2–5.4 后续由另一任务报告完成。早期 p25 名称是规划，不能据名称推断另有 p25 发布。本轮不重做云资源清理；Cloudflare 记录、临时 IAM 策略等剩余项以清理记录为准。
+
+后续来源：[2026-10-08-cloudfront-release-p28](2026-10-08-cloudfront-release-p28.md)；[2026-10-08-gatu-retirement-cleanup](2026-10-08-gatu-retirement-cleanup.md)。
+
+本补注为事后核对，原正文、失败与验证版本保留。本轮只核对 Git、任务记录和相关当前规范；来源执行结果不视为本次重跑。查询时间与实际 head 见[本周整理](2026-10-12-weekly-memory-review.md)。

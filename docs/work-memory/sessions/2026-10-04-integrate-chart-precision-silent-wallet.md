@@ -7,10 +7,10 @@
   "kind": "task",
   "status": "verified",
   "topics": ["pr-review", "wallet-onboarding", "hyperliquid-api"],
-  "summary": "用户要求把两条未推送的分支合成一个 PR 提交到 dev。从 origin/dev（498ea17a）建 claude/integrate-chart-precision-silent-wallet，先合图表价格精度（3 个提交），再合邮箱静默建钱包（4 个提交），都用 --no-ff 保留原哈希。文本冲突只在 CHANGELOG、ADR 目录和生成的记录索引；语义冲突一处：dev 后来加的小数显示契约要求登记每处 toFixed，图表的 tick size 在合并提交里登记。类型检查、源码契约、钱包与引导测试组、全量单测和生产构建通过。ADR 0033 的两项待用户决定事项仍未决定；没有做浏览器或真实邮箱注册验收，也没有对集成结果另做 Codex 审查。",
+  "summary": "图表精度与静默建钱包经 PR #77 集成，ADR 0033 的两项决定已由后续文档提交接续，随后随 p26 发布。原集成测试和构建范围保持；未补做浏览器、真实邮箱注册或独立集成审查。",
   "thread": null,
   "baseCommit": "498ea17a",
-  "commits": ["399dbbd9", "3d6a8000", "20d0e01f", "176c5a2a", "04394b08", "0bbbb248", "1de833b8", "15538d88", "f285d3bd"],
+  "commits": ["399dbbd9", "3d6a8000", "20d0e01f", "176c5a2a", "04394b08", "0bbbb248", "1de833b8", "15538d88", "f285d3bd", "06ed032e", "d65d78da", "8d9b9540"],
   "sources": [
     { "path": "docs/adr/0033-silent-email-wallet-creation.md" },
     { "path": "docs/adr/0035-chart-price-precision-from-market-rules.md" },
@@ -108,3 +108,11 @@
   - 智能钱包关联由 Privy SDK 内部完成，也是静默的。区别在于它在登录后自动发生，不是用户点了按钮。
   - Privy 官方《Configure smart wallets in the SDK》建议把 `SmartWalletsProvider` 挂在根部附近，用户有内嵌钱包后自动生成智能钱包，没有提供单独推迟的设置。
 - **智能钱包关联签名**（续）：用户随后决定按建议接受为有界例外。`AGENTS.md`「登录、刷新和状态检查绝不签名」后面加了唯一例外：Privy `SmartWalletsProvider` 自动创建智能钱包时那一次不显示界面的 SIWE 关联签名，其他签名仍不允许。同步了 `docs/trading-onboarding.md` 的「已知偏差」段、ADR 0033「待用户决定」一节与目录行。
+
+## 周整理补注（2026-10-12）
+
+原「两项尚未决定」在同记录后续和 d65d78da / 8d9b9540 中已有决定；p26 报告带入 PR #77。不能将发布后的 WebKit 探针当成真实邮箱注册验收。
+
+后续来源：[2026-10-08-cloudfront-release-p26](2026-10-08-cloudfront-release-p26.md)。
+
+本补注为事后核对，原正文、失败与验证版本保留。本轮只核对 Git、任务记录和相关当前规范；来源执行结果不视为本次重跑。查询时间与实际 head 见[本周整理](2026-10-12-weekly-memory-review.md)。

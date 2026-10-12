@@ -10,7 +10,7 @@
   "summary": "用户要求把 dev 合并到 main 并部署生产。dev 相对 p24b 的 main 含 #76（p24b 发布记录）、#77（图表精度 ADR 0035 + 静默建钱包 ADR 0033）、#81（TradingView 加载器握手补丁）。晋升 PR #82 的配对开启构建因总量包体超基线 1,297 字节失败；发布工作树的演练构建也超 55 字节。按 docs/terminal-performance-baseline.md 的规则用固定元数据、无 .env.local、Node 22.15 在同一隔离工作树测了 6da4c15a / 345a2143 / 54235298 三点（3,294,335 / 3,296,905 / 3,296,759），把总量基线重定为 dev 头 3,296,759 并归因（p24b 已用 +6,684、#77 +2,570、#81 -146 噪声），桌面运行时增量余 407 字节未重定。重定基线 PR #83 合入 dev（508ff73d）后 #82 七项 CI 全绿、以 merge commit 合入 main（290935c7）；从该提交构建 cloudfront-2026-10-08-p26（开关同 p24b），functions（08:52Z）、lambda（版本 11）、sync（带两个闸门参数）、两个分发失效依次执行；verify 主网 15/15、测试网 16/16，csp-coverage 33 步 0 违规 0 控制台错误，WebKit 探针对线上 route/locale 两场景全部就绪。真机 iOS Safari 验收仍未做。",
   "thread": null,
   "baseCommit": "54235298",
-  "commits": ["c46331a9", "508ff73d", "290935c7"],
+  "commits": ["c46331a9", "508ff73d", "290935c7", "8452b745"],
   "sources": [
     { "path": "scripts/check-client-bundle-budget.mjs" },
     { "path": "docs/terminal-performance-baseline.md" },
