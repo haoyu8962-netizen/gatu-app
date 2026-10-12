@@ -41,6 +41,7 @@
 
 - `node --test scripts/ci-workflows.test.mjs`：14/14 通过（新增两条）。变异检查：去掉一个步骤的分片参数 → 「unsharded Vitest step」失败；给一个 Vitest 步骤加 `if: matrix.shard == 1` → 「would skip half of its files」失败；恢复后通过。
 - 本地 Vitest 4.0.16：两文件步骤的两片各跑一个文件；单文件步骤的空片在 `--passWithNoTests` 下以 0 退出；「slider gesture lifecycles」八个文件两片各四个，无重叠，并集为八个，均通过。
+- 首轮 CI（PR #103，run 38188590376）第一片在「Test build and release validators」失败：`check-client-bundle-budget.test.mjs` 的「runs the budget tests once」断言工作流里不得出现 `matrix`，本地只跑了 `ci-workflows.test.mjs` 没发现。该断言的意图是校验器只跑一次，已改为要求 `node --test` 步骤带 `if: matrix.shard == 1`。之后本地把工作流里的非 Vitest 步骤全部跑了一遍：五个校验器 53/53（`serve-spa-static` 需在沙箱外绑定端口）、`pnpm test:cloudfront` 46/46、`pnpm brand:check` 通过。同一轮里第二片 585 秒通过，可作为单片耗时的首个读数（此前整个 job 约 930 秒）。
 - `git diff --check`、`pnpm memory:index`、`pnpm memory:check` 通过。Biome 不处理 `scripts/*.mjs`（配置忽略）。
 - 未验证：GitHub 上两片的实际耗时与计费、路径排除对真实 PR 的触发行为；本 PR 改了 `.github/workflows/**`，会启动 Terminal Tests 两片，不会启动浏览器回归（它只对自己的工作流文件敏感，本 PR 改了 `slider-browser.yml`，所以会启动）。以首轮运行为准。
 
