@@ -48,4 +48,6 @@
 
 ## 后续与替代关系
 
+2026-10-12 更正：上文「报价币百分比选择也记录冻结基准算出的基础币 `sizeSource`」一项已在同日撤回，原因与取证见 [Codex CLI 补审记录](2026-10-12-codex-cli-review-followups.md)。
+
 补充 [slider-interactions](../../slider-interactions.md) 与 2026-09-20 的滑杆复盘，不替代。合入 `dev` 后随下一次发布上线；请报告人在 HYPE 等小最大值交易对上实际拖动确认。

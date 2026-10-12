@@ -51,6 +51,10 @@ const testState = vi.hoisted(() => ({
 	toastLoading: vi.fn(),
 	toastSuccess: vi.fn(),
 	toastWarning: vi.fn(),
+	legalStatus: { userAllowed: true, canPerformActions: true, acceptedTerms: true } as
+		| { userAllowed: boolean; canPerformActions: boolean; acceptedTerms: boolean }
+		| undefined,
+	authorizationIntent: null as null | { authNonce: string; validBefore: number },
 	submissionOutcomeUnknown: false,
 	useDepositOptions: null as null | Record<string, unknown>,
 	trackingOptions: null as null | Record<string, unknown>,
@@ -167,6 +171,12 @@ vi.mock("@/hooks/trade/use-cctp-deposit-fee", () => {
 vi.mock("@/lib/trade/cctp-deposit", () => ({
 	meetsCctpDepositMinimum: (amountRaw: bigint) => amountRaw >= 400_000n,
 }));
+vi.mock("@sairn/hl-react", () => ({
+	useLegalStatus: () => ({ data: testState.legalStatus }),
+}));
+vi.mock("@/lib/trade/cctp-deposit-tracking", () => ({
+	readCctpSponsoredAuthorizationIntent: () => testState.authorizationIntent,
+}));
 vi.mock("@/lib/hyperliquid/use-deposit", () => ({
 	useDeposit: (options: Record<string, unknown>) => {
 		testState.useDepositOptions = options;
@@ -214,6 +224,8 @@ describe.each([
 		testState.toastLoading.mockReset();
 		testState.toastSuccess.mockReset();
 		testState.toastWarning.mockReset();
+		testState.legalStatus = { userAllowed: true, canPerformActions: true, acceptedTerms: true };
+		testState.authorizationIntent = null;
 		testState.submissionOutcomeUnknown = false;
 		testState.depositError = null;
 		testState.depositHash = undefined;
@@ -308,6 +320,80 @@ describe.each([
 		expect(testState.refreshBalance).toHaveBeenCalledTimes(2);
 		expect(testState.deposit).toHaveBeenCalledTimes(1);
 		expect(testState.deposit).toHaveBeenCalledWith("9");
+	});
+
+	it.each([
+		["the legal status is still loading", undefined],
+		["the terms are not accepted", { userAllowed: true, canPerformActions: true, acceptedTerms: false }],
+		["actions are restricted", { userAllowed: true, canPerformActions: false, acceptedTerms: true }],
+		["the user is not allowed", { userAllowed: false, canPerformActions: true, acceptedTerms: true }],
+	])(
+		"neither reads the balance nor reports a failure while %s, and deposits once it is allowed",
+		async (_name, status) => {
+			testState.legalStatus = status;
+			await act(async () => {
+				root.render(createElement(EmbeddedDepositAutoBridge));
+			});
+
+			expect(testState.useDepositOptions?.balanceEnabled).toBe(false);
+			expect(testState.deposit).not.toHaveBeenCalled();
+			expect(testState.toastError).not.toHaveBeenCalled();
+			expect(testState.toastLoading).not.toHaveBeenCalled();
+
+			testState.legalStatus = { userAllowed: true, canPerformActions: true, acceptedTerms: true };
+			await act(async () => {
+				root.render(createElement(EmbeddedDepositAutoBridge));
+			});
+
+			expect(testState.deposit).toHaveBeenCalledTimes(1);
+		},
+	);
+
+	it("starts no new attempt while an earlier authorization is unresolved, so its unknown-status warning stays", async () => {
+		testState.authorizationIntent = { authNonce: "0x01", validBefore: Math.floor(Date.now() / 1000) + 600 };
+		await act(async () => {
+			root.render(createElement(EmbeddedDepositAutoBridge));
+		});
+
+		expect(testState.refreshBalance).not.toHaveBeenCalled();
+		expect(testState.deposit).not.toHaveBeenCalled();
+		expect(testState.toastError).not.toHaveBeenCalled();
+
+		await act(async () => {
+			await vi.advanceTimersByTimeAsync(599_000);
+		});
+		expect(testState.deposit).not.toHaveBeenCalled();
+
+		testState.authorizationIntent = null;
+		await act(async () => {
+			await vi.advanceTimersByTimeAsync(3_000);
+		});
+		expect(testState.deposit).toHaveBeenCalledTimes(1);
+	});
+
+	it("drops a queued attempt when the legal status stops allowing actions before it submits", async () => {
+		let releaseBalance: (value: bigint) => void = () => {};
+		testState.refreshBalance.mockReturnValue(
+			new Promise<bigint>((resolve) => {
+				releaseBalance = resolve;
+			}),
+		);
+		await act(async () => {
+			root.render(createElement(EmbeddedDepositAutoBridge));
+		});
+		expect(testState.refreshBalance).toHaveBeenCalledTimes(1);
+
+		testState.legalStatus = { userAllowed: true, canPerformActions: true, acceptedTerms: false };
+		await act(async () => {
+			root.render(createElement(EmbeddedDepositAutoBridge));
+		});
+		await act(async () => {
+			releaseBalance(9_000_000n);
+			await Promise.resolve();
+		});
+
+		expect(testState.deposit).not.toHaveBeenCalled();
+		expect(testState.toastError).not.toHaveBeenCalled();
 	});
 
 	it("does not submit when sponsored CCTP is disabled", async () => {

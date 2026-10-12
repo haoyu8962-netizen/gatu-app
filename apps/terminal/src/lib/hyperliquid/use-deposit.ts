@@ -1309,7 +1309,9 @@ export function useDeposit({
 					await assertReviewedBalanceUnchanged();
 					await assertFreshSelectedDepositRoute();
 					if (provider) await assertDepositChainStillActive(provider, cctpDepositConfig);
-					if (executionScope === "automatic") await verifyFreshLegalAction({ env: cctpTrackingEnv });
+					if (executionScope === "automatic") {
+						await verifyFreshLegalAction({ env: cctpTrackingEnv, owner: ready.address });
+					}
 					const authorizationSignature = await ready.walletClient.signTypedData({
 						account: ready.address,
 						...parameters.typedData,
@@ -1339,7 +1341,7 @@ export function useDeposit({
 						if (!smartClient) throw new LocalizedActionError(msg`Smart wallet client not ready`);
 						await assertFreshSelectedDepositRoute();
 						await assertReviewedBalanceUnchanged();
-						await verifyFreshLegalAction({ env: cctpTrackingEnv });
+						await verifyFreshLegalAction({ env: cctpTrackingEnv, owner: ready.address });
 						await assertProviderAccountStillActive(ready.provider, ready.address);
 						if (getClientChainId(smartClient) !== cctpDepositConfig.chainId || !smartClient.paymaster) {
 							throw new LocalizedActionError(msg`Smart wallet client not ready`);
@@ -1381,7 +1383,7 @@ export function useDeposit({
 							);
 						}
 						await assertFreshSelectedDepositRoute();
-						await verifyFreshLegalAction({ env: cctpTrackingEnv });
+						await verifyFreshLegalAction({ env: cctpTrackingEnv, owner: ready.address });
 						await assertProviderAccountStillActive(ready.provider, ready.address);
 						await assertDepositChainStillActive(ready.provider, cctpDepositConfig);
 						sourceHash = await waitForWalletTransactionHash(

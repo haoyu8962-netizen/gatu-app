@@ -136,20 +136,20 @@ describe("order entry percent basis during a slider gesture", () => {
 		expect(testState.setSize).toHaveBeenLastCalledWith("0.25");
 	});
 
-	it("pins the base quantity of a quote-mode percentage to the price captured at the gesture start", () => {
+	it("keeps the quote amount of a percentage steady during a gesture and leaves its base size to the live price", () => {
 		let entry = render(86.88, "quote");
 		act(() => entry.beginSizePercentGesture());
 		act(() => entry.applySizePercent(77));
-		expect(testState.setSizeSelection).toHaveBeenLastCalledWith("20.73", expect.objectContaining({ baseSize: "0.23" }));
-		expect(testState.setSize).not.toHaveBeenCalled();
+		expect(testState.setSize).toHaveBeenLastCalledWith("20.73");
 
 		entry = render(90, "quote");
 		act(() => entry.applySizePercent(77));
-		expect(testState.setSizeSelection).toHaveBeenLastCalledWith("20.73", expect.objectContaining({ baseSize: "0.23" }));
+		expect(testState.setSize).toHaveBeenLastCalledWith("20.73");
+		expect(testState.setSizeSelection).not.toHaveBeenCalled();
 
 		act(() => entry.endSizePercentGesture());
 		act(() => entry.applySizePercent(77));
-		expect(testState.setSizeSelection).toHaveBeenLastCalledWith("21.48", expect.objectContaining({ baseSize: "0.23" }));
+		expect(testState.setSize).toHaveBeenLastCalledWith("21.48");
 	});
 
 	it("uses the live maximum outside a gesture", () => {
