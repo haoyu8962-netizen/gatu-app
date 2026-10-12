@@ -237,11 +237,15 @@ pointer was still. `useOrderEntryData` now captures `maxSize`, the conversion pr
 the spot balance, `szDecimals`, the size mode and the Reduce Only maximum at
 `onInteractionStart` and uses that basis for every preview and for the commit;
 `onInteractionEnd` releases it, so typed percentages, the Max button and the next
-gesture use live data again. A percentage selected in quote denomination also records
-the base quantity computed from that basis as its size source (as Reduce Only already
-did), because `deriveOrderEntry` otherwise converts the displayed quote amount back
-to base with the live price and the submitted base quantity would drift with every
-tick behind an unchanged display; a later edit of the size field replaces the source. The committed quantity is exactly the previewed one;
+gesture use live data again. In quote denomination the frozen basis keeps the displayed quote
+amount steady, and that amount is what the order commits to: `deriveOrderEntry`
+converts it to base with the live price, exactly as for a typed quote amount, so the
+size field, the order value and the submitted quantity always share one price. A
+version that also pinned the base quantity of the gesture (2026-10-12, PR #102) was
+withdrawn the same day: after release the field kept the old quote amount while the
+order used the pinned base at the new price, so the displayed amount and the order
+value drifted apart. Only Reduce Only keeps a base-quantity source, because its
+quote text is presentation of a position-bounded base size. The committed quantity is exactly the previewed one;
 validation and the execution guard still read the live maximum, so a maximum that
 fell during a long drag is reported as insufficient balance after release, not
 hidden by a silently smaller order. `order-entry-percent-basis` pins this with the

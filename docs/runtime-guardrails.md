@@ -321,7 +321,10 @@ implementation.
   then retries with the refreshed balance). Automatic callers also verify the
   owner's fresh legal status before signing, because no dialog gate ran. The
   host reports a no-hash submission or an unconfirmed submitted one as a
-  persistent unknown status, not as a failure.
+  persistent unknown status, not as a failure. The host is eligible only while
+  the legal status is known and allows actions, the legal check at the
+  execution boundary is bound to the account that signs, and no automatic
+  attempt starts while an earlier sponsored authorization is unresolved.
   Session restoration may process an existing eligible balance. This requires
   the application page to be running and does not promise offline initiation.
 - ZeroDev mainnet sponsorship must use a narrow Arbitrum One contract policy

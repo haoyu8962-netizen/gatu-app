@@ -1,5 +1,6 @@
 import { useLingui } from "@lingui/react/macro";
-import { useEffect, useLayoutEffect, useRef } from "react";
+import { useLegalStatus } from "@sairn/hl-react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { formatUnits } from "viem";
 import { isCctpSponsoredDepositEnabled } from "@/config/cctp-deposit";
@@ -15,6 +16,7 @@ import { formatTransferError, isSmartWalletNonceConflict } from "@/lib/errors/fo
 import { isDefinitiveDepositSourceFailure } from "@/lib/hyperliquid/deposit-source-error";
 import { useDeposit } from "@/lib/hyperliquid/use-deposit";
 import { meetsCctpDepositMinimum } from "@/lib/trade/cctp-deposit";
+import { readCctpSponsoredAuthorizationIntent } from "@/lib/trade/cctp-deposit-tracking";
 import { formatFundsActionFeedback } from "@/lib/trade/funds-action-feedback";
 import { runWithExclusiveBrowserLock } from "@/lib/wallet/exclusive-browser-lock";
 import { getPrivyEmailAddress } from "@/lib/wallet/privy-wagmi";
@@ -44,6 +46,9 @@ export function EmbeddedDepositAutoBridge() {
 	const depositEmbeddedWalletAddress = embeddedWalletAddress ?? ensuredEmbeddedWalletAddress;
 	const isEmbeddedDeposit = !!emailAddress && walletIntent === "embedded" && shouldUseEmailEmbeddedWallet;
 	const cctpTrackingEnv = isTestnet ? "Testnet" : "Mainnet";
+	const legalStatus = useLegalStatus().data;
+	const legalActionsAllowed =
+		legalStatus?.userAllowed === true && legalStatus.canPerformActions && legalStatus.acceptedTerms;
 	const notificationIdentity =
 		isEmbeddedDeposit && depositEmbeddedWalletAddress
 			? `${AUTO_DEPOSIT_TOAST_PREFIX}:${cctpTrackingEnv}:${depositEmbeddedWalletAddress.toLowerCase()}`
@@ -68,6 +73,7 @@ export function EmbeddedDepositAutoBridge() {
 		isEmbeddedDeposit &&
 		!!depositEmbeddedWalletAddress &&
 		automaticDepositEnabled &&
+		legalActionsAllowed &&
 		autoCctpRouteAvailable &&
 		!cctpDepositTracking.recoveryRecord;
 	const attemptKeyRef = useRef<string | null>(null);
@@ -75,6 +81,10 @@ export function EmbeddedDepositAutoBridge() {
 	const retryKeyRef = useRef<string | null>(null);
 	const retryCountRef = useRef(0);
 	const retryTimeoutRef = useRef<number | null>(null);
+	const authorizationRecheckTimeoutRef = useRef<number | null>(null);
+	const [authorizationRecheck, setAuthorizationRecheck] = useState(0);
+	const legalActionsAllowedRef = useRef(legalActionsAllowed);
+	legalActionsAllowedRef.current = legalActionsAllowed;
 	const activeAttemptAbortRef = useRef<AbortController | null>(null);
 	const activeAttemptIdentityRef = useRef<string | null>(null);
 	const reconciledErrorRef = useRef<Error | null>(null);
@@ -110,6 +120,7 @@ export function EmbeddedDepositAutoBridge() {
 	const balanceEligibleKey =
 		isEmbeddedDeposit &&
 		automaticDepositEnabled &&
+		legalActionsAllowed &&
 		sponsoredCctpEnabled &&
 		!cctpDepositTracking.recoveryRecord &&
 		!needsEmbeddedWallet &&
@@ -129,6 +140,8 @@ export function EmbeddedDepositAutoBridge() {
 	useEffect(() => {
 		return () => {
 			if (retryTimeoutRef.current) window.clearTimeout(retryTimeoutRef.current);
+			if (authorizationRecheckTimeoutRef.current) window.clearTimeout(authorizationRecheckTimeoutRef.current);
+			authorizationRecheckTimeoutRef.current = null;
 			activeAttemptAbortRef.current?.abort();
 			attemptKeyRef.current = null;
 			lastEligibleKeyRef.current = null;
@@ -168,6 +181,16 @@ export function EmbeddedDepositAutoBridge() {
 				attemptKeyRef.current = null;
 				resetDeposit();
 			}, retryDelay);
+		}
+
+		function scheduleAuthorizationRecheck(validBeforeSeconds: number) {
+			if (authorizationRecheckTimeoutRef.current) window.clearTimeout(authorizationRecheckTimeoutRef.current);
+			const delay = Math.max(1_000, validBeforeSeconds * 1_000 - Date.now() + 1_000);
+			authorizationRecheckTimeoutRef.current = window.setTimeout(() => {
+				authorizationRecheckTimeoutRef.current = null;
+				attemptKeyRef.current = null;
+				setAuthorizationRecheck((count) => count + 1);
+			}, delay);
 		}
 
 		if (activeAttemptIdentityRef.current && activeAttemptIdentityRef.current !== depositIdentityKey) {
@@ -243,7 +266,7 @@ export function EmbeddedDepositAutoBridge() {
 		}
 
 		if (attemptKeyRef.current === eligibleDepositKey) return;
-		if (!depositEmbeddedWalletAddress) return;
+		if (!depositEmbeddedWalletAddress || authorizationRecheck < 0) return;
 
 		attemptKeyRef.current = eligibleDepositKey;
 		const abortController = new AbortController();
@@ -256,8 +279,17 @@ export function EmbeddedDepositAutoBridge() {
 			name: lockName,
 			signal: abortController.signal,
 			task: async () => {
+				const unresolvedAuthorization = readCctpSponsoredAuthorizationIntent(cctpTrackingEnv, normalizedWalletAddress);
+				if (unresolvedAuthorization) {
+					scheduleAuthorizationRecheck(unresolvedAuthorization.validBefore);
+					return;
+				}
 				const currentBalanceRaw = await refreshBalance();
 				if (abortController.signal.aborted) return;
+				if (!legalActionsAllowedRef.current) {
+					attemptKeyRef.current = null;
+					return;
+				}
 				if (currentBalanceRaw === undefined) {
 					attemptKeyRef.current = null;
 					scheduleRetry(eligibleDepositKey);
@@ -283,6 +315,8 @@ export function EmbeddedDepositAutoBridge() {
 				}
 			});
 	}, [
+		authorizationRecheck,
+		cctpTrackingEnv,
 		deposit,
 		depositEmbeddedWalletAddress,
 		depositError,

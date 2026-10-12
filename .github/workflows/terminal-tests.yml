@@ -360,6 +360,7 @@ jobs:
           src/lib/tests/deposit-order-cta.test.tsx
           src/lib/tests/development-geo.test.ts
           src/lib/tests/embedded-deposit-auto-bridge.test.tsx
+          src/lib/tests/embedded-deposit-auto-bridge-sonner.test.tsx
           src/lib/tests/funding-address-card.test.tsx
           src/lib/tests/geo-api.test.ts
           src/lib/tests/privy-fiat-funding.test.ts

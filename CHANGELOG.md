@@ -556,10 +556,17 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Fixed
 
+- Automatic email-wallet deposits now wait until your terms acceptance and access status are
+  confirmed instead of trying first and reporting a failure; they start by themselves once the
+  terms are accepted. The legal check before signing is tied to the exact wallet that signs, and
+  while an earlier deposit authorization is still unresolved no new attempt starts, so its
+  "status unknown" notice stays visible.
+
 - Dragging the size slider no longer makes the quantity flicker between neighbouring lots on
   markets with a small maximum (for example HYPE): the percentage is applied to the maximum
   and price captured when the drag starts, instead of to every price tick that arrives during
-  the drag. Validation still checks the live maximum when the order is placed.
+  the drag. Validation still checks the live maximum when the order is placed. In quote
+  denomination the amount shown in the size field stays the amount the order is placed for.
 
 - A sponsored deposit that returns no transaction hash now says its submission is unconfirmed,
   instead of claiming an Arbitrum transaction was submitted. An active unresolved authorization
