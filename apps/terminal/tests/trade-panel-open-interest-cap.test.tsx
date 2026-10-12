@@ -109,6 +109,8 @@ vi.mock("@/hooks/trade/use-order-entry-data", () => ({
 		allowsIsolatedMarginRemoval: false,
 		applyMarginAndLeverage: vi.fn(),
 		applySizePercent: vi.fn(),
+		beginSizePercentGesture: vi.fn(),
+		endSizePercentGesture: vi.fn(),
 		availabilityMaxAgeMs: 20_000,
 		availabilityReceivedAt: Date.now(),
 		availabilityStatus: "success",

@@ -73,6 +73,7 @@
 
 当前规范：[docs/order-entry-layout-audit.md](../../docs/order-entry-layout-audit.md) · [docs/order-entry-surface-parity.md](../../docs/order-entry-surface-parity.md) · [docs/desktop-grid-layout.md](../../docs/desktop-grid-layout.md)
 
+- [拖动数量滑杆时个别交易对数量闪烁：手势期间冻结百分比计算基准](sessions/2026-10-12-slider-percent-basis-flicker.md) — 2026-10-12；已验证，范围见正文。用户报告 HYPE 等个别交易对拖动数量滑杆时 Size 数字不稳定、闪烁。审查确认缺陷：每 15ms 预览都用当时的 maxSize（activeAssetData.maxTradeSzs 随标记价 tick）和换算价重算 getSizeForPercent，拇指不动也会在相邻两档间翻（0.23↔0.24）。修复：useOrderEntryData 在 onInteractionStart 捕获 maxSize/换算价/现货余额/szDecimals/sizeMode/Reduce Only 上限并用于手势内全部预览与提交，onInteractionEnd 释放；桌面与手机表单都接上。新增真实 Hook 回归（基准 0.31→0.33 时 77% 仍为 0.23，结束后 0.25），变异检查先红后绿。未做真机拖动验收。
 - [移动端下单按钮的提交状态与桌面一致](sessions/2026-10-01-mobile-order-button-status.md) — 2026-10-01；已验证，范围见正文。移动端下单按钮提交订单时不再转圈、名称保持方向标签，只有启用交易的钱包签名阶段显示 ButtonLoading，与桌面一致；状态动效契约移除该转圈豁免，渲染真实 MobileTradeView 的用例钉住两种状态（旧代码上 4 例失败）；未做真机与真实钱包验收。
 - [集成 PR：持久化水合的 CI 覆盖与杠杆警告拖动保持](sessions/2026-09-28-integrate-hydration-leverage-warning.md) — 2026-09-28；已验证，范围见正文。按用户要求把 PR 43（claude/hungry-cartwright-aa350f）与没有 PR 的 claude/heuristic-goldberg-e91886 合成一个集成分支，基于 dev 5c7ccbd1 做两次 --no-ff 合并。PR 43 的修复提交已由 518d0039 以相同补丁进入 dev，实际新增的只有 CI 清单一行和记录补充；冲突只在工作记录（取分支版本，它包含 dev 上的副本）和生成的 INDEX.md（重新生成）。杠杆警告分支合并无冲突。集成分支上 typecheck、Biome、CI 结构测试、全量单测（608 个文件 / 6,985 项）与滑杆浏览器套件（22 项）通过；没有做真人拖动验证，GitHub CI 以 PR 为准。
 - [滑杆暂停测试的预览基线竞态](sessions/2026-09-28-slider-pause-preview-baseline.md) — 2026-09-28；已验证，范围见正文。滑杆浏览器测试「值来源在拖动中暂停」在 PR 48 的 CI 上偶发 Expected 5 / Received 6。代码分析与本地复现支持的根因在测试的读取顺序：基线在一次 evaluate 里读、暂停在下一次 evaluate 才设，其间 15ms 尾随预览会合法发布并被多计。改为先挂 MutationObserver 再暂停，在暂停提交之后的微任务里读基线；6 倍 CPU 节流下原测试 2/25 以同一签名失败、新测试 25/25 通过。Codex 只读对抗审查无 P0–P2，指出的两处表述过强经变异复核后已更正：暂停提交内同步发布的预览会被新基线吸收（由单测覆盖）。审查还发现暂停时取消待发定时器原先没有测试覆盖，已按用户决定补单测，只去掉取消分支的变异下它是唯一失败的用例。未改 trade-slider.tsx；PR 49 的五项检查全部通过后以 merge commit 合入 dev（d0e6a79b）。
@@ -389,6 +390,7 @@
 
 | 记录日期 | 任务记录 | 来源任务 | 基线提交 | 状态 |
 | --- | --- | --- | --- | --- |
+| 2026-10-12 | [拖动数量滑杆时个别交易对数量闪烁：手势期间冻结百分比计算基准](sessions/2026-10-12-slider-percent-basis-flicker.md) | 未取得任务标识，见正文 | `2eeec75d` | 已验证，范围见正文 |
 | 2026-10-11 | [CloudFront 生产发布 p30：邮箱主网自动存款、无名默认 Agent、Link mobile device 修复，三个闸门全开](sessions/2026-10-11-cloudfront-release-p30.md) | 未取得任务标识，见正文 | `0c8980e5` | 已验证，范围见正文 |
 | 2026-10-11 | [对抗审查 codex/deposit-auto-investigation 的 10 个提交并补自动存款余额锁定](sessions/2026-10-11-codex-deposit-branch-review.md) | 未取得任务标识，见正文 | `eeace5db` | 已验证，范围见正文 |
 | 2026-10-11 | [p30 晋升前修复配对开启构建：api-wallet 双 chunk 与总量基线](sessions/2026-10-11-p30-pairing-build-budget-fix.md) | 未取得任务标识，见正文 | `ee4aab99` | 已验证，范围见正文 |
