@@ -61,6 +61,22 @@ describe("not found page", () => {
 		expect(document.title).toBe("0.1 BTC/USDC · Sairn");
 	});
 
+	it("leaves a title that the next route already installed alone", () => {
+		document.title = "0.1 BTC/USDC · Sairn";
+		act(() =>
+			root.render(
+				<I18nProvider i18n={i18n}>
+					<NotFoundPage />
+				</I18nProvider>,
+			),
+		);
+		document.title = "Portfolio | Sairn";
+
+		act(() => root.render(null));
+
+		expect(document.title).toBe("Portfolio | Sairn");
+	});
+
 	it("updates its visible and accessible recovery copy after a locale switch", () => {
 		act(() =>
 			root.render(

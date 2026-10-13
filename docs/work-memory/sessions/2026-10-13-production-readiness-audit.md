@@ -113,6 +113,7 @@
 | `/trade/<不存在市场>` 标题 | `NotFoundPage` 挂载时设置 `Page Not Found | Sairn`、卸载时恢复；`lib/seo.ts` 抽出 `buildPageTitle`。`not-found-page.test.tsx` |
 | OI 未知放行 | **不改**：ADR 0023 已明确决定未知状态放行、交易所保持权威，审查代理把既定决定报成了缺陷 |
 | PR #108 机器人 P2：推荐地区接口的 1 KiB 上限只对 `application/json` 生效 | `readJsonBody` 对任何 content-type 都先做有界读取再决定是否解析；`geo-api.test.ts` 补 text/plain 2000 字节 → 413 |
+| PR #109 机器人 P2：404 页卸载时无条件写回旧标题，会覆盖新路由刚装好的标题 | 只在 `document.title` 仍是本组件写入的 404 标题时才恢复（与 `useDocumentTitle` 同一规则）；`not-found-page.test.tsx` 新增用例 |
 | PR #108 机器人 P2：自动存款在错误分支同步读取授权意向，存储抛错会进错误边界 | 读取包进 `hasNoSponsoredAuthorizationIntent`，抛错按「可能有未决授权」处理、不重试；`embedded-deposit-auto-bridge.test.tsx` 新增用例 |
 
 还原核对（实际运行）：调度器、Markdown、账本、兑换、404、错误上报、推荐地区 body 上限、自动存款意向读取八处分别还原到 `HEAD` 后对应用例变红。Biome、`pnpm typecheck`、`ci-workflows.test.mjs` 14/14、`pnpm memory:check` 通过；全量单测 685 个文件、9187 条通过（沙箱内不能绑定端口的 `vite-development-cache` 一条在沙箱外单跑通过）。

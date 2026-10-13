@@ -9,9 +9,10 @@ export function NotFoundPage() {
 
 	useEffect(() => {
 		const previousTitle = document.title;
-		document.title = buildPageTitle(ROUTE_SEO.NOT_FOUND.title);
+		const notFoundTitle = buildPageTitle(ROUTE_SEO.NOT_FOUND.title);
+		document.title = notFoundTitle;
 		return () => {
-			document.title = previousTitle;
+			if (document.title === notFoundTitle) document.title = previousTitle;
 		};
 	}, []);
 
