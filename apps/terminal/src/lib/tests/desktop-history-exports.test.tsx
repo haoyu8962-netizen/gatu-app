@@ -279,6 +279,14 @@ describe("desktop history exports", () => {
 		);
 	});
 
+	it("exports fill numbers as the exchange sent them, never compacted, rounded or localized", () => {
+		act(() => root.render(<HistoryTab />));
+		const rows = mocks.fillsBuildRows?.([mocks.fills[0]]) ?? [];
+
+		expect(rows[0]?.slice(4)).toEqual(["Price", "Size", "Fee", "Fee Token", "PNL", "Transaction"]);
+		expect(rows[1]?.slice(4)).toEqual(["100000", "0.01", "0.12", "USDC", "12.5", "0xaaa"]);
+	});
+
 	it("writes exported fill headers, labels and dates in the language active when the rows are built", () => {
 		act(() => root.render(<HistoryTab />));
 		const buildRowsFromEnglishRender = mocks.fillsBuildRows;

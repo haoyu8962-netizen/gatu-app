@@ -114,6 +114,14 @@ describe("staking action safety", () => {
 	it("clears only deterministic post-preflight errors and treats every other post-dispatch failure as unknown", () => {
 		expect(classifyStakingActionError(new Error("provider unavailable"), false)).toBe("preflight");
 		expect(classifyStakingActionError({ code: 4001 }, true)).toBe("rejected");
+		const wrappedRejection = new Error("Failed to sign the typed data using the wallet", {
+			cause: { code: 4001, message: "User rejected the request" },
+		});
+		wrappedRejection.name = "AbstractWalletError";
+		expect(classifyStakingActionError(wrappedRejection, true)).toBe("rejected");
+		expect(classifyStakingActionError(new Error("Request rejected by user"), true)).toBe("rejected");
+		expect(classifyStakingActionError(new Error("You rejected the request in the wallet"), true)).toBe("rejected");
+		expect(classifyStakingActionError(new Error("Request rejected by Hyperliquid"), true)).toBe("unknown");
 		const apiError = new Error("bad request");
 		apiError.name = "ApiRequestError";
 		expect(classifyStakingActionError(apiError, true)).toBe("apiError");

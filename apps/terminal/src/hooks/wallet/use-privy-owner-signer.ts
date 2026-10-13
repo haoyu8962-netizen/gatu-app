@@ -47,9 +47,14 @@ export function usePrivyOwnerSigner(): PrivyOwnerSignerValue | null {
 		hasSameWalletAddress(clientKey, ownerAddress) &&
 		hasSameWalletAddress(connectedWalletAddress, ownerAddress) &&
 		hasSameWalletAddress(embeddedWalletAddress, ownerAddress);
+	const signTypedDataRef = useRef(signTypedData);
+	useLayoutEffect(() => {
+		signTypedDataRef.current = signTypedData;
+	});
+	const embeddedWalletAddress_ = embeddedWallet?.address;
 	const session = useMemo(
-		() => ({ signerReady, ownerAddress, env, userId, embeddedWallet, signTypedData }),
-		[signerReady, ownerAddress, env, userId, embeddedWallet, signTypedData],
+		() => ({ signerReady, ownerAddress, env, userId, embeddedWalletAddress: embeddedWalletAddress_ }),
+		[signerReady, ownerAddress, env, userId, embeddedWalletAddress_],
 	);
 	const activeSessionRef = useRef<typeof session | null>(null);
 
@@ -75,11 +80,11 @@ export function usePrivyOwnerSigner(): PrivyOwnerSignerValue | null {
 					? createPrivyOwnerSigner({
 							ownerAddress,
 							chainId: env === "Testnet" ? arbitrumSepolia.id : arbitrum.id,
-							signTypedData,
+							signTypedData: (...args) => signTypedDataRef.current(...args),
 							assertCurrent,
 						})
 					: null,
 			assertCurrent,
 		};
-	}, [usesOwnerSigner, ownerAddress, signerReady, env, signTypedData, assertCurrent]);
+	}, [usesOwnerSigner, ownerAddress, signerReady, env, assertCurrent]);
 }

@@ -182,6 +182,27 @@ describe("geo API handlers in production", () => {
 		expect(fetchMock.mock.calls[0]?.[1]).toMatchObject({ cache: "no-store" });
 	});
 
+	it("limits referral decisions per client IP and rejects oversized bodies before touching IPdata", async () => {
+		const fetchMock = vi.fn(async () => ipdataResponse(ALLOWED_IPDATA_RESPONSE));
+		let nowMs = 1_000;
+		const handlers = createGeoApiHandlers(createEnvironment({ fetch: fetchMock, now: () => nowMs }));
+
+		for (let i = 0; i < 12; i++) expect((await handlers.referralActionGeo(referralRequest())).status).toBe(200);
+		expect((await handlers.referralActionGeo(referralRequest())).status).toBe(429);
+		expect(fetchMock).toHaveBeenCalledTimes(12);
+
+		const other = createEnvironment({ fetch: fetchMock, now: () => nowMs, resolveClientIp: () => "203.0.113.9" });
+		expect((await createGeoApiHandlers(other).referralActionGeo(referralRequest())).status).toBe(200);
+
+		nowMs += 60_000;
+		expect((await handlers.referralActionGeo(referralRequest())).status).toBe(200);
+
+		const oversized = await handlers.referralActionGeo(
+			referralRequest(undefined, {}, `{"override":"${"x".repeat(2_000)}"}`),
+		);
+		expect(oversized.status).toBe(413);
+	});
+
 	it("reports unavailable referral decisions inside the response body", async () => {
 		const handlers = createGeoApiHandlers(createEnvironment({ ipdataApiKey: () => undefined }));
 		const response = await handlers.referralActionGeo(referralRequest({ override: null }));

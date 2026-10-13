@@ -566,6 +566,30 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Fixed
 
+- CSV exports of trade history, TWAP fills and the trade-history page write prices, sizes, fees and
+  PNL exactly as the exchange reports them, in a plain numeric form, with the fee token in its own
+  column. They used to go through the on-screen formatter, which compacted `95001.5` to `$95K`,
+  rounded small prices to `$0.00` and localized separators; negative numbers also carried a leading
+  apostrophe that turned them into text in spreadsheets.
+- Changing a position's TP/SL no longer reports a replacement the exchange refused as an uncertain
+  outcome: when the old order was cancelled and the new one was rejected, the notification says so,
+  shows the exchange's reason, and the market is not locked for two minutes behind a reconciliation
+  that could never finish.
+- An automatic email-wallet deposit that failed before anything reached the bundler (a fee quote or
+  route that could not be read, for example) now retries with backoff instead of staying failed until
+  the balance changes; a submission that may have reached the bundler is still never repeated.
+- Staking and Vault actions treat a signature the wallet declined as a rejection even when the SDK
+  wrapped it, instead of ending in "status unknown" and blocking further Vault and staking actions
+  until the record was cleared by hand. A Vault action that stopped before the SDK boundary (funds
+  lock timeout, legal or identity change) is reported as a failure, not an unknown outcome.
+- Email-wallet trading no longer loses an in-flight or queued signed request when Privy re-renders,
+  which happens on token refresh, wallet directory updates and theme changes.
+- The referral region check accepts at most twelve requests per minute from one address per server
+  instance and rejects oversized bodies, which bounds how fast one client can spend the region
+  provider's quota.
+- Double-clicking the order button with confirmations turned off no longer produces a false "another
+  order is still being confirmed" notification.
+
 - Automatic email-wallet deposits now wait until your terms acceptance and access status are
   confirmed instead of trying first and reporting a failure; they start by themselves once the
   terms are accepted. The legal check before signing is tied to the exact wallet that signs, and

@@ -6,7 +6,12 @@ import type { Address, Hex } from "viem";
 import { useMasterWalletActionReason } from "@/hooks/trade/use-master-wallet-action-reason";
 import { useExplicitAgentApproval } from "@/hooks/wallet/use-explicit-agent-approval";
 import { useReconnectWallet, useWalletSession } from "@/hooks/wallet/use-wallet-session";
-import { type ActionFailure, classifyActionErrorOr, formatActionFailure } from "@/lib/errors/action-error";
+import {
+	type ActionFailure,
+	classifyActionErrorOr,
+	formatActionFailure,
+	isWalletRejectionError,
+} from "@/lib/errors/action-error";
 import { formatDateTime } from "@/lib/format";
 import { type InfoResponse, useHyperliquid, useInfo } from "@/lib/hyperliquid";
 import type { Translate } from "@/lib/translate";
@@ -323,7 +328,7 @@ export function useApiWalletController({
 			if (!executionIsCurrent(lease) || lease.abortController.signal.aborted) return;
 			const latest = activeActionRef.current;
 			if (!latest) return;
-			if (isUserRejectedRequest(error)) {
+			if (isWalletRejectionError(error)) {
 				updateAction({
 					...latest,
 					state: transitionApiWalletAction(latest.state, { type: "resolve", result: "rejected" }),
@@ -650,18 +655,6 @@ function isCurrentIdentityOperable(
 	pageState: ApiWalletViewProps["pageState"],
 ): boolean {
 	return expected === current && isApiWalletPageOperable(pageState);
-}
-
-function isUserRejectedRequest(error: unknown): boolean {
-	if (!error || typeof error !== "object") return false;
-	const candidate = error as { code?: unknown; message?: unknown };
-	return (
-		candidate.code === 4001 ||
-		(typeof candidate.message === "string" &&
-			/user rejected|user denied|rejected the request in (?:the )?wallet|request rejected by (?:the )?user/i.test(
-				candidate.message,
-			))
-	);
 }
 
 function isDeterministicApprovalError(error: unknown): boolean {

@@ -118,7 +118,7 @@ function parseDeclaredContentLength(header: string | null): number | undefined |
 	return Number.isSafeInteger(length) ? length : null;
 }
 
-async function readBoundedBody(request: Request, maxBytes: number): Promise<string | null> {
+export async function readBoundedBody(request: Request, maxBytes: number): Promise<string | null> {
 	if (!request.body) return "";
 
 	const reader = request.body.getReader();

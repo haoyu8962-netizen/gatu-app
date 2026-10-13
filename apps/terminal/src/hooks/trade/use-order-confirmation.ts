@@ -50,7 +50,12 @@ export function useOrderConfirmation<T>({
 			return;
 		}
 		if (getSkipOrderConfirmation()) {
-			await execute(input);
+			confirmingRef.current = true;
+			try {
+				await execute(input);
+			} finally {
+				confirmingRef.current = false;
+			}
 			return;
 		}
 		setDontShowAgain(false);

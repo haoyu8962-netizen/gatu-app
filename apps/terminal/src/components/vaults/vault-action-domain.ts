@@ -1,6 +1,7 @@
 import Big from "big.js";
 import type { FundsActionMatch } from "@/components/funds-action/funds-action-reconciliation";
 import { USDC_ATOMIC_DECIMALS } from "@/components/funds-action/funds-amount";
+import { isWalletRejectionError } from "@/lib/errors/action-error";
 import {
 	deriveVaultOwnerView,
 	isUnsignedDecimal,
@@ -147,12 +148,17 @@ export class VaultLocalPreDispatchError extends Error {
 }
 
 export function classifyVaultMutationFailure(error: unknown): VaultMutationFailureKind {
-	if (isUserRejectedRequest(error)) return "rejected";
+	if (isWalletRejectionError(error)) return "rejected";
 	if (
 		error instanceof Error &&
 		(error.name === "ApiRequestError" ||
 			error.name === "ValidationError" ||
-			error.name === "VaultLocalPreDispatchError")
+			error.name === "VaultLocalPreDispatchError" ||
+			error.name === "FundsActionLockTimeoutError" ||
+			error.name === "FundsActionLockUnavailableError" ||
+			error.name === "LegalActionNotAllowedError" ||
+			error.name === "ExchangeRequestInvalidatedError" ||
+			error.name === "WalletAccountMismatchError")
 	) {
 		return "deterministic";
 	}
@@ -183,17 +189,6 @@ export function formatVaultOperationReference(input: {
 
 export interface VaultActionReceipt extends FundsActionMatch {
 	operationReference: string;
-}
-
-function isUserRejectedRequest(error: unknown): boolean {
-	if (!isRecord(error)) return false;
-	return (
-		error.code === 4001 ||
-		(typeof error.message === "string" &&
-			/user rejected|user denied|rejected the request in (?:the )?wallet|request rejected by (?:the )?user/i.test(
-				error.message,
-			))
-	);
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

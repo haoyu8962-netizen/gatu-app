@@ -63,16 +63,11 @@ export function HistoryTab() {
 				{ header: t`Asset`, getValue: (fill) => fill.coin },
 				{ header: t`Direction`, getValue: (fill) => (fill.liquidation ? t`Liquidated` : getDirectionLabel(fill.dir)) },
 				{ header: t`Type`, getValue: () => t`Trade` },
-				{ header: t`Price`, getValue: (fill) => formatUSD(fill.px) },
-				{ header: t`Size`, getValue: (fill) => formatNumber(fill.sz, markets.getSzDecimals(fill.coin)) },
-				{ header: t`Fee`, getValue: (fill) => formatToken(fill.fee, { symbol: fill.feeToken }) },
-				{
-					header: t`PNL`,
-					getValue: (fill) => {
-						const closedPnl = getToolbarNonZeroPnl(fill.closedPnl);
-						return closedPnl ? formatUSD(closedPnl, { signDisplay: "exceptZero" }) : FALLBACK_VALUE_PLACEHOLDER;
-					},
-				},
+				{ header: t`Price`, getValue: (fill) => fill.px },
+				{ header: t`Size`, getValue: (fill) => fill.sz },
+				{ header: t`Fee`, getValue: (fill) => fill.fee },
+				{ header: t`Fee Token`, getValue: (fill) => fill.feeToken },
+				{ header: t`PNL`, getValue: (fill) => fill.closedPnl },
 				{
 					header: t`Transaction`,
 					getValue: (fill) => (hasUserFillExplorerTransaction(fill) ? fill.hash : FALLBACK_VALUE_PLACEHOLDER),

@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useHistoricalOrdersCsvExport, useUserFillsCsvExport } from "@/hooks/trade/use-history-csv-export";
 import { useTwapFillHistoryCsv } from "@/hooks/trade/use-twap-fill-history-csv";
-import { formatDateTimeShort, formatToken, formatUSD } from "@/lib/format";
+import { formatDateTimeShort } from "@/lib/format";
 import { clearTwapSliceFillsExportPacersForTests } from "@/lib/trade/user-fills";
 import { createI18nRoot } from "./harness/react";
 
@@ -416,27 +416,18 @@ describe("TWAP fill history CSV export", () => {
 		const [filename, rows] = mocks.downloadCsv.mock.calls[0] as [string, string[][]];
 		expect(filename).toBe("twap_fill_history.csv");
 		expect(rows).toEqual([
-			["Time", "Asset", "Direction", "Type", "Price", "Size", "Fee", "PNL", "Transaction"],
-			[
-				formatDateTimeShort(1_000),
-				"BTC",
-				"Open Long",
-				"TWAP",
-				formatUSD("63000"),
-				"0.01000",
-				formatToken("0.01", { symbol: "USDC" }),
-				"-",
-				"-",
-			],
+			["Time", "Asset", "Direction", "Type", "Price", "Size", "Fee", "Fee Token", "PNL", "Transaction"],
+			[formatDateTimeShort(1_000), "BTC", "Open Long", "TWAP", "63000", "0.01", "0.01", "USDC", "0", "-"],
 			[
 				formatDateTimeShort(2_000),
 				"ETH",
 				"Close Long",
 				"TWAP",
-				formatUSD("2500.5"),
-				"1.50",
-				formatToken("0.25", { symbol: "USDC" }),
-				formatUSD("-1.5", { signDisplay: "exceptZero" }),
+				"2500.5",
+				"1.5",
+				"0.25",
+				"USDC",
+				"-1.5",
 				`0x${"a".repeat(64)}`,
 			],
 			[
@@ -444,10 +435,11 @@ describe("TWAP fill history CSV export", () => {
 				"BTC",
 				"Liquidated",
 				"TWAP",
-				formatUSD("63000"),
-				"0.01000",
-				formatToken("0.01", { symbol: "USDC" }),
-				"-",
+				"63000",
+				"0.01",
+				"0.01",
+				"USDC",
+				"0",
 				`0x${"1".repeat(64)}`,
 			],
 		]);
