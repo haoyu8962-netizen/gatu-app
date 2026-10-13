@@ -5,10 +5,18 @@ import type { ExchangeMethod } from "../../types/clients";
 
 export type ExchangeRequestPriority = "normal" | "urgent";
 
+/**
+ * Which key signs the request. An external-wallet session signs user actions with the owner
+ * wallet and trading actions with its Agent; each signer keeps its own generation slot so a
+ * user-signed request can never invalidate a queued Agent-signed one, or the reverse.
+ */
+export type ExchangeRequestSigner = "user" | "agent";
+
 export interface ExchangeRequestGeneration {
 	readonly env: HyperliquidEnv;
 	readonly clientKey: string;
 	readonly sessionMode: SessionMode;
+	readonly signer: ExchangeRequestSigner;
 	readonly registrationEpoch?: string;
 	readonly agentPublicKey?: string;
 	readonly activeOwnerActivationEpoch?: string;
@@ -22,6 +30,7 @@ export interface ExchangeProviderLifecycleLease {
 }
 
 export interface ExchangeRequestGenerationProof {
+	signer?: ExchangeRequestSigner;
 	registrationEpoch?: string;
 	agentPublicKey?: string;
 	activeOwnerActivationEpoch?: string;
@@ -45,15 +54,22 @@ type QueueEntry<T> = {
 const identityGenerations = new Map<string, ExchangeRequestGeneration>();
 const activeSchedulers = new Set<ExchangeRequestScheduler>();
 
-function getIdentityKey(env: HyperliquidEnv, clientKey: string, sessionMode: SessionMode): string {
-	return `${env}:${clientKey.toLowerCase()}:${sessionMode}`;
+function getIdentityKey(
+	env: HyperliquidEnv,
+	clientKey: string,
+	sessionMode: SessionMode,
+	signer: ExchangeRequestSigner,
+): string {
+	return `${env}:${clientKey.toLowerCase()}:${sessionMode}:${signer}`;
 }
 
 function isGenerationCurrent(generation: ExchangeRequestGeneration | undefined): boolean {
 	if (!generation) return true;
 	return (
 		generation.lifecycle?.active !== false &&
-		identityGenerations.get(getIdentityKey(generation.env, generation.clientKey, generation.sessionMode)) === generation
+		identityGenerations.get(
+			getIdentityKey(generation.env, generation.clientKey, generation.sessionMode, generation.signer),
+		) === generation
 	);
 }
 
@@ -211,7 +227,8 @@ export function captureExchangeRequestGeneration(
 	sessionMode: SessionMode,
 	proof: ExchangeRequestGenerationProof = {},
 ): ExchangeRequestGeneration {
-	const identityKey = getIdentityKey(env, clientKey, sessionMode);
+	const signer = proof.signer ?? "user";
+	const identityKey = getIdentityKey(env, clientKey, sessionMode, signer);
 	const current = identityGenerations.get(identityKey);
 	if (current && hasSameGenerationProof(current, proof)) return current;
 
@@ -219,6 +236,7 @@ export function captureExchangeRequestGeneration(
 		env,
 		clientKey: clientKey.toLowerCase(),
 		sessionMode,
+		signer,
 		registrationEpoch: proof.registrationEpoch,
 		agentPublicKey: proof.agentPublicKey?.toLowerCase(),
 		activeOwnerActivationEpoch: proof.activeOwnerActivationEpoch,
@@ -230,17 +248,24 @@ export function captureExchangeRequestGeneration(
 	return generation;
 }
 
+/**
+ * Retires the generations of one owner. Without `signer` every signer of that owner is retired
+ * (the session itself ended); with `"agent"` only Agent-signed requests are retired, which is what
+ * an Agent key replacement or removal means for a wallet session whose owner keeps signing.
+ */
 export function invalidateExchangeRequestIdentity(
 	env: HyperliquidEnv,
 	clientKey: string,
 	sessionMode?: SessionMode,
+	signer?: ExchangeRequestSigner,
 ): void {
 	const normalizedClientKey = clientKey.toLowerCase();
 	for (const [identityKey, generation] of identityGenerations) {
 		if (
 			generation.env === env &&
 			generation.clientKey === normalizedClientKey &&
-			(sessionMode === undefined || generation.sessionMode === sessionMode)
+			(sessionMode === undefined || generation.sessionMode === sessionMode) &&
+			(signer === undefined || generation.signer === signer)
 		) {
 			identityGenerations.delete(identityKey);
 		}

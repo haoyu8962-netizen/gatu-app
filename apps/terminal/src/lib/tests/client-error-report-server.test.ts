@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { CLIENT_ERROR_REPORT_MAX_BYTES, type ClientErrorReport } from "@/lib/error-reporting/report";
 import { createErrorReportRateLimiter, handleClientErrorReport } from "@/lib/error-reporting/server";
+import { createFixedWindowIpLimiter } from "@/lib/server/fixed-window-ip-limiter";
 
 const VALID_REPORT: ClientErrorReport = {
 	schema: 1,
@@ -141,7 +142,39 @@ describe("client error report endpoint", () => {
 		expect(declared.status).toBe(413);
 	});
 
-	it("applies a fixed-window server rate limit without retaining client identity", async () => {
+	it("limits one client address before it can spend the shared budget", async () => {
+		const options = {
+			now: () => 1000,
+			rateLimiter: createErrorReportRateLimiter(3, 60_000),
+			clientRateLimiter: createFixedWindowIpLimiter({ limit: 1, windowMs: 60_000, maxEntries: 10 }),
+			resolveClientIp: (request: Request) => request.headers.get("x-test-ip") ?? undefined,
+			write: vi.fn(),
+		};
+		const body = JSON.stringify(VALID_REPORT);
+
+		const first = await handleClientErrorReport(
+			createReportRequest(body, undefined, { "x-test-ip": "10.0.0.1" }),
+			options,
+		);
+		const second = await handleClientErrorReport(
+			createReportRequest(body, undefined, { "x-test-ip": "10.0.0.1" }),
+			options,
+		);
+		const other = await handleClientErrorReport(
+			createReportRequest(body, undefined, { "x-test-ip": "10.0.0.2" }),
+			options,
+		);
+		const anonymous = await handleClientErrorReport(createReportRequest(body), options);
+
+		expect(first.status).toBe(202);
+		expect(second.status).toBe(429);
+		expect(second.headers.get("retry-after")).toBe("60");
+		expect(other.status).toBe(202);
+		expect(anonymous.status).toBe(202);
+		expect(options.write).toHaveBeenCalledTimes(3);
+	});
+
+	it("applies a fixed-window server rate limit on top of the per-client budget", async () => {
 		const limiter = createErrorReportRateLimiter(1, 60_000);
 		const options = { now: () => 1000, rateLimiter: limiter, write: vi.fn() };
 

@@ -141,6 +141,7 @@ export function useExchange<M extends ExchangeMethod>(
 		);
 		if (!registrationLease) throw new ExchangeRequestInvalidatedError();
 		const requestGeneration = captureExchangeRequestGeneration(env, clientKey, sessionMode, {
+			signer: requiresAgent ? "agent" : "user",
 			registrationEpoch: registrationLease.epoch.epoch,
 			agentPublicKey: registrationLease.agentPublicKey,
 			activeOwnerActivationEpoch: registrationLease.activeOwner?.activationEpoch,

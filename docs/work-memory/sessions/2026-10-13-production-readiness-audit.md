@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "id": "2026-10-13-production-readiness-audit",
   "date": "2026-10-13",
-  "title": "按模块与风险的生产就绪审计：五路审查、按功能测试与第一批修复",
+  "title": "按模块与风险的生产就绪审计：五路审查、按功能测试与两批修复",
   "kind": "task",
   "status": "verified",
   "topics": ["pr-review", "order-entry", "account-funding", "wallet-onboarding", "static-hosting"],
@@ -25,6 +25,17 @@
     {"path": "apps/terminal/src/hooks/trade/use-order-confirmation.ts"},
     {"path": "packages/hl-react/src/store.ts"},
     {"path": "packages/hl-react/src/internal/exchange/request-scheduler.ts"},
+    {"path": "packages/hl-react/src/hooks/useExchange.ts"},
+    {"path": "apps/terminal/src/lib/hyperliquid/use-deposit.ts"},
+    {"path": "apps/terminal/src/lib/hyperliquid/deposit-submission-outcome.ts"},
+    {"path": "apps/terminal/src/components/trade/components/spot-swap-modal.tsx"},
+    {"path": "apps/terminal/src/lib/trade/account-ledger.ts"},
+    {"path": "apps/terminal/src/lib/server/fixed-window-ip-limiter.ts"},
+    {"path": "apps/terminal/src/lib/error-reporting/server.ts"},
+    {"path": "apps/terminal/src/lib/markdown.tsx"},
+    {"path": "apps/terminal/src/components/pages/not-found-page.tsx"},
+    {"path": ".github/workflows/static-checks.yml"},
+    {"path": "docs/adr/0023-open-interest-cap-advisory-check.md"},
     {"path": "scripts/check-client-bundle-budget.mjs"},
     {"path": "docs/confirmation-surfaces.md"},
     {"path": "docs/cctp-deposits.md"},
@@ -85,7 +96,33 @@
 - Codex CLI（`gpt-6-astra`、只读、`low`）第一轮：7 项（无 P0/P1；评分 7/8/6）全部处理：自动存款的重试定时器在 effect 重跑时被重置并加倍退避（改为同一资格键保留已排定的定时器，并用费率报价对象身份变化的重渲染测试钉住）；共用拒签判定漏掉旧实现的两句钱包文案（恢复并补测试）；签名函数 ref 在渲染期更新（改为 layout effect 内同步发布）；订阅上限条目没有引用计数（加 `overflowConsumers`，两个消费者的测试）；CHANGELOG 对限流的措辞改为「每实例」；CSV 的 PNL 仍经 `getToolbarNonZeroPnl`（改为原样导出 `closedPnl`）；确认门的双击测试不能失败（改为用显式闸门挂起 `execute`，还原后确认失败）。第二轮（评分 8/9/7）：前 7 项中 6 项确认解决，订阅上限条目的引用计数仍有缺口（容量恢复后、同键的新消费者创建 runtime 时没有把被拒的旧消费者计入 `refCount`，任一方释放都会停掉另一方的数据），已改为创建 runtime 时吸收 `overflowConsumers` 的计数并加测试；另一项 P3 是文档把自动存款的重试边界写成「签名前」，实际边界是「授权尚未交给 bundler」（签名后、保存意向前的费用复核失败也会重试，该授权未发出，下一次用新 nonce 覆盖），文档、CHANGELOG 与代码注释已改。第三轮（评分 9/9/8）确认两项已解决、无新发现。最终全量单测：683 个文件、9172 条，除沙箱内不能绑定端口的一条外全部通过。
 - 限制：没有真实钱包、真实签名或真实存款；TP/SL 的修复只覆盖了单测模拟的交易所响应形状；审查代理未读纯展示视图与测试文件；线上 AWS 实配、依赖漏洞库未核对。
 
+## 第二批修复（2026-10-13，分支 `claude/prod-audit-fixes-2`，叠在第一批 `bd5e3fe0` 上）
+
+第一批经 PR #108 推送，CI 七项通过后以合并提交 `f63def71` 进入 `dev`（基线 `dev` 6525fd04）；GitHub 的 Codex 机器人对首个提交给出两条 P2，并入本批处理（见表末两行）。运营方要求「CI 过了就合并到 dev，跟着继续挑第二批」。第二批从未修项里挑出能在不改产品决定的前提下修的：
+
+| 项 | 处置 |
+| --- | --- |
+| 调度器身份槽位 | `captureExchangeRequestGeneration` 的身份键加入签名方（`signer: "user" | "agent"`），`useExchange` 按是否需要 Agent 传入。外部钱包会话里 owner 签名的请求（授权 Agent/builder fee、提款、划转）不再作废 Agent 已排队的下单，反之亦然；Agent 密钥在存储层被更换、移除或清除时（`agent-storage.ts`）只作废 Agent 队列（`invalidateExchangeRequestIdentity` 新增 `signer` 参数）；注册会话结束、owner 签名者或会话切换仍作废全部签名方。`exchange-request-scheduler.test.ts` 三条新用例，`agent-storage-removal.test.ts` 的移除用例补上 owner 队列存活的断言 |
+| 外部钱包存款广播标记 | `use-deposit.ts` 在 `writeContract` 前置 `directSubmissionStarted`；失败且无哈希时由新模块 `deposit-submission-outcome.ts` 判定：钱包拒签或广播前的 provider 错误码（4001/4100/4200/−32003/−32600/−32601/−32602，沿 `cause` 最多 6 层）为确定失败，断连码 4900/4901 与通用服务端码保持未知，其余为未知结果，复用既有「状态未知」常驻通知。`deposit-submission-outcome.test.ts` |
+| 资金锁内请求超时 | `fetchCctpDepositTerms` 与锁内余额复读带 15 秒期限（`DEPOSIT_LOCKED_REQUEST_TIMEOUT_MS`）。`deposit-broadcast.test.ts` 用假定时器验证到期失败 |
+| 现货兑换 Max 浮点 | Max 与余额不足判断改用 `fromBalanceExact`。`spot-swap-modal.test.tsx` 用 `100000000000.123454` 证明数值路径会丢位 |
+| 账本指数记法 | `account-ledger.ts` 五处 `toString` 改 `toFixed`，登记进 `decimal-display-contract`。`account-ledger.test.ts` |
+| 错误上报按 IP | 抽出 `lib/server/fixed-window-ip-limiter.ts`（推荐地区接口也改用它），错误上报每 IP 每实例 10/分钟叠加全局 60/分钟；Nitro 路由用 `getRequestIP`，Lambda 用 `x-sairn-client-ip`。`client-error-report-server.test.ts`、`fixed-window-ip-limiter.test.ts` |
+| Markdown 协议白名单 | 只放行 `http`/`https`/`mailto` 与相对路径，其余协议（含用空白或控制字符拆开的）渲染为文本。`markdown.test.tsx` |
+| 工作流 `permissions` | `static-checks`、`production-build`、`website-build` 加顶层 `contents: read`（其余工作流原有）。`ci-workflows.test.mjs` 14/14 |
+| `/trade/<不存在市场>` 标题 | `NotFoundPage` 挂载时设置 `Page Not Found | Sairn`、卸载时恢复；`lib/seo.ts` 抽出 `buildPageTitle`。`not-found-page.test.tsx` |
+| OI 未知放行 | **不改**：ADR 0023 已明确决定未知状态放行、交易所保持权威，审查代理把既定决定报成了缺陷 |
+| PR #108 机器人 P2：推荐地区接口的 1 KiB 上限只对 `application/json` 生效 | `readJsonBody` 对任何 content-type 都先做有界读取再决定是否解析；`geo-api.test.ts` 补 text/plain 2000 字节 → 413 |
+| PR #109 机器人 P2：404 页卸载时无条件写回旧标题，会覆盖新路由刚装好的标题 | 只在 `document.title` 仍是本组件写入的 404 标题时才恢复（与 `useDocumentTitle` 同一规则）；`not-found-page.test.tsx` 新增用例 |
+| PR #108 机器人 P2：自动存款在错误分支同步读取授权意向，存储抛错会进错误边界 | 读取包进 `hasNoSponsoredAuthorizationIntent`，抛错按「可能有未决授权」处理、不重试；`embedded-deposit-auto-bridge.test.tsx` 新增用例 |
+
+还原核对（实际运行）：调度器、Markdown、账本、兑换、404、错误上报、推荐地区 body 上限、自动存款意向读取八处分别还原到 `HEAD` 后对应用例变红。Biome、`pnpm typecheck`、`ci-workflows.test.mjs` 14/14、`pnpm memory:check` 通过；全量单测 685 个文件、9187 条通过（沙箱内不能绑定端口的 `vite-development-cache` 一条在沙箱外单跑通过）。
+
+Codex CLI（`gpt-6-astra`、只读、`low`）第一轮 7/6/6 不通过，两项：P1 把断连码 4900/4901 当作确定未广播会诱导重复存款（已改为未知）；P2 `invalidateExchangeRequestIdentity` 仍按 owner 作废全部签名方、Agent 存储换钥会作废 owner 队列（已加 `signer` 参数并按调用点划分）。第二轮 9/9/8 通过：两项确认解决、机器人两条修复成立，内存替换验证五处还原都让测试失败，无新发现。
+
+限制：`use-deposit.ts` 里 `directSubmissionStarted` 的接线没有 hook 级异常路径测试，只有判定模块的单元测试与 `fetchCctpDepositTerms` 的到期测试；没有真实钱包、生产构建或真机验收。
+
 ## 后续与替代关系
 
-- 未修项按上表：调度器身份槽位、分支保护（运营方在 GitHub 设置）、包体基线、现货余额无价格时的呈现、账本指数记法、OI 未知、外部钱包存款广播标记、现货兑换 Max、资金锁内请求超时、错误上报按 IP、图表 iframe 隔离、SW opaque 缓存、Markdown 协议白名单、工作流 `permissions`、`/trade/不存在市场` 标题。
+- 仍未修：分支保护（运营方在 GitHub 设置）、包体基线（桌面运行时余量约 460 字节）、现货余额无价格时用入场成本冒充市值（改余额消费方类型）、图表 iframe 同源 `unsafe-inline`、SW 缓存 opaque 图标；OI 未知放行按 ADR 0023 维持。
 - 本记录不替代任何早先记录。

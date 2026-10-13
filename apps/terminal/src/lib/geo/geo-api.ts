@@ -7,6 +7,7 @@ import {
 	toGeoVerdict,
 } from "@/lib/geo/geo-contracts";
 import { type ParsedIpdataGeo, parseIpdataGeoResponse } from "@/lib/geo/ipdata-geo";
+import { createFixedWindowIpLimiter } from "@/lib/server/fixed-window-ip-limiter";
 
 const IPDATA_BASE = "https://api.ipdata.co";
 const GEO_CACHE_TTL_MS = 10 * 60 * 1000;
@@ -43,7 +44,6 @@ export interface GeoApiHandlers {
 
 type ProviderLookup = { parsed: ParsedIpdataGeo } | { reason: GeoApiUnavailableReason };
 type CacheEntry = { parsed: ParsedIpdataGeo; atMs: number };
-type LimiterEntry = { windowStartedAtMs: number; count: number };
 
 function readOverride(value: unknown): string | null {
 	if (typeof value !== "string") return null;
@@ -63,34 +63,14 @@ async function readJsonBody(
 	request: Request,
 ): Promise<{ ok: true; value: unknown } | { ok: false; status: 400 | 413 }> {
 	const contentType = request.headers.get("content-type")?.toLowerCase() ?? "";
-	if (!contentType.startsWith("application/json")) return { ok: true, value: undefined };
 	try {
 		const text = await readBoundedBody(request, REFERRAL_GEO_BODY_MAX_BYTES);
 		if (text === null) return { ok: false, status: 413 };
+		if (!contentType.startsWith("application/json")) return { ok: true, value: undefined };
 		return { ok: true, value: text.trim() === "" ? undefined : JSON.parse(text) };
 	} catch {
 		return { ok: false, status: 400 };
 	}
-}
-
-function consumeReferralGeoBudget(limiter: Map<string, LimiterEntry>, ip: string, nowMs: number): boolean {
-	const entry = limiter.get(ip);
-	if (!entry || nowMs - entry.windowStartedAtMs >= REFERRAL_GEO_WINDOW_MS || nowMs < entry.windowStartedAtMs) {
-		if (limiter.size >= REFERRAL_GEO_LIMITER_MAX_ENTRIES) {
-			for (const [key, value] of limiter) {
-				if (nowMs - value.windowStartedAtMs >= REFERRAL_GEO_WINDOW_MS) limiter.delete(key);
-			}
-			if (limiter.size >= REFERRAL_GEO_LIMITER_MAX_ENTRIES) {
-				const oldest = limiter.keys().next();
-				if (!oldest.done) limiter.delete(oldest.value);
-			}
-		}
-		limiter.set(ip, { windowStartedAtMs: nowMs, count: 1 });
-		return true;
-	}
-	if (entry.count >= REFERRAL_GEO_LIMIT_PER_WINDOW) return false;
-	entry.count += 1;
-	return true;
 }
 
 function readBodyOverride(value: unknown): string | null {
@@ -110,7 +90,11 @@ function pruneCache(cache: Map<string, CacheEntry>, nowMs: number): void {
 
 export function createGeoApiHandlers(environment: GeoApiEnvironment): GeoApiHandlers {
 	const cache = new Map<string, CacheEntry>();
-	const referralLimiter = new Map<string, LimiterEntry>();
+	const referralLimiter = createFixedWindowIpLimiter({
+		limit: REFERRAL_GEO_LIMIT_PER_WINDOW,
+		windowMs: REFERRAL_GEO_WINDOW_MS,
+		maxEntries: REFERRAL_GEO_LIMITER_MAX_ENTRIES,
+	});
 	const now = environment.now ?? Date.now;
 
 	function fetchIpdata(ip: string, apiKey: string, init: RequestInit): Promise<Response> {
@@ -181,7 +165,7 @@ export function createGeoApiHandlers(environment: GeoApiEnvironment): GeoApiHand
 		const override = readBodyOverride(body.value);
 		const checkedAt = now();
 		const clientIp = environment.resolveClientIp(request);
-		if (clientIp && !consumeReferralGeoBudget(referralLimiter, clientIp, checkedAt)) {
+		if (clientIp && !referralLimiter.consume(clientIp, checkedAt).allowed) {
 			return jsonResponse({ error: "Too many requests" }, 429);
 		}
 

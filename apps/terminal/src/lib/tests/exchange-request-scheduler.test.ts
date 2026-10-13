@@ -126,6 +126,103 @@ describe("exchange request scheduler", () => {
 		await expect(scheduler.schedule("normal", async () => "agent", agentOnlyGeneration)).resolves.toBe("agent");
 	});
 
+	it("does not invalidate a queued Agent-signed request when the same session captures a user-signed one", async () => {
+		const scheduler = new ExchangeRequestScheduler();
+		const clientKey = "0x5555555555555555555555555555555555555555";
+		const agentGeneration = captureExchangeRequestGeneration("Mainnet", clientKey, "wallet", {
+			signer: "agent",
+			registrationEpoch: "epoch-1",
+			agentPublicKey: "0xaaaa",
+		});
+		let releaseFirst: (() => void) | undefined;
+		const first = scheduler.schedule(
+			"normal",
+			() =>
+				new Promise<string>((resolve) => {
+					releaseFirst = () => resolve("first");
+				}),
+			agentGeneration,
+		);
+		const queuedOrder = scheduler.schedule("normal", async () => "order", agentGeneration);
+		await vi.waitFor(() => expect(releaseFirst).toBeDefined());
+
+		const userGeneration = captureExchangeRequestGeneration("Mainnet", clientKey, "wallet", {
+			signer: "user",
+			registrationEpoch: "epoch-1",
+		});
+
+		expect(userGeneration).not.toBe(agentGeneration);
+		releaseFirst?.();
+		await expect(first).resolves.toBe("first");
+		await expect(queuedOrder).resolves.toBe("order");
+		await expect(scheduler.schedule("normal", async () => "withdraw", userGeneration)).resolves.toBe("withdraw");
+	});
+
+	it("invalidates only the Agent-signed queue when the Agent is replaced", async () => {
+		const scheduler = new ExchangeRequestScheduler();
+		const clientKey = "0x6666666666666666666666666666666666666666";
+		const agentGeneration = captureExchangeRequestGeneration("Mainnet", clientKey, "wallet", {
+			signer: "agent",
+			registrationEpoch: "epoch-1",
+			agentPublicKey: "0xaaaa",
+		});
+		const userGeneration = captureExchangeRequestGeneration("Mainnet", clientKey, "wallet", {
+			signer: "user",
+			registrationEpoch: "epoch-1",
+		});
+		let releaseFirst: (() => void) | undefined;
+		const first = scheduler.schedule(
+			"normal",
+			() =>
+				new Promise<string>((resolve) => {
+					releaseFirst = () => resolve("first");
+				}),
+			userGeneration,
+		);
+		const queuedOrder = scheduler.schedule("normal", async () => "order", agentGeneration);
+		const queuedWithdraw = scheduler.schedule("normal", async () => "withdraw", userGeneration);
+		await vi.waitFor(() => expect(releaseFirst).toBeDefined());
+
+		const replacedAgentGeneration = captureExchangeRequestGeneration("Mainnet", clientKey, "wallet", {
+			signer: "agent",
+			registrationEpoch: "epoch-2",
+			agentPublicKey: "0xbbbb",
+		});
+
+		expect(replacedAgentGeneration).not.toBe(agentGeneration);
+		await expect(queuedOrder).rejects.toBeInstanceOf(ExchangeRequestInvalidatedError);
+		releaseFirst?.();
+		await expect(first).resolves.toBe("first");
+		await expect(queuedWithdraw).resolves.toBe("withdraw");
+	});
+
+	it("retires only the Agent signer when Agent storage invalidates the owner's Agent requests", async () => {
+		const scheduler = new ExchangeRequestScheduler();
+		const clientKey = "0x7777777777777777777777777777777777777777";
+		const agentGeneration = captureExchangeRequestGeneration("Mainnet", clientKey, "wallet", {
+			signer: "agent",
+			registrationEpoch: "epoch-1",
+			agentPublicKey: "0xaaaa",
+		});
+		const userGeneration = captureExchangeRequestGeneration("Mainnet", clientKey, "wallet", {
+			signer: "user",
+			registrationEpoch: "epoch-1",
+		});
+
+		invalidateExchangeRequestIdentity("Mainnet", clientKey, undefined, "agent");
+
+		await expect(scheduler.schedule("normal", async () => "order", agentGeneration)).rejects.toBeInstanceOf(
+			ExchangeRequestInvalidatedError,
+		);
+		await expect(scheduler.schedule("normal", async () => "withdraw", userGeneration)).resolves.toBe("withdraw");
+
+		invalidateExchangeRequestIdentity("Mainnet", clientKey);
+
+		await expect(scheduler.schedule("normal", async () => "late", userGeneration)).rejects.toBeInstanceOf(
+			ExchangeRequestInvalidatedError,
+		);
+	});
+
 	it("does not start queued work after its Provider lifecycle has unmounted", async () => {
 		const scheduler = new ExchangeRequestScheduler();
 		const lifecycle: ExchangeProviderLifecycleLease = {

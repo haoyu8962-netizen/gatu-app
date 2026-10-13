@@ -51,6 +51,19 @@ describe("account ledger", () => {
 		});
 	});
 
+	it("keeps amounts below 1e-7 as plain decimal strings", () => {
+		const deposit = buildAccountLedgerRow(createUpdate({ type: "deposit", usdc: "0.00000001" }), USER);
+		const withdrawal = buildAccountLedgerRow(
+			createUpdate({ type: "withdraw", usdc: "0.00000002", fee: "0.00000001", nonce: 1 }),
+			USER,
+		);
+
+		expect(deposit?.amount).toBe("0.00000001");
+		expect(withdrawal?.amount).not.toMatch(/e/i);
+		expect(withdrawal?.fee?.amount).toBe("0.00000001");
+		expect(deposit?.amount).not.toMatch(/e/i);
+	});
+
 	it("derives send direction from the queried account", () => {
 		const sendDelta: Extract<UserNonFundingLedgerUpdatesResponse[number]["delta"], { type: "send" }> = {
 			type: "send",

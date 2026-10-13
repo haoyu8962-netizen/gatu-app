@@ -56,6 +56,7 @@ const testState = vi.hoisted(() => ({
 		| { userAllowed: boolean; canPerformActions: boolean; acceptedTerms: boolean }
 		| undefined,
 	authorizationIntent: null as null | { authNonce: string; validBefore: number },
+	authorizationIntentError: null as Error | null,
 	submissionOutcomeUnknown: false,
 	useDepositOptions: null as null | Record<string, unknown>,
 	trackingOptions: null as null | Record<string, unknown>,
@@ -185,7 +186,10 @@ vi.mock("@sairn/hl-react", () => ({
 	useLegalStatus: () => ({ data: testState.legalStatus }),
 }));
 vi.mock("@/lib/trade/cctp-deposit-tracking", () => ({
-	readCctpSponsoredAuthorizationIntent: () => testState.authorizationIntent,
+	readCctpSponsoredAuthorizationIntent: () => {
+		if (testState.authorizationIntentError) throw testState.authorizationIntentError;
+		return testState.authorizationIntent;
+	},
 }));
 vi.mock("@/lib/hyperliquid/use-deposit", () => ({
 	useDeposit: (options: Record<string, unknown>) => {
@@ -236,6 +240,7 @@ describe.each([
 		testState.toastWarning.mockReset();
 		testState.legalStatus = { userAllowed: true, canPerformActions: true, acceptedTerms: true };
 		testState.authorizationIntent = null;
+		testState.authorizationIntentError = null;
 		testState.submissionOutcomeUnknown = false;
 		testState.depositError = null;
 		testState.depositHash = undefined;
@@ -601,6 +606,24 @@ describe.each([
 			root.render(createElement(EmbeddedDepositAutoBridge));
 		});
 		expect(testState.deposit).toHaveBeenCalledTimes(2);
+	});
+
+	it("does not retry when the authorization intent store cannot be read", async () => {
+		await act(async () => {
+			root.render(createElement(EmbeddedDepositAutoBridge));
+		});
+		expect(testState.deposit).toHaveBeenCalledTimes(1);
+
+		testState.depositStatus = "error";
+		testState.depositError = new Error("Circle fee quote unavailable");
+		testState.authorizationIntentError = new Error("CCTP sponsored authorization storage is unavailable.");
+		await act(async () => {
+			root.render(createElement(EmbeddedDepositAutoBridge));
+		});
+
+		await act(() => vi.advanceTimersByTimeAsync(60_000));
+		expect(testState.resetDeposit).not.toHaveBeenCalled();
+		expect(testState.deposit).toHaveBeenCalledTimes(1);
 	});
 
 	it("does not automatically resubmit after a no-hash sponsored submission error", async () => {

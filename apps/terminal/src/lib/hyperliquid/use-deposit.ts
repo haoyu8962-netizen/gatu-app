@@ -33,6 +33,7 @@ import {
 	DEPOSIT_CHAIN_SWITCH_POLL_INTERVAL_MS,
 	DEPOSIT_CHAIN_SWITCH_SETTLE_MS,
 	DEPOSIT_CONFIRMATION_TIMEOUT_MS,
+	DEPOSIT_LOCKED_REQUEST_TIMEOUT_MS,
 	DEPOSIT_POLL_INTERVAL_MS,
 	DEPOSIT_WALLET_RESPONSE_TIMEOUT_MS,
 } from "@/config/time";
@@ -56,6 +57,7 @@ import {
 	DefinitiveDepositSourceFailureError,
 	isDefinitiveDepositSourceFailure,
 } from "@/lib/hyperliquid/deposit-source-error";
+import { isDepositSubmissionOutcomeUnknown } from "@/lib/hyperliquid/deposit-submission-outcome";
 import {
 	assertCctpDepositReceipt,
 	assertCctpSponsoredDepositReceipt,
@@ -602,13 +604,35 @@ async function getDepositProviderForChain(
 	}
 }
 
-async function fetchCctpDepositTerms(config: CctpDepositConfig) {
+/**
+ * Requests made while the funds-action lock is held get a deadline, so a hanging Circle or RPC
+ * answer releases the lock as a failure instead of blocking every other funds action.
+ */
+export function createLockedRequestSignal(timeoutMs = DEPOSIT_LOCKED_REQUEST_TIMEOUT_MS): {
+	signal: AbortSignal;
+	clear: () => void;
+} {
+	const controller = new AbortController();
+	const timer = setTimeout(() => controller.abort(new Error("Request timed out")), timeoutMs);
+	return { signal: controller.signal, clear: () => clearTimeout(timer) };
+}
+
+export async function fetchCctpDepositTerms(
+	config: CctpDepositConfig,
+	options: { fetcher?: typeof fetch; timeoutMs?: number } = {},
+) {
+	const { signal, clear } = createLockedRequestSignal(options.timeoutMs);
 	try {
-		return await Promise.all([fetchCctpDepositFees(config), fetchCctpFastAllowance(config)]);
+		return await Promise.all([
+			fetchCctpDepositFees(config, { fetcher: options.fetcher, signal }),
+			fetchCctpFastAllowance(config, { fetcher: options.fetcher, signal }),
+		]);
 	} catch (cause) {
 		throw new LocalizedActionError(msg`Unable to verify the current Circle CCTP fee and Fast Transfer capacity.`, {
 			cause,
 		});
+	} finally {
+		clear();
 	}
 }
 
@@ -1141,6 +1165,7 @@ export function useDeposit({
 			let sponsoredAuthorizationValidBefore: bigint | undefined;
 			let cctpRecoveryUnavailable = false;
 			let sponsoredSubmissionStarted = false;
+			let directSubmissionStarted = false;
 			const operationId = startDepositExecution(executionKey, executionLockKey, amount, depositRoute);
 			if (operationId === null) {
 				setBlockedDepositExecution(
@@ -1241,7 +1266,13 @@ export function useDeposit({
 						review?.expectedBalanceRaw ?? (mode === "smart" && executionScope === "automatic" ? amountRaw : undefined);
 					async function assertReviewedBalanceUnchanged() {
 						if (lockedBalanceRaw === undefined) return;
-						const freshBalanceRaw = await readDepositUsdcBalance(cctpDepositConfig, ready.address);
+						const lockedRead = createLockedRequestSignal();
+						let freshBalanceRaw: bigint;
+						try {
+							freshBalanceRaw = await readDepositUsdcBalance(cctpDepositConfig, ready.address, lockedRead.signal);
+						} finally {
+							lockedRead.clear();
+						}
 						if (amountRaw !== lockedBalanceRaw || freshBalanceRaw !== lockedBalanceRaw) {
 							throw new LocalizedActionError(msg`Available amount is not verified`);
 						}
@@ -1386,6 +1417,7 @@ export function useDeposit({
 						await verifyFreshLegalAction({ env: cctpTrackingEnv, owner: ready.address });
 						await assertProviderAccountStillActive(ready.provider, ready.address);
 						await assertDepositChainStillActive(ready.provider, cctpDepositConfig);
+						directSubmissionStarted = true;
 						sourceHash = await waitForWalletTransactionHash(
 							ready.walletClient.writeContract({
 								account: ready.address,
@@ -1494,7 +1526,7 @@ export function useDeposit({
 				}
 				refetch();
 			} catch (error) {
-				if (sponsoredSubmissionStarted || cctpTrackingRecord) {
+				if (sponsoredSubmissionStarted || directSubmissionStarted || cctpTrackingRecord) {
 					try {
 						reportClientError(error, {
 							kind: "deposit_submission",
@@ -1519,7 +1551,13 @@ export function useDeposit({
 					...previous,
 					status: "error",
 					error: toError(error),
-					submissionOutcomeUnknown: sponsoredSubmissionStarted && !previous.hash,
+					submissionOutcomeUnknown: isDepositSubmissionOutcomeUnknown({
+						sponsoredSubmissionStarted,
+						directSubmissionStarted,
+						hash: previous.hash,
+						error,
+						userRejected: isUserRejectedRequest(error),
+					}),
 					walletResponseDelayed: false,
 					networkSwitchPending: false,
 				}));

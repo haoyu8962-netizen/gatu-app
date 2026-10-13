@@ -28,6 +28,14 @@ const AUTO_DEPOSIT_RETRY_DELAY_MS = 30_000;
 const AUTO_DEPOSIT_MAX_RETRY_DELAY_MS = 5 * 60_000;
 let notificationPresentationSequence = 0;
 
+function hasNoSponsoredAuthorizationIntent(env: "Mainnet" | "Testnet", owner: string): boolean {
+	try {
+		return readCctpSponsoredAuthorizationIntent(env, owner.toLowerCase()) === null;
+	} catch {
+		return false;
+	}
+}
+
 export function EmbeddedDepositAutoBridge() {
 	const { t } = useLingui();
 	const isTestnet = useIsTestnet();
@@ -268,7 +276,7 @@ export function EmbeddedDepositAutoBridge() {
 				!depositHash &&
 				!submissionOutcomeUnknown &&
 				!!depositEmbeddedWalletAddress &&
-				readCctpSponsoredAuthorizationIntent(cctpTrackingEnv, depositEmbeddedWalletAddress.toLowerCase()) === null;
+				hasNoSponsoredAuthorizationIntent(cctpTrackingEnv, depositEmbeddedWalletAddress);
 			if (retrySafe) {
 				scheduleRetry(eligibleDepositKey);
 				return;

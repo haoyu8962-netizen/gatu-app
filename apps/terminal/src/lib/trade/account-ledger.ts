@@ -70,15 +70,15 @@ const SPOT_LOCATION: AccountLedgerLocation = { kind: "spot" };
 const STAKING_LOCATION: AccountLedgerLocation = { kind: "staking" };
 
 function add(left: string, right: string): string {
-	return Big(left).plus(right).toString();
+	return Big(left).plus(right).toFixed();
 }
 
 function subtract(left: string, right: string): string {
-	return Big(left).minus(right).toString();
+	return Big(left).minus(right).toFixed();
 }
 
 function negate(value: string): string {
-	return Big(value).times(-1).toString();
+	return Big(value).times(-1).toFixed();
 }
 
 function hasSameAddress(left: string, right: string): boolean {
@@ -438,12 +438,12 @@ function getStringNumber(delta: Record<string, unknown>, ...keys: string[]): str
 		const value = delta[key];
 		if (typeof value === "string") {
 			try {
-				return Big(value).toString();
+				return Big(value).toFixed();
 			} catch {
 				continue;
 			}
 		}
-		if (typeof value === "number" && Number.isFinite(value)) return Big(value).toString();
+		if (typeof value === "number" && Number.isFinite(value)) return Big(value).toFixed();
 	}
 	return null;
 }

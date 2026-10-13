@@ -185,6 +185,8 @@ jobs:
           src/lib/tests/account-abstraction-control.test.tsx
           src/lib/tests/csv.test.ts
           src/lib/tests/subscription-limit-release.test.ts
+          src/lib/tests/deposit-submission-outcome.test.ts
+          src/lib/tests/fixed-window-ip-limiter.test.ts
           src/lib/tests/account-mode-setup.test.ts
           src/lib/tests/account-mode-setup-attempts.test.ts
           src/lib/tests/unified-account-auto-setup.test.tsx

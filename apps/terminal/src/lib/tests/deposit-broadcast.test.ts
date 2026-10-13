@@ -9,6 +9,7 @@ import {
 	isDefinitiveDepositSourceFailure,
 } from "@/lib/hyperliquid/deposit-source-error";
 import {
+	fetchCctpDepositTerms,
 	waitForBroadcastedTransaction,
 	waitForConfirmedReceipt,
 	waitForWalletTransactionHash,
@@ -25,6 +26,39 @@ function createPublicClientMock(overrides: Partial<PublicClient>): PublicClient 
 describe("deposit broadcast confirmation", () => {
 	afterEach(() => {
 		i18n.loadAndActivate({ locale: "en", messages: {} });
+	});
+
+	it("fails a hanging Circle terms request at its deadline instead of holding the funds lock", async () => {
+		vi.useFakeTimers();
+		try {
+			const fetcher = vi.fn(
+				(_input: RequestInfo | URL, init?: RequestInit) =>
+					new Promise<Response>((_resolve, reject) => {
+						init?.signal?.addEventListener("abort", () => reject(init.signal?.reason), { once: true });
+					}),
+			);
+			const config = { feeApiUrl: "https://circle.test/fees", fastAllowanceApiUrl: "https://circle.test/fast" };
+			const pending = fetchCctpDepositTerms(config as Parameters<typeof fetchCctpDepositTerms>[0], {
+				fetcher: fetcher as unknown as typeof fetch,
+				timeoutMs: 1_000,
+			});
+			const outcome = pending.then(
+				() => "resolved",
+				(error: unknown) => error,
+			);
+
+			await vi.advanceTimersByTimeAsync(999);
+			expect(fetcher).toHaveBeenCalledTimes(2);
+			await vi.advanceTimersByTimeAsync(1);
+			const error = await outcome;
+
+			expect(error).toBeInstanceOf(LocalizedActionError);
+			expect(translate((error as LocalizedActionError).descriptor)).toBe(
+				"Unable to verify the current Circle CCTP fee and Fast Transfer capacity.",
+			);
+		} finally {
+			vi.useRealTimers();
+		}
 	});
 
 	it("classifies definitive failures by structured code instead of localized wording", () => {

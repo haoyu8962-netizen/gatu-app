@@ -22,6 +22,19 @@ function Heading({ level, id, children }: { level: number; id: string; children:
 const INLINE_SOURCE =
 	/\[([^\]]+)\]\(([^)]+)\)|\*\*([^*]+)\*\*|`([^`]+)`|(?<![\p{L}\p{N}_])_([^_\s\n](?:[^_\n]*[^_\s\n])?)_(?![\p{L}\p{N}_])|(?<![\p{L}\p{N}*])\*([^*\s\n](?:[^*\n]*[^*\s\n])?)\*(?![\p{L}\p{N}*])/gu;
 
+const LINK_SCHEME_PATTERN = /^[a-z][a-z0-9+.-]*:/i;
+const ALLOWED_LINK_SCHEME_PATTERN = /^(?:https?|mailto):/i;
+
+/**
+ * A document link is either relative or uses a scheme the renderer vouches for. Anything else
+ * (`javascript:`, `data:`, `vbscript:` or a scheme hidden behind whitespace) renders as text.
+ */
+export function isAllowedLinkHref(href: string): boolean {
+	const trimmed = [...href].filter((char) => char.charCodeAt(0) > 0x1f && !/\s/.test(char)).join("");
+	if (!LINK_SCHEME_PATTERN.test(trimmed)) return true;
+	return ALLOWED_LINK_SCHEME_PATTERN.test(trimmed);
+}
+
 function renderInline(text: string): ReactNode[] {
 	const inline = new RegExp(INLINE_SOURCE.source, INLINE_SOURCE.flags);
 	const nodes: ReactNode[] = [];
@@ -36,17 +49,21 @@ function renderInline(text: string): ReactNode[] {
 		}
 		if (match[1] !== undefined) {
 			const href = match[2];
-			const isExternal = /^https?:/.test(href);
-			nodes.push(
-				<a
-					key={key++}
-					href={href}
-					{...(isExternal ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-					className="text-signal underline underline-offset-2 hover:text-signal-hover focus-visible:rounded-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
-				>
-					{match[1]}
-				</a>,
-			);
+			if (!isAllowedLinkHref(href)) {
+				nodes.push(<Fragment key={key++}>{match[1]}</Fragment>);
+			} else {
+				const isExternal = /^https?:/i.test(href);
+				nodes.push(
+					<a
+						key={key++}
+						href={href}
+						{...(isExternal ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+						className="text-signal underline underline-offset-2 hover:text-signal-hover focus-visible:rounded-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
+					>
+						{match[1]}
+					</a>,
+				);
+			}
 		} else if (match[3] !== undefined) {
 			nodes.push(
 				<strong key={key++} className="font-semibold text-fg">

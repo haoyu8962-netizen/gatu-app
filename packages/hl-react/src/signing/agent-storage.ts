@@ -420,7 +420,7 @@ export function writeAgentToStorage(
 		storage.setItem(key, JSON.stringify(agentWalletSchema.parse(data)));
 		getAgentStorage(scope === "local" ? "session" : "local")?.removeItem(key);
 		if (previous?.privateKey !== data.privateKey) {
-			invalidateExchangeRequestIdentity(env, userAddress);
+			invalidateExchangeRequestIdentity(env, userAddress, undefined, "agent");
 			evictAgentWallet(env, previous);
 		}
 		invalidateSnapshotKey(key);
@@ -477,7 +477,7 @@ export function writeAgentToStorageAndVerify(
 		const actual = raw ? parseAgentWallet(JSON.parse(raw)) : null;
 		if (!actual || JSON.stringify(actual) !== JSON.stringify(expected)) {
 			storage.removeItem(key);
-			invalidateExchangeRequestIdentity(env, userAddress);
+			invalidateExchangeRequestIdentity(env, userAddress, undefined, "agent");
 			invalidateSnapshotKey(key);
 			window.dispatchEvent(new StorageEvent("storage", { key }));
 			return { status: "failed", reason: "readback_mismatch" };
@@ -486,7 +486,7 @@ export function writeAgentToStorageAndVerify(
 			alternateStorage.removeItem(key);
 			if (alternateStorage.getItem(key) !== null) {
 				storage.removeItem(key);
-				invalidateExchangeRequestIdentity(env, userAddress);
+				invalidateExchangeRequestIdentity(env, userAddress, undefined, "agent");
 				invalidateSnapshotKey(key);
 				window.dispatchEvent(new StorageEvent("storage", { key }));
 				return { status: "failed", reason: "readback_mismatch" };
@@ -494,7 +494,7 @@ export function writeAgentToStorageAndVerify(
 		}
 		invalidateSnapshotKey(key);
 		if (previous?.privateKey !== actual.privateKey) {
-			invalidateExchangeRequestIdentity(env, userAddress);
+			invalidateExchangeRequestIdentity(env, userAddress, undefined, "agent");
 			evictAgentWallet(env, previous);
 		}
 		blockedAgentStorageKeys.delete(key);
@@ -506,7 +506,7 @@ export function writeAgentToStorageAndVerify(
 		} catch {
 			// The original readback failure remains the actionable result.
 		}
-		invalidateExchangeRequestIdentity(env, userAddress);
+		invalidateExchangeRequestIdentity(env, userAddress, undefined, "agent");
 		invalidateSnapshotKey(key);
 		try {
 			window.dispatchEvent(new StorageEvent("storage", { key }));
@@ -518,7 +518,7 @@ export function writeAgentToStorageAndVerify(
 }
 
 export function removeAgentFromStorage(env: HyperliquidEnv, userAddress: string): void {
-	invalidateExchangeRequestIdentity(env, userAddress);
+	invalidateExchangeRequestIdentity(env, userAddress, undefined, "agent");
 	if (typeof window === "undefined") return;
 
 	const previous = readStoredAgentRecord(env, userAddress);
@@ -545,7 +545,7 @@ export function removeAgentFromStorage(env: HyperliquidEnv, userAddress: string)
 }
 
 export function removeAgentFromStorageAndVerify(env: HyperliquidEnv, userAddress: string): AgentStorageRemovalResult {
-	invalidateExchangeRequestIdentity(env, userAddress);
+	invalidateExchangeRequestIdentity(env, userAddress, undefined, "agent");
 	// Registration teardown writes a closing session tombstone before removing
 	// the key. Read the stored record directly so that tombstone cannot hide the
 	// signer and trading-client identities that must be evicted.
@@ -723,7 +723,7 @@ function handleStorageEvent(event: StorageEvent): void {
 	} else {
 		const scope = getStorageScope(event.key);
 		if (scope) {
-			invalidateExchangeRequestIdentity(scope.env, scope.address);
+			invalidateExchangeRequestIdentity(scope.env, scope.address, undefined, "agent");
 			let previous = event.oldValue;
 			if (!previous) {
 				previous = snapshotCache.get(getCacheKey(scope.env, scope.address))?.raw ?? null;
