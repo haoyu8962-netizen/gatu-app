@@ -90,7 +90,12 @@ const budgets = {
 	// #97 (automatic email deposits, ADR 0040; unknown-submission diagnostics). The pairing-on build that only pull
 	// requests into main run had read 3,307,744 in CI (+10,645) and also split api-wallet-state into a second
 	// api-wallet-*.js chunk shared with the pairing dialog; both are fixed by this baseline and by that move.
-	totalGzipBaselineBytes: 3_304_479,
+	// Re-baselined 2026-10-13 before release p32 to the fixed-identity Node 22.15.0 build of dev f50e21a8 with
+	// VITE_MOBILE_PAIRING_ENABLED=false (3,311,757, no .env.local; docs/terminal-performance-baseline.md). It folds in
+	// the +7,278 that dev had used since p30 across PR #101 (version entry), #102 (slider basis), #107 (ADR 0041
+	// automatic unified account), #108 and #109 (production audit fixes), each merged under the pairing-off allowance;
+	// the pairing-on promotion build of #112 had read 3,314,639 (+10,160) and sits +2,502 over this baseline locally.
+	totalGzipBaselineBytes: 3_311_757,
 	totalGzipAllowedIncreaseBytes: 10_000,
 	tradeStartup: {
 		requiredRouteIds: ["__root__", "/trade/$symbol"],
@@ -126,7 +131,10 @@ const budgets = {
 				// the +205 above): CI read 202,249 for fc5e10cd, 56 bytes over the previous allowance. Fixed-metadata Node
 				// 22.15.0 builds in clean worktrees read 201,032 for dev a0c05740 and 202,173 for fc5e10cd
 				// (docs/terminal-performance-baseline.md, locale and number-format re-baseline).
-				baselineGzipBytes: 193_129,
+				// Re-baselined 2026-10-13 before release p32 to the same fixed-identity pairing-off build of dev f50e21a8
+				// (202,683): +9,554 accumulated since 2026-10-03 across the card-funding host, ADR 0038-0041 and the
+				// production audit fixes, each under the allowance; CI had read 202,646 (pairing off) and 202,589 (on).
+				baselineGzipBytes: 202_683,
 				allowedIncreaseBytes: 10_000,
 			},
 		],
