@@ -7,10 +7,10 @@
   "kind": "task",
   "status": "verified",
   "topics": ["wallet-onboarding", "hyperliquid-api", "order-entry"],
-  "summary": "运营方决定按官方终端的做法处理新账号的协议 default 模式。新增页面级宿主 UnifiedAccountAutoSetup：账号已入金、条款已接受、签名者就绪、订单历史为空时，邮箱会话由 embedded owner 静默签 userSetAbstraction，外部钱包由已核验 Agent 签 agentSetAbstraction，都在资金锁内重读模式与订单历史、并在 SDK 边界再查一次条件；每账号每页最多 3 次、间隔 5 秒、终局拒绝即停。default 仍是不支持的模式，下单可用性永远不是 success，只改呈现：未入金的新账号下单按钮为 Deposit、余额为空账号提示、账户类型预选统一账户并说明；已入金时为加载；其余保留手动选择。Codex CLI gpt-6-astra 低强度只读审查三轮共 9 项发现全部修复。全量单测 9159 通过，另一条需绑定端口的用例在沙箱外通过；生产构建的包体预算在允许范围内。未推送、未发布；真实账号入金后的自动设置没有验收。",
+  "summary": "运营方决定按官方终端的做法处理新账号的协议 default 模式。新增页面级宿主 UnifiedAccountAutoSetup：账号已入金、条款已接受、签名者就绪、订单历史为空时，邮箱会话由 embedded owner 静默签 userSetAbstraction，外部钱包由已核验 Agent 签 agentSetAbstraction，都在资金锁内重读模式与订单历史、并在 SDK 边界再查一次条件；每账号每页最多 3 次、间隔 5 秒、终局拒绝即停。default 仍是不支持的模式，下单可用性永远不是 success，只改呈现：未入金的新账号下单按钮为 Deposit、余额为空账号提示、账户类型预选统一账户并说明；已入金时为加载；其余保留手动选择。Codex CLI gpt-6-astra 低强度只读审查三轮共 9 项发现全部修复。全量单测 9159 通过，另一条需绑定端口的用例在沙箱外通过；生产构建的包体预算在允许范围内。2026-10-12 随 PR #107 合入 dev（6525fd04），未晋升 main、未发布；真实账号入金后的自动设置没有验收。",
   "thread": null,
   "baseCommit": "c1a1e14e",
-  "commits": [],
+  "commits": ["b2ab32c71b1e6989775f0d50ed872aeffcd3f980", "c1a1e14e8055796194951a62e8d20e9ea9c875d1", "0b6b073ff4b189c7062c7ae8cfc643ece9f95dea", "6525fd04bbf7f0653512f1b749f2048e0d098a53"],
   "sources": [
     {"path": "docs/adr/0041-automatic-unified-account-for-new-accounts.md"},
     {"path": "docs/work-memory/sessions/2026-10-12-new-account-default-mode-review.md"},
@@ -38,7 +38,7 @@
 
 ## 背景与范围
 
-同步记录，未取得任务标识。接续[取证记录](2026-10-12-new-account-default-mode-review.md)：新注册账号处于协议的 `default` 模式，本项目把它当作不支持的模式却没有任何一步让账号离开它。运营方看过取证结论后明确说「同意，按官方做法去做」。本次在工作树 `version-hint` 的分支 `claude/auto-unified-account`（叠在未推送的 `claude/settings-version-no-release-hint` `c1a1e14e` 上）实现，设计与取舍见 [ADR 0041](../../adr/0041-automatic-unified-account-for-new-accounts.md)。
+同步记录，未取得任务标识。接续[取证记录](2026-10-12-new-account-default-mode-review.md)：新注册账号处于协议的 `default` 模式，本项目把它当作不支持的模式却没有任何一步让账号离开它。运营方看过取证结论后明确说「同意，按官方做法去做」。本次在工作树 `version-hint` 的分支 `claude/auto-unified-account`（叠在当时同样未推送的 `claude/settings-version-no-release-hint` `c1a1e14e` 上）实现，设计与取舍见 [ADR 0041](../../adr/0041-automatic-unified-account-for-new-accounts.md)。
 
 ## 结论与依据
 
@@ -88,4 +88,4 @@
 - 已有订单历史的 `default` 账号与 `dexAbstraction` 账号仍需手动选择；官方的强制迁移弹窗没有实现，是否实现需要运营方决定。
 - 桌面运行时启动的包体预算余量约 460 字节（本地读数，CI 略低）。下一处增加根部或交易面板启动代码的改动很可能需要按 `docs/terminal-performance-baseline.md` 的方法重定基线，或先把代码移出启动路径。
 - 取证记录里的三个旁观现象（Privy 登录窗口的钱包图标晚出现、内置浏览器面板里 Service Worker 注册失败、Privy `analytics_events` 的 CORS 报错）未处理。
-- 未推送、未开 PR、未发布。分支叠在同样未推送的 `claude/settings-version-no-release-hint` 上。
+- 2026-10-12 运营方要求「推送并创建 PR，CI 过了就合并到 dev」：三个提交（`b2ab32c7`、`c1a1e14e`、`0b6b073f`）作为 PR #107 推送，推送前第四轮 Codex 对整个差异无发现（9/9/8），CI 七项通过、机器人无发现后以合并提交 `6525fd04` 合入 `dev`；未晋升 `main`、未发布。本条为 2026-10-13 补记。

@@ -7,10 +7,10 @@
   "kind": "task",
   "status": "verified",
   "topics": ["account-funding"],
-  "summary": "审查 Codex 分支 51ee48a8..eeace5db（恢复邮箱主网自动存款、无哈希提示与脱敏诊断、ZeroDev 配置与预算记录）。对照官方终端打包代码：官方把向 Privy 钱包地址转入视为会自动触发存款，与 ADR 0040 一致。复跑分支 14 个测试文件 836 项、typecheck、Biome、memory:check 通过。发现自动 scope 在资金锁内不重读余额，已改为把提交的整笔余额当锁定值并补两项回归；补齐 AGENTS/onboarding 文档中「登录从不签名」与自动存款的关系。未推送、未发布、未做真实资金验收。",
+  "summary": "自动入金审查补齐余额锁定、签名前法律核验和未知结果通知，已随 PR #97 合入、p30 发布。来源定向测试与变异结果保留，未做真实主网自动存款验收。",
   "thread": null,
   "baseCommit": "eeace5db",
-  "commits": [],
+  "commits": ["b0a37333", "525f38c0"],
   "sources": [
     {"path": "docs/adr/0040-automatic-email-wallet-deposits.md"},
     {"path": "docs/cctp-deposits.md"},
@@ -90,3 +90,11 @@
 ## 后续与替代关系
 
 本记录补充 [恢复邮箱主网自动存款](2026-10-10-automatic-email-deposits.md) 与 [无哈希提交诊断](2026-10-10-deposit-unknown-submission-diagnostics.md)，不替代它们。`claude/deposit-auto-review` 叠在 Codex 分支之上，合并到 `dev` 时应一并进入；真实主网自动存款与最终 HyperCore 入账的验收仍待发布版本。
+
+## 周整理补注（2026-10-12）
+
+原“叠在 Codex 分支之上待合入、未发布”已由 PR #97/#96 和 p30 接续；包含 525f38c0 的两项 P1 修正。保留没有全量本地复跑或真实资金操作的边界，不把静态官方文案当真实流程调试。
+
+后续来源：[2026-10-11-cloudfront-release-p30](2026-10-11-cloudfront-release-p30.md)。
+
+本补注为事后核对，原正文、失败与验证版本保留。本轮只核对 Git、任务记录和相关当前规范；来源执行结果不视为本次重跑。查询时间与实际 head 见[本周整理](2026-10-12-weekly-memory-review.md)。

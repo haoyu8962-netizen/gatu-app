@@ -10,7 +10,7 @@
   "summary": "用户把 Sairn 设计交付物（Logo/图标套件 v1.3、Motion Library 与 Share Studio 两个 HTML 工具、iOS/Android/鸿蒙图标集）放进 brand/ 并要求规划替换。六路只读调查加两路对抗审查后形成 docs/brand-migration-plan.md：交付物缺 OG 卡、PnL 标注稿、maskable-192、域名与邮箱；存储键、Web Lock 名与 Agent 槽位名 gatu 默认保留（改名或换域名都会让资金与下单守卫失效）；页头三处 Logo 低于新规则的 24px；PWA 主题色按 runtime-guardrails §8 保持 #0F1A1F；官网线上版本停在 2026-07-19 且旧文件按 immutable 缓存一年。计划含 24 项待用户决定事项、阶段 0a–7 与仓库外清单。只改文档，未运行任何仓库测试，未实施任何阶段，brand/ 下的交付物仍未入库。",
   "thread": null,
   "baseCommit": "99ddc6b4",
-  "commits": ["895c7cf9"],
+  "commits": ["895c7cf9", "dba03dee"],
   "sources": [
     { "path": "docs/brand-migration-plan.md" },
     { "path": "brand/README.md" },
@@ -77,3 +77,11 @@
 - 修订（2026-10-01）：`brand/brand-info.yaml` 已在执行阶段由 `brand/brand.json` 取代并删除（`c2d47191`），本记录的来源随之改指 `brand/brand.json`；执行过程见 [执行记录](2026-10-01-sairn-brand-migration-execution.md)。
 
 - 2026-10-09 更正：来源列表里的 `apps/terminal/src/config/trading-agent.ts` 已随 ADR 0038（普通交易连接改用无名默认 Agent）删除，来源改指向该 ADR；正文提到的文件名保留为当时的写法。
+
+## 周整理补注（2026-10-12）
+
+本轮新增变更中的 dba03dee 又移除了普通交易的命名 Agent 槽位，见 ADR 0038；不能从本记录早期方案恢复旧槽位。旧域名组与过渡头亦已退役并随 p28 发布，AWS 资源名、仓库名和带日期的历史仍保留。上周 42f2bd23 的其余摘要修订尚在独立分支，本轮不重复套用。
+
+后续来源：[2026-10-09-unnamed-default-agent](2026-10-09-unnamed-default-agent.md)；[2026-10-08-cloudfront-release-p28](2026-10-08-cloudfront-release-p28.md)。
+
+本补注为事后核对，原正文、失败与验证版本保留。本轮只核对 Git、任务记录和相关当前规范；来源执行结果不视为本次重跑。查询时间与实际 head 见[本周整理](2026-10-12-weekly-memory-review.md)。

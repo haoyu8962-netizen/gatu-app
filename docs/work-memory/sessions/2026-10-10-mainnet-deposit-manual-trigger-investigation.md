@@ -7,10 +7,10 @@
   "kind": "task",
   "status": "recorded",
   "topics": ["account-funding"],
-  "summary": "用户要求核对为何转入 USDC 后仍需点击 Deposit。0c72fa857（Git 署名 Mark）引入主网手动限制；修复另有记录。线上 p28/d74dd616 尚不含本地 068f7cb2。Important 是固定网络/资产提醒，不是报错。用户随后报告 Another Circle CCTP deposit 长时间拦截；经其指定内置浏览器，只读确认存在未到期 submission-unresolved 授权、无源交易跟踪记录，链上源钱包余额仍在且授权未使用。该文案混用了待转发交易和无哈希未知提交两种状态；原始提交失败响应缺失，未认定具体钱包/Bundler/Paymaster 故障。未清除记录、重签、广播或发布。",
+  "summary": "主网二次 Deposit 的历史来源已核对，自动触发修复后随 PR #97 / p30 发布；后续真实重试定位代付策略与路由，配置修复后已有一笔成功及源收据记录。原未知授权诊断成立，但当时缺少错误响应不再代表后续证据状态。",
   "thread": null,
   "baseCommit": "a310ade18291e86617021a44a00c07710844965c",
-  "commits": ["0c72fa857687ffb789328ebeac8b2567044dd7f5", "6140b3784d9d519638c7f26e1b7c67f4ad0e5268", "783f50f0d84cd7016677ceb657b55282728c7c45", "068f7cb24904935ebe2018118bed11f95e13180c"],
+  "commits": ["0c72fa857687ffb789328ebeac8b2567044dd7f5", "6140b3784d9d519638c7f26e1b7c67f4ad0e5268", "783f50f0d84cd7016677ceb657b55282728c7c45", "068f7cb24904935ebe2018118bed11f95e13180c", "51ee48a8", "5919efe8", "82ac5c7b", "86e40177"],
   "sources": [
     { "path": "apps/terminal/src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx" },
     { "path": "apps/terminal/src/components/trade/tradebox/deposit-modal.tsx" },
@@ -104,3 +104,11 @@
 ## 同日再次重试后的续查
 
 用户再次点击后产生新的无哈希授权，仍未入账。原始拒绝响应未留在调试缓冲，链上授权未用、余额仍在；本地修复提示混用和诊断丢失，但不能据此声称上游提交故障已解决。实施、验证与待捕获证据见[无哈希提交续查](2026-10-10-deposit-unknown-submission-diagnostics.md)。本段不覆盖前次授权的时间与快照。
+
+## 周整理补注（2026-10-12）
+
+本记录末尾无原始上游响应的缺口已有后续真实重试取证；源收据又由计费核对补足。两次观察不可倒推成最初失败都已被确定归因。p28 手动成功与 p30 自动代码交付分开记录。
+
+后续来源：[2026-10-10-zerodev-deposit-sponsorship-policy](2026-10-10-zerodev-deposit-sponsorship-policy.md)；[2026-10-11-zerodev-budget-and-billing-audit](2026-10-11-zerodev-budget-and-billing-audit.md)；[2026-10-11-cloudfront-release-p30](2026-10-11-cloudfront-release-p30.md)。
+
+本补注为事后核对，原正文、失败与验证版本保留。本轮只核对 Git、任务记录和相关当前规范；来源执行结果不视为本次重跑。查询时间与实际 head 见[本周整理](2026-10-12-weekly-memory-review.md)。

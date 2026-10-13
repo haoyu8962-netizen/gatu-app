@@ -10,10 +10,10 @@
     "brand-identity",
     "static-hosting"
   ],
-  "summary": "用户要求扫描并移除旧 gatu 的代码与文档记录。扫描 origin/dev（2846a6f8）后把命中分成四类，用户选择做前两类：按切换方案 4.2（PR-B）删除 brand.json 的 domains.legacy、公共 origin 的双组识别、Lambda 的旧转发头回退、CloudFront 请求与响应函数的旧头双写和旧路由标记、源站请求策略白名单里的 X-Gatu-Forwarded-Host，并给 scripts/brand.mjs 加退役名单；同时把 brand-assets、两份部署说明、AGENTS.md 等现行文档里过时的 gatu 内容改成现状。AWS 资源名、仓库名和历史记录按 ADR 0027 保留。分支 claude/retire-gatu-domain-group，PR #73，未合入、未发布；用户决定 2026-10-09 之后再合入。类型检查、全量单测、CloudFront 与品牌测试通过，九组变异都被检查拦下；线上只做了只读核对，没有改动任何 AWS、DNS 或 Privy 配置。",
+  "summary": "旧域名组、过渡头与路由标记退役已经 PR #73 合入并随 p28 发布，后续云资源清理由独立记录接续。原草稿和等待日期属于当时阶段；AWS 资源名、仓库名与历史记录继续保留。",
   "thread": null,
   "baseCommit": "2846a6f8",
-  "commits": ["560158ab", "5708107a", "f96c4dd9", "e481bffb"],
+  "commits": ["560158ab", "5708107a", "f96c4dd9", "e481bffb", "922c667c"],
   "sources": [
     { "path": "docs/sairn-domain-cutover-plan.md" },
     { "path": "docs/adr/0032-gatu-offline-cutover-to-sairn.md" },
@@ -182,3 +182,11 @@ PR #73 开出后，`dev` 合入了 PR #74（银行卡入金 Meld 后续）和 PR
   - `.deepsec/data/sairn/tech.json` 的 `rootPath` 是带本机用户名的绝对路径，属于另一个问题；
   - `docs/brand-migration-plan.md` 与切换方案的正文是计划与执行记录，只改了状态行。
 - 本记录不替代任何记录。
+
+## 周整理补注（2026-10-12）
+
+只读 GitHub 核对 PR #73 已合入；p28 与清理记录分别报告代码发布和线上资源后续。原「未合入、未发布、等到 10-09」不再是当前阶段，但当时的只读操作边界保留。
+
+后续来源：[2026-10-08-cloudfront-release-p28](2026-10-08-cloudfront-release-p28.md)；[2026-10-08-gatu-retirement-cleanup](2026-10-08-gatu-retirement-cleanup.md)。
+
+本补注为事后核对，原正文、失败与验证版本保留。本轮只核对 Git、任务记录和相关当前规范；来源执行结果不视为本次重跑。查询时间与实际 head 见[本周整理](2026-10-12-weekly-memory-review.md)。

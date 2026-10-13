@@ -1,6 +1,6 @@
 # ADR 0041：新账号自动设为统一账户
 
-- 状态：已接受并实施（2026-10-12；运营方当日明确决定「按官方做法去做」）；未推送、未发布，真实账号验收未做，见文末。
+- 状态：已接受并实施（2026-10-12；运营方当日明确决定「按官方做法去做」）；2026-10-12 经 PR #107 合入 `dev`（合并提交 `6525fd04`），未晋升 `main`、未发布，真实账号验收未做，见文末。
 - 关联：[取证记录](../work-memory/sessions/2026-10-12-new-account-default-mode-review.md)、[首次交易](../trading-onboarding.md)、[移动数据呈现「账户模式与资金限制」](../mobile-data-presentation.md)、[账户概要](../account-overview.md)、[签名机制](../hyperliquid-signing.md)。
 
 ## 背景

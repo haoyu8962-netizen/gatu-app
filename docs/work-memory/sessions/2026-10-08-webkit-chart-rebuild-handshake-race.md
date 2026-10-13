@@ -10,7 +10,7 @@
   "summary": "用户在 iPhone Safari 上从交易页去任意仪表盘页再回到 Markets 视图，图表停在品牌加载动画，约 30 秒后变成「出错了 / 重试」，重试无效。根因不在应用代码：vendored 的 TradingView 加载器 charting_library.js（v28.3，`_create`）在 iframe 里 `document.write` 完图表文档之后才注册 `innerWindowLoad` 监听；线上 `charting_library/bundles/` 是 immutable，WebKit 对同一页面里第二次创建的 iframe 直接从内存缓存同步执行全部脚本，内层在 `document.write` 期间就派发了 `innerWindowLoad`，监听晚 1 ms 注册，`onChartReady` 永不触发，15 秒就绪看门狗重试一次后报错；重试、语言切回已缓存语言包的语言、数字格式变化走的是同一条重建路径。Playwright WebKit（iPhone 13）对 app.sairn.ai 复现并记录事件顺序，Chromium 同路径正常；本地开发服务器（无 immutable 缓存）与 iOS 模拟器不复现；官方站用同一份 v28.5 加载器，切页面同样销毁重建 iframe，但其 bundle 每次重新验证，不触发。用户选定方案 1：补丁四份加载器副本（`_create` 里把监听挪到 `document.open()` 之后、`document.write` 之前，blob 分支与缺 contentWindow 的警告分支在原位置调用同一 helper），新增源码契约 `chart-library-loader-handshake-contract` 与执行真实加载器的 `chart-library-loader-handshake`（含上游顺序负对照），重新生成 TradingView 摘要清单，更新 guardrails §4、ADR 0006 补记、清单 README、CHANGELOG 与 AGENTS 回归清单；Codex 只读对抗审查第一轮 8.0（3 项 P2、3 项 P3）与第二轮 9.0（4 项 P3：行为测试未调用 widget.remove、诊断服务器按目录名判 immutable 且畸形 URL 会让进程退出、记录描述与数字未按版本分列）都已处理；验证见正文。",
   "thread": null,
   "baseCommit": "6da4c15a",
-  "commits": [],
+  "commits": ["5d094605", "8c0dcac0", "1e89c0a3", "35dba806", "1da45820", "704602e4", "965d2c9e"],
   "sources": [
     { "path": "apps/terminal/tests/browser/chart-rebuild-webkit-probe.mjs" },
     { "path": "apps/terminal/src/lib/tests/chart-library-loader-handshake-contract.test.ts" },

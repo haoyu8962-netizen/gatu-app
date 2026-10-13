@@ -7,10 +7,10 @@
   "kind": "task",
   "status": "recorded",
   "topics": ["account-funding"],
-  "summary": "捕获真实重试的 pm_getPaymasterStubData AA21；线上 ZeroDev 项目缺少代付策略，经用户确认保存 Arbitrum CctpExtensionV2 限额策略及 Privy 两项 PIMLICO 路由。标准准备请求返回 Paymaster 数据；用户随后报告存款成功，23:50 北京时间只读确认原 d74dd616 页面已有资产、完成记录且未知授权和待处理记录清除。成功提交的原始响应未保留，未独立复核源收据；自动存款代码未发布。配置基线、发布检查、健康探针与预算告警仍是后续预防措施。",
+  "summary": "真实重试捕获 AA21 后修复 ZeroDev 代付策略与 Privy 路由；用户报告成功，随后账单核对独立补足源交易及 UserOperation 成功证据。日限额后来单独调整，自动入金与未知提示代码随 p30 发布；预防性配置探针、监控和自动流程真实验收仍未完成。",
   "thread": null,
   "baseCommit": "86e40177",
-  "commits": [],
+  "commits": ["54f9d6d9", "73a4f24f", "bcd504b8"],
   "sources": [
     {"path": "docs/cctp-deposits.md"},
     {"path": "docs/sairn-domain-cutover-plan.md"},
@@ -82,3 +82,11 @@
 Privy 两项路由已保存，公开配置、新客户端准备及刷新后页面响应已核验，临时观察已恢复。当前授权自然到期后由用户提交，继续核对源交易确认、Circle 转发和最终 HyperCore 余额，才能宣称报告的入账问题已解决。页面再次刷新会移除临时观察，需先恢复观察再重试。策略额度仍需实际 burn 和流量验证；若再次失败，以新请求为依据，不能预设只能扩额度或放宽策略。
 
 本记录局部更新前一条诊断中「尚无原始上游错误」的状态，保留其代码修改、测试结果与未知授权保护结论。没有覆盖此前的验证版本，也未把读链或未签名探针称为真实资金验收。
+
+## 周整理补注（2026-10-12）
+
+“未独立重取源收据”由后续计费核对补足，但 Circle 转发收据仍未独立核对；成功事实沿用来源报告与当时 UI。预算变更由另一记录说明，不能从本记录旧日限额或单笔成功推定持续容量；本轮没有访问供应商后台。
+
+后续来源：[2026-10-11-zerodev-budget-and-billing-audit](2026-10-11-zerodev-budget-and-billing-audit.md)；[2026-10-11-zerodev-budget-adjustment](2026-10-11-zerodev-budget-adjustment.md)；[2026-10-11-cloudfront-release-p30](2026-10-11-cloudfront-release-p30.md)。
+
+本补注为事后核对，原正文、失败与验证版本保留。本轮只核对 Git、任务记录和相关当前规范；来源执行结果不视为本次重跑。查询时间与实际 head 见[本周整理](2026-10-12-weekly-memory-review.md)。
