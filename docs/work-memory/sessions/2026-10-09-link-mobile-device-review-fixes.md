@@ -7,10 +7,10 @@
   "kind": "task",
   "status": "recorded",
   "topics": ["pairing-release", "wallet-onboarding"],
-  "summary": "用户要求审查电脑端连接手机与手机扫码连接电脑两个方向，并对照 app.hyperliquid.xyz。代码审查（两路子代理 + 本会话核对）结论：无 P0；P1 是从未批准 builder fee 的 owner 链接的手机无法下单或平仓（下单按钮置灰无原因，平仓类按钮报误导性的钱包错误）；P2 有 Privy 登录会删除或隐藏导入的密钥、再次批准会让已连接手机失效且无提示、二维码绘制失败要重新签名、手机端多个资金与主钱包入口可点后重连或文案不一致、iOS 系统相机导入存在 Safari 而非 PWA；另有若干 P3。生产配对开关关闭，功能线上不可达。用户选择：手机导入的密钥优先于钱包会话（对齐官方）；builder fee 先按推荐在关联弹窗里单独批准，开发服务器实测后用户否决，改为关联只关联不授权：账号未激活交易时置灰并提示先在电脑端存款下单（邮箱静默授权）。官方终端自己的订单不带 builder，普通界面没有批准 builder fee 的流程。已实施并补测试与文档；真机清单未运行；未推送。",
+  "summary": "ADR 0039 的手机密钥优先、关联不批准 builder fee、共用 Mobile QR 槽位及审查修复已经 PR #94 合入并随 p30 发布，生产配对已开启。原关闭开关状态已过时；真机清单、读屏长按和签名中关闭等限制保留，切网删除密钥的报告经 p30 后续核对不适用于当前应用。",
   "thread": null,
   "baseCommit": "805ee5a1",
-  "commits": [],
+  "commits": ["bdf73939", "72768c6f", "9ba297f4", "cdd6694c", "0985fb91", "4100c7d5", "997ef5e6", "435867a8", "344161f6", "e8b3e4be"],
   "sources": [
     { "path": "apps/terminal/src/components/trade/components/mobile-agent-sync-modal.tsx" },
     { "path": "apps/terminal/src/components/trade/components/trading-action-button.tsx" },
@@ -198,3 +198,11 @@
 - 命名 Agent 上限：已由 `9ba297f4` 处理（签名前只读检查、只提示不拦截，ADR 0039 决策 6）。
 - QR 密度：可以缩短载荷，并按设备像素比渲染。
 - 弹窗跨 1000px 时会重新挂载，签名会被中断。
+
+## 周整理补注（2026-10-12）
+
+原末尾“生产开关继续关闭”已由 p30 的发布记录和现行 ADR 0039 更新。PR #96 机器人切网删除密钥的 P2 经后续核对不适用于当前应用：env 是每页常量，切网整页刷新；保留库调用方原地改 env 的边界。真实手机授权、首单、RD-1..RD-3，以及本记录其它未完成项不因开启开关而关闭。
+
+后续来源：[2026-10-11-cloudfront-release-p30](2026-10-11-cloudfront-release-p30.md)。
+
+本补注为事后核对，原正文、失败与验证版本保留。本轮只核对 Git、任务记录和相关当前规范；来源执行结果不视为本次重跑。查询时间与实际 head 见[本周整理](2026-10-12-weekly-memory-review.md)。

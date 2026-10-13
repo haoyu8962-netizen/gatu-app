@@ -10,7 +10,7 @@
   "summary": "dev→main 晋升 PR #96 的配对开启生产构建在 a310ade1 与 ee4aab99 两次失败：总量 +10,645 超 10,000 允许量，且 api-wallet-*.js 出现两个 chunk。根因是配对弹窗静态引入 api-wallet-state 的 isApiWalletExtraAgentSnapshot，Rollup 把该模块提成与 API 钱包路由共享的 chunk 并沿用模块名。把守卫和 ExtraAgent 类型移到 lib/hyperliquid/extra-agent-snapshot.ts；以固定身份 Node 22.15.0 的配对关构建 3,304,479 重定总量基线，配对开构建 3,307,606（+3,127）且单 chunk。同时按运营方决定记录三个发布闸门默认全开、不再逐次询问。未发布。",
   "thread": null,
   "baseCommit": "ee4aab99",
-  "commits": [],
+  "commits": ["0c14a17d", "d499c77a"],
   "sources": [
     {"path": "scripts/check-client-bundle-budget.mjs"},
     {"path": "docs/terminal-performance-baseline.md"},
@@ -53,3 +53,11 @@ PR #98 的 Codex 机器人两条 P2 已采纳：发布 README「发布闸门」�
 ## 后续与替代关系
 
 本记录补充 [p26 重定基线](../../terminal-performance-baseline.md) 的做法，不替代任何记录。合入 `dev` 后，PR #96 重新运行配对开构建；通过即晋升 `main` 并按手册第 8 节发布 p30（三个闸门全开）。
+
+## 周整理补注（2026-10-12）
+
+修复经 PR #98 进入 dev，PR #96 在最终 head 通过后晋升并由 p30 报告发布。原沙箱绑定失败和仅客户端资产可测的范围保留，不改成那次完整构建通过。
+
+后续来源：[2026-10-11-cloudfront-release-p30](2026-10-11-cloudfront-release-p30.md)。
+
+本补注为事后核对，原正文、失败与验证版本保留。本轮只核对 Git、任务记录和相关当前规范；来源执行结果不视为本次重跑。查询时间与实际 head 见[本周整理](2026-10-12-weekly-memory-review.md)。

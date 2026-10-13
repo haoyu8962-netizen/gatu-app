@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
+import type { AccountModeSetupKind } from "@/domain/trade/account-mode-setup";
 import {
 	type BalanceRow,
 	getMarketQuoteToken,
@@ -11,6 +12,7 @@ import { getDirectionalAvailableToTrade } from "@/domain/trade/order/availabilit
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { useOrderSide } from "@/stores/use-order-entry-store";
 import { type AccountAbstraction, isSupportedAccountAbstraction, useSelectedDexBalances } from "./use-account-balances";
+import { useAccountModeSetupKind } from "./use-account-mode-setup";
 import { useActiveAssetData } from "./use-active-asset-data";
 import { useSpotTokenUsdPrices } from "./use-spot-token-usd-prices";
 
@@ -18,6 +20,7 @@ interface BalanceRowsState {
 	accountAbstraction: AccountAbstraction;
 	accountDataReady: boolean;
 	accountModeReady: boolean;
+	accountModeSetup: AccountModeSetupKind;
 	balances: BalanceRow[];
 	hasError: boolean;
 	internalTransfersEnabled: boolean;
@@ -31,7 +34,7 @@ interface BalanceRowsState {
 }
 
 export function useBalanceRows(): BalanceRowsState {
-	const { isConnected } = useWalletSession();
+	const { address, isConnected } = useWalletSession();
 	const side = useOrderSide();
 	const { data: activeAssetData, market, status: activeAssetStatus } = useActiveAssetData();
 	const {
@@ -58,6 +61,7 @@ export function useBalanceRows(): BalanceRowsState {
 			? getDirectionalAvailableToTrade(activeAssetData?.availableToTrade, side)
 			: null;
 	const accountModeReady = isSupportedAccountAbstraction(accountAbstraction);
+	const accountModeSetup = useAccountModeSetupKind(accountAbstraction, address);
 	const accountDataReady = perpStateStatus === "success" && spotStateStatus === "success" && !hasError;
 	const quoteBalanceShared = isQuoteBalanceSharedWithPerps(accountAbstraction);
 
@@ -91,6 +95,7 @@ export function useBalanceRows(): BalanceRowsState {
 		accountAbstraction,
 		accountDataReady,
 		accountModeReady,
+		accountModeSetup,
 		balances,
 		hasError,
 		internalTransfersEnabled: accountDataReady && accountModeReady && !quoteBalanceShared,

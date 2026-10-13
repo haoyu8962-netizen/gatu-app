@@ -52,6 +52,10 @@ vi.mock("@/components/trade/tradebox/cctp-deposit-tracking-notifier", () => ({
 vi.mock("@/components/trade/tradebox/embedded-deposit-auto-bridge", () => ({
 	EmbeddedDepositAutoBridge: () => null,
 }));
+
+vi.mock("@/components/trade/components/unified-account-auto-setup", () => ({
+	UnifiedAccountAutoSetup: () => null,
+}));
 vi.mock("@/components/trade/twap-reconciliation", () => ({ TwapReconciliation: () => null }));
 
 vi.mock("@/hooks/wallet/use-explicit-agent-approval", () => ({

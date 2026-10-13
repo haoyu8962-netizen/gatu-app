@@ -28,6 +28,14 @@ const AUTO_DEPOSIT_RETRY_DELAY_MS = 30_000;
 const AUTO_DEPOSIT_MAX_RETRY_DELAY_MS = 5 * 60_000;
 let notificationPresentationSequence = 0;
 
+function hasNoSponsoredAuthorizationIntent(env: "Mainnet" | "Testnet", owner: string): boolean {
+	try {
+		return readCctpSponsoredAuthorizationIntent(env, owner.toLowerCase()) === null;
+	} catch {
+		return false;
+	}
+}
+
 export function EmbeddedDepositAutoBridge() {
 	const { t } = useLingui();
 	const isTestnet = useIsTestnet();
@@ -247,13 +255,12 @@ export function EmbeddedDepositAutoBridge() {
 				void refreshBalance();
 			}
 
-			if (retryTimeoutRef.current) {
-				window.clearTimeout(retryTimeoutRef.current);
-				retryTimeoutRef.current = null;
-			}
-			retryKeyRef.current = null;
-
 			if (attemptKeyRef.current !== eligibleDepositKey) {
+				if (retryTimeoutRef.current) {
+					window.clearTimeout(retryTimeoutRef.current);
+					retryTimeoutRef.current = null;
+				}
+				retryKeyRef.current = null;
 				attemptKeyRef.current = null;
 				resetDeposit();
 				return;
@@ -261,7 +268,24 @@ export function EmbeddedDepositAutoBridge() {
 
 			// A rejected smart-account submission can still have reached the bundler.
 			// Keep the failed attempt latched until its balance/identity changes instead
-			// of signing a second EIP-3009 authorization automatically.
+			// of signing a second EIP-3009 authorization automatically. A failure before
+			// any authorization reached the bundler (no hash, no unresolved intent, no
+			// unknown outcome) left nothing in flight, so it is retried with backoff; a
+			// retry already scheduled for this key is kept across re-renders.
+			const retrySafe =
+				!depositHash &&
+				!submissionOutcomeUnknown &&
+				!!depositEmbeddedWalletAddress &&
+				hasNoSponsoredAuthorizationIntent(cctpTrackingEnv, depositEmbeddedWalletAddress);
+			if (retrySafe) {
+				scheduleRetry(eligibleDepositKey);
+				return;
+			}
+			if (retryTimeoutRef.current) {
+				window.clearTimeout(retryTimeoutRef.current);
+				retryTimeoutRef.current = null;
+			}
+			retryKeyRef.current = null;
 			return;
 		}
 
@@ -321,6 +345,7 @@ export function EmbeddedDepositAutoBridge() {
 		depositEmbeddedWalletAddress,
 		depositError,
 		depositFeeQuote,
+		depositHash,
 		depositStatus,
 		depositIdentityKey,
 		eligibleDepositKey,
@@ -328,6 +353,7 @@ export function EmbeddedDepositAutoBridge() {
 		networkName,
 		refreshBalance,
 		resetDeposit,
+		submissionOutcomeUnknown,
 	]);
 
 	useEffect(() => {

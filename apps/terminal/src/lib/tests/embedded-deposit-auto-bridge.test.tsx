@@ -36,6 +36,7 @@ const testState = vi.hoisted(() => ({
 	depositStatus: "idle" as "idle" | "pending" | "confirming" | "success" | "error",
 	isTestnet: true,
 	maxDepositRaw: 9_000_000n as bigint | undefined,
+	feeQuoteVersion: 0,
 	refreshBalance: vi.fn(),
 	resetDeposit: vi.fn(),
 	routingData: { depositRoute: "cctp", withdrawalRoute: "cctp" } as {
@@ -55,6 +56,7 @@ const testState = vi.hoisted(() => ({
 		| { userAllowed: boolean; canPerformActions: boolean; acceptedTerms: boolean }
 		| undefined,
 	authorizationIntent: null as null | { authNonce: string; validBefore: number },
+	authorizationIntentError: null as Error | null,
 	submissionOutcomeUnknown: false,
 	useDepositOptions: null as null | Record<string, unknown>,
 	trackingOptions: null as null | Record<string, unknown>,
@@ -154,16 +156,25 @@ vi.mock("@/lib/wallet/privy-wagmi", () => ({
 }));
 
 vi.mock("@/hooks/trade/use-cctp-deposit-fee", () => {
-	const data = {
-		feeQuote: {
-			finalityThreshold: 1000,
-			minimumFeeBps: "0",
-			forwardFeeRaw: { low: 200_000n, med: 200_000n, high: 200_000n },
-		},
-	};
+	const quotes = new Map<number, { feeQuote: Record<string, unknown> }>();
+	function dataForVersion(version: number) {
+		// A fresh object per version mirrors a refetched quote: same values, new identity.
+		let data = quotes.get(version);
+		if (!data) {
+			data = {
+				feeQuote: {
+					finalityThreshold: 1000,
+					minimumFeeBps: "0",
+					forwardFeeRaw: { low: 200_000n, med: 200_000n, high: 200_000n },
+				},
+			};
+			quotes.set(version, data);
+		}
+		return data;
+	}
 	return {
 		useCctpDepositFee: ({ amountRaw }: { amountRaw: bigint | undefined }) => ({
-			data,
+			data: dataForVersion(testState.feeQuoteVersion),
 			calculation: amountRaw !== undefined && amountRaw >= 400_000n ? { maxFeeRaw: 200_000n } : null,
 		}),
 	};
@@ -175,7 +186,10 @@ vi.mock("@sairn/hl-react", () => ({
 	useLegalStatus: () => ({ data: testState.legalStatus }),
 }));
 vi.mock("@/lib/trade/cctp-deposit-tracking", () => ({
-	readCctpSponsoredAuthorizationIntent: () => testState.authorizationIntent,
+	readCctpSponsoredAuthorizationIntent: () => {
+		if (testState.authorizationIntentError) throw testState.authorizationIntentError;
+		return testState.authorizationIntent;
+	},
 }));
 vi.mock("@/lib/hyperliquid/use-deposit", () => ({
 	useDeposit: (options: Record<string, unknown>) => {
@@ -226,6 +240,7 @@ describe.each([
 		testState.toastWarning.mockReset();
 		testState.legalStatus = { userAllowed: true, canPerformActions: true, acceptedTerms: true };
 		testState.authorizationIntent = null;
+		testState.authorizationIntentError = null;
 		testState.submissionOutcomeUnknown = false;
 		testState.depositError = null;
 		testState.depositHash = undefined;
@@ -233,6 +248,7 @@ describe.each([
 		testState.depositStatus = "idle";
 		testState.isTestnet = isTestnet;
 		testState.maxDepositRaw = 9_000_000n;
+		testState.feeQuoteVersion = 0;
 		testState.routingData = { depositRoute: "cctp", withdrawalRoute: "cctp" };
 		testState.routingIsError = false;
 		testState.routingIsFetching = false;
@@ -557,6 +573,59 @@ describe.each([
 		expect(testState.resetDeposit).toHaveBeenCalledTimes(1);
 	});
 
+	it("retries with backoff after a failure that happened before any authorization was signed", async () => {
+		await act(async () => {
+			root.render(createElement(EmbeddedDepositAutoBridge));
+		});
+		expect(testState.deposit).toHaveBeenCalledTimes(1);
+
+		testState.depositStatus = "error";
+		testState.depositError = new Error("Circle fee quote unavailable");
+		await act(async () => {
+			root.render(createElement(EmbeddedDepositAutoBridge));
+		});
+		expect(testState.resetDeposit).not.toHaveBeenCalled();
+
+		await act(() => vi.advanceTimersByTimeAsync(20_000));
+		testState.feeQuoteVersion += 1;
+		await act(async () => {
+			root.render(createElement(EmbeddedDepositAutoBridge));
+		});
+		testState.feeQuoteVersion += 1;
+		await act(async () => {
+			root.render(createElement(EmbeddedDepositAutoBridge));
+		});
+		await act(() => vi.advanceTimersByTimeAsync(9_000));
+		expect(testState.resetDeposit).not.toHaveBeenCalled();
+		await act(() => vi.advanceTimersByTimeAsync(1_000));
+		expect(testState.resetDeposit).toHaveBeenCalledTimes(1);
+
+		testState.depositStatus = "idle";
+		testState.depositError = null;
+		await act(async () => {
+			root.render(createElement(EmbeddedDepositAutoBridge));
+		});
+		expect(testState.deposit).toHaveBeenCalledTimes(2);
+	});
+
+	it("does not retry when the authorization intent store cannot be read", async () => {
+		await act(async () => {
+			root.render(createElement(EmbeddedDepositAutoBridge));
+		});
+		expect(testState.deposit).toHaveBeenCalledTimes(1);
+
+		testState.depositStatus = "error";
+		testState.depositError = new Error("Circle fee quote unavailable");
+		testState.authorizationIntentError = new Error("CCTP sponsored authorization storage is unavailable.");
+		await act(async () => {
+			root.render(createElement(EmbeddedDepositAutoBridge));
+		});
+
+		await act(() => vi.advanceTimersByTimeAsync(60_000));
+		expect(testState.resetDeposit).not.toHaveBeenCalled();
+		expect(testState.deposit).toHaveBeenCalledTimes(1);
+	});
+
 	it("does not automatically resubmit after a no-hash sponsored submission error", async () => {
 		await act(async () => {
 			root.render(createElement(EmbeddedDepositAutoBridge));
@@ -565,6 +634,7 @@ describe.each([
 
 		testState.depositStatus = "error";
 		testState.depositError = new Error("provider unavailable");
+		testState.submissionOutcomeUnknown = true;
 		await act(async () => {
 			root.render(createElement(EmbeddedDepositAutoBridge));
 		});

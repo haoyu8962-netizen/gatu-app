@@ -15,6 +15,8 @@ const testState = vi.hoisted(() => ({
 	availableBalance: 100,
 	baseAvailable: 100,
 	availabilityStatus: "success" as "success" | "loading" | "stale" | "error",
+	isAwaitingFirstDeposit: false,
+	openDeposit: vi.fn(),
 	kind: "perp" as "perp" | "spot",
 	limitPrice: "",
 	markPx: "100",
@@ -157,6 +159,7 @@ vi.mock("@/hooks/trade/use-order-entry-data", () => ({
 		beginSizePercentGesture: vi.fn(),
 		endSizePercentGesture: vi.fn(),
 		hasAvailabilityError: testState.availabilityStatus === "error",
+		isAwaitingFirstDeposit: testState.isAwaitingFirstDeposit,
 		hasPosition: false,
 		isAvailabilityBlocked: testState.availabilityStatus !== "success",
 		isBalanceAvailabilityBlocked: testState.availabilityStatus !== "success",
@@ -271,7 +274,7 @@ vi.mock("@/lib/lazy", () => ({
 }));
 
 vi.mock("@/stores/use-global-modal-store", () => ({
-	useDepositModalActions: () => ({ open: vi.fn() }),
+	useDepositModalActions: () => ({ open: testState.openDeposit }),
 	useEstablishConnectionModalActions: () => ({ open: vi.fn() }),
 	useSettingsDialogActions: () => ({ open: vi.fn() }),
 }));
@@ -402,6 +405,26 @@ describe("MobileTradeView order-size validation accessibility", () => {
 		expect(getValidationError(container)).toBeNull();
 		for (const control of getSizeControls(container)) expectDescriptionCleared(control);
 		await expectSubmissionBlocked(container);
+	});
+
+	it("offers Deposit to a new account awaiting its first deposit and never submits its valid-looking draft", async () => {
+		activateLocale("en");
+		testState.availabilityStatus = "error";
+		await renderView(root);
+		await expectSubmissionBlocked(container);
+
+		testState.isAwaitingFirstDeposit = true;
+		await act(async () => root.unmount());
+		root = createRoot(container);
+		await renderView(root);
+		const button = getCtaButton(container, "Deposit");
+		expect(button.disabled).toBe(false);
+
+		await act(async () => button.click());
+
+		expect(testState.openDeposit).toHaveBeenCalledWith("deposit");
+		expect(testState.requestSubmit).not.toHaveBeenCalled();
+		expect(testState.submitOrder).not.toHaveBeenCalled();
 	});
 
 	it("ignores the order button while the size slider is held without disabling it", async () => {
@@ -961,6 +984,7 @@ function setValidPerpScenario() {
 	testState.availableBalance = 100;
 	testState.baseAvailable = 100;
 	testState.availabilityStatus = "success";
+	testState.isAwaitingFirstDeposit = false;
 	testState.kind = "perp";
 	testState.limitPrice = "";
 	testState.markPx = "100";

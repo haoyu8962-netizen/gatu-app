@@ -1,4 +1,4 @@
-import { isSameOriginRequest } from "@/lib/error-reporting/server";
+import { isSameOriginRequest, readBoundedBody } from "@/lib/error-reporting/server";
 import { resolveDevelopmentGeoVerdict } from "@/lib/geo/development-geo";
 import {
 	createDevelopmentReferralActionGeoDecision,
@@ -7,11 +7,17 @@ import {
 	toGeoVerdict,
 } from "@/lib/geo/geo-contracts";
 import { type ParsedIpdataGeo, parseIpdataGeoResponse } from "@/lib/geo/ipdata-geo";
+import { createFixedWindowIpLimiter } from "@/lib/server/fixed-window-ip-limiter";
 
 const IPDATA_BASE = "https://api.ipdata.co";
 const GEO_CACHE_TTL_MS = 10 * 60 * 1000;
 const GEO_CACHE_MAX_ENTRIES = 5_000;
 const GEO_LOOKUP_TIMEOUT_MS = 5_000;
+// Referral decisions bypass the verdict cache on purpose; this caps what one client can make IPdata answer.
+const REFERRAL_GEO_LIMIT_PER_WINDOW = 12;
+const REFERRAL_GEO_WINDOW_MS = 60_000;
+const REFERRAL_GEO_LIMITER_MAX_ENTRIES = 5_000;
+const REFERRAL_GEO_BODY_MAX_BYTES = 1_024;
 const NO_STORE_HEADERS = { "cache-control": "no-store" } as const;
 
 export type GeoApiUnavailableReason = "invalid_response" | "missing_config" | "missing_ip" | "provider_error";
@@ -53,14 +59,17 @@ function methodNotAllowed(allow: string): Response {
 	return Response.json({ error: "Method not allowed" }, { status: 405, headers: { ...NO_STORE_HEADERS, allow } });
 }
 
-async function readJsonBody(request: Request): Promise<{ ok: true; value: unknown } | { ok: false }> {
+async function readJsonBody(
+	request: Request,
+): Promise<{ ok: true; value: unknown } | { ok: false; status: 400 | 413 }> {
 	const contentType = request.headers.get("content-type")?.toLowerCase() ?? "";
-	if (!contentType.startsWith("application/json")) return { ok: true, value: undefined };
 	try {
-		const text = await request.text();
+		const text = await readBoundedBody(request, REFERRAL_GEO_BODY_MAX_BYTES);
+		if (text === null) return { ok: false, status: 413 };
+		if (!contentType.startsWith("application/json")) return { ok: true, value: undefined };
 		return { ok: true, value: text.trim() === "" ? undefined : JSON.parse(text) };
 	} catch {
-		return { ok: false };
+		return { ok: false, status: 400 };
 	}
 }
 
@@ -81,6 +90,11 @@ function pruneCache(cache: Map<string, CacheEntry>, nowMs: number): void {
 
 export function createGeoApiHandlers(environment: GeoApiEnvironment): GeoApiHandlers {
 	const cache = new Map<string, CacheEntry>();
+	const referralLimiter = createFixedWindowIpLimiter({
+		limit: REFERRAL_GEO_LIMIT_PER_WINDOW,
+		windowMs: REFERRAL_GEO_WINDOW_MS,
+		maxEntries: REFERRAL_GEO_LIMITER_MAX_ENTRIES,
+	});
 	const now = environment.now ?? Date.now;
 
 	function fetchIpdata(ip: string, apiKey: string, init: RequestInit): Promise<Response> {
@@ -142,9 +156,18 @@ export function createGeoApiHandlers(environment: GeoApiEnvironment): GeoApiHand
 		if (request.method !== "POST") return methodNotAllowed("POST");
 		if (!isSameOriginRequest(request)) return jsonResponse({ error: "Forbidden" }, 403);
 		const body = await readJsonBody(request);
-		if (!body.ok) return jsonResponse({ error: "Invalid request body" }, 400);
+		if (!body.ok) {
+			return jsonResponse(
+				{ error: body.status === 413 ? "Request body too large" : "Invalid request body" },
+				body.status,
+			);
+		}
 		const override = readBodyOverride(body.value);
 		const checkedAt = now();
+		const clientIp = environment.resolveClientIp(request);
+		if (clientIp && !referralLimiter.consume(clientIp, checkedAt).allowed) {
+			return jsonResponse({ error: "Too many requests" }, 429);
+		}
 
 		if (environment.development) {
 			return jsonResponse(createDevelopmentReferralActionGeoDecision(override, checkedAt));

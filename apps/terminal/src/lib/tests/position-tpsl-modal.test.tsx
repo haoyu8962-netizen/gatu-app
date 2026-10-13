@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { i18n } from "@lingui/core";
+import { i18n, type MessageDescriptor } from "@lingui/core";
 import {
 	ApiRequestError,
 	type FrontendOpenOrdersResponse,
@@ -1549,6 +1549,39 @@ describe("PositionTpSlModal live data", () => {
 		expect(lastQueueMessage()).toEqual("Another order for this market is still being confirmed.");
 	});
 
+	it("reports a replacement the exchange refused after the cancel as a known failure and keeps the market usable", async () => {
+		testState.orders = [openOrder()];
+		testState.placeOrder.mockRejectedValueOnce(
+			new ApiRequestError(
+				{
+					status: "ok",
+					response: { type: "order", data: { statuses: [{ error: "Order price cannot be more than 95% away" }] } },
+				},
+				"order 0: Order price cannot be more than 95% away",
+			),
+		);
+		const onOpenChange = renderModal();
+
+		act(() => setInputValue(getInput(container, "Take Profit"), "27500"));
+		await act(async () => getButton(container, "Confirm").click());
+
+		expect(testState.cancelOrders).toHaveBeenCalledTimes(1);
+		expect(testState.placeOrder).toHaveBeenCalledTimes(1);
+		expect(onOpenChange).toHaveBeenCalledWith(false);
+		expectDismissedWith("failed", "Order price cannot be more than 95% away");
+		expect(lastQueueItem()?.message && i18n._(lastQueueItem()?.message as MessageDescriptor)).toBe(
+			"The existing TP/SL was cancelled, but the new TP/SL was not placed.",
+		);
+
+		act(() => {
+			root.render(modalElement(positionRef, vi.fn(), "tpsl-2"));
+		});
+		act(() => setInputValue(getInput(container, "Take Profit"), "27500"));
+		await act(async () => getButton(container, "Confirm").click());
+		await vi.waitFor(() => expect(testState.placeOrder).toHaveBeenCalledTimes(2));
+		expect(lastQueueItem()?.status).toBe("success");
+	});
+
 	it("replaces an existing position TP without the unsafe batch-modify flag", async () => {
 		testState.orders = [openOrder()];
 		renderModal();
@@ -1748,8 +1781,10 @@ describe("PositionTpSlModal live data", () => {
 
 		await vi.waitFor(() => expect(onOpenChange).toHaveBeenCalledWith(false));
 		expect(testState.placeOrder).not.toHaveBeenCalled();
-		expectDismissedWith("unconfirmed", "Review this position's TP/SL before retrying.");
-		expect(lastQueueItem()?.status).not.toBe("success");
+		expectDismissedWith("failed", "Trading data changed while this dialog was open.");
+		expect(lastQueueItem()?.message && i18n._(lastQueueItem()?.message as MessageDescriptor)).toBe(
+			"The existing TP/SL was cancelled, but the new TP/SL was not placed.",
+		);
 	});
 
 	it("shows a stable disconnected state instead of an endless loading screen", () => {

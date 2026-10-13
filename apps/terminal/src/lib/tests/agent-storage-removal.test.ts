@@ -111,7 +111,13 @@ describe("verified Agent storage removal", () => {
 		const storageModule = await import("@sairn/hl-react/signing/agent-storage");
 		const schedulerModule = await import("@sairn/hl-react/internal/exchange/request-scheduler");
 		const scheduler = new schedulerModule.ExchangeRequestScheduler();
-		const generation = schedulerModule.captureExchangeRequestGeneration("Mainnet", OWNER, "wallet");
+		const generation = schedulerModule.captureExchangeRequestGeneration("Mainnet", OWNER, "wallet", {
+			signer: "agent",
+			agentPublicKey: "0xaaaa",
+		});
+		const ownerGeneration = schedulerModule.captureExchangeRequestGeneration("Mainnet", OWNER, "wallet", {
+			signer: "user",
+		});
 		const run = vi.fn(async () => "unexpected");
 		const pending = scheduler.schedule("normal", run, generation);
 		const rejection = expect(pending).rejects.toBeInstanceOf(schedulerModule.ExchangeRequestInvalidatedError);
@@ -120,6 +126,7 @@ describe("verified Agent storage removal", () => {
 
 		await rejection;
 		expect(run).not.toHaveBeenCalled();
+		await expect(scheduler.schedule("normal", async () => "withdraw", ownerGeneration)).resolves.toBe("withdraw");
 	});
 
 	it("invalidates selected exchange work when another tab changes the Agent key", async () => {
@@ -128,7 +135,10 @@ describe("verified Agent storage removal", () => {
 		const schedulerModule = await import("@sairn/hl-react/internal/exchange/request-scheduler");
 		const unsubscribe = storageModule.subscribeToStorage(vi.fn());
 		const scheduler = new schedulerModule.ExchangeRequestScheduler();
-		const generation = schedulerModule.captureExchangeRequestGeneration("Mainnet", OWNER, "agent-only");
+		const generation = schedulerModule.captureExchangeRequestGeneration("Mainnet", OWNER, "agent-only", {
+			signer: "agent",
+			agentPublicKey: "0xaaaa",
+		});
 		const run = vi.fn(async () => "unexpected");
 		const pending = scheduler.schedule("normal", run, generation);
 		const rejection = expect(pending).rejects.toBeInstanceOf(schedulerModule.ExchangeRequestInvalidatedError);

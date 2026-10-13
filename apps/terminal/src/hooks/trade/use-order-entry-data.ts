@@ -6,6 +6,7 @@ import { getSpotAvailableValue, getSpotBalance } from "@/domain/trade/balances";
 import { getMarketOpenInterestCapStatus } from "@/domain/trade/open-interest-cap";
 import {
 	type AssetAvailabilityStatus,
+	getAccountModeAvailabilityStatus,
 	getOrderAvailabilityFlags,
 	getOrderAvailabilityStatus,
 } from "@/domain/trade/order/availability";
@@ -23,6 +24,7 @@ import type { UnifiedMarketInfo } from "@/lib/hyperliquid/hooks/useMarketsInfo";
 import type { Side, SizeMode } from "@/lib/trade/types";
 import { useOrderEntryActions, useOrderSizeSource, useOrderType } from "@/stores/use-order-entry-store";
 import { type AccountAbstraction, isSupportedAccountAbstraction, useDefaultDexBalances } from "./use-account-balances";
+import { useAccountModeSetupKind } from "./use-account-mode-setup";
 import { useAssetLeverage } from "./use-asset-leverage";
 
 interface OrderEntryData extends OrderEntryDerived {
@@ -38,6 +40,7 @@ interface OrderEntryData extends OrderEntryDerived {
 	conversionPrice: number;
 	isAvailabilityStale: boolean;
 	hasAvailabilityError: boolean;
+	isAwaitingFirstDeposit: boolean;
 	isOpenInterestCapped: boolean;
 	sideLabels: SideLabels;
 
@@ -104,7 +107,7 @@ export function useOrderEntryData({
 	positionSnapshot,
 }: UseOrderEntryDataOptions): OrderEntryData {
 	const { t } = useLingui();
-	const { isConnected } = useWalletSession();
+	const { address, isConnected } = useWalletSession();
 	const {
 		accountAbstraction,
 		isLoading: areBalancesLoading,
@@ -150,12 +153,14 @@ export function useOrderEntryData({
 		spotStatus: spotStateStatus,
 		perpStatus: subscriptionStatus,
 	});
-	const availabilityStatus =
-		isConnected && !isSupportedAccountAbstraction(accountAbstraction)
-			? areBalancesLoading
-				? "loading"
-				: "error"
-			: streamAvailabilityStatus;
+	const accountModeSetup = useAccountModeSetupKind(accountAbstraction, address);
+	const availabilityStatus = getAccountModeAvailabilityStatus({
+		isConnected,
+		isModeSupported: isSupportedAccountAbstraction(accountAbstraction),
+		areBalancesLoading,
+		accountModeSetup,
+		streamStatus: streamAvailabilityStatus,
+	});
 	const availabilityReceivedAt = isSpotMarket ? spotStateReceivedAt : subscriptionReceivedAt;
 	const availabilityMaxAgeMs = isSpotMarket ? 60_000 : 20_000;
 	const isOpenInterestCapped = getMarketOpenInterestCapStatus(perpsAtOpenInterestCap, market) === "capped";
@@ -307,6 +312,7 @@ export function useOrderEntryData({
 		conversionPrice,
 		isAvailabilityStale,
 		hasAvailabilityError,
+		isAwaitingFirstDeposit: isConnected && accountModeSetup === "awaiting-funds",
 		isOpenInterestCapped,
 		...derived,
 		sideLabels,

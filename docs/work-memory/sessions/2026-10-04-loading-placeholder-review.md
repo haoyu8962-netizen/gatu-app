@@ -10,7 +10,7 @@
   "summary": "用户截图指出存款弹窗的加载骨架与真实表单不符。核对后确认骨架定稿于 2026-08-18，真实表单此后改过两次而骨架未跟随（固定 600px 对实际约 690px）。处理：真实弹窗与代码块回退共用 FundsModalShell，回退只显示转圈；所有打开存款弹窗的控件在指针、按下、焦点到达且可用时预热，预热失败不触及懒加载组件；审计出的资金费页签、充值费用占位、推荐页、金库详情、API 钱包列表改为空白或共用类；新增 loading-placeholder-contract 与 deposit-modal-warm 测试并写入规则。Codex 三轮只读审查评分 6.5/6.5 → 8.0 → 8.5，发现全部核实并修复，最后一批修复未再送审。Chrome 真实指针验证了顶栏与账户面板入口；未做真机与生产构建验证。",
   "thread": null,
   "baseCommit": "498ea17a",
-  "commits": ["29c550c6", "8a00e50a", "50697085"],
+  "commits": ["29c550c6", "8a00e50a", "50697085", "07f3af8e", "4191acf7"],
   "sources": [
     { "path": ".claude/rules/style-ui-guide.md" },
     { "path": "apps/terminal/src/components/trade/components/funds-modal-shell.tsx" },
@@ -82,3 +82,11 @@ Codex 只读对抗审查（`gpt-6-astra`，medium，报告均为静态推演）�
 - 三个历史页的骨架缺筛选栏、手机行高与真实卡片不符，金库列表骨架为通用条块；这次判断为从一开始就是粗略条块而保留，可在下次改这些页面时改为空白占位。
 - 回退与真实弹窗是两个弹窗实例，切换时各有一次进场动画，这是改动前就有的结构，未处理。
 - 无被替代的记录。
+
+## 周整理补注（2026-10-12）
+
+本记录共用 FundsModalShell 的方式尚未保证节点身份，之后发现冷加载替换壳和遮罩；10-09 改成 DepositModalHost 唯一宿主。原预热、空白占位规则保留，旧“加载壳重挂”的实现被局部取代。
+
+后续来源：[2026-10-09-deposit-dialog-single-shell](2026-10-09-deposit-dialog-single-shell.md)。
+
+本补注为事后核对，原正文、失败与验证版本保留。本轮只核对 Git、任务记录和相关当前规范；来源执行结果不视为本次重跑。查询时间与实际 head 见[本周整理](2026-10-12-weekly-memory-review.md)。

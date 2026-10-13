@@ -10,7 +10,7 @@
   "summary": "用户要求把 dev 晋升到 main 并发布。先修复晋升 PR #96 两次失败的配对开启构建（PR #98：api-wallet 双 chunk、总量基线 3,304,479），再以 merge commit 晋升 main（ff11eee5）。运营方决定三个发布闸门默认全开且不再逐次询问。在仓库外工作树 gatu-release-p30 用 Node 22.15.0 构建 cloudfront-2026-10-11-p30（总量 3,307,832，配对开），按 functions → lambda（版本 14）→ sync（首次因本机代理瞬断两文件失败而中止、壳未上传，重跑后 Release markers 一致）→ 两次失效 → verify 主网 15/15、测试网 16/16 → csp-coverage 33 步 0 违规。线上自 p28 升到 p30，首次在生产打开移动配对；真实主网自动存款、真实外部钱包连接与真机配对清单均未做。",
   "thread": null,
   "baseCommit": "0c8980e5",
-  "commits": ["ee4aab99", "0c8980e5", "ff11eee5"],
+  "commits": ["ee4aab99", "0c8980e5", "ff11eee5", "361f372f", "2a14a1a1"],
   "sources": [
     {"path": "deploy/cloudfront/README.md"},
     {"path": "docs/agent-handbook.md"},

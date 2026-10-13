@@ -7,10 +7,10 @@
   "kind": "task",
   "status": "recorded",
   "topics": ["account-funding"],
-  "summary": "只读核对修复后的首次真实主网存款：源收据及对应 UserOperation 成功并包含账户部署，Paymaster 实付约 0.00001057 ETH；ZeroDev Gas 约 $0.02651、含 8% premium 约 $0.02864。Sandbox active，月 Gas 上限 $10、10,000 credits，已用 20；现有单笔/日策略保留，来源规则为空。按该单样本每天 10 笔估算月 Gas $7.95，尚未建立监控或调整预算/套餐。",
+  "summary": "来源核对一笔真实主网存款的源收据、UserOperation 与代付成本；后续按运营方决定只将日上限调整到 0.003 ETH，Sandbox 和月 Gas 上限不变。月额度、credits 和单样本成本不能混为持续吞吐保证；监控与容量扩展未实施。",
   "thread": null,
   "baseCommit": "73a4f24f",
-  "commits": [],
+  "commits": ["bcd504b8", "875a628c"],
   "sources": [
     {"path": "docs/cctp-deposits.md"},
     {"path": "docs/work-memory/sessions/2026-10-10-zerodev-deposit-sponsorship-policy.md"},
@@ -76,3 +76,11 @@ ZeroDev 当前项目 UserOps 列表有一笔与用户成功重试时间一致的
 本记录补充前轮真实源收据与成本证据，保留前轮失败诊断、修复步骤和各自验证边界；不把一次成功扩大为持续可用性或容量验收。
 
 后续：[额度调整](2026-10-11-zerodev-budget-adjustment.md)记录运营方选择保留 Sandbox，并批准将每日上限调整到 0.003 ETH；单笔和月上限未变。该记录也补充套餐摘要中间值的动画观察，以及 included credits 超出后按 overage 计费的说明。
+
+## 周整理补注（2026-10-12）
+
+本记录原日限额及“尚未调整”由后续记录更新；included credits 的超额计费与摘要动画观察亦有澄清，不能把第 501 笔直接视为硬阻断。自动入金代码已随 p30 来源发布，容量监控、服务迁移与真实自动流程验收未因此完成。
+
+后续来源：[2026-10-11-zerodev-budget-adjustment](2026-10-11-zerodev-budget-adjustment.md)；[2026-10-11-cloudfront-release-p30](2026-10-11-cloudfront-release-p30.md)。
+
+本补注为事后核对，原正文、失败与验证版本保留。本轮只核对 Git、任务记录和相关当前规范；来源执行结果不视为本次重跑。查询时间与实际 head 见[本周整理](2026-10-12-weekly-memory-review.md)。

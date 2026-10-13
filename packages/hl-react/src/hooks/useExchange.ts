@@ -62,7 +62,7 @@ const PRE_EXECUTION_GUARD_USER_CLIENT_MESSAGE =
 	"Pre-execution guards are supported only for user-signed methods and opted-in trading funds actions";
 
 // Trading-signed funds actions that may re-read account state inside the funds lock before signing.
-const TRADING_PRE_EXECUTION_GUARD_METHODS: ReadonlySet<ExchangeMethod> = new Set(["borrowLend"]);
+const TRADING_PRE_EXECUTION_GUARD_METHODS: ReadonlySet<ExchangeMethod> = new Set(["agentSetAbstraction", "borrowLend"]);
 
 function supportsTradingPreExecutionGuard(method: ExchangeMethod): boolean {
 	return TRADING_PRE_EXECUTION_GUARD_METHODS.has(method) && requiresFundsActionLock(method);
@@ -141,6 +141,7 @@ export function useExchange<M extends ExchangeMethod>(
 		);
 		if (!registrationLease) throw new ExchangeRequestInvalidatedError();
 		const requestGeneration = captureExchangeRequestGeneration(env, clientKey, sessionMode, {
+			signer: requiresAgent ? "agent" : "user",
 			registrationEpoch: registrationLease.epoch.epoch,
 			agentPublicKey: registrationLease.agentPublicKey,
 			activeOwnerActivationEpoch: registrationLease.activeOwner?.activationEpoch,

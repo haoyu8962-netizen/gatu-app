@@ -10,6 +10,7 @@ import {
 } from "@/hooks/trade/use-account-abstraction-control";
 import type { AccountAbstraction } from "@/hooks/trade/use-account-balances";
 import { useAccountModeLabels } from "@/hooks/trade/use-account-mode-labels";
+import { useAccountModeSetupKind } from "@/hooks/trade/use-account-mode-setup";
 import { useMasterWalletRequiredMessage } from "@/hooks/trade/use-master-wallet-action-reason";
 import { cn } from "@/lib/cn";
 import { classifyActionError, isAmbiguousExchangeActionError } from "@/lib/errors/action-error";
@@ -79,8 +80,11 @@ export function AccountModeForm({
 	const masterWalletRequiredMessage = useMasterWalletRequiredMessage();
 	const agentOnlySession = sessionMode === "agent-only";
 	const agentOnlyReasonId = useId();
+	const automaticSetupNoteId = useId();
+	const accountModeSetup = useAccountModeSetupKind(currentMode, clientKey);
+	const automaticSetup = accountModeSetup === "awaiting-funds" || accountModeSetup === "pending";
 	const [selectedMode, setSelectedMode] = useState<SelectableAccountAbstraction | null>(() =>
-		toSelectableAccountAbstraction(currentMode),
+		currentMode === "default" ? "unifiedAccount" : toSelectableAccountAbstraction(currentMode),
 	);
 	const applyInFlightRef = useRef(false);
 	const accountModeOptions: AccountModeOption[] = [
@@ -104,7 +108,9 @@ export function AccountModeForm({
 	const isDirty = selectedMode !== null && selectedMode !== currentMode;
 	const isBusy = !!isLoading || !!isUpdating;
 	const isModeUnavailable = !!canChange && !isLoading && currentMode === null;
-	const requiresExplicitSelection = currentMode === "default" || currentMode === "dexAbstraction";
+	const requiresExplicitSelection = currentMode === "dexAbstraction" || (currentMode === "default" && !automaticSetup);
+	const confirmDescriptionId =
+		(agentOnlySession && agentOnlyReasonId) || (automaticSetup && automaticSetupNoteId) || undefined;
 	async function handleApply() {
 		if (applyInFlightRef.current || agentOnlySession) return;
 		if (!canChange) {
@@ -112,7 +118,7 @@ export function AccountModeForm({
 			onConnect?.();
 			return;
 		}
-		if (!selectedMode || !isDirty || isBusy || isModeUnavailable) return;
+		if (!selectedMode || !isDirty || isBusy || isModeUnavailable || automaticSetup) return;
 
 		applyInFlightRef.current = true;
 		const notificationId = addOrderQueueItem({ owner: clientKey, env, title: msg`Account type`, status: "pending" });
@@ -141,7 +147,8 @@ export function AccountModeForm({
 						const isCurrent = currentMode === option.id;
 						const isActivationDisabled =
 							option.id === "portfolioMargin" && !isCurrent && !portfolioMarginActivationEnabled;
-						const isOptionDisabled = isBusy || isModeUnavailable || isActivationDisabled || agentOnlySession;
+						const isOptionDisabled =
+							isBusy || isModeUnavailable || isActivationDisabled || agentOnlySession || automaticSetup;
 
 						return (
 							<button
@@ -198,6 +205,13 @@ export function AccountModeForm({
 					</p>
 				) : null}
 
+				{automaticSetup ? (
+					<p id={automaticSetupNoteId} className="text-xs text-trading-panel-muted">
+						<Trans>New accounts are set to Unified account automatically after the first deposit.</Trans>{" "}
+						<Trans>You can change the mode here afterwards.</Trans>
+					</p>
+				) : null}
+
 				{requiresExplicitSelection ? (
 					<p className="text-xs text-warning">
 						<Trans>Select a supported account mode before using balances or moving funds.</Trans>
@@ -211,9 +225,9 @@ export function AccountModeForm({
 					variant="filled"
 					intent="neutral"
 					onClick={handleApply}
-					disabled={agentOnlySession || (canChange ? isBusy || isModeUnavailable || !isDirty : false)}
+					disabled={agentOnlySession || (canChange ? isBusy || isModeUnavailable || !isDirty || automaticSetup : false)}
 					focusableWhenDisabled={agentOnlySession}
-					aria-describedby={agentOnlySession ? agentOnlyReasonId : undefined}
+					aria-describedby={confirmDescriptionId}
 					className="min-h-11 w-full flex-1 rounded-[10px] bg-trading-panel-control font-bold text-trading-panel-on-control shadow-none hover:opacity-90"
 				>
 					{canChange || agentOnlySession ? <Trans>Confirm</Trans> : <Trans>Connect</Trans>}

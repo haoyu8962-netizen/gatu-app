@@ -182,6 +182,37 @@ describe("order confirmation gate", () => {
 		expect(currentHook().pending).toBeNull();
 	});
 
+	it("ignores a second request issued while a skipped-confirmation submission has not settled", async () => {
+		mocks.skipOrderConfirmation = true;
+		const gate = { resolve: () => {} };
+		const held = new Promise<void>((resolve) => {
+			gate.resolve = resolve;
+		});
+		execute = async (input: string) => {
+			executed.push(input);
+			await held;
+		};
+		act(() => root.render(<Probe />));
+
+		let first!: Promise<void>;
+		await act(async () => {
+			const hook = currentHook();
+			first = hook.requestSubmit("order-1", DRAFT);
+			await hook.requestSubmit("order-1", DRAFT);
+			await hook.requestSubmit("order-1", DRAFT);
+		});
+		expect(executed).toEqual(["order-1"]);
+
+		await act(async () => {
+			gate.resolve();
+			await first;
+		});
+		await act(async () => {
+			await currentHook().requestSubmit("order-2", DRAFT);
+		});
+		expect(executed).toEqual(["order-1", "order-2"]);
+	});
+
 	it("drops the order instead of submitting when a request-path gate flips during the review", async () => {
 		await act(async () => {
 			await currentHook().requestSubmit("order-1", DRAFT);

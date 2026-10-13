@@ -10,7 +10,7 @@
   "summary": "用户报告 HYPE 等个别交易对拖动数量滑杆时 Size 数字不稳定、闪烁。审查确认缺陷：每 15ms 预览都用当时的 maxSize（activeAssetData.maxTradeSzs 随标记价 tick）和换算价重算 getSizeForPercent，拇指不动也会在相邻两档间翻（0.23↔0.24）。修复：useOrderEntryData 在 onInteractionStart 捕获 maxSize/换算价/现货余额/szDecimals/sizeMode/Reduce Only 上限并用于手势内全部预览与提交，onInteractionEnd 释放；桌面与手机表单都接上。新增真实 Hook 回归（基准 0.31→0.33 时 77% 仍为 0.23，结束后 0.25），变异检查先红后绿。未做真机拖动验收。",
   "thread": null,
   "baseCommit": "2eeec75d",
-  "commits": [],
+  "commits": ["dadaa905", "c5096613"],
   "sources": [
     {"path": "apps/terminal/src/hooks/trade/use-order-entry-data.ts"},
     {"path": "apps/terminal/src/components/trade/mobile/mobile-trade-view.tsx"},
@@ -51,3 +51,9 @@
 2026-10-12 更正：上文「报价币百分比选择也记录冻结基准算出的基础币 `sizeSource`」一项已在同日撤回，原因与取证见 [Codex CLI 补审记录](2026-10-12-codex-cli-review-followups.md)。
 
 补充 [slider-interactions](../../slider-interactions.md) 与 2026-09-20 的滑杆复盘，不替代。合入 `dev` 后随下一次发布上线；请报告人在 HYPE 等小最大值交易对上实际拖动确认。
+
+## 周整理补注（2026-10-12）
+
+PR #102 已合入查询时 dev，head c5096613 包含报价币模式基础币冻结的后续修正；该 head 不在查询时 main ff11eee5，因此 p30 不包含本修复。真实手指/鼠标拖动及报告者原场景验收仍未完成。
+
+本补注为事后核对，原正文、失败与验证版本保留。本轮只核对 Git、任务记录和相关当前规范；来源执行结果不视为本次重跑。查询时间与实际 head 见[本周整理](2026-10-12-weekly-memory-review.md)。

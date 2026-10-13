@@ -3590,6 +3590,13 @@ msgstr "Frais"
 msgid "Fee market for taker and maker rates"
 msgstr "Marché de référence des taux taker et maker"
 
+#: src/components/trade-history/trade-history-page.tsx
+#: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/positions/history-tab.tsx
+#: src/hooks/trade/use-twap-fill-history-csv.ts
+msgid "Fee Token"
+msgstr "Jeton des frais"
+
 #: src/components/trade/tradebox/twap-order-summary.tsx
 #: src/config/trade-panel-labels.ts
 msgid "Fees"
@@ -5267,6 +5274,11 @@ msgstr "Réseau"
 #: src/components/staking/staking-view.tsx
 msgid "Network stake"
 msgstr "Stake du réseau"
+
+#: src/components/trade/tradebox/account-mode-modal.tsx
+#: src/hooks/trade/use-funds-action-availability.ts
+msgid "New accounts are set to Unified account automatically after the first deposit."
+msgstr "Les nouveaux comptes passent automatiquement en Compte unifié après le premier dépôt."
 
 #: src/components/trade/tradebox/bridge/success-screen.tsx
 msgid "New deposit"
@@ -7123,8 +7135,8 @@ msgid "Rejected due to too many open orders"
 msgstr "Rejeté en raison d'un trop grand nombre d'ordres ouverts"
 
 #: src/components/trade/components/global-settings-modal.tsx
-msgid "Release {APP_RELEASE_ID}"
-msgstr "Publication {APP_RELEASE_ID}"
+#~ msgid "Release {APP_RELEASE_ID}"
+#~ msgstr "Publication {APP_RELEASE_ID}"
 
 #: src/components/trade/header/user-menu.tsx
 #: src/components/trade/header/user-menu.tsx
@@ -8989,6 +9001,10 @@ msgstr "La plateforme n’a pas renvoyé le statut final de l’ordre. Vérifiez
 #: src/lib/trade/order-reconciliation-feedback.ts
 msgid "The exchange did not return a final TWAP status. Review active TWAP orders before retrying."
 msgstr "La plateforme n’a pas renvoyé le statut final du TWAP. Vérifiez les ordres TWAP actifs avant de réessayer."
+
+#: src/components/trade/positions/position-tpsl-modal.tsx
+msgid "The existing TP/SL was cancelled, but the new TP/SL was not placed."
+msgstr "Le TP/SL existant a été annulé, mais le nouveau TP/SL n'a pas été placé."
 
 #: src/components/api-wallet/api-wallet-list.tsx
 msgid "The extraAgents request failed. Existing API wallets continue to operate, but management stays disabled until fresh data can be verified."
@@ -11353,6 +11369,10 @@ msgstr "Vous êtes sur le Testnet"
 #: src/components/trade/components/hip3-deployer-disclaimer.tsx
 msgid "You are viewing markets deployed independently and permissionlessly by a third party on Hyperliquid. These markets are surfaced based on onchain activity and are not reviewed, verified, or approved."
 msgstr "Vous consultez des marchés déployés de manière indépendante et sans autorisation par un tiers sur Hyperliquid. Ces marchés sont présentés en fonction de l’activité onchain et ne sont ni examinés, ni vérifiés, ni approuvés."
+
+#: src/components/trade/tradebox/account-mode-modal.tsx
+msgid "You can change the mode here afterwards."
+msgstr "Vous pourrez ensuite changer de mode ici."
 
 #: src/components/vaults/vault-detail-view.tsx
 msgid "You can lose all deposited principal. Vault returns are not guaranteed."

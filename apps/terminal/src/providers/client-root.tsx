@@ -16,6 +16,7 @@ import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client
 import type { ReactNode } from "react";
 import { toast } from "sonner";
 import { MobileAgentEndedNotifier } from "@/components/trade/components/mobile-agent-ended-notifier";
+import { UnifiedAccountAutoSetup } from "@/components/trade/components/unified-account-auto-setup";
 import { OrderReconciliation } from "@/components/trade/order-reconciliation";
 import { EmbeddedDepositAutoBridge } from "@/components/trade/tradebox/embedded-deposit-auto-bridge";
 import { TwapReconciliation } from "@/components/trade/twap-reconciliation";
@@ -118,6 +119,7 @@ export function ClientRootProvider({ children, queryClient }: Props) {
 									<BaseUiDirectionProvider>
 										<HyperliquidBridge>
 											<EmbeddedDepositAutoBridge />
+											<UnifiedAccountAutoSetup />
 											<MobileAgentEndedNotifier />
 											<OrderReconciliation />
 											<TwapReconciliation />

@@ -1,5 +1,7 @@
+const PLAIN_NUMBER = /^[-+]?\d+(?:\.\d+)?$/;
+
 function escapeCsvCell(value: string): string {
-	const safeValue = /^[=+\-@\t\r]/.test(value) ? `'${value}` : value;
+	const safeValue = /^[=+\-@\t\r]/.test(value) && !PLAIN_NUMBER.test(value) ? `'${value}` : value;
 	if (!/[",\r\n]/.test(safeValue)) return safeValue;
 	return `"${safeValue.replaceAll('"', '""')}"`;
 }

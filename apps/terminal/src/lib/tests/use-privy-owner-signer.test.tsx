@@ -163,6 +163,30 @@ describe("usePrivyOwnerSigner", () => {
 		expect(state.signTypedData).not.toHaveBeenCalled();
 	});
 
+	it("keeps the session valid when Privy hands out a new signTypedData function on re-render", async () => {
+		const signer = renderHook();
+		expect(signer?.wallet).not.toBeNull();
+
+		const replacement = vi.fn().mockResolvedValue({ signature: SIGNATURE });
+		state.signTypedData = replacement;
+		act(() => root.render(<Probe />));
+
+		expect(hookValue).toBe(signer);
+		expect(() => signer?.assertCurrent()).not.toThrow();
+		await signer?.wallet?.signTypedData({
+			domain: {
+				name: "Exchange",
+				version: "1",
+				chainId: 42161,
+				verifyingContract: "0x0000000000000000000000000000000000000000",
+			},
+			types: { Agent: [{ name: "source", type: "string" }] },
+			primaryType: "Agent",
+			message: { source: "a" },
+		});
+		expect(replacement).toHaveBeenCalledTimes(1);
+	});
+
 	it("does not revive a captured signer after switching from one user to another and back", async () => {
 		const original = renderHook();
 		state.user = emailUser(OWNER, "did:privy:other");
@@ -260,15 +284,6 @@ describe("usePrivyOwnerSigner", () => {
 
 		await expect(original?.wallet?.getChainId()).rejects.toThrow("no longer available");
 		expect(await current?.wallet?.getChainId()).toBe(421614);
-	});
-
-	it("invalidates the captured signer when Privy replaces its signing function", async () => {
-		const original = renderHook();
-		state.signTypedData = vi.fn().mockResolvedValue({ signature: SIGNATURE });
-		const current = renderHook();
-
-		await expect(original?.wallet?.getAddresses()).rejects.toThrow("no longer available");
-		expect(await current?.wallet?.getAddresses()).toEqual([OWNER]);
 	});
 
 	it("blocks a late signature after the owner bridge unmounts", async () => {

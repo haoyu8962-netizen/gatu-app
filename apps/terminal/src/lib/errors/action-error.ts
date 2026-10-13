@@ -403,11 +403,23 @@ function getHttpFailure(error: Record<string, unknown>): CodedActionFailure {
 	return coded("request-rejected");
 }
 
+/** True when the user declined the request in their wallet, however deep the SDK wrapped it. */
+export function isWalletRejectionError(error: unknown): boolean {
+	return isRecord(error) && isWalletRejection(error);
+}
+
 function isWalletRejection(error: Record<string, unknown>): boolean {
 	let current: unknown = error;
 	for (let depth = 0; depth < 6 && isRecord(current); depth++) {
 		if (current.code === 4001 || current.name === "UserRejectedRequestError") return true;
-		if (typeof current.message === "string" && /user rejected|user denied/i.test(current.message)) return true;
+		if (
+			typeof current.message === "string" &&
+			/user rejected|user denied|rejected the request in (?:the )?wallet|request rejected by (?:the )?user/i.test(
+				current.message,
+			)
+		) {
+			return true;
+		}
 		current = current.cause;
 	}
 	return false;

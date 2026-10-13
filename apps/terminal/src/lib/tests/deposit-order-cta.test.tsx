@@ -128,6 +128,66 @@ describe("Deposit order CTA", () => {
 		},
 	);
 
+	it.each(["desktop", "mobile"] as const)(
+		"offers Deposit on %s to a new account awaiting its first deposit while order entry stays blocked",
+		(surface) => {
+			function content(input: ButtonContentInput): ButtonContent {
+				if (surface === "desktop") return renderDesktop(input);
+				return getMobileOrderButtonContent({
+					...input,
+					hasBalanceError: input.hasBalanceError === true,
+					isBalanceLoading: input.isBalanceLoading === true,
+					canSubmit: input.validation.canSubmit,
+					needsApproval: input.validation.needsApproval,
+					isRegistering: false,
+					onApprove: input.onRegister,
+					onConnect: input.onConnectWallet,
+					labels: {
+						connect: "Connect Wallet",
+						deposit: "Deposit",
+						enableTrading: "Enable Trading",
+						signing: "Signing...",
+					},
+				});
+			}
+			const blocked = createDesktopInput({
+				availableBalance: 100,
+				canDeposit: true,
+				depositUnavailableReason: null,
+				hasBalanceError: true,
+				isBalanceLoading: true,
+			});
+
+			const inert = content(blocked);
+			expect(inert.disabled).toBe(true);
+			expect(inert.text).not.toBe("Deposit");
+			inert.action();
+			expect(blocked.onDeposit).not.toHaveBeenCalled();
+
+			const awaiting = { ...blocked, isAwaitingFirstDeposit: true };
+			expect(content(awaiting)).toMatchObject({ text: "Deposit", disabled: false });
+			content(awaiting).action();
+			expect(awaiting.onDeposit).toHaveBeenCalledOnce();
+			expect(awaiting.onSubmit).not.toHaveBeenCalled();
+			expect(awaiting.onRegister).not.toHaveBeenCalled();
+
+			const needsSigner = {
+				...awaiting,
+				isSignerReady: false,
+				validation: { ...awaiting.validation, needsApproval: true },
+			};
+			expect(content(needsSigner).text).toBe("Enable Trading");
+
+			const unavailable = { ...awaiting, canDeposit: false, depositUnavailableReason: UNAVAILABLE_REASON };
+			expect(content(unavailable)).toMatchObject({ disabled: true, disabledReason: UNAVAILABLE_REASON });
+
+			const disconnected = { ...awaiting, isConnected: false };
+			content(disconnected).action();
+			expect(disconnected.onConnectWallet).toHaveBeenCalledOnce();
+			expect(awaiting.onDeposit).toHaveBeenCalledOnce();
+		},
+	);
+
 	it("keeps explicit signer setup reachable before the funding snapshot resolves", () => {
 		const input = createDesktopInput({
 			isSignerReady: false,

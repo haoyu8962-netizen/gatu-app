@@ -24,7 +24,7 @@ The mode picker and trading header use the same names. A compact header may abbr
 
 New portfolio margin activation remains controlled by `VITE_PORTFOLIO_MARGIN_ACTIVATION_ENABLED`. When disabled, describe this as a terminal feature policy, not lack of SDK support or exchange rejection. Existing portfolio accounts remain readable and can switch away. Do not enable the feature simply because documentation has changed.
 
-Link to current official eligibility and limits instead of embedding mutable pre-alpha, account-value or volume thresholds in translated UI. Mode updates continue through the matching owner-signed `userSetAbstraction({ user, abstraction })` action and refresh the existing account queries. Viewing the picker and changing its draft must never sign.
+Link to current official eligibility and limits instead of embedding mutable pre-alpha, account-value or volume thresholds in translated UI. Mode updates continue through the matching owner-signed `userSetAbstraction({ user, abstraction })` action and refresh the existing account queries. Viewing the picker and changing its draft must never sign. The one mode change the user does not request is the automatic Unified account setting of a funded new account ([ADR 0041](adr/0041-automatic-unified-account-for-new-accounts.md)); while it applies, the picker shows Unified account selected with its options and Confirm disabled and one sentence that says so.
 
 ## Evidence and verification
 

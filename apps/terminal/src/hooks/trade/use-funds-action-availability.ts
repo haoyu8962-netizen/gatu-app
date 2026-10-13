@@ -11,6 +11,7 @@ import {
 import { useGeoRestriction } from "@/hooks/use-geo-restriction";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import type { AccountAbstraction } from "./use-account-balances";
+import { useAccountModeSetupKind } from "./use-account-mode-setup";
 
 export type FundsActionAvailabilityPresentation = FundsActionAvailability & {
 	unavailableReason: string | null;
@@ -50,7 +51,9 @@ export function useFundsActionAvailability({
 }: FundsActionAvailabilityInput): FundsActionAvailabilityState {
 	const { t } = useLingui();
 	const geo = useGeoRestriction();
-	const { sessionMode } = useWalletSession();
+	const { address, sessionMode } = useWalletSession();
+	const accountModeSetup = useAccountModeSetupKind(accountAbstraction, address);
+	const automaticAccountModeSetup = accountModeSetup === "awaiting-funds" || accountModeSetup === "pending";
 	const geoStatus = getFundsActionGeoStatus(geo);
 	const accountModeStatus = getAccountModeAvailability(accountAbstraction);
 	const withdrawal = getWithdrawalAvailability({
@@ -80,6 +83,9 @@ export function useFundsActionAvailability({
 			return geo.isError
 				? t`Unable to verify regional availability. Funds actions are temporarily unavailable.`
 				: t`Checking regional availability. Funds actions are temporarily unavailable.`;
+		}
+		if (reason === "account-mode-unsupported" && automaticAccountModeSetup) {
+			return t`New accounts are set to Unified account automatically after the first deposit.`;
 		}
 		if (reason === "account-mode-unresolved" || reason === "account-mode-unsupported")
 			return t`Select a supported account mode before moving funds.`;

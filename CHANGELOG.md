@@ -58,9 +58,19 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Changed
 
+- A new account no longer has to choose an account type before it can be used. As on the official
+  terminal, once a new account has funds, has accepted the terms and has not traded yet, the
+  terminal sets it to Unified account by itself, without a prompt: an email account signs with its
+  own wallet, an external wallet with its trading key, and nothing is signed unless the account is
+  still in its initial state. Until the first deposit a new account looks like any empty account:
+  the order button offers Deposit, Balances shows the deposit entry, and Account type shows Unified
+  account selected with a note that it is set automatically after the first deposit; the mode can
+  be changed there afterwards. Accounts that already have orders, a phone session that uses a
+  desktop-approved key and accounts the exchange refuses keep the manual choice, where Unified
+  account is now preselected (ADR 0041).
 - The build version has moved from the footer to the Settings dialog: a new About section shows the
-  release and short commit (for example `p30 · ff11eee5`, or `dev` in a local build) with the full
-  release ID beneath it, and clicking it copies the complete version. The footer keeps the
+  release and short commit (for example `p30 · ff11eee5`, or `dev` in a local build), and clicking
+  it copies the complete version with the full release ID. The footer keeps the
   connection status, the command-menu shortcut, the links and the clock, and shows the same
   build label only while market data is still loading and Settings cannot be opened.
 
@@ -555,6 +565,48 @@ changes, not evidence that a build has been deployed or accepted on real devices
   says so, together with the expiry date and the desktop revoke path.
 
 ### Fixed
+
+- CSV exports of trade history, TWAP fills and the trade-history page write prices, sizes, fees and
+  PNL exactly as the exchange reports them, in a plain numeric form, with the fee token in its own
+  column. They used to go through the on-screen formatter, which compacted `95001.5` to `$95K`,
+  rounded small prices to `$0.00` and localized separators; negative numbers also carried a leading
+  apostrophe that turned them into text in spreadsheets.
+- Changing a position's TP/SL no longer reports a replacement the exchange refused as an uncertain
+  outcome: when the old order was cancelled and the new one was rejected, the notification says so,
+  shows the exchange's reason, and the market is not locked for two minutes behind a reconciliation
+  that could never finish.
+- An automatic email-wallet deposit that failed before anything reached the bundler (a fee quote or
+  route that could not be read, for example) now retries with backoff instead of staying failed until
+  the balance changes; a submission that may have reached the bundler is still never repeated.
+- Staking and Vault actions treat a signature the wallet declined as a rejection even when the SDK
+  wrapped it, instead of ending in "status unknown" and blocking further Vault and staking actions
+  until the record was cleared by hand. A Vault action that stopped before the SDK boundary (funds
+  lock timeout, legal or identity change) is reported as a failure, not an unknown outcome.
+- Email-wallet trading no longer loses an in-flight or queued signed request when Privy re-renders,
+  which happens on token refresh, wallet directory updates and theme changes.
+- The referral region check accepts at most twelve requests per minute from one address per server
+  instance and rejects oversized bodies, which bounds how fast one client can spend the region
+  provider's quota.
+- Double-clicking the order button with confirmations turned off no longer produces a false "another
+  order is still being confirmed" notification.
+- In an external-wallet session, a request signed by the wallet itself (approving an Agent or a
+  builder fee, withdrawing, transferring) no longer cancels an order that the Agent had queued, and
+  the reverse; each signer keeps its own queue, and replacing or removing the Agent key cancels only
+  the Agent's queued requests. Ending the trading session or switching wallets still cancels both.
+- An external-wallet deposit whose wallet was asked to broadcast the transaction but returned an
+  error instead of a hash is reported as "status unknown" with a check-before-retrying notice,
+  unless the wallet refused before broadcasting; it used to be reported as a plain failure that
+  invited a second, duplicate deposit. Circle fee and capacity requests and the balance re-read made
+  while the funds lock is held now time out after 15 seconds instead of holding the lock open.
+- Spot swap's Max and its insufficient-balance check use the exact balance string, so a large
+  balance no longer loses its last digits to floating point.
+- Ledger amounts below 0.0000001 are written as plain decimals instead of `1e-7`.
+- Error reports are limited to ten per minute from one address per server instance, on top of the
+  shared limit, so one client cannot exhaust it for everyone.
+- Document links in Docs, Support and the legal pages accept only `http`, `https`, `mailto` and
+  relative targets; any other scheme renders as text.
+- The browser tab says "Page Not Found" when the terminal cannot find a market, not only on the
+  catch-all route.
 
 - Automatic email-wallet deposits now wait until your terms acceptance and access status are
   confirmed instead of trying first and reporting a failure; they start by themselves once the

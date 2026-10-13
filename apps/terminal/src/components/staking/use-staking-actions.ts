@@ -3,6 +3,7 @@ import Big from "big.js";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { isAddress, zeroAddress } from "viem";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
+import { isWalletRejectionError } from "@/lib/errors/action-error";
 import { getReferralActionGeo, type ReferralActionGeoDecision } from "@/lib/geo/get-referral-action-geo";
 import { useExchange, useHyperliquid, useLegalStatus } from "@/lib/hyperliquid";
 import { hasSameWalletAddress } from "@/lib/wallet/privy-wagmi";
@@ -117,7 +118,7 @@ export interface StakingActionErrorDecision {
 export function classifyStakingActionError(error: unknown, sdkBoundaryPassed: boolean): StakingActionErrorKind {
 	if (error instanceof StakingActionPreflightError) return "preflight";
 	if (!sdkBoundaryPassed) return "preflight";
-	if (isUserRejectedRequest(error)) return "rejected";
+	if (isWalletRejectionError(error)) return "rejected";
 	if (error instanceof Error && (error.name === "ApiRequestError" || error.name === "ValidationError")) {
 		return "apiError";
 	}
@@ -853,18 +854,6 @@ function decimalAtLeast(left: string, right: string): boolean {
 	} catch {
 		return false;
 	}
-}
-
-function isUserRejectedRequest(error: unknown): boolean {
-	if (!error || typeof error !== "object") return false;
-	const candidate = error as { code?: unknown; message?: unknown };
-	return (
-		candidate.code === 4001 ||
-		(typeof candidate.message === "string" &&
-			/user rejected|user denied|rejected the request in (?:the )?wallet|request rejected by (?:the )?user/i.test(
-				candidate.message,
-			))
-	);
 }
 
 function waitForReconciliation(signal: AbortSignal): Promise<void> {

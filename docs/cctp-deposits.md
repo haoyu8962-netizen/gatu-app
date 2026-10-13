@@ -295,7 +295,11 @@ fee, and no unresolved earlier submission. Inside an exclusive browser lock it
 refreshes the native-USDC balance and submits that full refreshed amount through
 `useDeposit` with `executionScope: "automatic"`. The execution boundary retains
 fresh route, geo, legal, exact-owner, fee, allowance, amount-limit, chain and
-paymaster checks. Manual Mainnet sponsored callers still need exact reviewed
+paymaster checks. An attempt that fails before any authorization reaches the bundler (no
+transaction hash, no unresolved authorization intent, no unknown outcome) is
+retried with the host's backoff; an authorization that was signed but never
+handed to the bundler is simply superseded by the next one, and a submission
+that may have reached the bundler is never repeated automatically. Manual Mainnet sponsored callers still need exact reviewed
 balance and fee values; automatic deposits do not require a synthetic UI review,
 but the submitted full balance is treated as the locked value: the execution
 boundary re-reads the native-USDC balance inside the funds-action lock before
@@ -505,6 +509,18 @@ known-hash copy, retained authorization/retry prevention, reporting before dialo
 reset, nested-error classification and server rejection of unrecognized fields/reasons.
 These checks cannot establish the cause of a historical response that was not captured,
 or prove a real deposit was credited.
+
+Since 2026-10-13 the external-wallet path applies the same rule as the sponsored one: once
+`writeContract` has asked the wallet to broadcast, a failure without a source hash is an unknown
+outcome (`submissionOutcomeUnknown`) unless the wallet refused before broadcasting, which is a
+user rejection or a provider code that precedes any submission (`4001`, `4100`, `4200`,
+`-32003`, `-32600`, `-32601`, `-32602`; `deposit-submission-outcome.ts`). Disconnection codes
+(`4900`, `4901`) and generic server codes (`-32000`, `-32603`) stay unknown: a wallet can lose its
+connection after handing the transaction to a node, and nodes return the generic codes for
+"already known" and for timeouts. Requests made while the funds-action lock is held (the Circle fee and
+Fast Transfer allowance quotes, and the balance re-read of the locked amount) carry a 15-second
+deadline (`DEPOSIT_LOCKED_REQUEST_TIMEOUT_MS`), so a hanging provider releases the lock as a
+failure before anything is signed.
 
 ## Bridge2 Retirement
 

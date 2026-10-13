@@ -3590,6 +3590,13 @@ msgstr "手续费"
 msgid "Fee market for taker and maker rates"
 msgstr "吃单与挂单费率市场"
 
+#: src/components/trade-history/trade-history-page.tsx
+#: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/positions/history-tab.tsx
+#: src/hooks/trade/use-twap-fill-history-csv.ts
+msgid "Fee Token"
+msgstr "手续费币种"
+
 #: src/components/trade/tradebox/twap-order-summary.tsx
 #: src/config/trade-panel-labels.ts
 msgid "Fees"
@@ -5267,6 +5274,11 @@ msgstr "网络"
 #: src/components/staking/staking-view.tsx
 msgid "Network stake"
 msgstr "全网质押量"
+
+#: src/components/trade/tradebox/account-mode-modal.tsx
+#: src/hooks/trade/use-funds-action-availability.ts
+msgid "New accounts are set to Unified account automatically after the first deposit."
+msgstr "新账户会在首次存款后自动设为统一账户。"
 
 #: src/components/trade/tradebox/bridge/success-screen.tsx
 msgid "New deposit"
@@ -7123,8 +7135,8 @@ msgid "Rejected due to too many open orders"
 msgstr "因当前委托过多而被拒绝"
 
 #: src/components/trade/components/global-settings-modal.tsx
-msgid "Release {APP_RELEASE_ID}"
-msgstr "发布 {APP_RELEASE_ID}"
+#~ msgid "Release {APP_RELEASE_ID}"
+#~ msgstr "发布 {APP_RELEASE_ID}"
 
 #: src/components/trade/header/user-menu.tsx
 #: src/components/trade/header/user-menu.tsx
@@ -8989,6 +9001,10 @@ msgstr "交易所未返回最终订单状态。重试前请检查当前委托和
 #: src/lib/trade/order-reconciliation-feedback.ts
 msgid "The exchange did not return a final TWAP status. Review active TWAP orders before retrying."
 msgstr "交易所未返回最终 TWAP 状态。重试前请检查当前 TWAP 委托。"
+
+#: src/components/trade/positions/position-tpsl-modal.tsx
+msgid "The existing TP/SL was cancelled, but the new TP/SL was not placed."
+msgstr "原有 TP/SL 已撤销，但新的 TP/SL 未能下达。"
 
 #: src/components/api-wallet/api-wallet-list.tsx
 msgid "The extraAgents request failed. Existing API wallets continue to operate, but management stays disabled until fresh data can be verified."
@@ -11353,6 +11369,10 @@ msgstr "您当前处于测试网"
 #: src/components/trade/components/hip3-deployer-disclaimer.tsx
 msgid "You are viewing markets deployed independently and permissionlessly by a third party on Hyperliquid. These markets are surfaced based on onchain activity and are not reviewed, verified, or approved."
 msgstr "您当前查看的是由第三方在 Hyperliquid 上独立、无需许可部署的市场。这些市场基于链上活动展示，未经审查、验证或批准。"
+
+#: src/components/trade/tradebox/account-mode-modal.tsx
+msgid "You can change the mode here afterwards."
+msgstr "之后可以在这里更改模式。"
 
 #: src/components/vaults/vault-detail-view.tsx
 msgid "You can lose all deposited principal. Vault returns are not guaranteed."

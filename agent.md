@@ -49,6 +49,8 @@ Follow [trading onboarding](docs/trading-onboarding.md) and [email trading signi
 
 Email-wallet funding is a separate automatic flow: while the page is running, the exact active embedded owner's eligible USDC balance is deposited on either enabled network, including after session restoration. See [ADR 0040](docs/adr/0040-automatic-email-wallet-deposits.md) for its execution and recovery boundaries.
 
+A new account's protocol account mode (`default`) is set to Unified account by the page-level `UnifiedAccountAutoSetup` host once the account is funded, has no order history and its signer is ready, as the official terminal does; [ADR 0041](docs/adr/0041-automatic-unified-account-for-new-accounts.md) owns the conditions, the two signing paths and what each surface shows meanwhile.
+
 ## Coding conventions
 
 Detailed conventions live in [code-style.md](.claude/rules/code-style.md), [hyperliquid.md](.claude/rules/hyperliquid.md), [ui-library.md](.claude/rules/ui-library.md) and [design-tokens.md](.claude/rules/design-tokens.md).
