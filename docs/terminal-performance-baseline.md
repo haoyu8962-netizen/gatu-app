@@ -433,6 +433,46 @@ The sixth round (commit `4af147fd`) changed one classification function in the d
 3,286,638 in total (+16), 1,626,663 static trade startup, 117,769 mobile and 201,070 desktop, with the desktop runtime
 increment 918 bytes under its allowance. Later commits on the branch change tests and documents only.
 
+## Total-client and desktop runtime re-baseline before release p32 (2026-10-13)
+
+Promoting `dev` to `main` for release p32 ([PR #112](https://github.com/zora4523-bot/gatu-app/pull/112), head
+`f50e21a8` after [PR #109](https://github.com/zora4523-bot/gatu-app/pull/109)) failed the pairing-on production build
+that only pull requests into `main` run: CI read 3,314,639 gzip bytes with CI metadata, 10,160 over the 3,304,479
+baseline against a 10,000-byte allowance, while the pairing-off build of the same head read 3,311,212 (+6,733) and
+passed. No chunk split or other artefact was involved: the growth is the sum of what `dev` merged since p30 under
+the pairing-off allowance ([PR #101](https://github.com/zora4523-bot/gatu-app/pull/101) version entry,
+[#102](https://github.com/zora4523-bot/gatu-app/pull/102) slider basis freeze,
+[#107](https://github.com/zora4523-bot/gatu-app/pull/107) ADR 0041 automatic unified account,
+[#108](https://github.com/zora4523-bot/gatu-app/pull/108) and #109 production audit fixes), plus the ~2.5–3.4 KB the
+pairing dialog adds with the flag on.
+
+Measured in the release worktree `gatu-release-p32` (no `.env.local`, Node 22.15.0, pnpm 10.21.0) with the fixed
+identity `SAIRN_BUILD_SHA=f50e21a83245a00a372dde8ca405d847089273d9 SAIRN_RELEASE_ID=p32-rebaseline
+SAIRN_BUILD_TIME=2026-10-13T00:00:00.000Z NODE_ENV=production NITRO_PRESET=node-server VITE_HYPERLIQUID_TESTNET=`:
+
+| Metric | pairing off (`VITE_MOBILE_PAIRING_ENABLED=false`) | pairing on (`=true`) |
+| --- | ---: | ---: |
+| All client JS + CSS | 3,311,757 (442 chunks) | 3,314,259 (443 chunks) |
+| Static trade startup | 1,640,513 (101 assets) | 1,641,561 (101 assets) |
+| Mobile runtime increment | 118,314 | 118,311 |
+| Desktop runtime increment | 202,683 | 202,623 |
+| `api-wallet` chunk | 18,282 | 18,165 |
+
+The total-client baseline becomes the pairing-off build, 3,311,757 (+7,278 over the p30 baseline); the pairing-on
+build sits +2,502 over it, so the promotion build fits again. CI's own readings of the same head were 545 (pairing
+off) and 380 (pairing on) below the local fixed-identity figures.
+
+The desktop runtime increment is re-baselined at the same time to 202,683 (+9,554 over the 193,129 of 2026-10-03,
+483 bytes under the allowance in CI), as the p30 note required for the next desktop growth; it accumulated across
+the card-funding host, ADR 0038–0041 and the audit fixes, each merged under the allowance. The mobile runtime
+increment (118,314, +7,734 over 110,580) is not re-baselined; it has 2,266 bytes of headroom.
+
+A measurement pitfall recorded for the next time: leaving `VITE_MOBILE_PAIRING_ENABLED` unset is not a pairing-off
+build. `mobile-pairing-flags.ts` tests `=== "true"`, and with the variable unset Vite keeps the lookup as a runtime
+expression instead of folding it to `false`, so the pairing modules stay in the graph as a lazy `mobile-pairing-*.js`
+chunk: such a build read 3,315,616 with 444 chunks, larger than both real states. Pass `false` explicitly, as the CI
+matrix does.
+
 ## Total-client re-baseline and pairing-chunk fix before release p30 (2026-10-11)
 
 Promoting `dev` to `main` for release p30 failed the pairing-on production build that only pull requests into `main`
