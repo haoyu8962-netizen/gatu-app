@@ -201,6 +201,13 @@ describe("geo API handlers in production", () => {
 			referralRequest(undefined, {}, `{"override":"${"x".repeat(2_000)}"}`),
 		);
 		expect(oversized.status).toBe(413);
+		const oversizedText = await handlers.referralActionGeo(
+			referralRequest(undefined, { "content-type": "text/plain" }, "x".repeat(2_000)),
+		);
+		expect(oversizedText.status).toBe(413);
+		expect(
+			(await handlers.referralActionGeo(referralRequest(undefined, { "content-type": "text/plain" }, "x"))).status,
+		).toBe(200);
 	});
 
 	it("reports unavailable referral decisions inside the response body", async () => {

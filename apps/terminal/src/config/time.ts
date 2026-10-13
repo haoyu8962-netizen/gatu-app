@@ -21,6 +21,8 @@ export const MARKETS_STATS_TTL_MS = 5 * 60 * 1_000;
 export const SCRIPT_LOAD_TIMEOUT_MS = 30_000;
 export const CHART_HISTORY_REQUEST_TIMEOUT_MS = 12_000;
 export const DEPOSIT_WALLET_RESPONSE_TIMEOUT_MS = 60_000;
+/** Deadline for a Circle or RPC request made while the funds-action lock is held. */
+export const DEPOSIT_LOCKED_REQUEST_TIMEOUT_MS = 15_000;
 export const DEPOSIT_BROADCAST_TIMEOUT_MS = 30_000;
 export const DEPOSIT_CONFIRMATION_TIMEOUT_MS = 10 * 60 * 1_000;
 export const DEPOSIT_POLL_INTERVAL_MS = 2_000;

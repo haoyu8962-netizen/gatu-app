@@ -1,8 +1,12 @@
 import { APP_BUILD_COMMIT, APP_RELEASE_ID } from "@/config/app";
+import { createFixedWindowIpLimiter, type FixedWindowIpLimiter } from "@/lib/server/fixed-window-ip-limiter";
 import { CLIENT_ERROR_REPORT_MAX_BYTES, type ClientErrorReport, parseClientErrorReport } from "./report";
 
 const SERVER_REPORT_LIMIT = 60;
 const SERVER_REPORT_WINDOW_MS = 60_000;
+// One client cannot spend the shared budget above on its own; the address is held in memory only for its window.
+const CLIENT_REPORT_LIMIT = 10;
+const CLIENT_REPORT_LIMITER_MAX_ENTRIES = 5_000;
 
 interface RateLimitResult {
 	allowed: boolean;
@@ -16,6 +20,9 @@ interface ErrorReportRateLimiter {
 interface HandleClientErrorReportOptions {
 	now?: () => number;
 	rateLimiter?: ErrorReportRateLimiter;
+	clientRateLimiter?: FixedWindowIpLimiter;
+	/** The caller's IP as established by the trusted proxy chain; undefined skips the per-client budget. */
+	resolveClientIp?: (request: Request) => string | undefined;
 	write?: (record: ServerClientErrorRecord) => void;
 }
 
@@ -27,6 +34,11 @@ interface ServerClientErrorRecord extends ClientErrorReport {
 }
 
 const serverRateLimiter = createErrorReportRateLimiter(SERVER_REPORT_LIMIT, SERVER_REPORT_WINDOW_MS);
+const clientRateLimiter = createFixedWindowIpLimiter({
+	limit: CLIENT_REPORT_LIMIT,
+	windowMs: SERVER_REPORT_WINDOW_MS,
+	maxEntries: CLIENT_REPORT_LIMITER_MAX_ENTRIES,
+});
 
 export async function handleClientErrorReport(
 	request: Request,
@@ -43,6 +55,13 @@ export async function handleClientErrorReport(
 
 	const now = options.now ?? Date.now;
 	const nowMs = now();
+	const clientIp = options.resolveClientIp?.(request);
+	if (clientIp) {
+		const clientLimit = (options.clientRateLimiter ?? clientRateLimiter).consume(clientIp, nowMs);
+		if (!clientLimit.allowed) {
+			return responseWithStatus(429, { "retry-after": String(clientLimit.retryAfterSeconds) });
+		}
+	}
 	const rateLimit = (options.rateLimiter ?? serverRateLimiter).consume(nowMs);
 	if (!rateLimit.allowed) {
 		return responseWithStatus(429, { "retry-after": String(rateLimit.retryAfterSeconds) });

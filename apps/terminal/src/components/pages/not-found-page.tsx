@@ -1,8 +1,19 @@
 import { Trans, useLingui } from "@lingui/react/macro";
 import { buttonVariants } from "@sairn/ui";
+import { useEffect } from "react";
+import { ROUTE_SEO } from "@/config/seo";
+import { buildPageTitle } from "@/lib/seo";
 
 export function NotFoundPage() {
 	const { t } = useLingui();
+
+	useEffect(() => {
+		const previousTitle = document.title;
+		document.title = buildPageTitle(ROUTE_SEO.NOT_FOUND.title);
+		return () => {
+			document.title = previousTitle;
+		};
+	}, []);
 
 	return (
 		<main className="min-h-screen bg-background text-fg flex items-center justify-center p-6">

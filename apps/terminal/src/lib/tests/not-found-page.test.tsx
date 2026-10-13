@@ -7,6 +7,7 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { NotFoundPage } from "@/components/pages/not-found-page";
+import { SEO_DEFAULTS } from "@/config/seo";
 
 function getMessageId(message: string): string {
 	return createHash("sha256").update(`${message}\x1f`).digest("base64").slice(0, 6);
@@ -41,6 +42,23 @@ describe("not found page", () => {
 		const link = container.querySelector<HTMLAnchorElement>('a[href="/"]');
 		expect(link?.getAttribute("aria-label")).toBe("Go to trading terminal");
 		expect(link?.textContent).toContain("Go to trading terminal");
+	});
+
+	it("names the document after the missing page while mounted, whichever route renders it", () => {
+		document.title = "0.1 BTC/USDC · Sairn";
+		act(() =>
+			root.render(
+				<I18nProvider i18n={i18n}>
+					<NotFoundPage />
+				</I18nProvider>,
+			),
+		);
+
+		expect(document.title).toBe(`Page Not Found | ${SEO_DEFAULTS.siteName}`);
+
+		act(() => root.render(null));
+
+		expect(document.title).toBe("0.1 BTC/USDC · Sairn");
 	});
 
 	it("updates its visible and accessible recovery copy after a locale switch", () => {

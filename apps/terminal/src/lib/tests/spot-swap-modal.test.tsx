@@ -17,6 +17,7 @@ function spotBalanceRejection() {
 }
 
 const mocks = vi.hoisted(() => ({
+	spotTotal: "1000",
 	closeSwap: vi.fn(),
 	owner: "0x1111111111111111111111111111111111111111",
 	executionGuard: null as null | ((params: unknown) => void),
@@ -72,7 +73,7 @@ vi.mock("@/hooks/trade/use-account-balances", () => ({
 	isSupportedAccountAbstraction: () => true,
 	useDefaultDexBalances: () => ({
 		accountAbstraction: "default",
-		spotBalances: [{ coin: "USDC", total: "1000", hold: "0" }],
+		spotBalances: [{ coin: "USDC", total: mocks.spotTotal, hold: "0" }],
 		spotAvailableAfterMaintenance: undefined,
 		spotStateStatus: "success",
 		spotStateReceivedAt: Date.now(),
@@ -136,6 +137,7 @@ vi.mock("@/stores/use-global-modal-store", () => ({
 }));
 
 import { SpotSwapModal } from "@/components/trade/components/spot-swap-modal";
+import { DEFAULT_SWAP_SLIPPAGE_BPS, getMaxSwapInput } from "@/domain/trade/swap";
 import { getOrderQueueItem, removeOrderQueueItem } from "@/stores/use-order-queue-store";
 
 function setInputValue(input: HTMLInputElement, value: string) {
@@ -151,6 +153,7 @@ describe("SpotSwapModal submission", () => {
 	beforeEach(() => {
 		mocks.modalType = "swap";
 		mocks.owner = "0x1111111111111111111111111111111111111111";
+		mocks.spotTotal = "1000";
 		container = document.createElement("div");
 		document.body.appendChild(container);
 		root = createI18nRoot(container);
@@ -195,6 +198,23 @@ describe("SpotSwapModal submission", () => {
 			},
 		};
 	}
+
+	it("fills Max from the exact protocol balance instead of a JavaScript number", () => {
+		const exactBalance = "100000000000.123454";
+		mocks.spotTotal = exactBalance;
+		act(() => root.render(createElement(SpotSwapModal, { key: "exact" })));
+		const maxButton = [...container.querySelectorAll("button")].find((button) =>
+			button.textContent?.startsWith("Available:"),
+		);
+		if (!maxButton) throw new Error("Expected the Max balance control");
+
+		act(() => maxButton.click());
+
+		const amount = container.querySelector<HTMLInputElement>('input[aria-label="Swap amount"]');
+		const expected = getMaxSwapInput(exactBalance, true, DEFAULT_SWAP_SLIPPAGE_BPS, 8);
+		expect(amount?.value).toBe(expected);
+		expect(getMaxSwapInput(Number(exactBalance), true, DEFAULT_SWAP_SLIPPAGE_BPS, 8)).not.toBe(expected);
+	});
 
 	it("hides the dialog at click and creates one scoped pending task before receiving the outcome", async () => {
 		let resolveSubmission: ((value: unknown) => void) | undefined;

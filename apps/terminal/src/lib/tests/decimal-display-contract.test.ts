@@ -26,6 +26,10 @@ const REGISTERED_FIXED_POINT_CALLS: Readonly<Record<string, Registration>> = {
 		count: 5,
 		use: "atomic and decimal amounts of the signed Vault transfer and its marker; the recovery host and operation references show the decimal amount through formatDecimalString; two helpers have no production caller",
 	},
+	"lib/trade/account-ledger.ts": {
+		count: 5,
+		use: "protocol-precision ledger amounts (sums, differences, negations and normalized deltas) that later pass a decimal pattern and formatDecimalString; toString would print values below 1e-7 in exponent notation",
+	},
 	"components/leaderboard/leaderboard-fixture.tsx": {
 		count: 8,
 		use: "development-only fixture rows, rendered through formatUSD and formatPercent",

@@ -510,6 +510,18 @@ reset, nested-error classification and server rejection of unrecognized fields/r
 These checks cannot establish the cause of a historical response that was not captured,
 or prove a real deposit was credited.
 
+Since 2026-10-13 the external-wallet path applies the same rule as the sponsored one: once
+`writeContract` has asked the wallet to broadcast, a failure without a source hash is an unknown
+outcome (`submissionOutcomeUnknown`) unless the wallet refused before broadcasting, which is a
+user rejection or a provider code that precedes any submission (`4001`, `4100`, `4200`,
+`-32003`, `-32600`, `-32601`, `-32602`; `deposit-submission-outcome.ts`). Disconnection codes
+(`4900`, `4901`) and generic server codes (`-32000`, `-32603`) stay unknown: a wallet can lose its
+connection after handing the transaction to a node, and nodes return the generic codes for
+"already known" and for timeouts. Requests made while the funds-action lock is held (the Circle fee and
+Fast Transfer allowance quotes, and the balance re-read of the locked amount) carry a 15-second
+deadline (`DEPOSIT_LOCKED_REQUEST_TIMEOUT_MS`), so a hanging provider releases the lock as a
+failure before anything is signed.
+
 ## Bridge2 Retirement
 
 No new manual or automatic Bridge2 deposit may be signed or submitted. The app

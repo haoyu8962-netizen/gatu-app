@@ -120,7 +120,7 @@ export function buildPageHead(options: PageSeoOptions = {}): HeadOutput {
 		noIndex = false,
 	} = options;
 
-	const pageTitle = title ? (fullTitle ? title : `${title} | ${SEO_DEFAULTS.siteName}`) : SEO_DEFAULTS.defaultTitle;
+	const pageTitle = title ? (fullTitle ? title : buildPageTitle(title)) : SEO_DEFAULTS.defaultTitle;
 	const socialTitle = ogTitle ?? (title ? pageTitle : SEO_DEFAULTS.defaultOgTitle);
 
 	const canonicalUrl = `${SEO_DEFAULTS.siteUrl}${path}`;
@@ -160,6 +160,10 @@ export function buildPageHead(options: PageSeoOptions = {}): HeadOutput {
 	const links: LinkTag[] = [{ rel: "canonical", href: canonicalUrl }];
 
 	return { meta, links };
+}
+
+export function buildPageTitle(title: string): string {
+	return `${title} | ${SEO_DEFAULTS.siteName}`;
 }
 
 export function buildMarketDocumentTitle(price: string, pairName: string): string {

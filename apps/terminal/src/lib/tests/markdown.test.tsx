@@ -28,6 +28,23 @@ describe("renderMarkdown links", () => {
 		expect(externalLink.getAttribute("target")).toBe("_blank");
 		expect(externalLink.getAttribute("rel")).toBe("noopener noreferrer");
 	});
+
+	it("renders links with a scheme other than http, https or mailto as plain text", () => {
+		const container = document.createElement("div");
+		container.innerHTML = renderToStaticMarkup(
+			<div>
+				{renderMarkdown(
+					"[run](javascript:alert(1)) [data](data:text/html,x) [split](java\tscript:alert(1)) [mail](mailto:support@example.com) [page](/docs) [anchor](#top)",
+				)}
+			</div>,
+		);
+		const links = [...container.querySelectorAll("a")].map((link) => link.getAttribute("href"));
+
+		expect(links).toEqual(["mailto:support@example.com", "/docs", "#top"]);
+		expect(container.textContent).toContain("run");
+		expect(container.textContent).toContain("data");
+		expect(container.textContent).toContain("split");
+	});
 });
 
 function renderDocument(markdown: string) {

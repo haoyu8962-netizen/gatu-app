@@ -139,7 +139,9 @@ export function createApiRouter(environment: LambdaEnvironment): (request: Reque
 		if (pathname === REFERRAL_GEO_API_PATH) return getGeoHandlers().referralActionGeo(request);
 		if (pathname === CLIENT_ERROR_REPORT_API_PATH || pathname === LEGACY_CLIENT_ERROR_REPORT_PATH) {
 			if (request.method !== "POST") return jsonResponse({ error: "Method not allowed" }, 405, { allow: "POST" });
-			return handleClientErrorReport(request);
+			return handleClientErrorReport(request, {
+				resolveClientIp: (report) => report.headers.get(CLIENT_IP_HEADER) ?? undefined,
+			});
 		}
 		if (pathname === LEADERBOARD_API_PATH) {
 			if (request.method !== "GET" && request.method !== "HEAD") {

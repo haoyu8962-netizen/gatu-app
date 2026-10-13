@@ -589,6 +589,24 @@ changes, not evidence that a build has been deployed or accepted on real devices
   provider's quota.
 - Double-clicking the order button with confirmations turned off no longer produces a false "another
   order is still being confirmed" notification.
+- In an external-wallet session, a request signed by the wallet itself (approving an Agent or a
+  builder fee, withdrawing, transferring) no longer cancels an order that the Agent had queued, and
+  the reverse; each signer keeps its own queue, and replacing or removing the Agent key cancels only
+  the Agent's queued requests. Ending the trading session or switching wallets still cancels both.
+- An external-wallet deposit whose wallet was asked to broadcast the transaction but returned an
+  error instead of a hash is reported as "status unknown" with a check-before-retrying notice,
+  unless the wallet refused before broadcasting; it used to be reported as a plain failure that
+  invited a second, duplicate deposit. Circle fee and capacity requests and the balance re-read made
+  while the funds lock is held now time out after 15 seconds instead of holding the lock open.
+- Spot swap's Max and its insufficient-balance check use the exact balance string, so a large
+  balance no longer loses its last digits to floating point.
+- Ledger amounts below 0.0000001 are written as plain decimals instead of `1e-7`.
+- Error reports are limited to ten per minute from one address per server instance, on top of the
+  shared limit, so one client cannot exhaust it for everyone.
+- Document links in Docs, Support and the legal pages accept only `http`, `https`, `mailto` and
+  relative targets; any other scheme renders as text.
+- The browser tab says "Page Not Found" when the terminal cannot find a market, not only on the
+  catch-all route.
 
 - Automatic email-wallet deposits now wait until your terms acceptance and access status are
   confirmed instead of trying first and reporting a failure; they start by themselves once the

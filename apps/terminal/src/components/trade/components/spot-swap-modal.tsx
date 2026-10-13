@@ -274,7 +274,7 @@ function SpotSwapModalContent({ initialFromToken, initialToToken, mode, onClose 
 	}
 
 	function handleMaxClick() {
-		setAmount(getMaxSwapInput(fromBalance, isBuying, DEFAULT_SWAP_SLIPPAGE_BPS, fromTokenInfo?.szDecimals ?? 6));
+		setAmount(getMaxSwapInput(fromBalanceExact, isBuying, DEFAULT_SWAP_SLIPPAGE_BPS, fromTokenInfo?.szDecimals ?? 6));
 	}
 
 	function handleAmountChange(value: string) {
@@ -348,7 +348,7 @@ function SpotSwapModalContent({ initialFromToken, initialToToken, mode, onClose 
 		}
 	}
 
-	const insufficientBalance = accountDataReady && (toBig(requiredInput)?.gt(fromBalance) ?? false);
+	const insufficientBalance = accountDataReady && (toBig(requiredInput)?.gt(fromBalanceExact) ?? false);
 	const noPairAvailable = fromToken && toToken && !spotMarket;
 	const quoteUnavailable = hasPositiveAmount && Boolean(spotMarket) && Boolean(liveOrderbook) && !quote;
 	const belowMinimumNotional = Boolean(quote?.isBelowMinimumNotional);
