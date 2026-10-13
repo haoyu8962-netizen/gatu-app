@@ -10,7 +10,7 @@
   "summary": "用户要求调整 Gas 代付上限，并明确暂不升级套餐；说明 $0 套餐费不代表 Gas 免费后，用户确认只调整每日上限。已保存 Arbitrum CCTP 合约策略 0.003 ETH/天，单笔仍为 0.0001 ETH；UI 返回成功并显示新值。Sandbox $0/月、月 Gas 上限 $10 保留，无套餐升级、交易或代码发布。",
   "thread": null,
   "baseCommit": "bcd504b8",
-  "commits": [],
+  "commits": ["875a628c", "eeace5db"],
   "sources": [
     {"path": "docs/cctp-deposits.md"},
     {"path": "docs/agent-handbook.md"},

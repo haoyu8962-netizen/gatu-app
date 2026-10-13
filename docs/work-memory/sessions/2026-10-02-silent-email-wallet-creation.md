@@ -7,10 +7,10 @@
   "kind": "task",
   "status": "verified",
   "topics": ["wallet-onboarding"],
-  "summary": "用户报告邮箱注册后出现「创建钱包」提示并与协议勾选同时显示。原因：createOnLogin 让 Privy 在登录窗口里创建钱包，协议门控一拿到地址就打开。改为 createOnLogin off，根部 EmailEmbeddedWalletProvider 作为唯一自动创建方调用 Privy 的 createWallet()，任何时候只有一个在途的 SDK 请求，失败或超时不自动重试；协议门控在创建中与 10 秒激活宽限内为 checking，失败为 wallet_setup_failed（Retry 与断开连接），未提交的协议状态等 Privy 窗口关闭后再出现。Codex 三轮对抗审查：第一轮（评分 3–8.5）指出充值弹窗循环重试、缺钱包会话无法登出、重试入口不可达、超时后请求重叠、文档过满、新测试不在 CI 清单；第二轮指出修复引入的回归（登出后被隐藏的 Agent-only owner 复活）和跨会话请求重叠；第三轮没有 P0/P1，指出两个并发边缘情况；均已核实并修复。ADR 0033。单测、22 个变异检查、类型检查、CI 式生产构建通过；最终代码全量单测全部通过；未做真实邮箱注册验收，未发布。智能钱包关联签名是否算例外待用户决定。",
+  "summary": "邮箱钱包静默创建与协议顺序修复已随 PR #77 集成、p26 发布；智能钱包 SIWE 关联签名与断开行为的两项决定于 2026-10-04 接续。原审查与模拟验证保留，真实邮箱注册验收仍缺；后续自动入金签名例外独立归属 ADR 0040。",
   "thread": null,
   "baseCommit": "04a52301",
-  "commits": ["176c5a2a", "04394b08", "0bbbb248"],
+  "commits": ["176c5a2a", "04394b08", "0bbbb248", "1de833b8", "06ed032e", "d65d78da", "8d9b9540"],
   "sources": [
     { "path": "apps/terminal/src/config/privy.ts" },
     { "path": "apps/terminal/src/providers/email-embedded-wallet-provider.tsx" },
@@ -265,3 +265,11 @@
 - 2026-10-04 补记：本分支已与图表价格精度（ADR 0035）一起合进集成分支 `claude/integrate-chart-precision-silent-wallet`（合并提交 `f285d3bd`），提交为 PR #77 → `dev`，未合入、未发布。上面两项「需要用户决定」的事仍未决定。经过见[集成记录](2026-10-04-integrate-chart-precision-silent-wallet.md)。
 - 2026-10-04 用户决定：断开连接是否删除本地 Agent 密钥，以代码为准，断开即删。依据是 Hyperliquid 官方文档《Nonces and API wallets》建议不复用 API 钱包地址、以后使用时生成新的。`docs/runtime-guardrails.md` 的规则和反模式条目、`docs/trading-onboarding.md` 的「Stay Connected」存储表已据此改写（PR #77）。智能钱包关联签名那一项仍未决定。
 - 2026-10-04 用户决定：智能钱包关联签名接受为有界例外，已写进 `AGENTS.md` 首次交易引导契约，`docs/trading-onboarding.md` 与 ADR 0033「待用户决定」一节同步（PR #77）。两项待决定事项都已结案。
+
+## 周整理补注（2026-10-12）
+
+原摘要中「智能钱包关联签名待决定」已由 8d9b9540 和 ADR 0033 的 2026-10-04 决定取代；d65d78da 记录断开移除本地密钥的行为。PR #77 已随 p26 发布。自动入金 EIP-3009 是后来 ADR 0040 的另一有界例外，不把 SIWE 与资金签名混为一谈。真实邮箱注册仍无本轮验收证据。
+
+后续来源：[2026-10-04-integrate-chart-precision-silent-wallet](2026-10-04-integrate-chart-precision-silent-wallet.md)；[2026-10-08-cloudfront-release-p26](2026-10-08-cloudfront-release-p26.md)；[2026-10-10-automatic-email-deposits](2026-10-10-automatic-email-deposits.md)。
+
+本补注为事后核对，原正文、失败与验证版本保留。本轮只核对 Git、任务记录和相关当前规范；来源执行结果不视为本次重跑。查询时间与实际 head 见[本周整理](2026-10-12-weekly-memory-review.md)。

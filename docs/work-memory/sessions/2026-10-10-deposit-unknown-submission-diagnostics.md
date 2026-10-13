@@ -9,10 +9,10 @@
   "topics": [
     "account-funding"
   ],
-  "summary": "用户重新点击线上存款后继续排查。p28/d74dd616 产生新的 submission-unresolved 授权但无源哈希，链上余额仍在且授权未用；原始失败响应已不在调试缓冲，不能认定具体上游故障。本地修正无哈希仍声称已提交和两类 pending 混用，接入现有脱敏错误上报。保留有效授权与防重复提交；随后有效期内再次点击，捕获到同一本地 pending 守卫，未重新发起交易。真实提交故障仍待到期后捕获响应，未发布。",
+  "summary": "无哈希未知提交的提示与脱敏诊断已实施并随 PR #97 / p30 发布；后续真实重试捕获 AA21、修复代付策略与路由，并补足一笔源收据证据。早期缺失的失败响应不补造，有效授权与防重复提交保护保留。",
   "thread": null,
   "baseCommit": "82ac5c7b",
-  "commits": [],
+  "commits": ["86e40177", "54f9d6d9"],
   "sources": [
     {
       "path": "docs/cctp-deposits.md"
@@ -93,3 +93,11 @@
 后续更新：已捕获下一次真实提交的 `pm_getPaymasterStubData` / `AA21 didn't pay prefund`，并继续核对 ZeroDev 项目策略和 provider 路由，见[后续配置排查记录](2026-10-10-zerodev-deposit-sponsorship-policy.md)。下段保留本记录结束时的证据缺口，不代表后续尚未取得原始错误；本记录的代码修复、验证范围与有效授权保护仍成立。
 
 真实不能入账的根因尚未确认。需要在当前有效授权自然到期后，由用户在保留临时订阅的页面发起下一次存款，再读取具体 SDK 原因链及对应失败响应；不绕过授权记录，不由 Agent 代点资金提交。若页面刷新，先重新安装观察再由用户操作。按新响应修复确定的问题后，还需验证对应发布版本的源链确认与最终 HyperCore 余额；本地单测或提示修复不能替代这个验收。
+
+## 周整理补注（2026-10-12）
+
+原等待授权到期重试的阶段由配置排查与成功收据来源接续。新增响应说明的是那次真实重试，不能补造早期丢失响应；未知授权保护保持。代码发布与自动入金验收仍是两件事。
+
+后续来源：[2026-10-10-zerodev-deposit-sponsorship-policy](2026-10-10-zerodev-deposit-sponsorship-policy.md)；[2026-10-11-zerodev-budget-and-billing-audit](2026-10-11-zerodev-budget-and-billing-audit.md)；[2026-10-11-cloudfront-release-p30](2026-10-11-cloudfront-release-p30.md)。
+
+本补注为事后核对，原正文、失败与验证版本保留。本轮只核对 Git、任务记录和相关当前规范；来源执行结果不视为本次重跑。查询时间与实际 head 见[本周整理](2026-10-12-weekly-memory-review.md)。
