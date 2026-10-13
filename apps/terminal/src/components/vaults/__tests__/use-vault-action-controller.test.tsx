@@ -38,6 +38,7 @@ const mocks = vi.hoisted(() => ({
 	env: "Mainnet" as "Mainnet" | "Testnet",
 	exchangeGuard: null as null | ((params: { vaultAddress: `0x${string}`; isDeposit: boolean; usd: number }) => void),
 	exchangeMutate: vi.fn(),
+	failBeforeSdkBoundary: null as Error | null,
 	geoRetry: vi.fn(),
 	history: vi.fn(),
 	legalRefetch: vi.fn(),
@@ -88,6 +89,8 @@ vi.mock("@/lib/hyperliquid", () => ({
 		mocks.exchangeGuard = options.executionGuard;
 		return {
 			mutateAsync: async (params: { vaultAddress: `0x${string}`; isDeposit: boolean; usd: number }) => {
+				options.executionGuard?.(params);
+				if (mocks.failBeforeSdkBoundary) throw mocks.failBeforeSdkBoundary;
 				options.executionGuard?.(params);
 				return mocks.exchangeMutate(params);
 			},
@@ -534,6 +537,30 @@ describe("useVaultActionController", () => {
 
 		expect(current().action).toMatchObject({ state: { stage: "done", result: "apiError" } });
 		expect(mocks.history).toHaveBeenCalledOnce();
+		expect(getFundsActionMarkers()).toHaveLength(0);
+	});
+
+	it("clears the marker when the request stops before the SDK boundary, since nothing was signed", async () => {
+		mocks.failBeforeSdkBoundary = new Error("browser lock unavailable");
+		await openAndReview();
+		await act(async () => current().confirm());
+
+		expect(current().action).toMatchObject({ state: { stage: "done", result: "apiError" } });
+		expect(getFundsActionMarkers()).toHaveLength(0);
+		expect(mocks.exchangeMutate).not.toHaveBeenCalled();
+		mocks.failBeforeSdkBoundary = null;
+	});
+
+	it("reports a wallet rejection the SDK wrapped as rejected, not as an unknown outcome", async () => {
+		const wrapped = new Error("Failed to sign the typed data using the wallet", {
+			cause: { code: 4001, message: "User rejected the request" },
+		});
+		wrapped.name = "AbstractWalletError";
+		mocks.exchangeMutate.mockRejectedValue(wrapped);
+		await openAndReview();
+		await act(async () => current().confirm());
+
+		expect(current().action).toMatchObject({ state: { stage: "done", result: "rejected" } });
 		expect(getFundsActionMarkers()).toHaveLength(0);
 	});
 

@@ -295,7 +295,11 @@ fee, and no unresolved earlier submission. Inside an exclusive browser lock it
 refreshes the native-USDC balance and submits that full refreshed amount through
 `useDeposit` with `executionScope: "automatic"`. The execution boundary retains
 fresh route, geo, legal, exact-owner, fee, allowance, amount-limit, chain and
-paymaster checks. Manual Mainnet sponsored callers still need exact reviewed
+paymaster checks. An attempt that fails before any authorization reaches the bundler (no
+transaction hash, no unresolved authorization intent, no unknown outcome) is
+retried with the host's backoff; an authorization that was signed but never
+handed to the bundler is simply superseded by the next one, and a submission
+that may have reached the bundler is never repeated automatically. Manual Mainnet sponsored callers still need exact reviewed
 balance and fee values; automatic deposits do not require a synthetic UI review,
 but the submitted full balance is treated as the locked value: the execution
 boundary re-reads the native-USDC balance inside the funds-action lock before

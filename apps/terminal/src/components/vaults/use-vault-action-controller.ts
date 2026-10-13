@@ -102,6 +102,9 @@ interface VaultExecutionLease {
 	ownerAddress: `0x${string}`;
 	atomicAmount: number;
 	eligibilityDeadline: number;
+	/** Counts `useExchange` guard runs: once before queueing, once at the SDK boundary. */
+	guardCalls: number;
+	/** True only once the SDK boundary guard ran, so a request may actually have been signed. */
 	guardPassed: boolean;
 }
 
@@ -319,7 +322,8 @@ export function useVaultActionController({
 			) {
 				throw new VaultLocalPreDispatchError();
 			}
-			lease.guardPassed = true;
+			lease.guardCalls += 1;
+			if (lease.guardCalls >= 2) lease.guardPassed = true;
 		},
 	});
 
@@ -609,6 +613,7 @@ export function useVaultActionController({
 				ownerAddress,
 				atomicAmount: scaledAmount.atomicNumber,
 				eligibilityDeadline: Date.now() + ELIGIBILITY_LEASE_MS,
+				guardCalls: 0,
 				guardPassed: false,
 			};
 			executionLeaseRef.current = executionLease;

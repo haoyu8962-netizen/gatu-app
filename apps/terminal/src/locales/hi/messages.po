@@ -3590,6 +3590,13 @@ msgstr "शुल्क"
 msgid "Fee market for taker and maker rates"
 msgstr "टेकर और मेकर दरों के लिए फ़ीस मार्केट"
 
+#: src/components/trade-history/trade-history-page.tsx
+#: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/positions/history-tab.tsx
+#: src/hooks/trade/use-twap-fill-history-csv.ts
+msgid "Fee Token"
+msgstr "शुल्क टोकन"
+
 #: src/components/trade/tradebox/twap-order-summary.tsx
 #: src/config/trade-panel-labels.ts
 msgid "Fees"
@@ -8994,6 +9001,10 @@ msgstr "एक्सचेंज ने ऑर्डर की अंतिम �
 #: src/lib/trade/order-reconciliation-feedback.ts
 msgid "The exchange did not return a final TWAP status. Review active TWAP orders before retrying."
 msgstr "एक्सचेंज ने TWAP की अंतिम स्थिति नहीं लौटाई। दोबारा प्रयास करने से पहले सक्रिय TWAP ऑर्डर जाँचें।"
+
+#: src/components/trade/positions/position-tpsl-modal.tsx
+msgid "The existing TP/SL was cancelled, but the new TP/SL was not placed."
+msgstr "मौजूदा TP/SL रद्द कर दिया गया, लेकिन नया TP/SL नहीं लगाया जा सका।"
 
 #: src/components/api-wallet/api-wallet-list.tsx
 msgid "The extraAgents request failed. Existing API wallets continue to operate, but management stays disabled until fresh data can be verified."

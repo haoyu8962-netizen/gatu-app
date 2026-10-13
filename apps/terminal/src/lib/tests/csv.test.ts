@@ -10,6 +10,12 @@ describe("serializeCsv", () => {
 
 		expect(csv).toBe('normal,"with,comma","with""quote"\n\'=SUM(A1:A2),\'+cmd,\'-5 USDC,\'@name');
 	});
+
+	it("leaves plain numbers unprefixed so negative amounts stay numeric in spreadsheets", () => {
+		expect(serializeCsv([["-12.5", "+3", "-0.00001234", "-1e-7", "-5 USDC", "-1+1"]])).toBe(
+			"-12.5,+3,-0.00001234,'-1e-7,'-5 USDC,'-1+1",
+		);
+	});
 });
 
 describe("buildCsvRows", () => {

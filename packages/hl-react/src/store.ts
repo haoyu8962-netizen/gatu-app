@@ -181,6 +181,7 @@ export function getStoreInternals(store: HyperliquidStore): StoreInternals {
 
 export function createHyperliquidStore(initialConfig: HyperliquidConfig): HyperliquidStore {
 	const subscriptionRuntime = new Map<string, SubscriptionRuntime>();
+	const overflowConsumers = new Map<string, number>();
 	const watchdog: StalenessWatchdog = createStalenessWatchdog(WS_RELIABILITY_LIMITS.staleness.checkIntervalMs);
 	const visibilityBuffer = new Map<string, VisibilityBufferedValue>();
 	const chaos: ChaosState = { messageFrozenUntil: 0, reconnectDropCount: 0 };
@@ -443,6 +444,7 @@ export function createHyperliquidStore(initialConfig: HyperliquidConfig): Hyperl
 			const isNewRuntime = runtime === undefined;
 			if (!runtime) {
 				if (subscriptionRuntime.size >= WS_RELIABILITY_LIMITS.subscriptions.maxTrackedKeys) {
+					overflowConsumers.set(key, (overflowConsumers.get(key) ?? 0) + 1);
 					set((state) => {
 						const entry: SubscriptionEntry = {
 							status: "error",
@@ -452,7 +454,10 @@ export function createHyperliquidStore(initialConfig: HyperliquidConfig): Hyperl
 					});
 					return;
 				}
-				runtime = { refCount: 0, reconnectAttempts: 0, pauseWhenHidden };
+				// Consumers that were refused for this key while the tracked-key limit was reached are
+				// still mounted; the new runtime serves them too, so they count from the start.
+				runtime = { refCount: overflowConsumers.get(key) ?? 0, reconnectAttempts: 0, pauseWhenHidden };
+				overflowConsumers.delete(key);
 				subscriptionRuntime.set(key, runtime);
 
 				const threshold = stalenessThresholdMs === undefined ? getStalenessThresholdForKey(key) : stalenessThresholdMs;
@@ -709,6 +714,20 @@ export function createHyperliquidStore(initialConfig: HyperliquidConfig): Hyperl
 		releaseSubscription: (key) => {
 			const runtime = subscriptionRuntime.get(key);
 			if (!runtime) {
+				// The subscription-limit branch records an error entry without a runtime; drop it
+				// with its last consumer so it cannot keep the connection state in `error`.
+				const remaining = (overflowConsumers.get(key) ?? 1) - 1;
+				if (remaining > 0) {
+					overflowConsumers.set(key, remaining);
+					return;
+				}
+				overflowConsumers.delete(key);
+				set((state) => {
+					if (!state.subscriptions[key]) return state;
+					const nextSubscriptions: SubscriptionMap = { ...state.subscriptions };
+					delete nextSubscriptions[key];
+					return { subscriptions: nextSubscriptions, ...deriveWsState(nextSubscriptions) };
+				});
 				return;
 			}
 

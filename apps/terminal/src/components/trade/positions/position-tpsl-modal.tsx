@@ -1132,9 +1132,21 @@ function PositionTpSlForm({
 								? error.resolution.status === "partial"
 								: isApiOrderResponseError(error) &&
 									(apiResolution === null || apiResolution.status === "partial" || apiResolution.status === "accepted");
+					// The cancel completed and the replacement was refused before or by the exchange: the
+					// position now has no TP/SL, which is a known state, not one to reconcile or to hold the
+					// market's asset lock for.
+					const replacementRefused =
+						completedMutation &&
+						activeStep === "place" &&
+						(error instanceof PositionTpSlExecutionContextError ||
+							error instanceof PositionTpSlFreshStateError ||
+							(isOrderBatchResolutionError(error) && error.resolution.status === "rejected") ||
+							(isApiOrderResponseError(error) && apiResolution?.status === "rejected"));
 					const uncertain =
-						mutationStarted && (completedMutation || isAmbiguousExchangeRequestError(error) || responseUncertain);
-					const requiresRefresh = uncertain || error instanceof PositionTpSlFreshStateError;
+						mutationStarted &&
+						!replacementRefused &&
+						(completedMutation || isAmbiguousExchangeRequestError(error) || responseUncertain);
+					const requiresRefresh = uncertain || replacementRefused || error instanceof PositionTpSlFreshStateError;
 					if (uncertain) {
 						reserveOrderAssets(lease, {
 							...reservationIntent,
@@ -1142,7 +1154,7 @@ function PositionTpSlForm({
 							createdAt: Date.now(),
 						});
 					}
-					return { state: "failed", error, requiresRefresh, uncertain } as const;
+					return { state: "failed", error, requiresRefresh, uncertain, replacementRefused } as const;
 				}
 			});
 
@@ -1165,6 +1177,9 @@ function PositionTpSlForm({
 			} else if (lockResult.value.state === "failed") {
 				updateOrderQueueItem(queueId, {
 					status: lockResult.value.uncertain ? "unconfirmed" : "failed",
+					...(lockResult.value.replacementRefused
+						? { message: msg`The existing TP/SL was cancelled, but the new TP/SL was not placed.` }
+						: {}),
 					error: getSubmitFeedback(toSubmitError(lockResult.value.error, lockResult.value.uncertain)),
 				});
 			} else {

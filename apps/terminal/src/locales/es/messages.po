@@ -3590,6 +3590,13 @@ msgstr "Comisión"
 msgid "Fee market for taker and maker rates"
 msgstr "Mercado de comisiones para tasas taker y maker"
 
+#: src/components/trade-history/trade-history-page.tsx
+#: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/positions/history-tab.tsx
+#: src/hooks/trade/use-twap-fill-history-csv.ts
+msgid "Fee Token"
+msgstr "Token de comisión"
+
 #: src/components/trade/tradebox/twap-order-summary.tsx
 #: src/config/trade-panel-labels.ts
 msgid "Fees"
@@ -8994,6 +9001,10 @@ msgstr "El exchange no devolvió el estado final de la orden. Revisa las órdene
 #: src/lib/trade/order-reconciliation-feedback.ts
 msgid "The exchange did not return a final TWAP status. Review active TWAP orders before retrying."
 msgstr "El exchange no devolvió el estado final del TWAP. Revisa las órdenes TWAP activas antes de volver a intentarlo."
+
+#: src/components/trade/positions/position-tpsl-modal.tsx
+msgid "The existing TP/SL was cancelled, but the new TP/SL was not placed."
+msgstr "El TP/SL existente se canceló, pero el nuevo TP/SL no se colocó."
 
 #: src/components/api-wallet/api-wallet-list.tsx
 msgid "The extraAgents request failed. Existing API wallets continue to operate, but management stays disabled until fresh data can be verified."
