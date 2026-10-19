@@ -7,10 +7,10 @@
   "kind": "task",
   "status": "recorded",
   "topics": ["wallet-onboarding", "hyperliquid-api"],
-  "summary": "运营方用新邮箱在本机开发服务器注册后，账户类型弹窗没有任何选中项，要求查明为何新账号没有默认模式。取证：该账号 userAbstraction 为 default、webData3 的 userState 没有 abstraction 字段、userRole 为 missing、无订单与账本记录。官方终端打包代码在账户进入 readyToTrade（已入金且 Agent 已登记）且无订单历史时，用 Agent 签名的 agentSetAbstraction u 静默设为统一账户，最多 3 次；有订单历史的旧账号弹强制迁移窗。本项目把 default 归为 unsupported：权益与余额显示为 0、下单被阻断、资金动作被禁用，只能由用户自己打开账户类型弹窗选择，未入金时选择必然失败。属于与官方做法的差距，未修复，等待运营方决定是否新增这一自动签名。",
+  "summary": "新账号协议 default 模式的取证保留；当时等待决定的自动设置后来由 ADR 0041 实施并随 p32 发布。邮箱路径最终采用 userSetAbstraction，外部钱包采用 agentSetAbstraction；有历史订单的账号强制迁移仍未实现。原官方打包代码阅读不是新账号真实流程验收。",
   "thread": null,
   "baseCommit": "0ad17bd1",
-  "commits": [],
+  "commits": ["c1a1e14e"],
   "sources": [
     {"path": "apps/terminal/src/domain/trade/account-abstraction.ts"},
     {"path": "apps/terminal/src/hooks/trade/use-account-balances.ts"},
@@ -82,3 +82,11 @@
 ## 后续与替代关系
 
 待运营方决定后实施并另记：是否按官方做法自动把新账号设为统一账户（需新增签名例外与 ADR）；账户类型弹窗对 `default` 预选统一账户、未入金时事先说明；页头控件与余额占位的文案。本记录补充 [账户概要规范](../../account-overview.md) 与 `docs/mobile-data-presentation.md` 的 2026-09-09 决定，不替代。
+
+## 周整理补注（2026-10-19）
+
+原“未修复、等待运营方决定”仅属于取证阶段，后续授权、实现与交付见 ADR 0041 和自动统一账户记录。尤其不能复用本记录判断段中邮箱 owner 签 agentSetAbstraction 的初步提议：最终采用另一用户签名方法。旧账号强制迁移和旁观的三个浏览器现象仍在后续事项中，没有因 p32 发布而自动关闭。
+
+后续来源：[2026-10-12-automatic-unified-account](2026-10-12-automatic-unified-account.md)；[2026-10-14-cloudfront-release-p32](2026-10-14-cloudfront-release-p32.md)。
+
+本补注为事后整理，只核对当前规范、代码、Git 和来源记录；来源测试及发布结果不作为本轮执行。查询时间和实际 head 见[本周整理](2026-10-19-weekly-memory-review.md)。

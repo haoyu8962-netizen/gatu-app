@@ -7,10 +7,10 @@
   "kind": "task",
   "status": "verified",
   "topics": ["wallet-onboarding", "hyperliquid-api", "order-entry"],
-  "summary": "运营方决定按官方终端的做法处理新账号的协议 default 模式。新增页面级宿主 UnifiedAccountAutoSetup：账号已入金、条款已接受、签名者就绪、订单历史为空时，邮箱会话由 embedded owner 静默签 userSetAbstraction，外部钱包由已核验 Agent 签 agentSetAbstraction，都在资金锁内重读模式与订单历史、并在 SDK 边界再查一次条件；每账号每页最多 3 次、间隔 5 秒、终局拒绝即停。default 仍是不支持的模式，下单可用性永远不是 success，只改呈现：未入金的新账号下单按钮为 Deposit、余额为空账号提示、账户类型预选统一账户并说明；已入金时为加载；其余保留手动选择。Codex CLI gpt-6-astra 低强度只读审查三轮共 9 项发现全部修复。全量单测 9159 通过，另一条需绑定端口的用例在沙箱外通过；生产构建的包体预算在允许范围内。2026-10-12 随 PR #107 合入 dev（6525fd04），未晋升 main、未发布；真实账号入金后的自动设置没有验收。",
+  "summary": "ADR 0041 的新账号自动统一账户已经 PR #107 合入，并随 p32 来源记录发布；邮箱使用精确 embedded owner 的 userSetAbstraction，外部钱包使用已核验 Agent 的 agentSetAbstraction，default 本身仍不放行交易。原三轮审查及推送前第四轮、失败与测试边界保留，两条真实入金后自动设置路径均未验收。",
   "thread": null,
   "baseCommit": "c1a1e14e",
-  "commits": ["b2ab32c71b1e6989775f0d50ed872aeffcd3f980", "c1a1e14e8055796194951a62e8d20e9ea9c875d1", "0b6b073ff4b189c7062c7ae8cfc643ece9f95dea", "6525fd04bbf7f0653512f1b749f2048e0d098a53"],
+  "commits": ["b2ab32c71b1e6989775f0d50ed872aeffcd3f980", "c1a1e14e8055796194951a62e8d20e9ea9c875d1", "0b6b073ff4b189c7062c7ae8cfc643ece9f95dea", "6525fd04bbf7f0653512f1b749f2048e0d098a53", "0df68c13"],
   "sources": [
     {"path": "docs/adr/0041-automatic-unified-account-for-new-accounts.md"},
     {"path": "docs/work-memory/sessions/2026-10-12-new-account-default-mode-review.md"},
@@ -89,3 +89,11 @@
 - 桌面运行时启动的包体预算余量约 460 字节（本地读数，CI 略低）。下一处增加根部或交易面板启动代码的改动很可能需要按 `docs/terminal-performance-baseline.md` 的方法重定基线，或先把代码移出启动路径。
 - 取证记录里的三个旁观现象（Privy 登录窗口的钱包图标晚出现、内置浏览器面板里 Service Worker 注册失败、Privy `analytics_events` 的 CORS 报错）未处理。
 - 2026-10-12 运营方要求「推送并创建 PR，CI 过了就合并到 dev」：三个提交（`b2ab32c7`、`c1a1e14e`、`0b6b073f`）作为 PR #107 推送，推送前第四轮 Codex 对整个差异无发现（9/9/8），CI 七项通过、机器人无发现后以合并提交 `6525fd04` 合入 `dev`；未晋升 `main`、未发布。本条为 2026-10-13 补记。
+
+## 周整理补注（2026-10-19）
+
+原“未晋升 main、未发布”已由 p32 发布来源接续。包体基线也已在 PR #113 重定，原约 460 字节余量只属于当时测量。取证阶段提出的邮箱 owner 签 agentSetAbstraction 方案没有采用，现行实现按 ADR 0041 使用 userSetAbstraction。原正文列出的模拟测试、预渲染端口失败、页面脚本读取与真实验收缺口保持各自范围。
+
+后续来源：[2026-10-14-cloudfront-release-p32](2026-10-14-cloudfront-release-p32.md)；[2026-10-13-p32-rebaseline](2026-10-13-p32-rebaseline.md)。
+
+本补注为事后整理，只核对当前规范、代码、Git 和来源记录；来源测试及发布结果不作为本轮执行。查询时间和实际 head 见[本周整理](2026-10-19-weekly-memory-review.md)。
