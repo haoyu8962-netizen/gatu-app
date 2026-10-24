@@ -5,8 +5,8 @@
 // Country-level blocks (ISO 3166-1 alpha-2, uppercase):
 //  - US, CN — United States & China, named in Terms §2.2(a).
 //  - CU, IR, KP, SY — OFAC comprehensively sanctioned ("embargoed countries"), Terms §2.2(b).
-//  - JP — retained from the initial launch config (not a Terms §2.2 Restricted Person).
-export const TRADE_RESTRICTED_COUNTRIES: readonly string[] = ["US", "CN", "CU", "IR", "KP", "SY", "JP"];
+// JP was removed on 2026-10-24 by operator decision (docs/adr/0042-japan-allowed-trading-region.md).
+export const TRADE_RESTRICTED_COUNTRIES: readonly string[] = ["US", "CN", "CU", "IR", "KP", "SY"];
 
 // Sub-national blocks: country code → restricted ISO 3166-2 region codes (the part after the
 // hyphen). Ontario (CA-ON) is named in Terms §2.2(a); the rest of Canada is not restricted.
