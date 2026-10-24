@@ -418,7 +418,7 @@
 
 当前规范：[docs/adr/0042-japan-allowed-trading-region.md](../../docs/adr/0042-japan-allowed-trading-region.md) · [docs/marketing/jp-launch-email/README.md](../../docs/marketing/jp-launch-email/README.md)
 
-- [日本改为允许交易地区与日本用户营销邮件草案](sessions/2026-10-24-japan-trading-region-and-email.md) — 2026-10-24；已整理，验证见正文。运营方要给位于日本的用户群发营销邮件，并决定日本改为允许交易地区：从 geo.ts 的受限清单删除 JP（ADR 0042，新契约测试钉住清单），并在 docs/marketing/jp-launch-email/ 写了日语 HTML、纯文本、中文对照和带 10 道发送闸门的策划说明。Agent 的法规调研认为未登记的 Sairn Corp. 用日语向日本居民推广很可能构成「勧誘」，删除地区限制也拿掉了取引防止措置，所以 ADR 与邮件都要求先取得日本律师的书面意见再发布、再发送。未合入 dev、未发布、未发送；隐私政策、同意记录、发送基础设施与真实日本 IP 验收都未做。
+- [日本改为允许交易地区与日本用户营销邮件草案](sessions/2026-10-24-japan-trading-region-and-email.md) — 2026-10-24；已整理，验证见正文。运营方要给位于日本的用户群发营销邮件（当前为第 4 版利益导向文案），并决定日本改为允许交易地区：从 geo.ts 的受限清单删除 JP（ADR 0042，新契约测试钉住清单），并在 docs/marketing/jp-launch-email/ 写了日语 HTML、纯文本、中文对照和带 10 道发送闸门的策划说明。Agent 的法规调研认为未登记的 Sairn Corp. 用日语向日本居民推广很可能构成「勧誘」，删除地区限制也拿掉了取引防止措置，所以 ADR 与邮件都要求先取得日本律师的书面意见再发布、再发送。未合入 dev、未发布、未发送；隐私政策、同意记录、发送基础设施与真实日本 IP 验收都未做。
 
 ## 按记录日期检索
 

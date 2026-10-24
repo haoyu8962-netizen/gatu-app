@@ -7,6 +7,7 @@
 > - 这是一份放在硬性闸门之后的可用草稿，**没有获得发送批准**。调研结论是：未在日本登记的 Sairn Corp. 用日语向日本居民推广，很可能构成无登记业者的「勧誘」；删除地域限制也拿掉了一项「取引防止措置」。因此必须先取得日本律师的书面意见。
 > - 配套决策：[ADR 0042](../../adr/0042-japan-allowed-trading-region.md)（日本改为允许交易地区；截至本文日期未合入 `dev`、未发布，线上仍是 p32 `9ccb88c0`，`JP` 仍在受限清单里）。
 > - 任务记录：[2026-10-24 日本交易地区与营销邮件](../../work-memory/sessions/2026-10-24-japan-trading-region-and-email.md)。下文所说的「任务记录」都指这份文件，闸门证据以追加条目的方式记在里面。
+> - **当前文案是第 4 版（2026-10-24）**：按运营方要求改为从用户利益与需求出发、以转化率为先的写法，正文不再解释 builder fee 与签名机制，见第 2 节「第 4 版：利益导向重写」与第 6 节「转化率方案」。第 1 节闸门、第 4 节文件表与第 5 节主张与证据表已按第 4 版改写；第 2 节其余小节与第 5 节末尾第 1–3 版的各轮核对记录的是第 1–3 版的取舍，作为历史保留。同日第 4 版又经过一轮审阅（转化、合规、事实同步三个视角，共 23 条），处理结果见第 2 节「第 4 版审阅的处理」，本文其余各节已按处理后的文案更新。
 > - 修订：2026-10-24 第 1 轮审阅（日文文案、合规、事实、邮件工程四个视角）已处理，处理方式与仍待决定的事项见第 2 节「第 1 轮审阅的处理」；同日第 2 轮审阅（日文文案、合规、事实三个视角）也已处理，见第 2 节「第 2 轮审阅的处理」。同日主会话又做了第 3 轮编辑精简：只删减和合并正文，页脚、法定表示与风险内容不变，见第 2 节「第 3 轮编辑精简」。
 
 ## 1 发送闸门
@@ -19,14 +20,13 @@
      - Sairn 收取 builder fee 的路由行为，是否构成金融商品取引業（媒介・取次ぎ）或暗号資産交換業（媒介）；
      - USDC 在日本属于「電子決済手段」（2023 年修正的資金決済法）时，Sairn 经由 CCTP 的存款与提款是否涉及電子決済手段等取引業（含媒介）；页脚的未登记声明是否要加上「電子決済手段等取引業者」。这一问来自 Agent 自己的法规知识，调研（`reg`）没有覆盖，见第 8 节「调研缺口」。律师确认后，页脚可改为「…金融商品取引業者、暗号資産交換業者、電子決済手段等取引業者のいずれとしても登録を受けておらず…」，STEP 2 的「国内の暗号資産取引所が」可改为「国内の取引業者が」；答复之前文案不改；
      - 是否应该发布 ADR 0042；
-     - 新闻句「日本からも注文・入金・出金の各機能をご利用いただけるようになりました」和主题 B「日本からも取引できるようになりました」能否保留：两者属于调研 `prohibitedOrRiskyClaims` 所列「日本で使える」类表示，可能被视为表示经营该业务（金商法第31条の3の2）；「ご利用前にご確認ください」里「ご利用の通信環境によっては、注文・入金・出金をご利用いただけない場合があります」一条的措辞是否合适；
+     - 首屏的新闻（大标题「日本からも、取引できるようになりました。」）、主题 A「【Sairn】日本から取引できるようになりました」与 A 的预览文本「お待たせしました。運営会社に預けずに、BTC・ETHなど100以上の銘柄を24時間取引できます。」能否保留：它们属于调研 `prohibitedOrRiskyClaims` 所列「日本で使える」类表示，可能被视为表示经营该业务（金商法第31条の3の2）；首屏按钮正下方与「ご利用前にご確認ください」里「ご利用の通信環境によっては、注文・入金・出金をご利用いただけない場合があります」一条的措辞是否合适（眉标题已改为「Hyperliquid向けの取引ツール」，主题 C 已改为「【Sairn】ウォレットがなくても、メールで登録できます」，两者不再写新闻，也不承诺当天可交易）；
      - STEP 2「※国内の暗号資産取引所が、Arbitrum上のUSDCの送金や受け取りに対応しているとは限りません…」一句，是否加重「以日本居民为对象」的认定（它假定读者从日本国内登记业者转出资金）；
-     - 第 4 段「Hyperliquidの予測ファンディングレートを、他の主要な取引所と比較できるページもあります」：比较页的对象是 Binance 与 Bybit（[`docs/funding-comparison.md`](../../funding-comparison.md)），其中 Bybit 在金融厅警告名单上，Binance 也曾被警告。按文案规则这一条必须写，所以保留，请律师决定能否保留；不能保留就删掉这一条（第 7 节后续邮件按同样结论处理）；
-     - 开头的早期链接「取引画面を見る→」与主按钮都指向 BTC 永续的下单页（`/trade/BTC`）：本轮已在早期链接正上方加了一行杠杆风险，请确认是否足够，或改指向非下单页；
+     - 三个点击入口（首屏按钮「取引を始める」、特点之后的次级按钮「取引画面を見てみる」、结尾按钮「Sairnで取引を始める」）都指向 BTC 永续的下单页（`/trade/BTC`）：首屏按钮正下方先是 15px 粗体、与正文同色的「※無期限先物はレバレッジを伴う取引で、証拠金の全額を失うおそれがあります。」，其下是 13px 的「※取引画面は英語表示です。ご利用の通信環境によっては、注文・入金・出金をご利用いただけない場合があります。」；结尾按钮正上方是「ご利用前にご確認ください」框；次级按钮旁边没有风险句。请确认是否足够，或改指向非下单页；
      - 页脚「未登记」声明的措辞，以及它会降低还是加重风险；
      - 特定商取引法第11条与第12条の3是否适用（若适用，需要「特定商取引法に基づく表記」并可能要求电话号码）；
-     - 景表法下手续费与风险表示是否充分，包括第 3 段小标题「手数料は、内訳まで明確に」：它指邮件里逐项写明的协议费与 builder fee。Sairn 的界面不逐笔显示这份明细（成交记录只显示 `fill.fee` 合计，下单界面只显示含 builder fee 的合计费率），所以第 3 轮删去了「約定ごとに確認できます」的说法（见第 2 节「第 3 轮编辑精简」）。这类质量表示也在景表法第48条第1号（著しい優良誤認）的直罚范围内（第 8 节）；
-     - STEP 1 与页脚都以利用规约为前提，但 Sairn 没有自己的条款同意记录：同意状态完全取自 Hyperliquid `legalCheck` 的 `acceptedTerms`（[`apps/terminal/src/hooks/trade/use-legal-gate.ts`](../../../apps/terminal/src/hooks/trade/use-legal-gate.ts) 第 74 行），所以曾在别处（例如 Hyperliquid 官方前端）同意过条款的地址，不会看到列有 Sairn 利用规约、隐私政策与 Cookie 政策的确认框。这对 Sairn 条款（含 §13）能否对这些用户生效有何影响；
+     - 景表法下手续费与风险表示是否充分，包括特点 03 的小标题「手数料は、テイカー0.055%・メイカー0.025%」：紧接其下的正文字号限定「Sairnでのお取引にかかる、無期限先物の合計の料率です（Hyperliquidの標準の無期限先物市場、基本ティア、2026年10月24日時点）。月額料金や、注文ごとのガス代はかかりません。」，再接一句同字号的「※このほか、資金調達料や、入金・出金時の手数料（ネットワーク手数料を含む）等がかかる場合があります。詳しくは本メール末尾をご確認ください。」，最后是小字「※独立した事業者が運営する市場では、料率が異なる場合があります。取引量に応じて割引が適用される場合があります。」；Hyperliquid 手续费与 Sairn 手续费的拆分、现货费率以及各项其他费用的明细只在页脚。要回答：只写合计、拆分放在页脚是否足够；「注文ごとのガス代はかかりません」加上紧邻的同字号其他费用提示，是否足以避免被读成没有其他费用（有利誤認）。特点 04「プロ仕様のツールを、スマホでも」这类质量表示也在景表法第48条第1号（著しい優良誤認）的直罚范围内（第 8 节）；
+     - 确认框的「ご利用は、適用される法令および利用規約で認められる範囲に限られます」与页脚都以利用规约为前提，但 Sairn 没有自己的条款同意记录：同意状态完全取自 Hyperliquid `legalCheck` 的 `acceptedTerms`（[`apps/terminal/src/hooks/trade/use-legal-gate.ts`](../../../apps/terminal/src/hooks/trade/use-legal-gate.ts) 第 74 行），所以曾在别处（例如 Hyperliquid 官方前端）同意过条款的地址，不会看到列有 Sairn 利用规约、隐私政策与 Cookie 政策的确认框。这对 Sairn 条款（含 §13）能否对这些用户生效有何影响；
      - [条款](../../../legal/terms.md) §13：英格兰与威尔士法、伦敦 LCIA 英文仲裁、放弃集团诉讼，对日本消费者（消費者契約法、仲裁法附則）的效力；
      - 是否等 2026 年修正法的政省令确定后再面向日本；
      - Sairn Corp. 的注册地，以及这些风险对法人和董事的影响。
@@ -39,7 +39,7 @@
      - 2026 年修正法 2026-07-15 通过、2026-07-23 公布，加密资产相关条款在一年内施行，日期未定。施行后加密资产移入金商法，无登记加密资产业务的上限提高到 10 年、1,000 万日元，并新增法院紧急禁止令、推定无登记业者的部分销售无效、隐性营销规则。
      - 日本国内个人加密资产衍生品的杠杆上限是 2 倍（要求保证金为名义金额的 50%）。
      - 截至 2026-10-24，两份金融厅名单都没有 Hyperliquid 或其前端；金融厅自己说明，未列入不代表合法。新加坡 MAS 于 2026-06-26 把 Hyperliquid 列入 Investor Alert List（据 Cointelegraph 等报道）；英国 FCA 的警告见于 2026-06-05 前的报道，未在 FCA 登记簿上核对。
-   - 核实：意见书必须明确结论为：可以把本目录的定稿（email.ja.html、email.ja.txt、主题 A/B/C 与预览文本）发给位于日本的收件人，且可以发布 ADR 0042。结论为否定、附条件或没有覆盖其中任一项时，本闸门不满足：按意见修改后，由律师再次书面确认。意见书的日期、结论和适用范围记入任务记录，意见书本身按运营方的方式保管，不放进仓库。律师不同意新闻句时，删除正文里的新闻段落和主题 B（「ご利用前にご確認ください」里的通信环境一条可以保留），改测 A 对 C；这类修改同样要律师再次书面确认后才算满足本闸门。
+   - 核实：意见书必须明确结论为：可以把本目录的定稿（email.ja.html、email.ja.txt、主题 A/B/C 与预览文本）发给位于日本的收件人，且可以发布 ADR 0042。结论为否定、附条件或没有覆盖其中任一项时，本闸门不满足：按意见修改后，由律师再次书面确认。意见书的日期、结论和适用范围记入任务记录，意见书本身按运营方的方式保管，不放进仓库。律师不同意新闻句时，删除首屏的大标题、主题 A 和 A 预览文本里的「お待たせしました。」（眉标题「Hyperliquid向けの取引ツール」，以及首屏按钮下方与「ご利用前にご確認ください」里的通信环境一条都可以保留），按第 3 节改用 B 的方向并改测 B 对 C；这类修改同样要律师再次书面确认后才算满足本闸门。
 
 2. **ADR 0042 的版本已上线，并用真实日本 IP 验证** [运营方][律师]
    - 发布本身也以闸门 1 为前提：律师书面意见必须明确同意发布 `geo.ts` 删除 `JP` 的改动（ADR 0042 建议在此之前不发布）。没有这一条，不得为了满足本闸门而发布。
@@ -47,7 +47,7 @@
      - `curl -s https://app.sairn.ai/build-meta.json` 的 `commit` 必须包含从 `TRADE_RESTRICTED_COUNTRIES` 删除 `JP` 的提交；2026-10-24 读到的仍是 `9ccb88c0`（p32）。
      - 用位于日本、不经代理的网络，实际确认能建立交易连接、下单、存款和提款。
      - 在同一网络下记录 Hyperliquid `legalCheck` 对测试地址的返回（`userAllowed`、`restrictions`，以及返回里若有的 `ipAllowed` 等字段）。每一次写操作还要过 Hyperliquid 自己的这道检查（[`packages/hl-react/src/legal.ts`](../../../packages/hl-react/src/legal.ts)：`canPerformActions` 要求 `userAllowed` 为真且限制已知、不为 `a`），仓库无法证明它对日本 IP 放行，所以必须实测。
-   - 注意：[`apps/terminal/src/lib/geo/ipdata-geo.ts`](../../../apps/terminal/src/lib/geo/ipdata-geo.ts) 把 iCloud 专用代理（Private Relay，`is_icloud_relay`）判为代理，交易和资金操作会被禁用。日本 iPhone 占比高，验证时要分别测开启和关闭 Private Relay 的 Safari。正文「ご利用前にご確認ください」因此有中性的一条「ご利用の通信環境によっては、注文・入金・出金をご利用いただけない場合があります」（第 3 轮从新闻句下方移入，免得紧跟在新闻后面像是马上收回），措辞交律师确认（闸门 1）。按文案规则，邮件不提 VPN 或代理；更具体的说明放在客服 FAQ 里，同样交律师确认，不得暗示规避地域限制（条款 §2.3）。
+   - 注意：[`apps/terminal/src/lib/geo/ipdata-geo.ts`](../../../apps/terminal/src/lib/geo/ipdata-geo.ts) 把 iCloud 专用代理（Private Relay，`is_icloud_relay`）判为代理，交易和资金操作会被禁用。日本 iPhone 占比高，验证时要分别测开启和关闭 Private Relay 的 Safari。正文因此有中性的一条「ご利用の通信環境によっては、注文・入金・出金をご利用いただけない場合があります」，写在两处：首屏按钮正下方（第 4 版审阅按合规意见补上，使点第一个按钮的读者也能看到这条限定）与「ご利用前にご確認ください」框里（第 3 轮移入，保留）。措辞交律师确认（闸门 1）。按文案规则，邮件不提 VPN 或代理；更具体的说明放在客服 FAQ 里，同样交律师确认，不得暗示规避地域限制（条款 §2.3）。
 
 3. **隐私政策已为营销用途更新** [运营方][律师]
    - [`legal/privacyPolicy.md`](../../../legal/privacyPolicy.md) §3 目前没有营销邮件这一用途，§7 没有提到把名单交给境外 ESP。
@@ -77,14 +77,14 @@
      - 邮件写了「メール（宛先：support@sairn.ai／件名：配信停止）でも…承ります」，所以 support@sairn.ai 必须真的有人处理这类回信，并在每次发送前同步。
      - 施行規則第5条允许收件人用电子邮件或其他任何方式提出退订，只要能识别其地址；回复 From 地址说「配信停止」也是法第3条第3項的有效通知。因此 From/Reply-To 邮箱（建议 Reply-To 设为 support@sairn.ai）、List-Unsubscribe 的 `mailto:` 邮箱、ESP 投诉反馈环（FBL）收到的退订都要有人处理，并在两天内同步到所有 ESP 的屏蔽名单；不使用不收信的 no-reply 地址。
    - 邮件格式：`multipart/alternative`，HTML 用 `email.ja.html`，纯文本用 `email.ja.txt`，两部分都用 UTF-8；主题按 RFC 2047 编码。
-   - 链接追踪（发送前必须二选一并记入任务记录）：ESP 的点击追踪会把链接改写成追踪域名，打开追踪会插入 ESP 主机上的像素图片，这和正文「正規のURLは、次のとおりです」所列的两个地址矛盾，读者悬停看到的也不是 sairn.ai。两种做法：
+   - 链接追踪（发送前必须二选一并记入任务记录）：ESP 的点击追踪会把链接改写成追踪域名，打开追踪会插入 ESP 主机上的像素图片，这和正文防钓鱼段「正規のURLは、次のとおりです。取引画面：https://app.sairn.ai／ウェブサイト：https://sairn.ai」矛盾，读者悬停看到的也不是 sairn.ai。两种做法：
      - 关闭点击追踪与打开追踪，用 CloudFront 访问日志统计首个请求里的 `utm_campaign=jp_2026_trust`，前提是日志已开启，这一点要先确认；
-     - 使用 sairn.ai 之下的自有追踪子域，并把这个子域加进正文与纯文本「正規のURLは、次のとおりです」的列表，`email.ja.html`、`email.ja.txt`、`email.zh.md` 三份文件同步修改。这是事实层面的文案修正，不必交律师。
+     - 使用 sairn.ai 之下的自有追踪子域，并把这个子域加进正文与纯文本「正規のURLは、次のとおりです。」下面的「取引画面／ウェブサイト」列表，`email.ja.html`（经生成脚本，见第 4 节）、`email.ja.txt`、`email.zh.md` 三份文件同步修改。这是事实层面的文案修正，不必交律师。
      - 开启任何一种追踪时，闸门 3 的隐私政策也要写明。
    - 注意：终端没有读取 UTM 的分析代码。根路由的 `validateSearch`（[`apps/terminal/src/routes/__root.tsx`](../../../apps/terminal/src/routes/__root.tsx)）只保留 `scope`，所以页面内一导航，UTM 就会从地址栏消失；归因只能靠 ESP 或首个请求的日志。纯文本部分按规则只显示不带参数的 `https://app.sairn.ai`，那部分的点击不会带 `utm_campaign`。
    - 核实：
      - 给种子邮箱发测试，检查原始邮件头（SPF/DKIM/DMARC pass、List-Unsubscribe 两个头）；点一次退订链接，确认无需登录、立即生效。
-     - 在种子邮件原文（ESP 处理之后的 HTML）里列出所有 `href` 与 `img src` 的主机名，必须都是 `app.sairn.ai` 或 `sairn.ai`；若用自有追踪子域，它必须已经出现在三份文件的「正規のURL」列表里。`mailto:` 链接与 `{{unsubscribe_url}}` 按闸门 7 另查。
+     - 在种子邮件原文（ESP 处理之后的 HTML）里列出所有 `href` 与 `img src` 的主机名，必须都是 `app.sairn.ai` 或 `sairn.ai`；若用自有追踪子域，它必须已经出现在三份文件的「正規のURL」一句里。`mailto:` 链接与 `{{unsubscribe_url}}` 按闸门 7 另查。
 
 7. **占位符已填写** [运营方]
    - `{{company_address}}` 必须是 Sairn Corp. 真实的登记地址（施行規則第9条第2号）。仓库和 `brand/brand.json` 都没有这个地址，不得编造，也不得带着占位符发送：住所缺失或不实违反法第4条的表示义务（施行規則第9条第2号），可被下措置命令（法第7条），违反命令才适用刑罚。
@@ -94,15 +94,17 @@
    - 核实：在渲染后的测试邮件里搜索 `{{`，结果必须为零；检查退订链接与 List-Unsubscribe 头的主机名。
 
 8. **发送当天复核事实** [运营方]
-   - builder fee：`sed -n 1,6p apps/terminal/src/config/hyperliquid.ts`，应为 `f: 10`（0.01%）。
+   - builder fee：`sed -n 1,6p apps/terminal/src/config/hyperliquid.ts`，应为 `f: 10`（0.01%）。正文特点 03 的合计费率与页脚费用一条都以它为前提。
    - Hyperliquid 基础档费率：
      - 命令：`curl -s -X POST https://api.hyperliquid.xyz/info -H 'content-type: application/json' -d '{"type":"userFees","user":"0x0000000000000000000000000000000000000001"}'`
-     - 2026-10-24 读到 `userCrossRate 0.00045`、`userAddRate 0.00015`、`userSpotCrossRate 0.0007`、`userSpotAddRate 0.0004`。永续（正文费率表与页脚）和现货（页脚的 0.07%／0.04%）两组数字都要对照。
-   - 订单类型：`apps/terminal/src/config/trade.ts` 的 `ORDER_TYPES` 仍为 8 项，`SPOT_ALLOWED_TYPES` 仍只有 `twap`、`scale`（现货因此是成行・指値・TWAP・スケール四种）。
-   - builder fee 的对象：[`packages/hl-react/src/registries/exchange.ts`](../../../packages/hl-react/src/registries/exchange.ts) 的 `BUILDER_INJECTED_METHODS` 仍只有 `order`；[`apps/terminal/src/components/trade/tradebox/trade-panel.tsx`](../../../apps/terminal/src/components/trade/tradebox/trade-panel.tsx) 仍是 `requiresBuilderFee = !twapOrder`。
+     - 2026-10-24 读到 `userCrossRate 0.00045`、`userAddRate 0.00015`、`userSpotCrossRate 0.0007`、`userSpotAddRate 0.0004`。永续（正文特点 03 的合计 0.055%／0.025% 等于基础档 0.045%／0.015% 加 builder fee 0.01%；页脚同时写拆分与合计）和现货（页脚的 0.07%／0.04%）两组数字都要对照。
+   - 永续数量：`curl -s -X POST https://api.hyperliquid.xyz/info -H 'content-type: application/json' -d '{"type":"meta"}'`，`universe` 里 `isDelisted` 不为真的项必须仍不少于 100（2026-10-24 读到 234 项，其中 178 项未下架）。正文「100以上の無期限先物」「100以上の銘柄」、主题 B 与预览文本都以它为前提；这里只数主 dex，不算 HIP-3 市场，免得这个数字依赖股票或指数永续。
+   - 订单类型：`apps/terminal/src/config/trade.ts` 的 `ORDER_TYPES` 仍为 8 项且包含 `stopMarket`、`stopLimit`、`twap`、`scale`（正文特点 04「無期限先物では、成行・指値・逆指値からTWAP・スケールまで8種類の注文に対応」）；`SPOT_ALLOWED_TYPES` 仍只有 `twap`、`scale`（现货因此只有成行・指値・TWAP・スケール四种，所以句子以「無期限先物では」开头）；`ORDER_MIN_NOTIONAL_USD` 仍为 `10`、`TWAP_MIN_NOTIONAL_USD` 仍为 `100`（STEP 3「成行・指値の注文は、10ドル相当から発注できます」）。
+   - 界面文字：STEP 1、STEP 2 引用的按钮名在发布版本上仍是英文原样：手机头部「Connect」（[`user-menu.tsx`](../../../apps/terminal/src/components/trade/header/user-menu.tsx) 第 169 行）、桌面头部「Connect Wallet」（[`config/desktop-nav.ts`](../../../apps/terminal/src/config/desktop-nav.ts) 第 40 行）、连接窗口的「Log in with Email」（[`wallet-modal.tsx`](../../../apps/terminal/src/components/trade/components/wallet-modal.tsx) 第 210 行）、「Deposit」（[`top-nav.tsx`](../../../apps/terminal/src/components/trade/header/top-nav.tsx) 第 188 行、[`use-button-content.ts`](../../../apps/terminal/src/lib/trade/use-button-content.ts) 第 87 行）。界面加入日语后，这两步要改成日语界面的按钮名。
+   - builder fee 的对象（页脚「無期限先物の注文と現物の売却には…TWAP注文と現物の購入は対象外です」）：[`packages/hl-react/src/registries/exchange.ts`](../../../packages/hl-react/src/registries/exchange.ts) 的 `BUILDER_INJECTED_METHODS` 仍只有 `order`；[`apps/terminal/src/components/trade/tradebox/trade-panel.tsx`](../../../apps/terminal/src/components/trade/tradebox/trade-panel.tsx) 仍是 `requiresBuilderFee = !twapOrder`。
    - 链接：`/trade/BTC`、`/terms`、`/privacy`、`/risk`、`/brand/email-logo.png` 都返回 200（2026-10-24 已确认；SPA 路由返回的是同一个外壳，路由是否存在以 `apps/terminal/src/routes/` 为准）。
    - 域名：仍是 `brand/brand.json` 的 `domains.primary`。
-   - 日期：若发送日期不是 2026-10-24，要同时改：`email.ja.html` 与 `email.ja.txt` 里的「2026年10月24日時点」（正文费率说明一处）和「2026年10月24日時点の料率です」（页脚一处），`email.zh.md` 里的「截至 2026年10月24日」两处。
+   - 日期：若发送日期不是 2026-10-24，要同时改：`email.ja.html`（经生成脚本，见第 4 节）与 `email.ja.txt` 里的「2026年10月24日時点」（正文特点 03 的小字「（Hyperliquidの標準の無期限先物市場、基本ティア、2026年10月24日時点）」一处）和「2026年10月24日時点の料率です」（页脚一处），`email.zh.md` 里的「截至 2026年10月24日」两处。
 
 9. **在发布版本上走一遍真实的端到端流程** [运营方]
    - 环境：日本 IP，浏览器语言为 `ja-JP`，用发布后的版本。
@@ -110,10 +112,10 @@
      - 邮箱注册：ADR 0033 的真实注册从未验收；
      - 存入 Arbitrum 原生 USDC：会走 ADR 0040 的自动赞助存款，主网没有真实资金验收；
      - 首单：包括静默的 builder fee 批准。
-   - 外部钱包路径：若该地址尚未同意，先签 `acceptTerms2`（同意条款），再签 Enable Trading 的 `approveAgent`；首单走 ADR 0038 的无名默认 Agent，也没有真实验收。STEP 1 写了「外部ウォレットの場合は、取引用の鍵を承認する署名などを求められます」，验收时用一个未同意过的地址和一个已同意过的地址各走一次，核对实际弹出的签名：未同意的地址先签 `acceptTerms2` 再签 `approveAgent`，已同意的地址只签 `approveAgent`，两种都应在这一句的范围内。
+   - 外部钱包路径：若该地址尚未同意，先签 `acceptTerms2`（同意条款），再签 Enable Trading 的 `approveAgent`；首单走 ADR 0038 的无名默认 Agent，也没有真实验收。第 4 版 STEP 1 只写「MetaMaskなどのウォレットでも接続できます。」，不再描述签名，所以签名本身不和文案矛盾；要核实的是这一句与 STEP 3「入金が反映されたら、銘柄を選んで注文します。成行・指値の注文は、10ドル相当から発注できます。」对外部钱包成立（第 4 版审阅删去了「すぐに注文できます」：存款要等入账，新账号在自动设为统一账户之前下单区显示为加载中，外部钱包还要先签 Enable Trading）。邮箱路径还要核实 STEP 1、STEP 2 写的点击顺序：头部「Connect」（桌面「Connect Wallet」）→「Log in with Email」→ 输入邮箱，以及「Deposit」按钮打开的存款画面显示存款地址。验收时用 MetaMask 以一个未同意过的地址和一个已同意过的地址各走一次，确认能连接、完成 Enable Trading 并下单，并记录实际弹出的签名：未同意的地址先签 `acceptTerms2` 再签 `approveAgent`，已同意的地址只签 `approveAgent`；TWAP 以外的首单另有一次 builder fee 批准。
    - 提款：首次转出（CCTP 路径、账户未激活时）可能收取账户激活费；金额以 `preTransferCheck` 返回为准，旧路径 `withdraw3` 不收这笔（[`docs/withdrawals.md`](../../withdrawals.md)）。
    - 赞助额度（硬性条件，不是建议）：邮箱用户存款的 gas 由 ZeroDev Sandbox 赞助，上限每天 0.003 ETH、每月 10 美元（[记录](../../work-memory/sessions/2026-10-11-zerodev-budget-adjustment.md)）。群发会带来峰值，发送前必须提高额度并安排发送期间的监控，否则存款可能卡在失败或「未知」状态。
-   - STEP 2 的「※外部ウォレットから入金する場合は、ガス代としてArbitrum上のETHが少額必要です」按文案规则必须写，但它隐含邮箱用户存款无需 gas，也就是文案规则禁止宣传的 ADR 0040 赞助路径。第 2 轮在同一条后面加了「メールアドレスでご利用の場合の入金手順は、入金画面でご案内いたします」来中和对比（第 3 轮精简时曾改成对两种钱包通用的说法，独立复核指出中和作用因此消失，已恢复）。发送当天必须确认赞助存款可用、额度足够；做不到时把这一条整体改写为「※入金方法とガス代の扱いは、接続方法により異なります。」（HTML、纯文本、中文对照同步改）。
+   - STEP 2 的「※外部ウォレットから入金する場合は、ガス代としてArbitrum上のETHが少額必要です」按文案规则必须写，但它隐含邮箱用户存款无需 gas，也就是文案规则禁止宣传的 ADR 0040 赞助路径。第 2 轮在同一条后面加了「メールアドレスでご利用の場合の入金手順は、入金画面でご案内いたします」来中和对比（第 3 轮精简时曾改成对两种钱包通用的说法，独立复核指出中和作用因此消失，已恢复）；第 4 版审阅把它改为不那么生硬的「メールアドレスで登録した場合の入金方法は、入金画面に表示されます」，中和作用不变（邮箱会话的存款画面显示存款地址，[`funding-address-card.tsx`](../../../apps/terminal/src/components/trade/tradebox/deposit/funding-address-card.tsx)）。发送当天必须确认赞助存款可用、额度足够；做不到时把这一条整体改写为「※入金方法とガス代の扱いは、接続方法により異なります。」（HTML、纯文本、中文对照同步改）。
    - 核实：把每一步的结果和交易哈希写进任务记录。不得用页面截图或测试替代这一步。
 
 10. **决定客服能否用日语回复** [运营方]
@@ -121,6 +123,44 @@
     - 客服 FAQ 需要提前准备：iCloud 专用代理、Arbitrum USDC 的来源（调研只找到以太坊上的国内 USDC，见第 5 节）、邮箱存款期间要保持页面打开（ADR 0040）、首次提款的激活费。
 
 ## 2 策略
+
+### 第 4 版：利益导向重写（当前文案）
+
+运营方 2026-10-24 看过第 3 版后指出：正文在「介绍产品机制」（builder fee 的批准签名、手续费由谁收、`userFills` 等），营销邮件应当从用户能得到什么、要解决什么需求出发，并且发邮件成本高，必须尽一切办法提高转化率。第 4 版据此重写正文；页脚、法定表示与风险内容保持不变，只把页脚费用一条的术语「ビルダー手数料」改成「Sairnの手数料」。
+
+| 用户需求（调研 `practice.persona`） | 第 4 版的回应 |
+| --- | --- |
+| 在日本注册过却一直被地区限制挡住，想交易 | 大标题「日本からも、取引できるようになりました。」，主题 A「【Sairn】日本から取引できるようになりました」；「お待たせしました」放在 A 的预览文本里。眉标题「Hyperliquid向けの取引ツール」先说明 Sairn 是什么，照顾没有被挡过、不熟悉寄件人的读者 |
+| 交易所托管与出金风险（安全与信任是首要选择标准） | 首屏「資産を運営会社に預けることなく」；特点 01「資産は、ご自身の手元に」：「Sairnがお客様の資産をお預かりすることはありません」，资金和仓位在自己的地址，订单直达 Hyperliquid，链上可查 |
+| 国内交易所币种少、只能在交易时间外干等 | 首屏「BTC・ETHをはじめHyperliquidの100以上の無期限先物を、24時間取引できます」；特点 02「100以上の銘柄を、24時間」：现货也在同一画面 |
+| 手续费（排第一的选择标准） | 特点 03 小标题直接写数字「手数料は、テイカー0.055%・メイカー0.025%」（扫读时只看粗体小标题）；紧接其下用正文字号说明这是在 Sairn 交易的合计费率及其范围，再加「没有月费、下单不付 gas」与同字号的其他费用提示 |
+| 活跃交易者要好用的工具、以手机为主 | 特点 04「プロ仕様のツールを、スマホでも」：从成行・指値・逆指値到 TWAP・スケール的 8 种订单、下单时设置 TP/SL、图表上的订单与仓位和清算价、手机专用界面 |
+| 钱包门槛 | 首屏「ウォレットをお持ちでない方も、メールアドレスで登録できます」；三步上手写明画面上要点的按钮（「Connect」「Log in with Email」「Deposit」）和最低下单额 |
+
+版式：375px 宽时第一个按钮的上沿在约 465px（审阅前约 507px，无头 Chromium 量得；第 3 版约 3,100px），Logo 卡片缩为 120×60；全文三个点击入口（首屏按钮「取引を始める」、特点后的白底次级按钮「取引画面を見てみる」、结尾按钮「Sairnで取引を始める」），都指向同一个落地页；首屏按钮正下方先是 15px 粗体的杠杆风险句，再是英文界面与通信环境的小字，确认框紧贴在结尾按钮上方。正文删去的内容：builder fee 的拆分表与批准签名说明、`userFills`、区块浏览器、TWAP 释义、最低存款额、称呼行与「本日は…」导语；第 4 版审阅又删去了助记词、「だけ」、「いつでも」、「すぐに」、新币种自动加入、资金费率比较与主屏幕添加（见下一小节）。保留的限定：费率的标准市场、基础档与日期，其他费用的提示，存款的网络与国内交易所提醒，英文界面、通信环境与法规范围。
+
+### 第 4 版审阅的处理
+
+2026-10-24 第 4 版写成后，又做了一轮审阅，分转化、合规、事实同步三个视角，共 23 条（14 条必须项、9 条建议项）。处理原则：必须项全部落实；建议项只在不违反硬性约束、且主张能由仓库证明时采用；转化建议与合规或事实冲突时，保留合规的写法。几条意见改同一句话时，合并成同时满足各方的写法。下表只列合并、改写与未采纳的地方；照建议原文落实的不再逐条列出（「異なる場合があります」、防钓鱼段恢复列表写法、风险句拆成 15px 粗体、STEP 3 删去「すぐに」、删去新币种自动加入、特点 01 改为「Sairnがお客様の資産をお預かりすることはありません」、眉标题、次级按钮、Logo 缩小）。
+
+| 事项 | 处理 | 理由 |
+| --- | --- | --- |
+| 首屏导语：转化视角（必须）要求删去「シードフレーズ」，改为「資産をご自身のウォレットに置いたまま…ウォレットをお持ちでない方も、メールアドレスだけで登録できます」；合规视角（必须）要求不写「だけ」、不写「ウォレットに置いたまま」，给的是「メールアドレスで始められ、シードフレーズの準備も不要です」 | 合并为「資産を運営会社に預けることなく、BTC・ETHをはじめHyperliquidの100以上の無期限先物を、24時間取引できます。ウォレットをお持ちでない方も、メールアドレスで登録できます。」 | 三条必须项各自的问题都解决：助记词不出现在第一个按钮上方；没有「だけ」；不托管只限定为运营公司。合规视角给的原句仍含「シードフレーズ」，与转化视角的必须项冲突，所以没有用 |
+| 主题 C：转化视角给「【Sairn】ウォレットがなくても、メールで登録できます」，合规视角给「【Sairn】メールアドレスで始める、Hyperliquid取引」 | 采用前者 | 两条必须项要去掉的都是「だけ」与「今日から取引できます」，前者两者都没有，也不含「ログイン」「シードフレーズ」；它和首屏的钱包门槛一句同一角度，对没打开过的人更有新意 |
+| 预览文本：转化视角给的 A、C 预览写「資産を預けずに」 | 改为「運営会社に預けずに」：A「お待たせしました。運営会社に預けずに、BTC・ETHなど100以上の銘柄を24時間取引できます。」，C「運営会社に預けずに、BTC・ETHなど100以上の銘柄を24時間取引できます。」 | 合规必须项：没有限定的「資産を預けずに」与 STEP 2 的存款看起来矛盾（第 1、3 轮已有同样结论）。合规视角给的「…メールアドレスで始められます」没有用：A 的预览改放「お待たせしました」，C 的主题已经讲邮箱注册，它们针对的「だけ」都已删去 |
+| 特点 02 正文：转化视角建议「Hyperliquidに新しく上場した銘柄も、自動で一覧に加わります。現物の売買も、同じ画面でできます。」，合规视角（必须）要求删去新币种自动加入，正文改回「BTCやETHをはじめ、Hyperliquidの100以上の無期限先物に対応…」 | 改为「無期限先物に加えて、現物の売買も同じ画面でできます。」 | 自动加入的新市场包括第三方部署的股票、指数、金属永续，按合规意见删除。合规视角给的替换句与首屏导语几乎重复（首屏已经写了 BTC・ETH 与 100 以上），转化视角指出的重复问题因此保留不改；两边都要的「同じ画面」照用 |
+| 特点 03：转化视角建议小标题「手数料は、テイカー0.055%・メイカー0.025%」、正文「Hyperliquidの標準の無期限先物市場における、基本ティアの料率です…」 | 未采纳。小标题按合规必须项改为「手数料は、合計の料率を明示」；正文写「合計でテイカー0.055%、メイカー0.025%（標準市場の基本ティア）」，其后同字号补其他费用提示，小字改为「※Sairnでのお取引にかかる合計の料率です（Hyperliquidの標準の無期限先物市場、基本ティア、2026年10月24日時点）…」 | 转化视角的正文把含 Sairn 0.01% 的合计说成 Hyperliquid 的基础档费率，正是合规必须项指出的有利误认；把数字放进粗体小标题，会让限定条件相对更不显眼，与合规必须项「打消し表示要紧邻且显眼」相反 |
+| 特点 03 小标题（主会话复核后） | 改为采纳转化视角的数字小标题「手数料は、テイカー0.055%・メイカー0.025%」 | 上一行否决的理由在于建议正文把合计说成 Hyperliquid 的基础档费率；现在紧贴小标题的第一句用正文字号写明「Sairnでのお取引にかかる、無期限先物の合計の料率です（Hyperliquidの標準の無期限先物市場、基本ティア、日期）」，归属与范围都在数字旁边，打消し表示与数字同样显眼。手续费是首要选择标准，读者扫读时只看小标题，所以数字放在小标题里 |
+| STEP 3：转化视角给「銘柄を選んで、注文します。成行・指値の注文は、10ドル相当から発注できます。」，合规视角给「入金が反映されたら、100以上の銘柄から選んで注文できます。」 | 合并为「入金が反映されたら、銘柄を選んで注文します。成行・指値の注文は、10ドル相当から発注できます。」 | 「入金が反映されたら」写明前提（合规），不再第四次重复「100以上」（转化）；10 美元是 `ORDER_MIN_NOTIONAL_USD`，TWAP 是 100 美元，所以只写成行・指値 |
+| STEP 1：转化视角建议「画面右上の「Connect」を押し、メールアドレスを入力します。」，证据写的是 `user-menu.tsx` 第 169 行「桌面与手机头部共用」 | 改为「画面右上の「Connect」（パソコンでは「Connect Wallet」）を押し、「Log in with Email」を選んでメールアドレスを入力します。」 | 核对源码：第 169 行只是手机头部的按钮；桌面头部的按钮名是 `DESKTOP_NAV_LABELS.wallet`「Connect Wallet」；点开后还要先选「Log in with Email」才会出现邮箱输入框（`wallet-modal.tsx` 第 210 行）。原句在桌面上与界面不符 |
+| 特点 04：转化视角给「…8種類の注文に対応。利確・損切り（TP/SL）は注文と同時に設定でき…」，要求发送前确认现货的适用范围 | 改为「無期限先物では、成行・指値・逆指値からTWAP・スケールまで8種類の注文に対応し、利確・損切り（TP/SL）も注文と同時に設定できます。チャート上では、注文・ポジション・清算価格を確認できます。」 | 已核对：现货只有四种订单（`SPOT_ALLOWED_TYPES`），TP/SL 只在永续上出现（`packages/hl-react/src/capabilities.ts` 对现货 `hasTpSl: false`），所以用「無期限先物では」限定整句 |
+| 次级按钮的高度 | 按钮文字 16px、行高 20px、上下内边距 13px，加边框为 48px；不设 `min-width` | 去掉 `<style>` 后 320px 宽时，主按钮的 `min-width:180px` 加左右 32px 内边距已经让页面宽到 342px（第 4 版起就如此，本轮没有改主按钮）；次级按钮若照抄 `min-width`，会再宽 2px |
+| 首屏按钮下的说明：合规视角给出拆成两段的具体字号 | 照用（15px 粗体同色，其下 13px）；纯文本改为风险句在前 | — |
+| 主屏幕添加一句（转化视角建议删，合规视角要求去掉「すぐ」） | 从第一封删去，移到第 7 节第 4 封，并写成不含「すぐ」的「ホーム画面に追加すれば、アプリのように開けます（…）」 | 两条都满足 |
+
+
+以下各小节记录第 1–3 版的评审与修订取舍，作为历史保留；与第 4 版不一致之处以本小节和第 5 节为准。
+
 
 ### 评审结果
 
@@ -234,32 +274,33 @@
 
 | 版本 | 主题行 | 全角折算 | 前 15 个全角位 | 作用 |
 | --- | --- | --- | --- | --- |
-| A（对照） | 【Sairn】運営会社に預けずに、Hyperliquidで取引 | 23 | 【Sairn】運営会社に預けずに、H | 信任主张；保留正文的限定「運営会社に」，不写「資産を」，避免与 STEP 2「入金」看起来矛盾。手机显示约 20 个全角位时可见「【Sairn】運営会社に預けずに、Hyperliquid」。规则原句「【Sairn】預けずに、Hyperliquidで取引する」（20）的取舍见第 2 节 |
-| B（挑战） | 【Sairn】日本からも取引できるようになりました | 22.5 | 【Sairn】日本からも取引できる | 新闻主张；只有闸门 1、2 满足后才是真的，劝诱风险也最高。不在主题里列「入金・出金」，免得像模仿交易所入出金通知的钓鱼邮件；正文仍写注文・入金・出金 |
-| C（备用） | 【Sairn】注文は直接Hyperliquidへ届きます | 20 | 【Sairn】注文は直接Hyperliquid | 直连主张，来自 pro-tools；「直接」放进前 15 位 |
+| A（主推） | 【Sairn】日本から取引できるようになりました | 21.5 | 【Sairn】日本から取引できるよ | 新闻；新闻点全部落在前 15 个全角位里。对在日本注册过却被地区限制挡住的人最相关，回应他们的「お待たせしました」放在预览文本里。只有闸门 1、2 满足后才是真的，劝诱风险也最高 |
+| B（挑战） | 【Sairn】運営会社に預けずに、100以上の銘柄を取引 | 24 | 【Sairn】運営会社に預けずに、1 | 利益主张：运营公司不托管＋币种数，对没有被挡过的订阅者更有说服力 |
+| C（补发） | 【Sairn】ウォレットがなくても、メールで登録できます | 25.5 | 【Sairn】ウォレットがなくても | 降低钱包门槛（ADR 0033：邮箱登录后自动创建钱包）；用于未打开者的补发（第 6 节）。不写「だけ」，也不写「今日から取引できます」 |
 
 | 预览文本 | 全角折算 | 用于 |
 | --- | --- | --- |
-| 注文はHyperliquidへ直接。板も約定も手数料も、オンチェーンで確認できます。 | 36.5 | A、B（已写在 HTML 隐藏预览里） |
-| Sairnは資産をお預かりしません。板も約定も、オンチェーンで確認できます。 | 35.5 | C（用 C 时替换 HTML 开头隐藏 `div` 里的文字）。第 2 轮改掉了原来的「手数料の内訳は約定ごとに確認できます」：这个主张在 Sairn 界面里无法核对（第 2 节），不该放在收件箱预览里 |
+| お待たせしました。運営会社に預けずに、BTC・ETHなど100以上の銘柄を24時間取引できます。 | 42.5 | A（已写在 HTML 隐藏预览里） |
+| 資産はHyperliquid上のご自身のアドレスに。100以上の無期限先物を、24時間。 | 36 | B（用 B 时替换 HTML 开头隐藏 `div` 里的文字，避免与主题重复） |
+| 運営会社に預けずに、BTC・ETHなど100以上の銘柄を24時間取引できます。 | 33.5 | C（补发时替换 HTML 开头隐藏 `div` 里的文字） |
 
-刻意避免：主题里不用「シードフレーズ」「確認コード」「ログイン」，这些是日本加密资产钓鱼邮件的常见词；不用【重要】【緊急】，不用 emoji。
+刻意避免：主题与预览文本里不用「シードフレーズ」「確認コード」「ログイン」，这些是日本加密资产钓鱼邮件的常见词；不用【重要】【緊急】、emoji、「今だけ」「今日から」之类的紧迫感；不用「だけ」类的注册门槛说法（读成不需要本人确认）；不用没有限定的「資産を預けずに」（与 STEP 2 的存款看起来矛盾，只写「運営会社に預けずに」）；不用「いつでも」。
 
 测试设计：
 
-- 首批是名单的 10%（A、B 各 5%），与第 6 节的分批一致；C 不参加，留作替补。
+- 首批是名单的 10%（A、B 各 5%），与第 6 节的分批一致；C 留作补发。
 - 观察 24 小时，判定指标是独立点击率（独立点击数除以送达数）和投诉率；退订率作参考。不看打开率，因为 Apple MPP 会虚高打开。
 - 任一组投诉率超过 0.1% 就暂停该组。
 - 每组送达不足约 1,000 封时，样本太小，不做测试，直接发 A。
-- 律师不允许新闻句时，删除正文的新闻段落，改测 A 对 C。
+- 律师不允许新闻句时，删除首屏的大标题与 A 预览文本里的「お待たせしました。」，改用 B 的方向（大标题例如「運営会社に預けずに、100以上の銘柄を。」；眉标题「Hyperliquid向けの取引ツール」照用），并改测 B 对 C；这类修改同样要律师再次书面确认。
 
 ## 4 文件与占位符
 
 | 文件 | 用途 |
 | --- | --- |
 | `README.md` | 本文：闸门、策略、证据、发送建议与调研摘要 |
-| `email.ja.html` | HTML 部分。600px 表格布局，内联样式，约 51.4 KB（第 3 轮后为 51,350 字节；低于本任务规定的 60 KB，也低于 Gmail 约 102 KB 的截断线），没有脚本、表单、追踪像素和网络字体 |
-| `email.ja.txt` | 手写的 `text/plain` 部分，内容与 HTML 相同（费率表改写成列表），每行约 35 个全角字符；可见的链接只写不带参数的 `https://app.sairn.ai` 与条款等完整 URL |
+| `email.ja.html` | HTML 部分，由仓库外的生成脚本输出（见下面「其他说明」），不手改。600px 表格布局，内联样式，主会话最后修订后为 46,133 字节（第 4 版审阅后 46,135 字节，第 4 版初稿 43,443 字节，第 3 轮 51,350 字节；低于本任务规定的 60 KB，也低于 Gmail 约 102 KB 的截断线），没有脚本、表单、追踪像素和网络字体，唯一的图片是 Logo（显示为 120×60） |
+| `email.ja.txt` | 手写的 `text/plain` 部分，内容与 HTML 相同，除 URL 与分隔线外每行最长 33 个全角位（2026-10-24 用脚本量得）；可见的链接只写不带参数的 `https://app.sairn.ai`、防钓鱼段的 `https://sairn.ai` 与条款等完整 URL |
 | `email.zh.md` | 中文对照，仅供审阅、不发送 |
 
 | 占位符 | 位置 | 由谁填写 | 规则 |
@@ -269,38 +310,60 @@
 
 其他说明：
 
-- HTML 的 `<title>` 和隐藏预览用的是 A 和对应的预览文本。
-- 没有收件人姓名变量：Sairn 不保存经过核实的姓名，所以统一用称呼「…皆さまへ」。
+- HTML 的 `<title>` 和隐藏预览用的是 A 和 A 的预览文本；发 B 或 C 时，把隐藏预览换成第 3 节对应的一行，`<title>` 换成对应的主题（改生成脚本的 `SUBJECT`、`PREHEADER` 后重新生成）。
+- 没有收件人姓名变量：Sairn 不保存经过核实的姓名。第 4 版也删去了称呼行，正文从眉标题「Hyperliquid向けの取引ツール」开始。
 - `<head>` 里除了媒体查询与深色模式样式，只有两段 `<!--[if mso]>` 条件注释：Outlook 的 96 DPI 设置，和把字体强制为 Meiryo 的样式（Word 引擎不认 `-apple-system`，会退回西文字体）。其他客户端忽略这两段。`<style>` 开头另有 `:root` 的 `color-scheme` 声明和 iOS 数据识别链接（`a[x-apple-data-detectors]`）的复位，防止填入的地址或日期被 iOS 邮件自动加成系统蓝色链接。
-- HTML 由 Agent 的一次性生成脚本输出，脚本不在仓库里；以后改文案直接改这三份文件，并保持 HTML、纯文本、中文对照同步。
+- `email.ja.html` 由 Agent 会话临时目录（scratchpad）里的生成脚本 `build_email_v5.py` 输出（用法：`python3 build_email_v5.py docs/marketing/jp-launch-email/email.ja.html`；文件名里的 v5 是脚本的迭代号，不是文案版本）。脚本不在仓库里，会话结束后不保证还在。脚本还在时，改 HTML 一律改脚本后重新生成，不手改；脚本不在时只能直接改 HTML。两种情况都要保持 HTML、纯文本、中文对照三份同步，并重做第 5 节的脚本检查。
 
 ## 5 正文主张与证据
 
+第一张表按第 4 版正文的顺序，一条主张一行；页脚与法定表示另列一表；第 1–3 版写过、第 4 版正文删去的主张列在第三张表。表中的仓库路径与行号都在 2026-10-24 用 `ls`、`rg`、`sed` 核对过（见本节末尾「第 4 版证据核对」与「第 4 版审阅后的核对」），这是读源码与文档，不是运行时验证。
+
+### 正文（第 4 版，审阅后）
+
 | 邮件中的主张 | 仓库证据 |
 | --- | --- |
-| Sairn 是交易 Hyperliquid 永续合约与现货的交易终端 | [`apps/terminal/src/routes/perp.tsx`](../../../apps/terminal/src/routes/perp.tsx)、`spot.tsx`、`trade.$symbol.tsx`；[`apps/website/src/components/Hero.astro`](../../../apps/website/src/components/Hero.astro)；线上 `build-meta.json`（p32） |
-| 「日本からも注文・入金・出金の各機能をご利用いただけるようになりました」 | 本分支的 [`apps/terminal/src/config/geo.ts`](../../../apps/terminal/src/config/geo.ts) 与 [ADR 0042](../../adr/0042-japan-allowed-trading-region.md)。**只有发布后才是真的**（闸门 2）。即使发布后也有两道检查：[`apps/terminal/src/lib/geo/ipdata-geo.ts`](../../../apps/terminal/src/lib/geo/ipdata-geo.ts) 把 `is_icloud_relay` 等判为代理并禁用交易与资金操作；每次写操作还要过 Hyperliquid 的 `legalCheck`（[`packages/hl-react/src/legal.ts`](../../../packages/hl-react/src/legal.ts)），仓库无法证明它对日本 IP 放行。所以「ご利用前にご確認ください」里有「ご利用の通信環境によっては…」一条 |
-| 资产不托管；资金与仓位在 Hyperliquid 上用户自己的地址 | [`legal/terms.md`](../../../legal/terms.md) §1.3、§1.5；[`apps/website/src/components/Trust.astro`](../../../apps/website/src/components/Trust.astro)；[`AGENTS.md`](../../../AGENTS.md) 钱包签名契约 |
-| 订单由用户自己的钱包或用该钱包批准的交易专用密钥签名（被动句，不暗示 Sairn 签名）；Sairn 不保管私钥 | [ADR 0038](../../adr/0038-unnamed-default-agent-for-trading-connection.md)（本地生成、主钱包批准的 Agent）；[`docs/hyperliquid-signing.md`](../../hyperliquid-signing.md)；[`docs/email-trading-signing.md`](../../email-trading-signing.md)（邮箱交易用精确的 embedded owner）；Agent 密钥保存在浏览器本地：[`packages/hl-react/src/signing/agent-storage.ts`](../../../packages/hl-react/src/signing/agent-storage.ts)（`localStorage`／`sessionStorage`），以及 [`docs/trading-onboarding.md`](../../trading-onboarding.md)「Mobile Agent QR client-only transfer」一节（"without any server state"） |
-| 订单从浏览器直接发往 Hyperliquid，不经中继 | [`packages/hl-react/src/clients.ts`](../../../packages/hl-react/src/clients.ts)；[`apps/terminal/src/config/security-headers.ts`](../../../apps/terminal/src/config/security-headers.ts) 的 `connect-src`（`api.hyperliquid.xyz`）。这是传输路径；邮箱用户的签名经过 Privy，页脚已写明 |
-| 订单簿在链上，订单、成交、手续费是任何人都能查看的记录 | `Trust.astro`（"Onchain order book"、"Fees on the record"）；这是 Hyperliquid 的属性，文案写成「Hyperliquidの板」 |
-| 标准永续市场基础档 0.045%/0.015%；现货基础档 0.07%/0.04% | Hyperliquid `userFees`（2026-10-24 读取，命令见闸门 8）；[`apps/terminal/src/config/trade.ts`](../../../apps/terminal/src/config/trade.ts) 的 `ORDER_FEE_RATE_TAKER/MAKER` 后备值相同 |
-| 费率表只适用于标准市场；独立运营方的市场不同 | Hyperliquid [Fees](https://hyperliquid.gitbook.io/hyperliquid-docs/trading/fees) 的 `feeRates`：HIP-3 永续按 `deployerFeeScale` 放大（小于 1 时乘 dfs+1，否则乘 dfs×2），growth mode 乘 0.1，稳定币现货对乘 0.2；[`docs/fee-display.md`](../../fee-display.md) 同样记录。所以正文写「標準の無期限先物市場」，并另起一句「独立した事業者が運営する市場では、料率が異なる場合があります」。HIP-3 市场的费率由各 dex 的部署方通过 `deployerFeeScale` 与 growth mode 决定并可以改变（`docs/fee-display.md` 的公式与 `xyz:NFLX` 实测），所以页脚写「Hyperliquidや各市場を運営する事業者により改定されることがあります」 |
-| builder fee 0.01%，上限 0.01% | [`apps/terminal/src/config/hyperliquid.ts`](../../../apps/terminal/src/config/hyperliquid.ts) `f: 10`；[`packages/hl-react/src/signing/use-builder-fee-approval.ts`](../../../packages/hl-react/src/signing/use-builder-fee-approval.ts)（`maxFeeRate` 取同一个 `f`） |
-| builder fee 只收永续订单和现货卖出，TWAP 与现货买入不收 | [`apps/terminal/src/domain/trade/order-fee-quote.ts`](../../../apps/terminal/src/domain/trade/order-fee-quote.ts)；只有 `order` 动作注入 builder（[`packages/hl-react/src/registries/exchange.ts`](../../../packages/hl-react/src/registries/exchange.ts) 的 `BUILDER_INJECTED_METHODS`）。改单走 `batchModify`，不带 builder 字段，仓库没有确认改过的永续订单是否仍收 builder fee；如果有偏差，也是对用户有利的方向，所以文案不改 |
-| 小标题「手数料は、内訳まで明確に」：邮件逐项写明协议费与 builder fee 及合计 | 数值依据见上下两行。明细的公开来源是 Hyperliquid [Info endpoint](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint) 的 `userFills`（`fee` 含 `builderFee`）；Sairn 的成交记录（`history-tab.tsx`、[`mobile-history-tab.tsx`](../../../apps/terminal/src/components/trade/mobile/mobile-history-tab.tsx)）只显示 `fill.fee`，下单界面（[`order-fee-summary-value.tsx`](../../../apps/terminal/src/components/trade/components/order-fee-summary-value.tsx)）只显示含 builder fee 的合计费率。所以第 3 轮起正文不再声称能在约定ごとに核对明细，也删去了 `userFills` 与「注文画面には…目安」两句 |
-| TWAP 以外的第一笔订单（含本身不收 builder fee 的现货买入）时批准 builder fee；外部钱包在钱包里确认，邮箱自动签名；不交出私钥 | `AGENTS.md` 首次交易契约（builder fee 由第一个需要它的交易动作批准）；`trade-panel.tsx` 的 `requiresBuilderFee = !twapOrder`；[`apps/terminal/src/config/privy.ts`](../../../apps/terminal/src/config/privy.ts) `showWalletUIs: false`；[`docs/trading-onboarding.md`](../../trading-onboarding.md)「Email Registration and Direct Signing」一节第 684–686 行（普通 L1 写操作与 builder fee 批准用同一个 owner 钱包，批准绑定第一个需要 builder 的动作）与「Mobile Agent QR client-only transfer」一节第 691 行（"which an email owner signs silently"） |
-| 外部钱包连接时会被要求签名批准交易用密钥等（尚未同意条款的地址还要先签名同意） | `docs/trading-onboarding.md` 第 4 步（Enable Trading 的 `approveAgent`）与第 3 步（`acceptTerms2`）。第 3 步只在 `legalCheck` 返回未同意时发生：[`apps/terminal/src/hooks/trade/use-legal-gate.ts`](../../../apps/terminal/src/hooks/trade/use-legal-gate.ts) 第 74 行在 `acceptedTerms` 为真时直接返回 `accepted`，不弹确认框也不签名。第 2 轮写成条件句；第 3 轮概括为「取引用の鍵を承認する署名などを求められます」，对已同意与未同意条款的地址都成立。确认框列出的是 Sairn 的利用规约、隐私政策、Hyperliquid 的利用规约与 Cookie 政策，所以写「利用規約など」；邮箱用户的 `acceptTerms2` 在应用内的条款确认之后静默签名，正文没有单独写 |
-| 永续 8 种订单：成行・指値・逆指値・利益確定（各成行／指値）・TWAP・スケール（第 3 轮起正文写「…など、8種類」，不再列现货的 4 种与 TWAP、スケール的释义） | `apps/terminal/src/config/trade.ts` `ORDER_TYPES`（market、limit、stopMarket、stopLimit、takeProfitMarket、takeProfitLimit、twap、scale）；同文件 `SPOT_ALLOWED_TYPES = ["twap", "scale"]`，[`apps/terminal/src/components/trade/tradebox/trade-header.tsx`](../../../apps/terminal/src/components/trade/tradebox/trade-header.tsx) 第 79 行在现货下过滤掉其余高级类型（桌面与手机共用这个头部），所以现货是成行・指値・TWAP・スケール |
-| 图表叠加订单、仓位、清算价 | [`apps/terminal/src/lib/chart/tradingview-overlays.ts`](../../../apps/terminal/src/lib/chart/tradingview-overlays.ts)（`kind: "order" \| "position" \| "liquidation"`）；不写图表库的商标 |
-| 在交易画面以外的单独页面，预测资金费率可与其他主要交易所的费率比较 | [`docs/funding-comparison.md`](../../funding-comparison.md)；`apps/terminal/src/routes/fundingComparison.tsx`（比较对象是 Binance 与 Bybit，邮件不点名；能否保留由律师决定，见闸门 1）。这是独立页面，入口是 [`apps/terminal/src/config/desktop-nav.ts`](../../../apps/terminal/src/config/desktop-nav.ts) 第 26 行的「More」菜单（`placement: "more"`）与手机抽屉，只含主 dex 永续、不含 HIP-3。第 3 轮把小标题改为「取引に必要な機能を、ひとつのターミナルに」，这一条写成「…比較できるページもあります」，不再暗示它在交易画面上 |
-| 手机专用界面 | [`apps/terminal/src/config/layout.ts`](../../../apps/terminal/src/config/layout.ts)（1000px）；`apps/terminal/src/components/trade/mobile/` |
-| 可添加到主屏幕；iPhone 从 Safari 共享菜单；需要联网 | [`apps/terminal/src/providers/pwa-install.tsx`](../../../apps/terminal/src/providers/pwa-install.tsx)（`ios-instructions`）；`wallet-modal.tsx` 的 iOS 说明文案；[`docs/runtime-guardrails.md`](../../runtime-guardrails.md) §8（不宣传离线可用） |
-| 邮箱或 MetaMask 等钱包连接 | `config/privy.ts`（`loginMethods: ["wallet", "email"]`；`PRIVY_WALLET_LIST` 含 `metamask`） |
-| 邮箱连接时自动创建交易用钱包，无需助记词（外部密钥管理服务 Privy 在页脚写明） | 自动创建：[ADR 0033](../../adr/0033-silent-email-wallet-creation.md)、[`apps/terminal/src/config/privy.ts`](../../../apps/terminal/src/config/privy.ts)（`embeddedWallets`，`createOnLogin: "off"`，由根部 provider 创建）。无需助记词：Privy 文档 [User wallets](https://docs.privy.io/wallets/overview/solutions/user-wallets)（"without needing to manage seed phrases or private keys directly"）；ADR 0033 本身没有提助记词 |
-| CCTP 把 USDC 送到 Hyperliquid 上用户自己的地址；只认 Arbitrum 原生 USDC；外部钱包需要 ETH；具体步骤在存款界面说明（第 3 轮删去最低存款额一句） | [`docs/cctp-deposits.md`](../../cctp-deposits.md)「Supported Paths」：外部钱包是同一地址收到 HyperCore 入账，邮箱会话是精确的 embedded EOA，它必须等于所选的 Hyperliquid owner（写「不入账」而不是「丢失」，因为地址是用户自己的钱包）；[`CHANGELOG.md`](../../../CHANGELOG.md)（最低额为 Circle 手续费的两倍） |
-| 国内交易所不一定支持 Arbitrum 上 USDC 的转出或接收 | 仓库里没有任何证据表明有国内交易所支持；调研（`practice.persona`）只找到 SBI VC Trade 的国内 USDC，且据报道只支持以太坊。所以第 1 轮改为「対応しているとは限りません」并请读者事先确认网络，不再写暗示普遍支持的「場合があります」 |
-| 界面、登录、条款为英文 | [`apps/terminal/src/config/i18n.ts`](../../../apps/terminal/src/config/i18n.ts)（en、zh、hi、es、fr、ar）；`legal/*.md` 只有英文；Privy 登录界面不是日文 |
+| 首屏大标题「日本からも、取引できるようになりました。」（主题 A「【Sairn】日本から取引できるようになりました」与 A 的预览文本「お待たせしました。…」同一方向） | 本分支的 [`apps/terminal/src/config/geo.ts`](../../../apps/terminal/src/config/geo.ts)（`TRADE_RESTRICTED_COUNTRIES` 已删去 `JP`，提交 `712df93c`，未合入 `dev`）与 [ADR 0042](../../adr/0042-japan-allowed-trading-region.md)。**只有发布后才是真的**（闸门 2）。即使发布后也有两道检查：[`apps/terminal/src/lib/geo/ipdata-geo.ts`](../../../apps/terminal/src/lib/geo/ipdata-geo.ts) 把 `is_icloud_relay` 等判为代理并禁用交易与资金操作；每次写操作还要过 Hyperliquid 的 `legalCheck`（[`packages/hl-react/src/legal.ts`](../../../packages/hl-react/src/legal.ts)），仓库无法证明它对日本 IP 放行。所以首屏按钮正下方与确认框里都有「ご利用の通信環境によっては…」一条。能否保留由律师决定（闸门 1） |
+| 首屏眉标题「Hyperliquid向けの取引ツール」 | Sairn 是运行在 Hyperliquid 上的独立交易界面：`legal/terms.md` §1.1（Independent Access Software）；官网 [`apps/website/src/components/Hero.astro`](../../../apps/website/src/components/Hero.astro) 第 27–28 行（"The trading terminal for Hyperliquid"）。不写「専用」，避免读成 Hyperliquid 的官方应用；页脚另有「Hyperliquidが運営または推奨するものではありません」 |
+| 首屏「資産を運営会社に預けることなく」；特点 01「Sairnがお客様の資産をお預かりすることはありません。資金とポジションはHyperliquid上のご自身のアドレスにあり」（主题 B、预览文本 A 与 C 的「運営会社に預けずに」同义；预览文本 B「資産はHyperliquid上のご自身のアドレスに」） | [`legal/terms.md`](../../../legal/terms.md) §1.3（No Brokerage, Exchange, or Custody Service）、§1.5（Wallets and Signing Methods）；[`apps/website/src/components/Trust.astro`](../../../apps/website/src/components/Trust.astro)（"Self-custody"）；[`AGENTS.md`](../../../AGENTS.md) 钱包签名契约（精确 owner 签名）。邮箱用户的钱包由 Privy 提供，页脚写明 |。不写没有限定的「資産を預けずに」或「ウォレットに置いたまま」：STEP 2 要把 USDC 存入 Hyperliquid，仓库能证明的只是 Sairn（运营公司）不托管 |
+| 特点 01「注文はブラウザからHyperliquidへ直接届きます」 | [`packages/hl-react/src/clients.ts`](../../../packages/hl-react/src/clients.ts)；[`apps/terminal/src/config/security-headers.ts`](../../../apps/terminal/src/config/security-headers.ts) 的 `hyperliquidConnectSources`（`https://api.hyperliquid.xyz` 等）；[`apps/website/src/components/FeatureSpeed.astro`](../../../apps/website/src/components/FeatureSpeed.astro)（"sent from your browser straight to Hyperliquid — no relayer in between"）。这是传输路径；邮箱用户的签名经过 Privy，页脚已写明 |
+| 特点 01「板も約定もオンチェーンで、誰でも確認できます」 | `Trust.astro`（"Onchain order book"、"Fees on the record"）。这是 Hyperliquid 的属性，句子放在讲 Hyperliquid 的一段里，不写成 Sairn 的功能 |
+| 首屏「BTC・ETHをはじめHyperliquidの100以上の無期限先物」；特点 02 小标题「100以上の銘柄」；主题 B 与预览文本 A、B、C | 终端的市场列表在运行时从 Hyperliquid 的 `allPerpMetas`、`perpDexs`、`spotMeta` 读取（[`apps/terminal/src/lib/hyperliquid/markets/market-catalog-info-client.ts`](../../../apps/terminal/src/lib/hyperliquid/markets/market-catalog-info-client.ts)），并跳过 `isDelisted` 的市场（[`use-markets.tsx`](../../../apps/terminal/src/lib/hyperliquid/markets/use-markets.tsx) 第 66、148 行）；官网 `FeatureSpeed.astro` 写的是 "100+ perp markets"。数量本身不在仓库里：2026-10-24 Agent 读公开的 `meta`，主 dex 有 234 项，其中 178 项未下架。只数主 dex、不算 HIP-3，这个数字就不依赖股票或指数永续；「100以上の銘柄」「BTC・ETHなど100以上の銘柄」指同一组永续，不含现货交易对。数量会变，发送当天复核（闸门 8） |
+| 首屏「24時間取引できます」；特点 02 小标题「100以上の銘柄を、24時間」；预览文本 | 终端没有按交易时段禁止下单的代码（2026-10-24 在 `apps/terminal/src` 里用 `rg` 查 market hours、trading hours、weekend 等，没有结果）；官网 [`apps/website/src/config/faq.ts`](../../../apps/website/src/config/faq.ts) 第 20 行（"tradable around the clock"）与 `apps/website/src/components/Markets.astro`（"Around the clock"）。这是 Hyperliquid 永续不设交易时段的属性；系统与通信故障写在页脚风险里。不写「いつでも」：页脚的系统与通信故障，以及首屏按钮下方的通信环境限制，都可能让人在某些时候无法交易 |
+| 特点 02「無期限先物に加えて、現物の売買も同じ画面でできます。」 | [`apps/terminal/src/routes/spot.tsx`](../../../apps/terminal/src/routes/spot.tsx)、`trade.$base.$quote.tsx`、[`perp.tsx`](../../../apps/terminal/src/routes/perp.tsx)、`trade.$symbol.tsx`；[`apps/website/src/components/Hero.astro`](../../../apps/website/src/components/Hero.astro)；线上 `build-meta.json`（p32） |
+| 特点 03 小标题「手数料は、テイカー0.055%・メイカー0.025%」 | 正文第一句就说明这是在 Sairn 交易永续合约的合计费率及其范围（标准市场、基础档、日期），限定条件与其他费用提示紧跟在下面（以下各行）；下单界面显示的也是合计（[`order-fee-summary-value.tsx`](../../../apps/terminal/src/components/trade/components/order-fee-summary-value.tsx) 只渲染 `totalRate`）。第 4 版初稿的「手数料は、シンプルに」加上「かかりません」，可能被读成没有其他费用，审阅后改为这一句 |
+| 特点 03「無期限先物の手数料は、合計でテイカー0.055%、メイカー0.025%（標準市場の基本ティア）」 | Hyperliquid 基础档 0.045%／0.015%（`userFees`，2026-10-24 读取，命令见闸门 8；[`apps/terminal/src/config/trade.ts`](../../../apps/terminal/src/config/trade.ts) 的 `ORDER_FEE_RATE_TAKER/MAKER` 后备值相同）加 Sairn 的 0.01%（[`apps/terminal/src/config/hyperliquid.ts`](../../../apps/terminal/src/config/hyperliquid.ts) `f: 10`；[`apps/terminal/src/domain/trade/order-fee-quote.ts`](../../../apps/terminal/src/domain/trade/order-fee-quote.ts) 对永续两侧都收）。下单界面显示的也是这个含 builder fee 的合计（[`order-fee-summary-value.tsx`](../../../apps/terminal/src/components/trade/components/order-fee-summary-value.tsx) 只渲染 `totalRate`），官网 [`Fees.astro`](../../../apps/website/src/components/Fees.astro) 写的是同一组合计。正文不出现 builder fee 一词，拆分写在页脚。TWAP 不收 builder fee，实际费率低于这一行，偏差对用户有利 |
+| 特点 03 小字「※Sairnでのお取引にかかる合計の料率です（Hyperliquidの標準の無期限先物市場、基本ティア、2026年10月24日時点）。」 | 同上：合计＝Hyperliquid 基础档 0.045%／0.015% 加 Sairn 的 0.01%。第 4 版初稿写的是「Hyperliquidの標準の無期限先物市場における基本ティアの料率です」，把含 Sairn 0.01% 的合计说成 Hyperliquid 的基础档费率（Hyperliquid 公布的基础档是 0.045%／0.015%），读者对照官方费率时会误以为 Sairn 的费用被藏起来；第 4 版审阅改正（2026-10-24）。正文不出现 builder fee 一词。日期按闸门 8 在发送当天复核 |
+| 特点 03 小字「独立した事業者が運営する市場では、料率が異なる場合があります。」 | Hyperliquid [Fees](https://hyperliquid.gitbook.io/hyperliquid-docs/trading/fees) 的 `feeRates`；[`docs/fee-display.md`](../../fee-display.md) 第 9–12 行与 [`apps/terminal/src/domain/trade/fees.ts`](../../../apps/terminal/src/domain/trade/fees.ts) 第 23、36 行：HIP-3 永续按 `deployerFeeScale`（dfs）放大，dfs 小于 1 时乘 dfs+1，否则乘 dfs×2；growth mode 乘 0.1。dfs 为 0 且没有 growth mode 的 HIP-3 市场与标准市场费率相同，所以只能写「場合があります」。第 4 版初稿写成了断定的「異なります」，第 4 版审阅改回（2026-10-24，生成脚本、纯文本、中文对照三处） |
+| 特点 03「取引量に応じて割引が適用される場合があります。」 | `docs/fee-display.md` 第 9 行（费率取每个用户自己的 `userCrossRate`）；`faq.ts` 第 12 行（"dropping with volume and HYPE staking"）；`Fees.astro`（"Hyperliquid's share drops with volume and HYPE staking"，"the 0.01% builder fee stays the same"）。折扣只作用于 Hyperliquid 那一部分，Sairn 的 0.01% 不变，所以写「場合があります」 |
+| 特点 03「月額料金や、注文ごとのガス代はかかりません。」 | 下单是 L1 Action，经 API 提交，不需要链上网络：[`docs/hyperliquid-signing.md`](../../hyperliquid-signing.md) 的 Quick Reference（L1 Actions 一行为 "None (API only)"；只有存款是 Arbitrum 上的 EVM 交易）。没有月费：`legal/terms.md` §6.1 列出的是 builder fee 等界面费用与第三方费用，没有订阅费；`faq.ts` 第 12 行与 `Fees.astro`（"No gas per trade, no subscription"）。这一句只说下单：外部钱包存款需要 ETH（STEP 2），页脚写了网络手续费（ガス代），不得扩写成免 gas 存款（「刻意不写的卖点」） |
+| 特点 03 同字号「※このほか、資金調達料や、入金・出金時の手数料（ネットワーク手数料を含む）等がかかる場合があります。詳しくは本メール末尾をご確認ください。」 | 页脚费用两条与风险条：资金费（`legal/riskDisclosure.md`）、外部钱包存款的 gas 与 Circle 的桥费（`docs/cctp-deposits.md`）、提款路径费与账户激活费（[`docs/withdrawals.md`](../../withdrawals.md)）。第 4 版审阅加上，作为紧挨「かかりません」的打消し表示；字号与正文相同 |
+| 特点 04「無期限先物では、成行・指値・逆指値からTWAP・スケールまで8種類の注文に対応」 | `config/trade.ts` 的 `ORDER_TYPES`（market、limit、stopMarket、stopLimit、takeProfitMarket、takeProfitLimit、twap、scale）。8 种指永续：同文件 `SPOT_ALLOWED_TYPES = ["twap", "scale"]`，[`apps/terminal/src/components/trade/tradebox/trade-header.tsx`](../../../apps/terminal/src/components/trade/tradebox/trade-header.tsx) 第 79 行在现货下过滤掉其余高级类型（桌面与手机共用这个头部），所以现货是成行・指値・TWAP・スケール四种。「逆指値」指 stopMarket、stopLimit；8 种只在永续上成立，所以句子以「無期限先物では」开头 |
+| 特点 04「利確・損切り（TP/SL）も注文と同時に設定できます」 | [`apps/terminal/src/components/trade/tradebox/trade-form-tp-sl.tsx`](../../../apps/terminal/src/components/trade/tradebox/trade-form-tp-sl.tsx)，桌面经 [`trade-form-fields.tsx`](../../../apps/terminal/src/components/trade/tradebox/trade-form-fields.tsx) 第 474 行、手机经 [`mobile-trade-view.tsx`](../../../apps/terminal/src/components/trade/mobile/mobile-trade-view.tsx) 第 1030 行挂载；只在成行・指値下可用（[`lib/trade/order-types.ts`](../../../apps/terminal/src/lib/trade/order-types.ts) 第 35 行 `canUseTpSl`），现货没有（[`packages/hl-react/src/capabilities.ts`](../../../packages/hl-react/src/capabilities.ts) 对现货 `hasTpSl: false`）。句子在「無期限先物では」之下，不说所有订单类型都能带 TP/SL |
+| 特点 04「チャート上では、注文・ポジション・清算価格を確認できます。」 | [`apps/terminal/src/lib/chart/tradingview-overlays.ts`](../../../apps/terminal/src/lib/chart/tradingview-overlays.ts)（`kind: "order" \| "position" \| "liquidation"`）；不写图表库的商标 |
+| 特点 04「スマートフォン専用の画面で、外出先からも取引できます。」 | [`apps/terminal/src/config/layout.ts`](../../../apps/terminal/src/config/layout.ts)（`MOBILE_BREAKPOINT_PX = 1000`）；`apps/terminal/src/components/trade/mobile/` |
+| 首屏「ウォレットをお持ちでない方も、メールアドレスで登録できます。」；STEP 1「メールアドレスで登録」；主题 C「ウォレットがなくても、メールで登録できます」 | [`apps/terminal/src/config/privy.ts`](../../../apps/terminal/src/config/privy.ts)（`loginMethods: ["wallet", "email"]`）；登录后自动创建交易用钱包：[ADR 0033](../../adr/0033-silent-email-wallet-creation.md)（`createOnLogin: "off"`，由根部 provider 创建）。真实的邮箱注册从未验收（闸门 9）。不写「だけ」：在日本读者眼里，「登録はメールアドレスだけ」等于不需要本人确认（见「刻意不写的卖点」的 No KYC 一行） |
+| STEP 1「画面右上の「Connect」（パソコンでは「Connect Wallet」）を押し、「Log in with Email」を選んでメールアドレスを入力します。」 | 手机头部的按钮名「Connect」：[`apps/terminal/src/components/trade/header/user-menu.tsx`](../../../apps/terminal/src/components/trade/header/user-menu.tsx) 第 169 行（`MobileWalletCtaView`），位于头部右侧（[`mobile-header-view.tsx`](../../../apps/terminal/src/components/trade/mobile/mobile-header-view.tsx) 的 `headerActions` 为 `justify-end`）；桌面头部的按钮名是「Connect Wallet」（[`config/desktop-nav.ts`](../../../apps/terminal/src/config/desktop-nav.ts) 第 40 行 `DESKTOP_NAV_LABELS.wallet`），在 [`top-nav-view.tsx`](../../../apps/terminal/src/components/trade/header/top-nav-view.tsx) 右端；点开后选「Log in with Email」（[`wallet-modal.tsx`](../../../apps/terminal/src/components/trade/components/wallet-modal.tsx) 第 210 行），再由 Privy 要求输入邮箱。审阅建议所说「第 169 行由桌面与手机共用」不符合源码，所以加了括号里的桌面按钮名。按钮名在发送当天复核（闸门 8） |
+| STEP 1「MetaMaskなどのウォレットでも接続できます。」 | `config/privy.ts`（`loginMethods` 含 `wallet`；`PRIVY_WALLET_LIST` 第 33 行含 `metamask`）。不点名交易所品牌的钱包。外部钱包还要签 Enable Trading 的 `approveAgent`（[ADR 0038](../../adr/0038-unnamed-default-agent-for-trading-connection.md)），未同意条款的地址先签 `acceptTerms2`（[`apps/terminal/src/hooks/trade/use-legal-gate.ts`](../../../apps/terminal/src/hooks/trade/use-legal-gate.ts) 第 74 行）；正文不描述这些签名，按闸门 9 实测 |
+| STEP 2「「Deposit」ボタンから、Arbitrum上のUSDCを入金します。入金したUSDCは、Hyperliquid上のご自身のアドレスに反映されます。」 | 「Deposit」：桌面头部按钮（[`top-nav.tsx`](../../../apps/terminal/src/components/trade/header/top-nav.tsx) 第 188 行，有钱包访问或走赞助路径时显示）；空账户时下单按钮也显示为「Deposit」（[`use-button-content.ts`](../../../apps/terminal/src/lib/trade/use-button-content.ts) 第 87 行，桌面与手机共用），手机账户页另有存款入口（`mobile-account-view.tsx`）。入账地址：[`docs/cctp-deposits.md`](../../cctp-deposits.md)「Supported Paths」，外部钱包是同一地址收到 HyperCore 入账，邮箱会话是精确的 embedded EOA，它必须等于所选的 Hyperliquid owner。第 4 版正文不再写 CCTP 的名称；页脚写了「入金時のブリッジ手数料（Circleの手数料）」 |
+| STEP 2「※反映されるのは、Arbitrum上のネイティブUSDCのみです。ほかの資産やネットワークで送ったものは反映されません。」 | `docs/cctp-deposits.md` 第 87 行（Circle native USDC）与第 131 行（native USDC on Arbitrum，"other assets or networks are not credited"）。写「反映されません」而不是「失われます」，因为地址是用户自己的钱包 |
+| STEP 2「※国内の暗号資産取引所が、Arbitrum上のUSDCの送金や受け取りに対応しているとは限りません。事前にご確認ください。」 | 仓库里没有任何证据表明有国内交易所支持；调研（`practice.persona`）只找到 SBI VC Trade 的国内 USDC，且据报道只支持以太坊。所以写「対応しているとは限りません」，不写暗示普遍支持的「場合があります」 |
+| STEP 2「※外部ウォレットから入金する場合は、ガス代としてArbitrum上のETHが少額必要です。メールアドレスで登録した場合の入金方法は、入金画面に表示されます。」 | `docs/cctp-deposits.md`「Supported Paths」（外部钱包自付源链 gas；邮箱会话的 gas 由赞助支付）；[ADR 0040](../../adr/0040-automatic-email-wallet-deposits.md)。邮箱会话的存款画面显示存款地址（[`funding-address-card.tsx`](../../../apps/terminal/src/components/trade/tradebox/deposit/funding-address-card.tsx) 第 97 行「Deposit address」）。后一句用来中和「邮箱存款不用 gas」的暗示；赞助额度与改写方案见闸门 9 |
+| STEP 3「入金が反映されたら、銘柄を選んで注文します。成行・指値の注文は、10ドル相当から発注できます。」 | [`apps/terminal/src/config/trade.ts`](../../../apps/terminal/src/config/trade.ts) 第 17 行 `ORDER_MIN_NOTIONAL_USD = 10`，由 [`domain/trade/orders.ts`](../../../apps/terminal/src/domain/trade/orders.ts) 第 276 行校验（`min-notional`）；同文件第 37 行 `TWAP_MIN_NOTIONAL_USD = 100`，所以句子只写成行・指値。这是操作说明，不是速度承诺：第 4 版初稿的「すぐに注文できます」已删去（存款要等入账，ADR 0040 的邮箱路径还要求页面开着；ADR 0041 下新账号在自动设为统一账户之前，下单区显示为加载中；外部钱包要先签 Enable Trading；TWAP 以外的首单还要批准 builder fee），这些步骤按闸门 9 实测 |
+| 首屏按钮下「※取引画面は英語表示です。」；确认框「取引画面・ログイン画面・利用規約などは英語表示です。」 | [`apps/terminal/src/config/i18n.ts`](../../../apps/terminal/src/config/i18n.ts)（en、zh、hi、es、fr、ar，没有 ja）；`legal/*.md` 只有英文；Privy 的登录界面不是日文 |
+| 首屏按钮正下方（15px 粗体，与正文同色）与确认框第一条「無期限先物はレバレッジを伴う取引で、証拠金の全額を失うおそれがあります。」 | [`legal/riskDisclosure.md`](../../../legal/riskDisclosure.md) §3（Leverage, Margin, and Liquidation）。不写杠杆倍数。第 4 版初稿里它是 13px 灰字、排在英文提示之后；按業府令第73条（损失风险的文字不得明显小于最大文字）与打消し表示的显眼性要求，审阅后拆出单独一行 |
+| 首屏按钮正下方小字与确认框「ご利用の通信環境によっては、注文・入金・出金をご利用いただけない場合があります。」 | `ipdata-geo.ts`（iCloud 专用代理等判为代理）与 `packages/hl-react/src/legal.ts`（`canPerformActions`），见闸门 2。首屏按钮下方这一条是第 4 版审阅补上的，使点第一个按钮的读者也能看到限定 |
+| 确认框「ご利用は、適用される法令および利用規約で認められる範囲に限られます。」 | `legal/terms.md` §2（§2.2 Restricted Persons、§2.3 No Evasion、§2.4 Your Legal Compliance） |
+| 防钓鱼段「Sairnから、メールで秘密鍵・シードフレーズ・確認コード・パスワードをお尋ねすることはありません。正規のURLは、次のとおりです。取引画面：https://app.sairn.ai／ウェブサイト：https://sairn.ai確認コードは、ご自身で開いたログイン画面にのみ入力してください。」 | [`brand/brand.json`](../../../brand/brand.json) 的 `domains.primary`：列出的是 `app` 与 `apex`，`brand.json` 另有 `www` 与 `testnet`，句子没有写「2つ」；邮箱用户确实会收到 Privy 的验证码（`config/privy.ts` 的 email 登录）。「お尋ねすることはありません」是运营方的承诺，发送前由运营方确认客服与邮件流程都不索要这些。第 4 版初稿改成了行内写法，在日文与 URL 之间留了半角空格，审阅后恢复第 1–3 版的列表写法 |
+| 「お問い合わせ窓口（support@sairn.ai）」「回答は英語となる場合があります。」 | `brand/brand.json` 的 `emails.support`；能否用日语回复见闸门 10 |
+
+### 页脚与法定表示
+
+| 页脚中的主张 | 仓库证据 |
+| --- | --- |
+| 手续费一条：Hyperliquid 的交易手续费，另加「Sairnの手数料（約定金額の0.01%）」，对象是永续订单与现货卖出，「TWAP注文と現物の購入は対象外です」；永续合计 0.055%／0.025%；现货 0.07%／0.04%，卖出另加 0.01%；「2026年10月24日時点」 | `config/hyperliquid.ts` `f: 10`；`order-fee-quote.ts`（永续两侧、现货只收卖出、`twapOrder` 不带 builder）；只有 `order` 动作注入 builder（[`packages/hl-react/src/registries/exchange.ts`](../../../packages/hl-react/src/registries/exchange.ts) 第 33 行的 `BUILDER_INJECTED_METHODS`）。改单走 `batchModify`，不带 builder 字段，仓库没有确认改过的永续订单是否仍收 builder fee；如果有偏差，也是对用户有利的方向，所以文案不改。费率数字：`userFees`（闸门 8），`config/trade.ts` 的 `ORDER_FEE_RATE_SPOT_TAKER/MAKER` 后备值相同 |
+| 「料率は、取引量や市場（独立した事業者が運営する市場を含む）によって異なり、Hyperliquidや各市場を運営する事業者により改定されることがあります。また、画面上の見積もりと実際の金額が異なる場合があります。」 | HIP-3 市场的费率由各 dex 的部署方通过 `deployerFeeScale` 与 growth mode 决定并可以改变（`docs/fee-display.md` 的公式与 `xyz:NFLX` 实测）；同一文档列了两处未修的展示偏差，所以写估算可能与实际不同 |
+| 「Sairnはお客様の資産を預からないセルフカストディ型の取引インターフェースです」「Sairnが秘密鍵や資産を復元することはできません」 | `legal/terms.md` §1.3、§1.5；Agent 密钥保存在浏览器本地：[`packages/hl-react/src/signing/agent-storage.ts`](../../../packages/hl-react/src/signing/agent-storage.ts)（`localStorage`／`sessionStorage`） |
 | 提款手续费的写法 | [`docs/withdrawals.md`](../../withdrawals.md)：路径由 Hyperliquid 的 `usdcRouting` 决定；CCTP 路径收 Circle 的转发费（`CoreDepositWallet` 的所有者设定，2026-09-29 读到 0.2 USDC），旧路径 `withdraw3` 收 1 USDC；账户激活费由 Hyperliquid 在首次转出时收取，只在 CCTP 路径且 `preTransferCheck` 返回费用时出现，旧路径按零处理。金额由协议返回，所以邮件不写数字，写「CCTP経路ではCircleの転送手数料」「アカウント有効化手数料を課す場合があります」 |
 | 邮箱钱包由 Privy 提供、签名经过 Privy；Sairn 是独立界面 | Privy：`config/privy.ts`（`embeddedWallets`、`showWalletUIs: false`）与 Privy 的 embedded wallet 文档；`legal/terms.md` §1.5 只写了第三方密钥管理服务，没有点名 Privy。独立界面：`legal/terms.md` §1.1 |
 | 不在日本登记的声明 | 调研 `requiredRiskDisclosureJa`；措辞与是否保留由律师决定（闸门 1） |
@@ -309,16 +372,43 @@
 | Logo | `apps/terminal/public/brand/email-logo.png`（360x180 RGB，无透明，6,085 字节；线上同大小） |
 | 发件人、正规域名、客服邮箱 | [`brand/brand.json`](../../../brand/brand.json) |
 
+### 第 4 版正文已删除的主张
+
+这些主张在第 1–3 版正文或第 4 版初稿里出现过，证据指针保留供追溯；现在的正文不再写，页脚是否仍有写在「第 4 版状态」一列。
+
+| 主张（第 1–3 版正文或第 4 版初稿） | 第 4 版状态 | 证据 |
+| --- | --- | --- |
+| builder fee 的拆分：Hyperliquid 0.045%／0.015% 加 Sairn 的 builder fee 0.01% 的费率表 | 第 4 版正文已删除，页脚仍有（上表手续费一条）；正文只给合计 | 见上表手续费一条 |
+| builder fee 上限 0.01%（批准时的 `maxFeeRate`） | 第 4 版正文已删除，页脚没有 | `config/hyperliquid.ts` `f: 10`；[`packages/hl-react/src/signing/use-builder-fee-approval.ts`](../../../packages/hl-react/src/signing/use-builder-fee-approval.ts)（`maxFeeRate` 取同一个 `f`） |
+| builder fee 的批准签名：TWAP 以外的第一笔订单（含本身不收 builder fee 的现货买入）时批准；外部钱包在钱包里确认，邮箱自动签名；这个签名不会把私钥交给 Sairn | 第 4 版正文已删除，页脚没有；闸门 9 仍在真实流程里核对 | `AGENTS.md` 首次交易契约；`trade-panel.tsx` 第 316 行 `requiresBuilderFee = !twapOrder`；`config/privy.ts` `showWalletUIs: false`；[`docs/trading-onboarding.md`](../../trading-onboarding.md) 第 684–686 行（批准绑定第一个需要 builder 的动作）与第 691 行 |
+| 订单由用户自己的钱包或用该钱包批准的交易专用密钥签名；Sairn 不保管私钥 | 第 4 版正文已删除；页脚仍有「Sairnが秘密鍵や資産を復元することはできません」与 Privy 签名一条 | ADR 0038；`docs/hyperliquid-signing.md`；[`docs/email-trading-signing.md`](../../email-trading-signing.md)；`agent-storage.ts` |
+| 外部钱包连接时的签名（`approveAgent`；未同意条款的地址先签 `acceptTerms2`） | 第 4 版正文已删除，STEP 1 只写可以用 MetaMask 等钱包连接；闸门 9 仍记录实际签名 | `docs/trading-onboarding.md` 第 3、4 步；`use-legal-gate.ts` 第 74 行 |
+| 小标题「手数料の内訳を、約定ごとに確認できます」／「手数料は、内訳まで明確に」，以及逐笔明细（`userFills` API、「Sairnの注文画面には…目安」） | 第 3 轮删去逐笔核对与 `userFills`；第 4 版小标题改为「手数料は、シンプルに」，正文不再给明细 | Hyperliquid [Info endpoint](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint) 的 `userFills`（`fee` 含 `builderFee`）；Sairn 的成交记录（[`history-tab.tsx`](../../../apps/terminal/src/components/trade/positions/history-tab.tsx)、[`mobile-history-tab.tsx`](../../../apps/terminal/src/components/trade/mobile/mobile-history-tab.tsx)）只显示 `fill.fee` |
+| 从 Sairn 的成交记录用区块浏览器核对交易（一部分成交除外） | 第 3 轮已删除 | — |
+| 「中継サーバーを介さず」 | 第 4 版改为「注文はブラウザからHyperliquidへ直接届きます」，证据见正文表 | — |
+| 订单类型逐一列举、现货的 4 种与 TWAP、スケール的释义 | 第 3 轮起逐步删去；第 4 版只写「TWAP・スケールを含む8種類の注文タイプ」 | 见正文表 |
+| CCTP 的名称与最低存款额 | 最低额第 3 轮删去（存款界面会显示）；第 4 版正文不再写 CCTP，页脚仍写 Circle 的桥费与 CCTP 提款路径 | `docs/cctp-deposits.md`；[`CHANGELOG.md`](../../../CHANGELOG.md)（最低额为 Circle 手续费的两倍） |
+| 基础档是「取引量などに応じた割引が適用される前の料率」 | 第 4 版改为「取引量に応じて割引が適用される場合があります」，证据见正文表 | — |
+| 「新しい銘柄も自動で追加されます」（第 4 版初稿，特点 02） | 第 4 版审阅删除 | 市场列表确实来自 Hyperliquid 的元数据（`market-catalog-info-client.ts`、[`market-catalog-query.ts`](../../../apps/terminal/src/lib/hyperliquid/markets/market-catalog-query.ts)；`faq.ts` 第 32 行 "New markets appear automatically as they launch"），但终端读取包括 HIP-3 在内的所有 dex，`use-markets.tsx` 没有白名单，自动加入的也可能是第三方部署、Sairn 没有审核过的股票、指数、金属永续（`legal/terms.md` §1.4）。「100以上」只数主 dex，就是为了不依赖这些品类，这一句又把它们带了回来，等于间接宣传禁止的品类；对第三方上币决定作断定承诺、突出没有上币审核，在日本也会被看作劝诱信号 |
+| 「ほかの主要な取引所とのファンディングレート比較」（第 4 版初稿，特点 04） | 第 4 版审阅删除；闸门 1 的相应提问撤销 | [`docs/funding-comparison.md`](../../funding-comparison.md)：比较对象是 Binance 与 Bybit，两者都上过金融厅的警告名单，在发给日本居民的推广邮件里称它们为「主要な取引所」，会损害读者与律师两方面的信任；这项功能也只对套利用户有用 |
+| 「ホーム画面に追加すれば、アプリのようにすぐ開けます（iPhoneはSafariの共有メニューから。インターネット接続が必要です）」（第 4 版初稿，特点 04 小字） | 第 4 版审阅从第一封删除，挪到第 7 节第 4 封，并去掉没有测量依据的「すぐ」 | [`apps/terminal/src/providers/pwa-install.tsx`](../../../apps/terminal/src/providers/pwa-install.tsx)（`ios-instructions`）；`apps/terminal/public/manifest.json`（`"display": "standalone"`）；[`docs/runtime-guardrails.md`](../../runtime-guardrails.md) §8（第 830–831 行：可安装不等于可离线，不宣传离线可用） |
+| 「シードフレーズの準備も不要です」（第 4 版初稿，首屏） | 第 4 版审阅删除；改为「ウォレットをお持ちでない方も、メールアドレスで登録できます」 | Privy 文档 [User wallets](https://docs.privy.io/wallets/overview/solutions/user-wallets)（"without needing to manage seed phrases or private keys directly"）。删除原因：它落在第一个按钮正上方，也是纯文本前约 80 个字符里的词，而「シードフレーズ」是日本加密资产钓鱼邮件的常见词（第 3 节已不让它进主题），正文末尾的防钓鱼段也在提醒读者警惕它；讲的也是机制而不是利益 |
+| 「登録はメールアドレスだけ」（第 4 版初稿，首屏、预览文本、主题 C） | 第 4 版审阅删除 | 在日本读者眼里等于不需要本人确认（KYC不要），见「刻意不写的卖点」 |
+| 没有限定的「資産を預けずに」与「資産はご自身のウォレットに置いたまま」（第 4 版初稿，首屏、预览文本、主题 B、备用大标题） | 第 4 版审阅改为「運営会社に預けずに」「資産を運営会社に預けることなく」 | 与 STEP 2 的存款看起来矛盾，第 1、3 轮已经决定只写「運営会社に」；仓库能证明的只是 Sairn 不托管（`legal/terms.md` §1.3） |
+| 「24時間いつでも」（第 4 版初稿，首屏、特点 02 小标题、预览文本 B） | 第 4 版审阅改为「24時間」 | 「いつでも」是绝对说法，与通信环境限制和页脚的系统・通信障害风险矛盾 |
+| 「100以上の銘柄から選んで、すぐに注文できます」（第 4 版初稿，STEP 3） | 第 4 版审阅改为「入金が反映されたら、銘柄を選んで注文します。…」 | 「すぐに」没有依据，见正文表 STEP 3 一行 |
+| 小标题「手数料は、シンプルに」（第 4 版初稿，特点 03） | 第 4 版审阅改为「手数料は、合計の料率を明示」，主会话复核后改为「手数料は、テイカー0.055%・メイカー0.025%」 | 见正文表特点 03 小标题一行 |
+
 ### 刻意不写的卖点
 
 | 卖点 | 原因 |
 | --- | --- |
-| No KYC | 对日本居民是监管红旗；facts 标为 `safeToClaim: false` |
+| No KYC | 对日本居民是监管红旗；facts 标为 `safeToClaim: false`。也不写「だけ」类的注册门槛说法（如「登録はメールアドレスだけ」），它在日本读者眼里等于不需要本人确认；写成「メールアドレスで登録できます」 |
 | 杠杆倍数 | 国内个人上限 2 倍，高杠杆宣传最容易被认定为劝诱 |
 | 股票、指数、金属永续，日经 225/JP225 | 涉及有价证券关联衍生品；日经是商标；JP225 是第三方 HIP-3 市场 |
-| 「100以上の市場」 | 应用里的市场列表包含 HIP-3 股票和指数永续 |
+| 「100以上の市場」 | 应用里的市场列表包含 HIP-3 股票和指数永续，「市場」会把它们算进去。第 4 版写的是「Hyperliquidの100以上の無期限先物」与「100以上の銘柄」，数的只是主 dex 的永续（2026-10-24 未下架 178 个，闸门 8 复核） |
 | 刷卡或日元存款 | [卡存款清单](../../privy-card-funding-launch-checklist.md) CF-11 未通过，规定通过前不对外宣传；日本覆盖情况未核实 |
-| 邮箱钱包自动、免 gas 存款 | [ADR 0040](../../adr/0040-automatic-email-wallet-deposits.md) 没有真实主网验收，页面必须开着，赞助额度很小。STEP 2 外部钱包需要 ETH 的一句会隐含这一点，处理见闸门 9 |
+| 邮箱钱包自动、免 gas 存款 | [ADR 0040](../../adr/0040-automatic-email-wallet-deposits.md) 没有真实主网验收，页面必须开着，赞助额度很小。STEP 2 外部钱包需要 ETH 的一句会隐含这一点，处理见闸门 9。特点 03 的「注文ごとのガス代はかかりません」只说下单，后面紧跟「入金・出金時の手数料（ネットワーク手数料を含む）」的提示，改文案时不得扩写到存款 |
 | 自动统一账户、Link mobile device | 没有真实账号或真机验收（[真机清单](../../mobile-phone-access-device-validation.md)） |
 | Earn、Vault 收益率、排行榜盈亏 | 借贷收益与集合投资风险，以及业绩误导 |
 | 推荐、奖励、空投、积分、限时 | 景表法赠品限制，也是金融厅眼中的劝诱信号 |
@@ -333,6 +423,7 @@
 | 与 Hyperliquid 官方应用比较 | 需要比较依据；只陈述事实 |
 | 首次提款激活费的具体金额 | 金额由协议返回（`docs/withdrawals.md`），写死会过时 |
 | 「入金反映まで画面を開いたまま」 | 写进邮件就等于宣传自动存款；放进客服 FAQ |
+| builder fee 的拆分与批准签名 | 第 4 版按运营方要求不在正文出现，页脚保留一行费用披露（「無期限先物の注文と現物の売却には、これに加えてSairnの手数料（約定金額の0.01%）がかかり…」） |
 
 ### 本次核对（2026-10-24，Agent 执行）
 
@@ -375,7 +466,54 @@
 - 这些都是浏览器渲染、源码阅读与脚本检查，不是邮件客户端测试；第 6 节 QA 矩阵仍一项未做。
 - 没有做：任何真实发送、种子邮箱测试、律师审阅、日本 IP 访问、用已同意与未同意两种地址实测 STEP 1 的签名、Outlook 中 VML 按钮的实际渲染。
 
-## 6 发送建议
+### 第 4 版证据核对（2026-10-24，Agent 执行）
+
+这一轮只核对 README 与第 4 版文案是否一致、证据是否存在，没有改三份邮件文件。
+
+- 文案来源：从 `email.ja.html` 去掉标签后的可见文字与 `email.ja.txt` 逐句取出第 4 版正文的每条主张，写进上面的正文表；第 1 节闸门里引用的日文句子都换成了现有文件里的原句。
+- 路径：正文表与页脚表引用的仓库路径全部用 `ls` 确认存在；用 `rg` 与 `sed` 读过所引的行或字段：`geo.ts`（`JP` 已删，`git log` 为 `712df93c`）、`config/trade.ts`、`config/hyperliquid.ts`、`config/privy.ts`、`config/i18n.ts`、`config/layout.ts`、`config/desktop-nav.ts` 第 26 行、`mobile-nav-drawer.tsx` 第 251 行、`trade-header.tsx` 第 79 行、`trade-panel.tsx` 第 316 行、`use-legal-gate.ts` 第 74 行、`registries/exchange.ts` 第 33 行、`use-markets.tsx`（`isDelisted`）、`market-catalog-info-client.ts`、`tradingview-overlays.ts`、`pwa-install.tsx`、`manifest.json`、`docs/runtime-guardrails.md` 第 830–831 行、`docs/cctp-deposits.md`、`docs/hyperliquid-signing.md` 的 Quick Reference、`docs/fee-display.md` 第 9–12 行、`docs/trading-onboarding.md` 第 684–686 与 691 行、`legal/terms.md` §1、§2、§6.1 的标题、`legal/riskDisclosure.md` 的节标题、`brand/brand.json` 的域名与客服邮箱，以及官网的 `faq.ts`、`Fees.astro`、`FeatureSpeed.astro`、`Trust.astro`、`Markets.astro`。
+- 公开 API（只读）：`meta` 的 `universe` 有 234 项，其中 178 项未下架。
+- HTML：43,443 字节；没有 `<script>`、`<form>` 与网络字体，唯一的图片是 `https://app.sairn.ai/brand/email-logo.png`（仓库里 6,085 字节、360×180 RGB）；`<head>` 里有两段 `<!--[if mso]>`；所有 `href` 的主机都是 `app.sairn.ai` 或 `sairn.ai`，另有 `mailto:` 与 `{{unsubscribe_url}}`。纯文本除 URL 与分隔线外最长 33 个全角位。
+- 发现：特点 03 的「独立した事業者が運営する市場では料率が異なります」是断定句，仓库的公式证明不了（正文表该行），建议改回「異なる場合があります」。第 4 版审阅已改回（三份文件），见下一小节。
+- 只对纯文本做了一次禁用词扫描（「無料」「必ず」「絶対」「最安」「業界」「今だけ」「口座開設」「日本語」「金融庁」「登録済」「認可」「KYC」「倍」「日経」「株」「VPN」「プロキシ」「ボーナス」「ポイント」等，没有命中）。
+- 没有做：运行时验证、真实发送、律师审阅、日本 IP 访问、第 6 节 QA 矩阵；没有重跑第 1–3 版那套日文与半角之间的空格检查和 HTML 与纯文本的逐句对照脚本。
+
+### 第 4 版审阅后的核对（2026-10-24，Agent 执行）
+
+- 仓库核对（读源码，不是运行时验证）：`user-menu.tsx` 第 169 行（手机「Connect」）与 `config/desktop-nav.ts` 第 40 行（桌面「Connect Wallet」）、`mobile-header-view.tsx` 与 `top-nav-view.tsx`（按钮在头部右侧）、`wallet-modal.tsx` 第 210 行（「Log in with Email」）、`top-nav.tsx` 第 188 行与 `use-button-content.ts` 第 87 行（「Deposit」）、`funding-address-card.tsx` 第 97 行（邮箱存款画面显示存款地址）、`config/trade.ts` 第 17、37 行与 `domain/trade/orders.ts` 第 276 行（10 美元、TWAP 100 美元）、`lib/trade/order-types.ts` 第 35 行与 `packages/hl-react/src/capabilities.ts`（TP/SL 只在永续的成行・指値下）、`trade-form-fields.tsx` 第 474 行与 `mobile-trade-view.tsx` 第 1030 行（TP/SL 在两种界面都挂载）、`tradingview-overlays.ts` 第 18 行、`domain/trade/fees.ts` 第 23、36 行（HIP-3 系数与 growth mode）、`market-catalog-info-client.ts`（读 `allPerpMetas` 与 `perpDexs`）、`legal/terms.md` §1.1、§1.3、§1.4 的标题、官网 `Hero.astro` 第 27–28 行。
+- 生成脚本改后重新生成 HTML：46,135 字节；没有 `<script>`、`<form>` 与网络字体；所有 `href` 与 `img src` 的主机都是 `app.sairn.ai` 或 `sairn.ai`，另有 `mailto:` 与两个占位符。
+- 文案脚本检查（HTML 可见文字取自去掉 `<head>`、隐藏预览与 MSO 条件注释后的正文；`<title>` 与隐藏预览单独查）：
+  - 主题与预览文本的全角折算见第 3 节（A 21.5、B 24、C 25.5；预览 A 42.5、B 36、C 33.5）；
+  - 纯文本除 URL 与分隔线外每行最长 33 个全角位；
+  - HTML 可见文字、纯文本、`<title>` 与隐藏预览里都没有日文与半角字母、数字之间的空格，没有半角片假名或全角英数；除「©」外没有 CP932 编码不了的字符；纯文本里没有 `utm_`；
+  - 禁用词扫描（四处都查）：「KYC」「倍」「株」「指数」「金属」「日経」「JP225」「カード」「円で」「自動入金」「ガス代無料」「ガス代不要」「ボーナス」「キャッシュバック」「ポイント」「エアドロップ」「今だけ」「期間限定」「本日限り」「今すぐ」「Binance」「Bybit」「VPN」「プロキシ」「口座開設」「日本語対応」「日本語サポート」「金融庁」「登録済み」「認可」「No.1」「最安」「業界最低」「業界初」「無料」「必ず」「絶対」「安全確実」「いつでも」「すぐ」「シードフレーズの準備」，以及不在「いただけ」里的「だけ」，全部零命中；另查「自動」「保証」「ログイン不要」，只在页脚的 ADL、法定货币不受保证、免登录退订三处出现，都是原有的风险或法定表示；
+  - HTML 与纯文本逐句比对：HTML 的每一句都在纯文本里；不同之处只有格式：按钮在纯文本里写成「▼按钮名」加不带参数的 URL，特点编号与 STEP 编号的写法不同，首屏按钮下方的「※取引画面は英語表示です。ご利用の通信環境によっては…」在 HTML 里是同一个 ※ 下的两句，在纯文本里按审阅意见拆成两个 ※。
+- 无头 Chromium（Playwright，macOS 字体）：375px 宽时页面宽度等于视口，首屏按钮上沿约 465px（审阅前约 507px，812px 高的视口内），Logo 显示为 120×60；次级按钮在 375px 宽时撑满（321×48px），600px 以上为 210×48px；深色模式下次级按钮为透明底、`#edeef2` 文字与边框。320px 宽时页面宽度等于视口。
+- 发现但没有改（不在审阅范围内）：去掉 `<style>`、320px 宽时页面宽 342px。第 4 版初稿就是这样（主按钮 `min-width:180px` 加左右 32px 内边距，再加卡片与外层内边距），第 1 轮曾修到 320px；次级按钮没有设 `min-width`，没有让它更宽。要恢复，需要在生成脚本里降低主按钮的 `min-width` 或内边距，并重新确认 600px 以上的按钮外观。
+- 主会话最后修订（同日）：特点 03 小标题改为数字「手数料は、テイカー0.055%・メイカー0.025%」（见第 2 节「第 4 版审阅的处理」末行）；主按钮内联样式改为 `min-width:140px;padding:17px 28px`。改后再查 320px：带样式与去掉 `<style>` 都是 320px，上面这条溢出已修。定位过程中发现真正撑宽的是费率小标题里不换行的「テイカー0.055%・メイカー0.025%」（299px），已拆成两个不换行片段，允许在「・」处折行。375px 宽时首屏按钮上沿约 490px。HTML 46,133 字节；逐句对照、禁用词、日文与半角之间的空格、半角片假名检查都是零。
+- 没有做：任何真实发送、种子邮箱测试、律师审阅、日本 IP 访问、第 6 节 QA 矩阵、Outlook 中两个 VML 按钮（含次级按钮的 1.5px 描边）的实际渲染，以及在真实界面上走一遍 STEP 1–3 所写的点击顺序（闸门 9）。
+
+## 6 发送建议与转化率方案
+
+### 转化率方案
+
+发一封邮件的成本高，目标是让「送达→打开→点击→注册→首次存款→首笔交易」每一步都尽量高。按影响大小排序：
+
+1. **投递率先于文案**：进了垃圾箱，文案再好也没有转化。SPF、DKIM、DMARC 对齐，独立子域，分批预热，一键退订（闸门 6）。
+2. **先发最高意向的人群**：名单分三层。(a) 在日本注册过、因地区限制无法交易的账户，他们本来就想交易，最适合主题 A；(b) 在官网或应用内主动订阅的人；(c) 其余。先发 (a)，点击率达标再扩到 (b)。注意 (a) 的邮箱来自 Privy 登录，不等于营销同意（闸门 4）：发布后先在应用内对日本访客展示默认不勾选的订阅选项，只发给勾选的人；或者在律师确认后，按施行規則第2条发一封征求同意的邮件。
+3. **落地阻力比文案影响更大**，按单项收益排序：
+   - **日语界面**：现在只有英文（`apps/terminal/src/config/i18n.ts`，没有 `ja` 目录）。先为注册、存款、下单三个流程加日语，是单项提升最大的改动；做完之前，邮件如实写明英文显示。
+   - **存款指南**：Arbitrum 上的 USDC 是最大的流失点，日本国内交易所不一定支持。发送前做一页日语存款指南（从国内交易所或钱包取得 Arbitrum USDC 的路径），在 STEP 2 下加链接。
+   - **iCloud 专用代理**：开启 Private Relay 的 iPhone 用户被判为代理，点进来后无法交易（闸门 2）。是否放行属于产品与法律决定，但它会直接吃掉点击。
+   - 按钮落地页保持 `/trade/BTC`：未连接时页面上就有连接入口，不要改指向首页（多一次跳转）。
+4. **主题测试**：A、B 各 5% 先发，24 小时后按独立点击率选胜者发给其余（第 3 节）。
+5. **未打开者补发**：首发 72 小时后，对未打开者换主题 C「【Sairn】ウォレットがなくても、メールで登録できます」补发一次，预览文本同时换成 C 的那一行（第 3 节）；不补发给已点击或已退订的人。C 讲的是「没有钱包也能开始」：对没打开过的人，这是首发主题之外最有新意的角度，也不再用「今日から」这类到补发时已不成立的时间说法。
+6. **发送时间**：周二到周四 21:00–22:30（日本时间）。
+7. **让转化可衡量**：应用的 `validateSearch` 会丢掉 UTM（闸门 6），终端也没有分析工具，所以现在只能从 ESP 统计点击、从 CloudFront 日志看落地。要衡量注册、首次存款与首笔交易，需要在首次访问时把活动参数存进会话，并在这三个事件发生时上报。这是产品侧的后续任务，也是第 7 节行为触发邮件的前提。
+8. **刻意不用的手段**：入金奖励、返现、积分、空投、「今だけ」式的限时紧迫感。景表法的赠品限制与金融厅的劝诱认定都针对这类手段，日本交易者也普遍把它们看成诱饵（第 5 节「刻意不写的卖点」）。
+
+### 发送执行
+
 
 - 时间：周二到周四 21:00–22:30（日本时间）。避开周一、周五和节假日。多数打开发生在第一个小时。
 - 分批：
@@ -401,22 +539,18 @@ QA 矩阵（种子邮箱，发送前）：
 
 ## 7 后续邮件编排
 
-每一封都要单独通过第 1 节的全部闸门和律师审阅，并且只发给同意范围包括这类邮件的人。
+每一封都要单独通过第 1 节的全部闸门和律师审阅，并且只发给同意范围包括这类邮件的人。按行为触发的邮件需要第 6 节第 7 条的事件数据，做完之前只能按 ESP 的打开与点击分组。
 
-1. **轻松上手改写版**：第一封发出 3–5 天后，发给点击过但没有连接的人。
-   - 用 STEP 1/2/3 讲清楚怎样取得 Arbitrum 上的 USDC。最好先写一篇经过验证的英文或日文存款指南，再链接过去。
-   - 不写「簡単」「3ステップで」；主题和预览文本不用「シードフレーズ」「確認コード」。
-   - 不宣传自动存款。
-2. **专业工具精简版**：发给已经交易过或互动多的人。
-   - 只保留 TWAP、スケール和图表叠加两个卖点。
-   - 不写市场数量。资金费率比较按闸门 1 律师对第一封的结论处理：律师不同意保留时，第一封与后续邮件都删掉这一条。
-   - 配置相关的数值发送当天复核。
-3. 频率：同一个人每月不超过两封营销邮件。每封都附同样的页脚和退订方式。
+1. **未打开者补发**：首发 72 小时后，主题 C「【Sairn】ウォレットがなくても、メールで登録できます」（第 6 节第 5 条）。
+2. **点击但未注册**：24 小时后发一封短邮件，只讲邮箱注册（首屏「ウォレットをお持ちでない方も、メールアドレスで登録できます」与 STEP 1「メールアドレスで登録」），一个按钮；不写「だけ」类的说法（第 5 节「刻意不写的卖点」）。
+3. **注册但未存款**：两天后发存款指南。这是漏斗最大的缺口，前提是第 6 节第 3 条的日语存款指南页已上线；不宣传自动存款，不写「簡単」。
+4. **存款但未交易**：发专业工具版，只讲 TWAP、スケール、TP/SL 和清算价图表，配置相关的数值发送当天复核。第一封删去的主屏幕添加一句放在这里，写作「ホーム画面に追加すれば、アプリのように開けます（iPhoneはSafariの共有メニューから。インターネット接続が必要です）。」，不写「すぐ」（证据见第 5 节「第 4 版正文已删除的主张」）。不写资金费率比较：比较对象 Binance 与 Bybit 都上过金融厅警告名单（第 4 版审阅从第一封删除的理由同样适用）。
+5. 频率：同一个人每月不超过两封营销邮件。每封都附同样的页脚和退订方式。
 
 与这几封邮件无关、但应当排期的后续：
 
-- **邮件专用 Logo**：现在的 `email-logo.png` 是不透明的白底图，放在白色的 `logo-card` 里。Apple 邮件与 Outlook.com 靠媒体查询保持白卡，但 Gmail 应用的强制反色会把单元格背景压暗、图片仍是白色，结果是深色卡片上一块 180×90 的白方块。应通过品牌工具（`pnpm brand:derive-icons`）生成一张四角透明、自带留白圆角白底的邮件 Logo，让它在任何反色下都像一枚有意的徽章；不得手改 `brand/web`（`docs/brand-assets.md`）。
-- **任务记录**：[2026-10-24 日本交易地区与营销邮件](../../work-memory/sessions/2026-10-24-japan-trading-region-and-email.md) 已创建，记录了本目录、三轮修订与复核；各闸门的证据以追加条目的方式记入。
+- **邮件专用 Logo**：现在的 `email-logo.png` 是不透明的白底图，放在白色的 `logo-card` 里。Apple 邮件与 Outlook.com 靠媒体查询保持白卡，但 Gmail 应用的强制反色会把单元格背景压暗、图片仍是白色，结果是深色卡片上一块 120×60 的白方块（第 4 版审阅前是 180×90）。应通过品牌工具（`pnpm brand:derive-icons`）生成一张四角透明、自带留白圆角白底的邮件 Logo，让它在任何反色下都像一枚有意的徽章；不得手改 `brand/web`（`docs/brand-assets.md`）。
+- **任务记录**：[2026-10-24 日本交易地区与营销邮件](../../work-memory/sessions/2026-10-24-japan-trading-region-and-email.md) 已创建，记录了本目录、各版修订与复核；各闸门的证据以追加条目的方式记入。
 
 ## 8 法规调研摘要与来源
 
@@ -446,7 +580,7 @@ QA 矩阵（种子邮箱，发送前）：
 
 - No.1、最安一类说法需要依据，没有依据就是优良误认或有利误认（第5条）。
 - 消费者厅 2024-09-26 的 No.1 表示调查报告对依据提出了要求。
-- 自 2024-10-01 起，著しい优良误认与著しい有利误认都可以不经措置命令直接处以 100 万日元以下罚金（第48条第1号、第2号），另有措置命令（第7条）与课征金（第8条）。调研只引用了第2号，第1号是第 2 轮审阅补充的，同样要律师确认。本邮件的「プロ仕様のチャート」「他の主要な取引所」「手数料の内訳を、約定ごとに確認できます」这类质量表示属于第1号的范围，不只是行政风险。
+- 自 2024-10-01 起，著しい优良误认与著しい有利误认都可以不经措置命令直接处以 100 万日元以下罚金（第48条第1号、第2号），另有措置命令（第7条）与课征金（第8条）。调研只引用了第2号，第1号是第 2 轮审阅补充的，同样要律师确认。第 4 版的「プロ仕様のツールを、スマホでも」这类质量表示属于第1号的范围，不只是行政风险（第 4 版初稿里的「ほかの主要な取引所とのファンディングレート比較」已在审阅时删除，「手数料は、シンプルに」已改为「手数料は、合計の料率を明示」）。
 - 赠品受第4条限制。
 - 隐性营销属于第5条第3号指定的不当表示。
 
