@@ -390,6 +390,7 @@
 
 当前规范：[docs/brand-migration-plan.md](../../docs/brand-migration-plan.md)
 
+- [官网行业调研与重建规划](sessions/2026-10-24-website-research-and-rebuild-plan.md) — 2026-10-24；已整理，验证见正文。运营方认为官网 sairn.ai 太传统，要求用现代前端与加密原生技术重做。Agent 调研约 40 个同行站点、动效技术与仓库约束（docs/website-industry-research-2026-10.md），按三个设计方向与三份评审写出拟议、未批准的重建规划（docs/website-rebuild-plan.md：保留 Astro 静态站，首屏用 Worker 里的 Canvas 2D 实时行情画布，fail-closed 数据层与 REST 权重上限，主张登记表，阶段 0 先删英文站与日本邮件矛盾的说法并补风险句，默认关闭的日语页，日本邮件依赖的 sairn.ai 能力与 19 项待决事项），同日按 25 条评审意见核对后修订。只有文档：未改官网代码，未运行官网测试或构建，未发布；三个方向与三份评审的原文未取得，原始调研证据只在本机 .worklog。
 - [更换 Claude 账号的交接：私有记忆整理进仓库，新增 Agent 工作手册，清理过时的架构说法与发布状态](sessions/2026-10-08-agent-docs-handover.md) — 2026-10-08；已整理，验证见正文。用户要求整理开发文档，尤其是 agent 读的文档，保证换 Claude 账号后记忆不丢，现行文档不再引用旧架构与旧品牌。逐份核对本机 76 份 Claude 私有记忆：持久经验写进新的 docs/agent-handbook.md（协作约定、工作树、CI、Codex 审查、发布要点、换账号清单），产品知识写进手续费展示、协议实测行为、图表 K 线闸门等归属文档，AGENTS.md 加「Operator collaboration」指针节；改正 README、codex-onboard、agent.md 与代码规范里不存在的 hook 名、运行时 SSR、Node 24 等旧说法，替换签名文档里的旧实施方案，刷新 ADR 目录、文档地图和 16 份 ADR、8 份专题文档的发布状态。本文还给出 2026-10-08 的状态快照、待办汇总与每份私有记忆的去向。只做文档与链接检查，未运行应用测试。
 - [CloudFront 生产发布 p28：存款按需切链、订单按钮不再要求切到 Arbitrum、gatu.ai 域名组退役（阶段 5.1）](sessions/2026-10-08-cloudfront-release-p28.md) — 2026-10-08；已验证，范围见正文。用户要求把最新代码部署到生产。先把 #80（存款按数字比较链 ID、点击存款时按需切链；订单按钮去掉 Switch to Arbitrum 预拦截，外部钱包签名客户端按连接自身的链取用）、#73（gatu.ai 域名组与过渡头退役，p25 清理代码）、#79（agent 文档迁入仓库）合入 dev，晋升 PR #87 七项 CI 全绿合入 main（d74dd616）。发布前核对切换方案阶段 5.1 前提：三条分发都没有 gatu.ai 别名，API 源站请求策略含 X-Sairn-Forwarded-Host（ETag ETVPDKIKX0DER 未变）。在仓库外工作树 gatu-release-p28 用 Node 22.15.0 从 d74dd616 构建 cloudfront-2026-10-08-p28（开关同 p27），按 functions → lambda（版本 13）→ sync（闸门 sponsored-mainnet-deposits=on mobile-pairing=off mainnet-card-funding=on，1,643 个文件，发布标记一致）→ 两次失效 → verify 主网 15/15、测试网 16/16（签名 POST allowed）→ csp-coverage 33 步 0 违规。线上不再识别 gatu 主机；阶段 5.2–5.4 的线上步骤未做；真机验收未做。
 - [gatu.ai 退役收尾：阶段 5.2 执行、5.3/5.4 权限不足、旧发布工作树清理](sessions/2026-10-08-gatu-retirement-cleanup.md) — 2026-10-08；已整理，验证见正文。p28 发布后用户说「gatu 相关的产物可以全部清理掉了，不需要等了」。只读核对后执行：5.2 从 API 源站请求策略删除 X-Gatu-Forwarded-Host（ETag ETVPDKIKX0DER → E3UN6WX5RRO2AG，9 个头，/api/geo 仍 200）；5.3 命令行被 lambda:UpdateFunctionConfiguration 拒绝，随后按用户要求在其 Chrome 的 Lambda 控制台改名为 SAIRN_TRUST_VIEWER_ADDRESS=true（保留 IPDATA_API_KEY），读回成功、geo 正常；5.4 命令行被 acm:DeleteCertificate 拒绝、浏览器操作被安全分类器拒绝，用户自己删除了两张 gatu 证书，读回只剩 sairn.ai。删除发布工作树 gatu-release-p24、p25，保留 p26 与 p28。未做：Cloudflare 的 gatu 验证与解析记录、临时 IAM 策略 gatu-edge-domain-cutover 的摘除（无权限读取）。
@@ -419,12 +420,14 @@
 当前规范：[docs/adr/0042-japan-allowed-trading-region.md](../../docs/adr/0042-japan-allowed-trading-region.md) · [docs/marketing/jp-launch-email/README.md](../../docs/marketing/jp-launch-email/README.md)
 
 - [日本改为允许交易地区与日本用户营销邮件草案](sessions/2026-10-24-japan-trading-region-and-email.md) — 2026-10-24；已整理，验证见正文。运营方要给位于日本的用户群发营销邮件（当前为第 4 版利益导向文案），并决定日本改为允许交易地区：从 geo.ts 的受限清单删除 JP（ADR 0042，新契约测试钉住清单），并在 docs/marketing/jp-launch-email/ 写了日语 HTML、纯文本、中文对照和带 10 道发送闸门的策划说明。Agent 的法规调研认为未登记的 Sairn Corp. 用日语向日本居民推广很可能构成「勧誘」，删除地区限制也拿掉了取引防止措置，所以 ADR 与邮件都要求先取得日本律师的书面意见再发布、再发送。未合入 dev、未发布、未发送；隐私政策、同意记录、发送基础设施与真实日本 IP 验收都未做。
+- [官网行业调研与重建规划](sessions/2026-10-24-website-research-and-rebuild-plan.md) — 2026-10-24；已整理，验证见正文。运营方认为官网 sairn.ai 太传统，要求用现代前端与加密原生技术重做。Agent 调研约 40 个同行站点、动效技术与仓库约束（docs/website-industry-research-2026-10.md），按三个设计方向与三份评审写出拟议、未批准的重建规划（docs/website-rebuild-plan.md：保留 Astro 静态站，首屏用 Worker 里的 Canvas 2D 实时行情画布，fail-closed 数据层与 REST 权重上限，主张登记表，阶段 0 先删英文站与日本邮件矛盾的说法并补风险句，默认关闭的日语页，日本邮件依赖的 sairn.ai 能力与 19 项待决事项），同日按 25 条评审意见核对后修订。只有文档：未改官网代码，未运行官网测试或构建，未发布；三个方向与三份评审的原文未取得，原始调研证据只在本机 .worklog。
 
 ## 按记录日期检索
 
 | 记录日期 | 任务记录 | 来源任务 | 基线提交 | 状态 |
 | --- | --- | --- | --- | --- |
 | 2026-10-24 | [日本改为允许交易地区与日本用户营销邮件草案](sessions/2026-10-24-japan-trading-region-and-email.md) | 未取得任务标识，见正文 | `9ccb88c0` | 已整理，验证见正文 |
+| 2026-10-24 | [官网行业调研与重建规划](sessions/2026-10-24-website-research-and-rebuild-plan.md) | 未取得任务标识，见正文 | `32125377` | 已整理，验证见正文 |
 | 2026-10-13 | [p32 晋升前重定总量与桌面运行时包体基线](sessions/2026-10-13-p32-rebaseline.md) | 未取得任务标识，见正文 | `f50e21a8` | 已验证，范围见正文 |
 | 2026-10-13 | [按模块与风险的生产就绪审计：五路审查、按功能测试与两批修复](sessions/2026-10-13-production-readiness-audit.md) | 未取得任务标识，见正文 | `6525fd04` | 已验证，范围见正文 |
 | 2026-10-12 | [新账号自动设为统一账户（ADR 0041）：实现、三轮 Codex 审查与修复](sessions/2026-10-12-automatic-unified-account.md) | 未取得任务标识，见正文 | `c1a1e14e` | 已验证，范围见正文 |
