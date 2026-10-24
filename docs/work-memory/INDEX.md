@@ -414,10 +414,17 @@
 - [集成 PR：图表价格精度（ADR 0035）与邮箱静默建钱包（ADR 0033）合并进 dev](sessions/2026-10-04-integrate-chart-precision-silent-wallet.md) — 2026-10-04；已验证，范围见正文。图表精度与静默建钱包经 PR #77 集成，ADR 0033 的两项决定已由后续文档提交接续，随后随 p26 发布。原集成测试和构建范围保持；未补做浏览器、真实邮箱注册或独立集成审查。
 - [邮箱注册后静默创建钱包，协议弹窗不再与 Privy 窗口重叠](sessions/2026-10-02-silent-email-wallet-creation.md) — 2026-10-02；已验证，范围见正文。邮箱钱包静默创建与协议顺序修复已随 PR #77 集成、p26 发布；智能钱包 SIWE 关联签名与断开行为的两项决定于 2026-10-04 接续。原审查与模拟验证保留，真实邮箱注册验收仍缺；后续自动入金签名例外独立归属 ADR 0040。
 
+### 地区限制与市场推广
+
+当前规范：[docs/adr/0042-japan-allowed-trading-region.md](../../docs/adr/0042-japan-allowed-trading-region.md) · [docs/marketing/jp-launch-email/README.md](../../docs/marketing/jp-launch-email/README.md)
+
+- [日本改为允许交易地区与日本用户营销邮件草案](sessions/2026-10-24-japan-trading-region-and-email.md) — 2026-10-24；已整理，验证见正文。运营方要给位于日本的用户群发营销邮件，并决定日本改为允许交易地区：从 geo.ts 的受限清单删除 JP（ADR 0042，新契约测试钉住清单），并在 docs/marketing/jp-launch-email/ 写了日语 HTML、纯文本、中文对照和带 10 道发送闸门的策划说明。Agent 的法规调研认为未登记的 Sairn Corp. 用日语向日本居民推广很可能构成「勧誘」，删除地区限制也拿掉了取引防止措置，所以 ADR 与邮件都要求先取得日本律师的书面意见再发布、再发送。未合入 dev、未发布、未发送；隐私政策、同意记录、发送基础设施与真实日本 IP 验收都未做。
+
 ## 按记录日期检索
 
 | 记录日期 | 任务记录 | 来源任务 | 基线提交 | 状态 |
 | --- | --- | --- | --- | --- |
+| 2026-10-24 | [日本改为允许交易地区与日本用户营销邮件草案](sessions/2026-10-24-japan-trading-region-and-email.md) | 未取得任务标识，见正文 | `9ccb88c0` | 已整理，验证见正文 |
 | 2026-10-13 | [p32 晋升前重定总量与桌面运行时包体基线](sessions/2026-10-13-p32-rebaseline.md) | 未取得任务标识，见正文 | `f50e21a8` | 已验证，范围见正文 |
 | 2026-10-13 | [按模块与风险的生产就绪审计：五路审查、按功能测试与两批修复](sessions/2026-10-13-production-readiness-audit.md) | 未取得任务标识，见正文 | `6525fd04` | 已验证，范围见正文 |
 | 2026-10-12 | [新账号自动设为统一账户（ADR 0041）：实现、三轮 Codex 审查与修复](sessions/2026-10-12-automatic-unified-account.md) | 未取得任务标识，见正文 | `c1a1e14e` | 已验证，范围见正文 |
