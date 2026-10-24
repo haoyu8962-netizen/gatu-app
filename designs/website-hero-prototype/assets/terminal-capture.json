@@ -1,0 +1,46 @@
+{
+	"url": "https://app.sairn.ai/trade/HYPE/USDC",
+	"capturedAt": "2026-10-24T16:44:59.171Z",
+	"shots": [
+		{
+			"name": "desktop",
+			"file": "terminal-desktop.jpg",
+			"viewport": {
+				"width": 1440,
+				"height": 900
+			},
+			"dpr": 1.5,
+			"clip": {
+				"x": 0,
+				"y": 0,
+				"width": 1440,
+				"height": 732
+			},
+			"guardedTexts": 131
+		},
+		{
+			"name": "mobile",
+			"file": "terminal-mobile.jpg",
+			"viewport": {
+				"width": 390,
+				"height": 844
+			},
+			"dpr": 2,
+			"clip": {
+				"x": 0,
+				"y": 0,
+				"width": 390,
+				"height": 605
+			},
+			"guardedTexts": 58
+		}
+	],
+	"guards": [
+		"leverage: /\\b\\d+(\\.\\d+)?\\s?x\\b/i",
+		"HIP-3 market: /xyz:/i",
+		"wallet brand: /metamask|coinbase|okx|binance|walletconnect|rabby|phantom|rainbow/i",
+		"testnet: /testnet/i",
+		"PnL: /\\bpnl\\b|unrealized|realized/i",
+		"account summary: /portfolio value|account margin ratio|maintenance margin/i"
+	]
+}

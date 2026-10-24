@@ -5,8 +5,8 @@
 - 依据：[官网行业调研（2026-10）](website-industry-research-2026-10.md)（下称「调研」）；同日由工作流生成的三个设计方向与三份评审（转化与品牌、工程、合规与无障碍），由 Agent 完成，本文第 4 节记录其结论与取舍。
 - 任务记录：[官网行业调研与重建规划](work-memory/sessions/2026-10-24-website-research-and-rebuild-plan.md)，写明原始需求、方法、证据位置、评分与取舍和未决项。调研的原始证据（`research-web.json`、`research-digest.md`、Playwright 的 JSON 输出与采集脚本）脱敏后复制在本机 Git 忽略的 `.worklog/2026-10-24/c1e345bd-069b-4821-ab73-a7bd5e2b03b2/snapshot-website-research/`，不进远端。三个方向与三份评审的原文**未取得**：写记录时会话的临时目录与任务输出目录里都没有它们，第 4 节的评分（7.5、6、8 等）只能追溯到本文与任务记录，不能追溯到原文。
 - 本文不是实施记录，也不是法律意见。文中所有英文与日文文案都是草稿，需要运营方确认；面向日本的一切内容还需要日本律师的书面意见。
-- 本文没有改动任何代码，也没有运行任何测试；第 9 节的色差与对比度是 Agent 按 sRGB（D65）计算的 CIE76 ΔE 与 WCAG 对比度，未经设计方复核。
-- 首屏原型：[`designs/website-hero-prototype/`](../designs/website-hero-prototype/README.md)（2026-10-24，A 克制版与 B 大胆版两套配色，可在本机运行对比；不是生产代码）。
+- 本文没有改动产品代码，也没有运行仓库的测试或构建（第 10、23–25 节的测量只针对设计原型与公共接口）；第 9 节的色差与对比度是 Agent 按 sRGB（D65）计算的 CIE76 ΔE 与 WCAG 对比度，未经设计方复核。
+- 首屏原型：[`designs/website-hero-prototype/`](../designs/website-hero-prototype/README.md)（2026-10-24，A 克制版与 B 大胆版两套布局与配色，可在本机运行对比；不是生产代码）。第二轮修订（第 24 节）要求原型加入 Terminal / Live market 两个视图与录制海报冷启动，由主会话实现并记录实测。
 - 关联：[日本用户营销邮件](marketing/jp-launch-email/README.md) §1 闸门 1（官网与邮件的矛盾）、§5「刻意不写的卖点」、§6 转化率方案；[ADR 0042](adr/0042-japan-allowed-trading-region.md)（未发布）；[ADR 0028](adr/0028-brand-accent-colors.md)；[品牌迁移计划](brand-migration-plan.md) D2、D5 与 D12 的动效子项 (h)；[品牌标识与素材](brand-assets.md)；[官网 README](../apps/website/README.md)；[官网发布手册](../deploy/website/README.md)。
 
 ## 1 背景
@@ -20,13 +20,13 @@
 
 ### 目标
 
-1. 第一屏展示真实的产品与真实的 Hyperliquid 市场，而不是描述它们；五秒内让访客知道 Sairn 是什么、在哪里交易、怎样开始。
+1. 第一屏展示真实的产品与真实的 Hyperliquid 市场，而不是描述它们：产品窗口默认是 app.sairn.ai 未登录状态的真实截图（Terminal 视图），另一个视图是 Hyperliquid 公共行情的实时画布（Live market 视图，第 6 节）。五秒内让访客答得出三件事：Sairn 是什么、资金由谁持有、怎样登录；存款要准备什么由首次点击任务与一道不限时的追问检验。上线前用理解测试验证（第 16 节、第 19 节 V1）。
 2. 每个数字都有来源与时间，数据不可信时不显示（fail closed），绝不出现 '...'、'—'、'NaN'、'$0'、'Loading' 这类占位当作事实。
 3. 视觉上与 Hyperliquid 官方站明确区分，并在首屏写明 Sairn 是独立界面。
 4. 每条主张都能用仓库或条款证明，并由测试钉住；风险句紧贴每一个进入应用的按钮。
 5. 页面轻：手机首屏交互前 ≤250 KB。调研中同行首页的单次加载为 0.76–12.6 MB（桌面 1440 宽、不限速、只算首屏加载，不含滚动与视频播完，口径不一，见调研第 3 节与第 4 节第 8 条）；那不是手机首屏交互前的数字，所以本规划不写「轻一个数量级」之类的比较。
 6. 服务存款这一步，而不只是点击：首个英文版本就带 Arbitrum USDC 存款指南。
-7. 在现行隐私政策下可衡量转化；需要改政策的手段明确列出，不默认采用。
+7. 在现行隐私政策下可衡量：上线前测首屏是否被看懂，上线后看到达趋势（第 16 节）；需要改政策的手段明确列出，不默认采用。
 8. 日语页按日本惯例原生撰写、预先建好，闸门满足前不上线。
 
 ### 非目标
@@ -49,7 +49,7 @@
 ### 核心信息
 
 - 一句话：Sairn 是 Hyperliquid 永续与现货的独立网页终端，可以用邮箱或自己的钱包登录，资金留在自己的 Hyperliquid 地址。
-- 品牌口号 'See the market clearly. Decide for yourself.' 保留，但不作 H1：首屏的实时市场让「看清」成立，可证明的签名与托管事实让「自己决定」成立。
+- 品牌口号 'See the market clearly. Decide for yourself.' 保留，但不作 H1，第二轮修订后也不再作首屏眉标题（眉标题改为独立身份，第 6 节）：Live market 视图让「看清」成立，可证明的签名与托管事实让「自己决定」成立。口号放在首屏以下的哪一处（例如第 07 区块结尾 CTA 的标题）随 D7 定。
 
 ### 主张登记表
 
@@ -88,12 +88,41 @@
 | Live Window（产品即首屏） | 首屏是只读的终端片段（价格条、图表、订单簿），点 CTA 时「展开」进终端；构建时快照；全屏点阵着色器 | 7 | 7.5（胜出） | 6.5 |
 | Plain Sight（编辑式信任，日本优先） | 双主题编辑排版，每条主张带 ※ 脚注，DOM 行情表，原生日语版 | 5.5 | 6.5 | 7.5 |
 
-### 选定：Open Book 为底，嫁接另两个方向的部件
+上表是第一轮的原始分数，保留作历史记录（原文未取得，见开头）。
 
-两份评审选 Open Book，工程评审选 Live Window。本规划以 Open Book 为底，按三份评审的嫁接清单与必改项调整：
+### 加权重评（第二轮修订，2026-10-24）
+
+GPT 审查 S2 指出上表不公平：Live Window 因可以单独删掉的实现缺陷（点阵着色器、所有格 H1、6 小时清空的快照）被整体否决，A/B 也只是同一方向的两个变体。按 S2 建议、本轮采用的权重重评：产品理解 30%、差异记忆 25%、现代感 20%、手机 15%、维护 10%。规则：
+
+- 每个方向按它去掉可删缺陷之后的最佳实现打分：Live Window 是未登录终端的真实截图加只读行情片段，不带着色器；Open Book 是带录制海报冷启动与灰阶热度的画布；Plain Sight 是双语编辑排版加 DOM 行情表。
+- A/B 是 Open Book 的两个变体，不作为方向比较；它们的选择放在方向确定之后。
+- 分数是 Agent 的判断（1–10），不是用户测试结果。V1（第 19 节）校正产品理解；现代感与差异记忆只有方向性证据；维护分仍是估计。
+
+| 方向（最佳实现） | 产品理解 ×0.30 | 差异记忆 ×0.25 | 现代感 ×0.20 | 手机 ×0.15 | 维护 ×0.10 | 加权合计 |
+| --- | --- | --- | --- | --- | --- | --- |
+| Live Window | 8 → 2.40 | 5 → 1.25 | 6 → 1.20 | 7 → 1.05 | 7 → 0.70 | **6.60** |
+| Open Book | 5 → 1.50 | 7 → 1.75 | 8 → 1.60 | 5 → 0.75 | 4 → 0.40 | **6.00** |
+| Plain Sight | 6 → 1.80 | 4 → 1.00 | 3 → 0.60 | 7 → 1.05 | 8 → 0.80 | **5.25** |
+
+打分理由：
+
+- 产品理解：真实终端截图直接展示访客将要用的图表、盘口与下单区；Open Book 展示的是 Hyperliquid 的市场，窗口说明还写着 'not a terminal feature'（L1、S1）；Plain Sight 靠文字与表格说明，没有产品画面。
+- 差异记忆：交易终端截图彼此相似，Hyperliquid 自己的前端也是这种样子；Open Book 的时间 × 价格画面更容易被记住，但仍是通用金融语言（V7）；浅色编辑排版正是 Hyperliquid 2026-08 改版的样子。
+- 现代感：实时画布最高；静态截图中等；编辑排版是运营方要离开的风格。
+- 手机：手机终端截图本身就是窄屏产品证明；Open Book 的画布需要高度，第一轮原型在 390×844 下首屏露出的画布为 0（第 23 节）；Plain Sight 的文字与表格重排良好。
+- 维护：Open Book 要维护 Worker、渲染器、数据客户端与海报管线；Live Window 只要截图管线与每次发布重拍；Plain Sight 最省。
+
+结论：没有一个方向在全部维度占优。产品理解的权重最高，Live Window 的最佳实现在加权合计上领先；Open Book 在差异记忆与现代感上领先，正是运营方「不要传统」的诉求。所以本轮把两者合成一个首屏：默认视图是 Live Window 方向的最佳实现（Terminal 截图），第二视图是 Open Book（Live market）。默认视图由决定 D20 确认。V2、V3 的结果对应哪一种首版产物，见第 19 节「验证结果与首版产物」表；任何一种产物里 Terminal 视图都不受影响。
+
+组合（Terminal 默认 + Live market 第二视图，第二轮审查 S2、S-N1 后补）：上表只给三个单独方向打分，组合本身没有分数。它的维护分 ≤4，因为截图管线与 Worker、渲染器、数据客户端、海报管线两套都要维护；差异记忆与现代感取决于访客能否发现第二视图，默认访客只看到静态截图。示意计算（Agent 判断）：没有人发现第二视图时，差异记忆与现代感按截图的 5、6 计，维护按 4 计，加权约 6.30，低于 Live Window 单独的 6.60。所以组合是否保留，取决于 V1 的第二视图发现率与现代感比较（第 16 节，只记录、不设门槛）；推荐两项不都指向正面时退为单视图，由 D20 定。
+
+### 选定：真实终端预览为默认视图，Open Book 为第二视图，嫁接 Plain Sight 的部件
+
+第一轮两份评审选 Open Book，工程评审选 Live Window，本规划原以 Open Book 为底。第二轮修订按上面的重评改为：首屏产品窗口默认展示未登录终端的真实截图（来自 Live Window 方向），Open Book 作为同一窗口里的 'Live market' 视图保留。其余按三份评审的嫁接清单与必改项调整：
 
 - **来自 Live Window**：
-  - 首屏放可辨认的终端元素：价格条、24h 迷你走势、前五档盘口，用终端的表面色与订单簿令牌；
+  - 首屏默认视图是 app.sairn.ai 未登录状态的真实截图（第 6 节；截图来源待决定 D21）；
+  - Live market 视图放可辨认的终端元素：价格条、24h 迷你走势、前五档盘口，用终端的表面色与订单簿令牌；
   - 主按钮的名称与链接跟随所选市场；
   - 结构快照让构建保持离线、可复现；
   - 截图采集管线带 DOM 内容守卫；
@@ -115,13 +144,13 @@
 
 | 被拒的设计 | 原因 |
 | --- | --- |
-| Live Window 整体 | 品牌没有辨识度（石墨底、薄荷只用于焦点）；全屏点阵着色器是 Hyperliquid 自己的插画语言（粒子、点阵），放在文字背后还违反前庭安全；H1 'Hyperliquid's order book, in your own account.' 用所有格，暗示归属；构建快照超过 6 小时就被 JS 清空，几乎每个访客都会看到数字先出现再变空 |
+| Live Window 的具体实现（第二轮修订前写作「Live Window 整体」） | 品牌没有辨识度（石墨底、薄荷只用于焦点）；全屏点阵着色器是 Hyperliquid 自己的插画语言（粒子、点阵），放在文字背后还违反前庭安全；H1 'Hyperliquid's order book, in your own account.' 用所有格，暗示归属；构建快照超过 6 小时就被 JS 清空，几乎每个访客都会看到数字先出现再变空。第二轮修订：这些都是可以单独删掉的实现缺陷（S2），「产品即首屏」本身以 Terminal 截图视图被采用（上面的重评） |
 | Plain Sight 整体 | 不满足运营方「不要传统」的要求：编号小节、细线与脚注边栏正是要离开的编辑风；paper #F5F4EE（C*ab 3.1）与 Hyperliquid 的 #f8f9f9（C*ab 0.4）同为近白中性色，按第 9 节规则第 3 条它们之间的 ΔE 没有意义，问题在于浅色编辑页本身正是 Hyperliquid 2026-08 改版的样子；把琥珀色当界面强调色与 ADR 0028 决策 6 冲突；浅色营销站进入深色终端会断开；`?ref=` 参数读起来像推荐计划 |
 | Open Book 原稿里的琥珀「决策线」 | ADR 0028 测得琥珀与警告色 ΔE 只有 3.9，且 Logo 颜色不是界面强调色；动效令牌里琥珀还是 `pending` 色。默认改用中性墨色线，用琥珀需要先修订 ADR 0028（决定 D5） |
 | Open Book 原稿的青色热度梯度（#0F1A1F → #2B5055 → #A5BFBC → #F4F8F4） | #2B5055 与 Hyper Foundation 的 #23524C ΔE76 只有 8.3；青色光场叠在青黑底上，呼应 Hyperliquid 的「深绿底上的薄荷粒子」。改为中性灰梯度（第 7 节） |
 | WebGL2 主渲染器与两个渲染器之间的像素比对测试 | 工程评审：首屏核心用 Canvas 2D 按数据事件重绘即可；双渲染器加倍维护，无头 SwiftShader 下的像素比对容易不稳。WebGL2 只在实测证明需要时再加（第 7 节） |
 | 点击 CTA 时把窗口「展开」到全屏再进入终端 | 合规评审：点击触发的全视口缩放属于前庭触发；工程评审：要处理修饰键、中键、bfcache 恢复，换来的只是装饰。连续性改由颜色承担：首屏窗口与终端启动画面同为 #0F1A1F |
-| 把带日期的价格快照烘焙进 HTML | 发布靠手工，HTML 里的价格可能是几周前的；工程与合规评审都要求只提交结构快照。爬虫与无 JS 访客看到的是静态主张与标明 'Recorded' 的海报 |
+| 把带日期的价格快照烘焙进 HTML | 发布靠手工，HTML 里的价格可能是几周前的；工程与合规评审都要求只提交结构快照。爬虫与无 JS 访客看到的是静态主张与标明 'Recorded' 的海报（第二轮修订后，无 JS 时首屏是带来源与 UTC 日期说明的 Terminal 截图，第 7 节回退阶梯） |
 | 页面级暂停偏好写进 localStorage | Cookie 政策只覆盖 app.sairn.ai；在它覆盖 sairn.ai 之前，官网不写任何浏览器存储 |
 | 以「每周首次出现的交易地址」为北极星指标 | 需要保存地址历史，隐私政策 §3 没有这种用途；改用聚合总量，地址级指标等政策更新与法律审阅 |
 | 首屏全宽画布放在文字背后、Pause 偏好跨页记忆、`deviceMemory` 门控 | 前庭安全与可读性；存储同上；Safari 没有 `deviceMemory` |
@@ -132,10 +161,10 @@
 
 | 编号 | 必改项 | 处理 | 位置 |
 | --- | --- | --- | --- |
-| C1 | H1 改成具体的价值主张，口号移走，做五秒测试 | 采用；口号改作眉标题 | 第 6 节；阶段 2 验收 |
+| C1 | H1 改成具体的价值主张，口号移走，做五秒测试 | 采用；第一轮口号改作眉标题，第二轮修订后眉标题改为独立身份、口号移出首屏（D7）；五秒测试扩展为上线前的理解测试 | 第 6、16 节；第 19 节 V1 |
 | C2 | 热度梯度去青色；仿冒检查改为最小色差 | 采用中性灰梯度；有色相的颜色要求 ΔE76 ≥15，近黑近白的中性色豁免（理由见第 9 节） | 第 7、9 节 |
-| C3 | 修冷启动的空画布 | 用一次盘口快照与 `recentTrades` 播种，时间轴随数据增长，不把录制数据和实时数据拼进同一帧 | 第 7 节 |
-| C4 | 画布加一行图例与说明，注明是官网视图而非终端功能 | 采用 | 第 6、7 节 |
+| C3 | 修冷启动的空画布 | 第二轮修订：默认市场 BTC 先显示录制海报，连续 15 s 有效实时数据后以一次场景替换切到实时（数据区淡出、在不可见时整体替换、淡入，不交叉，第 7 节）；其他市场没有海报，用一次盘口快照与 `recentTrades` 播种，时间轴随数据增长；录制数据和实时数据绝不拼进同一视图 | 第 7 节 |
+| C4 | 画布加一行图例与说明，注明是官网视图而非终端功能 | 采用；第二轮修订后这句说明只用于 Live market 视图，Terminal 视图的说明是截图来源与日期 | 第 6、7 节 |
 | C5 | 服务存款这一步 | 首个英文版本带存款指南、按钮组里的「需要 Arbitrum 上的 USDC」一行与三步开始 | 第 5 节；阶段 2 |
 | C6 | 日本邮件发送前先修正英文站主张 | 阶段 0，含 Hero 与 Footer 两处 CTA 的风险句；邮件闸门 1 已列官网矛盾问题，是否把「阶段 0 已上线」设为硬性发送条件由运营方定 | 第 19 节；决定 D1、D18 |
 | C7 | 用琥珀前先修订 ADR 0028，并记录品牌迁移计划 D5 与 D12 (h) | 默认不用琥珀；三项都列为待决 | 第 9、21 节 |
@@ -145,7 +174,7 @@
 | C11 | 日本全程受闸门约束 | 默认关闭的构建开关等 | 第 12、18 节 |
 | C12 | 申请 Hyperliquid `/apps` 收录 | 与开发并行，由运营方提交 | 第 15 节；决定 D12 |
 | E1 | 不把易变数值烘焙进 HTML；只提交结构快照 | 采用；刷新快照与主张检查是发布手册步骤，不在 CI 里联网 | 第 10 节 |
-| E2 | 先测量再定预算；不订阅 `allMids` 流；手机走轻量路径 | 阶段 1 测量；卡片用逐币 `activeAssetCtx`；手机的一行最优买卖价用 WebSocket `bbo`，不轮询 REST；REST 权重按路径设上限，由调速器执行 | 第 10 节 |
+| E2 | 先测量再定预算；不订阅 `allMids` 流；手机走轻量路径 | 阶段 1 测量；市场表用逐币 `activeAssetCtx`；最优买卖价用 WebSocket `bbo`，不轮询 REST；REST 权重按路径设上限，由调速器执行。第二轮修订：桌面与手机共用同一条连接、同一组订阅（第 10 节的数据路径表），手机的轻量体现在一行最优买卖价、60 s 窗口与更低的帧率和 DPR | 第 10 节 |
 | E3 | 遵守按 IP 共享的限额，跨标签页只开一个连接 | 每页一个 Worker 持有的连接，用 Web Locks 在 sairn.ai 各标签页之间选出一个 | 第 10 节 |
 | E4 | 不在主线程做 WebGL；核心是 DOM 加按事件重绘的 Canvas 2D | 采用 | 第 7 节 |
 | E5 | 版本路径：先对齐 Tailwind；Astro 6 单独一个 PR；Astro 7 等全仓 Node 决定 | 采用 | 第 11 节 |
@@ -162,11 +191,11 @@
 | E16 | 更新发布手册：快照与主张检查、重拍截图与海报、删除下架市场页、真机记录 | 采用 | 第 19 节各阶段交付物 |
 | A1 | 英文站风险主张现在就删，删除不必等律师 | 阶段 0；发布由运营方批准，律师收到改动对照 | 第 19 节；决定 D1 |
 | A2 | 日语禁用词表禁的是登记类主张，不是「登録」这个词 | 采用；禁用清单放在 `tests/`，因为 copy-contract 会扫描 `src` 下所有文本 | 第 12 节 |
-| A3 | 凡链到 app.sairn.ai 的都算 CTA；日语页每个都要配风险句，否则去掉；英文首屏、结尾与市场卡组配 14px 以上正文色风险句 | 采用；英文只有页头页脚导航列入豁免清单；现站 Hero、Footer 与 404 的 CTA 风险句提前到阶段 0 | 第 6、18、19 节 |
+| A3 | 凡链到 app.sairn.ai 的都算 CTA；日语页每个都要配风险句，否则去掉；英文首屏、结尾与市场卡组配 14px 以上正文色风险句 | 采用（第二轮修订后的位置：首屏、三步开始、市场表与结尾）；英文只有页头页脚导航列入豁免清单；现站 Hero、Footer 与 404 的 CTA 风险句提前到阶段 0 | 第 6、18、19 节 |
 | A4 | 写明律师意见必须覆盖的范围，并规划「律师不同意」的分支 | 采用 | 第 18 节 |
 | A5 | 第一版日语只上 `/ja/` 与 `/ja/deposit/`，实时数据只有 BTC、ETH 的美元价格 | 采用；「100以上の無期限先物」是由结构快照检查保证的静态主张，不是实时数字（第 12 节同一口径） | 第 12 节 |
 | A6 | 每条主张精确可证 | 见第 3 节「不写的内容」 | 第 3 节 |
-| A7 | 截图只用夹具数据并标注；海报永远写 'Recorded' | 采用 | 第 7、9 节 |
+| A7 | 截图只用夹具数据并标注；海报永远写 'Recorded' | 第一轮采用。第二轮修订提议改为：未登录状态下实拍 app.sairn.ai 的现货市场（现货没有杠杆控件），DOM 守卫拒绝杠杆、`xyz:`、钱包品牌、测试网、盈亏与账户摘要，并要求画面里有可见的 Connect 按钮，截图注明来源与 UTC 日期；夹具数据保留为备选，待决定 D21。海报永远写 'Recorded' 不变 | 第 6、7、9 节；D21 |
 | A8 | 画布上的文字要有不透明底板，并测对比度 | 文字一律放在不透明底板上，不叠在光场上 | 第 6、7 节 |
 | A9 | 不在文字背后放全宽动效，不做点击触发的全视口缩放，不自动播放视频；页面级暂停 | 采用 | 第 8、14 节 |
 | A10 | sairn.ai 不写 Cookie 与 localStorage；只用 `utm_*`；日志短期保存；只用聚合数据；主机白名单测试 | 采用；暂停状态只存在内存 | 第 8、16 节 |
@@ -174,31 +203,56 @@
 
 ## 5 信息架构
 
-本站顺序对应调研第 4 节第 14 条「信息架构与转化路径」里交易所一段的惯例（首屏 → 实时市场条 → 三支柱 → 分项特性 → 3 步 → 安全 → FAQ → 结尾 CTA → 风险），首屏用永续 DEX 的公式（4–8 个词的主张、一句副标题、一个主 CTA），并借用 Hyperliquid 前端的深链与槽位 UTM、桌面二维码转手机。偏离之处与原因：
+本站顺序参照调研第 4 节第 14 条「信息架构与转化路径」里交易所一段的惯例（首屏 → 实时市场条 → 三支柱 → 分项特性 → 3 步 → 安全 → FAQ → 结尾 CTA → 风险），首屏用永续 DEX 的公式（4–8 个词的主张、一句副标题、一个主 CTA），并借用 Hyperliquid 前端的深链与槽位 UTM、桌面二维码转手机。第二轮修订（L4）把页头与页脚之间的内容收敛为七段：产品证明提前到首屏与第 02 区块，行情只在首屏与市场区出现，两种进入方式并入三步开始。偏离之处与原因：
 
 - 没有 Logo 条、投资人、用户数或审计徽标：这些都不存在（第 2 节非目标）；
 - 首屏没有交易所式的内联邮箱注册：官网没有后端，注册在终端的连接窗口里完成，CTA 直接深链到 `/trade/BTC`；
-- 证明条放 Hyperliquid 的网络数字并标明来源，不放 Sairn 自己的数字；
+- 「三支柱」与「分项特性」合并为第 02 区块的一张终端截图加三张能力卡；
+- Hyperliquid 的网络数字降为市场区的一行，标明来源，不放 Sairn 自己的数字；
 - 没有产品站的更新日志与公告条在首版首页上，二者随 `/changelog/` 在阶段 5 加入。
 
 ### 首页 `/`（英文）
 
+页面外框（不计入七段）：
+
+| 部分 | 作用与内容 |
+| --- | --- |
+| 跳转链接与官方网址一行 | 纯文本，不是链接（链到 app.sairn.ai 就成了 A3 意义上的 CTA，会让风险相邻测试失败）：'Official addresses: <apex> · <www> · <app>'，从 `brand.json` 的 `domains.primary` 读取（`www.sairn.ai` 也直接返回 200，见[官网发布手册](../deploy/website/README.md)），是否列 `testnet` 由运营方定；不写「只」。只放在首页与 `/ja/` 顶部，其他页在页脚列出，避免每页重复朗读。测试断言该行不含 `<a>` |
+| 页头 | 横版 Logo（≥24px）；锚点 Terminal、Get started、Markets、Fees、Security、FAQ，分别指向第 02–07 区块（Get started 即 `#start`）；`/ja/` 上线后才出现的 EN \| 日本語 链接（不自动跳转）；`bg-action` 的 'Open terminal'，链到 `/trade/BTC` 并带 `utm_content=header` |
+| 页脚 | `brand.json` 的法律实体 Sairn Corp.；`/terms`、`/privacy`、`/risk`、`/support`；官方网址；页面级 'Pause live data'；语言链接（`/ja/` 上线后）；'Not financial advice'；构建时计算的版权年份与构建日期。品牌迁移计划 D2 提供账号前不放社交链接 |
+
+七段内容：
+
 | 序号 | 区块 | 作用与内容 |
 | --- | --- | --- |
-| 01 | 跳转链接与官方网址一行 | 纯文本，不是链接（链到 app.sairn.ai 就成了 A3 意义上的 CTA，会让风险相邻测试失败）：'Official addresses: <apex> · <www> · <app>'，从 `brand.json` 的 `domains.primary` 读取（`www.sairn.ai` 也直接返回 200，见[官网发布手册](../deploy/website/README.md)），是否列 `testnet` 由运营方定；不写「只」。只放在首页与 `/ja/` 顶部，其他页在页脚列出，避免每页重复朗读。测试断言该行不含 `<a>` |
-| 02 | 页头 | 横版 Logo（≥24px）；锚点 Markets、How it works、Fees、Security、FAQ；`/ja/` 上线后才出现的 EN \| 日本語 链接（不自动跳转）；`bg-action` 的 'Open terminal'，链到 `/trade/BTC` 并带 `utm_content=header` |
-| 03 | 首屏 | 见第 6 节 |
-| 04 | 实时证明条「Hyperliquid, right now」 | 实时卡：主场所未下架永续数量；主场所 24h 永续名义成交额（Σ `Big(dayNtlVlm)`，`dayNtlVlm` 已是美元名义值）与持仓量（Σ `Big(openInterest).times(markPx)`：`openInterest` 是基础币数量，不是美元，同终端的 `getOiUsd`；只对未下架项求和，任一项 `markPx` 缺失或为 0 时整张卡 fail closed），都用 Big.js 求和、向下取整。静态卡（契约测试钉住）：0.01% builder fee；taker 0.055% / maker 0.025%（含 builder fee）。每张实时卡写来源与更新时间，附「How we compute this」说明。验证不通过的卡直接移除，条高不变 |
-| 05 | 市场 | BTC、ETH、SOL、HYPE 四张主场所永续卡：实时标记价、24h 涨跌（带符号与 ▲▼）、手绘 24h SVG 走势；各自深链 `/trade/:symbol` 并带独立 `utm_content`；卡组配风险句；一行说明现货在同一界面交易。不放 HIP-3 股票、指数、金属或 JP225。替代悬停才暂停的跑马灯 |
-| 06 | 三步开始 | 用邮箱或钱包登录 → 存入 Arbitrum 上的 USDC（链到存款指南） → 下第一单；每步一句话加一张截图裁切，不写耗时承诺 |
-| 07 | 订单怎样流转（Fig. 1） | 四个节点：浏览器 → 你的签名（邮箱：Privy 为账户创建的钱包；外部钱包：你批准的交易密钥） → Hyperliquid 订单簿 → 在你自己的 Hyperliquid 地址结算。Sairn 的方框只标「界面 + builder fee」。标明「Illustration」，不显示他人订单；节点只用 `brand/loader/glyphs/mono/` 的状态符号（`currentColor`，颜色由官网令牌决定），不用 `on-dark/`：其中 `pending.svg`、`unknown.svg`、`wallet.svg` 含琥珀 #E6B766，动效令牌 on-dark 的 surface 是品牌青 #0A3038（C*ab 13.3，与 #03211c 的 ΔE76 只有 12.0），会把琥珀与青色带进标志图形（违反本规划 D5 的默认、ADR 0028 决策 6 与仿冒防护第 2 条） |
-| 08 | 终端内部 | 吸顶的设备框随滚动换四屏：图表与订单簿；订单类型（市价、限价、TP/SL、TWAP、Scale，不写 TWAP 参数）；同屏的持仓与现货；手机与 PWA。截图来自采集管线，AVIF/WebP，经 Astro `<Picture>`；不支持滚动时间线时是普通的纵向排列 |
-| 09 | 两种进入方式 | 邮箱与钱包各一句事实、各一个 CTA（同链到 `/trade/BTC`，`utm_content` 不同，配风险句）；桌面二维码在此处给手机与 PWA |
-| 10 | 费用 | 永续合计 taker 0.055% / maker 0.025%，配分解条：Hyperliquid 基础 0.045 / 0.015 加 0.01% builder fee；现货 'builder fee on sells only'；'TWAP orders carry no builder fee'；HIP-3 场所可能另定费率；注明日期。数字由现有 copy-contract 钉在 `config/hyperliquid.ts` |
-| 11 | 记录在案（信任清单） | 编号清单，每条带 ※ 链到证据：托管（条款 §1.3）；签名（第 3 节的三条签名主张）；费用（builder fee 与核对方式，核对路径实施时按 Hyperliquid 文档写）；数据去向（浏览器直连 `api.hyperliquid.xyz`，不加分析工具）；独立声明（条款 §1.1）；官方网址（纯文本）；'We will never ask for your private key, seed phrase, verification code or password'（第 3 节登记表）；文档、支持与风险披露链接。没有审计、投资人、用户数或状态徽标 |
-| 12 | FAQ | 继续由 `config/faq.ts` 同时生成页面与 FAQPage 结构化数据。删掉 'There's no KYC'，改为条款 §2 的资格说明；删掉股票问答 'Can I really trade stocks here?'；删掉市场问答里的 HIP-3 品类（'equity, index, and metal perps'）与 'New markets appear automatically'；把杠杆问答 'What's the max leverage?' 改为风险与保证金说明（FAQ 里本来没有杠杆数字，有的是这两条问答）；删掉交易所钱包名；'Orders are signed with your keys' 按登录方式改写，'gas-sponsored deposits' 改为 'deposit transactions'；保留 'TWAP orders and spot buys carry none'。新增：Who holds my funds?、What does a trade cost?、What do I need to deposit?、Where does the live data come from?、Why might a number not show?、Is this investment advice?。区域与代理拦截的问答措辞交律师 |
-| 13 | 结尾 CTA 与风险摘要 | 'Start trading' 配同一风险句，下接风险摘要，链到 `/risk`（由 `legal/riskDisclosure.md` 渲染） |
-| 14 | 页脚 | `brand.json` 的法律实体 Sairn Corp.；`/terms`、`/privacy`、`/risk`、`/support`；官方网址；页面级 'Pause live data'；语言链接（`/ja/` 上线后）；'Not financial advice'；构建时计算的版权年份与构建日期。品牌迁移计划 D2 提供账号前不放社交链接 |
+| 01 | 首屏 | 终端预览（默认 Terminal 视图）加 Live market 视图，见第 6 节 |
+| 02 | 终端与三项能力（`#terminal`） | 一张经 DOM 守卫的大截图（与首屏 Terminal 视图同一采集管线，可以是另一个市场或面板，第 9 节）加三张能力卡，草稿：订单类型（市价、限价、TP/SL、TWAP、Scale，不写 TWAP 参数）；永续与现货在同一界面；手机与 PWA。截图 AVIF/WebP，经 Astro `<Picture>`。取消原「终端内部」的四屏吸顶叙事：桌面是截图配三张卡，手机按截图、卡片的普通纵向顺序排列，没有吸顶或滚动换屏 |
+| 03 | 三步开始（`#start`） | 合并原「三步开始」与「两种进入方式」：用邮箱或自己的钱包登录 → 存入 Arbitrum 上的 USDC（链到存款指南） → 下第一单；每步一句话，可配一张截图裁切，不写耗时承诺。第一步内含 'How email sign-in works' 的短说明（邮箱：Privy 为账户创建钱包；外部钱包：连接后批准一个交易密钥，第 3 节登记表的措辞），详细签名解释在 `/how-it-works/` 上线（阶段 5）后链过去，之前不加链接（链到 app.sairn.ai 的文档页会成为 A3 意义上的 CTA）。首屏次级链接 'No wallet? How email sign-in works →' 跳到这里。本节一个 CTA（`utm_content=start_cta`），配风险句 |
+| 04 | 市场（`#markets`） | 白名单市场的实时表：行来自运营方审阅的白名单（首版 BTC、ETH、SOL、HYPE 主场所永续，写在 `src/config/markets.ts` 的首页子集里，阶段 2 建文件；D15 扩大 `/markets/` 白名单不改变首页表的行数，订阅上限仍为 7），列为实时标记价、24h 涨跌（带符号与 ▲▼）、手绘 24h SVG 走势与 'Trade' 深链（`/trade/:symbol`，各自的 `utm_content`）；表格配风险句；一行说明现货在同一界面交易。不放 HIP-3 股票、指数、金属或 JP225。表下一行网络统计（原「实时证明条」降级）：主场所未下架永续数量、24h 永续名义成交额（Σ `Big(dayNtlVlm)`，`dayNtlVlm` 已是美元名义值）与持仓量（Σ `Big(openInterest).times(markPx)`：`openInterest` 是基础币数量，不是美元，同终端的 `getOiUsd`；只对未下架项求和，任一项 `markPx` 缺失或为 0 时该项 fail closed），都用 Big.js 求和、向下取整，写来源与更新时间，附「How we compute this」说明；验证不通过的项直接移除，行高不变 |
+| 05 | 费用（`#fees`） | 永续合计 taker 0.055% / maker 0.025%，配分解条：Hyperliquid 基础 0.045 / 0.015 加 0.01% builder fee；现货 'builder fee on sells only'；'TWAP orders carry no builder fee'；HIP-3 场所可能另定费率；注明日期。数字由现有 copy-contract 钉在 `config/hyperliquid.ts`（原证明条的两张静态费用卡并入这里） |
+| 06 | 机制与信任（`#security`） | 合并原「订单怎样流转」与「记录在案」。上半是 Fig. 1，说明非托管怎样成立：浏览器 → 你的签名（邮箱：Privy 为账户创建的钱包；外部钱包：你批准的交易密钥） → Hyperliquid 订单簿 → 在你自己的 Hyperliquid 地址结算。Sairn 的方框只标「界面 + builder fee」。标明「Illustration」，不显示他人订单；节点只用 `brand/loader/glyphs/mono/` 的状态符号（`currentColor`，颜色由官网令牌决定），不用 `on-dark/`：其中 `pending.svg`、`unknown.svg`、`wallet.svg` 含琥珀 #E6B766，动效令牌 on-dark 的 surface 是品牌青 #0A3038（C*ab 13.3，与 #03211c 的 ΔE76 只有 12.0），会把琥珀与青色带进标志图形（违反本规划 D5 的默认、ADR 0028 决策 6 与仿冒防护第 2 条）。下半是编号清单，每条带 ※ 链到证据：托管（条款 §1.3）；签名（第 3 节的三条签名主张）；费用（builder fee 与核对方式，核对路径实施时按 Hyperliquid 文档写）；数据去向（浏览器直连 `api.hyperliquid.xyz`，不加分析工具）；独立声明（条款 §1.1）；安全（'We will never ask for your private key, seed phrase, verification code or password'，第 3 节登记表）；官方网址（纯文本）；支持与风险披露链接（`/support/`、`/risk/`，都在 sairn.ai；终端文档在 app.sairn.ai，链过去就是 A3 意义上的 CTA，`/how-it-works/` 上线前不链）。没有审计、投资人、用户数或状态徽标 |
+| 07 | FAQ 与结尾 CTA（`#faq`） | FAQ 继续由 `config/faq.ts` 同时生成页面与 FAQPage 结构化数据。删掉 'There's no KYC'，改为条款 §2 的资格说明；删掉股票问答 'Can I really trade stocks here?'；删掉市场问答里的 HIP-3 品类（'equity, index, and metal perps'）与 'New markets appear automatically'；把杠杆问答 'What's the max leverage?' 改为风险与保证金说明（FAQ 里本来没有杠杆数字，有的是这两条问答）；删掉交易所钱包名；'Orders are signed with your keys' 按登录方式改写，'gas-sponsored deposits' 改为 'deposit transactions'；保留 'TWAP orders and spot buys carry none'。新增：Who holds my funds?、What does a trade cost?、What do I need to deposit?、Where does the live data come from?、Why might a number not show?、Is this investment advice?。区域与代理拦截的问答措辞交律师。之后是结尾 CTA 'Start trading'，配同一风险句，下接风险摘要，链到 `/risk`（由 `legal/riskDisclosure.md` 渲染） |
+
+手机按同一顺序纵向排列，没有吸顶叙事。
+
+旧编号（第一轮的 14 个区块）到新位置的对照：
+
+| 旧编号 | 旧区块 | 新位置 |
+| --- | --- | --- |
+| 01 | 跳转链接与官方网址一行 | 页面外框，不变；官方网址另在 06 的清单里 |
+| 02 | 页头 | 页面外框；锚点改为指向 02–07 |
+| 03 | 首屏 | 01 |
+| 04 | 实时证明条 | 实时卡降为 04 的一行网络统计；两张静态费用卡并入 05 |
+| 05 | 市场（四张卡） | 04，改为白名单实时表 |
+| 06 | 三步开始 | 03 |
+| 07 | 订单怎样流转（Fig. 1） | 06 的上半 |
+| 08 | 终端内部（吸顶四屏） | 02，改为一张截图加三张能力卡；吸顶叙事删除 |
+| 09 | 两种进入方式 | 并入 03；两个同链接、只差 UTM 的 CTA 删除（L9、S6）；桌面二维码只留在首屏的 'Open on your phone' 弹层 |
+| 10 | 费用 | 05 |
+| 11 | 记录在案（信任清单） | 06 的下半 |
+| 12 | FAQ | 07 |
+| 13 | 结尾 CTA 与风险摘要 | 07 |
+| 14 | 页脚 | 页面外框，不变 |
 
 删除的区块与元素：Manifesto（'No KYC. No custody. No middlemen.' 逐词出现）、FeatureSpeed（'8 order types'、'100+ perp markets' 计数动画）、Ticker 跑马灯、`animate-ping` 状态点、假浏览器框与 'Connected · 12ms'。
 
@@ -235,36 +289,41 @@
 
 ## 6 首屏
 
-### 英文首屏（文案均为草稿）
+### 英文首屏（文案均为草稿，D7）
 
-桌面（≥1024px，12 列网格，最大宽度 1280）：
+第二轮修订（L1、L3、L6、L9、S1、S6、V4、V6）：产品窗口默认展示真实终端；文案与按钮组压缩，手机首屏必须露出窗口内容。原型的两个变体共用下面的内容与顺序，只在构图上不同：A 在视口 ≥1200px 时左 5 列文字、右 7 列窗口，更窄时单列；B 是标题居中、窗口在下方全宽（字号见下文；绘图区比例只随窗口宽度，不随变体，见第 7 节）。下文按 A 的分栏写。
 
-- **左 5 列**：
+桌面（12 列网格，最大宽度 1280）：
+
+- A 的两栏只在视口 ≥1200px 时使用；1024–1199px 与平板（641–1023px）一样单列，窗口在文案下方。原因（第二轮审查 L-N3，源码推算，未在浏览器实测）：1024 宽时两栏的右栏画布只有约 471px，达不到第 7 节桌面绘图区 ≥560px 的要求。
+- B 在短桌面视口（`min-width: 1024px` 且 `max-height: 820px`）收紧页头与首屏间距，让窗口上移；目标取 L2：1366×768 的 CSS 视口下窗口顶边 ≤380px（第 25 节实测 374px，达标；Live 视图画布首屏露出 235px，L2 建议的 ≥260px 本规划未采纳为目标）。不靠删减官方网址一行、风险句或存款一行换高度，也不拉开风险句与按钮之间的 8px。
+- 布局检查宽度：1024、1100、1200、1280、1366、1440 与手机 390（阶段 2 另加 320）。每个宽度下两个视图、各个状态的窗口高度不变，身份说明完整显示（`scrollWidth ≤ clientWidth`）。
+
+- **左 5 列（≥1200px；更窄时在窗口之上）**：
   - 可选的公告条（仅英文，带日期，来自 `config/announcement.ts`，链到 `/changelog/`）。
-  - 眉标题（IBM Plex Mono 12px，`text-fg-muted`）：'See the market clearly. Decide for yourself.'
-  - H1（IBM Plex Sans 500，64/68，字距 -0.02em）：'Trade Hyperliquid perps and spot from an independent web terminal.' H1 在静态 HTML 里，是 LCP 元素，从不为入场动画隐藏。
-  - 副标题（18/28，`text-fg-muted`）：'Sign in with email or connect your own wallet. {BRAND_NAME} never holds your funds; they stay at your own Hyperliquid address.'
-  - CTA 组（`data-cta-group`）：
-    - 主按钮 `bg-action` / `text-on-action`（`--action` 保持中性，ADR 0028），名称与链接跟随所选市场：'Trade BTC' → `{APP_URL}/trade/BTC?utm_source=website&utm_medium=site&utm_campaign=en_home&utm_content=hero_cta_btc`（`APP_URL` 来自 `config/brand.ts`，不写域名字面量；命名与透传规则见第 16 节）；
-    - 次级链接 'No wallet yet? Start with email'，同一路由，`utm_content=hero_email`；终端连接窗口里有 'Log in with Email'；
-    - 「需要什么」一行：'To deposit, you need USDC on Arbitrum. Deposit guide →'；
-    - 风险句（`data-risk-note`，14px，正文色，不用淡色）：'Perpetual futures use leverage. You can lose all of your margin. Risk disclosure →'；
-    - 仅桌面：'Open on your phone' 弹层（Popover API），构建时用 qrcode 1.5.3 生成内联 SVG 二维码，指向同一链接。
-  - 小字（Plex Mono 12px）：'Non-custodial · Email or wallet · 0.01% builder fee · Independent interface: not Hyperliquid Corp. or the Hyper Foundation'（'endorsed' 等证据，第 3 节）。
-- **右 7 列：Live Window**。一个用终端表面色（#0F1A1F、浮层 #212d33、`--orderbook-*`、涨跌色）绘制的产品窗口，最小高度 440px，内部分区，文字一律放在不透明底板上：
-  - 顶栏：市场标签 BTC · ETH · SOL · HYPE（`role=tablist`，方向键切换；只显示当前 `meta` 里存在且未下架的市场）；'LIVE · Hyperliquid' 标记（只在数据有效时出现，见第 10 节）；Pause 按钮（`aria-pressed`）。
-  - 价格条：最新成交价（NumberFlow）与 24h 涨跌（涨跌色加符号与 ▲▼，不用薄荷）；24h 迷你走势（手绘 SVG，数据来自 `candleSnapshot`）。
-  - 主区：Open Book 画布（第 7 节），上方一行图例：'Brighter = more resting orders · ● buy ○ sell = trades · line = mid price'。
-  - 右侧或底部：前五档买卖盘（`role=table`，有表头与 caption，Plex Mono 12px，订单簿令牌），显示协议原始字符串；行不可点击，避免让人以为能在官网下单。
-  - 窗口下方说明：'Hyperliquid BTC-USD perpetual, live from the public API. A website view of public market data, not a terminal feature. Not a recommendation.'
+  - 眉标题（IBM Plex Mono 12/16，`text-fg-muted`）：'Independent web terminal for Hyperliquid'。
+  - H1（IBM Plex Sans 500，字距 -0.02em，统一近白 `text-fg`，不做灰白两色分句）：'Trade Hyperliquid perps and spot.'。字号上限：A 48/52，B 60/64，手机 32/35。H1 在静态 HTML 里，是 LCP 元素，从不为入场动画隐藏。
+  - 副标题（18/28，`text-fg-muted`；在 390px 宽的手机上不超过两行）：'Sign in with email or your own wallet. Your funds stay at your own Hyperliquid address.'
+  - CTA 组（`data-cta-group`），自上而下：
+    - 主按钮 `bg-action` / `text-on-action`（`--action` 保持中性，ADR 0028）'Trade BTC' → `{APP_URL}/trade/BTC?utm_source=website&utm_medium=site&utm_campaign=en_home&utm_content=hero_cta_btc`（`APP_URL` 来自 `config/brand.ts`，不写域名字面量；命名与透传规则见第 16 节）。在 Live market 视图里切换市场时，名称与链接跟随所选市场（例如 'Trade ETH'、`hero_cta_eth`）；切换 Preview 视图不改变它；
+    - 与主按钮同组的次级文字链接 'No wallet? How email sign-in works →'，跳到本页第 03 区块 `#start`。它是页内锚点，不链 app.sairn.ai，所以不是 A3 意义上的 CTA，也不带 UTM；不再是「同一终端链接换一个 UTM」（L9、S6）；
+    - 间隔 8px，风险句（`data-risk-note`，14px，正文色，不用淡色）：'Perpetual futures use leverage. You can lose all of your margin. Risk disclosure →'；
+    - 再间隔 8px，「需要什么」一行：'To deposit, you need USDC on Arbitrum. Deposit guide →'；
+    - 仅桌面：'Open on your phone' 弹层（Popover API），构建时用 qrcode 1.5.3 生成内联 SVG 二维码，指向主按钮的链接。
+  - 小字（Plex Mono 12px）：'Non-custodial · 0.01% builder fee · Independent interface: not Hyperliquid Corp. or the Hyper Foundation'（'endorsed' 等证据，第 3 节）。
+- **右 7 列（≥1200px；更窄时在文案下方）：Preview 窗口**。一个用终端表面色（#0F1A1F、浮层 #212d33、`--orderbook-*`、涨跌色）绘制的产品窗口，内部分区，文字一律放在不透明底板上。顶栏是名为 'Preview' 的 tablist（`role=tablist`，方向键切换），两个视图。每个视图的第一行是常显的身份说明（第二轮审查 L-N1、V-N3）：位于顶栏之下、内容之上，静态 HTML，不依赖 JS；允许换行，不用省略号或行数截断；两个视图按最窄宽度预留同样的行高，切换视图不改变窗口高度。
+  - **Terminal（默认，D20）**：app.sairn.ai 的真实截图，未登录状态，HYPE/USDC 现货市场（现货没有杠杆控件），裁切到账户表格之上。采集视口：桌面 1440×900、1.5 倍像素；手机 390×844、2 倍像素。采集脚本与 DOM 守卫见第 9 节，截图来源待 D21，A 版的呈现方式待 D22。身份说明：'Screenshot of app.sairn.ai, signed out · <date> UTC'（原型为 '24 Oct 2026 UTC'）；市场与未登录写在 `alt` 里。截图下方一行区域标签（`aria-hidden`）：桌面 'Chart / Order book / Order form'，手机 'Order form / Order book'。截图是静态图像，没有 JS 时也完整显示。
+  - **Live market**：Open Book（第 7 节）。身份说明：'Public market data · not a terminal feature'（不含市场名，切换市场不改变长度；市场名不与 'not a terminal feature' 写进同一短句，否则 'BTC-USD perpetual · not a terminal feature' 会被读成终端不能交易 BTC）。市场标签 BTC · ETH · SOL · HYPE（第二个 tablist，名为 'Market'；只显示当前 `meta` 里存在且未下架的市场）；状态标记（'RECORDED'、'LIVE' 等，见第 7 节状态表）；Pause 按钮（`aria-pressed`）；价格条：最新成交价（NumberFlow，带可见的 'Last trade' 标签，只在该成交的交易所时间与盘口的交易所时间相差 ≤60 s 时显示，第 10 节）与 24h 涨跌（涨跌色加符号与 ▲▼，不用薄荷）、24h 迷你走势（手绘 SVG，数据来自 `candleSnapshot`）；绘图区、图例与时间刻度（第 7 节）；窗口宽 ≥900px 时（容器查询）右侧有前五档买卖盘（`role=table`，有表头与 caption，表头 'Price (USD) / Size (BTC)'，单位随市场，Plex Mono 12px，订单簿令牌，显示协议原始字符串；行不可点击，避免让人以为能在官网下单），更窄时只有一行最优买卖价。窗口底部两行，允许换行，按最窄宽度预留行高（状态变化不改变高度）：第一行是状态（第 7 节状态表），Live 时 'Live from the Hyperliquid public API. Last trade hh:mm:ss UTC.'，BTC 冷启动的录制阶段 'Recorded <date> HH:MM–HH:MM UTC. Switches to live after 15 s of live data.'，减少动态（Still）时 'Recorded <date> HH:MM–HH:MM UTC. Live view on request.'，设备回退与非选主标签页只写 'Recorded <date> HH:MM–HH:MM UTC.'，Waiting 时 'Waiting for Hyperliquid public data.'，其余不可用的情况 'Live data is unavailable right now.'；第二行是 '<coin>-USD perpetual · Not advice.'（市场随所选标签）。'not a terminal feature' 只用于这个视图。
+  - 'Live market' 标签上的圆点只看后台实时数据是否有效（第 10 节 LIVE 判定的数据条件：连接打开、币种匹配、满足新鲜度），不看视图处在哪个状态：选中 Terminal 视图时、以及 BTC 还在录制阶段时，只要后台数据有效圆点就亮。这是有意的，提示实时数据已在积累；LIVE 标记则只在 Live 状态出现。连接按第 10 节的可见性规则打开，与选中哪个视图无关，所以切到 Live market 时海报或实时画面立即可用，圆点也如实反映数据。
 - **手机（≤640px）**：
-  - 顺序：眉标题、H1（40/44）、副标题、全宽 CTA 组（含风险句与「需要什么」）、Live Window 窄版；
-  - 窄版：标签横向滚动，一行最优买卖价（WebSocket `bbo`，不轮询 REST）代替五档，保留 LIVE 标记与 Pause，画布高 56vw（至少 220px），没有二维码。
+  - 顺序：眉标题、H1（32/35）、副标题（≤2 行）、全宽 CTA 组（主按钮 44px 高、次级链接、风险句、「需要什么」）、Preview 窗口；
+  - 390×844 的验收目标（不计原型底部的切换条，那是原型自己的界面）：主按钮顶边 ≤340px，窗口顶边 ≤520px，首屏至少露出 160px 窗口内容（默认是 Terminal 截图；切到 Live market 时至少 120px 绘图区）；
+  - Live market 窄版：市场标签横向滚动，一行最优买卖价（WebSocket `bbo`）代替五档，保留状态标记与 Pause，绘图区宽高比约 9:10（第 7 节），没有二维码。
 - **首屏性能**：
   - 预加载 Plex Sans 拉丁子集，用 Astro 6 Fonts API 生成的回退度量，换字不引起重排（D9 不同意升级时的备选见阶段 2）；
-  - 画布区先显示 ≤45 KB 的 AVIF 海报，写明宽高；海报的说明文字是 'Recorded <date> UTC'；
+  - Terminal 截图写明宽高，AVIF/WebP，按第 13 节预算；Live market 的海报（标 'Recorded <date> HH:MM–HH:MM UTC'）在标签获得指针、焦点或页面空闲时预取，不进交互前总量；
   - 只有副标题、CTA 与窗口在 400 ms 内淡入，H1 不参与。
-- **删除**：'No KYC'、'Live on mainnet' 状态点、'Connected · 12ms'、'each market's full leverage'、假浏览器框与旧截图。
+- **删除**：'No KYC'、'Live on mainnet' 状态点、'Connected · 12ms'、'each market's full leverage'、假浏览器框与旧截图（含 40x、10x 的两张）；第一轮草稿的 H1 'Trade Hyperliquid perps and spot from an independent web terminal.'、作眉标题的口号、副标题 'Sign in with email or connect your own wallet. {BRAND_NAME} never holds your funds; they stay at your own Hyperliquid address.'，以及次级链接 'No wallet yet? Start with email'（`utm_content=hero_email`）。
 
 ### `/ja/` 首屏（待律师与母语审阅）
 
@@ -272,29 +331,65 @@
 - 副标题取自已核对证据的邮件第 4 版：「BTC・ETHをはじめHyperliquidの100以上の無期限先物を、24時間取引できます。メールアドレスで登録できます。」
 - CTA「取引を始める」→ `/trade/BTC`，默认 `utm_campaign=ja_home`；从邮件进入时透传邮件的 `utm_campaign=jp_2026_trust`（第 16 节）。正下方先是 15px 粗体、正文色的「※無期限先物はレバレッジを伴う取引で、証拠金の全額を失うおそれがあります。」，再下是 13px 的「※取引画面は英語表示です。ご利用の通信環境によっては、注文・入金・出金をご利用いただけない場合があります。」
 - 没有 Open Book 画布与盘口。实时数据只有 BTC、ETH 的美元价格（24h 涨跌要律师同意才显示），说明写「Hyperliquidの公開データ」与 `hh:mm:ss JST`。
-- 是否放一张夹具数据的终端截图（标「※画面はイメージです」）由律师意见决定。
+- 是否放终端截图（标「※画面はイメージです」）由律师意见决定；截图来源随 D21（未登录实拍的画面里有采集时的真实价格，律师看的是那一版）。
 
 ## 7 标志性视觉：Open Book
 
 ### 画什么
 
+Open Book 是 Preview 窗口里的 Live market 视图（第 6 节），第二轮修订后不再是首屏的默认视图。
+
 - 一个 Hyperliquid 永续（默认 BTC）的「时间 × 价格」流动性画面：
-  - 横轴：桌面最近 120 s，手机 60 s，右端是「现在」；
-  - 纵轴：中间价附近的价格；
+  - 横轴：桌面最近 120 s，手机 60 s，右端是「现在」；绘图区下方有时间刻度，满窗时桌面为 '−120 s / −60 s / Now'、手机为 '−60 s / −30 s / Now'，窗口增长期间刻度跟随当前的窗口宽度；
+  - 纵轴：中间价附近的价格，右侧 68px 价格刻度槽（中间价标签在槽里，不压画布）；
   - 中间价离开中央区域时，纵轴按离散步长重新居中，最多每 10 s 一次，不做动画缩放。
+- 固定几何：绘图区的宽高比跟随 Preview 窗口的宽度（容器查询），不跟随 A/B 变体：窗口窄于 900px 为 16:5，≥900px 为 13:7，手机（视口 ≤640px）为 9:10。这些是近似取值，实现时可按实测各调一档；第一版的「A 桌面 3:1、B 桌面 16:9、手机 4:5」作废（第二轮审查 L-N3：按变体固定的比例在 1440 宽以外对不齐两个视图）。两个视图叠在同一个网格单元里，窗口取较高者；目标是在第 6 节列出的布局检查宽度下，两个视图的内容高度相差 ≤15px（第 25 节实测：1024–1440 的六种宽度与 390×844 下 ≤14px；视口 641–690px 时图例换行，相差约 60px，未处理）。海报、实时画布与各种回退状态共用同一尺寸，切换状态不改变窗口高度（S10）。桌面绘图区在 1024px 及以上的每个宽度都 ≥560px（由第 6 节 A 的 ≥1200px 两栏断点保证）；窗口宽 ≥900px 时右侧才放五档表，更窄时改为一行最优买卖价（L5、V5）。
 - 第 1 层，挂单流动性：
   - 每次盘口快照加一列，每档挂单量用对数映射到亮度，按滚动 95 百分位归一化；
-  - 颜色是中性灰梯度（色度 C*ab < 8，草案取值实施时由测试计算），买卖两侧最多带终端 15% 深度填充那样的色调。
+  - 颜色是中性灰梯度（色度 C*ab < 8），最高不透明度 ≤0.65，梯度没有近白的终点，不与中间价线争亮度（V3）。A 用原型的暗中性灰阶；B 用 #263138 → #68747D → #AAB4BC（C*ab 6.5 / 6.9 / 5.6，见第 9 节的表），B 在任何地方都不用琥珀，所以 D5 与 ADR 0028 都不必为 B 修改（V2、S5）；买卖两侧最多带终端 15% 深度填充那样的色调。
 - 第 2 层，成交：
-  - 在（时间，价格）处画点，半径与 √名义金额成正比，限制在 2–14 px；
+  - 同一交易所时间（成交的 `time` 是区块时间）、同一主动方向的成交在显示上合并为一个点，画在按成交额加权的均价处，金额为合计（第二轮原型实现；第一轮把每个价位各画一点，一笔大单会画成一串）。这是显示合并，不是订单识别：一笔吃单扫过多个价位时，它的成交都在同一区块，会并成一点；但同一区块里同方向的几笔吃单也会并成一点。能区分它们的 `hash` 与 `users` 已被校验器丢弃（第 10 节），也不为此保留。`side` 按主动方理解，Hyperliquid 文档没有明说，实施时核实；
+  - 在（时间，价格）处画点，半径与 √名义金额成正比，限制在桌面 2–8 px、手机 2–6 px；
   - 买单是 `--orderbook-price-bid` 实心点，卖单是 `--orderbook-price-ask` 空心环，方向同时由形状表达；
-  - 新成交只脉冲一次，400 ms（品牌 `feedback` 时长），每帧最多 8 个新脉冲。
-- 第 3 层，中间价轨迹：中性墨色细线（第 9 节；用琥珀需决定 D5）。悬停时出现中性十字线，DOM 提示框显示最近一笔成交的协议原文，例如 'Buy 0.0150 BTC @ 67,012 · 21:03:11 UTC'。
+  - 历史成交点没有光晕；光晕只出现在新成交到达时的一次性描边脉冲上，320 ms（≤400 ms，即不超过品牌 `feedback` 时长），每帧最多 8 个新脉冲。
+- 第 3 层，中间价轨迹：1.5px #EDEEF2（与 `--action` 同值）细线，下面一道深色衬底，不加光晕（第 9 节；用琥珀需决定 D5）。悬停时出现中性十字线，DOM 提示框描述最近的那个点：它合并了几笔成交（'N trades'）、合计数量与加权均价、交易所时间，例如 'Buy · 3 trades · 0.0450 BTC · avg 67,012 · 21:03:11 UTC'（合计与均价是计算值，用 Big.js 并按第 10 节的精度规则取）；不把一个点写成一条协议记录。
+- 图例（绘图区上方一行，文字在不透明底板上；L8、V8）：'Resting orders (brighter = more size)'、'Buy trades'、'Sell trades'、'Dot size = trade value'、'Mid price'。合并后点的大小是该点的合计金额，'Dot size' 一项的措辞随 D7 定。
+- 删除第一轮原型 B 的暖色背景光、窗口入场的 0.99→1 缩放与历史成交光晕；整页网格底纹若保留，不透明度 ≤1%（V9）。
 - 盘口只从访客到达时开始画，不回填历史；切换标签时清空全部缓冲区，就像终端在身份变化时重置。
 
-### 冷启动
+### 冷启动（第二轮修订：录制海报）
 
-到达时先用一次 REST `l2Book` 快照画出最右侧的当前深度列，并用 `recentTrades` 在窗口内播种成交点；时间轴宽度是 max(已过时间, 15 s)，随数据增长到 120 s，所以第一帧就有内容。录制的海报数据与实时数据绝不拼进同一帧：从海报切到实时是整体淡入切换。
+- 默认市场 BTC 到达时显示录制海报（静态图，标记 'RECORDED'，说明 'Recorded <date> HH:MM–HH:MM UTC'）。海报上的价格条、五档、坐标与中间价标签全部取自同一份录制的元数据快照（见下文海报管线），所以显示的每个数字都来自同一时刻。
+- Worker 同时在后台建立实时状态（REST 种子加 WebSocket，第 10 节）；只有连续 15 s 收到有效实时数据之后，才以一次场景替换（下一条）切到实时画面，标记随场景一起换成 LIVE。
+- 场景替换（录制 → 实时与实时 → 录制两个方向相同；第二轮审查 V-N1、S-N2）：
+  - 数据区（价格条、图例、绘图区、坐标、五档、最优买卖价一行与说明行）约 100 ms 淡出；顶栏的状态标记不淡出，在数据区不可见时与内容同一步替换；
+  - 在不可见时，一个同步步骤里替换全部内容：画面、每一个数字、坐标、标记与状态文字；
+  - 淡入的时机：去实时时等 Worker 确认已画出一帧（超时 300 ms），回海报时等海报图片解码完成（同样最多等 300 ms）；
+  - 减少动态时直接替换，没有淡化；
+  - 不做两套画面的交叉淡化：交叉期间两套数字同时半透明可见，本身就违反「每一帧的数字只来自一个来源」；
+  - 24h 走势在录制阶段就预取（只缓存、不绘制），实时场景出现时一起带上，不再先隐藏再补画；这条 `candleSnapshot` 请求计入第 10 节的 REST 权重。
+- 一个视图里绝不混用录制值与实时值：海报显示期间，价格条与五档也显示录制值，不提前换成实时数字。
+- 其他市场没有海报，切过去时直接进入实时：用一次 REST `l2Book` 快照画出最右侧的当前深度列，用 `recentTrades` 在窗口内播种成交点；时间轴宽度是 max(已过时间, 15 s)，随数据增长到满窗，所以第一帧就有内容。只有 BTC 有海报，V3 的结论也只覆盖 BTC。
+- 减少动态：海报作为静止画面一直保留，直到访客按 'Show live view'。
+- 实时数据失败（被拒、校验不通过、不满足新鲜度）：海报保留，说明行写明实时数据不可用（下面的 Unavailable 状态）。
+- 生产版每次发布重新录制、重新生成海报（AVIF/WebP），海报上始终保留录制日期。
+
+### 状态
+
+Live market 视图在任何时刻只处于下表的一个状态，每个状态都使用同一个固定尺寸的绘图区。标记与说明文字是草稿（D7）。
+
+| 状态 | 何时 | 标记 | 画的是什么 | 显示哪些数字 |
+| --- | --- | --- | --- | --- |
+| Recorded | BTC 冷启动，实时数据连续有效未满 15 s；或设备条件只允许海报（见回退阶梯） | 'RECORDED'；说明 'Recorded <date> HH:MM–HH:MM UTC'。后台实时数据有效时 Live market 标签上的圆点照样亮（有意，第 6 节） | BTC 海报 | 只有海报元数据快照里的值（最新价、24h 涨跌、前五档、坐标与中间价标签、走势收盘价），都是回放最后一刻的值 |
+| Waiting | 没有海报的市场（或已离开海报的 BTC）开始一条新数据流（到达、切换市场、恢复之后），还没有收到一帧通过校验的 `l2Book` 或 `bbo`；最长 6 s，之后转为 Unavailable | 没有 LIVE 与圆点 | 同尺寸的空绘图区，数据到达后逐列填入 | 不显示数字（预留宽度的空白槽）。说明行写 'Waiting for Hyperliquid public data.' |
+| Live | 满足第 10 节的新鲜度条件；BTC 还要先连续有效 15 s 并完成场景替换 | 'LIVE'；Live market 标签上有圆点 | 实时画布 | 只有实时值，带第 10 节归属规则的更新时间；最新成交价带 'Last trade' 标签，只在它与盘口的交易所时间相差 ≤60 s 时显示 |
+| Paused | 访客按下 Pause | 'PAUSED' | 按下时的最后一帧，不再更新 | 冻结在按下那一刻的值，说明行写 'Paused · numbers and chart are frozen'；Recorded 状态没有 Pause 按钮（海报本来就是静止的） |
+| Still（减少动态） | `prefers-reduced-motion: reduce`，访客还没按 'Show live view' | BTC：'RECORDED'；其他市场：'STILL'，说明行写 'Still snapshot · hh:mm:ss UTC.'（沿用原型现有写法） | BTC：海报；其他市场：到达时画出的一帧，不再更新 | BTC：海报元数据；其他市场：那一帧的值与时间 |
+| Unavailable | 实时数据失败、被拒、校验不通过、不满足新鲜度、Waiting 超过 6 s，或调速器超预算（第 10 节） | 没有 LIVE 与圆点；BTC 保留 'RECORDED' | BTC：海报；其他市场：空的绘图区（同一尺寸） | BTC：海报元数据；其他市场：价格位置是预留宽度的空白槽，不显示任何数字。说明行写 'Live data is unavailable right now.' |
+
+- 「没有数据」指没有通过校验的 `l2Book` 或 `bbo` 帧（成交与 `activeAssetCtx` 不算）。Worker 只维护一个单调的 `lastDataAt`（`performance.now()`，只在接受这两种帧时更新，切换市场与恢复时重新起算），并把 `silentMs`（距 `lastDataAt` 的时长）发给主线程。
+- 新鲜度一旦不满足，LIVE 标记、标签圆点与所有实时数字立即消失（绘图区留下空列，不补画）；连接按预算停止（fail closed）或 `silentMs ≥ 20 s` 时，BTC 以场景替换回到海报。20 s 的视图重置（第 10 节）用同一个时钟，两者同时发生；第二轮原型最初从 LIVE 撤下那一刻起再等 20 s（全断流时约 26 s），与本规则不符，已改并重测（第 25 节）。恢复后按冷启动规则重新连续计满 15 s 才回到 Live。短暂断流不回海报，避免在海报与实时之间来回闪。
+- 说明行只说明状态，不显示传输错误原文、'offline'、'stale' 或错误代码。
 
 ### 怎样构建
 
@@ -305,33 +400,41 @@
   - 用 `putImageData` 写新列、`drawImage` 滚动，成交点最多 1500 个；
   - 颜色启动时用 `getComputedStyle` 从 CSS 变量读一次，令牌仍是唯一来源。
 - 主线程只更新 DOM 片段（标签、盘口表、标记、提示框、NumberFlow 数字），按 Worker 发来的显示字符串，≤4 Hz。
-- 离屏（IntersectionObserver）、页面隐藏、按下 Pause 时停止绘制。
+- 离屏（IntersectionObserver）、页面隐藏、按下 Pause、或 Preview 窗口选中的不是 Live market 时停止绘制；选中的不是 Live market 时，Worker 照常接收与校验数据，以便切回时状态正确；离屏与页面隐藏按第 10 节的连接策略关闭连接，Pause 按第 8 节停下所有实时更新。
 - WebGL2 不在首版：只有当阶段 1 的测量证明 Canvas 2D 在目标设备上达不到预算，并有人在真机上验证后，才在同一 Worker 里加 WebGL2（`failIfMajorPerformanceCaveat: true`、`powerPreference: 'low-power'`，拆卸时 `WEBGL_lose_context`），那时再加两个渲染器的比对测试。
 
 ### 回退阶梯（自动）
 
-1. Worker 里的 Canvas 2D 实时画面。
-2. 只看成交的窄条：数据调速器（第 10 节）降级到只订阅成交时，画面换成 64px 高的成交打印条，每笔成交一条竖线，在基线上方是买、下方是卖。
-3. 海报（标 'Recorded <date> UTC'），出现于以下任一情况：
-   - 没有 OffscreenCanvas（为保护 INP，绝不在主线程渲染）；
-   - `prefers-reduced-motion: reduce`（提供 'Show live view' 按钮让访客自行开启）；
-   - Save-Data，或 `effectiveType` 为 2g、slow-2g；
-   - `prefers-contrast: more`；
-   - 数据未通过校验。
-4. 没有 JS：海报加文字。
+1. Worker 里的 Canvas 2D 实时画面（Live）。
+2. 海报或一帧静止画面（上表的 Recorded、Still、Unavailable），出现于以下任一情况：
+   - 冷启动，实时数据连续有效未满 15 s（只限 BTC，Recorded）；
+   - 没有 OffscreenCanvas（为保护 INP，绝不在主线程渲染）、Save-Data 或 `effectiveType` 为 2g、slow-2g、`prefers-contrast: more`：BTC 停在 Recorded 不切实时，其他市场显示同尺寸的空绘图区，说明行写明原因（文案随 D7）；
+   - `prefers-reduced-motion: reduce`：Still，提供 'Show live view' 按钮让访客自行开启；
+   - 数据未通过校验、不满足新鲜度，或调速器超预算：Unavailable。
+3. 没有 JS：Preview 窗口只显示默认的 Terminal 截图与说明，Live market 标签不出现。
+
+第一轮的「只看成交的窄条」（64px 高的成交打印条）删除：它会改变窗口高度，违背固定几何（S10）；调速器超预算时直接进入 Unavailable（第 10 节）。
 
 ### 海报管线（生成文件）
 
-1. `apps/website/scripts/record-market.mjs`（官网的脚本统一放在 `apps/website/scripts/`，该目录现在还不存在）从公共 WebSocket 录 120 s 的真实 BTC 成交与盘口快照，写入 `apps/website/src/data/recorded/<coin>-<utc>.json`，记录来源、起止 UTC 与 SHA-256。成交只保留 `coin`、`side`、`px`、`sz`、`time`、`tid`，丢弃 `users`（买卖双方地址，`@nktkas/hyperliquid` 0.33.3 的 `recentTrades.d.ts` 第 41–42 行写明了这个字段）与 `hash`，不把第三方地址提交进仓库。schema 测试断言 `src/data/recorded/**` 与 `market-structure.json` 里没有 `/0x[0-9a-fA-F]{40}/`。
-2. `pnpm --filter @sairn/website poster:render` 在 Playwright Chromium（`@playwright/test` 1.59.1）里用同一个渲染器渲染这份数据，输出三种宽度的 AVIF/WebP 到 `src/assets`，文件名带内容哈希。
-3. 说明文字的日期从 JSON 旁注读取，测试校验两者一致；海报永远写 'Recorded'，不写 'Live'。这些是生成文件，不手改。
+1. `apps/website/scripts/record-market.mjs`（官网的脚本统一放在 `apps/website/scripts/`，该目录现在还不存在）在一条公共 WebSocket 上录约 135 s，订阅与实时视图相同（`l2Book` 加 `nSigFigs: 5`、`bbo`、`trades`、`activeAssetCtx`，第 10 节的数据路径表），结束时再取一次 24h `candleSnapshot` 的收盘价供走势用，写入 `apps/website/src/data/recorded/<coin>-<utc>.json`，记录来源、起止 UTC 与 SHA-256。成交只保留 `coin`、`side`、`px`、`sz`、`time`、`tid`，丢弃 `users`（买卖双方地址，`@nktkas/hyperliquid` 0.33.3 的 `recentTrades.d.ts` 第 41–42 行写明了这个字段）与 `hash`；盘口档位只保留 `px`、`sz`；`activeAssetCtx` 只保留 `markPx`、`prevDayPx`。不把第三方地址提交进仓库，schema 测试断言 `src/data/recorded/**` 与 `market-structure.json` 里没有 `/0x[0-9a-fA-F]{40}/`。原型里对应的脚本是 `designs/website-hero-prototype/tools/record-sample.mjs`。
+2. `pnpm --filter @sairn/website poster:render` 在 Playwright Chromium（`@playwright/test` 1.59.1）里让同一个 Worker 渲染器用虚拟时钟回放这份录制，按配色与绘图区比例输出海报（三种比例：窗口窄于 900px 的 16:5、≥900px 的 13:7、手机 9:10；原型另按 A/B 两套配色各出一套，共六张，生产版只用选定的一套配色），每种三个宽度的 AVIF/WebP 写入 `src/assets`，文件名带内容哈希；同时输出一份元数据快照，即回放最后一刻的界面状态：最新价、24h 涨跌、前五档、坐标与中间价标签、走势收盘价。Recorded 状态显示的每个数字都只取自这份快照。
+3. 说明文字 'Recorded <date> HH:MM–HH:MM UTC' 由录制的起止时间生成，测试校验两者一致；海报永远写 'Recorded'，不写 'Live'。这些是生成文件，不手改；每次官网发布重新录制、重新生成。
 
 ### 测试
 
-- `node --test`：校验器、场景分箱、字符串格式化；校验器的输出与 Worker 发往主线程的消息里不含 `users`、`hash` 或任何 `0x` 加 40 位十六进制的地址。
-- Playwright `page.routeWebSocket` 故障矩阵：正常、盘口交叉、过期、畸形字符串、币种不符、断线、成交暴涨。每种故障下 LIVE 标记都不出现、改显示海报，实时区域里不出现 '...'、'—'、'NaN'、'Loading'、'$0'。
-- 文字与底板：断言 Live Window 里所有文字节点的背景底板计算后不透明度为 1、对比度 ≥4.5:1，且没有文字框与画布区相交（提示框也在不透明底板上）。
-- 减少动态模拟下，Worker 的渲染帧数为 0。
+- `node --test`：校验器、场景分箱、字符串格式化、`bbo` 与 `l2Book` 的合并规则（含第 10 节卖侧与买侧的例子）；校验器的输出、Worker 发往主线程的消息与录制文件里不含 `users`、`hash` 或任何 `0x` 加 40 位十六进制的地址。
+- Playwright `page.routeWebSocket` 故障矩阵：正常、盘口交叉、过期、畸形字符串、币种不符、断线、成交暴涨、超预算。每种故障下 LIVE 标记都不出现，窗口进入 Unavailable，实时区域里不出现 '...'、'—'、'NaN'、'Loading'、'$0'。矩阵另加五种（第二轮审查 S-N3），每种的预期写进用例：
+  - socket 已关闭：立即撤下 LIVE，不等新鲜度过期；
+  - 仅深度帧无效（`bbo` 正常）：`l2Book` 的坏帧计数不被 `bbo` 清零，连续 3 帧后丢弃深度，撤下 LIVE；
+  - 仅深度停更（`bbo` 正常）：最近一帧 `l2Book` 早于 20 s 时在同一连接上重订 `l2Book`，不新建连接；
+  - 仅成交停更：LIVE 不受影响，最新成交价按 60 s 规则移除；
+  - 仅 `activeAssetCtx` 停更：本规划还没有给它定新鲜度阈值（第 10 节数据路径表里是「—」），阶段 1 定下后写进用例。
+- 状态表的六个状态各有用例：标记文字；状态切换前后绘图区与窗口的尺寸相等；Recorded 与 Still（BTC）下显示的每个数字等于元数据快照，Live 下没有一个数字来自快照；Waiting 超过 6 s 转为 Unavailable。
+- 冷启动时间点（V3）：在 0、1、2、5、15 s 截图并断言：15 s 连续有效数据之前只有录制值，之后场景替换完成、标记换成 LIVE；中途注入一次无效帧时重新计时。
+- 单一来源（V3）：页面内的逐帧采样器（`requestAnimationFrame`）记录数据区、海报与画布的计算不透明度和每个数据元素标明的来源，断言没有一帧同时可见录制与实时两种来源；录制 → 实时、实时 → 录制、减少动态各测一次。它只能证明主线程每一帧的 DOM 与计算样式，不是合成器输出的像素。
+- 文字与底板：断言 Preview 窗口里所有文字节点的背景底板计算后不透明度为 1、对比度 ≥4.5:1，且没有文字框与画布区相交（提示框也在不透明底板上）。
+- 减少动态模拟下，BTC（海报）的 Worker 渲染帧数为 0；切到其他市场时只渲染那一帧静止画面（Still 状态），之后为 0。
 - 关于真实输入（指针、触控、iOS 低电量模式）的任何结论，都要由人在实体设备上验证；注入的事件不算证据。
 
 ## 8 动效系统
@@ -352,20 +455,23 @@
   - 入场：`@starting-style` 配 opacity 与 12px 位移，用 `sibling-index()` 错开（Baseline 2026-08-18），构建时写 `--i` 作回退；每项 ≤400 ms，合计 ≤800 ms。
   - 分节显现：`@supports (animation-timeline: view())` 下用 `animation-timeline: view()`，`animation-range: entry 0% cover 30%`，只动 transform 与 opacity。Chrome 115、Safari 26、Firefox 159（计划 2026-10-27）支持；更早的 Safari 直接显示终态，不加 JS 回退。调研没有在 24 个加密与金融首页里检测到它。
   - Fig. 1 的连线用 `view()` 时间线画出；减少动态时完整显示。
-  - 终端内部一节的吸顶设备框用 `view-timeline` 加 `timeline-scope` 交叉淡化屏幕；不支持时是纵向排列。
+  - （第二轮修订删除：原「终端内部」一节的吸顶设备框与 `view-timeline` 加 `timeline-scope` 换屏。第 02 区块是一张截图加三张卡，只用上面的分节显现。）
   - FAQ 的 `<details>` 用 `interpolate-size: allow-keywords` 与 `::details-content` 渐进增强。
   - 站内页面之间用原生跨文档 View Transitions：`@view-transition { navigation: auto }`，根元素交叉淡化 ≤250 ms，页头用 `view-transition-name` 保持不动。Chrome 126、Safari 18.2 支持；Firefox 退化为普通导航。不用 Astro `ClientRouter`：它改变脚本生命周期，WebSocket 要重新初始化。
-  - 同文档 `document.startViewTransition` 只用于首屏标签切换，≤200 ms。
+  - 首屏的 Preview 视图切换：局部不透明度过渡 ≤180–200 ms，过渡结束后才给旧视图设 `visibility: hidden`（例如 `transition: opacity 180ms, visibility 0s 180ms`），隐藏的视图不能被聚焦，也不被读屏读到；减少动态时即时切换。
+  - 市场标签切换不做交叉淡化，复用第 7 节的场景替换：淡出 → 清空 → 淡入到同尺寸的空绘图区，随数据到达逐步填满，旧市场的价格与画面不会叠在新市场的标签下（第 7 节「切换标签时清空全部缓冲区」）。数据迟到时停在空绘图区，不把等待拉长成动画。
+  - 这两处都不用同文档 `document.startViewTransition`：它的默认效果是新旧两张快照交叉淡化（原稿写的是用它，第二轮审查 V9 后改）。
 - **第 2 层，延迟加载的 JS**：
   - Open Book（Worker，按事件重绘）；
   - 实时数字用 NumberFlow 0.6.2 滚动：首次渲染不滚；同一数值每 2 s 最多滚一次；只是格式变化时不滚；
-  - 成交脉冲（400 ms，一次性）。
+  - 成交脉冲（320 ms，一次性，第 7 节）；
+  - 录制与实时之间的场景替换（约 100 ms 淡出、不可见时整体替换、淡入，两个方向相同，第 7 节冷启动）。
   - 实时更新是页面上唯一的持续运动，没有装饰性循环、跑马灯或粒子。
 
 ### 规则
 
-- CSS 只动 transform 与 opacity，不动 filter、backdrop-filter、box-shadow 或布局属性。
-- 不用滚动劫持、Lenis、GSAP、Motion、Rive、Lottie、Spline 或视频；不做随滚动的视差或相机移动（WCAG 2.3.3）。
+- CSS 只动 transform 与 opacity，不动 filter、backdrop-filter、box-shadow 或布局属性。入场不做缩放（删除第一轮原型 B 窗口的 0.99→1），不加暖色背景光，历史成交点不加光晕（第 7 节）。
+- 不做滚动劫持（包括 Lenis 一类的平滑滚动）、随滚动的视差或相机移动（WCAG 2.3.3）。这是行为规则；动效库按第 11 节的「原生优先」规则取舍，不再一概禁止（第二轮修订，S8）。
 - 文字背后不放全宽动效；不做点击触发的全视口过渡；不自动播放视频。
 - 一个共享的动效偏好模块读取 `prefers-reduced-motion` 并监听变化，统一驱动 CSS 开关、Worker、NumberFlow 与 View Transitions。减少动态时页面上什么都不动：画布换成海报，数字直接替换，过渡与滚动动画关闭。现有全局 0.01 ms 规则保留，但滚动驱动动画不依赖它，显式门控。
 - 页面级暂停：首屏与页脚各一个 Pause 控件（WCAG 2.2.2），停下画布、数字滚动与所有实时更新。状态只存在内存里，不写 localStorage 或 Cookie（Cookie 政策只覆盖 app.sairn.ai）；跨页记忆等政策覆盖 sairn.ai 后再议。
@@ -378,7 +484,7 @@
 
 ### 画布与表面（推荐值，待决定 D3）
 
-- 页面画布保持石墨色 #12131a（官网现在的 `--bg-base`，也是共享 UI 的深色默认）。产品窗口（Live Window、终端内部的设备框、两种进入方式里的截图框）用终端自己的表面色 #0F1A1F 与浮层 #212d33。这一组从 `apps/terminal/src/styles.css` 复制，由跨应用测试钉住。
+- 页面画布保持石墨色 #12131a（官网现在的 `--bg-base`，也是共享 UI 的深色默认）。产品窗口（首屏的 Preview 窗口、第 02 区块的截图框）用终端自己的表面色 #0F1A1F 与浮层 #212d33；Terminal 视图的截图本身就是终端的 #0F1A1F 画面。这一组从 `apps/terminal/src/styles.css` 复制，由跨应用测试钉住。
 - 理由：
   - #12131a（C*ab 5.0）与 #0F1A1F（C*ab 6.0）都是近黑中性色，按本节仿冒规则第 3 条豁免 ΔE 检查，所以不拿底色的 ΔE 作理由：用这个指标的话，#12131a 与 Hyper Foundation 的 #04060c 只差 5.1，结论反而相反。与 Hyperliquid 的区分靠色相与色度（#03211c 是有色相的深绿，C*ab 12.8、h 179.5°），以及字体与母题，不靠底色；
   - 首屏窗口与终端启动画面同为 #0F1A1F，「Start trading」之后的连续性由窗口承担；
@@ -391,12 +497,12 @@
 
 - `--action` 中性 #edeef2 配 `text-on-action`，用于所有填充按钮（ADR 0028 决策 3）。
 - 薄荷 `--signal` #86e5d3 只用于焦点环、链接、Logo 与每节最多一个强调词，不作大面积填充、渐变或光晕，不放在数字或盈亏旁边。它与 Hyperliquid 的 #97fce3 ΔE76 只有 8.5，所以用量要刻意小。
-- 琥珀 #E6B766 默认只在 Logo 里（ADR 0028 决策 6）。在标志图形里用它（中间价线、十字线）需要先修订 ADR 0028（决定 D5），而且永远不能靠近风险句或警告。
+- 琥珀 #E6B766 默认只在 Logo 里（ADR 0028 决策 6）。在标志图形里用它（中间价线、十字线）需要先修订 ADR 0028（决定 D5），而且永远不能靠近风险句或警告。第二轮修订：原型 B 的热度改为灰阶 #263138 → #68747D → #AAB4BC，B 的任何部分都不再用琥珀，选 B 不需要修订 ADR 0028（V2、S5）。
 - 涨跌与订单簿颜色复制终端令牌，由跨应用测试钉住。
 
 ### 字体（待决定 D4）
 
-- IBM Plex Sans Variable（`@fontsource-variable/ibm-plex-sans` 5.2.8，与终端同包同版本）用于标题与正文：标题 500，64/68，字距 -0.02em；正文 16/26。
+- IBM Plex Sans Variable（`@fontsource-variable/ibm-plex-sans` 5.2.8，与终端同包同版本）用于标题与正文：标题 500，字距 -0.02em；首屏 H1 的上限是 A 48/52、B 60/64、手机 32/35（第二轮修订，第 6 节；第一轮是 64/68）；正文 16/26。
 - IBM Plex Mono 400/500 拉丁子集，用于行情、数字、标签与眉标题；版本在实施时固定，并按本规划提出的「发布至少两周」规则选择（见第 11 节依赖表下的说明；仓库现在没有这条规定）。
 - 日语标题与正文用 IBM Plex Sans JP 构建时子集（第 12 节）。
 - 去掉 Instrument Serif 与 Inter。衬线大标题是 midday 式「传统感」的标志，编辑衬线又正是 Hyperliquid 改版用的 Teodor；Instrument Serif 也没有日文字形。终端改版后的交易界面本来就用 Plex（`font-market-close`），官网与产品因此一致。
@@ -407,12 +513,13 @@
 - 12 列网格，最大宽度 1280；页面表面 12px 圆角，内部卡片 8px。
 - 图标在构建时从 `@phosphor-icons/core` 2.1.1（已是依赖）内联。
 - 图像只有两种：真实界面截图（AVIF/WebP）与生成的海报；不用素材库 3D、AI 渲染、币标球。行情用 Plex Mono 文字显示，不外链 `app.hyperliquid.xyz` 的币标（CSP 的 `img-src` 因此只需 `'self' data:`）。
-- 截图采集管线 `apps/website/scripts/capture-ui.mjs`：
-  - 驱动终端的 Playwright 夹具，只用夹具数据；夹具服务器按 [runtime-guardrails](runtime-guardrails.md) §9 使用与应用开发服务器分开、互不嵌套的 Vite `cacheDir`；
-  - 采集前用 DOM 守卫拒绝含杠杆文字、`xyz:`、交易所品牌钱包、测试网徽标、盈亏、余额或收益的画面；
-  - 地址打码（如 `0x12…ab`），不出现可用的存款地址；
-  - 清单记录终端提交号，每次官网发布重拍；
-  - 截图标注 'Sample data'，日语为「※画面はイメージです」。
+- 截图采集管线 `apps/website/scripts/capture-ui.mjs`（第二轮修订；来源待决定 D21）：
+  - 推荐来源：在未登录状态下用 Playwright 实拍 app.sairn.ai 的现货市场（首屏是 HYPE/USDC：现货没有杠杆控件），裁切到账户表格之上；视口桌面 1440×900、1.5 倍像素，手机 390×844、2 倍像素，`locale` 为 en-US，时区 UTC。原型的对应脚本是 `designs/website-hero-prototype/tools/capture-terminal.cjs`；
+  - DOM 守卫保留，只读裁切区内可见的文本：含杠杆文字（`\d+x` 一类）、`xyz:`、钱包品牌名、testnet、PnL / realized / unrealized、账户摘要标签（例如 portfolio value、margin ratio）任何一项就拒绝采集；裁切区里必须有可见的 Connect 按钮，证明画面来自未登录会话，否则也拒绝；
+  - 未登录画面里没有地址与余额；需要账户状态的画面（持仓、余额、`/deposit/` 里的 Deposit 窗口）不实拍，只能用下面备选来源的夹具管线；
+  - 清单记录采集 URL、UTC 时间、线上终端的构建标识（`build-meta.json`）与守卫检查过的文本数，每次官网发布重拍；
+  - 说明文字写来源与日期：首屏的身份说明 'Screenshot of app.sairn.ai, signed out · <date> UTC'，市场写在 `alt` 里（第 6 节）；日语为「※画面はイメージです」；
+  - 备选来源（第一轮 A7 的规则）：驱动终端的 Playwright 夹具，只用夹具数据，地址打码（如 `0x12…ab`）、不出现可用的存款地址，夹具服务器按 [runtime-guardrails](runtime-guardrails.md) §9 使用与应用开发服务器分开、互不嵌套的 Vite `cacheDir`，截图标注 'Sample data'；DOM 守卫同上（不要求 Connect 按钮）。
 
 ### 仿冒防护（Lookalike guard）
 
@@ -436,6 +543,7 @@
 | #04060c | Hyper Foundation 底色 | C*ab；与 #12131a、#0F1A1F 的 ΔE76 | 2.5；5.1、8.1（中性之间的 ΔE 没有意义，只为说明为什么不用它作理由） |
 | #0A3038 | 品牌青（不作画布） | ΔE76 对 #03211c / #23524C | 12.0 / 17.6 |
 | #2B5055 | 原稿梯度中段（已弃用） | ΔE76 对 #23524C | 8.3 |
+| #263138 / #68747D / #AAB4BC | B 的灰阶热度（第二轮修订） | C*ab / h | 6.5 / 246.1°、6.9 / 249.3°、5.6 / 250.3°（都是中性，豁免第 2 条）；#AAB4BC 对 #0F1A1F 的对比度 8.39（最高不透明度 ≤0.65，实际合成后更暗） |
 | #86e5d3 | 薄荷 signal | ΔE76 对 #97fce3 | 8.5 |
 | #E6B766 | 琥珀 choice | ΔE76 对 #97fce3 | 63.7 |
 | #edeef2 / #86e5d3 / #E6B766 | 文字与强调 | 对 #0F1A1F 的对比度 | 15.25 / 11.92 / 9.54 |
@@ -447,28 +555,37 @@
 
 2026-10-24 实测 `api.hyperliquid.xyz/info` 对 Origin `https://sairn.ai` 返回 `access-control-allow-origin: *`，不需要后端。
 
-- **WebSocket** `wss://api.hyperliquid.xyz/ws`，每页一个，由 Worker 持有，通过 `postMessage` 供卡片使用。最多 6 个订阅：
-  - 桌面首屏所选市场的 `l2Book {coin, nSigFigs}`：`nSigFigs` 取 4 还是 5，由阶段 1 的测量决定；
-  - 手机首屏所选市场的 `bbo {coin}`：一行最优买卖价，代替五档盘口与 REST 轮询，不占 REST 权重（阶段 1 的测量清单里本来就有 `bbo`）；
-  - `trades {coin}`；
-  - 四张市场卡的 `activeAssetCtx {coin}`：标记价，用 `prevDayPx` 算 24h 涨跌；
-  - 不订阅 `allMids` 流：它推送整个主场所的数据，体积与卡片需求不成比例。
-- **REST** `POST /info`：
-  - `metaAndAssetCtxs`（权重 20）：证明条与 szDecimals 用，区块可见时取一次，之后可见期间每 60 s 一次；
-  - `l2Book`（权重 2）：首屏种子快照；手机画布的深度列每 ≥20 s 拉一次（约每分钟 6 权重），或手机不画深度层，由阶段 1 的测量决定；不再每 2 s 轮询（那样约每分钟 60 权重，单这一项就超过下表的上限）；
-  - `recentTrades`：播种成交点；
-  - 四条走势各一次 `candleSnapshot`（1h × 24），每 10 分钟刷新；
-  - WebSocket 被拒（例如公司代理）时，改用 `metaAndAssetCtxs` 刷新价格，每 60 s 一次、每次访问最多 5 次，状态显示为带时间的快照。
-- **初始负载**：方向稿估计约 125 权重（到达时一次：`metaAndAssetCtxs`、`l2Book` 种子、`recentTrades` 与四条 `candleSnapshot`），阶段 1 测量后确认。按 IP 的预算是每分钟 1200，而手机网络普遍走运营商级 NAT，同一出口 IP 后面还有其他访客与他们（包括同一访客点进之后）打开的终端，所以官网自己的稳态权重按下表设上限：
+### 数据路径（唯一来源，第二轮修订）
+
+下表是官网实时数据路径的唯一来源。第一轮正文里「桌面订阅 `l2Book`、手机订阅 `bbo`」的分法、「盘口 5 s 过期」与第一轮原型的两条连接都由它取代（S4）。
+
+决定：桌面与手机每页都只开一条 WebSocket `wss://api.hyperliquid.xyz/ws`，由 Worker 持有，通过 `postMessage` 供首屏与市场表使用。一条连接上只订阅一个 `l2Book`：帧里既不标明分组参数，也不标明是否 `fast`，同一连接上两个 `l2Book` 订阅的帧无法区分（本仓库 AGENTS.md 订单簿契约），第一轮原型正是为了 `fast: true` 才开了第二条连接；现在快速的最优价改由 `bbo` 提供，帧的来源因此不会有歧义。
+
+| 来源 | 方式 | 用途 | 推送或请求周期 | 新鲜度与记账 |
+| --- | --- | --- | --- | --- |
+| `l2Book {coin, nSigFigs: 5}`（20 档） | WebSocket，所选市场 | 热度层的深档位；五档表（只显示一帧完整快照，见合并规则） | 2026-10-24 实测 BTC 约每 5.3 s 推送一次（p90 约 5.6 s） | Live 要求 12 s 内有一帧 |
+| `bbo {coin}` | WebSocket，所选市场 | 最优买卖价、中间价、热度层的最优一档、窄窗口与手机的一行最优价 | 实测 BTC 约每 0.2 s（最长约 1.6 s） | 与 `l2Book` 合起来，Live 要求 6 s 内有一次顶档更新 |
+| `trades {coin}` | WebSocket，所选市场 | 成交点、价格条的最新成交价（'Last trade'） | 实测约 1 s；订阅后的第一条消息是最近约 30 笔成交的快照，没有 `isSnapshot` 标记，按快照处理并按 `tid` 去重 | 最新成交价只在它的交易所时间与盘口的交易所时间相差 ≤60 s 时显示 |
+| `activeAssetCtx {coin}` | WebSocket，所选市场与市场表白名单 | 市场表的标记价；价格条与市场表的 24h 涨跌（`markPx` 对 `prevDayPx`）。价格条的主数字是最新成交价，不是标记价 | 实测约 1 s | — |
+| `l2Book` + `recentTrades` 种子 | REST，到达时与切换市场时 | 当前深度列与窗口内的成交点 | 防抖 300 ms；切换市场时中止上一次请求（`AbortController`） | 计入下文的 REST 权重滑动窗口 |
+| `candleSnapshot`（1h × 24） | REST，每个市场一条 | 24h 迷你走势 | 缓存 10 分钟 | 同上 |
+| `metaAndAssetCtxs`（权重 20） | REST | 网络统计行与 szDecimals | 区块可见时取一次，之后可见期间每 60 s | 同上 |
+| `metaAndAssetCtxs`（回退） | REST，WebSocket 被拒时（例如公司代理） | 价格 | 每 60 s，每次访问最多 5 次，状态显示为带时间的快照 | 同上 |
+
+- 最多 7 个订阅：`l2Book`、`bbo`、`trades` 各一个，`activeAssetCtx` 按所选市场与市场表白名单去重（首版 4 个）。不订阅 `allMids` 流：它推送整个主场所的数据，体积与需求不成比例。
+- 合并规则（只用于热度层与中间价）：最优买卖价取 `bbo` 与 `l2Book` 中交易所时间较新的那一个；更深的档位只来自 `l2Book`；旧档位只保留在新最优价之外的一侧：卖侧保留价格高于新最优卖价的旧卖档，买侧保留价格低于新最优买价的旧买档；与新最优价同价的旧档由新顶档替代，其余（已被新最优价越过的）丢弃。例子：旧卖档 101、102、103，新最优卖价 100 时三档都保留；新最优卖价 102 时，101 丢弃、102 由新顶档替代、103 保留。买侧对称：旧买档 99、98、97，新最优买价 100 时三档都保留；新最优买价 98 时，99 丢弃、98 由新顶档替代、97 保留。被丢弃的价位不补画，留空（第二轮原型 `open-book.worker.js` 的 `mergedBook` 按此实现）。交易所时间只在两条交易所消息之间比较，绝不与用户的墙钟比较。
+- 五档表不合并：只显示最近一帧完整的 `l2Book` 快照（五档同出一帧），caption 写这一帧的交易所时间，例如 'Top 5 · step 1 · 16:20:31 UTC'。窗口窄于 900px 时不显示五档表，只显示一行最新的最优买卖价（第 6 节）；两者不同时出现，表可见时最新顶档体现在中间价标签与热度层。原因：第二轮原型最初把 `bbo` 拼进五档表，价格下行时表里出现 79,819 之后直接是 79,811 的假缺口（2026-10-24 实测截图），因为 79,812–79,818 这几档在旧快照里不存在、新快照还没到。
+- 新鲜度（接收时间用 `performance.now()`，见下文 Fail-closed 规则）：Live 要求 6 s 内有一次顶档更新（来自 `bbo` 或 `l2Book`）且 12 s 内有一帧 `l2Book`；连续 20 s 没有通过校验的 `l2Book` 或 `bbo` 帧时（按 `lastDataAt` 计，见 Fail-closed 规则），视图重置并重新播种，BTC 同时回到海报（第 7 节）。
+- 表里的推送间隔来自第一轮原型的单次短时采样（下文「原型实测」小节），每种订阅当时单独一个连接。第二轮在一条连接上录了 135 s 的 BTC（2026-10-24 15:54–15:57 UTC，`tools/record-sample.mjs`）：`l2Book` 26 帧（约每 5.2 s）、`bbo` 1261 帧（约每 0.11 s）、`trades` 324 条消息、`activeAssetCtx` 132 帧（约每 1 s）。这只是一次采样，录制文件也去掉了未使用的字段，不能代表线上字节数；写成预算之前，阶段 1 与 V2（第 19 节）要按这一组订阅重测每分钟消息数与字节数。
+- **初始负载**：方向稿估计约 125 权重（到达时一次：`metaAndAssetCtxs`、`l2Book` 种子、`recentTrades` 与各条 `candleSnapshot`），阶段 1 测量后确认。按 IP 的预算是每分钟 1200，而手机网络普遍走运营商级 NAT，同一出口 IP 后面还有其他访客与他们（包括同一访客点进之后）打开的终端，所以官网自己的稳态权重按下表设上限：
 
   | 路径 | 稳态 REST 请求 | 每分钟权重 | 上限 |
   | --- | --- | --- | --- |
-  | 桌面（WebSocket 正常） | `metaAndAssetCtxs` 每 60 s（20）；四条 `candleSnapshot` 每 10 分钟（约 8）；盘口、成交与卡片都走 WebSocket | 约 28 | ≤30 |
-  | 手机（WebSocket 正常） | 同桌面（约 28）；画布深度列 `l2Book` 每 ≥20 s（约 6），或不画深度层（0）；最优买卖价走 `bbo` | 约 28–34 | ≤35 |
+  | 桌面与手机（WebSocket 正常） | `metaAndAssetCtxs` 每 60 s（20）；四条 `candleSnapshot` 每 10 分钟（约 8）；盘口、最优价、成交与市场表都走 WebSocket，手机也不再轮询 REST `l2Book` | 约 28 | ≤30 |
   | WebSocket 被拒的回退 | `metaAndAssetCtxs` 每 60 s，每次访问最多 5 次（20，之后为 0）；不轮询 `l2Book`；走势每 10 分钟（约 8） | ≤28 | ≤30 |
 
-  - 权重按 Hyperliquid 文档写成常量（`l2Book` 2，多数 info 20，`recentTrades` 每 20 条加 1，`candleSnapshot` 每 60 条加 1）。调速器在运行时按 60 s 滑动窗口统计本页已发出的 REST 权重，超出所在路径的上限时依次降级：先停走势刷新，再停深度列，再停证明条刷新，最后只保留 WebSocket；初始负载单独记账，不触发降级。单元测试覆盖三种路径的权重合计、上限与降级顺序。
-  - 所有 REST 请求与 WebSocket 一样，只在 Web Lock 选主的标签页发出（下一小节）；其他标签页不发任何请求，保持海报，实时卡按 fail-closed 规则移除。
+  - 权重按 Hyperliquid 文档写成常量（`l2Book` 2，多数 info 20，`recentTrades` 每 20 条加 1，`candleSnapshot` 每 60 条加 1）。调速器在运行时按 60 s 滑动窗口统计本页已发出的 REST 权重，超出所在路径的上限时依次降级：先停走势刷新，再停网络统计行刷新，最后只保留 WebSocket；初始负载单独记账，不触发降级。访客切换市场触发的种子请求计入滑动窗口，表里的稳态数字不含它；V2 测出切换频率后再定是否另设上限。单元测试覆盖两种路径的权重合计、上限与降级顺序。
+  - 所有 REST 请求与 WebSocket 一样，只在 Web Lock 选主的标签页发出（下一小节）；其他标签页不发任何请求，Live market 视图停在 Recorded（BTC）或 Unavailable，网络统计与市场表的实时值按 fail-closed 规则移除。
 - **不使用**：
   - 未见文档的 `globalStats` 与 explorer `blockList`；
   - `stats-data.hyperliquid.xyz`（响应最大 64 MB，排行榜与金库也是对日本刻意不写的内容）；
@@ -479,12 +596,12 @@
 
 ### 客户端与连接策略
 
-- 手写客户端，约 2 KB：订阅、换订阅前先退订、静默 50 s 后发 `{method:'ping'}`。不用打了补丁的 `@nktkas/hyperliquid`，也不用 hl-react：后者依赖 React、TanStack Query 与 wagmi，且官网 README 要求官网不依赖 workspace 包。
-- 只在首屏或卡片至少 10% 可见、且文档可见时连接；页面隐藏 15 s、或离屏 30 s 后关闭。
+- 手写客户端，约 2 KB：订阅、换订阅前先退订、静默 20 s 后发一次 `{method:'ping'}`（30 s 内仍没有任何消息才按下文重连）。不用打了补丁的 `@nktkas/hyperliquid`，也不用 hl-react：后者依赖 React、TanStack Query 与 wagmi，且官网 README 要求官网不依赖 workspace 包。
+- 只在首屏或市场表至少 10% 可见、且文档可见时连接，与 Preview 窗口选中哪个视图无关（第 6 节）；页面隐藏 30 s、或离屏 30 s 后关闭（第一轮写的是隐藏 15 s）。
 - 跨标签页只开一个连接：用 Web Lock `sairn-site-live`（内部标识按品牌契约用 `sairn` 字面量）在 sairn.ai 的可见标签页之间选出一个持有连接并发出全部 REST 请求，其他标签页保持海报、不发请求；隐藏的标签页会放锁，所以可见的那一页很快能拿到。终端的订单簿传输池自己就可能开到 4 个连接，两边是不同源，无法协调，官网只占 1 个。
-- 重连用全抖动退避（1、2、4、8、16、30 s），每 5 分钟最多 6 次、每页每分钟最多新建 3 个连接；被拒绝时 fail closed。重新订阅后的快照替换全部状态。
+- 连接预算不变：每页每 60 s 最多新建 3 个连接、每 300 s 最多 6 个；重连用全抖动退避（1、2、4、8、16、30 s），收到一帧有效数据后退避重置；30 s 没有收到任何消息时主动重连；被拒绝时 fail closed。重新订阅后的快照替换全部状态。
 - 消息按动画帧合并，DOM 更新 ≤4 Hz。
-- 数据调速器：Worker 统计每分钟收到的字节数。桌面超过 400 KB/min、手机超过 120 KB/min 时，先把盘口从 `l2Book` 改为 `bbo`，再降到只订阅成交；降级不改用 REST 轮询，REST 权重另由上表约束。阈值在阶段 1 实测后固定。
+- 数据调速器：Worker 统计每分钟收到的字节数。桌面超过 400 KB/min、手机超过 120 KB/min 时，首屏退订 `l2Book`、`bbo` 与 `trades`，Live market 视图进入 Unavailable（第 7 节状态表）；市场表的 `activeAssetCtx` 保留。第一轮「先把盘口从 `l2Book` 改为 `bbo`，再降到只订阅成交」的阶梯取消：`bbo` 已在订阅里，「只看成交」的窄条也已删除（第 7 节回退阶梯）。降级不改用 REST 轮询，REST 权重另由上表约束。阈值在阶段 1 与 V2 实测后固定。
 
 ### Fail-closed 规则
 
@@ -494,16 +611,19 @@
   - 频道匹配，`data.coin` 等于订阅的币种，其他币种的串扰直接丢弃；
   - 两侧都存在；每个 `px`、`sz` 符合 `/^\d+(\.\d+)?$/`；
   - 买盘严格递减、卖盘严格递增，最优买价 < 最优卖价，`sz > 0`，时间不倒退；
-  - 连续 3 帧无效，就把数据源标为无效。
-- **成交**：方向是 `B` 或 `A`，`px`、`sz` 是十进制字符串，按 `(time, coin, tid)` 去重（与终端最近成交契约一致）。校验器在解析时就丢弃 `users`（买卖双方地址）与 `hash`，只保留 `coin`、`side`、`px`、`sz`、`time`、`tid`；提示框与 Read snapshot 也不显示地址。
-- **新鲜度**：用 `performance.now()` 的接收时间，绝不拿用户的墙钟比较交易所时间戳（同 [ADR 0022](adr/0022-subscription-staleness-monotonic-clock.md) 的思路）。盘口 5 s 没有有效帧即为过期并冻结，30 s 后重连。
-- **LIVE 标记**：只在连接打开、最近一次有效盘口不到 5 s、最近一条消息不到 10 s、币种匹配时显示。否则隐藏；5 s 后画布交叉淡化为海报（'Recorded <date>'）。不显示 'offline'、'stale' 或错误文字。
-- **证明卡**：
+  - 只有一侧的 `bbo` 帧（盘口一侧暂时为空）跳过，不更新顶档，也不计为坏帧；
+  - 坏帧按频道计数（`l2Book`、`bbo` 各一个计数器），一个频道的有效帧只清零它自己的计数。第二轮原型最初共用一个计数器，约每 0.1 s 一帧的 `bbo` 会不断清零深度的坏帧计数，「连续 3 帧」永远达不到（第二轮审查 S-N3）；
+  - 同一频道连续 3 帧无效，就丢弃该频道已有的数据，LIVE 随之撤下（第二轮原型同时关闭连接并按退避重连，重连计入连接预算，持续坏帧会在几轮后 fail closed；生产是否这样做在阶段 1 决定，并写进第 7 节故障矩阵的预期）。
+- **仅深度停更的恢复**：`bbo` 健康而最近一帧 `l2Book` 早于 20 s 时，在同一连接上先退订再订阅 `l2Book`，不新建连接，不占连接预算。这种情况下 `lastDataAt` 一直被 `bbo` 刷新，20 s 重置与 30 s 静默重连都不会触发，没有这一条市场会一直停在 Unavailable。
+- **成交**：方向是 `B` 或 `A`，`px`、`sz` 是十进制字符串，按 `(time, coin, tid)` 去重（与终端最近成交契约一致）。校验器在解析时就丢弃 `users`（买卖双方地址）与 `hash`，只保留 `coin`、`side`、`px`、`sz`、`time`、`tid`；提示框与 Read snapshot 也不显示地址。价格条的最新成交价带可见的 'Last trade' 标签（不只放在 `title` 里：触屏看不到，读屏也不可靠），只在该成交的交易所时间与盘口的交易所时间相差 ≤60 s 时显示，否则是预留宽度的空白槽；两个都是交易所时间，不与墙钟比较。
+- **新鲜度**：用 `performance.now()` 的接收时间，绝不拿用户的墙钟比较交易所时间戳（同 [ADR 0022](adr/0022-subscription-staleness-monotonic-clock.md) 的思路）。阈值以上面的数据路径表为准：6 s 内有顶档更新、12 s 内有 `l2Book`，20 s 没有通过校验的 `l2Book` 或 `bbo` 帧时重置并重新播种，30 s 静默重连。20 s 从 Worker 唯一的 `lastDataAt` 起算（只在接受这两种帧时更新，切换市场与恢复时重新起算；第 7 节状态表下的说明）。`silentMs` 以时长跨线程传递，绝不传时间戳：Worker 与页面的 `performance.timeOrigin` 不同，两边的时间戳不能直接比较。第一轮的「盘口 5 s 没有有效帧即为过期并冻结」作废：完整深度的 `l2Book` 本身约 5.3 s 一帧，用它会让 LIVE 反复闪断。
+- **LIVE 标记**：只在 Live 状态显示（第 7 节状态表）：WebSocket 处于打开状态（`readyState === OPEN`；连接一关闭就撤下，不等新鲜度过期；海报管线的回放没有连接，豁免这一条）、币种匹配、满足上面的新鲜度条件，BTC 还要先连续有效 15 s。条件一旦不满足，LIVE 与 Live market 标签上的圆点立即消失，实时数字移除（圆点在录制阶段也按同样的数据条件亮，第 6 节）；何时回到海报见第 7 节状态表下的说明（fail closed 或 `silentMs ≥ 20 s`）。说明行只写 'Waiting for Hyperliquid public data.'、'Live data is unavailable right now.' 这类状态说明，不显示 'offline'、'stale' 或错误文字。
+- **网络统计行**（第一轮的「证明卡」，第二轮降为市场区的一行，第 5 节）：
   - `universe.length` 等于 `assetCtxs.length`，排除已下架与 HIP-3；
-  - 成交额 = Σ `Big(dayNtlVlm)`（美元名义值）；持仓量 = Σ `Big(openInterest).times(markPx)`：`openInterest` 是基础币单位，直接求和得到的是各币张数之和，量级可能正好落在下面的合理范围里，校验拦不住（终端同样先换算：`apps/terminal/src/domain/market/calculations.ts` 的 `getOiUsd`、`funding-comparison.ts` 第 240 行）；只对未下架项求和，任一项 `markPx` 缺失、为 0 或不是十进制字符串时，整张持仓量卡 fail closed；
+  - 成交额 = Σ `Big(dayNtlVlm)`（美元名义值）；持仓量 = Σ `Big(openInterest).times(markPx)`：`openInterest` 是基础币单位，直接求和得到的是各币张数之和，量级可能正好落在下面的合理范围里，校验拦不住（终端同样先换算：`apps/terminal/src/domain/market/calculations.ts` 的 `getOiUsd`、`funding-comparison.ts` 第 240 行）；只对未下架项求和，任一项 `markPx` 缺失、为 0 或不是十进制字符串时，持仓量一项 fail closed；
   - 求和用 Big.js 7.0.1，显示时向下取整（主张绝不向上取整）；
   - 合理范围：永续数量 50–1000，24h 成交额与持仓量各 $1M–$1T；
-  - 不通过的卡从固定高度的条里移除，不留占位，也不编造；
+  - 不通过的项从固定高度的行里移除，不留占位，也不编造；
   - `validate.ts` 的单测至少有两个持仓量用例：把基础单位直接求和的实现必须失败；按名义值求和的样本必须通过。
 - **价格**：
   - 协议直接给出的值（`px`、`markPx`、盘口与成交价）原样显示协议字符串，只换分隔符（整数部分插入千分位），不重新取精度；
@@ -519,9 +639,9 @@
 - 发布手册增加一步：`pnpm --filter @sairn/website snapshot`（脚本在 `apps/website/scripts/`）刷新快照。主场所未下架永续少于 100 个，或 `/markets/` 白名单里有币种不存在或已下架时，命令失败、本次发布停止，静态的 '100+ perpetual markets' 与邮件的「100以上の無期限先物」因此每次发布都成立。
 - 顺序固定为「刷新快照 → 提交（进 `dev` 的 PR 或发布提交）→ 从该提交构建」，发布产物因此对应一个提交；禁止从脏工作区构建发布产物，构建前 `git status --porcelain` 必须为空。
 
-### 2026-10-24 原型实测（追加）
+### 2026-10-24 原型实测（证据；结论已并入上面的数据路径表）
 
-做首屏原型时直接测了公共 WebSocket 的推送节奏（本机 Node 订阅 BTC，30–120 s，每种订阅单独一个连接；不是长期统计）：
+做首屏原型时直接测了公共 WebSocket 的推送节奏（本机 Node 订阅 BTC，30–120 s，每种订阅单独一个连接；不是长期统计）。下表保留为证据，设计以上面的数据路径表为准：
 
 | 订阅 | 推送间隔中位数 | 档数 |
 | --- | --- | --- |
@@ -533,11 +653,11 @@
 
 另外，订阅 `trades` 之后的第一条消息是最近约 30 笔成交的快照（ETH 实测最早约 84 s 前），没有 `isSnapshot` 标记，要按快照处理并按 `tid` 去重。
 
-影响本节的设计：
+第一轮据此写下的推论，以及第二轮的处理（已被数据路径表取代的部分照原样保留，便于追溯）：
 
-- 「盘口 5 s 没有有效帧即为过期」不能用在完整深度的 `l2Book` 上，它本身就约 5.3 s 一帧，LIVE 会反复闪断。原型最初就是这样，改为用快速流判定后，四个场景约 60–94 s 的逐秒采样里中断 0 次。
-- LIVE、五档表与中间价要来自快速流（`fast: true`）或 `bbo`；20 档深度只适合画热度层，并按「快速流覆盖、深度流里比快速流最外档更靠内的价位丢弃」合并。
-- 同一连接上不同参数的 `l2Book` 帧无法区分（本仓库 AGENTS.md 订单簿契约），所以要么像原型那样开两条连接（快速流一条、深度流一条），要么一条连接只订阅一种 `l2Book`，配 `bbo` 判定新鲜度（这时五档表的第 2–5 档最多约 5 s 旧，要在表头写明）。这与本节「每页一个连接」的取舍由阶段 1 决定，并记入决定 D8。
+- 「盘口 5 s 没有有效帧即为过期」不能用在完整深度的 `l2Book` 上，它本身就约 5.3 s 一帧，LIVE 会反复闪断。原型最初就是这样，改为用快速流判定后，四个场景约 60–94 s 的逐秒采样里中断 0 次。→ 第二轮改为 6 s 顶档、12 s `l2Book` 的阈值。第二轮原型在一条连接上做了短时逐秒采样（2026-10-24，无头 Chromium）：BTC 90 s、SOL 与 HYPE 各 45 s，LIVE 中断 0 次，每页 1 条 WebSocket；24 小时浸泡仍是 V2 的验收项。
+- 「LIVE、五档表与中间价要来自快速流（`fast: true`）或 `bbo`；20 档深度只适合画热度层，并按快速流覆盖的规则合并。」→ 第二轮选 `bbo`，不再用 `fast: true`；合并规则见数据路径表。
+- 「要么像原型那样开两条连接（快速流一条、深度流一条），要么一条连接只订阅一种 `l2Book`，配 `bbo` 判定新鲜度，由阶段 1 决定并记入 D8。」→ 第二轮选定后者：每页一条连接，D8 不再需要裁决这一项。五档表只显示一帧完整的 `l2Book` 快照并写明交易所时间（见合并规则），正常推送时最多旧一个推送间隔（约 5 s），Live 状态下不超过 12 s（数据路径表的新鲜度条件）。
 - 原型的其余实现与限制见它的 README。
 
 ## 11 技术栈决定
@@ -566,7 +686,7 @@
 
 「发布至少两周」是本规划提出的新规则：AGENTS.md、agent.md、Agent 工作手册与 `pnpm-workspace.yaml` 里都没有这条规定。实施时把它写进官网 README 的依赖说明，只约束官网新增或升级的依赖；若要全仓执行，可改用 pnpm 的 `minimumReleaseAge` 设置（pnpm 10.16 起支持，属先验知识，实施时核实；它写在 `pnpm-workspace.yaml`，影响所有包，需要单独决定）。
 
-不使用：React 岛（react-dom 59.5 KB）、three.js（110–177 KB）、OGL（11.1 KB，两个手写程序用不着）、GSAP（25.6–44.1 KB）、Motion（27.1 KB）、Lenis（5 KB）、Rive（51 KB + 262 KB WASM）、dotLottie（12 KB + 388 KB WASM）、Spline（863 KB）、hls.js 与视频、Lightweight Charts（47.5 KB，其 NOTICE 要求的 TradingView 归属与日本的图表库商标规则冲突，[资金费率历史](market-funding-history.md)第 148 行也否决过为小图表引入图表库）。体积均为调研的 brotli 实测。
+原生优先（第二轮修订，S8；取代第一轮的「不使用」清单）：默认用 CSS、WAAPI、Canvas 2D 与手写客户端。一个库只有在同一交互的实测比较里胜过原生实现（压缩体积、实现复杂度、降级与减少动态行为、维护边界），并放得进第 13 节预算时才加入；比较结果写进引入它的 PR 与官网 README。例如要做的交互如果用 `motion/mini`（约 3.4 KB，调研的 brotli 实测）比手写 WAAPI 更简单可靠，就可以加。按调研体积与本规划现在的需求，下列目前不入选，这是取舍而不是禁令：React 岛（react-dom 59.5 KB）、three.js（110–177 KB）、OGL（11.1 KB，两个手写程序用不着）、GSAP（25.6–44.1 KB）、Motion 的完整原生 API（27.1 KB）、Rive（51 KB + 262 KB WASM）、dotLottie（12 KB + 388 KB WASM）、Spline（863 KB）。另有三项不是体积问题：Lenis（5 KB）做平滑滚动，属于第 8 节不做的滚动劫持；hls.js 与视频，第 2 节非目标不做营销视频；Lightweight Charts（47.5 KB）的 NOTICE 要求的 TradingView 归属与日本的图表库商标规则冲突，[资金费率历史](market-funding-history.md)第 148 行也否决过为小图表引入图表库。体积均为调研的 brotli 实测。
 
 ### 代码布局
 
@@ -575,7 +695,7 @@
 - `src/lib/live/open-book.worker.ts`：Canvas 2D 渲染器。
 - `src/config/claims.ts`：主张登记表。
 - `src/data/market-structure.json`：结构快照。
-- `src/config/markets.ts`：`/markets/` 的白名单（阶段 5）。
+- `src/config/markets.ts`：首页市场表的四个币种（阶段 2）与 `/markets/` 的白名单（阶段 5）。
 - `scripts/`（即 `apps/website/scripts/`，现在还不存在）：`record-market.mjs`、`snapshot-market.mjs`（`snapshot` 命令）、`subset-ja-fonts.mjs`、`capture-ui.mjs` 与海报渲染脚本。本文所有脚本路径都指这个目录。
 - 注意：`copy-contract.test.mjs` 扫描 `src` 下所有文本文件（`.astro`、`.ts`、`.json`、`.css` 等），注释里也不能出现 'self-host' 等禁用词；禁用清单本身放在 `tests/`。因此会命中 CSS 与动效代码的模式（例如毫秒延迟数字，`global.css` 的减少动态规则就写着 `0.01ms`）不放进这个测试，改为扫描 `dist` 的可见文本（第 18 节）。
 
@@ -665,17 +785,17 @@
 | Worker（Canvas 2D 渲染器、WebSocket 客户端、校验器、调速器） | ≤12 KB |
 | 全部 JS（除启动脚本外都延迟加载） | ≤30 KB |
 | 字体（拉丁页；Plex Sans 拉丁预加载，Plex Mono 不预加载） | ≤75 KB |
-| 海报 AVIF | 手机 ≤45 KB，桌面 ≤80 KB |
+| 首屏图像 AVIF（默认的 Terminal 截图；Live market 的海报同样适用，但在首次可能打开该视图前才预取，不计入下一行） | 手机 ≤45 KB，桌面 ≤80 KB（目标，实测后固定） |
 | 交互前总量（不含实时数据流） | 手机 ≤250 KB，桌面 ≤350 KB |
 | `/ja/` 首屏（加 400 与 600 两个子集，没有画布与海报） | ≤280 KB |
 
-- **首屏以下**（`content-visibility: auto` 配 `contain-intrinsic-size`）：终端内部一节最多 4 张 AVIF，每张 ≤60 KB；走势线是内联 SVG；首版没有视频。
-- **实时数据**：前 10 s ≤60 KB；稳态桌面 ≤400 KB/min、手机 ≤120 KB/min，REST 权重桌面 ≤30/min、手机 ≤35/min（第 10 节的表），都由调速器在运行时执行，阈值以阶段 1 实测为准。
+- **首屏以下**（`content-visibility: auto` 配 `contain-intrinsic-size`）：第 02 区块最多 4 张 AVIF（一张大截图与至多三张卡片裁切），每张 ≤60 KB；走势线是内联 SVG；首版没有视频。
+- **实时数据**：前 10 s ≤60 KB；稳态桌面 ≤400 KB/min、手机 ≤120 KB/min，REST 权重桌面与手机都 ≤30/min（第 10 节的表；第一轮手机是 ≤35/min，因为要轮询 REST `l2Book`），都由调速器在运行时执行，阈值以阶段 1 与 V2 实测为准。
 - **运行时**：渲染不在主线程；加载后没有超过 50 ms 的长任务。
 - **Core Web Vitals**：
   - 实验室（Lighthouse 移动限速配置）：LCP ≤1.8 s、TBT ≤50 ms、CLS ≤0.02；
   - 现场（有足够流量后看 CrUX 的 p75）：必须满足 LCP ≤2.5 s、INP ≤200 ms、CLS ≤0.1，目标是 LCP ≤1.8 s、INP ≤100 ms；
-  - LCP 元素永远是 H1 文字或海报，不是画布。
+  - LCP 元素永远是 H1 文字或默认的 Terminal 截图，不是画布。
 - **执行**：
   - 体积测试进 `node --test`，很便宜；
   - 官网的 Playwright 套件只对 `astro build` 产出的 `dist` 用静态服务器跑，不跑 `astro dev`，因此不碰任何 Vite 依赖缓存；`capture-ui.mjs` 驱动终端夹具时，按 [runtime-guardrails](runtime-guardrails.md) §9 使用独立的 Vite `cacheDir`，与终端开发服务器的缓存互不嵌套；
@@ -688,14 +808,14 @@
 
 目标是 WCAG 2.2 AA，可行处满足 2.3.3。
 
-- **静态优先**：所有主张、数字标签与 CTA 都是真实 HTML 文本。画布 `aria-hidden`，含义放在说明、DOM 盘口表与 'Read current snapshot' 按钮里。按下这个按钮，一个礼貌的 live region 读出一段摘要，例如 'BTC: best bid 67,012, best ask 67,013, last trade buy 0.015 BTC at 21:03:11 UTC'。快速跳动的数字不进 `aria-live`；NumberFlow 本身 `aria-hidden`，旁边有同频更新的读屏文本。
+- **静态优先**：所有主张、数字标签与 CTA 都是真实 HTML 文本。画布 `aria-hidden`，含义放在说明、DOM 盘口表与 'Read snapshot' 按钮里。按下这个按钮，一个礼貌的 live region 读出一段摘要，例如 'BTC: best bid 67,012, best ask 67,013, last trade buy 0.015 BTC at 21:03:11 UTC'；Recorded 与 Still 状态下读的是海报元数据，开头先读 'Recorded <date> HH:MM–HH:MM UTC'。Terminal 截图有描述画面的 `alt`（市场、未登录、采集日期）。快速跳动的数字不进 `aria-live`；NumberFlow 本身 `aria-hidden`，旁边有同频更新的读屏文本。
 - **会动和自动更新的内容**（WCAG 2.2.2 的例子就是股票行情条）：首屏与页脚的 Pause（`aria-pressed`）停下画布、数字滚动与所有实时数字。
-- **减少动态**：见第 8 节；画布换海报，并提供 'Show live view' 让访客自行开启。
+- **减少动态**：见第 8 节；Live market 视图停在 Still 状态（第 7 节），并提供 'Show live view' 让访客自行开启。
 - 没有滚动劫持、随滚动的相机或视差；滚动驱动效果只有 `no-preference` 下的 opacity 与 transform 显现；文字背后没有全宽动效。
 - **颜色**：方向由形状（实心与空心）、盘口中的位置以及符号和 ▲▼ 表达，不只靠颜色；第 9 节的对比度满足 4.5:1；现有 `--text-faint` ≥4.5:1 的检查扩展到新表面（#0F1A1F、#212d33）；焦点环 `var(--signal)` 永不移除。
-- **输入**：市场标签是键盘可用的 tablist（方向键）；Pause 与 Read snapshot 是真正的按钮；悬停十字线与提示框只是增强，信息不只靠悬停获得；目标尺寸 ≥24×24（2.5.8），触控 ≥44px 并有按下反馈；吸顶页头不遮挡获得焦点的元素（2.4.11，用 `scroll-padding-top`）；二维码弹层可用键盘打开，Esc 关闭。
+- **输入**：Preview 视图与市场标签是两个各有可访问名称（'Preview'、'Market'）、键盘可用的 tablist（方向键）；Pause 与 Read snapshot 是真正的按钮；悬停十字线与提示框只是增强，信息不只靠悬停获得；目标尺寸 ≥24×24（2.5.8），触控 ≥44px 并有按下反馈；吸顶页头不遮挡获得焦点的元素（2.4.11，用 `scroll-padding-top`）；二维码弹层可用键盘打开，Esc 关闭。
 - **结构**：HTML 里只有一个 H1，就是看得见的首屏句子；每页 `lang` 正确；有跳转链接与地标区域；FAQ 用原生 `<details>`；文字放大到 200%、宽 320px 时重排且没有横向滚动。※ 注释的标记是带可访问名称的链接（「注3: 根拠」），并有返回链接。
-- **验证**：Playwright 套件里用 `@axe-core/playwright` 跑 axe；英文与日语各做一次 VoiceOver 与 NVDA 手动检查；纯键盘走查；减少动态模拟下统计 rAF 帧数，断言 Worker 渲染为 0。
+- **验证**：Playwright 套件里用 `@axe-core/playwright` 跑 axe；英文与日语各做一次 VoiceOver 与 NVDA 手动检查；纯键盘走查；减少动态模拟下统计 rAF 帧数，断言 Worker 除 Still 状态的那一帧静止画面外不再渲染（第 7 节「测试」）。
 
 ## 15 SEO 与增长
 
@@ -712,13 +832,53 @@
 
 隐私政策 §4 与 Cookie 政策 §3 写明不集成产品分析 SDK、不用广告 Cookie，但两处说的都是 the Interface（app.sairn.ai）；隐私政策开头的 Services 另含「related Sairn websites」。隐私政策 §3 列出的用途里有「了解聚合的服务可靠性与性能」，没有营销分析。
 
+第二轮修订（S7）把衡量分成上线前与上线后两类，并分别写明能证明什么、不能证明什么。
+
+### 上线前：首屏理解测试（V1）
+
+- 方法：5 秒测试（看首屏 5 秒后回答问题）与首次点击测试（给一个任务，记录第一次点在哪里）。每个变体至少 10 位目标用户：用过或考虑过 Hyperliquid 的交易者，或持有加密资产但没有自托管钱包的人（第 3 节受众 1、2），此前不熟悉 Sairn。变体指要比较的首屏稿，例如 Terminal 默认与 Live market 默认（D20），需要时再加 A/B 两种构图。测试用本地原型或不公开的预览，不放公开 URL；招募方式与测试工具由运营方选择。
+- 5 秒测试的三个问题：Sairn 是什么？资金由谁持有？怎样登录？（第一轮的「开始需要什么」拆成「怎样登录」与「存款要准备什么」两问，第二轮审查 L-N4：原来只答出 USDC 或只答出登录方式之一就能通过。）「存款要准备什么」在 5 秒时只记录，判分见下面的通过标准。
+- 检查误解的问题：
+  - 行情画面是不是终端里的功能？Live market 默认稿在 5 秒后直接问；Terminal 默认稿在下面的自由浏览结束后，由主持人切到 Live market 再问。这是有提示的曝光，测的是看到后会不会误认，不是自然发现；
+  - 看到 Terminal 截图时问「你能直接在这个窗口里下单吗？」（它是截图，答案是不能；L-N1）。
+- 首次点击的任务（草稿）：「你想开始交易」「你没有钱包，想知道能不能用」「你想知道存款需要准备什么」。主按钮 'Trade <coin>' 与页头 'Open terminal' 都算对，分别记录槽位；点到截图里的控件（'Connect'、'Buy' 等）单列为「点截图」，计为未命中。
+- 只记录、不设门槛的度量（第二轮审查 S-N1、L-N4，新增项都不是 go / no-go 条件）：
+  - 第二视图发现率：Terminal 默认稿在 5 秒题与点击任务之后给 30 s 自由浏览，记录是否、何时主动打开 Live market；
+  - 现代感成对比较：每位参与者最后与基线做一次组内比较，基线是阶段 0 修正后的现站首屏，阶段 0 尚未上线时用当前现站；两稿各看 5 s，顺序平衡，问「哪个更现代、更不像传统网站，为什么」。不另加组，每个变体仍是 10 人（两个变体时共 20 人，每多一个变体多 10 人）。参与者此前已看过新稿，熟悉度会偏向新稿，结果只是方向性证据；
+  - 「怎样登录」的回答是否提到邮箱，单独编码（差异点，第 3 节受众 2）；
+  - 「点截图」的次数与「能否直接下单」的回答。
+- 通过标准（拟议，运营方确认后使用）：
+  - 至少 8/10 说出它是交易 Hyperliquid 永续与现货的网页终端（答成 Hyperliquid 本身或交易所算错）；
+  - 至少 8/10 说出资金留在自己的 Hyperliquid 地址、Sairn 不持有；
+  - 至少 7/10 说出可以用邮箱或自己的钱包登录（5 秒时判分）；
+  - 存款要准备什么：由任务 3 的首次点击（下一条）与一道不限时的追问判分，追问至少 7/10 答出 Arbitrum 上的 USDC；
+  - 至多 1/10 认为 Live market 画面是终端功能（S1）；Terminal 默认稿只在全部参与者都由主持人切到 Live market 看过之后才计算；
+  - 三个点击任务各有至少 7/10 的第一次点击落在对应目标上（任务 1 为 'Trade <coin>' 或页头 'Open terminal'，任务 2 为 'How email sign-in works'，任务 3 为 'Deposit guide'）。
+- 点击任务只测入口能否被发现，不测 `#start` 等落点的内容：三步说明与存款指南的内容在阶段 2 用整页稿另测（第 19 节）。
+- 能证明：在小样本下，首屏文案与默认视图是否把这几件事讲清楚，以及变体之间的方向性差别；发现率与现代感比较只给 D20、D2 提供方向。不能证明：转化率、存款或留存；5 秒后的回答是即时理解，不是记忆；每组 10 人也不足以区分很接近的两个变体；维护成本用户测试测不到。
+
+### 上线后：趋势
+
+- 指标：带官网 CTA 槽位的应用文档请求数（日志代理指标，不是点击数、会话数或用户数），按 `utm_content` 分槽统计，再按 `utm_source`、`utm_campaign` 分成直接到访与邮件透传两类（透传后 `utm_source` 是 `email`，只按 `utm_source=website` 筛会漏掉它们，官网来源靠 `utm_content` 槽位识别）；改版上线前后各四周对比，用官网分发同期的页面文档请求数归一化。计数口径：
+  - 数据源：终端分发的 CloudFront 标准日志；
+  - 计入：`cs-method` 为 GET；`sc-status` 为 200 或 304；`cs-uri-stem` 属于 CTA 生成器（由 `APP_URL` 构造）产出的路径集合，`/tradeHistory/<address>` 这类带地址的路径因此不在内；`cs-uri-query` 里的 `utm_content` 在下面统一命名表的槽位内；
+  - 排除：HEAD 请求，以及已知爬虫与链接预览的 User-Agent（名单随统计脚本做版本管理；app.sairn.ai 的 `robots.txt` 允许全部抓取，爬虫沿官网 CTA 抓取会产生同样带 UTM 的请求），报告同时给出被过滤掉的量；
+  - 不去重：重复点击、多开标签与刷新各计一次，报告写明；
+  - 开启日志选字段时，必须保留 `cs-uri-query`、`cs-user-agent`、`sc-status` 与 `cs-method`（`c-ip` 仍去掉，D10）。
+- 会话数：现行政策下无法定义（没有 Cookie、浏览器存储与 `c-ip`，也没有会话化规则），不报告。第一轮列的「来自官网的应用会话数」删除；若运营方坚持要会话指标，属于 D10 的范围扩展，先改隐私政策并经法律审阅，不能用指纹或 IP 哈希凑出会话。
+- 不做 A/B 分流：现在的流量分成两组后每组样本太少，稳定分组还需要 Cookie 或浏览器存储（A10）。
+- 服务器日志从阶段 1 开始（第一轮放在阶段 5），在现行隐私政策下运行：去掉 `c-ip`、短期保存、只做聚合（D10）。用于营销衡量之前仍需律师确认（第 18 节）：确认前不出到达与转化报告，确认后用已积累的数据作基线；没有日志就明确不评估 CTA 文档请求的变化。
+- 能证明：改版前后到达与 CTA 文档请求的相关变化。不能证明因果：同期的行情、日本邮件等推广与季节都会影响，也不能把变化归因到画布或某一句文案。首次存款与首笔交易仍未测（要产品侧事件）；builder 聚合收入分不出新访客与已有用户，不用它替代转化。每个观察期只改一个主要因素，并记录同期的市场与推广变化。
+
+### 手段与前提
+
 | 手段 | 现在能否用 | 前提 |
 | --- | --- | --- |
 | 每个指向 app.sairn.ai 的链接按下面的统一命名表带 `utm_*`，不用 `?ref=` | 能 | 无。参数不含任何标识；终端的 `validateSearch` 首次导航后会丢掉它们，但首个文档请求已经带上 |
 | ESP 的邮件点击统计 | 能 | 按邮件 README 闸门 6 的决定 |
 | Lighthouse 实验室数据、CrUX 现场数据（公开、聚合，站上不加代码） | 能 | CrUX 需要足够流量 |
 | Hyperliquid 公开的 builder 聚合数据。优先用 `referral` 返回的 builder 收入等聚合字段（字段使用前要实测），它不含逐地址数据。方向稿引用的每日 builder 成交文件 `stats-data.hyperliquid.xyz/Mainnet/builder_fills/{builder}/{YYYYMMDD}.csv.lz4`（本次未复核）是 Sairn 自己用户的逐地址成交，即使只统计每日笔数、名义金额与费用，也是在为营销目的处理逐地址数据，而隐私政策 §3 的用途里没有营销分析；律师确认前不用 | `referral` 聚合：能；`builder_fills`：等律师（第 18 节） | 不保存任何地址；`builder_fills` 只在律师确认后离线处理、只留聚合结果 |
-| CloudFront 标准访问日志（官网与终端两个分发），按路径、语言与 `utm_content` 统计到达；短期保存（例如 30 天） | 需要运营方在 AWS 开启 | 律师确认隐私政策覆盖用于营销分析的服务器日志。终端分发的日志会记下 `/tradeHistory/<address>` 这类路径（`apps/terminal/src/routes/tradeHistory.$address.tsx`，另有 `fundingHistory`、`historicalOrders`）与 `c-ip`，把地址和 IP 关联在一起：开启时去掉 `c-ip` 字段（CloudFront 标准日志 v2 可以选字段，属先验知识，运营方实施时核实），或对这些带地址的路径不记录；字段选择、保存期限与处理方式写进 D10 的批准事项 |
+| CloudFront 标准访问日志（官网与终端两个分发），按路径、语言与 `utm_content` 统计到达；短期保存（例如 30 天） | 需要运营方在 AWS 开启；第二轮修订提前到阶段 1 | 律师确认隐私政策覆盖用于营销分析的服务器日志。终端分发的日志会记下 `/tradeHistory/<address>` 这类路径（`apps/terminal/src/routes/tradeHistory.$address.tsx`，另有 `fundingHistory`、`historicalOrders`）与 `c-ip`，把地址和 IP 关联在一起：开启时去掉 `c-ip` 字段（CloudFront 标准日志 v2 可以选字段，属先验知识，运营方实施时核实），或对这些带地址的路径不记录；字段选择、保存期限与处理方式写进 D10 的批准事项 |
 | 任何地址级指标（每日唯一地址、首次出现的地址） | 不能 | 先改隐私政策并经法律审阅 |
 | 站上的第一方事件请求（例如 `/e/<event>`）、Cookie 或 localStorage、分析 SDK、A/B 工具、热图 | 不能 | 先改政策与 Cookie 政策（目前只覆盖 app.sairn.ai）并经法律审阅 |
 
@@ -727,14 +887,14 @@
 | 来源 | `utm_source` | `utm_medium` | `utm_campaign` | `utm_content` |
 | --- | --- | --- | --- | --- |
 | 日本邮件（现行，邮件 README 闸门 6） | `email` | `email` | `jp_2026_trust` | 无（以后若按按钮加槽位，要同步修改邮件 README 与三份邮件文件） |
-| 官网 | `website`（固定的非域名标记，不写 `sairn.ai`：品牌契约要求域名只从 `brand.json` 读取） | `site` | `<locale>_<page>`，例如 `en_home`、`en_deposit`、`ja_home` | 槽位，例如 `header`、`hero_cta_btc`、`hero_email`、`markets_btc`、`entry_email`、`entry_wallet`、`final_cta` |
+| 官网 | `website`（固定的非域名标记，不写 `sairn.ai`：品牌契约要求域名只从 `brand.json` 读取） | `site` | `<locale>_<page>`，例如 `en_home`、`en_deposit`、`ja_home` | 槽位，例如 `header`、`hero_cta_btc`、`start_cta`、`markets_btc`、`final_cta`（第一轮的 `hero_email`、`entry_email`、`entry_wallet` 随同链接换 UTM 的入口一起删除，L9、S6） |
 
 - CTA 链接由 `config/brand.ts` 的 `APP_URL` 加路径构造，不写域名字面量。
 - 透传：进入页面的地址同时带合法的 `utm_source`、`utm_medium`、`utm_campaign`（各自匹配 `/^[a-z0-9_]{1,40}$/`）时，CTA 保留这三个值，只把 `utm_content` 换成本页槽位；否则用上表的官网默认值。这样邮件以后改指 `/ja/` 时，点进终端的请求仍带 `utm_campaign=jp_2026_trust`，不会被官网的 `ja_home` 覆盖。实现是内联启动脚本只读一次 `location.search` 并改写链接的 `href`，不写任何存储（A10）；没有 JS 时链接保持官网默认值。
 
-- **基线**：改版上线前，至少取四周的 `referral` 聚合数据，若日志已开启也取四周的到达数据，记入任务记录。
-- **实验**：不做 A/B；按两周的时间窗依次比较，用日志里的页面浏览数归一化，发布日期记入任务记录；主张登记表让每次文案变化可审计。
-- **已知盲点**：终端的 Service Worker 会少算回访；归因止于进入应用的第一个请求；注册、首次存款与首笔交易要在产品侧另做事件（邮件 README §6 第 7 条）。
+- **基线**：改版上线前，至少取四周的 `referral` 聚合数据，以及阶段 1 开启日志后积累的到达数据（律师确认后才出报告），记入任务记录。
+- **比较**：不做 A/B；上线前后各四周对比（上文「上线后：趋势」），用日志里的页面浏览数归一化，发布日期记入任务记录；主张登记表让每次文案变化可审计。第一轮的「两周时间窗」改为四周。
+- **已知盲点**：终端的 Service Worker 对同源导航用 stale-while-revalidate，每次仍发出网络请求（`apps/terminal/public/sw.js`），HTML 又是 `max-age=0`（`deploy/cloudfront/deploy.mjs`），按此推断导航请求仍会到达 CloudFront（可能记为 304），离线时不计；第一轮写的「Service Worker 会少算回访」没有证据支持，阶段 1 开启日志后用一次自测点击核对。官网不对 app.sairn.ai 的链接做预取或 speculation rules。归因止于进入应用的第一个请求；注册、首次存款与首笔交易要在产品侧另做事件（邮件 README §6 第 7 条）。
 
 ## 17 安全响应头与 CSP
 
@@ -760,10 +920,10 @@
 
 - 阶段 0 删除闸门 1 列出的矛盾内容。删除不需要等律师；把改动对照交给律师，英文站最终还要改到什么程度由律师决定。
 - 主张登记表、copy-contract 的扩展与风险相邻测试，一起保证不会退回去：
-  - copy-contract（扫描 `src`）新增禁止：No KYC、'12ms'、杠杆数字、`xyz:`、Nikkei、JP225、'full leverage'、"each market's maximum"、'max leverage'、`fundingComparison`、'New markets appear automatically'、股票与 HIP-3 品类（`/stocks?|equit(y|ies)|indices|metal perps|TSLA|NVDA|AAPL/i`）、交易所品牌钱包名，以及不分登录方式的签名说法 `/signed with your keys|signed by your (own )?wallet|signed locally|from your own wallet|your keys sign/i`（不禁 'connect your own wallet'：首屏副标题草稿要用，它说的是连接，不是签名）和 `/gas-sponsored/i`；现有费用断言保留；
+  - copy-contract（扫描 `src`）新增禁止：No KYC、'12ms'、杠杆数字、`xyz:`、Nikkei、JP225、'full leverage'、"each market's maximum"、'max leverage'、`fundingComparison`、'New markets appear automatically'、股票与 HIP-3 品类（`/stocks?|equit(y|ies)|indices|metal perps|TSLA|NVDA|AAPL/i`）、交易所品牌钱包名，以及不分登录方式的签名说法 `/signed with your keys|signed by your (own )?wallet|signed locally|from your own wallet|your keys sign/i`（不禁 'your own wallet' 本身：第二轮首屏副标题草稿 'Sign in with email or your own wallet.' 要用，它说的是登录方式，不是签名，也不命中上面的模式）和 `/gas-sponsored/i`；现有费用断言保留；
   - 「任何毫秒延迟数字」不放进扫描 `src` 的测试（会命中 `global.css` 的 `0.01ms` 与动效时长代码），改为扫描 `dist` HTML 的可见文本节点：`/\b\d+\s?ms\b/`；
   - 每条新模式都做变异检查（把文字加回去，测试必须失败），结果记入任务记录。
-- CTA 的定义：凡指向 app.sairn.ai 的链接都是 CTA。英文页上，首屏、两种进入方式、市场卡组与结尾都要在同一 `[data-cta-group]` 里带 `[data-risk-note]`，风险句用正文颜色、≥14px；只有页头与页脚导航里的链接列入测试的豁免清单，带数量。
+- CTA 的定义：凡指向 app.sairn.ai 的链接都是 CTA。英文页上，首屏（01）、三步开始（03）、市场表（04）与结尾（07）都要在同一 `[data-cta-group]` 里带 `[data-risk-note]`，风险句用正文颜色、≥14px；只有页头与页脚导航里的链接列入测试的豁免清单，带数量。
 - 法律页继续由 `legal/*.md` 渲染；任何改动要律师对当时版本的书面确认。
 
 ### 日语
@@ -865,27 +1025,53 @@
   - 律师收到改动对照，记入任务记录；
   - 日本营销邮件在此之前不发送。
 
-### 阶段 1：决定与去风险（约 1 周）
+### 阶段 1：决定与去风险（约 1 周，另加下面 V1–V3 的限时验证）
 
 - **交付**：
-  - 运营方对第 21 节各项作出决定，并记录；
+  - 运营方对第 21 节各项作出决定，并记录（V1–V3 开始前需要的决定见第 21 节开头）；
   - 把第 18 节的问题清单交给律师；
-  - 新 ADR「官网静态架构与实时行情画布」（编号取当时的下一个），记录方向、颜色与字体、数据规则与衡量的取舍；
-  - 新 Reference `docs/website-live-data.md`：fail-closed 规则、限额、回退；
+  - 新 ADR「官网静态架构与实时行情画布」（编号取当时的下一个），记录方向、颜色与字体、数据规则与衡量的取舍，含第 4 节的加权重评与第 10 节的单连接数据路径；
+  - 新 Reference `docs/website-live-data.md`：数据路径表、fail-closed 规则、状态表、限额、回退；
   - 测量实验：
-    - 在 BTC、ETH、SOL、HYPE 上测 `l2Book`（20 档的 `nSigFigs` 4 与 5，以及 5 档快速模式）、`trades`、`activeAssetCtx`、`bbo` 的每分钟消息数与字节数，桌面与手机分开；
+    - 在 BTC、ETH、SOL、HYPE 上，按第 10 节数据路径表的订阅组合（一条连接上的 `l2Book` `nSigFigs: 5`、`bbo`、`trades`、`activeAssetCtx`）测每分钟消息数与字节数，桌面与手机分开；
     - 核实 `metaAndAssetCtxs`、`recentTrades`、`candleSnapshot` 与 `referral` 的返回形状；
     - 在 Safari 18 与 26、低电量模式的 iPhone 与中端 Android 上测 Worker 里 Canvas 2D 的帧时间；
-    - 录第一份海报数据；
-  - 一页式首屏原型（静态，用录制数据），桌面与手机各一版，供运营方评审；
+    - 录第一份海报数据（V3）；
+  - 首屏原型按第二轮修订更新（Terminal 与 Live market 两个视图、录制海报冷启动、压缩后的手机首屏），桌面与手机各一版，供运营方评审与 V1 使用；
   - `tailwindcss` 对齐 4.1.18 的 PR；
-  - 衡量基线开始积累；
-  - 任务记录在每个阶段的检查点追加，阶段 1 结束时写明各决定与测量结果。
+  - CloudFront 标准日志在两个分发上开启（D10，运营方操作，去掉 `c-ip`），衡量基线开始积累（第 16 节）；
+  - 任务记录在每个阶段的检查点追加，阶段 1 结束时写明各决定、测量结果与 V1–V3 的结论。
 - **验收**：
-  - 预算有实测依据，或者按证据降级（例如只做成交打印条）；REST 权重表（第 10 节）的三种路径按实测重算并固定；
+  - 预算有实测依据，或者按证据降级（按下文「验证结果与首版产物」表）；REST 权重表（第 10 节）的两种路径按实测重算并固定；
   - 每条设备结论写明输入路径与设备；
+  - V1–V3 各有 go / no-go 结论，记入任务记录；
   - 原型经运营方确认；
   - ADR 与 Reference 进入审阅。
+
+### 验证包 V1–V3（阶段 1 内，全面实施之前）
+
+第二轮修订（S9）：在承诺阶段 2 与阶段 3 的完整建设之前，先用三个限时的验证包检验最贵、最不确定的三件事；V3 分成 V3a（海报冷启动）与 V3b（录制到实时的交接）两项判定（第二轮审查 S-N6），以便决定下文的首版产物。通过标准是拟议值，运营方确认后使用；结果按实际版本与范围记入任务记录，没有做的检查写明未做。
+
+| 包 | 时限 | 内容 | 通过（go） | 不通过（no-go）时 |
+| --- | --- | --- | --- | --- |
+| V1 首屏理解测试 | 约 1 周 | 第 16 节「上线前」的 5 秒测试与首次点击测试，每个变体至少 10 位目标用户；变体至少包括 Terminal 默认与 Live market 默认（D20）；另记录第二视图发现率与对基线的现代感成对比较（只报告，不设门槛） | 第 16 节的通过标准全部满足；按结果确认 D20 与 D7 | 改文案或默认视图后重测一次；仍不通过就停在阶段 0 的修正版官网，重新评审方向，不进入阶段 2 |
+| V2 数据路径浸泡测试 | 24 h 运行，加准备与分析，上限 3–5 个工作日 | 一条连接、第 10 节数据路径表的订阅组合，连续 24 h，桌面与手机各一次；记录 LIVE 中断（离开 Live 状态）次数与时长、重连次数与原因、每分钟字节数、REST 权重、Worker 与页面的内存 | 拟议：网络正常时 LIVE 中断平均每小时不超过 1 次、单次不超过 30 s；重连全部在连接预算内（每 60 s ≤3、每 300 s ≤6）；字节数与 REST 权重在第 13 节预算内；运行 1 h 后内存不再持续增长 | 按下表产物 B 发布（V3a 也不通过时为产物 C），Terminal 视图与静态站照常；按数据调整阈值后可重测 |
+| V3a 海报冷启动 | 与 V3b 合计上限 3–5 个工作日 | 录制（约 135 s）→ 回放生成海报与元数据快照 → 页面里显示；减少动态与无 JS 各一次 | 0 s 就有海报、'RECORDED' 标记与录制时间说明；海报期间显示的每个数字等于元数据快照；减少动态时停在海报；无 JS 时只有 Terminal 截图与说明（第 7 节回退阶梯第 3 条） | 按下表产物 C 发布 |
+| V3b 录制到实时的交接 | 同上 | 页面里从海报以场景替换切到实时，再从实时回到海报；在 0、1、2、5、15 s 截图检查，加第 7 节「测试」的逐帧采样，断网一次 | 15 s 连续有效数据之前只显示录制值，之后场景替换完成、标记换成 LIVE；正反两个方向的每一帧都只有一种来源；状态切换前后窗口尺寸不变；断网时回到海报并写明实时数据不可用 | 修好后重测；在此之前按下表产物 B 发布 |
+
+验证包只验证方向与关键风险，不是发布：它们的结果不能当作阶段 2、3 的验收，也不能当作真机验收（第 7 节「测试」最后一条）。
+
+### 验证结果与首版产物
+
+V2、V3a、V3b 的结论决定首版发哪一种首屏。第 4 节的止损说法、阶段 2 的海报交付与阶段 3 的开关关闭形态都以本表为准（第二轮审查 S-N6）。文案是 D7 草稿。
+
+| 产物 | 条件 | Preview 窗口 | 说明 |
+| --- | --- | --- | --- |
+| A：Terminal + Live market | V2、V3a、V3b 都通过 | Terminal（默认，D20）加 'Live market'。BTC 用录制海报冷启动，连续 15 s 有效后以场景替换切到实时；第 7 节状态表全部适用 | 阶段 2 发布时 `PUBLIC_LIVE_CANVAS` 关闭，第二视图先按产物 B 上线；阶段 3 验收通过后打开开关，成为产物 A |
+| B：Terminal + Recorded market | V2 不通过而 V3a 通过（V3b 未通过、V3a 通过时同样按 B，直到 V3b 修好重测） | Terminal 固定为默认，D20 不再保留 Live market 默认的备选。第二个标签改名为 'Recorded market'，只有 BTC 海报；不显示市场标签、Pause、标签圆点与 LIVE。状态行只写 'Recorded <date> HH:MM–HH:MM UTC'，没有「切到实时」的承诺；第二行 'BTC-USD perpetual. A recorded website view of public market data, not a terminal feature. Not advice.'；上方身份说明随 D7 相应改写 | 主按钮固定为 'Trade BTC'；'Read snapshot' 读海报元数据；不打包 WebSocket 客户端 |
+| C：只有 Terminal | V3a 不通过 | 只有 Terminal 截图与说明，不渲染视图切换的 tablist，结构与第 7 节回退阶梯第 3 条（无 JS）相同 | 阶段 2 不做海报管线。第一轮的冷启动不作为自动备选：若要在 V2 通过的前提下保留实时视图，作为阶段 3 的单独变更，先过 0、1、2、5、15 s 截图检查与 V1 式的 5 秒测试。首屏只剩截图，第 20 节「仍被认为传统」的风险更突出 |
+
+任何产物只要默认视图、标签或可见文案与 V1 测过的稿子不同，就按阶段 2 的验收重测，不沿用另一种产物的 V1 结果；产物 A 在阶段 2 先以产物 B 的形态上线时同样适用。可以在 V1 里把产物 B 的首屏列为第三个变体，省一轮重测，代价是多招一组参与者。
 
 ### 阶段 2：基础与静态信息架构（英文，约 2 周）
 
@@ -894,12 +1080,12 @@
   - 令牌：产品窗口与订单簿令牌及其跨应用测试；动效令牌的读取与等值测试；
   - IBM Plex 与回退度量（Fonts API 或上面的备选）；
   - 主张登记表；
-  - 第 5 节的全部首页区块（首屏用海报，证明条只有静态卡）；
+  - 第 5 节的七个首页区块（首屏按上文「验证结果与首版产物」表：产物 A、B 都先以产物 B 的形态上线，即 Terminal 截图加只有 BTC 海报的 'Recorded market'；产物 C 只有 Terminal。市场表与网络统计行的实时值随阶段 3 加入）；
   - `/deposit/`、法律页样式、`/404/`；
   - 第 8 节的 CSS 动效层；
-  - 海报管线与截图采集管线；
+  - 截图采集管线；海报管线（产物 A、B 才做，产物 C 不做）；
   - 测试：重写的 brand-contract 与 copy-contract（含仿冒防护、内联 SVG 颜色扫描与风险相邻）；品牌名与域名字面量测试（第 18 节「品牌」）；体积测试；主机白名单测试（只允许 sairn.ai 与 https、wss 的 `api.hyperliquid.xyz`，`dist` 里没有外部 `<script src>`，`dist/_astro/` 的 Worker 包也在扫描范围内）；`dist` 可见文本的毫秒延迟扫描；
-  - Playwright（对 `dist` 的静态服务器）在 1440、1024、390、320 宽度下的布局检查与 `@axe-core/playwright`；
+  - Playwright（对 `dist` 的静态服务器）在第 6 节列出的宽度（1024、1100、1200、1280、1366、1440、390）与 320 下的布局检查与 `@axe-core/playwright`，含第 6 节 390×844 的首屏目标（主按钮顶边 ≤340px、窗口顶边 ≤520px、露出 ≥160px 窗口内容）；
   - 更新官网 README 的设计说明与依赖规则（含两周规则）；
   - 发布手册增加五步：快照刷新并提交后再构建、主张检查、截图与海报重拍、`legal/*.md` 有改动时当天重建发布官网并核对 Last Updated、构建前工作区必须干净；
   - `CHANGELOG.md` 的用户可见条目。
@@ -908,7 +1094,8 @@
   - 关闭 JS 时内容完整；
   - 减少动态时没有任何动画；
   - axe 无严重问题；
-  - 五秒测试：至少 5 位不熟悉 Sairn 的人看首屏 5 秒后，能说出它是 Hyperliquid 的交易终端、可以用邮箱开始，结果记入任务记录；
+  - V1 已通过；构建版本的首屏与 V1 测试稿一致（文案、顺序、默认视图与尺寸），不一致时按第 16 节重测（第一轮这里是至少 5 人的五秒测试，已由 V1 取代）；
+  - 第 03 区块的三步说明与存款指南的内容用整页稿另做一次读后测试（V1 的点击任务只测入口能否被发现，第 16 节），结果记入任务记录；
   - 与 hyperliquid.xyz 的并排截图经人审阅；
   - 契约测试经变异检查；
   - `pnpm test:brand` 通过；
@@ -918,18 +1105,18 @@
 
 - **交付**：
   - Worker、Canvas 2D 渲染器、WebSocket 客户端、调速器、校验器、Web Lock 选主；
-  - 实时证明卡与市场卡；Pause 与 Read snapshot；NumberFlow；
-  - Playwright `routeWebSocket` 故障矩阵；减少动态的帧数断言；文字底板与对比度测试；REST 权重与降级顺序的单测；
-  - 构建开关 `PUBLIC_LIVE_CANVAS` 默认关闭；关闭时是阶段 2 的静态站加海报；
+  - 网络统计行与市场表的实时值；Live market 视图的六个状态（第 7 节）与录制、实时之间的场景替换；Pause 与 Read snapshot；NumberFlow；
+  - Playwright `routeWebSocket` 故障矩阵；状态表与冷启动时间点的用例（第 7 节「测试」）；减少动态的帧数断言；文字底板与对比度测试；`bbo` 与 `l2Book` 合并规则、REST 权重与降级顺序的单测；
+  - 构建开关 `PUBLIC_LIVE_CANVAS` 默认关闭；关闭时是阶段 2 的静态站：首屏 Terminal 视图照常，第二视图是产物 B 的 'Recorded market'（只有 BTC 海报，不承诺切到实时；上文「验证结果与首版产物」表），打开后成为产物 A；
   - `CHANGELOG.md` 的用户可见条目。
 - **验收**：
-  - 故障矩阵全部通过（LIVE 标记不出现，没有禁用占位）；
-  - 实测数据量、REST 权重与帧时间在预算内；
+  - 故障矩阵全部通过（LIVE 标记不出现，进入 Unavailable，没有禁用占位）；
+  - 实测数据量、REST 权重与帧时间在预算内；V2 的标准在生产构建上复测通过；
   - 在选定的 `style-src`（不含 `'unsafe-inline'`）下 NumberFlow 正常渲染，浏览器控制台没有 CSP 违规；做不到就回退为纯文本数字，并记录；
   - 主机白名单测试覆盖 Worker 包，Worker 只连 `api.hyperliquid.xyz`；
   - 由人在中端 Android、低电量模式 iPhone、Safari 18（回退路径）、Safari 26、Chrome 与 Firefox 上实际拖动与触摸，验证并记录输入路径；
   - 之后才打开开关发布。
-- **止损线**：任一设备检查失败、实测超预算、或故障矩阵有遗漏时，保持开关关闭发布，静态站本身就是完整的产品页；修好再开。
+- **止损线**：任一设备检查失败、实测超预算、或故障矩阵有遗漏时，保持开关关闭发布（产物 B），静态站本身就是完整的产品页；修好再开。
 
 ### 阶段 4：日语（只在闸门 1、2 的书面批准之后）
 
@@ -952,7 +1139,7 @@
   - `/markets/[symbol]/`（英文，主场所，只来自运营方审阅的白名单）与下架页删除步骤；
   - `/how-it-works/`、`/fees/`、`/learn/`、`/changelog/`、`llms.txt`；
   - Search Console 与 Bing 的 DNS 验证；`/apps` 收录申请；
-  - CloudFront 日志（去掉 `c-ip`）与响应头策略（运营方在 AWS 操作）；
+  - 响应头策略（运营方在 AWS 操作；CloudFront 日志已提前到阶段 1，第 16 节）；
   - 全仓 Node 决定之后再做 Astro 7（同时把 `@tailwindcss/vite` 升到 4.3.x）；
   - 每项上线时的 `CHANGELOG.md` 条目。
 - **验收**：每项单独审阅与发布；市场页只来自白名单，删除下架市场时先 `--dryrun`；每次发布后按第 16 节的时间窗记录结果。
@@ -964,8 +1151,8 @@
 | 律师限制或拒绝 `/ja`，或要求英文站改更多；面向日本居民的实时行情与费用可能被认定为劝诱（金融厅 2000-12-11 指引、ADR 0042） | 阶段 0 先删；主张登记表按语言审批；默认关闭的 ja 开关与闸门记录；不做地理定向或跳转；只做英文也是完整结果 |
 | 看起来像 Hyperliquid 官方：薄荷与 #97fce3 ΔE 8.5，Hyperliquid 首屏是薄荷粒子视频 | 中性梯度与墨色线；没有粒子与编辑衬线；仿冒防护测试与人工并排审阅；首屏的独立声明；官方网址区块 |
 | 实时数据当众出错（Paradex、GMX、Drift、Uniswap） | 共享校验器、单调时钟、只在有效时显示 LIVE、移除而不是填占位、海报标 'Recorded'、发布时的主张检查、故障矩阵 |
-| 按 IP 共享的限额（10 个连接、每分钟新建 30 个、每分钟 1200 权重），手机走运营商级 NAT，同一出口 IP 下还有其他访客与终端标签页 | 每页一个连接，跨标签页选主，REST 也只在选主标签页发出；最多 6 个订阅；有上限的退避；手机的最优买卖价走 WebSocket `bbo`，不轮询 REST；按路径设 REST 权重上限（桌面 ≤30/min、手机 ≤35/min、回退 ≤30/min），调速器运行时统计并降级 |
-| 手机流量与电量 | 先测量；手机不订阅 `l2Book` 盘口流，只订阅 `bbo`；限帧与 DPR；离屏与隐藏时停止；Save-Data 用海报；绝不在主线程渲染 |
+| 按 IP 共享的限额（10 个连接、每分钟新建 30 个、每分钟 1200 权重），手机走运营商级 NAT，同一出口 IP 下还有其他访客与终端标签页 | 桌面与手机都是每页一个连接，跨标签页选主，REST 也只在选主标签页发出；最多 7 个订阅（第 10 节数据路径表）；有上限的退避；最优买卖价走 WebSocket `bbo`，不轮询 REST；按路径设 REST 权重上限（桌面与手机 ≤30/min、回退 ≤30/min），调速器运行时统计并降级 |
+| 手机流量与电量 | 先测量（阶段 1 与 V2）；手机与桌面同一组订阅，`l2Book` 只有约 5.3 s 一帧，最优价走 `bbo`；字节超预算时首屏进入 Unavailable；限帧与 DPR；离屏与隐藏时停止；Save-Data 用海报；绝不在主线程渲染 |
 | 未见文档或会变化的接口字段 | 不用 `globalStats` 与 `blockList`；阶段 1 实测返回形状；校验器拒绝未知形状，变化时 fail closed |
 | 会动的内容带来无障碍回退 | Pause；减少动态时切到海报；不报跳动；DOM 表格；CI 里跑 axe；人工读屏检查 |
 | 浏览器直连 Hyperliquid，Hyperliquid 能看到访客 IP（现在的 Ticker 也是如此） | 律师确认隐私政策覆盖与外部送信規律问题；不加任何遥测 |
@@ -977,24 +1164,26 @@
 | 第三方地址进入仓库或页面（成交数据带 `users`） | 录制脚本与 Worker 校验器丢弃 `users` 与 `hash`；schema 测试扫描地址模式 |
 | 没有分析工具，归因弱 | 接受；槽位 UTM、日志与聚合 builder 数据给方向；产品侧事件另做 |
 | 1.0 之前的依赖（number-flow、budoux） | 精确固定版本；number-flow 旁保留纯文本；BudouX 只在构建时运行，输出写进 HTML |
-| 第一屏仍被认为「传统」 | 阶段 1 的原型先给运营方看；首屏是实时市场，不是截图 |
+| 第一屏仍被认为「传统」；默认的 Terminal 截图又让首屏回到「截图式」 | 阶段 1 的原型先给运营方看，「太传统」的最终裁决是运营方看原型；Preview 窗口的 Live market 视图提供实时市场，标签上的圆点提示它在动；V1 记录第二视图发现率与对现站基线的现代感比较（只是方向性证据），供 D20、D2 决定默认视图与是否保留两个视图 |
+| 实拍截图出现不该展示的内容（杠杆、HIP-3、钱包品牌、测试网、盈亏或账户数字），或采集时其实已登录 | 只拍未登录的现货市场；DOM 守卫拒绝这些文字并要求可见的 Connect 按钮；每次重拍附人工审阅；夹具数据是 D21 的备选 |
+| 录制画面与实时画面混在一起，或切换突兀、改变窗口高度 | 第 7 节状态表与固定几何；15 s 连续有效后才以场景替换切换（淡出、不可见时整体替换、淡入，不交叉）；V3b 在 0、1、2、5、15 s 截图并逐帧采样 |
 
 ## 21 需要运营方决定的事项
 
-本节的 D1–D19 只指本规划的决定。[品牌迁移计划](brand-migration-plan.md)也有一套 D1–D20，本文提到它们时一律写全称，例如「品牌迁移计划 D2」「品牌迁移计划 D5」「品牌迁移计划 D12 (h)」。
+本节的 D1–D23 只指本规划的决定（D20、D21 是第二轮修订新增，D22、D23 是第二轮审查后新增）。V1–V3（第 19 节）开始前需要的决定是 D2、D5、D7、D20、D21，其中 D20 在 V1 之前只批准进入测试的候选与推荐默认；D22 与 A/B 构图的选择一起定，V1 若用 A 的构图就在 V1 之前定；D23 在 D20 定案后再定；其余在阶段 1 结束前作出即可（S9）。[品牌迁移计划](brand-migration-plan.md)也有一套 D1–D20，本文提到它们时一律写全称，例如「品牌迁移计划 D2」「品牌迁移计划 D5」「品牌迁移计划 D12 (h)」。
 
 | 编号 | 事项 | 选项与推荐 |
 | --- | --- | --- |
 | D1 | 阶段 0 的范围与发布时机 | 推荐：现在就删全部闸门 1 矛盾内容（含英文站的 HIP-3 股票、指数、金属与 JP225），批准后发布，律师事后看对照；备选：等律师意见再删 |
-| D2 | 是否批准本规划为方向，并先做一页原型 | 推荐：批准，先做原型 |
-| D3 | 官网画布（品牌迁移计划 D5 的官网部分） | 推荐：页面石墨 #12131a + 产品窗口 #0F1A1F。两者都是近黑中性色，与 Hyperliquid 的区分靠色相（#03211c 是 C*ab 12.8、h 179.5° 的深绿）、字体与母题，不靠底色的 ΔE；选石墨的理由是不改官网画布、令牌改动最少，连续性由同为 #0F1A1F 的首屏窗口与终端启动画面承担。备选：整页 #0F1A1F（连续性更强）；不推荐：品牌青 #0A3038（有色相，与 #03211c 的 ΔE76 只有 12.0） |
+| D2 | 是否批准本规划为方向，并先做一页原型 | 推荐：批准为方向，先做原型；第二轮修订后，全面实施（阶段 2、3）要等 V1–V3 的结论 |
+| D3 | 官网画布（品牌迁移计划 D5 的官网部分） | 推荐：页面石墨 #12131a + 产品窗口 #0F1A1F。两者都是近黑中性色，与 Hyperliquid 的区分靠色相（#03211c 是 C*ab 12.8、h 179.5° 的深绿）、字体与母题，不靠底色的 ΔE；选石墨的理由是不改官网画布、令牌改动最少，连续性由同为 #0F1A1F 的首屏窗口与终端启动画面承担；第二轮修订后首屏窗口的默认视图本身就是 #0F1A1F 的终端截图。原型 B 的整页青黑底与 64px 网格若采用，网格不透明度 ≤1%，不加暖色背景光（V9）。备选：整页 #0F1A1F（连续性更强）；不推荐：品牌青 #0A3038（有色相，与 #03211c 的 ΔE76 只有 12.0） |
 | D4 | 字体 | 推荐：改用 IBM Plex Sans 与 Plex Mono（日语用 Plex Sans JP 子集），去掉 Inter 与 Instrument Serif |
-| D5 | 标志图形里是否用琥珀 | 推荐：不用，琥珀只在 Logo；备选：修订 ADR 0028，只在中间价线与十字线上用，远离风险句与警告 |
+| D5 | 标志图形里是否用琥珀 | 推荐：不用，琥珀只在 Logo。第二轮修订：原型 B 的热度改为灰阶 #263138 → #68747D → #AAB4BC，B 的任何部分都不用琥珀，选 B 不需要修订 ADR 0028（V2、S5）。备选：修订 ADR 0028，只在中间价线与十字线上用，远离风险句与警告。若有人要琥珀色的热度层，那超出本备选的范围，需要另写一份明确的授权（允许区域、强度上限、与警告色的隔离、图例规则）并修订 ADR，本规划不推荐 |
 | D6 | 页面加载时是否播放 `brand-intro`（品牌迁移计划 D12 (h)） | 推荐：不播放。入场动画会推迟首屏内容与 LCP（H1 是 LCP 元素，第 6 节），占用第 8 节的动效预算；动效库（`brand/tools/Sairn-Motion-Library-v1.3.html`）也写明 brand-intro「不用于延长启动等待」 |
-| D7 | 首屏英文文案（H1、副标题、按钮、风险句） | 推荐：以第 6 节草稿为起点，经五秒测试后定稿 |
-| D8 | 实时层的止损线与 WebGL2 | 推荐：按阶段 3 的止损线；WebGL2 只在实测证明需要时再议 |
+| D7 | 首屏英文文案（眉标题、H1、副标题、按钮、次级链接、风险句、存款一行、小字、状态标记与说明） | 推荐：以第 6 节第二轮草稿为起点（眉标题 'Independent web terminal for Hyperliquid'，H1 'Trade Hyperliquid perps and spot.'，次级链接 'No wallet? How email sign-in works →' 跳到 `#start`），经 V1 理解测试后定稿；口号移出首屏，放在首屏以下的位置一并定。另：Live market 里密集成交点的画法也由运营方看对比海报后选定（第 7 节；第二轮审查 V3）：(a) 减薄每个点的底色描边、降低小额成交的不透明度或把最小半径降到 1.5px，不改数据含义；(b) 显示聚合，按数据空间分桶（时间格与价格步长对齐，买卖分开；按屏幕像素分桶会随画面平移闪烁），合计与均价用 Big.js 计算，提示框逐笔列出所含成交，图例写明一点可代表多笔成交。推荐先出 (a) 的对比海报 |
+| D8 | 实时层的止损线与 WebGL2 | 推荐：按阶段 3 的止损线，并以 V2 为前置检查；WebGL2 只在实测证明需要时再议。第一轮原型实测追加里「两条连接还是一条」的取舍已在第 10 节定为每页一条，不再由本项裁决 |
 | D9 | Astro 6 升级时机 | 推荐：阶段 2 开头单独一个 PR；Astro 7 等全仓 Node 决定。不同意时，阶段 2 走 Astro 5 的备选路径（手写回退度量与构建后算 CSP 哈希，第 19 节） |
-| D10 | AWS 操作（各自单独批准） | 开启两个分发的 CloudFront 标准日志（字段选择去掉 `c-ip`，或不记录带地址的终端路径；保存期限与处理方式随批准写明）；给 sairn.ai 挂响应头策略；导出 `gatu-rewrite-index` 源码入库；D19 需要时新建指向 ESP 源站的退订路径缓存行为 |
+| D10 | AWS 操作（各自单独批准） | 开启两个分发的 CloudFront 标准日志（第二轮修订提前到阶段 1，以便上线前积累四周基线；字段选择去掉 `c-ip`，或不记录带地址的终端路径；保存期限与处理方式随批准写明）；给 sairn.ai 挂响应头策略；导出 `gatu-rewrite-index` 源码入库；D19 需要时新建指向 ESP 源站的退订路径缓存行为 |
 | D11 | Search Console 与 Bing 的 DNS 验证（Cloudflare） | 推荐：英文先做，日语等律师 |
 | D12 | 申请 Hyperliquid `/apps` 目录收录 | 推荐：与开发并行提交 |
 | D13 | 是否为地址级指标或站上事件请求修改隐私政策 | 推荐：暂不，先用聚合数据 |
@@ -1004,6 +1193,10 @@
 | D17 | 社交链接 | 等品牌迁移计划 D2 提供账号；之前不放 |
 | D18 | 是否把「阶段 0 已上线」设为日本邮件的硬性发送条件 | 邮件 README 闸门 1 已经列了「官网与邮件是否矛盾（2026-10-24 审计新增）」一问；待决的只是要不要把「阶段 0 已上线」写成硬性发送条件。推荐：是 |
 | D19 | 日本邮件依赖的 sairn.ai 能力（第 18 节） | 同意入口：推荐只在应用内（官网不加表单）；备选：ESP 托管页挂在 sairn.ai 子路径。退订路径：推荐 sairn.ai 的 `/u/*` 由 CloudFront 单独路由到 ESP 源站（并入 D10，排除在 `gatu-rewrite-index` 与 404 映射之外）；备选：放在 app.sairn.ai 下。若决定官网不做订阅，同步修改邮件 README §6 第 2 条 (b)。出现表单时 CSP 加 `form-action`，隐私政策覆盖（邮件闸门 3） |
+| D20 | 首屏 Preview 窗口的默认视图 | 推荐：Terminal（未登录终端的真实截图）。理由：产品理解在第 4 节重评里权重最高，Live market 画面证明的是 Hyperliquid 在交易，不是 Sairn 的产品（L1、S1）；Terminal 截图是静态图，没有 JS、减少动态或实时数据失败时也完整。备选：Live market 默认，条件是 V1 里误认画面为终端功能的人不超过 1/10，且其余通过标准同样满足。V1 之前只批准进入测试的候选（Terminal 默认、Live market 默认）与推荐默认；V1 之后按理解测试结果、第二视图发现率与现代感比较（第 16 节）定默认视图，以及是否保留两个视图：推荐两项记录不都指向正面时退为单视图，省掉一套管线（第 4 节「组合」）；现代感比较的基线按第 16 节，由运营方确认。发现率与现代感要不要升为硬门槛、数值多少，由运营方在 V1 前决定，本规划不设 |
+| D21 | 截图来源（首屏 Terminal 视图与第 02 区块） | 推荐：未登录状态下实拍 app.sairn.ai 的现货市场（首屏是 HYPE/USDC），DOM 守卫拒绝杠杆文字、`xyz:`、钱包品牌、testnet、盈亏与账户摘要，并要求可见的 Connect 按钮；说明写来源与 UTC 日期；每次官网发布重拍；生产管线 `apps/website/scripts/capture-ui.mjs` 保留守卫（第 9 节）。这改变第一轮 A7「截图只用夹具数据」的规则。备选：沿用 A7，用终端夹具与夹具数据并标 'Sample data'；需要账户状态的画面（持仓、余额、`/deposit/` 里的 Deposit 窗口）只能用这个备选。日语页用哪一种由律师意见决定。阶段 0 的临时重拍按阶段 0 清单原文（夹具数据或不含杠杆区域的裁切），不受本项影响 |
+| D22 | A 版首屏终端截图的呈现（第二轮审查 L-N2、V-N2） | 背景：A 在视口 ≥1280 时把 1440 宽的采集按约 48% 显示，终端 11–13px 的字只剩约 5–6px，导航、盘口数字与下单输入难以阅读（源码推算）。(a) 保留整张截图：首屏只证明「这是真实终端」，细节由第 02 区块的大截图承担（第 5 节）；成本最低。(b) 对同一张 1440 采集做一个连续的右侧裁切（约 x 440–1440、y 0–545，约 69%）：会失去截图里的市场名，市场身份只靠 `alt` 与说明；DOM 守卫要加横向边界（现在只按纵向过滤，横向裁切时 Connect 检查会误判通过），`alt` 与第 6 节的截图描述同步改写；坐标是对截图的目测估计，实施时实测。(c) 把 A 的窗口移到文案下方，向 B 靠拢，A/B 的构图差别随之消失。推荐与 A/B 构图一起决定。不推荐在 md 宽度重拍：终端的 md 布局把盘口排到裁切线以下（2026-10-24 观察），缩放比例也只升到约 58–63%（推算）。三种做法都只取同一次采集里的一个连续矩形，不拼接、不锐化、不描边 |
+| D23 | Open Book 的品牌识别（第一轮审查 V7） | 推荐：D20 定案前不加。若要加，只用现成的单色小标 `brand/svg/mark-small/sairn-mark-small-mono.svg`，中性前景色，不用 `--logo-*`，不用琥珀，也不自行派生新几何（ADR 0028 决策 6）；完成命名与商标检查之前，不把 'Open Book' 用作可见名称（第二轮核验指出 Solana 上有名为 OpenBook 的订单簿 DEX，属先验知识，没有做商标检索）。另要注意：'Sairn / Open Book' 一类标题会把 Hyperliquid 公开数据的可视化包装成 Sairn 的功能，与同一视图的 'not a terminal feature' 相抵，可能推高 V1 的误认率；手机窗口顶栏也没有余量放标题 |
 
 ## 22 本文的验证与限制
 
@@ -1013,6 +1206,7 @@
 - 外部事实来自调研的单次取证，限制见调研第 1 节；版本、支持数据与页面重量在实施前要重新核对。
 - 色差与对比度是 Agent 计算的，未经设计方复核；仿冒防护的阈值（ΔE76 ≥15、中性色 C*ab <8）是本规划的提议，需要在测试里落实，并经运营方确认。
 - 文中出现的法律问题都不是法律意见；面向日本的一切以律师的书面意见为准。
+- 第二轮修订（第 24、25 节）对本文只是文字改动；设计原型 `designs/website-hero-prototype/` 由主会话另行修改，并用 Playwright 无头 Chromium 做了短时测量（第 24、25 节），不是仓库测试、不是真机，也不是 V2 浸泡；文中新增的尺寸、阈值与通过标准都是目标或拟议值，第 4 节的重评分数是 Agent 的判断。
 
 ## 23 外部对抗审查（2026-10-24，追加）
 
@@ -1026,18 +1220,123 @@
 
 三路都没有 P0，结论一致：保留 Astro 静态底座，方向值得继续，但不能按现稿批准实施。三路共同指出的 P1：
 
-1. **首屏主视觉不能证明 Sairn 的产品**：本节第 2 节目标 1 要求首屏展示真实产品，第 6 节的窗口说明却写着 'not a terminal feature'；画布证明的是 Hyperliquid 在交易，不是为什么用 Sairn（L1、S1）。S 路还指出第 4 节的三方向比较不公平：Live Window 因可以单独删掉的实现缺陷被整体否决，A/B 也只是同一画布的配色版式差异（S2）。
+1. **首屏主视觉不能证明 Sairn 的产品**：本规划第 2 节目标 1 要求首屏展示真实产品，第 6 节的窗口说明却写着 'not a terminal feature'；画布证明的是 Hyperliquid 在交易，不是为什么用 Sairn（L1、S1）。S 路还指出第 4 节的三方向比较不公平：Live Window 因可以单独删掉的实现缺陷被整体否决，A/B 也只是同一画布的配色版式差异（S2）。
 2. **最好的画面出现得太晚**：原型要积累约 100 秒才饱满，1.5 秒时大部分为空（L2、S3、V1）。
 3. **手机首屏仍是长篇文字**：主会话实测 390×844 下实时窗口顶边 613px、画布顶边 817px，首屏露出的画布为 0；主按钮底部到风险句 96px（L3、L6、S3、V4）。
 4. **B 的琥珀超出决定 D5 的备选范围**：D5 备选只允许中间价线与十字线，B 用在整个热度层、时间边与背景暖光（S5、V2）。
 5. **画面主次不清**：A 像条形码、B 像木纹，高亮挂单带接近中间价白线的亮度，B 的历史成交光晕连成发光珠串（V3）。
-6. **规划自相矛盾**：第 10 节正文仍是「每页一个连接、盘口 5 s 过期」，与本节末尾的原型实测追加互斥；数据路径要在视觉批准前定下（S4）。
-7. **整页信息架构冗长**：行情出现三次，进入方式重复，真实终端到第 08 区块才出现；L 路建议收敛为七段（首屏 → 真实终端与三项能力 → 三步开始 → 市场 → 费用 → 机制与信任 → FAQ 与结尾）（L4）。
+6. **规划自相矛盾**：第 10 节正文仍是「每页一个连接、盘口 5 s 过期」，与第 10 节末尾的原型实测小节（当时名为「2026-10-24 原型实测（追加）」）互斥；数据路径要在视觉批准前定下（S4）。
+7. **整页信息架构冗长**：行情出现三次，进入方式重复，真实终端到第 08 区块（第一轮编号，现为第 02 区块，见第 5 节对照表）才出现；L 路建议收敛为七段（首屏 → 真实终端与三项能力 → 三步开始 → 市场 → 费用 → 机制与信任 → FAQ 与结尾）（L4）。
 8. **邮箱入口只是同一链接换 UTM**（L9、S6）；**衡量方案回答不了改版是否有效**（S7）。
 
 主会话的核验：
-- 引用的规划原文（第 23、259、450、499、992 行）与 ADR 0028 决策 6 都对得上。
+- 引用的规划原文（提交 `69a4e7a2` 版本的第 23、259、450、499、992 行，本轮修订后行号已变）与 ADR 0028 决策 6 都对得上。
 - 用 Playwright 实测了它推算的尺寸，全部吻合：手机窗口顶边 613px（推算约 615）、主按钮到风险句 96px（约 100）、B 在 1366×768 画布可见 148px（约 150）、1440×900 为 275px、A 画布宽 393px，占窗口 57%。
 - 设计判断部分没有找到与仓库事实冲突之处。
 
-这些意见尚未落实到本规划与原型，处理方式待运营方决定。
+这些意见的处理见第 24 节（第二轮修订）。
+
+## 24 第二轮修订（2026-10-24）
+
+运营方要求按第 23 节的 GPT 审查意见修订：首屏加入真实终端预览，冷启动用录制海报，压缩手机首屏，收敛整页信息架构和数据路径。下表逐条列出三路报告里全部 P1 与 P2 意见（编号是各路报告「主要问题」的序号：L 布局、V 视觉、S 方案）、处理方式、在本规划中的位置与状态。状态只说明本规划的文字：「已改」是规划已按意见改写，「部分」是只采纳了一部分，「未改」是没有采纳；原型的实现由主会话负责，不在本表的状态里。采纳的数值（尺寸、阈值、通过标准）都是目标或拟议值，不是实测结果。
+
+| 意见 | 级别 | 处理 | 位置 | 状态 |
+| --- | --- | --- | --- | --- |
+| L1 首要展示物不能证明正在销售的产品 | P1 | Preview 窗口默认是未登录终端的真实截图（Terminal），Open Book 改为第二视图 Live market；'not a terminal feature' 只用于 Live market | 第 2、4、6 节；D20 | 已改 |
+| L2 B 的首屏卖点在冷启动时不成立 | P1 | BTC 用录制海报冷启动，连续 15 s 有效后以场景替换切到实时；V3b 在 0、1、2、5、15 s 检查；绘图区比例随窗口宽度（第 7 节，原为 B 固定 16:9）；第二轮审查后，B 在短桌面视口（`min-width: 1024px` 且 `max-height: 820px`）收紧页头间距 | 第 6、7 节；第 19 节 V3a、V3b | 部分：1366×768 下窗口顶边 ≤380px 已写为第 6 节的目标，原型已加短视口间距；第 25 节实测窗口顶边 374px 达标，画布露出 235px（L2 建议 260px）；L2 的头部 ≤120px 与 ≥260px 画布仍没有写入。第一版原型实测：B 在 1366×768 下首屏露出终端截图 288px，切到 Live market 时画布露出约 208px（第一轮 148px）；新加的身份说明会占去一部分高度，旧读数不能沿用 |
+| L3 手机首屏仍主要是说明文字 | P1 | H1 'Trade Hyperliquid perps and spot.'，独立身份移到眉标题，副标题 ≤2 行，H1 32/35；390×844 目标：主按钮顶边 ≤340px、窗口顶边 ≤520px、首屏露出 ≥160px 窗口内容（Live market 视图 ≥120px 绘图区），不计原型切换条 | 第 6 节；阶段 2 布局检查 | 已改 |
+| L4 整页先证明 Hyperliquid 活跃，后证明 Sairn 值得用 | P1 | 页头页脚之间收敛为七段：首屏 → 终端与三项能力 → 三步开始 → 市场 → 费用 → 机制与信任 → FAQ 与结尾 CTA；网络统计降为市场区一行；订单流转并入机制区；附旧编号对照 | 第 5 节；第 8 节 | 已改；手机按普通纵向顺序排列，没有采用 L4 提的「可直接选择的静态标签」 |
+| L5 A 的固定五档侧栏挤压绘图宽度 | P2 | 窗口宽 ≥900px（容器查询）才放五档表，更窄时一行最优价；价格刻度槽 68px；桌面绘图区 ≥560px | 第 6、7 节 | 部分：没有加 L5 的 `Depth` 展开控件，手机刻度槽没有单独定为 60–64px。第二轮审查 L-N3 后，A 的两栏断点改为视口 ≥1200px（1024 宽两栏时画布约 471px，源码推算），A 桌面 3:1 由随窗口宽度的比例取代（第 7 节） |
+| L6 风险句与 CTA 之间隔了两个决策层 | P2 | 顺序改为主按钮与次级链接 → 8px → 风险句 → 8px → 存款条件一行 | 第 6 节 | 已改 |
+| L7 手机窗口的辅助信息占用接近画布的高度 | P2 | 绘图区比例（手机现为约 9:10，原为 4:5）与「首屏露出 ≥160px 窗口内容」目标；图例改写 | 第 6、7 节 | 部分：L7 的标签栏 56px、报价区 72px、图例 36px 没有写成固定值；图例仍是五项，亮度说明没有移进可点击说明。第二轮审查后，两个视图的身份说明常显，计入窗口辅助区的高度；图例压成一行要删除或缩写标签，作为 V1 的可选变体，由运营方决定 |
+| L8 图例分不清挂单与成交 | P2 | 图例 'Resting orders (brighter = more size)'、'Buy trades'、'Sell trades'、'Dot size = trade value'、'Mid price'；表头 'Price (USD) / Size (BTC)'；时间刻度 '−120 s / −60 s / Now' 跟随增长的窗口 | 第 7 节 | 已改 |
+| L9 邮箱入口只是同一终端链接 | P2 | 次级链接改为 'No wallet? How email sign-in works →'，跳到第 03 区块 `#start`；删除 `hero_email`、`entry_email`、`entry_wallet` 槽位 | 第 5、6、16 节 | 已改 |
+| V1 招牌图形的最佳状态来得太晚 | P1 | 带日期的录制海报，15 s 有效后以场景替换切到实时：数据区淡出，在不可见时整体替换画面、数字、坐标、标记与状态文字，确认新画面就绪后淡入，两个方向相同，不交叉；V3b 检查 0、1、2、5、15 s 并逐帧采样 | 第 7、8 节；V3a、V3b | 已改。如实记录：本行原写「200 ms 整体交叉淡化……不拼接录制与实时」，第二轮审查（V-N1、S-N2）发现原型第一版只淡化了画布，数字、标记与坐标在海报仍可见时已换成实时值，反向回海报是硬切，与本行和第 7 节当时的文字都不符；规划改为场景替换，原型随之修改，逐帧验证结果另记 |
+| V2 B 的琥珀改变了品牌主视觉角色 | P1 | B 的热度改为 #263138 → #68747D → #AAB4BC，删除暖色背景光，按钮仍为 #EDEEF2；B 不用琥珀，D5 与 ADR 0028 不变；D5 写明琥珀热度不在备选范围内 | 第 7、9 节；D5 | 已改 |
+| V3 热图、成交与中间价没有主次 | P1 | 热度最高不透明度 ≤0.65、无近白终点；中间价 1.5px #EDEEF2 加深色衬底、无光晕；成交点桌面 2–8px、手机 2–6px；历史点无光晕，只有 320 ms 的到达脉冲 | 第 7 节 | 部分：同一区块时间（成交的 `time`）、同一方向的成交在显示上合并为一点（按成交额加权的均价，第 7 节）；这是显示合并，不是订单识别，同一区块里同方向的几笔吃单也会并成一点（本行原写「按一笔吃单合并」，第二轮审查后更正）。不同时间、位置重叠的点没有合并，密集点的画法交 D7 |
+| V4 手机首屏仍是长篇介绍 | P1 | 与 L3 合并处理：H1 32/35，主按钮 44px，风险句在按钮组下 8px；窗口顶边取 L3 的 ≤520px，露出量取 V4 的 160px，用于窗口内容 | 第 6 节 | 部分：眉标题与 H1 用 L3 的写法（H1 保留 'Hyperliquid'），没有用 V4 的 'Trade perps and spot.'；V4 的窗口顶边 ≤480px 未采用；副标题与风险句的行高未逐项写入 |
+| V5 A 的侧栏盘口占用招牌图形宽度 | P2 | 与 L5 合并：以 900px 容器宽为界（V5 提 800px），刻度槽 68px（V5 提 64px）；第一版 A 的绘图区固定 3:1（1440 宽时 621×207px），第二轮审查后改为随窗口宽度的比例（第 7 节） | 第 7 节 | 部分：阈值取 L5 与主会话的值 |
+| V6 标题强调身份声明，品牌承诺不利落 | P2 | 独立身份放眉标题；H1 统一近白、不分色；A 最大 48/52、B 最大 60/64，字重 500 | 第 6、9 节 | 部分：H1 文案用 'Trade Hyperliquid perps and spot.'，没有用 V6 的两行写法；B 标题约 900px 宽未写入 |
+| V7 Open Book 还没有 Sairn 识别度 | P2 | 没有处理：可见标题 'Sairn / Open Book'、Logo 双片几何的角标与编号、去掉字标的并排识别测试都没有写入 | — | 未改：本轮先解决产品证明与冷启动；默认视图改为终端截图后，母题承担的作用也变了，待 D20 定案后再议 |
+| V8 图例解释了颜色，没解释在看什么 | P2 | 图例改写、时间刻度、点大小说明（同 L8） | 第 7 节 | 部分：没有加 'Orders over time. Dots are executed trades.' 一句；图例文字用主会话选定的写法；说明文字的字体没有改为 Sans 12/16 |
+| V9 动效要补状态衔接，不是装饰 | P2 | 删除 B 的 0.99→1 缩放、历史点光晕与暖光；整页网格 ≤1%；录制与实时之间的场景替换；视图切换 ≤180–200 ms 的不透明度过渡（结束后才隐藏），市场切换走场景替换 | 第 7、8 节 | 部分：触控可用的检查十字线、NumberFlow 只用于一个主价格没有写入 |
+| S1 核心视觉没有证明为什么用 Sairn | P1 | Terminal 默认；V1 问「资金由谁持有」等三个问题，并检查误认，误认画面为终端功能的人 ≤1/10 | 第 4、6、16 节；V1；D20 | 部分：S1 的「8/10 能说出一个已验证的产品特点」改写为三个问题的通过标准；资金归属一问覆盖一个已验证特点，邮箱登录这一差异点按 V1 的「怎样登录」一问单独编码报告，不设门槛（第二轮核验） |
+| S2 三个方向不是公平比较 | P1 | 按产品理解 30、差异记忆 25、现代感 20、手机 15、维护 10 的权重重评，按最佳实现打分并写出算式；A/B 视为同一方向的两个变体 | 第 4 节 | 已改；分数是 Agent 的判断。V1 校正产品理解，现代感与差异记忆只有方向性证据，维护分仍是估计；第二轮审查后补了「组合」一段（第 4 节） |
+| S3 关键视觉收益出现在等待之后 | P1 | 录制海报；V3 在 0、1、2、5、15 s 与断网时检查（S3 提 0、2、5、10 s）；手机首屏露出 ≥160px 窗口内容 | 第 6、7 节；V3 | 已改 |
+| S4 实测已经否定旧架构，正文仍有两套要求 | P1 | 第 10 节改为一张数据路径表作唯一来源：每页一条连接，`l2Book`（`nSigFigs: 5`）+ `bbo` + `trades` + `activeAssetCtx`；合并规则；6 s / 12 s / 20 s 新鲜度；旧实测保留为证据并标明被取代 | 第 10 节 | 已改；与 S4 的首轮建议不同，手机与桌面同一组订阅，不是只有 `bbo` 加 `trades`；短时采样中断 0 次（见下），24 h 浸泡仍是 V2 的验收项。第二轮审查（S-N4）发现合并规则的例子方向写反（原写「新的最优卖价已低于某个旧卖档，那一档不画」，那一档其实是合法的更深卖档），已按原型的实际规则更正并补了买侧例子。原型的 LIVE 判定不检查连接、坏帧计数共用、回海报的计时与第 7 节不一致，属原型实现，规划写明了规则（第 7、10 节） |
+| S5 B 的视觉差异超出 D5 允许的范围 | P1 | 与 V2 合并：B 直接改用灰阶，D5 不变，琥珀热度需另行授权 | 第 7、9 节；D5 | 已改；没有另做「B 布局加 A 灰阶」的对比稿，B 本身就换成灰阶 |
+| S6 邮箱差异只落实为链接文案 | P1 | 采用 S6 的第二种做法：不改终端，次级链接 'How email sign-in works' 跳到三步说明 | 第 5、6 节 | 部分：没有加「首次用户进入终端后 10 秒内找到邮箱入口」的验收；把意图带进终端连接窗口的入口不做（第 2 节非目标：不改终端） |
+| S7 衡量回答不了改版是否有效 | P1 | 第 16 节分为上线前理解测试与上线后四周对比，写明能证明与不能证明什么；不做 A/B；日志提前到阶段 1；首次存款仍标为未测，不用 builder 收入替代 | 第 16、19 节；D10 | 已改；第二轮审查（S-N7）后，第 16 节把「CTA 点击」改称带官网 CTA 槽位的应用文档请求数，写明计数口径，并删除没有数据来源的「会话数」 |
+| S8 「不用库」成了前提 | P2 | 原生优先：库在实测比较中胜过原生实现并放得进预算才加入，以 `motion/mini` 为例；第 8 节只保留行为规则 | 第 8、11 节 | 已改 |
+| S9 路线图先扩建，后验证最贵的核心 | P2 | 阶段 1 内加限时验证包 V1（约 1 周）、V2（24 h 浸泡，上限 3–5 个工作日）、V3（上限 3–5 个工作日），各有 go / no-go；写明 V1–V3 前需要的决定；日志提前到阶段 1 | 第 19、21 节 | 部分：响应头仍在阶段 5（需要运营方的 AWS 操作）；首版范围没有按 S9 收窄；阶段 0 不变 |
+| S10 降级可能留下无法理解的界面变化 | P2 | 固定几何；Recorded / Live / Paused / Still / Unavailable 五状态表，写明标记、画面与数字来源；删除 64px 成交窄条；网络统计项移除但行高不变；第二轮审查后加 Waiting 状态，20 s 从 `lastDataAt` 起算 | 第 7、10 节 | 部分（第二轮审查更正，原记「已改」）：原稿缺「等待首帧」状态，也没写 20 s 从哪里起算、哪些频道算数据；两项现已补上（第 7 节 Waiting 行，第 7、10 节的 `lastDataAt`）。原型回海报计时的偏差见第 7 节状态表下的说明 |
+
+### 原型实测（2026-10-24 UTC，主会话）
+
+原型 `designs/website-hero-prototype/` 按上表的决定改为第二版（README「第二版改了什么」）。用仓库的 Playwright 无头 Chromium 连接真实的 Hyperliquid 公共接口测得：
+
+- 手机 390×844（A、B 相同）：主按钮顶边 263px，按钮到风险句 8px，窗口顶边 403px，首屏露出终端截图 383px；Live market 视图的画布顶边 593px，首屏露出 251px。第一轮为窗口顶边 613px、画布 0px、按钮到风险句 96px。
+- 桌面 1440×900：A 窗口顶边 147px，两个视图的内容高 391 / 401px，画布 621×207；B 窗口顶边 437px，首屏露出截图 417px，画布 922×519。
+- 录制到实时：A 桌面在 0.5、1、2、5、10、14 s 都是 `RECORDED` 与录制数值，约 16 s 交叉淡化，数值同时换成实时值（当时只淡化画布，数值在淡化开始时就已换成实时值，正是上表 V1 行记录的混用）；B 手机约 18 s 切换。减少动态效果时 22 s 后仍是海报，按 'Show live view' 才进入实时。录制阶段切到 ETH 立即离开海报。
+- 单连接：BTC 90 s、SOL 与 HYPE 各 45 s，LIVE 中断 0 次，每页 1 条 WebSocket，控制台零错误；暂停时画布像素、最新价与盘口 3 s 不变。
+- 断网（Playwright 离线模式）：约 6 s 后 LIVE 与实时数字消失，约 26 s 回到 `RECORDED` 海报；恢复网络后 15–20 s 重新进入实时。这里原注「第 7 节状态表下的规则」是错的：26 s 来自当时的实现（LIVE 撤下后再等 20 s，即 6 s + 20 s），不符合「20 s 没有数据」的规则，而且当时的回海报其实是硬切，不是淡化。原型按第 7 节改为从 `lastDataAt` 起算之后已重测，重测结果见下一节。
+- 实测中发现并修正：非 BTC 初始市场时画布与 Pause 不显示（状态属性未初始化）；五档表拼入 `bbo` 后出现假缺口（改为只显示一帧完整快照，第 10 节）；回到海报时旧的海报元数据缺快照时间，页面抛出 'Invalid time value'（重新生成海报并加了防御）。
+
+这些是无头浏览器的短时结果，不是真机，也不是 V2 的 24 小时浸泡。对修订稿的第二轮 GPT 审查记录在第 25 节。
+
+## 25 第二轮外部审查（2026-10-24，追加）
+
+运营方要求修订后再让 GPT 复审一轮。方法同第 23 节：Codex CLI 调 `gpt-6-astra`，只读沙箱、`medium`，三路并行。每路附上自己第一轮的报告并逐条复核，另附 11 张截图：第二版原型的 Terminal 与 Live market 视图（1440×900、1366×768、390×844，含录制海报与交接后的实时画面），以及第一轮原型 A 的桌面与手机首屏作对比。提示词、三份报告与截图存在本机 `.worklog/2026-10-24/c1e345bd-069b-4821-ab73-a7bd5e2b03b2/snapshot-gpt-review2/`（Git 忽略）。
+
+| 审查路 | 第一轮 | 第二轮 | 新问题 |
+| --- | --- | --- | --- |
+| L 布局 | 6.7 | 7.9 | 1 个 P1（两个视图的身份说明放得太晚、手机上被截断）；3 个 P2（A 的截图尺度、A 的两栏断点、V1 判分） |
+| V 视觉 | 6.6（A 6.4、B 6.8） | 7.4（A 7.1、B 7.7） | 1 个 P1（录制到实时只淡化画布）；2 个 P2（A 的截图尺度、手机的身份说明） |
+| S 方案 | 6.3 | 7.2 | 3 个 P1（默认视图绕开「太传统」的验收、交接混用来源、LIVE 判定与坏帧处理）；4 个 P2（合并示例写反、验证不通过时的产物、20 s 口径与失效文案、指标命名） |
+
+三路都没有 P0，结论一致：可以进入 V1–V3 验证包，不宜按现稿批准全面实施。L 建议以 A 为布局基础，V 建议以 B 为主方向，A/B 的选择仍由运营方定。
+
+### 核验与处理
+
+主会话用 Workflow 起 7 个只读代理，按主题分组对抗核验新意见（默认去证伪，逐条核对引用的行号与源码），再按结论处理：
+
+| 意见 | 核验结论 | 处理 |
+| --- | --- | --- |
+| V N1、S N2 交接混用来源 | 属实：正向只有画布与海报做透明度过渡，价格、标记、坐标与盘口在海报仍可见时已换成实时值，违反 V3 的判据与原型 README 的说法；反向其实是硬切，S 说的「反向也混用」被高估 | 原型改为整幕替换（第 7 节），逐帧采样验证（见下） |
+| S N3 LIVE 判定与坏帧 | 部分属实：不检查连接、坏帧计数共用（`bbo` 每帧清零深度的计数）属实；「仍为 LIVE」夸大，被拒的帧不写入状态 | 原型修正；第 10 节写入连接条件、按频道计数、只有深度停更时重订阅 |
+| S N5 失效文案与 20 s 口径 | 属实：主线程从 LIVE 撤下后再等 20 s，第 24 节把 26 s 归为规则是错的 | 原型改为 Worker 的 `lastDataAt` 与 `silentMs`；状态表加 Waiting |
+| L N1、V N3 身份说明 | 属实 | 原型在视图上方加常显说明与截图区域标签（第 6 节） |
+| L N3 A 的两栏断点 | 属实（源码推算 1024 宽画布约 471px） | A 改为视口 ≥1200px 才两栏；绘图区比例跟随窗口宽度（第 7 节） |
+| L N2、V N2 A 的截图尺度 | 属实；V 提的 900–1000px 局部裁切在 1440 采集里装不下市场名、图表、盘口与下单区；主会话在 1100–1180 宽重拍试过，终端用中等布局，盘口落到裁切线以下 | 交运营方：D22 |
+| S N4 合并示例 | 属实，方向写反 | 已改（第 10 节），原型实现本来就对 |
+| S N6 不通过时的产物 | 属实 | 第 19 节「验证结果与首版产物」A/B/C；V3 拆为 V3a、V3b |
+| S N7 指标命名 | 部分属实：规划把文档请求叫「CTA 点击」，另列一个没有数据来源的「会话数」 | 第 16 节改名并写计数口径，删除会话数 |
+| S N1 默认视图与「太传统」 | 属实 | 第 16 节 V1 加只记录、不设门槛的第二视图发现率与现站基线的成对现代感比较；D20 改为 V1 后再定；门槛交运营方，基线按第 16 节、由运营方确认 |
+| L N4 V1 判分 | 属实 | 第 16 节改写（页头入口也算对、拆分「开始需要什么」、误认题的时机） |
+| V V7 识别度 | 属实 | 交运营方：D23 |
+| V V3 密集成交成串 | 部分属实 | 交运营方：D7 下的画法选项 |
+| V V9 视图切换 | 属实 | 原型加 180 ms 不透明度过渡，切换市场也走整幕替换 |
+| L L2 B 的矮屏 | 属实 | B 在视口 ≥1024 且高 ≤820 时收紧间距；窗口顶边达标，画布露出量未达标（见下） |
+| V 对「一笔吃单」的质疑 | 属实：同一区块里同方向的几笔吃单也会并成一点，能区分它们的 `hash` 与 `users` 已被丢弃 | 第 7 节与原型 README 改为「显示合并，不是订单识别」 |
+
+### 修正后的原型实测（2026-10-24 UTC，主会话）
+
+仓库的 Playwright 无头 Chromium，连接真实的 Hyperliquid 公共接口：
+
+- 逐帧采样：页面里每个动画帧记录数据区不透明度、海报与画布是否可见、价格与状态标记。正向（录制到实时）1,320 帧、反向（断网后回到海报）1,384 帧，没有一帧在可见状态下混用录制与实时；正向替换占 12 帧（约 200 ms）。这只证明主线程每帧的 DOM 状态与计算样式，不是合成器层的像素证据。
+- 断网：约 6 s 后 LIVE 与实时数字消失，约 21 s 整幕换回 `RECORDED` 海报（规则是最后一帧有效数据后 20 s，按 1 s 采样）；第 24 节里的 26 s 是修正前的实现。
+- 录制到实时：A 桌面与 B 手机在 0.5、1、2、5、10、14 s 都是 `RECORDED` 与录制数值，约 16 s 整幕替换；状态行写出最新成交的交易所时间。减少动态效果时 22 s 后仍是海报，按 'Show live view' 才进入实时。
+- 版式：A、B 在 1024、1100、1200、1280、1366、1440 宽与 390×844 下两个视图的内容高度相差 ≤14px，没有横向溢出。A 在 1200 宽两栏、画布 574px，1100 / 1024 宽单列、画布 742 / 666px。手机主按钮顶边 263px、按钮到风险句 8px、窗口顶边 403px，首屏露出截图 350px，Live 视图画布露出 212px。B 在 1366×768 窗口顶边 374px（L2 目标 ≤380px，达标），Live 视图画布首屏露出 235px（L2 建议 ≥260px，本规划未采纳为目标，见第 24 节 L2 行与本节末尾的待决项）。视口 641–690px 时图例换成两行，两个视图相差约 60px，未处理。
+- 单连接：BTC 90 s、SOL 与 HYPE 各 45 s，LIVE 中断 0 次，每页 1 条 WebSocket，控制台零错误；暂停时画布像素、最新价与盘口 3 s 不变。
+- 修正过程中发现并修了两个回归：海报元数据缺最新成交时间时页面抛出 'Invalid time value'，海报阶段被整段跳过；交接中出现异常时数据区停在透明（改为 `finally` 里清除）。两者都已用上面的检查复测。
+
+这些是无头浏览器的短时结果，不是真机，也不是 V2 的 24 小时浸泡；没有对修正后的版本再做第三轮外部审查。
+
+### 待运营方决定（本轮新增或改变）
+
+- D20：V1 之后再定默认视图与是否保留两个视图；V1 的门槛（基线按第 16 节，由运营方确认）。
+- D21：截图来源（未登录实拍现货，或夹具）。
+- D22：A 首屏终端截图的呈现；与 A/B 的选择一起定。
+- D23：Open Book 的品牌识别标记。
+- D7 之下：密集成交点的画法（(a) 细描边、小额降透明度或最小半径 1.5px；(b) 按数据空间分桶的显示聚合，见 D7）。
+- B 若入选：矮屏 1366×768 下画布露出 235px 是否接受，还是继续压缩首屏。

@@ -3,6 +3,13 @@ const APP_URL = "https://app.sairn.ai";
 const COINS = ["BTC", "ETH", "SOL", "HYPE"];
 const SPARK_DEBOUNCE_MS = 300;
 const SPARK_CACHE_MS = 10 * 60 * 1000;
+const POSTER_META_URL = "./posters/btc.json";
+const LIVE_HANDOFF_SECONDS = 15;
+const RECORDED_FALLBACK_MS = 20_000;
+const SPARK_PREFETCH_SECONDS = 5;
+const SWAP_HALF_MS = 100;
+const SWAP_READY_TIMEOUT_MS = 300;
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 const root = document.documentElement;
 const params = new URLSearchParams(location.search);
@@ -12,51 +19,64 @@ const mqMobile = matchMedia("(max-width: 640px)");
 const $ = (id) => document.getElementById(id);
 const els = {
 	window: $("window"),
-	panel: $("market-panel"),
-	stage: $("stage"),
+	viewTabs: [...document.querySelectorAll(".view-tab")],
+	terminalPanel: $("terminal-panel"),
+	marketPanel: $("market-panel"),
+	marketBody: $("market-body"),
+	plot: $("plot"),
 	canvas: $("open-book"),
+	poster: $("poster"),
 	tabs: [...document.querySelectorAll(".tab")],
-	liveBadge: $("live-badge"),
-	liveText: $("live-text"),
+	stateBadge: $("state-badge"),
+	stateText: $("state-text"),
 	pause: $("pause"),
 	snapshot: $("snapshot"),
 	snapshotOut: $("snapshot-out"),
-	pair: $("pair"),
 	last: $("last"),
+	lastLabel: $("last-label"),
 	change: $("change"),
 	spark: $("spark"),
 	sparkPath: $("spark-path"),
-	sparkLabel: $("spark-label"),
 	axisTop: $("axis-top"),
 	axisBottom: $("axis-bottom"),
 	midLabel: $("mid-label"),
+	tLeft: $("t-left"),
+	tMid: $("t-mid"),
+	tRight: $("t-right"),
 	showLive: $("show-live"),
-	stillNote: $("still-note"),
+	stateNote: $("state-note"),
+	footNote: $("foot-note"),
 	asks: $("book-asks"),
 	bids: $("book-bids"),
 	spread: $("book-spread"),
 	bookCaption: $("book-caption"),
+	bookSizeHead: $("book-size-head"),
 	bbo: $("bbo"),
 	bboBid: $("bbo-bid"),
 	bboAsk: $("bbo-ask"),
-	windowSeconds: $("window-seconds"),
-	note: $("win-note"),
 	ctaTrade: $("cta-trade"),
-	ctaEmail: $("cta-email"),
 	ctaHeader: $("cta-header"),
 	variantButtons: [...document.querySelectorAll("[data-variant-btn]")],
 };
 
 let variant = root.dataset.variant === "b" ? "b" : "a";
 let coin = COINS.includes(params.get("coin")) ? params.get("coin") : "BTC";
+let view = params.get("view") === "live" ? "live" : "terminal";
+let phase = coin === "BTC" ? "recorded" : "live";
+let posterMeta = null;
 let paused = false;
 let liveOptIn = false;
 let needsFirstRender = true;
 let docVisible = document.visibilityState === "visible";
 let onScreen = true;
 let latest = null;
+let workerFailed = false;
+let pendingPhase = null;
+let swapToken = 0;
+let renderedWaiters = [];
 let worker = null;
 const sparkCache = new Map();
+const sparkPrefetching = new Set();
 let sparkTimer = 0;
 let sparkAbort = null;
 
@@ -79,6 +99,15 @@ function groupDigits(value) {
 	return frac === undefined ? grouped : `${grouped}.${frac}`;
 }
 
+function utcTime(ms) {
+	return new Date(ms).toISOString().slice(11, 19);
+}
+
+function utcDate(ms) {
+	const d = new Date(ms);
+	return `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
+}
+
 function setEmpty(el, empty) {
 	if (empty) el.setAttribute("data-empty", "");
 	else el.removeAttribute("data-empty");
@@ -89,7 +118,15 @@ function updateUrl() {
 	next.searchParams.set("v", variant);
 	if (coin === "BTC") next.searchParams.delete("coin");
 	else next.searchParams.set("coin", coin);
+	if (view === "live") next.searchParams.set("view", "live");
+	else next.searchParams.delete("view");
 	history.replaceState(null, "", next);
+}
+
+// Posters exist for each plot ratio: phone, a window narrower than 900px, and a wider one.
+function posterKey() {
+	if (mqMobile.matches) return `${variant}-mobile`;
+	return `${variant}-${els.window.clientWidth >= 900 ? "tall" : "wide"}`;
 }
 
 function applyVariant(next) {
@@ -99,6 +136,7 @@ function applyVariant(next) {
 		button.setAttribute("aria-pressed", String(button.dataset.variantBtn === next));
 	}
 	worker?.postMessage({ type: "variant", variant: next });
+	if (phase === "recorded" && posterMeta) showRecorded();
 	updateUrl();
 }
 
@@ -111,8 +149,23 @@ function setVariant(next) {
 	}
 }
 
+function setView(next, focus) {
+	view = next;
+	for (const tab of els.viewTabs) {
+		const selected = tab.dataset.view === next;
+		tab.setAttribute("aria-selected", String(selected));
+		tab.tabIndex = selected ? 0 : -1;
+		if (selected && focus) tab.focus();
+	}
+	els.window.dataset.view = next;
+	els.terminalPanel.toggleAttribute("data-inactive", next !== "terminal");
+	els.marketPanel.toggleAttribute("data-inactive", next !== "live");
+	syncVisibility();
+	updateUrl();
+}
+
 function clearMarketView() {
-	for (const el of [els.last, els.change, els.spark, els.sparkLabel, els.bbo]) setEmpty(el, true);
+	for (const el of [els.last, els.change, els.spark, els.bbo]) setEmpty(el, true);
 	els.last.textContent = "";
 	els.change.textContent = "";
 	els.asks.replaceChildren();
@@ -122,11 +175,12 @@ function clearMarketView() {
 	els.midLabel.hidden = true;
 	els.axisTop.hidden = true;
 	els.axisBottom.hidden = true;
-	els.liveBadge.hidden = true;
+	els.stateBadge.hidden = true;
 	latest = null;
 }
 
 function setCoin(next, focus) {
+	const changed = next !== coin;
 	coin = next;
 	let selectedId = "";
 	for (const tab of els.tabs) {
@@ -136,18 +190,30 @@ function setCoin(next, focus) {
 		if (selected) selectedId = tab.id;
 		if (selected && focus) tab.focus();
 	}
-	els.panel.setAttribute("aria-labelledby", selectedId);
-	els.pair.textContent = `${next}-USD perpetual`;
-	els.note.textContent = `Hyperliquid ${next}-USD perpetual, live from the public API. A website view of public market data, not a terminal feature. Not a recommendation.`;
+	els.marketBody.setAttribute("aria-labelledby", selectedId);
+	els.bookSizeHead.textContent = `Size (${next})`;
+	els.footNote.textContent = `${next}-USD perpetual · Not advice.`;
 	els.ctaTrade.textContent = `Trade ${next}`;
 	els.ctaTrade.href = tradeUrl(next, `hero_cta_${next.toLowerCase()}`);
-	els.ctaEmail.href = tradeUrl(next, "hero_email");
 	els.ctaHeader.href = tradeUrl(next, "header");
+	if (!changed) return;
 	needsFirstRender = true;
-	clearMarketView();
-	worker?.postMessage({ type: "coin", coin: next });
-	scheduleSparkline(next);
 	updateUrl();
+	if (phase === "recorded") {
+		clearMarketView();
+		worker?.postMessage({ type: "coin", coin: next });
+		leaveRecorded(false);
+		return;
+	}
+	swapScene(
+		() => {
+			clearMarketView();
+			worker?.postMessage({ type: "coin", coin: next });
+			scheduleSparkline(next);
+		},
+		() => Promise.resolve(),
+		true,
+	);
 }
 
 function bookRow(kind, [pxS, szS, sz], maxSz) {
@@ -172,21 +238,38 @@ function placeLabel(el, label) {
 	el.hidden = false;
 }
 
-function renderUi(msg) {
-	if (msg.coin !== coin) return;
-	if (paused && !msg.force && !needsFirstRender) return;
-	latest = msg;
+function stateLabel(recorded) {
+	if (recorded) return "RECORDED";
+	if (paused) return "PAUSED";
+	return reducedActive() ? "STILL" : "LIVE";
+}
+
+// Every number in the market view comes from one source at a time: the recording's
+// final state while the poster shows, the live worker afterwards.
+function renderFrame(msg, recorded) {
 	const reduced = reducedActive();
-	els.window.dataset.live = String(msg.live);
-	els.liveBadge.hidden = !msg.live;
-	els.liveText.textContent = paused ? "PAUSED" : reduced ? "STILL" : "LIVE";
-	els.windowSeconds.textContent = String(msg.windowSeconds);
+	els.stateBadge.hidden = !recorded && !msg.live;
+	els.stateText.textContent = stateLabel(recorded);
+
+	const w = msg.windowSeconds;
+	if (recorded) {
+		els.tLeft.textContent = utcTime(posterMeta.recordedTo - w * 1000);
+		els.tMid.textContent = "";
+		els.tRight.textContent = `${utcTime(posterMeta.recordedTo)} UTC`;
+	} else {
+		els.tLeft.textContent = `−${w} s`;
+		els.tMid.textContent = `−${Math.round(w / 2)} s`;
+		els.tRight.textContent = "Now";
+	}
 
 	if (msg.live && msg.last) {
 		els.last.textContent = groupDigits(msg.last.pxS);
+		els.last.title = Number.isFinite(msg.last.time) ? `Last trade ${utcTime(msg.last.time)} UTC` : "Last trade";
 		setEmpty(els.last, false);
+		setEmpty(els.lastLabel, false);
 	} else {
 		setEmpty(els.last, true);
+		setEmpty(els.lastLabel, true);
 	}
 
 	if (msg.live && msg.pct !== null) {
@@ -203,41 +286,177 @@ function renderUi(msg) {
 		els.asks.replaceChildren(...[...msg.asks].reverse().map((l) => bookRow("ask", l, maxSz)));
 		els.bids.replaceChildren(...msg.bids.map((l) => bookRow("bid", l, maxSz)));
 		els.spread.textContent = `Spread ${groupDigits(msg.spreadS)}`;
-		els.bookCaption.textContent = msg.tickS ? `Top 5 · step ${groupDigits(msg.tickS)}` : "Top 5";
-		els.bboBid.textContent = groupDigits(msg.bestBidS);
-		els.bboAsk.textContent = groupDigits(msg.bestAskS);
-		setEmpty(els.bbo, false);
-		needsFirstRender = false;
+		const at = Number.isFinite(msg.depthAt) ? ` · ${utcTime(msg.depthAt)} UTC` : "";
+		els.bookCaption.textContent = `Top 5 · step ${groupDigits(msg.tickS)}${at}`;
+		if (!recorded) needsFirstRender = false;
 	} else {
 		els.asks.replaceChildren();
 		els.bids.replaceChildren();
 		els.spread.textContent = "";
+		els.bookCaption.textContent = "Top 5";
+	}
+	if (msg.live && msg.bestBidS) {
+		els.bboBid.textContent = groupDigits(msg.bestBidS);
+		els.bboAsk.textContent = groupDigits(msg.bestAskS);
+		setEmpty(els.bbo, false);
+	} else {
 		setEmpty(els.bbo, true);
 	}
 
-	if (msg.live && !reduced) {
-		placeLabel(els.midLabel, msg.mid);
-	} else {
-		els.midLabel.hidden = true;
-	}
-	if (!reduced || msg.force) {
+	if (msg.live && (recorded || !reduced)) placeLabel(els.midLabel, msg.mid);
+	else els.midLabel.hidden = true;
+	if (recorded || !reduced || msg.force) {
 		placeLabel(els.axisTop, msg.live ? msg.axis?.top : null);
 		placeLabel(els.axisBottom, msg.live ? msg.axis?.bottom : null);
 	}
+	updateStateNote(msg);
+}
 
-	if (reduced && msg.frozenAt) {
-		els.stillNote.textContent = `Still snapshot · ${new Date(msg.frozenAt).toISOString().slice(11, 19)} UTC`;
-		els.stillNote.hidden = false;
-	} else {
-		els.stillNote.hidden = true;
+// The state line has room for two lines in every layout, so a state change never
+// resizes the window.
+function updateStateNote(msg) {
+	let text = "Live from the Hyperliquid public API.";
+	if (msg?.live && Number.isFinite(msg.last?.time)) text += ` Last trade ${utcTime(msg.last.time)} UTC.`;
+	if (phase === "recorded" && posterMeta) {
+		const from = utcTime(posterMeta.recordedFrom).slice(0, 5);
+		const to = utcTime(posterMeta.recordedTo).slice(0, 5);
+		const span = `Recorded ${utcDate(posterMeta.recordedFrom)}, ${from}–${to} UTC.`;
+		if (workerFailed) text = `${span} Live data is unavailable right now.`;
+		else if (reducedActive()) text = `${span} Live view on request.`;
+		else text = `${span} Switches to live after ${LIVE_HANDOFF_SECONDS} s of live data.`;
+	} else if (workerFailed) {
+		text = "Live data is unavailable right now.";
+	} else if (paused) {
+		text = "Paused. Numbers and chart are frozen.";
+	} else if (msg && !msg.live) {
+		text = msg.reason === "waiting" ? "Waiting for Hyperliquid public data." : "Live data is unavailable right now.";
+	} else if (reducedActive() && msg?.frozenAt) {
+		text = `Still snapshot · ${utcTime(msg.frozenAt)} UTC.`;
 	}
+	els.stateNote.textContent = text;
+}
+
+function showRecorded() {
+	const poster = posterMeta.posters[posterKey()];
+	if (!poster) {
+		leaveRecorded(false);
+		return;
+	}
+	els.window.dataset.phase = "recorded";
+	els.poster.dataset.key = posterKey();
+	els.poster.src = `./posters/${poster.file}`;
+	els.poster.hidden = false;
+	els.showLive.hidden = !reducedActive();
+	drawSparkline(posterMeta.closes24h.map(Number));
+	renderFrame(poster.ui, true);
+}
+
+function delay(ms) {
+	return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function waitForRendered() {
+	return new Promise((resolve) => renderedWaiters.push(resolve));
+}
+
+// Swaps the whole market view as one scene: the data region fades out, the picture,
+// every number, the axes and the state badge change while it is invisible, and it
+// fades back in once the new picture is drawn. No visible frame mixes recorded and
+// live values.
+async function swapScene(apply, ready, fade) {
+	const token = ++swapToken;
+	const animate = fade && !mqReduced.matches && docVisible && onScreen && view === "live";
+	try {
+		if (animate) {
+			els.marketPanel.dataset.swap = "out";
+			await delay(SWAP_HALF_MS);
+			if (token !== swapToken) return;
+		}
+		apply();
+		if (animate) await Promise.race([ready(), delay(SWAP_READY_TIMEOUT_MS)]);
+	} finally {
+		if (token === swapToken) delete els.marketPanel.dataset.swap;
+	}
+}
+
+function leaveRecorded(fade) {
+	pendingPhase = "live";
+	swapScene(
+		() => {
+			pendingPhase = null;
+			phase = "live";
+			els.window.dataset.phase = "live";
+			els.poster.hidden = true;
+			syncReduced();
+			syncVisibility();
+			scheduleSparkline(coin);
+			if (latest) renderFrame(latest, false);
+			else clearMarketView();
+		},
+		waitForRendered,
+		fade,
+	);
+}
+
+// Brief gaps stay on the live canvas; only a stopped connection or 20 s without
+// data brings the recording back, so the view never flickers between the two.
+function returnToRecorded() {
+	pendingPhase = "recorded";
+	latest = null;
+	swapScene(
+		() => {
+			pendingPhase = null;
+			phase = "recorded";
+			showRecorded();
+			syncVisibility();
+		},
+		() => els.poster.decode().catch(() => {}),
+		true,
+	);
+}
+
+async function loadPosterMeta() {
+	try {
+		const res = await fetch(POSTER_META_URL);
+		if (!res.ok) throw new Error(String(res.status));
+		const meta = await res.json();
+		if (phase !== "recorded" || meta.coin !== coin) return;
+		posterMeta = meta;
+		showRecorded();
+	} catch {
+		if (phase === "recorded") leaveRecorded(false);
+	}
+}
+
+function onWorkerUi(msg) {
+	if (msg.coin !== coin) return;
+	workerFailed = msg.failed;
+	els.window.dataset.live = String(msg.live);
+	if (pendingPhase) {
+		if (pendingPhase === "live") latest = msg;
+		return;
+	}
+	if (phase === "recorded") {
+		latest = msg;
+		if (!posterMeta) return;
+		if (msg.live && msg.liveSeconds >= SPARK_PREFETCH_SECONDS) prefetchSparkline(coin);
+		if (msg.live && msg.liveSeconds >= LIVE_HANDOFF_SECONDS && !reducedActive()) leaveRecorded(true);
+		else updateStateNote(msg);
+		return;
+	}
+	if (posterMeta && coin === posterMeta.coin && (msg.failed || msg.silentMs >= RECORDED_FALLBACK_MS)) {
+		returnToRecorded();
+		return;
+	}
+	if (paused && !msg.force && !needsFirstRender) return;
+	latest = msg;
+	renderFrame(msg, false);
 }
 
 function scheduleSparkline(market) {
 	clearTimeout(sparkTimer);
 	sparkAbort?.abort();
 	setEmpty(els.spark, true);
-	setEmpty(els.sparkLabel, true);
 	const cached = sparkCache.get(market);
 	if (cached && Date.now() - cached.at < SPARK_CACHE_MS) {
 		drawSparkline(cached.closes);
@@ -246,30 +465,46 @@ function scheduleSparkline(market) {
 	sparkTimer = setTimeout(() => loadSparkline(market), SPARK_DEBOUNCE_MS);
 }
 
+async function fetchCloses(market, signal) {
+	const end = Date.now();
+	const res = await fetch(INFO_URL, {
+		method: "POST",
+		headers: { "content-type": "application/json" },
+		body: JSON.stringify({ type: "candleSnapshot", req: { coin: market, interval: "15m", startTime: end - 86_400_000, endTime: end } }),
+		signal,
+	});
+	if (!res.ok) return null;
+	const candles = await res.json();
+	if (!Array.isArray(candles) || candles.length < 24) return null;
+	const closes = candles.map((c) => Number(c.c));
+	if (closes.some((v) => !Number.isFinite(v) || v <= 0)) return null;
+	sparkCache.set(market, { at: Date.now(), closes });
+	return closes;
+}
+
 async function loadSparkline(market) {
 	const abort = new AbortController();
 	sparkAbort = abort;
 	try {
-		const end = Date.now();
-		const res = await fetch(INFO_URL, {
-			method: "POST",
-			headers: { "content-type": "application/json" },
-			body: JSON.stringify({ type: "candleSnapshot", req: { coin: market, interval: "15m", startTime: end - 86_400_000, endTime: end } }),
-			signal: abort.signal,
-		});
-		if (!res.ok) return;
-		const candles = await res.json();
-		if (market !== coin || !Array.isArray(candles) || candles.length < 24) return;
-		const closes = candles.map((c) => Number(c.c));
-		if (closes.some((v) => !Number.isFinite(v) || v <= 0)) return;
-		sparkCache.set(market, { at: Date.now(), closes });
-		drawSparkline(closes);
+		const closes = await fetchCloses(market, abort.signal);
+		if (closes && market === coin && phase === "live") drawSparkline(closes);
 	} catch {
 		// The sparkline is optional; it stays hidden when the snapshot is unavailable.
 	}
 }
 
+// Fetched before the recorded-to-live swap so the live scene arrives with its sparkline.
+function prefetchSparkline(market) {
+	const cached = sparkCache.get(market);
+	if ((cached && Date.now() - cached.at < SPARK_CACHE_MS) || sparkPrefetching.has(market)) return;
+	sparkPrefetching.add(market);
+	fetchCloses(market)
+		.catch(() => null)
+		.finally(() => sparkPrefetching.delete(market));
+}
+
 function drawSparkline(closes) {
+	if (closes.length < 2 || closes.some((v) => !Number.isFinite(v))) return;
 	const min = Math.min(...closes);
 	const max = Math.max(...closes);
 	const span = max - min || 1;
@@ -279,7 +514,6 @@ function drawSparkline(closes) {
 	els.sparkPath.setAttribute("d", d);
 	els.spark.dataset.dir = closes[closes.length - 1] >= closes[0] ? "up" : "down";
 	setEmpty(els.spark, false);
-	setEmpty(els.sparkLabel, false);
 }
 
 function stageSize() {
@@ -291,41 +525,63 @@ function stageSize() {
 		dpr: Math.min(window.devicePixelRatio || 1, mobile ? 1 : 1.5),
 		windowMs: mobile ? 60_000 : 120_000,
 		maxFps: mobile ? 20 : 30,
+		maxRadius: mobile ? 6 : 8,
 	};
 }
 
+function renderWanted() {
+	return docVisible && onScreen && view === "live" && phase === "live";
+}
+
 function syncVisibility() {
-	worker?.postMessage({ type: "visibility", value: docVisible && onScreen });
+	worker?.postMessage({ type: "visibility", page: docVisible, render: renderWanted() });
 }
 
 function syncReduced() {
 	const reduced = reducedActive();
 	els.showLive.hidden = !reduced;
 	worker?.postMessage({ type: "reduced", value: reduced });
+	if (phase === "recorded") updateStateNote(latest);
 }
 
 function startWorker() {
 	if (!("transferControlToOffscreen" in els.canvas) || typeof Worker === "undefined") {
 		const note = document.createElement("p");
 		note.className = "no-canvas";
-		note.textContent = "This browser cannot draw the live view off the main thread, so it is not shown.";
-		els.stage.append(note);
+		note.textContent = "This browser cannot draw the live view off the main thread, so only the recording is shown.";
+		els.plot.append(note);
 		return;
 	}
 	const offscreen = els.canvas.transferControlToOffscreen();
 	worker = new Worker(new URL("./open-book.worker.js", import.meta.url), { type: "module" });
 	worker.onmessage = (event) => {
-		if (event.data?.type === "ui") renderUi(event.data);
+		if (event.data?.type === "ui") onWorkerUi(event.data);
+		if (event.data?.type === "rendered") {
+			for (const resolve of renderedWaiters) resolve();
+			renderedWaiters = [];
+		}
 	};
-	worker.postMessage({ type: "init", canvas: offscreen, ...stageSize(), variant, coin, reduced: reducedActive() }, [offscreen]);
+	worker.postMessage(
+		{ type: "init", canvas: offscreen, ...stageSize(), variant, coin, reduced: reducedActive(), render: renderWanted() },
+		[offscreen],
+	);
 	new ResizeObserver(() => worker.postMessage({ type: "resize", ...stageSize() })).observe(els.canvas);
+	new ResizeObserver(() => {
+		if (phase === "recorded" && posterMeta && !pendingPhase && els.poster.dataset.key !== posterKey()) showRecorded();
+	}).observe(els.window);
 	new IntersectionObserver((entries) => {
 		onScreen = entries.some((entry) => entry.isIntersecting);
 		syncVisibility();
-	}).observe(els.stage);
+	}).observe(els.plot);
 }
 
 function readSnapshot() {
+	if (phase === "recorded" && posterMeta) {
+		const m = posterMeta.posters[posterKey()].ui;
+		const at = utcTime(posterMeta.recordedTo).slice(0, 5);
+		els.snapshotOut.textContent = `Recording from ${at} UTC, not live: BTC-USD perpetual, best bid ${groupDigits(m.bestBidS)}, best ask ${groupDigits(m.bestAskS)}.`;
+		return;
+	}
 	const m = latest;
 	if (!m || !m.live || !m.bestBidS) {
 		els.snapshotOut.textContent = `${coin}: live data is not available right now.`;
@@ -337,42 +593,45 @@ function readSnapshot() {
 	els.snapshotOut.textContent = `${parts.join(", ")}.`;
 }
 
-function wireTabs() {
-	for (const tab of els.tabs) {
-		tab.addEventListener("click", () => {
-			if (tab.dataset.coin !== coin) setCoin(tab.dataset.coin, false);
-		});
-	}
-	els.tabs[0].parentElement.addEventListener("keydown", (event) => {
+function wireTablist(tabs, select) {
+	tabs[0].parentElement.addEventListener("keydown", (event) => {
 		if (event.repeat) return;
-		const index = els.tabs.findIndex((t) => t.dataset.coin === coin);
+		const index = tabs.findIndex((t) => t.getAttribute("aria-selected") === "true");
 		let next = index;
-		if (event.key === "ArrowRight") next = (index + 1) % els.tabs.length;
-		else if (event.key === "ArrowLeft") next = (index - 1 + els.tabs.length) % els.tabs.length;
+		if (event.key === "ArrowRight") next = (index + 1) % tabs.length;
+		else if (event.key === "ArrowLeft") next = (index - 1 + tabs.length) % tabs.length;
 		else if (event.key === "Home") next = 0;
-		else if (event.key === "End") next = els.tabs.length - 1;
+		else if (event.key === "End") next = tabs.length - 1;
 		else return;
 		event.preventDefault();
-		setCoin(els.tabs[next].dataset.coin, true);
+		select(tabs[next], true);
 	});
+	for (const tab of tabs) tab.addEventListener("click", () => select(tab, false));
 }
 
 function wireControls() {
+	wireTablist(els.viewTabs, (tab, focus) => setView(tab.dataset.view, focus));
+	wireTablist(els.tabs, (tab, focus) => setCoin(tab.dataset.coin, focus));
 	els.pause.addEventListener("click", () => {
 		paused = !paused;
 		els.pause.setAttribute("aria-pressed", String(paused));
 		els.window.dataset.paused = String(paused);
-		els.liveText.textContent = paused ? "PAUSED" : "LIVE";
+		els.stateText.textContent = stateLabel(false);
+		updateStateNote(latest);
 		worker?.postMessage({ type: "pause", value: paused });
 	});
 	els.snapshot.addEventListener("click", readSnapshot);
 	els.showLive.addEventListener("click", () => {
 		liveOptIn = true;
+		if (phase === "recorded") leaveRecorded(false);
 		syncReduced();
 		els.pause.focus();
 	});
 	mqReduced.addEventListener("change", syncReduced);
-	mqMobile.addEventListener("change", () => worker?.postMessage({ type: "resize", ...stageSize() }));
+	mqMobile.addEventListener("change", () => {
+		worker?.postMessage({ type: "resize", ...stageSize() });
+		if (phase === "recorded" && posterMeta) showRecorded();
+	});
 	document.addEventListener("visibilitychange", () => {
 		docVisible = document.visibilityState === "visible";
 		syncVisibility();
@@ -389,9 +648,12 @@ function wireControls() {
 	});
 }
 
+els.window.dataset.phase = phase;
 applyVariant(variant);
-wireTabs();
+setView(view, false);
 wireControls();
 startWorker();
 setCoin(coin, false);
+if (phase === "live") scheduleSparkline(coin);
 syncReduced();
+if (phase === "recorded") loadPosterMeta();
