@@ -6,6 +6,7 @@
 - 任务记录：[官网行业调研与重建规划](work-memory/sessions/2026-10-24-website-research-and-rebuild-plan.md)，写明原始需求、方法、证据位置、评分与取舍和未决项。调研的原始证据（`research-web.json`、`research-digest.md`、Playwright 的 JSON 输出与采集脚本）脱敏后复制在本机 Git 忽略的 `.worklog/2026-10-24/c1e345bd-069b-4821-ab73-a7bd5e2b03b2/snapshot-website-research/`，不进远端。三个方向与三份评审的原文**未取得**：写记录时会话的临时目录与任务输出目录里都没有它们，第 4 节的评分（7.5、6、8 等）只能追溯到本文与任务记录，不能追溯到原文。
 - 本文不是实施记录，也不是法律意见。文中所有英文与日文文案都是草稿，需要运营方确认；面向日本的一切内容还需要日本律师的书面意见。
 - 本文没有改动任何代码，也没有运行任何测试；第 9 节的色差与对比度是 Agent 按 sRGB（D65）计算的 CIE76 ΔE 与 WCAG 对比度，未经设计方复核。
+- 首屏原型：[`designs/website-hero-prototype/`](../designs/website-hero-prototype/README.md)（2026-10-24，A 克制版与 B 大胆版两套配色，可在本机运行对比；不是生产代码）。
 - 关联：[日本用户营销邮件](marketing/jp-launch-email/README.md) §1 闸门 1（官网与邮件的矛盾）、§5「刻意不写的卖点」、§6 转化率方案；[ADR 0042](adr/0042-japan-allowed-trading-region.md)（未发布）；[ADR 0028](adr/0028-brand-accent-colors.md)；[品牌迁移计划](brand-migration-plan.md) D2、D5 与 D12 的动效子项 (h)；[品牌标识与素材](brand-assets.md)；[官网 README](../apps/website/README.md)；[官网发布手册](../deploy/website/README.md)。
 
 ## 1 背景
@@ -517,6 +518,27 @@
 - 价格、成交额、持仓量等易变数值绝不写进 HTML。
 - 发布手册增加一步：`pnpm --filter @sairn/website snapshot`（脚本在 `apps/website/scripts/`）刷新快照。主场所未下架永续少于 100 个，或 `/markets/` 白名单里有币种不存在或已下架时，命令失败、本次发布停止，静态的 '100+ perpetual markets' 与邮件的「100以上の無期限先物」因此每次发布都成立。
 - 顺序固定为「刷新快照 → 提交（进 `dev` 的 PR 或发布提交）→ 从该提交构建」，发布产物因此对应一个提交；禁止从脏工作区构建发布产物，构建前 `git status --porcelain` 必须为空。
+
+### 2026-10-24 原型实测（追加）
+
+做首屏原型时直接测了公共 WebSocket 的推送节奏（本机 Node 订阅 BTC，30–120 s，每种订阅单独一个连接；不是长期统计）：
+
+| 订阅 | 推送间隔中位数 | 档数 |
+| --- | --- | --- |
+| `l2Book`（不带参数，或 `nSigFigs` 4、5，或带 `mantissa`） | 约 5.3 s（p90 约 5.6 s） | 20 / 20 |
+| `l2Book` 加 `fast: true`（含 `nSigFigs: 5`） | 约 0.53 s（最长约 1 s） | 5 / 5 |
+| `bbo` | 约 0.2 s（最长约 1.6 s） | 最优一档 |
+| `trades`、`activeAssetCtx` | 约 1 s | — |
+| `l2`（增量流） | 公共接口拒绝订阅（`Error parsing JSON into valid websocket request`） | — |
+
+另外，订阅 `trades` 之后的第一条消息是最近约 30 笔成交的快照（ETH 实测最早约 84 s 前），没有 `isSnapshot` 标记，要按快照处理并按 `tid` 去重。
+
+影响本节的设计：
+
+- 「盘口 5 s 没有有效帧即为过期」不能用在完整深度的 `l2Book` 上，它本身就约 5.3 s 一帧，LIVE 会反复闪断。原型最初就是这样，改为用快速流判定后，四个场景约 60–94 s 的逐秒采样里中断 0 次。
+- LIVE、五档表与中间价要来自快速流（`fast: true`）或 `bbo`；20 档深度只适合画热度层，并按「快速流覆盖、深度流里比快速流最外档更靠内的价位丢弃」合并。
+- 同一连接上不同参数的 `l2Book` 帧无法区分（本仓库 AGENTS.md 订单簿契约），所以要么像原型那样开两条连接（快速流一条、深度流一条），要么一条连接只订阅一种 `l2Book`，配 `bbo` 判定新鲜度（这时五档表的第 2–5 档最多约 5 s 旧，要在表头写明）。这与本节「每页一个连接」的取舍由阶段 1 决定，并记入决定 D8。
+- 原型的其余实现与限制见它的 README。
 
 ## 11 技术栈决定
 

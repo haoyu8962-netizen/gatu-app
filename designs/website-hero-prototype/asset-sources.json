@@ -1,0 +1,22 @@
+{
+	"fonts/ibm-plex-sans-latin-wght-normal.woff2": {
+		"family": "IBM Plex Sans Variable",
+		"weight": "100-700",
+		"source": "@fontsource-variable/ibm-plex-sans@5.2.8 files/ibm-plex-sans-latin-wght-normal.woff2 (apps/terminal dependency)",
+		"sha256": "e2291e842cf5af167122a22881a740c7f2dda7716f1e8cd76680264f4a859470"
+	},
+	"fonts/ibm-plex-sans-latin-ext-wght-normal.woff2": {
+		"family": "IBM Plex Sans Variable",
+		"weight": "100-700",
+		"source": "@fontsource-variable/ibm-plex-sans@5.2.8 files/ibm-plex-sans-latin-ext-wght-normal.woff2 (apps/terminal dependency)",
+		"sha256": "d160e20920ae4d6556518d352d3af27a74e9b0de3d8fe17b1c1044fc75aa2f81"
+	},
+	"fonts/OFL-IBM-Plex-Sans.txt": {
+		"source": "@fontsource-variable/ibm-plex-sans@5.2.8 LICENSE",
+		"sha256": "d0283623ef57e722fd0eb688a8041589670c608ab780cd3612d06ba6f153d3fd"
+	},
+	"assets/sairn-lockup-on-dark.svg": {
+		"source": "brand/svg/lockup/sairn-lockup-on-dark.svg (copy; edit the brand source, never this copy)",
+		"sha256": "f7930ec754945ca9680744b08aeac48d3a751dce7b25aa2405292b365bf882b8"
+	}
+}

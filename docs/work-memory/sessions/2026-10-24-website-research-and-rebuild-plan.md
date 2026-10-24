@@ -13,6 +13,7 @@
   "commits": [],
   "sources": [
     {"path": "docs/website-rebuild-plan.md"},
+    {"path": "designs/website-hero-prototype/README.md"},
     {"path": "docs/website-industry-research-2026-10.md"},
     {"path": "docs/marketing/jp-launch-email/README.md"},
     {"path": "apps/website/src/config/faq.ts"},
@@ -68,6 +69,14 @@
 - 没有运行官网测试、构建或浏览器检查；规划里的测试、预算与开关都是提议，没有实现。所有法律相关内容都不是法律意见。
 - 本地证据：`.worklog/2026-10-24/c1e345bd-069b-4821-ab73-a7bd5e2b03b2/snapshot-website-research/`（Git 忽略，约 0.8 MB）：`research-web.json`、`research-digest.md`、`playwright/exchanges/*.json`、`playwright/wallets/*.json`、采集脚本与 `manifest.json`（每个文件的 SHA-256、脱敏说明、未复制的 46 张截图的文件名、大小与 SHA-256）。脱敏只替换了本机用户名；文件里的邮箱是公开的企业地址与示例地址，没有发现钱包地址、密钥或令牌。原件在会话临时目录，不保证保留。
 - 未取得：三个设计方向与三份评审的原文；运营方的原话。
+
+## 追加：首屏原型（2026-10-24，同一会话）
+
+- 运营方要求做一页首屏原型：实时 Open Book 画布加 Live Window，分「克制版」和「更大胆版」两套配色与动效对比选择。原型放在 [`designs/website-hero-prototype/`](../../../designs/website-hero-prototype/README.md)，静态文件，用 `.claude/launch.json` 现有的 `design-handoff` 配置（端口 3020）预览，不进官网构建。
+- 做的过程中实测出两件规划没有覆盖的接口事实，已追加到[重建规划](../../website-rebuild-plan.md)第 10 节「2026-10-24 原型实测（追加）」：完整深度 `l2Book`（20 档，任何 `nSigFigs`）约每 5.3 秒才推送一次，只有 `fast: true`（5 档，约 0.5 秒）或 `bbo`（约 0.2 秒）适合判定新鲜度；订阅后第一条 `trades` 消息是约 30 笔、可早至 80 多秒前的历史快照。原型因此用两条连接（快速流与深度流）并合并两本簿；这与规划「每页一个连接」的取舍留给阶段 1 与决定 D8。
+- 一轮三视角审查（数据与资源、无障碍与动效安全、设计；Agent 执行，只读）提出 36 条意见，必须项全部修正，详见原型 README「实测」一节。设计视角指出 B 原稿把琥珀用在 8 个地方、超出 ADR 0028，修正后 B 只在流动性热度与「现在」标记上用琥珀，标题改为灰白双色。
+- 验证（Playwright 无头 Chromium，不是真机）：桌面 1440×900 与手机 390×844 各约 100 秒与 70 秒，控制台零错误、无横向溢出、LIVE 逐秒采样 0 次中断；暂停与减少动态效果下画布 3–4 秒内像素不变；连按 6 次方向键切换市场只发出 3 个 REST 请求。Safari、Firefox、真机触控与长时间运行没有测。
+- 待运营方：看原型选 A 或 B（或各取部分），据此定规划第 21 节的 D3（画布）、D4（字体）、D5（琥珀）。
 
 ## 后续与替代关系
 
