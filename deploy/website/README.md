@@ -24,7 +24,7 @@ AWS 资源名保留 `gatu-*`，这是有意的：它们只是现有资源的标�
 1. **域名与证书仍然有效。** `curl -sI https://sairn.ai/` 与 `https://www.sairn.ai/` 返回 200；分发 `EP2DIBP3T7M3G` 的别名与证书没有被改动。`sairn.ai` 的 DNS 在 Cloudflare，记录保持 DNS only（灰云）；开代理会改变 CloudFront 的证书与缓存行为。
 2. **支持邮箱。** `support@sairn.ai` 能收信：页脚的 Contact 与法律页都链接到它。
 3. **终端在 `https://app.sairn.ai` 正常提供服务。** 官网所有 CTA 都指向它，`<head>` 里也对它做了 `preconnect`。
-4. **法律页签字。** `/terms`、`/privacy`、`/risk`、`/support` 直接渲染仓库根目录的 `legal/*.md`。签约主体是 Sairn Corp.；这四页有改动时，发布前需要法务对当前版本给出书面确认（记录确认人、日期和对应的提交）。
+4. **法律页签字。** `/terms`、`/privacy`、`/risk`、`/support` 直接渲染仓库根目录的 `legal/*.md`。签约主体是 Sairn Corp.；这四页有改动时，发布前由运营方对当前版本书面确认（记录确认人、日期和对应的提交）；2026-10-25 运营方决定取消律师确认这一步（[官网规划](../../docs/website-plan.md)第 1 节）。
 5. **构建检查通过**（见下一节）。
 
 ## 构建与本地检查

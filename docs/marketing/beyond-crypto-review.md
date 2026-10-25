@@ -1,4 +1,6 @@
 > **Draft for legal review — not for publication.**
+
+> **状态更新（2026-10-25）：** 运营方 2026-10-25 决定：律师已完全同意在日本展开（运营方陈述，书面意见原文不在仓库），解除律师闸门、不再询问；官网宣传 HIP-3 美股与未上市公司市场，做法跟随 Hyperliquid 官方。本文第 3 节问题清单与正文里所有「待律师」「律师同意前」的默认值与状态作废；第 2 节事实表仍作为证据，由[官网规划](../website-plan.md)引用。下面的「Draft for legal review」标记与原文保留为历史。
 >
 > - 日期：2026-10-25。分支：`claude/japan-user-email-template-d3e2b5`（起始提交 `371674ba`）。
 > - 状态：拟议，只供运营方的律师审阅。本文与 `designs/beyond-crypto-review/` 里的任何内容都没有获得批准，没有发布、上线、链接或发送，也不是产品决定。

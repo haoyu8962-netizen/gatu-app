@@ -43,3 +43,9 @@
 - 计划与实际执行：`pnpm --dir apps/terminal exec vitest run src/lib/tests/geo-restriction-list.test.ts src/lib/tests/development-geo.test.ts src/lib/tests/geo-api.test.ts src/lib/tests/use-geo-restriction.test.tsx src/lib/tests/geo-prefetch.test.ts`，2026-10-24 在本分支 5 个文件 28 项通过。
 - 变异：把 `JP` 加回清单后，`geo-restriction-list.test.ts` 的两项失败；已还原。
 - 未做：生产环境用日本 IP 的真实访问验收（需要发布后进行）。
+
+## 更新（2026-10-25）
+
+- 运营方 2026-10-25 决定：律师已完全同意在日本展开（运营方陈述，书面意见原文不在仓库），解除律师闸门、不再询问；官网宣传 HIP-3 美股与未上市公司市场，做法跟随 Hyperliquid 官方。
+- 因此上文「取得日本律师的书面意见之前，不发布这项改动，也不向日本居民发送营销邮件」的建议不再作为闸门。原文保留为历史。
+- 合并、发布与发送仍按 AGENTS.md 由运营方逐项批准；发布后用日本 IP 的真实访问验收仍未做。[官网规划](../website-plan.md)第 10 节建议把本 ADR 的发布排在官网阶段 1 上线之前或同时，因为生产分支的 `geo.ts` 仍拦截日本，而条款 §2.2 没有列日本。

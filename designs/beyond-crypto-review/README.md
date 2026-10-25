@@ -1,5 +1,7 @@
 # 「加密之外的市场」律师审阅包（设计部分）
 
+> **状态更新（2026-10-25）：** 运营方 2026-10-25 决定：律师已完全同意在日本展开（运营方陈述，书面意见原文不在仓库），解除律师闸门、不再询问；官网宣传 HIP-3 美股与未上市公司市场，做法跟随 Hyperliquid 官方。本目录不再是律师审阅材料，改作[官网规划](../../docs/website-plan.md)的参考草稿；页面与视频里的「Draft for legal review — not for publication」水印是当时的标记，原样保留。视频由运营方另行自制。
+
 > **Draft for legal review — not for publication.**
 
 状态：只供运营方的律师审阅。**不上线、不发布、不链到官网或终端，也不进官网构建。** 日期 2026-10-25（UTC）。问题清单、事实底稿与全部文案的出处在 [docs/marketing/beyond-crypto-review.md](../../docs/marketing/beyond-crypto-review.md)；本目录只放能看的东西。
