@@ -6,6 +6,7 @@ const HIP3_DEPLOYER_DOCUMENTATION_URLS: Readonly<Record<string, string>> = {
 	cash: "https://docs.dreamcash.xyz",
 	mkts: "https://docs.markets.xyz",
 	para: "https://docs.paragon.trade/",
+	io: "https://docs.entropy.io/",
 };
 
 export function getHip3DeployerDocumentationUrl(dex: string): string | undefined {

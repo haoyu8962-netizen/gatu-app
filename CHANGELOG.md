@@ -58,6 +58,9 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Changed
 
+- The HIP-3 deployer notice for EntropyIO markets (the `io` deployer, such as the OpenAI and
+  Anthropic pre-IPO markets) now links to EntropyIO's documentation, as it already did for the
+  other listed deployers.
 - Japan is no longer a restricted region. Visitors located in Japan can place orders, enable
   trading, deposit and withdraw like visitors from other unrestricted countries; access through a
   VPN or proxy is still blocked, and the countries and regions named in the Terms are unchanged
