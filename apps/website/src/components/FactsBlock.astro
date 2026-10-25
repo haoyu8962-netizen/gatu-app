@@ -1,0 +1,22 @@
+---
+import { BRAND_NAME } from "@/config/brand";
+import { RISK_PATH, TERMS_RESTRICTED_PATH } from "@/config/copy";
+
+const linkClass = "text-fg underline underline-offset-2 hover:text-fg-muted transition-colors duration-150";
+---
+
+<section aria-labelledby="facts-title" class="border-b border-stroke-weaker">
+	<div class="mx-auto w-full max-w-3xl px-5 sm:px-6 py-12 md:py-16">
+		<h2 id="facts-title" class="text-3xs uppercase tracking-uppercase text-fg-faint">Before you trade</h2>
+		<p class="mt-4 text-sm md:text-base text-fg-muted leading-relaxed">
+			Perpetual futures use leverage and can be liquidated; you can lose all of your margin. HIP-3 markets are deployed
+			by independent third parties and can be halted, settled or delisted, and their liquidity can be thin. Contracts
+			that reference companies give you no ownership in them, and {BRAND_NAME} is not affiliated with or endorsed by
+			those companies. {BRAND_NAME} is an independent interface, not Hyperliquid Corp. or the Hyper Foundation. It is not
+			intended for, and may not be used by, persons who reside in, are located in or are incorporated in the United
+			States or other restricted locations listed in the <a href={TERMS_RESTRICTED_PATH} class={linkClass}>Terms of Use</a>;
+			deployers may apply their own restrictions. Not financial advice.
+			<a href={RISK_PATH} class={linkClass}>Risk disclosure →</a>
+		</p>
+	</div>
+</section>

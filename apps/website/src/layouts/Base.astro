@@ -25,6 +25,14 @@ const schemas = jsonLd === undefined ? [] : Array.isArray(jsonLd) ? jsonLd : [js
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 		<meta name="theme-color" content={SEO_DEFAULTS.themeColor} />
+		<script is:inline>
+			if (
+				"IntersectionObserver" in window &&
+				!window.matchMedia("(prefers-reduced-motion: reduce)").matches
+			) {
+				document.documentElement.classList.add("motion");
+			}
+		</script>
 		<meta name="color-scheme" content="dark light" />
 		<link rel="icon" type="image/x-icon" sizes="16x16 32x32 48x48" href="/favicon.ico" />
 		<link rel="icon" type="image/svg+xml" sizes="any" href={faviconUrl} />
@@ -77,12 +85,8 @@ const schemas = jsonLd === undefined ? [] : Array.isArray(jsonLd) ? jsonLd : [js
 	<body class="flex min-h-screen flex-col bg-background text-fg antialiased">
 		<slot />
 		<script>
-			const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
 			const revealTargets = document.querySelectorAll<HTMLElement>(".reveal");
-			if (reduced) {
-				for (const el of revealTargets) el.classList.add("reveal-in");
-			} else if (revealTargets.length > 0) {
+			if (document.documentElement.classList.contains("motion") && revealTargets.length > 0) {
 				const io = new IntersectionObserver(
 					(entries) => {
 						for (const entry of entries) {
@@ -94,30 +98,6 @@ const schemas = jsonLd === undefined ? [] : Array.isArray(jsonLd) ? jsonLd : [js
 					{ rootMargin: "0px 0px -10% 0px" },
 				);
 				for (const el of revealTargets) io.observe(el);
-			}
-
-			const countTargets = document.querySelectorAll<HTMLElement>("[data-countup]");
-			if (!reduced && countTargets.length > 0) {
-				const co = new IntersectionObserver((entries) => {
-					for (const entry of entries) {
-						if (!entry.isIntersecting) continue;
-						co.unobserve(entry.target);
-						const el = entry.target as HTMLElement;
-						const target = Number(el.dataset.countup);
-						if (!Number.isFinite(target)) continue;
-						const suffix = el.dataset.suffix ?? "";
-						const start = performance.now();
-						const duration = 900;
-						function frame(now: number) {
-							const t = Math.min((now - start) / duration, 1);
-							const eased = 1 - (1 - t) ** 3;
-							el.textContent = `${Math.round(target * eased)}${suffix}`;
-							if (t < 1) requestAnimationFrame(frame);
-						}
-						requestAnimationFrame(frame);
-					}
-				});
-				for (const el of countTargets) co.observe(el);
 			}
 		</script>
 	</body>

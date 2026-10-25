@@ -56,3 +56,6 @@ jobs:
 
       - name: Build marketing website
         run: pnpm --filter @sairn/website build
+
+      - name: Test built website
+        run: pnpm --filter @sairn/website test:dist

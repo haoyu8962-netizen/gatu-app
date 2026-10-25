@@ -13,6 +13,8 @@
   "commits": [],
   "sources": [
     {"path": "docs/website-plan.md"},
+    {"path": "apps/website/src/lib/markets/live.js"},
+    {"path": "apps/website/src/config/featured-markets.ts"},
     {"path": "docs/website-rebuild-plan.md"},
     {"path": "designs/website-hero-prototype/README.md"},
     {"path": "designs/website-hero-prototype/tools/guard.cjs"},
@@ -179,6 +181,17 @@
 - 新规划用工作流完成（8 个代理无报错：三路调研、起草、产品/准确性/工程三路审查与一轮修订），结果存于 `.worklog/2026-10-25/c1e345bd-069b-4821-ab73-a7bd5e2b03b2/snapshot-website-plan-v2/workflow-results.json`；主会话通读全文，并对照代码核实了首屏截图依赖的 Traditional Finance → Pre-IPO 子页签与六种界面语言。
 - 产物：[官网规划](../../website-plan.md)（334 行，取代 `docs/website-rebuild-plan.md`，旧规划保留为历史）。按 W1、W2 同批更新：旧规划、审阅包与两个设计目录加取代说明；ADR 0042 追加更新一节；日本邮件 README 的闸门 1 按运营方陈述视为已满足；`deploy/website/README.md` 第 4 条改为运营方书面确认；`docs/agent-handbook.md` 增加「不设律师闸门」一条；`docs/README.md` 入口改指新规划。
 - 本轮没有改代码，没有运行官网测试或构建；新规划里的公共接口读数与第三方站点读法是调研代理 2026-10-25 用 curl 做的，原始输出只在上面的工作流结果里。
+
+## 追加：阶段 1 实施（2026-10-26 UTC，同一会话）
+
+- 运营方要求按规划开始阶段 1：先做终端 T1，再改写现站。
+- T1：`hip3-deployers.ts` 加 `io → https://docs.entropy.io/`，测试与 CHANGELOG 同步，提交 `c39df181`；HIP-3 相关 5 个测试文件 53 项通过、终端 typecheck 通过。
+- 官网阶段 1 用工作流实施（数据层、页面、契约与 CI 三段顺序实施，规划符合度、工程、渲染三路审查，一轮修复；7 个代理无报错），结果存于 `.worklog/2026-10-26/c1e345bd-069b-4821-ab73-a7bd5e2b03b2/snapshot-website-phase-1/workflow-results.json`。
+- 主会话复核时发现行情条要约 2 分钟才出齐数字（≤30 权重/分钟的自设预算只能每 60 s 发一次请求），改为 ≤60 权重/分钟、首轮同时请求，并同步规划第 7 节与测试；实测行情条进入视口后约 1 秒数字出齐。另按原页把 io:OAI 结算日更正为 2028-09-02（规划第 7 节同步）。
+- 验证（本工作树当前版本）：`pnpm --filter @sairn/website test` 42 项、`build` 7 页、`test:dist` 19 项、`node --test scripts/ci-workflows.test.mjs` 16 项全部通过；无头 Chromium 在 1440 与 390 宽截图看过（减少动态模式下各区块都显示，没有横向溢出，控制台零错误）；开启动效时区块要滚进视口才淡入，整页一次截图拍不到，属截图手法而非缺陷。没有在真实浏览器里人工查看，没有记录首屏 10 s 传输字节。
+- 发布阻断：`pnpm --filter @sairn/website terminal:check` 对线上 p32（`9ccb88c0`）失败，因为 T1 与 ADR 0042 都还没有随终端发布；终端发布后重跑通过才能发布官网。
+- 待运营方决定：品牌主色 `--signal` 与 Hyperliquid 主色的 ΔE76 只有 8.5（规划第 6 节要求 ≥15），已作为待决例外列在 `brand-contract.test.mjs`；快照满 7 天后首页构建失败，会连带阻断只改法律页或品牌的 PR，是否只在发布构建里拦截待定。
+- 预期事件：xyz:JIO 预计 2026-10-28 上市后转为普通股票永续，届时每日检查会报红，需要更新快照与 `deployers.ts`。
 
 ## 后续与替代关系
 

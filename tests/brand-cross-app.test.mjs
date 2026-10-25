@@ -87,6 +87,26 @@ test("the brand signal stays readable as text on every terminal surface in both 
 	}
 });
 
+test("the website's 24h up and down colours are the terminal's dark market colours", () => {
+	// The website has only a dark theme, so it matches the terminal's .dark values (plan §6).
+	for (const [direction, token] of [
+		["up", "--text-success"],
+		["down", "--text-error"],
+	]) {
+		assert.equal(readCssVariable(TERMINAL_STYLES, ".dark", `--market-${direction}`), `var(${token})`);
+		assert.equal(
+			readCssVariable(WEBSITE_STYLES, ":root", token).toLowerCase(),
+			readCssVariable(TERMINAL_STYLES, ".dark", token).toLowerCase(),
+			`website ${token} must equal the terminal's dark --market-${direction}`,
+		);
+	}
+	assert.match(WEBSITE_STYLES, /--color-success:\s*var\(--text-success\);/);
+	assert.match(WEBSITE_STYLES, /--color-error:\s*var\(--text-error\);/);
+	const liveScript = readFileSync(resolve(REPOSITORY_ROOT, "apps/website/src/scripts/live-markets.ts"), "utf8");
+	assert.match(liveScript, /direction === "up"\) changeSlot\.classList\.add\("text-success"\)/);
+	assert.match(liveScript, /direction === "down"\) changeSlot\.classList\.add\("text-error"\)/);
+});
+
 test("Terminal and Website ship distinct large social cards", () => {
 	const terminalImage = readFileSync(resolve(REPOSITORY_ROOT, "apps/terminal/public/og-terminal-1200x630.png"));
 	const websiteImage = readFileSync(resolve(REPOSITORY_ROOT, "apps/website/public/og-website-1200x630.png"));

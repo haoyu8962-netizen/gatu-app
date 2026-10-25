@@ -26,6 +26,8 @@ AWS 资源名保留 `gatu-*`，这是有意的：它们只是现有资源的标�
 3. **终端在 `https://app.sairn.ai` 正常提供服务。** 官网所有 CTA 都指向它，`<head>` 里也对它做了 `preconnect`。
 4. **法律页签字。** `/terms`、`/privacy`、`/risk`、`/support` 直接渲染仓库根目录的 `legal/*.md`。签约主体是 Sairn Corp.；这四页有改动时，发布前由运营方对当前版本书面确认（记录确认人、日期和对应的提交）；2026-10-25 运营方决定取消律师确认这一步（[官网规划](../../docs/website-plan.md)第 1 节）。
 5. **构建检查通过**（见下一节）。
+6. **记录线上终端的版本，并按它核对功能主张**（[官网规划](../../docs/website-plan.md)第 9 节 R14）。取 `curl -s https://app.sairn.ai/build-meta.json`，在任务记录里写明其中的 `release` 与 `commit`；再按这个版本逐项核对官网写到的功能（订单类型、语言、登录方式、存款方式、移动端安装、Earn 等入口）在该版本里确实存在、默认开启。官网写了而该版本没有的，先改官网文案，不要先发布。按规划 R13，卡入金、邮箱钱包自动存款与 Link mobile device 在真实验收之前不写进官网。
+7. **线上终端已经带上官网依赖的改动，否则不发布。** 官网首页深链到快照里每个部署方的市场，并说受限地区以条款 §2.2 为准，所以线上终端必须已经：(a) 在 `apps/terminal/src/config/hip3-deployers.ts` 里给快照中的每个 dex 配了文档链接（规划第 10 节 T1：`io` → EntropyIO），否则访客从官网点进 `io:OAI`、`io:ANTH`，终端的 HIP-3 免责弹窗里没有部署方文档链接；(b) 包含 ADR 0042 的 `geo.ts`（不再拦截条款 §2.2 没有列出的日本）。先 `git fetch origin`，再跑 `NODE_USE_ENV_PROXY=1 pnpm --filter @sairn/website terminal:check`：它读线上 `build-meta.json` 的 commit，在本地 Git 对象里读该提交的这两个文件，有一项不满足就以退出码 1 结束，这时不发布官网，先发布终端。它对缅甸 `MM`（规划 T4）只打印警告：T4 不是阶段 1 的前置，但发布记录里要写明线上终端与条款 §2.2 的这一差异。
 
 ## 构建与本地检查
 
@@ -33,11 +35,17 @@ AWS 资源名保留 `gatu-*`，这是有意的：它们只是现有资源的标�
 
 ```bash
 pnpm install --frozen-lockfile
-pnpm --filter @sairn/website test        # 品牌与文案契约
+pnpm --filter @sairn/website markets:snapshot   # 每次发布前刷新行情快照（见下文）
+git diff --stat apps/website/src/data/          # 快照的改动写进任务记录
+pnpm --filter @sairn/website test        # 只读源码：品牌、文案契约与行情数据规则
 pnpm --filter @sairn/website build       # → apps/website/dist/
-grep -rli gatu apps/website/dist         # 期望没有任何输出
+pnpm --filter @sairn/website test:dist   # 读构建产物：风险句、部署方、FAQPage、/blog noindex、无 gatu 等
+grep -rli gatu apps/website/dist         # 期望没有任何输出（test:dist 也会检查）
 git rev-parse HEAD                       # 记下本次发布对应的提交
+git fetch origin && NODE_USE_ENV_PROXY=1 pnpm --filter @sairn/website terminal:check   # 发布前提 7：线上终端已含 T1 与 ADR 0042
 ```
+
+**行情快照。** 首页的市场名、部署方、市场数与 Pre-IPO 行来自提交进仓库的 `apps/website/src/data/market-structure.json`。精选市场下架或换了品类、出现没有文档链接的部署方、`deployers.ts` 的条目与快照不符时，`astro build` 直接失败；快照超过 7 天、`deployers.ts` 的来源超过 90 天没有复核、或预定结算日已过时，首页（`src/pages/index.astro` 调用 `assertMarketStructureCurrent()`）的构建失败，所以整个 `astro build` 也失败，包括只改法律页或品牌文件的 PR 在 CI 里的构建。源码测试（`test`、`test:brand`）不读时钟，不受快照年龄影响。所以每次发布前都要重跑 `markets:snapshot`，把快照的改动作为一次单独的提交审阅，并在任务记录里写明 `fetchedAt` 与 diff 的要点（新增或下架的市场、部署方、品类数的变化）。脚本报出问题时退出码为 1：先按提示改 `src/config/featured-markets.ts` 或 `src/config/deployers.ts`，不要手改快照。每日的 `Website Market Snapshot` 工作流（`.github/workflows/website-markets-check.yml`）只跑 `--check`，它报红说明下一次发布前需要刷新，它自己不改任何文件。沙箱或代理环境里本地运行需要 `NODE_USE_ENV_PROXY=1`。
 
 在浏览器里看一遍构建结果（`python3 -m http.server 3035 -d apps/website/dist`，或 `pnpm --filter @sairn/website preview`）：首页、`/blog/`、`/terms/`、`/privacy/`、`/risk/`、`/support/`、`/404.html`，桌面与手机宽度各一次。
 
@@ -48,6 +56,19 @@ git rev-parse HEAD                       # 记下本次发布对应的提交
 | 内容哈希资源 | `_astro/*` | `public,max-age=31536000,immutable` | 文件名带内容哈希，内容变了 URL 就变 |
 | 其余非 HTML | `favicon.ico`、`apple-touch-icon.png`、`og-website-1200x630.png`、`robots.txt`、`sitemap-*.xml` 等 | `public,max-age=0,must-revalidate` | 文件名固定，换内容时必须让浏览器重新验证 |
 | HTML | `*.html` | `no-cache` | 页面每次都要回源验证，才能拿到新的资源地址 |
+
+### 视频分组（预留，视频上线时启用）
+
+规划第 5 节的视频交付之前，`dist` 里没有视频，这一组不执行。启用时按以下约定补全本节并在任务记录里写明：
+
+| 分组 | 匹配 | `Cache-Control` | 原因 |
+|---|---|---|---|
+| 视频 | `media/<sha256>.<ext>` | `public,max-age=31536000,immutable` | 文件名就是内容哈希，内容变了 URL 就变 |
+
+- 视频文件不进 git；仓库只提交清单（每个文件的哈希、字节数、时长与码率）以及海报和字幕。上传前用清单核对本地文件的 `sha256` 与字节数，对不上就停。
+- 上传顺序排在「内容哈希资源」之后、HTML 之前，并显式写 `--content-type`（`video/mp4`、`video/webm`）。
+- 不对 `media/` 加 `--delete`：旧页面与外部引用可能还在请求旧视频。
+- 上线后用 `curl -sI` 与 `curl -s -r 0-1023 -o /dev/null -w '%{http_code}'` 核对 `content-type`、`immutable` 与 Range 请求返回 206。
 
 2026-10-02 之前的发布方式把**所有**非 HTML 文件都标成一年 `immutable`。同名文件原地替换后，访问过的浏览器最长一年都看不到新内容。所以首页截图已改为从 `src/assets/` 导入、由 Astro 输出到带哈希的 `_astro/` 路径，旧的 `/app-desktop.jpeg`、`/app-mobile.jpeg` 不再使用；以后不要再把会更新的图片放进 `public/`。
 
@@ -93,7 +114,7 @@ aws s3 sync apps/website/dist s3://gatu-dist-2026 --profile gatu-edge \
 
 **不要随手对资源加 `--delete`。** 2026-10-02 的发布没有清理资源：桶里还有 2026-07 版本留下的文件（如 `logo.svg`、`og.png`、`app-desktop.jpeg`、`app-mobile.jpeg`），已打开旧页面的浏览器和外部引用可能还在用。确认新站稳定、旧文件确实没有引用后，再在之后的某次发布里先 `--dryrun` 后 `--delete` 清理。
 
-**已撤下的页面必须删除。** 页面从构建里撤下后，旧的 HTML 还在桶里，函数会继续把对应路径改写到它。2026-10-02 的发布就这样删除了占位博文 `blog/welcome/index.html`（标题和正文含「公开仓库」等已撤回的说法）。做法是只对 HTML 做一次带 `--delete` 的同步，先核对清单：
+**已撤下的页面必须删除，而且先 `--dryrun`。** 本次构建比线上少了页面时（例如以后从 `FEATURED_MARKETS` 删掉一个市场，它的 `/markets/<slug>/` 不再生成），先跑下面带 `--delete --dryrun` 的命令，核对将被删除的只有撤下的页面，再去掉 `--dryrun` 执行，并把删除清单写进任务记录；撤下的页面也要已经不在站点地图里（`test:dist` 只检查构建产物）。页面从构建里撤下后，旧的 HTML 还在桶里，函数会继续把对应路径改写到它。2026-10-02 的发布就这样删除了占位博文 `blog/welcome/index.html`（标题和正文含「公开仓库」等已撤回的说法）。做法是只对 HTML 做一次带 `--delete` 的同步，先核对清单：
 
 ```bash
 aws s3 sync apps/website/dist s3://gatu-dist-2026 --profile gatu-edge \

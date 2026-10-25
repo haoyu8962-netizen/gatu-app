@@ -1,0 +1,86 @@
+---
+import { joinNames } from "@/config/copy";
+import type { FeaturedCategory } from "@/config/featured-markets";
+import { getDeployerFullNames, getFeaturedMarkets, getLiveMarketInputs } from "@/lib/markets/structure";
+import { coinSlot, terminalTradeUrl } from "@/lib/terminal-links";
+
+const markets = getFeaturedMarkets();
+const deployers = joinNames(getDeployerFullNames(markets.map((market) => market.coin)));
+const liveInputs = getLiveMarketInputs();
+
+function liveKind(category: FeaturedCategory): "preipo" | "rate" | "price" {
+	if (category === "preipo") return "preipo";
+	return category === "fx" ? "rate" : "price";
+}
+---
+
+<section id="markets-now" aria-labelledby="markets-now-title" class="border-b border-stroke-weaker bg-surface/40" data-live-strip>
+	<div class="mx-auto w-full max-w-6xl px-5 sm:px-6 py-8 md:py-10">
+		<div class="flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
+			<h2 id="markets-now-title" class="text-xs text-fg-subtle">
+				Hyperliquid public data · mark prices<span data-live-asof hidden> · as of <time data-live-asof-time></time> UTC</span>
+			</h2>
+			<button
+				type="button"
+				data-live-pause
+				aria-pressed="false"
+				hidden
+				class="press inline-flex min-h-8 items-center rounded-xs border border-stroke-weak px-3 text-2xs text-fg-muted hover:text-fg hover:border-stroke-strong active:bg-fill-weak aria-pressed:bg-fill-weak aria-pressed:text-fg"
+			>
+				Pause updates
+			</button>
+		</div>
+		<p class="mt-2 text-xs text-fg-muted leading-relaxed">
+			Stock and pre-IPO markets are perpetuals run by third-party deployers such as {deployers}. They are not shares.
+		</p>
+
+		<p id="markets-now-status" class="sr-only" data-live-status>
+			Live prices are shown here once Hyperliquid public data has loaded.
+		</p>
+		<ul
+			class="mt-5 -mx-5 sm:mx-0 flex snap-x snap-mandatory gap-3 overflow-x-auto px-5 sm:px-0 pb-2 [scrollbar-width:thin]"
+			aria-busy="true"
+			aria-describedby="markets-now-status"
+			data-live-list
+		>
+			{markets.map((market) => {
+				const kind = liveKind(market.featuredCategory);
+				return (
+					<li class="snap-start shrink-0 w-56" data-market-coin={market.coin}>
+						<a
+							href={terminalTradeUrl(market.coin, `ticker_${coinSlot(market.coin)}`)}
+							class="press flex h-full flex-col rounded-xs border border-stroke-weak bg-surface p-4 hover:border-stroke-strong hover:bg-fill-weaker active:bg-fill-weak transition-colors duration-200"
+							data-live-card={market.coin}
+							data-live-kind={kind}
+						>
+							<span class="text-sm font-medium text-fg">{market.name}</span>
+							<span class="mt-0.5 text-2xs text-fg-faint">
+								{market.displayName ?? market.coin}
+								{market.deployerFullName && <> · by {market.deployerFullName}</>}
+							</span>
+							<span class="mt-3 block h-6 text-base font-medium tabular-nums text-fg whitespace-nowrap" data-live-primary></span>
+							<span class="mt-1 flex h-4 items-center justify-between gap-2 text-2xs tabular-nums whitespace-nowrap">
+								<span class="text-fg-subtle" data-live-secondary></span>
+								<span data-live-change></span>
+							</span>
+						</a>
+					</li>
+				);
+			})}
+		</ul>
+	</div>
+	<script type="application/json" data-live-inputs set:html={JSON.stringify(liveInputs)} />
+</section>
+
+<script>
+	import { startLiveMarkets } from "@/scripts/live-markets";
+
+	function boot() {
+		const start = () => startLiveMarkets(document);
+		if ("requestIdleCallback" in window) window.requestIdleCallback(start, { timeout: 4_000 });
+		else setTimeout(start, 1_000);
+	}
+
+	if (document.readyState === "complete") boot();
+	else window.addEventListener("load", boot, { once: true });
+</script>

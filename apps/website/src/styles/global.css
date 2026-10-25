@@ -221,55 +221,30 @@
 		background-size: 56px 56px;
 	}
 
-	.marquee {
-		mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
-	}
-	.marquee-track {
-		animation: marquee-scroll 45s linear infinite;
-	}
-	.marquee:hover .marquee-track {
-		animation-play-state: paused;
-	}
-	@keyframes marquee-scroll {
-		to {
-			transform: translateX(-50%);
-		}
-	}
-
-	.reveal {
+	/* The default style of every animated element is its final, visible state. Base.astro adds `motion` to
+	   <html> only when JavaScript runs and the reader allows motion; only then does anything start hidden. */
+	.motion .reveal:not(.reveal-in) {
 		opacity: 0;
 		transform: translateY(14px);
+	}
+	.motion .reveal {
 		transition:
 			opacity 700ms var(--ease-out-quint),
 			transform 700ms var(--ease-out-quint);
 	}
-	.reveal.reveal-in {
-		opacity: 1;
-		transform: translateY(0);
-	}
-	@media (prefers-reduced-motion: reduce) {
-		.reveal {
-			opacity: 1;
-			transform: none;
-		}
-	}
 
-	/* Staggered fade-in: applies to children with `.stagger-item`. */
-	.stagger > .stagger-item {
-		opacity: 0;
-		transform: translateY(8px) scale(0.98);
-		animation: stagger-in 600ms var(--ease-out-quint) forwards;
+	.motion .stagger > .stagger-item {
+		animation: stagger-in 600ms var(--ease-out-quint) both;
 	}
-	.stagger > .stagger-item:nth-child(1) { animation-delay: 0ms; }
-	.stagger > .stagger-item:nth-child(2) { animation-delay: 60ms; }
-	.stagger > .stagger-item:nth-child(3) { animation-delay: 120ms; }
-	.stagger > .stagger-item:nth-child(4) { animation-delay: 180ms; }
-	.stagger > .stagger-item:nth-child(5) { animation-delay: 240ms; }
+	.motion .stagger > .stagger-item:nth-child(2) { animation-delay: 60ms; }
+	.motion .stagger > .stagger-item:nth-child(3) { animation-delay: 120ms; }
+	.motion .stagger > .stagger-item:nth-child(4) { animation-delay: 180ms; }
+	.motion .stagger > .stagger-item:nth-child(5) { animation-delay: 240ms; }
 
 	@keyframes stagger-in {
-		to {
-			opacity: 1;
-			transform: translateY(0) scale(1);
+		from {
+			opacity: 0;
+			transform: translateY(8px) scale(0.98);
 		}
 	}
 
@@ -386,22 +361,4 @@
 		letter-spacing: -0.01em;
 	}
 
-	.word-stagger .word {
-		display: inline-block;
-		opacity: 0;
-		transform: translateY(0.4em);
-		transition:
-			opacity 600ms var(--ease-out-quint),
-			transform 600ms var(--ease-out-quint);
-	}
-	.word-stagger.reveal-in .word {
-		opacity: 1;
-		transform: translateY(0);
-	}
-	@media (prefers-reduced-motion: reduce) {
-		.word-stagger .word {
-			opacity: 1;
-			transform: none;
-		}
-	}
 }

@@ -1,79 +1,80 @@
 ---
 import desktopScreenshot from "@/assets/terminal-desktop.jpeg";
 import mobileScreenshot from "@/assets/terminal-mobile.jpeg";
-import { APP_HOST, APP_URL as appUrl, BRAND_NAME } from "@/config/brand";
+import capture from "@/assets/terminal-capture.json";
+import { APP_HOST, BRAND_NAME } from "@/config/brand";
+import { formatUtcTimestamp, joinNames, RESTRICTED_SHORT, RISK_PATH, RISK_SENTENCE, TERMS_RESTRICTED_PATH } from "@/config/copy";
+import { getDeployerFullNames, getFeaturedMarkets, getHeroMarkets } from "@/lib/markets/structure";
+import { terminalTradeUrl } from "@/lib/terminal-links";
+
+const heroMarkets = getHeroMarkets();
+const heroDeployers = joinNames(getDeployerFullNames(getFeaturedMarkets().map((market) => market.coin)));
+const startUrl = terminalTradeUrl("BTC", "hero_cta");
+function listSeparator(index: number, count: number): string {
+	if (index === 0) return "";
+	return index === count - 1 ? " and " : ", ";
+}
+
+const caption = `Screenshot of ${APP_HOST}, signed out · ${formatUtcTimestamp(capture.capturedAt)}`;
 ---
 
 <section class="relative overflow-hidden border-b border-stroke-weaker">
 	<div class="absolute inset-0 bg-grid opacity-40 [mask-image:radial-gradient(ellipse_at_center,black,transparent_75%)]"></div>
 
-	<div class="relative mx-auto w-full max-w-6xl px-5 sm:px-6 pt-16 pb-20 md:pt-28 md:pb-28">
-		<div class="stagger flex flex-col items-center text-center">
-			<a
-				href="#features"
-				class="stagger-item press group inline-flex items-center gap-2 rounded-full border border-stroke-weak bg-fill-weaker px-3 py-1 text-2xs text-fg-muted hover:bg-fill-weak hover:border-stroke-weak/60 transition-colors duration-200"
-			>
-				<span class="relative inline-flex">
-					<span class="inline-block h-1.5 w-1.5 rounded-full bg-live"></span>
-					<span class="absolute inset-0 inline-block h-1.5 w-1.5 rounded-full bg-live opacity-75 animate-ping"></span>
-				</span>
-				<span class="uppercase tracking-uppercase">Live on mainnet</span>
-				<svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true" class="opacity-60 group-hover:translate-x-0.5 transition">
-					<path d="M4.5 3l3 3-3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-				</svg>
-			</a>
+	<div class="relative mx-auto w-full max-w-6xl px-5 sm:px-6 pt-14 pb-16 md:pt-24 md:pb-24">
+		<div class="flex flex-col items-center text-center">
+			<p class="text-2xs uppercase tracking-uppercase text-fg-faint">Independent trading terminal for Hyperliquid</p>
 
-			<h1 class="font-display stagger-item mt-7 md:mt-8 max-w-3xl text-3xl md:text-4xl leading-[1.02] tracking-display">
-				The trading terminal<br />
-				<span class="text-fg-subtle">for </span><span class="text-signal">Hyperliquid</span><span class="text-fg-subtle">.</span>
+			<h1 class="font-display mt-6 md:mt-7 max-w-3xl text-3xl md:text-4xl leading-[1.02] tracking-display">
+				Every market on <span class="text-signal">Hyperliquid</span>.<br />
+				One account, 24/7.
 			</h1>
 
-			<p class="stagger-item mt-5 md:mt-6 max-w-xl text-sm md:text-base text-fg-muted leading-relaxed">
-				Crypto, stocks, and indices — perps and spot in one workspace, with pro charts, every order type, and each market's full leverage, streamed live from Hyperliquid's WebSocket.
+			<p class="mt-5 md:mt-6 max-w-2xl text-sm md:text-base text-fg-muted leading-relaxed">
+				Sign in with email or your own wallet. Trade perpetuals on crypto, US stocks, indices, commodities, FX and
+				pre-IPO companies such as {heroMarkets.map((market, index) => [
+					listSeparator(index, heroMarkets.length),
+					<a
+						href={terminalTradeUrl(market.coin, "hero_market")}
+						class="text-fg underline underline-offset-4 decoration-stroke-strong hover:decoration-fg transition-colors duration-150"
+					>{market.name}</a>,
+				])}, plus spot.
 			</p>
 
-			<div class="stagger-item mt-8 md:mt-10 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
-				<a
-					href={appUrl}
-					class="press inline-flex h-11 items-center justify-center gap-2 rounded-xs bg-action px-5 text-sm font-medium text-on-action transition-[background-color,transform] duration-200 hover:bg-action-hover active:bg-action-active"
-				>
-					Open the terminal
-					<svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
-						<path d="M3 9l6-6M5 3h4v4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-					</svg>
-				</a>
-				<a
-					href="#features"
-					class="press inline-flex h-11 items-center justify-center gap-2 rounded-xs border border-stroke-weak px-5 text-sm text-fg-muted hover:text-fg hover:border-stroke-strong transition-colors duration-200"
-				>
-					See what's inside
-				</a>
-			</div>
-
-			<p class="stagger-item mt-5 text-2xs text-fg-faint uppercase tracking-uppercase">
-				Non-custodial · Wallet or email · No KYC
-			</p>
-		</div>
-
-		<!-- Real app screenshots framed in a browser chrome. -->
-		<div class="relative mx-auto mt-14 md:mt-20 max-w-5xl">
-			<div class="absolute -inset-2 rounded-12 ring-1 ring-stroke-weaker"></div>
-
-			<div class="relative rounded-12 border border-stroke-weak bg-surface shadow-2xl overflow-hidden">
-				<div class="flex items-center gap-1.5 border-b border-stroke-weaker px-3 md:px-4 py-2.5">
-					<span class="h-2 w-2 md:h-2.5 md:w-2.5 rounded-full bg-fill-weak"></span>
-					<span class="h-2 w-2 md:h-2.5 md:w-2.5 rounded-full bg-fill-weak"></span>
-					<span class="h-2 w-2 md:h-2.5 md:w-2.5 rounded-full bg-fill-weak"></span>
-					<div class="ml-3 md:ml-4 inline-flex items-center gap-1.5 rounded-full bg-fill-weaker px-2.5 py-0.5 text-2xs text-fg-faint tabular truncate">
-						<svg width="9" height="9" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-							<rect x="2.5" y="3.5" width="7" height="6" rx="1.5"/>
-							<path d="M4 3.5V2.5a2 2 0 0 1 4 0v1"/>
+			<div data-cta-group class="mt-8 md:mt-10 flex w-full max-w-2xl flex-col items-center">
+				<div class="flex w-full flex-col items-stretch gap-3 sm:w-auto sm:flex-row sm:items-center">
+					<a
+						href={startUrl}
+						class="press inline-flex h-11 items-center justify-center gap-2 rounded-xs bg-action px-5 text-sm font-medium text-on-action transition-[background-color,transform] duration-200 hover:bg-action-hover active:bg-action-active"
+					>
+						Start trading
+						<svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+							<path d="M3 9l6-6M5 3h4v4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
 						</svg>
-						<span>{APP_HOST}</span>
-					</div>
+					</a>
+					<a
+						href="#markets"
+						class="press inline-flex h-11 items-center justify-center gap-2 rounded-xs border border-stroke-weak px-5 text-sm text-fg-muted hover:text-fg hover:border-stroke-strong transition-colors duration-200"
+					>
+						Browse markets ↓
+					</a>
 				</div>
 
-				<!-- One art-directed picture: the browser downloads only the screenshot for the current width. -->
+				<p class="mt-6 text-xs md:text-sm text-fg-muted leading-relaxed">
+					{RISK_SENTENCE} Stock and pre-IPO markets are perpetuals run by third-party deployers such as {heroDeployers},
+					not shares; outside exchange hours their prices come from the deployer.
+					<a href={RISK_PATH} class="text-fg underline underline-offset-2 hover:text-fg-muted transition-colors duration-150">Risk disclosure →</a>
+				</p>
+
+				<p class="mt-3 text-2xs text-fg-subtle">
+					Funds stay in your own Hyperliquid account · 0.01% builder fee ·
+					<a href={TERMS_RESTRICTED_PATH} class="underline underline-offset-2 hover:text-fg-muted transition-colors duration-150">{RESTRICTED_SHORT}</a>
+				</p>
+			</div>
+		</div>
+
+		<figure class="relative mx-auto mt-12 md:mt-16 max-w-5xl">
+			<div class="overflow-hidden rounded-12 border border-stroke-weak bg-surface shadow-2xl">
 				<picture>
 					<source
 						media="(min-width: 640px)"
@@ -83,7 +84,7 @@ import { APP_HOST, APP_URL as appUrl, BRAND_NAME } from "@/config/brand";
 					/>
 					<img
 						src={mobileScreenshot.src}
-						alt={`${BRAND_NAME} trading terminal on BTC-USDC with the live order book and order form`}
+						alt={`${BRAND_NAME} terminal, signed out, on BTC with the market selector open at Traditional Finance, Pre-IPO`}
 						class="block w-full h-auto bg-background"
 						loading="eager"
 						decoding="async"
@@ -92,15 +93,7 @@ import { APP_HOST, APP_URL as appUrl, BRAND_NAME } from "@/config/brand";
 					/>
 				</picture>
 			</div>
-
-			<!-- Floating "CONNECTED" status chip, anchored bottom-left of screenshot -->
-			<div class="absolute -bottom-3 left-4 sm:left-6 hidden sm:inline-flex items-center gap-2 rounded-full border border-stroke-weak bg-surface px-3 py-1.5 text-2xs text-fg-muted shadow-lg">
-				<span class="relative inline-flex">
-					<span class="inline-block h-1.5 w-1.5 rounded-full bg-live"></span>
-					<span class="absolute inset-0 inline-block h-1.5 w-1.5 rounded-full bg-live opacity-75 animate-ping"></span>
-				</span>
-				<span class="uppercase tracking-uppercase tabular">Connected · 12ms</span>
-			</div>
-		</div>
+			<figcaption class="mt-3 text-center text-2xs text-fg-faint">{caption}</figcaption>
+		</figure>
 	</div>
 </section>

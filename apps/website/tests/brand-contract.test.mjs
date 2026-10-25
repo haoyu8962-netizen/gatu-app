@@ -37,6 +37,33 @@ test("website faint text remains WCAG AA on every supported dark surface", () =>
 	}
 });
 
+// Plan §6 anti-impersonation rule: every site colour token stays at least ΔE76 15 away from Hyperliquid's
+// brand colours. Near-black neutrals (L* ≤ 25 and chroma ≤ 10 after compositing over --bg-base) are exempt,
+// as the plan allows. A pending exception waits for an operator decision and must still be below the limit,
+// so a fixed or renamed token fails until it is removed from the list.
+const HYPERLIQUID_COLORS = ["#97fce3", "#03211c", "#23524c"];
+const MIN_DELTA_E = 15;
+const PENDING_DELTA_E_EXCEPTIONS = {
+	"--signal": "brand.json accent (ADR 0028), shared with the terminal; ΔE 8.5 from #97fce3. Plan §6 keeps it for focus, links and the logo; changing it is a brand decision",
+	"--signal-hover": "hover step of the same brand accent; ΔE 11.7 from #97fce3",
+};
+
+test("website colour tokens keep their distance from Hyperliquid's brand colours (plan §6)", () => {
+	const base = parseHex(readCssVariable(WEBSITE_STYLES, ":root", "--bg-base"));
+	const tokens = readRootColorTokens(WEBSITE_STYLES);
+	assert.ok(tokens.length >= 25, `expected the site's colour tokens, found ${tokens.length}`);
+	const tooClose = [];
+	for (const { name, channels } of tokens) {
+		const composited = channels.slice(0, 3).map((channel, index) => channel * channels[3] + base[index] * (1 - channels[3]));
+		const lab = toLab(composited);
+		if (lab[0] <= 25 && Math.hypot(lab[1], lab[2]) <= 10) continue;
+		const nearest = Math.min(...HYPERLIQUID_COLORS.map((color) => deltaE76(lab, toLab(parseHex(color).slice(0, 3)))));
+		if (nearest < MIN_DELTA_E) tooClose.push(name);
+	}
+	assert.deepEqual(tooClose.sort(), Object.keys(PENDING_DELTA_E_EXCEPTIONS).sort());
+	assert.ok(deltaE76(toLab([0x86, 0xe5, 0xd3]), toLab([0x97, 0xfc, 0xe3])) < MIN_DELTA_E, "the check measures what the plan means");
+});
+
 test("website renders the logo kit's on-dark lockup and mark from brand/ instead of public copies", () => {
 	const logo = readFileSync(resolve(WEBSITE_ROOT, "src/components/Logo.astro"), "utf8");
 	const base = readFileSync(resolve(WEBSITE_ROOT, "src/layouts/Base.astro"), "utf8");
@@ -70,6 +97,36 @@ function readCssVariable(source, selector, variable) {
 	const declaration = new RegExp(`${variable}:\\s*([^;]+);`).exec(source.slice(blockStart + 1, blockEnd));
 	assert.ok(declaration?.[1], `missing variable: ${selector} ${variable}`);
 	return declaration[1].trim();
+}
+
+function readRootColorTokens(source) {
+	const start = source.indexOf(":root {");
+	const block = source.slice(source.indexOf("{", start) + 1, source.indexOf("}", start));
+	const tokens = [];
+	for (const [, name, value] of block.matchAll(/(--[\w-]+):\s*([^;]+);/g)) {
+		if (value.startsWith("var(")) continue;
+		const rgb = /^rgb\((\d+) (\d+) (\d+) \/ (\d+)%\)$/.exec(value);
+		if (rgb) tokens.push({ name, channels: [Number(rgb[1]), Number(rgb[2]), Number(rgb[3]), Number(rgb[4]) / 100] });
+		else if (/^#[0-9a-f]{6}([0-9a-f]{2})?$/i.test(value)) tokens.push({ name, channels: parseHex(value) });
+		else assert.fail(`${name}: ${value} is a colour form the distance check cannot read`);
+	}
+	return tokens;
+}
+
+function toLab(channels) {
+	const [red, green, blue] = channels.map((channel) => {
+		const normalized = channel / 255;
+		return normalized <= 0.04045 ? normalized / 12.92 : ((normalized + 0.055) / 1.055) ** 2.4;
+	});
+	const x = (0.4124564 * red + 0.3575761 * green + 0.1804375 * blue) / 0.95047;
+	const y = 0.2126729 * red + 0.7151522 * green + 0.072175 * blue;
+	const z = (0.0193339 * red + 0.119192 * green + 0.9503041 * blue) / 1.08883;
+	const f = (t) => (t > 216 / 24389 ? Math.cbrt(t) : ((24389 / 27) * t + 16) / 116);
+	return [116 * f(y) - 16, 500 * (f(x) - f(y)), 200 * (f(y) - f(z))];
+}
+
+function deltaE76(a, b) {
+	return Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
 }
 
 function compositeHex(foreground, background) {

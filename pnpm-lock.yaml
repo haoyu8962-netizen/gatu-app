@@ -270,9 +270,19 @@ importers:
       astro:
         specifier: 5.14.6
         version: 5.14.6(@types/node@24.12.4)(db0@0.3.4)(idb-keyval@6.2.4)(jiti@2.7.0)(lightningcss@1.33.0)(rollup@4.54.0)(terser@5.46.0)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.3)
+      big.js:
+        specifier: 7.0.1
+        version: 7.0.1
       tailwindcss:
         specifier: 4.0.6
         version: 4.0.6
+    devDependencies:
+      '@types/big.js':
+        specifier: 6.2.2
+        version: 6.2.2
+      jsdom:
+        specifier: 29.0.2
+        version: 29.0.2(@noble/hashes@1.8.0)
 
   packages/hl-react:
     dependencies:

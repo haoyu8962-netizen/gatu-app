@@ -1,0 +1,59 @@
+{
+	"recordedAt": "2026-10-25T17:39:45.095Z",
+	"note": "Real POST https://api.hyperliquid.xyz/info response, trimmed to the coins the site uses (meta.universe and ctxs kept index-aligned; marginTables dropped).",
+	"request": {
+		"type": "metaAndAssetCtxs"
+	},
+	"status": 200,
+	"body": [
+		{
+			"universe": [
+				{
+					"szDecimals": 5,
+					"name": "BTC",
+					"maxLeverage": 40,
+					"marginTableId": 56
+				},
+				{
+					"szDecimals": 4,
+					"name": "ETH",
+					"maxLeverage": 25,
+					"marginTableId": 55
+				}
+			],
+			"collateralToken": 0
+		},
+		[
+			{
+				"funding": "0.0000125",
+				"openInterest": "42142.16718",
+				"prevDayPx": "80120.0",
+				"dayNtlVlm": "1235330094.813151598",
+				"premium": "-0.0002971879",
+				"oraclePx": "80757.0",
+				"markPx": "80730.3",
+				"midPx": "80732.5",
+				"impactPxs": [
+					"80731.0",
+					"80733.0"
+				],
+				"dayBaseVlm": "15345.5331299999"
+			},
+			{
+				"funding": "0.0000125",
+				"openInterest": "1106274.5345999992",
+				"prevDayPx": "2316.9",
+				"dayNtlVlm": "482799267.1035903096",
+				"premium": "-0.0004284545",
+				"oraclePx": "2357.31",
+				"markPx": "2356.5",
+				"midPx": "2356.25",
+				"impactPxs": [
+					"2356.13",
+					"2356.3"
+				],
+				"dayBaseVlm": "206203.9453"
+			}
+		]
+	]
+}

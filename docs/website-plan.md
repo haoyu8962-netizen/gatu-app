@@ -245,10 +245,10 @@
 - 快照：`apps/website/src/data/market-structure.json` 由 `pnpm --filter @sairn/website markets:snapshot` 生成并提交，带 `fetchedAt`，不手改；`fetchedAt` 超过 7 天时构建失败。测试断言其中没有 `/0x[0-9a-fA-F]{40}/`。每次发布前刷新快照，并在任务记录里写明 diff。
 - 每日检查：GitHub Actions 每天跑一次 `markets:snapshot --check`（约 1 分钟，每月约 30 分钟，在 3,000 分钟的额度内）。`FEATURED_MARKETS` 或已发布的 Pre-IPO 行下架、改分类时检查失败并通知运营方；下一次构建也会失败。新工作流同步写进 `scripts/ci-workflows.test.mjs`。
 - 数据体积：接口不压缩（2026-10-25 带 `Accept-Encoding: gzip, br` 实测也没有 `content-encoding`）；主 dex 约 72 KB、xyz 约 61 KB、io 约 7 KB，一轮约 140 KB。实时数据不计入交互前预算，首轮在 `load` 之后才发，稳态约 70 KB/min；手机 ≤120 KB/min、桌面 ≤400 KB/min 的上限保留，超出时拉长间隔。备选：主 dex 改用 `allMids`（权重 2，约 25 KB，但没有 24h 涨跌）；阶段 3 实测只订阅展示币种的 WebSocket `activeAssetCtx`。
-- 刷新周期：间隔 max(120 s, 请求总数 × 40 s)，请求总数含主 dex；退避重试计入同一个 60 s 滑动窗口，合计 ≤30 权重/分钟，由单测覆盖。只有持锁的标签页发请求；页面隐藏或区块离屏 30 s 后停止。
+- 刷新周期：首轮各 dex 同时请求，之后每个 dex 间隔 max(120 s, 请求总数 × 40 s)，请求总数含主 dex；退避重试计入同一个 60 s 滑动窗口，合计 ≤60 权重/分钟（Hyperliquid 单 IP 上限 1200 的 5%），由单测覆盖。（2026-10-26 实施时修订：原定 ≤30 权重/分钟只能每 60 s 发一次请求，行情条要约 2 分钟才出齐数字。）只有持锁的标签页发请求；页面隐藏或区块离屏 30 s 后停止。
 - 校验（fail closed）：数值必须是十进制字符串，`markPx`、`prevDayPx` 大于 0；coin 必须在快照里，dex 与请求一致；运行时读到已下架的市场，在 02 与 03 当场移除；涨跌、隐含估值与求和用 Big.js（`big.js` 7.0.1，与终端同版本），精度按 Hyperliquid 的有效数字规则；不显示 `maxLeverage`。
 - 新鲜度：以 `performance.now()` 计接收时间，不拿墙钟比较交易所时间。超过两个刷新周期再加 30 s 仍没有有效数据时，移除全部数字，数字位留出固定宽度的空白，并设 `aria-busy` 与读屏专用说明；不显示错误原文、'offline'、'—' 或 '$0'。
-- Pre-IPO：`src/config/deployers.ts` 按 coin 写单位、预定结算日、结算规则、来源 URL 与读取日期；条目超过 90 天没有复核时快照脚本失败。EntropyIO（均 2026-10-25 读取）：每 1 美元价格对应公司 10 亿美元隐含估值（https://docs.entropy.io/market-types/pre-ipo-perpetuals ）；io:OAI、io:ANTH 的 No-IPO 结算日 2028-08-18（https://docs.entropy.io/asset-directory/pre-ipo-assets ）；运营方可以在预定日期前发出提前结算通知（https://docs.entropy.io/pre-ipo-perp-mechanics/no-ipo-resolution ）。没有配置单位的 `preipo` 市场（2026-10-25 的 xyz:JIO、xyz:OURA）不显示价格与结算日。
+- Pre-IPO：`src/config/deployers.ts` 按 coin 写单位、预定结算日、结算规则、来源 URL 与读取日期；条目超过 90 天没有复核时快照脚本失败。EntropyIO（均 2026-10-25 读取）：每 1 美元价格对应公司 10 亿美元隐含估值（https://docs.entropy.io/market-types/pre-ipo-perpetuals ）；io:ANTH 的 No-IPO 结算日 2028-08-18、io:OAI 为 2028-09-02（2026-10-26 实施时按原页更正）（https://docs.entropy.io/asset-directory/pre-ipo-assets ）；运营方可以在预定日期前发出提前结算通知（https://docs.entropy.io/pre-ipo-perp-mechanics/no-ipo-resolution ）。没有配置单位的 `preipo` 市场（2026-10-25 的 xyz:JIO、xyz:OURA）不显示价格与结算日。
 - 降级：没有 JS、请求被拒或网络错误时，显示构建时生成的名称、部署方与链接，不显示数字；错误时按全抖动指数退避重试，每次访问最多 5 次。
 - 未核实：停牌状态从哪个接口读取（阶段 2 要么找到信号，要么文案只写 'not delisted'，不写 'trading'）；XYZ 的 Pre-IPO 规格（https://docs.trade.xyz/perpetuals/specifications-and-schedules/pre-ipo-specification-index ，旧地址 `/perpetuals/markets/pre-ipo` 2026-10-25 返回 404）；`perpConciseAnnotations` 的请求权重（只在构建时调用）。
 
@@ -307,7 +307,7 @@ copy-contract 的改动：删除旧规划第 18 节拟议过、但从未实施�
 **阶段 2 交付物：** 第 4 节的完整首页（01–10，05 除外）、`/deposit/`（含先在 Arbitrum 上取得原生 USDC 一节；第 11 节第 5 项通过后加卡入金一句）与 `/404/`；Plex 字体与第 6 节的视觉；截图采集脚本；`budget.test.mjs`、axe 与浏览器故障矩阵；Tailwind 对齐 PR 与 Astro 6 PR（各自单独提）；meta CSP。
 
 **并行的终端任务（各自单独提 PR、单独发布）：**
-- T1：在 `apps/terminal/src/config/hip3-deployers.ts` 增加 `io → https://docs.entropy.io/`。官网构建读这份配置，所以它是阶段 1 的前置；不加的话，访客从官网点进 io:OAI、io:ANTH，终端的免责弹窗里也没有部署方文档链接。
+- T1（2026-10-26 已提交 `c39df181`，待随终端发布）：在 `apps/terminal/src/config/hip3-deployers.ts` 增加 `io → https://docs.entropy.io/`。官网构建读这份配置，所以它是阶段 1 的前置；不加的话，访客从官网点进 io:OAI、io:ANTH，终端的免责弹窗里也没有部署方文档链接。
 - T2：终端的 Pre-launch 页签改名为 Pre-IPO，与官方终端一致（官方的 Pre-launch 指主 dex 的预上线币种）。与阶段 1 在同一周发布。
 - T3：仿照官方终端，在每个 HIP-3 市场页加一条可关闭的部署方横幅。
 - T4：`geo.ts` 补齐条款 §2.2 点名的地区：缅甸 `MM` 加进 `TRADE_RESTRICTED_COUNTRIES`；克里米亚 UA-43、塞瓦斯托波尔 UA-40、顿涅茨克 UA-14、卢甘斯克 UA-09 按现有 `CA: ["ON"]` 的写法加进 `TRADE_RESTRICTED_REGIONS`，并注明这些地区的 IP 区域定位误差较大。

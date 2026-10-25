@@ -1,13 +1,20 @@
 ---
-import { APP_URL as appUrl, BRAND_NAME, SUPPORT_EMAIL } from "@/config/brand";
+import { APP_HOST, LEGAL_ENTITY, SITE_HOST, SUPPORT_EMAIL } from "@/config/brand";
 import Logo from "./Logo.astro";
 
-const year = new Date().getFullYear();
+interface Props {
+	livePause?: boolean;
+}
+
+const { livePause = false } = Astro.props;
+const builtAt = new Date();
+const year = builtAt.getUTCFullYear();
+const buildDate = builtAt.toISOString().slice(0, 10);
 
 const product = [
-	{ label: "Open terminal", href: appUrl, icon: "terminal", external: true },
+	{ label: "Markets", href: "/#markets", icon: "terminal" },
 	{ label: "Features", href: "/#features", icon: "sparkle" },
-	{ label: "Blog", href: "/blog/", icon: "article" },
+	{ label: "Security", href: "/#security", icon: "scale" },
 	{ label: "FAQ", href: "/#faq", icon: "question" },
 ];
 
@@ -15,6 +22,7 @@ const resources = [
 	{ label: "Hyperliquid", href: "https://hyperliquid.xyz", icon: "link", external: true },
 	{ label: "Support", href: "/support/", icon: "question" },
 	{ label: "Risk disclosure", href: "/risk/", icon: "scale" },
+	{ label: "Terms of Use", href: "/terms/", icon: "article" },
 	{ label: "Contact", href: `mailto:${SUPPORT_EMAIL}`, icon: "mail" },
 ];
 
@@ -32,28 +40,13 @@ const iconSvg: Record<string, string> = {
 
 <footer class="relative mt-auto border-t border-stroke-weaker">
 	<div class="mx-auto w-full max-w-6xl px-5 sm:px-6 pt-12 md:pt-16 pb-8">
-		<div class="flex flex-col md:flex-row md:items-center md:justify-between gap-5 rounded-xs border border-stroke-weak bg-fill-weaker px-5 md:px-7 py-5 md:py-6">
-			<div>
-				<div class="text-3xs uppercase tracking-uppercase text-fg-faint">Ready when you are</div>
-				<p class="mt-1.5 text-sm md:text-base text-fg">
-					Open the terminal and start trading on Hyperliquid.
-				</p>
-			</div>
-			<a
-				href={appUrl}
-				class="press inline-flex h-10 items-center justify-center gap-2 self-start rounded-xs bg-action px-4 text-sm font-medium text-on-action transition-[background-color,transform] duration-200 hover:bg-action-hover active:bg-action-active md:self-auto"
-			>
-				Open terminal
-				<svg width="12" height="12" viewBox="0 0 256 256" aria-hidden="true" set:html={iconSvg.arrowUpRight} />
-			</a>
-		</div>
-
-		<div class="mt-12 md:mt-16 grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-10">
+		<div class="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-10">
 			<div class="col-span-2">
 				<Logo />
 				<p class="mt-4 max-w-xs text-xs text-fg-muted leading-relaxed">
 					The trading terminal for Hyperliquid. See the market clearly. Decide for yourself.
 				</p>
+				<p class="mt-3 text-2xs text-fg-faint">Official addresses: {SITE_HOST} · {APP_HOST}</p>
 			</div>
 
 			<div>
@@ -105,7 +98,7 @@ const iconSvg: Record<string, string> = {
 
 		<div class="mt-10 md:mt-14 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-t border-stroke-weaker pt-6">
 			<p class="text-2xs text-fg-faint">
-				© {year} {BRAND_NAME} · Not financial advice. Trade at your own risk. ·
+				© {year} {LEGAL_ENTITY} · Not financial advice. Trade at your own risk. ·
 				<a href="/privacy/" class="hover:text-fg-muted transition-colors duration-150">Privacy</a> ·
 				<a href="/terms/" class="hover:text-fg-muted transition-colors duration-150">Terms</a> ·
 				<a href="/risk/" class="hover:text-fg-muted transition-colors duration-150">Risk</a>
@@ -116,13 +109,21 @@ const iconSvg: Record<string, string> = {
 					<span class="uppercase tracking-uppercase">Non-custodial</span>
 				</span>
 				<span class="h-3 w-px bg-stroke-weaker"></span>
-				<span class="inline-flex items-center gap-1.5">
-					<span class="relative inline-flex">
-						<span class="inline-block h-1.5 w-1.5 rounded-full bg-live"></span>
-						<span class="absolute inset-0 inline-block h-1.5 w-1.5 rounded-full bg-live opacity-75 animate-ping"></span>
-					</span>
-					<span class="tabular uppercase tracking-uppercase">Live on mainnet</span>
-				</span>
+				<span class="tabular">Built <time datetime={buildDate}>{buildDate}</time></span>
+				{livePause && (
+					<>
+						<span class="h-3 w-px bg-stroke-weaker" data-live-pause-separator hidden></span>
+						<button
+							type="button"
+							data-live-pause
+							aria-pressed="false"
+							hidden
+							class="press inline-flex min-h-6 items-center rounded-xs px-1.5 text-2xs text-fg-faint hover:text-fg-muted active:bg-fill-weak aria-pressed:text-fg"
+						>
+							Pause live data
+						</button>
+					</>
+				)}
 			</div>
 		</div>
 	</div>

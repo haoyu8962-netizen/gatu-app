@@ -1,8 +1,10 @@
 ---
+import { APP_HOST, SITE_HOST } from "@/config/brand";
+
 const pillars = [
 	{
 		title: "Self-custody",
-		body: "Your wallet is your account. Funds never pass through us — orders are signed locally and settle on Hyperliquid.",
+		body: "Funds stay in your own Hyperliquid account and never pass through us. With email, a wallet created for your account signs your orders; with your own wallet, a trading key you approve for this browser session signs them.",
 		icon: "key",
 	},
 	{
@@ -12,7 +14,7 @@ const pillars = [
 	},
 	{
 		title: "Fees on the record",
-		body: "Hyperliquid's trading fee, plus a 0.01% builder fee on perp orders and spot sells — both charged by the protocol and shown on your fills.",
+		body: "Hyperliquid's trading fee, plus a 0.01% builder fee on perp orders and spot sells (TWAP orders carry none) — both charged by the protocol and shown on your fills.",
 		icon: "receipt",
 	},
 ];
@@ -24,10 +26,10 @@ const iconSvg: Record<string, string> = {
 };
 ---
 
-<section id="trust" class="border-b border-stroke-weaker">
+<section id="security" class="border-b border-stroke-weaker">
 	<div class="reveal mx-auto w-full max-w-5xl px-6 py-20 md:py-28">
 		<div class="text-center">
-			<span class="text-3xs uppercase tracking-uppercase text-fg-faint">Trust</span>
+			<span class="text-3xs uppercase tracking-uppercase text-fg-faint">Security</span>
 			<h2 class="font-display mt-3 text-xl md:text-2xl tracking-display">Verify, don't trust.</h2>
 			<p class="mt-4 mx-auto max-w-md text-sm text-fg-muted leading-relaxed">
 				Your funds, orders, and fees all live on Hyperliquid's public ledger, so you can check every one of them.
@@ -45,5 +47,10 @@ const iconSvg: Record<string, string> = {
 				</div>
 			))}
 		</div>
+
+		<p class="mt-8 text-center text-xs text-fg-muted leading-relaxed">
+			We will never ask for your private key, seed phrase, verification code or password. The official addresses are
+			{SITE_HOST} and {APP_HOST}.
+		</p>
 	</div>
 </section>

@@ -1,0 +1,164 @@
+{
+	"recordedAt": "2026-10-25T17:39:45.095Z",
+	"note": "Real POST https://api.hyperliquid.xyz/info response, trimmed to the coins the site uses (meta.universe and ctxs kept index-aligned; marginTables dropped).",
+	"request": {
+		"type": "metaAndAssetCtxs",
+		"dex": "xyz"
+	},
+	"status": 200,
+	"body": [
+		{
+			"universe": [
+				{
+					"szDecimals": 4,
+					"name": "xyz:XYZ100",
+					"maxLeverage": 30,
+					"marginTableId": 30,
+					"growthMode": "enabled",
+					"lastFeeScaleChangeTime": "2025-11-23T17:37:10.033211662",
+					"deployerFeeScale": "1.0"
+				},
+				{
+					"szDecimals": 3,
+					"name": "xyz:SNDK",
+					"maxLeverage": 10,
+					"marginTableId": 10,
+					"growthMode": "enabled",
+					"lastFeeScaleChangeTime": "2025-11-23T17:37:10.033211662",
+					"deployerFeeScale": "1.0"
+				},
+				{
+					"szDecimals": 3,
+					"name": "xyz:SKHX",
+					"maxLeverage": 10,
+					"marginTableId": 10,
+					"growthMode": "enabled",
+					"lastFeeScaleChangeTime": "2025-12-19T16:55:24.230127845",
+					"deployerFeeScale": "1.0"
+				},
+				{
+					"szDecimals": 2,
+					"name": "xyz:JPY",
+					"maxLeverage": 50,
+					"marginTableId": 50,
+					"onlyIsolated": true,
+					"marginMode": "noCross",
+					"growthMode": "enabled",
+					"lastFeeScaleChangeTime": "2025-12-19T16:55:24.230127845",
+					"deployerFeeScale": "1.0"
+				},
+				{
+					"szDecimals": 3,
+					"name": "xyz:CL",
+					"maxLeverage": 20,
+					"marginTableId": 20,
+					"growthMode": "enabled",
+					"lastFeeScaleChangeTime": "2026-01-06T14:22:02.431616165",
+					"deployerFeeScale": "1.0"
+				},
+				{
+					"szDecimals": 2,
+					"name": "xyz:BRENTOIL",
+					"maxLeverage": 20,
+					"marginTableId": 20,
+					"growthMode": "enabled",
+					"lastFeeScaleChangeTime": "2026-03-04T14:33:56.611209792",
+					"deployerFeeScale": "1.0"
+				}
+			],
+			"collateralToken": 0
+		},
+		[
+			{
+				"funding": "0.0000200722",
+				"openInterest": "9746.2902",
+				"prevDayPx": "28897.0",
+				"dayNtlVlm": "47326406.9215999991",
+				"premium": "0.0003785793",
+				"oraclePx": "29056.0",
+				"markPx": "29066.0",
+				"midPx": "29067.0",
+				"impactPxs": [
+					"29066.0",
+					"29068.0"
+				],
+				"dayBaseVlm": "1633.2395"
+			},
+			{
+				"funding": "0.0000701654",
+				"openInterest": "98107.318",
+				"prevDayPx": "1223.5",
+				"dayNtlVlm": "19642465.6031000018",
+				"premium": "0.0002944932",
+				"oraclePx": "1253.0",
+				"markPx": "1253.3",
+				"midPx": "1253.35",
+				"impactPxs": [
+					"1253.249",
+					"1253.489"
+				],
+				"dayBaseVlm": "15831.294"
+			},
+			{
+				"funding": "0.0000254283",
+				"openInterest": "325101.134",
+				"prevDayPx": "937.17",
+				"dayNtlVlm": "23471774.0699699968",
+				"premium": "0.0000544273",
+				"oraclePx": "964.59",
+				"markPx": "964.67",
+				"midPx": "964.635",
+				"impactPxs": [
+					"964.558",
+					"964.727"
+				],
+				"dayBaseVlm": "24513.551"
+			},
+			{
+				"funding": "0.0",
+				"openInterest": "215492.68",
+				"prevDayPx": "156.64",
+				"dayNtlVlm": "1284569.8692000001",
+				"premium": "0.0002567292",
+				"oraclePx": "156.78",
+				"markPx": "156.82",
+				"midPx": "156.82",
+				"impactPxs": [
+					"156.7958",
+					"156.8447"
+				],
+				"dayBaseVlm": "8198.2"
+			},
+			{
+				"funding": "-0.0000519606",
+				"openInterest": "2184824.54",
+				"prevDayPx": "103.71",
+				"dayNtlVlm": "65321645.149170056",
+				"premium": "-0.0003418636",
+				"oraclePx": "102.38",
+				"markPx": "102.35",
+				"midPx": "102.345",
+				"impactPxs": [
+					"102.34",
+					"102.35"
+				],
+				"dayBaseVlm": "633211.4139999998"
+			},
+			{
+				"funding": "-0.0000374642",
+				"openInterest": "2103684.7200000007",
+				"prevDayPx": "111.74",
+				"dayNtlVlm": "34325117.009100005",
+				"premium": "0.0002133732",
+				"oraclePx": "110.37",
+				"markPx": "110.37",
+				"midPx": "110.395",
+				"impactPxs": [
+					"110.3871",
+					"110.4"
+				],
+				"dayBaseVlm": "308663.1800000001"
+			}
+		]
+	]
+}
