@@ -7,13 +7,18 @@
   "kind": "task",
   "status": "recorded",
   "topics": ["brand-identity", "jurisdiction-marketing"],
-  "summary": "运营方认为官网 sairn.ai 太传统，要求用现代前端与加密原生技术重做。Agent 调研约 40 个同行站点、动效技术与仓库约束（docs/website-industry-research-2026-10.md），按三个设计方向与三份评审写出拟议、未批准的重建规划（docs/website-rebuild-plan.md：保留 Astro 静态站，首屏用 Worker 里的 Canvas 2D 实时行情画布，fail-closed 数据层与 REST 权重上限，主张登记表，阶段 0 先删英文站与日本邮件矛盾的说法并补风险句，默认关闭的日语页，日本邮件依赖的 sairn.ai 能力与 19 项待决事项），同日按 25 条评审意见核对后修订。只有文档：未改官网代码，未运行官网测试或构建，未发布；三个方向与三份评审的原文未取得，原始调研证据只在本机 .worklog。",
+  "summary": "运营方认为官网 sairn.ai 太传统，要求用现代前端与加密原生技术重做。Agent 调研约 40 个同行站点、动效技术与仓库约束（docs/website-industry-research-2026-10.md），写出拟议、未批准的重建规划（docs/website-rebuild-plan.md：保留 Astro 静态站；首屏 Preview 窗口默认是未登录终端的演示录屏，第二视图是 Worker 里 Canvas 2D 的实时行情画布；fail-closed 数据层与 REST 权重上限，主张登记表，阶段 0 先删英文站与日本邮件矛盾的说法并补风险句，默认关闭的日语页，日本邮件依赖的 sairn.ai 能力，D1–D25 待决事项），经三轮修订与两轮 GPT 对抗审查。设计原型在 designs/website-hero-prototype（首屏、演示录屏、录制脚本与 DOM 守卫）；「加密之外的市场」审阅包（docs/marketing/beyond-crypto-review.md 与 designs/beyond-crypto-review）只供律师审阅，尚未发出。未改官网与终端代码，未运行官网测试或构建，没有发布或上线任何内容，2026-10-25 的改动没有提交；方向与评审原文未取得，原始证据只在本机 .worklog。",
   "thread": null,
   "baseCommit": "32125377",
   "commits": [],
   "sources": [
     {"path": "docs/website-rebuild-plan.md"},
     {"path": "designs/website-hero-prototype/README.md"},
+    {"path": "designs/website-hero-prototype/tools/guard.cjs"},
+    {"path": "designs/website-hero-prototype/tools/record-demo.cjs"},
+    {"path": "designs/website-hero-prototype/media/demo-capture.json"},
+    {"path": "docs/marketing/beyond-crypto-review.md"},
+    {"path": "designs/beyond-crypto-review/README.md"},
     {"path": "docs/website-industry-research-2026-10.md"},
     {"path": "docs/marketing/jp-launch-email/README.md"},
     {"path": "apps/website/src/config/faq.ts"},
@@ -36,7 +41,7 @@
 ## 背景与范围
 
 - 同步记录，与[日本交易地区与营销邮件](2026-10-24-japan-trading-region-and-email.md)同一个 Claude Code 桌面会话，但是另一个任务：那份记录的「官网 sairn.ai 审计」一节之后，运营方认为现官网「太传统」，希望用现代前端与加密原生的技术重做。这句需求转述自工作流的任务说明，运营方原话未取得。会话任务 ID 未取得（`thread: null`）；本机会话目录名是 `c1e345bd-069b-4821-ab73-a7bd5e2b03b2`，只作为 `.worklog/` 的目录名，不是已核对的任务 ID。
-- 工作树分支 `claude/japan-user-email-template-d3e2b5`，基线 `32125377`。影响面只有文档：两份新文档 `docs/website-industry-research-2026-10.md`、`docs/website-rebuild-plan.md`，`docs/README.md` 的一行导航，本记录。`apps/website` 的代码、测试与线上站点都没有改。
+- 工作树分支 `claude/japan-user-email-template-d3e2b5`，基线 `32125377`。影响面是文档与 `designs/` 下的设计文件：两份新文档 `docs/website-industry-research-2026-10.md`、`docs/website-rebuild-plan.md`，`docs/README.md` 的导航，本记录；首屏原型 `designs/website-hero-prototype/`（2026-10-24 起；2026-10-25 加入演示录屏 `media/`、录制脚本 `tools/record-demo.cjs` 与 `tools/demo-scenarios.cjs`、DOM 守卫 `tools/guard.cjs` 及其测试）；2026-10-25 的「加密之外的市场」审阅包 `docs/marketing/beyond-crypto-review.md` 与 `designs/beyond-crypto-review/`。`apps/website`、`apps/terminal` 的代码、测试与线上站点都没有改；这两个 `designs/` 目录不进任何构建（2026-10-25 收尾验证核对：只有 `designs/og-cards` 接入官网构建）。2026-10-25 的改动没有提交。
 - 关联：现官网的矛盾内容已在邮件 README 闸门 1 列为律师问题（提交 `32125377`）。
 
 ## 结论与依据
@@ -69,6 +74,7 @@
 - 没有运行官网测试、构建或浏览器检查；规划里的测试、预算与开关都是提议，没有实现。所有法律相关内容都不是法律意见。
 - 本地证据：`.worklog/2026-10-24/c1e345bd-069b-4821-ab73-a7bd5e2b03b2/snapshot-website-research/`（Git 忽略，约 0.8 MB）：`research-web.json`、`research-digest.md`、`playwright/exchanges/*.json`、`playwright/wallets/*.json`、采集脚本与 `manifest.json`（每个文件的 SHA-256、脱敏说明、未复制的 46 张截图的文件名、大小与 SHA-256）。脱敏只替换了本机用户名；文件里的邮箱是公开的企业地址与示例地址，没有发现钱包地址、密钥或令牌。原件在会话临时目录，不保证保留。
 - 未取得：三个设计方向与三份评审的原文；运营方的原话。
+- 以上是 2026-10-24 第一轮的验证与证据；之后各轮的验证、证据位置与未保存的证据写在下面各节「追加」里。
 
 ## 追加：首屏原型（2026-10-24，同一会话）
 
@@ -103,10 +109,76 @@
 - 修正后实测（无头 Chromium，真实公共接口）：逐帧采样正反两向各约 1,300 帧，没有一帧在可见状态下混用录制与实时；断网约 21 秒回海报（规则 20 秒）；1024–1440 六种宽度与 390×844（共七种尺寸）两版的两视图高差 ≤14px；手机主按钮顶边 263px、窗口顶边 403px；B 在 1366×768 窗口顶边 374px、画布露出 235px（风险句改为桌面也紧贴按钮 8px 后的读数）；BTC 90 秒与 SOL、HYPE 各 45 秒单连接 LIVE 中断 0 次。修正过程中又发现并修了两个回归：海报元数据缺成交时间导致 'Invalid time value' 使海报整段跳过、交接异常时数据区一直透明（改为 `finally` 清除）。
 - 规划文字由一个子代理按核验结论修订，主会话复核后追加第 25 节记录本轮审查。证据：提示词、三份报告、核验结果与截图在 `.worklog/2026-10-24/c1e345bd-069b-4821-ab73-a7bd5e2b03b2/snapshot-gpt-review2/`（Git 忽略）。
 
+## 追加：产品演示录屏与「加密之外的市场」审阅包（2026-10-25 UTC，同一会话）
+
+- 运营方看第二版原型后指出首屏只有一张截图、没有动效与功能介绍，参照 hyperliquid.xyz；问视频怎么做，并认为美股与未上市公司（例如 OpenAI）的 HIP-3 永续是好卖点。随后决定：产品演示之外，再做一版「加密之外的市场」视频与区块草稿，只供律师审阅，不上线。
+- 调研（Workflow，3 个只读代理）：终端录屏可脚本化的步骤与守卫通过情况；HIP-3 事实（截图里的 `io` 是 EntropyIO，运营方 Bursa Global Inc.；OpenAI、Anthropic 按部署方对公司估值的估计定价，1 USD 对应 10 亿美元市值，外部数据权重不公开，未上市满 2 年到期结算且文档前后矛盾；PEARL 是加密资产；5 个「已下架」io 市场更像注册后从未开盘）；律师问题清单与英文文案草稿。
+- 产品演示：`tools/record-demo.cjs` 按 `demo-scenarios.cjs` 操作未登录终端（只录现货、不打开市场选择器，因为永续页有杠杆倍数、选择器的现货列表会出现代币化股票与不雅代币名），与截图共用 `tools/guard.cjs`；桌面 15.5 秒（守卫 50 次通过），手机 8 秒（26 次通过），接入首屏 Terminal 视图，带暂停按钮、减少动态与省流量时不播放。制作中修了三处：ffmpeg 的 concat 把每帧至少算 1/25 秒导致视频拉长到 29 秒（改为自己重采样到 30 fps）；无头 Chrome 屏幕广播在手机模拟下只给 CSS 像素（手机改用 2 倍像素连续截图）；演示指针在 TradingView iframe 上收不到鼠标事件（改由录制脚本直接定位）。
+- 守卫规则细化：手机现货页未登录时显示 'Available 0.00 USDC'，守卫只放行紧跟 'Available' 的零值占位，非零金额拒绝（规划 D25，待运营方确认）。
+- 审阅包：`docs/marketing/beyond-crypto-review.md`（子代理按两份调研合并并更正）；`designs/beyond-crypto-review/`（区块草稿页、通用版 15 秒与命名版 18 秒视频、终端现状截图）。部署方风险声明没有人代为确认；研究代理另拍的「用 CSS 隐藏弹窗」截图改动了产品画面，没有收进审阅包。命名版视频原稿里「not affiliated with these companies or deployers」仓库无法证明，先改为「Sairn is an independent interface」；审阅文档定稿后，命名版视频与区块表格按文档第 5.3 节与第 4.4 节模板 R1、R2 重做（代码 `OAI`、部署方给的公司名、上市与未上市分屏、方法页深链），第 6 屏的「not affiliated with these companies」标为待 E4，两版视频重新渲染。
+- 规划：第 2 节非目标与 A9 改为允许静音循环的真实终端录屏；第 6、9、13 节写入录屏；新增 D24（加密之外的市场，待律师）、D25（零值余额规则）与第 26 节。
+- 没有做：整页其余区块（02–07）还没有做成原型；视频真机播放与 Safari 未测；审阅包没有发给律师，也没有上线任何内容。
+- 更正（收尾验证后补记）：上面「按部署方对公司估值的估计定价，1 USD 对应 10 亿美元市值」是调研时的转述。EntropyIO 文档的说法是以公司市值（market cap）报价，价格 1 代表 10 亿美元市值，理由是私募轮次的股数不确定；上市后仍按市值报价，因为 Hyperliquid HIP-3 还不支持拆股；评分标准公开，评分与聚合程序是内部的，聚合结果由 RedStone 上链（`snapshot-deployer-docs/web2/docs.entropy.io_market-types_pre-ipo-perpetuals.txt`）。规划第 26 节已改为「公司市值（EntropyIO 的说法）」。
+- 证据：本节的调研工作流（3 个只读代理：terminal-script、hip3-facts、legal-questions）的结果没有复制进 `.worklog/`（不在 2026-10-25 整理证据时指定的来源里），只在本机会话目录的 `subagents/workflows/wf_d276bfb7-7ca/`，不保证保留。第一次录制（桌面 15.5 秒、手机 8 秒）的视频与报告已被下一节的重录替换，`media/` 里只有重录的文件，第一次的没有另存。研究代理另拍的「用 CSS 隐藏弹窗」截图没有保存。
+
+## 追加：对抗审查与修复（2026-10-25 UTC，同一会话）
+
+- 两个只读审查代理：审阅包 16 条（P1：页面把挑出的示例写成「其余全部列出」；上市前两行漏了「无 IPO 配售权」），录屏 18 条（P1：守卫只在 Node 端每 400 ms 与每步之后检查，两次之间的短暂画面没人看过；正则逐个文本节点匹配，终端把杠杆写成 "40"、"x" 两个节点，HIP-3 名称去掉前缀显示，都漏检）。
+- 修复用工作流：两组文件各一个修复代理，各两个只读代理交叉验证，再修一轮；8 个代理无报错。
+  - 录屏：`tools/guard.cjs` 改为纯规则函数加按元素读取（含输入框与同源 iframe），页面内 MutationObserver 加 requestAnimationFrame 逐帧检查并打浏览器时间戳，Node 端仍每步与每 400 ms 检查；手机帧前后两次检查都通过才保留；只编码最后一次通过的检查之前的帧；编码在暂存目录完成并经 ffprobe 校验后整体移入 `media/`，TV 范围 BT.709；`tools/guard.test.cjs` 12 项与 `tools/guard.dom.test.cjs`。为让未登录页面能录，守卫按终端标记放行三处公开行情（市场头部成交量与市值、代币合约缩写地址、手机盘口中间价），写进规划 D25，待运营方确认。
+  - 首屏播放：去掉 `aria-pressed`，按钮跟随 play / pause 事件，`play()` 被拒绝时显示 Play，中途开启减少动态或 Save-Data 即暂停，按断点换源、海报与 `aria-label`。
+  - 审阅包：表格只留 SNDK、NBIS、ANTH、OAI（与具名版视频一致），DRAM、EWY 因没有 ETF 模板删除；加选取说明（示例、不完整、不是审计或批准）；上市前行补「无 IPO 配售权」并改写方法归属（评分方法不公开、RedStone 上链）；地区限制改为 'persons in the United States or other restricted locations'，主张状态改为部分有证据；主张编号 H3-n 改为 BC-n；可选列改为 Mark price、USDC、上市前行不显示价格；方法链接改到具体文档页。
+- 主会话：重录两段演示（桌面 18.25 s，页面内检查 907 次、Node 端 57 次；手机 7.46 s，页面内 450 次、Node 端 194 次；全部通过），重新渲染两版审阅视频并逐屏取中点帧核对字幕；通用版第 2 屏改为 'Some of these markets reference companies that are not publicly listed.'（原句易被读成名词短语）；7 个部署方文档页 2026-10-25 均返回 200，EntropyIO 页原文确认 'IPO allocation' 与 RedStone；无头 Playwright 核对首屏：手机与桌面各自的源、暂停、减少动态只显示海报、跨 640px 换源，控制台零错误。应用内浏览器面板隐藏时视频不加载，是面板隐藏的假象，不是缺陷。
+- 规划同步：第 6 节循环与播放规则、第 8 节例外、第 13 节体积、第 21 节 D25、第 26 节实测与审阅包描述。
+- 证据（2026-10-25 补存，Git 忽略；路径前缀 `.worklog/2026-10-25/c1e345bd-069b-4821-ab73-a7bd5e2b03b2/`，每个快照有 `manifest.json` 与 `SHA256SUMS`；本机用户名替换为 `<user>`，会话临时目录写作 `<session-tmp>`，扫描后没有发现邮箱、钱包地址或令牌）：
+  - `snapshot-adversarial-review/`：两个只读审查代理的最终报告（审阅包、录屏），只抽取各自转录的最后一条助手消息；
+  - `snapshot-fix-verify/`：修复工作流 8 个代理的结果对象（修复、两路验证、返修）与事件顺序。README 列出的干跑检查次数（桌面 584 / 手机 350、桌面 673 / 手机 449）出自其中 `results/04-fix-recorder.json` 与 `results/08-repair-recorder.json` 的 `checksRun`；
+  - `snapshot-deployer-docs/`：审查代理（`web/`，2 页）与主会话（`web2/`，9 页）用 curl 取得的 EntropyIO 与 trade[XYZ] 文档页，只保留去掉标签后的文本，HTML 原件只记了大小、SHA-256 与文件时间。`web2/` 里 7 页的文件时间是 06:49–06:50Z（上文「7 个部署方文档页」），另外两页（EntropyIO Pre-IPO Assets、XYZ Holiday Closures）是 07:15Z 为下一节的收尾验证意见补取的；
+  - `snapshot-frame-sheets/`：主会话核对重录后的录屏与重渲染的审阅视频用的四张帧拼图（按文件时间推断对应 06:49Z 的录制与随后的渲染；复制前逐张目视检查过）。
+- 守卫测试的结果（代理报告，本记录没有重跑这一版本）：返修代理报告 `tools/guard.test.cjs` 12/12、`tools/guard.dom.test.cjs` 5/5 通过（后者在沙箱外启动无头 Chromium），并报告把这两个测试套到改动前的守卫上分别有 4 项与 3 项失败；收尾验证代理之后同样报告 12/12 与 5/5。
+- 没有保存：审查与修复代理的完整转录（只存了最终报告或结果对象）；审查代理抽出的帧（`scratchpad/frames/`）；13 张单帧 PNG（没有逐张检查，只在 `snapshot-frame-sheets/manifest.json` 记了文件名、大小与 SHA-256）；部署方页面的 HTML 原件。
+
+## 追加：收尾验证与文档同步（2026-10-25 UTC，同一会话）
+
+- 重录与重渲染之后，主会话用 Workflow 起 3 个只读验证代理（审阅包一致性、录屏与文档、完整性）。主要意见：
+  - 守卫实际放行了第四处公开行情：盘口悬停时的累计提示框 'Total (USDC)' 加数值（重录的桌面录屏约 7–8 秒处可见），规划第 9 节与 D25 只写了三处，运营方确认 D25 时会依据不完整的描述；
+  - 原型的 Terminal 视图没有不依赖 JS 的画面（海报、尺寸与 `aria-label` 都由脚本设置），与规划第 6、7 节的无 JS 回退不符；
+  - 规划第 13 节的首屏图像预算仍按截图写，而原型海报是首帧 JPEG（桌面 146,608 B、手机 76,942 B），两端都超出预算；
+  - 桌面录屏是 1 倍像素（1440×732），少于它取代的 1.5 倍截图（2160×1098），规划与 README 都没写，D22 与 B 版清晰度的判断依据随之改变；
+  - 规划第 9、14 节的说明与无障碍文字、第 16 节 V1 的误解题与「点截图」仍以静态截图为前提，演示指针带来的误解风险没有记录；
+  - 录制报告没有记录终端构建标识；原型现有的截图是 2026-10-24 用旧守卫拍的；
+  - 审阅包仍说视频待重渲染，几处部署方说法与引用的页面不符（例如把 EntropyIO 以市值报价说成因为没有交易所价格）；
+  - 2026-10-25 各轮没有保存本地证据，本记录的摘要、来源、范围与后续事项没有跟上。
+- 主会话据此起修复工作流，分规划与任务记录、审阅包、原型三组。本条只记规划与任务记录这一组（Agent 执行）；审阅包与原型两组的结果、之后的重录、重拍与重渲染由主会话补记。
+  - 规划（第三轮修订的同步）：文档头日期；第 1 节目标、第 4 节（加一段说明重评是按第二轮的静态截图打的分，没有重评）、第 6 节 Terminal 视图（录屏与截图回退的说明分开写、录制像素、演示指针、无 JS 时的首帧海报）、第 7 节回退阶梯第 3 条、第 9 节、第 11 节依赖说明、第 13 节首屏图像预算（录屏海报；原型 JPEG 超出，生产改 AVIF/WebP 后重测）、第 14 节、第 16 节 V1（三道录屏误解题、「点录屏」）、第 19 节验证包与产物、第 20 节风险（新增录屏误解一行）、D20–D22 的背景（推荐不变）、第 22、26 节；EntropyIO 的单位改为「公司市值（EntropyIO 的说法）」。D25 一行与第 9 节列守卫例外的一条由主会话改，本组没有动。
+  - 本记录：摘要、来源、范围，2026-10-25 各节的证据位置，后续事项。
+- 证据：收尾验证 3 个代理的结果对象在 `.worklog/2026-10-25/c1e345bd-069b-4821-ab73-a7bd5e2b03b2/snapshot-final-verify/`（Git 忽略，有 `manifest.json` 与 `SHA256SUMS`）。没有保存：这 3 个代理的完整转录；修复工作流本身（进行中，结果由主会话补存）。
+- 验证（本组）：`git diff --check` 通过；重读了规划改动的段落；用 grep 复核规划里剩下的「截图」都指现站、第 02 区块、测试方法、律师预览或第二轮的记录（第 23–25 节由第 22 节的一条说明统一标注）。2026-10-25T07:31Z 运行 `node --test designs/website-hero-prototype/tools/guard.test.cjs`：14/14 通过；这是修复工作流进行中的版本（`guard.cjs` SHA-256 `eb9f7a62…`、`guard.test.cjs` `761ea802…`），不是收尾验证时 12 项的那一版，重录前后还可能再变。没有运行 `guard.dom.test.cjs`（要在沙箱外启动 Chromium）。`pnpm memory:index`、`memory:check`、`memory:test` 的结果见本节最后一条。
+- 记录检查（2026-10-25 约 07:33–07:35Z，本组依次运行两遍，工作区未提交）：`pnpm memory:index` 只改了 `INDEX.md` 里本记录的两行摘要；`pnpm memory:check` 输出 'Work-memory index verified.'；`pnpm memory:test` 8/8 通过。主会话补记另两组之后要重新运行这三条。
+
+## 追加：最后一轮修复、第三次录制与提交（2026-10-25 UTC，同一会话）
+
+- 最终核查（工作流 3 个只读代理）提出约 25 条，按三组文件交给修复工作流（各一个修复代理与一个只读核查代理，6 个代理无报错），结果存于 `.worklog/2026-10-25/c1e345bd-069b-4821-ab73-a7bd5e2b03b2/snapshot-final-round-fixes/workflow-results.json`。
+  - 审阅包：R1 的「节假日」补上 XYZ Holiday Closures 页并在 BC-18 写明是推断；R2 的可调边界补上 EntropyIO pre-ipo-assets 页（'may be updated at the market operator's discretion'）；计价单位改用 EntropyIO 的说法 'company market capitalisation'；具名版第 3 屏去掉因果 'so'；R2 评分句由主会话定为被动语态 'the criteria that data is scored on'，不把评分归于 EntropyIO（与审阅文档第 10 项一致）；视频状态说明、编号前缀与依赖文件说明更正。
+  - 首屏原型：括号单位标签（如 'Total (USDC)'）后接数字算金额，第四处例外绑定 `data-slot="orderbook-cumulative-tooltip"`；无 JS 时显示静态 `<picture>` 首帧海报，视频与按钮在 JS 就绪前隐藏；报告写入终端构建标识与按取帧方式区分的时钟说明；主会话另加：页面级 Pause 同时暂停录屏（恢复时回到录屏自己的状态），截图脚本去掉已失效的路由参数，读页面内守卫前先等一个动画帧。
+  - 规划与记录：第 6、7、8、9、13、14、16、21、26 节按录屏改写（无 JS 海报、说明与 `aria-label`、V1 录屏误解题、播放脚本预算、D22 的录屏裁切、D25 四处例外、EntropyIO 的原文理由）。
+- 第三次录制：第一次尝试在桌面被录制器自己拒绝（页面内守卫最后一次运行时间早于最后一次 Node 检查几毫秒，读数时序问题，没有写出任何视频），改为读数前先等一个动画帧后重试通过：桌面 17.55 s（视频 17.53 s），页面内检查 766 次、Node 端 55 次；手机 7.44 s，176 帧，页面内 443 次、Node 端 201 次；报告记录线上终端 `cloudfront-2026-10-14-p32`（commit `9ccb88c0`）。截图按现行守卫重拍（桌面 2160×1098、手机 780×1210，前后两次检查都通过，同源 iframe 都读到）。两版审阅视频重新渲染，具名版 6 屏按完全显示阶段中点取帧核对，与审阅文档第 5.3 节一致；两段录屏抽帧（桌面每 2 s、手机每 1 s 与片尾）看过，没有杠杆、HIP-3 市场、钱包地址或账户金额，片尾回到 Market / Buy。
+- 无头 Playwright（`http://localhost:3020`）：无 JS 时桌面与手机各显示自己的首帧海报、按钮与视频隐藏、只下载海报；有 JS 时两端播放各自的源、海报对辅助技术隐藏；在 Live 视图按页面级 Pause 后切回 Terminal，录屏暂停，取消后恢复；用户自己暂停的录屏在页面暂停与恢复后仍保持暂停；控制台零错误。`guard.test.cjs` 14 项通过。
+- 提交在本地分支，没有推送，没有发布；审阅包没有发给律师。
+
 ## 后续与替代关系
 
-- 运营方决定规划第 21 节的 D1–D23（V1–V3 开始前还需要 D2、D5、D7、D20、D21，见规划第 21 节开头），先是 D1（阶段 0 的范围与时机）、D18（是否把阶段 0 上线设为日本邮件的硬性发送条件）与 D19（邮件依赖的 sairn.ai 能力）。
+- 运营方决定规划第 21 节的 D1–D25（V1–V3 开始前还需要 D2、D5、D7、D20、D21，见规划第 21 节开头），先是 D1（阶段 0 的范围与时机）、D18（是否把阶段 0 上线设为日本邮件的硬性发送条件）与 D19（邮件依赖的 sairn.ai 能力）。
 - 阶段 0 实施时按规划第 19 节的逐项清单与 grep 验收，并按当时源码复核行号；把改动对照交给律师。
 - 若 D19 决定官网不做订阅，同步修改邮件 README §6 第 2 条 (b)。
 - 规划批准后按阶段 1 新建 ADR 与 `docs/website-live-data.md`，再在本文件追加阶段检查点。
-- 下次先查：本记录、规划第 4、19、21 节、调研第 4 节，以及邮件 README §1 与 §5。
+- D24（加密之外的市场）：审阅包要先经律师审阅，现在还没有发出；发出前按审阅文档 §5 逐屏核对两段视频（已做的是每屏取中点帧，不是逐帧）。律师书面意见与运营方决定之前，规划第 5 节「不放 HIP-3 股票」与阶段 0 的删除继续有效。
+- D25：守卫现在放行四处公开行情（第四处是桌面盘口悬停提示 `data-slot="orderbook-cumulative-tooltip"` 里 'Total (USDC)' 后的累计名义额，已写入规划第 9 节与 D25），待运营方确认；若改选严格版，要按 D25 的备选放弃手机录屏或改裁切并重录。
+- 任何发布之前重录演示录屏、按第三轮的守卫重拍截图，并在录制与截图报告里记录线上终端的构建标识（`build-meta.json`）；2026-10-25 06:49Z 那一次录制的报告没有记录它，07:55Z 的第三次录制与 07:56Z 的截图已记录（`cloudfront-2026-10-14-p32`，commit `9ccb88c0`）。
+- 海报：生产版改为 AVIF/WebP 并按规划第 13 节重新测量；原型的首帧 JPEG（约 146 / 75 KB）超出预算。没有 JS 时显示静态海报（规划第 7 节回退阶梯第 3 条），原型已用 `<picture>` 实现。
+- 视频在真机、Safari 与 iOS（含低电量模式）上的播放都没有测；Playwright 无头 Chromium 的结果不能代替。
+- 桌面录屏是 1 倍像素（1440×732）：按它复核 D22 的三种做法与 B 版近全宽的清晰度，或决定按 1.5 倍重录。
+- 审阅包里的终端现状截图拍摄时没有接受部署方风险声明（弹窗保持打开，没有人代为确认）；以后要拍弹窗之后的画面，需要运营方本人决定是否以及由谁确认。
+- 没有发布或上线任何内容：官网、终端、原型、审阅包与视频都没有公开；2026-10-25 的改动在本地分支提交，没有推送。
+- 2026-10-25 的调研工作流结果没有存进 `.worklog/`（见「追加：产品演示录屏」一节）；需要时由主会话补存。
+- 下次先查：本记录、规划第 4、19、21、26 节、调研第 4 节、审阅文档 `docs/marketing/beyond-crypto-review.md`，以及邮件 README §1 与 §5。

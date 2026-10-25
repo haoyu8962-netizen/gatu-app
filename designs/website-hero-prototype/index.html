@@ -81,18 +81,30 @@
 
 					<div class="panels">
 						<div class="terminal-panel" id="terminal-panel" role="tabpanel" aria-labelledby="view-terminal">
-							<p class="view-caption"><strong>Screenshot</strong> of app.sairn.ai, signed out · 24 Oct 2026 UTC</p>
-							<picture>
-								<source media="(max-width: 640px)" srcset="./assets/terminal-mobile.jpg" width="780" height="1210" />
-								<img
-									class="terminal-shot"
-									src="./assets/terminal-desktop.jpg"
-									width="2160"
-									height="1098"
-									alt="The Sairn terminal, signed out, on the HYPE/USDC spot market: price chart, order book, and an order form with Buy and Sell."
-									fetchpriority="high"
-								/>
-							</picture>
+							<p class="view-caption"><strong>Screen recording</strong> of app.sairn.ai, signed out · 25 Oct 2026 UTC</p>
+							<div class="demo">
+								<picture class="demo-poster" id="demo-poster">
+									<source media="(max-width: 640px)" srcset="./media/demo-mobile.jpg" width="780" height="1210" />
+									<img
+										src="./media/demo-desktop.jpg"
+										width="1440"
+										height="732"
+										alt="First frame of a screen recording of the Sairn terminal, signed out, on the HYPE/USDC spot market"
+										fetchpriority="high"
+										decoding="async"
+									/>
+								</picture>
+								<video
+									class="terminal-video"
+									id="terminal-video"
+									muted
+									loop
+									playsinline
+									preload="none"
+									hidden
+								></video>
+								<button class="demo-toggle" id="demo-toggle" type="button" aria-controls="terminal-video" hidden>Pause</button>
+							</div>
 							<div class="regions" aria-hidden="true">
 								<span class="r-chart">Chart</span><span class="r-book">Order book</span><span class="r-form">Order form</span>
 							</div>

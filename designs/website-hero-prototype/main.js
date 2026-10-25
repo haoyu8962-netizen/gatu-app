@@ -46,6 +46,9 @@ const els = {
 	showLive: $("show-live"),
 	stateNote: $("state-note"),
 	footNote: $("foot-note"),
+	video: $("terminal-video"),
+	demoPoster: $("demo-poster"),
+	demoToggle: $("demo-toggle"),
 	asks: $("book-asks"),
 	bids: $("book-bids"),
 	spread: $("book-spread"),
@@ -529,12 +532,125 @@ function stageSize() {
 	};
 }
 
+// The terminal recordings. record-demo.cjs reads the AV1 codec string and the pixel size back
+// from the encoded files and refuses to publish files that differ from these entries.
+const DEMO_SOURCES = {
+	desktop: {
+		base: "./media/demo-desktop",
+		codecs: "av01.0.05M.08",
+		width: 1440, height: 732,
+		label: "Screen recording of the Sairn terminal, signed out, on the HYPE/USDC spot market: the chart interval changes, recent trades and the order book, a Limit price filled from the order book, the Sell side, and the TWAP, Scale and Market order types.",
+	},
+	mobile: {
+		base: "./media/demo-mobile",
+		codecs: "av01.0.05M.08",
+		width: 780, height: 1210,
+		label: "Screen recording of the Sairn terminal on a phone, signed out, on the HYPE/USDC spot market: a Limit order with its price filled from the order book, the Sell side, the asks-only order book, and back to a Market buy.",
+	},
+};
+
+// The terminal recording plays muted and looped only while the Terminal view is on screen
+// and the page is visible. Reduced motion and Save-Data keep the poster until the visitor
+// presses Play, and switching either on later pauses it; the button can pause it at any time
+// (WCAG 2.2.2). A pause the browser makes on its own, or a refused play(), shows Play.
+// Before this runs (and without JavaScript) the <picture> poster shows on its own; once the
+// video is wired it covers the picture, which is then hidden from assistive technology so only
+// the video's label is announced.
+let demoUserPaused = mqReduced.matches || Boolean(navigator.connection?.saveData);
+let demoOnScreen = false;
+// The page-level Pause also pauses the recording; resuming restores the recording's own state.
+let demoPausedBeforePage = false;
+
+function demoWanted() {
+	return !demoUserPaused && demoOnScreen && docVisible && view === "terminal";
+}
+
+function attachDemoSources(source) {
+	els.video.dataset.loaded = "true";
+	els.video.replaceChildren(
+		Object.assign(document.createElement("source"), { src: `${source.base}.webm`, type: `video/webm; codecs="${source.codecs}"` }),
+		Object.assign(document.createElement("source"), { src: `${source.base}.mp4`, type: "video/mp4" }),
+	);
+	els.video.load();
+}
+
+// The source follows the 640px breakpoint; an element that already loaded the other recording
+// reloads at once so its frame and aspect ratio match the layout.
+function applyDemoSource() {
+	const key = mqMobile.matches ? "mobile" : "desktop";
+	if (els.video.dataset.source === key) return;
+	const source = DEMO_SOURCES[key];
+	els.video.dataset.source = key;
+	els.video.poster = `${source.base}.jpg`;
+	els.video.width = source.width;
+	els.video.height = source.height;
+	els.video.setAttribute("aria-label", source.label);
+	if (els.video.dataset.loaded === "true") attachDemoSources(source);
+}
+
+function renderDemoToggle() {
+	els.demoToggle.textContent = demoUserPaused ? "Play" : "Pause";
+}
+
+function syncDemo() {
+	applyDemoSource();
+	if (demoWanted()) {
+		if (els.video.dataset.loaded !== "true") attachDemoSources(DEMO_SOURCES[els.video.dataset.source]);
+		els.video.play()?.catch((error) => {
+			if (error?.name === "AbortError") return;
+			demoUserPaused = true;
+			renderDemoToggle();
+		});
+	} else if (!els.video.paused) {
+		els.video.pause();
+	}
+	renderDemoToggle();
+}
+
+function pauseDemoForPreference() {
+	if (demoUserPaused) return;
+	demoUserPaused = true;
+	syncDemo();
+}
+
+function startDemo() {
+	applyDemoSource();
+	renderDemoToggle();
+	els.demoPoster.setAttribute("aria-hidden", "true");
+	els.video.hidden = false;
+	els.demoToggle.hidden = false;
+	els.demoToggle.addEventListener("click", () => {
+		demoUserPaused = !demoUserPaused;
+		syncDemo();
+	});
+	els.video.addEventListener("play", () => {
+		if (!els.video.paused) demoUserPaused = false;
+		renderDemoToggle();
+	});
+	els.video.addEventListener("pause", () => {
+		if (els.video.paused && demoWanted()) demoUserPaused = true;
+		renderDemoToggle();
+	});
+	new IntersectionObserver((entries) => {
+		demoOnScreen = entries.some((entry) => entry.isIntersecting);
+		syncDemo();
+	}).observe(els.video);
+	mqMobile.addEventListener("change", syncDemo);
+	mqReduced.addEventListener("change", () => {
+		if (mqReduced.matches) pauseDemoForPreference();
+	});
+	navigator.connection?.addEventListener?.("change", () => {
+		if (navigator.connection.saveData) pauseDemoForPreference();
+	});
+}
+
 function renderWanted() {
 	return docVisible && onScreen && view === "live" && phase === "live";
 }
 
 function syncVisibility() {
 	worker?.postMessage({ type: "visibility", page: docVisible, render: renderWanted() });
+	syncDemo();
 }
 
 function syncReduced() {
@@ -619,6 +735,13 @@ function wireControls() {
 		els.stateText.textContent = stateLabel(false);
 		updateStateNote(latest);
 		worker?.postMessage({ type: "pause", value: paused });
+		if (paused) {
+			demoPausedBeforePage = demoUserPaused;
+			demoUserPaused = true;
+		} else {
+			demoUserPaused = demoPausedBeforePage;
+		}
+		syncDemo();
 	});
 	els.snapshot.addEventListener("click", readSnapshot);
 	els.showLive.addEventListener("click", () => {
@@ -649,6 +772,7 @@ function wireControls() {
 }
 
 els.window.dataset.phase = phase;
+startDemo();
 applyVariant(variant);
 setView(view, false);
 wireControls();

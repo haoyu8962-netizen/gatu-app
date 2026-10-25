@@ -424,10 +424,45 @@ h1 {
 	visibility: hidden;
 }
 
-.terminal-shot {
+.demo {
+	position: relative;
+	aspect-ratio: 1440 / 732;
+	background: var(--surface);
+}
+
+.demo-poster,
+.demo-poster img,
+.terminal-video {
 	display: block;
 	width: 100%;
-	height: auto;
+	height: 100%;
+}
+
+.demo-poster,
+.terminal-video {
+	position: absolute;
+	inset: 0;
+}
+
+.terminal-video[hidden] {
+	display: none;
+}
+
+.demo-toggle {
+	position: absolute;
+	right: 10px;
+	bottom: 10px;
+	padding: 5px 10px;
+	border: 1px solid rgb(237 238 242 / 20%);
+	border-radius: 6px;
+	background: rgb(15 26 31 / 88%);
+	color: var(--fg);
+	font: 500 11px/16px var(--font-mono);
+	cursor: pointer;
+}
+
+.demo-toggle[hidden] {
+	display: none;
 }
 
 .regions {
@@ -1027,6 +1062,10 @@ h1 {
 @media (max-width: 640px) {
 	.plot {
 		aspect-ratio: 9 / 10;
+	}
+
+	.demo {
+		aspect-ratio: 780 / 1210;
 	}
 
 	.regions {

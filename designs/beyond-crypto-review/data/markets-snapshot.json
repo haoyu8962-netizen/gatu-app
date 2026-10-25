@@ -1,0 +1,172 @@
+{
+	"fetchedAt": "2026-10-25T04:55:47Z",
+	"source": "POST https://api.hyperliquid.xyz/info (perpAnnotation, perpDexs, metaAndAssetCtxs)",
+	"markets": [
+		{
+			"coin": "xyz:SNDK",
+			"dex": "xyz",
+			"deployerFullName": "XYZ",
+			"annotation": {
+				"category": "stocks",
+				"description": "SNDK references 1 share of Sandisk Corporation common stock (Nasdaq: SNDK), quoted in USD. Sandisk develops NAND flash-memory and data-storage products.",
+				"displayName": "SNDK",
+				"keywords": [
+					"sandisk",
+					"memory"
+				]
+			},
+			"ctx": {
+				"isDelisted": false,
+				"markPx": "1247.6",
+				"oraclePx": "1247.0",
+				"dayNtlVlm": "21881671.5826000012",
+				"openInterest": "97301.086"
+			}
+		},
+		{
+			"coin": "xyz:NBIS",
+			"dex": "xyz",
+			"deployerFullName": "XYZ",
+			"annotation": {
+				"category": "stocks",
+				"description": "NBIS references 1 Nebius Group N.V. Class A ordinary share (Nasdaq: NBIS), quoted in USD. Nebius provides GPU-based cloud and AI infrastructure.",
+				"displayName": "NBIS",
+				"keywords": [
+					"nebius",
+					"aicloud"
+				]
+			},
+			"ctx": {
+				"isDelisted": false,
+				"markPx": "158.82",
+				"oraclePx": "158.72",
+				"dayNtlVlm": "2672876.655199999",
+				"openInterest": "256075.86"
+			}
+		},
+		{
+			"coin": "xyz:DRAM",
+			"dex": "xyz",
+			"deployerFullName": "XYZ",
+			"annotation": {
+				"category": "stocks",
+				"description": "DRAM references 1 share of the Roundhill Memory ETF (Cboe BZX: DRAM), quoted in USD. The actively managed fund invests in companies involved in semiconductor memory and storage.",
+				"displayName": "DRAM",
+				"keywords": [
+					"etf",
+					"memory"
+				]
+			},
+			"ctx": {
+				"isDelisted": false,
+				"markPx": "47.581",
+				"oraclePx": "47.566",
+				"dayNtlVlm": "8913685.0386000015",
+				"openInterest": "1469475.0"
+			}
+		},
+		{
+			"coin": "xyz:EWY",
+			"dex": "xyz",
+			"deployerFullName": "XYZ",
+			"annotation": {
+				"category": "stocks",
+				"description": "EWY references 1 share of the iShares MSCI South Korea ETF (NYSE Arca: EWY), quoted in USD. The fund provides exposure to large- and mid-cap South Korean equities; local-currency exposure is embedded in the ETF.",
+				"displayName": "EWY",
+				"keywords": [
+					"korea",
+					"etf"
+				]
+			},
+			"ctx": {
+				"isDelisted": false,
+				"markPx": "151.69",
+				"oraclePx": "151.64",
+				"dayNtlVlm": "3306472.2200999986",
+				"openInterest": "70914.192"
+			}
+		},
+		{
+			"coin": "io:SNDK",
+			"dex": "io",
+			"deployerFullName": "EntropyIO",
+			"annotation": {
+				"category": "stocks",
+				"description": "",
+				"displayName": "SNDK",
+				"keywords": [
+					"sandisk",
+					"memory"
+				]
+			},
+			"ctx": {
+				"isDelisted": false,
+				"markPx": "1248.0",
+				"oraclePx": "1247.6",
+				"dayNtlVlm": "8259189.6738099977",
+				"openInterest": "5976.1016"
+			}
+		},
+		{
+			"coin": "io:NBIS",
+			"dex": "io",
+			"deployerFullName": "EntropyIO",
+			"annotation": {
+				"category": "stocks",
+				"description": "",
+				"displayName": "NBIS",
+				"keywords": [
+					"nebius"
+				]
+			},
+			"ctx": {
+				"isDelisted": false,
+				"markPx": "158.89",
+				"oraclePx": "158.87",
+				"dayNtlVlm": "1554691.8892999997",
+				"openInterest": "49530.52"
+			}
+		},
+		{
+			"coin": "io:ANTH",
+			"dex": "io",
+			"deployerFullName": "EntropyIO",
+			"annotation": {
+				"category": "preipo",
+				"description": "",
+				"displayName": "ANTH",
+				"keywords": [
+					"anthropic"
+				]
+			},
+			"ctx": {
+				"isDelisted": false,
+				"markPx": "1907.7",
+				"oraclePx": "1905.8",
+				"dayNtlVlm": "9807505.8808999918",
+				"openInterest": "25246.47"
+			}
+		},
+		{
+			"coin": "io:OAI",
+			"dex": "io",
+			"deployerFullName": "EntropyIO",
+			"annotation": {
+				"category": "preipo",
+				"description": "",
+				"displayName": "OPENAI",
+				"keywords": [
+					"openai",
+					"oai"
+				]
+			},
+			"ctx": {
+				"isDelisted": false,
+				"markPx": "1425.1",
+				"oraclePx": "1424.5",
+				"dayNtlVlm": "957906.0366999997",
+				"openInterest": "4931.576"
+			}
+		}
+	]
+}
