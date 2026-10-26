@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
@@ -35,9 +35,14 @@ import {
 	getFeaturedMarkets,
 	getHeroMarkets,
 	getListedCount,
+	getListedTotals,
 	getLiveMarketInputs,
 	getPreIpoRows,
+	getPreIpoTerms,
+	getStatsDexes,
+	liveKindOf,
 	MARKET_STRUCTURE,
+	MARKET_TAB_ROWS,
 } from "../src/lib/markets/structure.ts";
 import { terminalTradeUrl } from "../src/lib/terminal-links.ts";
 
@@ -89,13 +94,33 @@ test("the date rules are not checked when the module is imported", () => {
 	const source = readFileSync(resolve(WEBSITE_ROOT, "src/lib/markets/structure.ts"), "utf8");
 	const importTime = source.slice(0, source.indexOf("export function assertMarketStructureCurrent"));
 	assert.doesNotMatch(importTime, /Date\.now\(\)|findFreshnessProblems\(/);
-	for (const component of ["Nav.astro", "Fees.astro", "Faq.astro", "Footer.astro"]) {
+	// Components shared with pages that show no market data never load the snapshot.
+	for (const component of ["Nav.astro", "Faq.astro", "Footer.astro"]) {
 		const text = readFileSync(resolve(WEBSITE_ROOT, "src/components", component), "utf8");
 		assert.doesNotMatch(text, /lib\/markets\/structure/, `${component} must not import the market structure`);
+	}
+	// A page that renders a component reading the snapshot (Fees builds its HIP-3 example from it) checks its age.
+	const readers = readdirSync(resolve(WEBSITE_ROOT, "src/components")).filter((file) =>
+		/lib\/markets\/structure/.test(readFileSync(resolve(WEBSITE_ROOT, "src/components", file), "utf8")),
+	);
+	assert.ok(readers.includes("Fees.astro"), "expected Fees.astro to read the snapshot for its growth-mode example");
+	for (const page of listPages(resolve(WEBSITE_ROOT, "src/pages"))) {
+		const text = readFileSync(page, "utf8");
+		const rendered = readers.filter((file) => text.includes(`@/components/${file}`));
+		if (rendered.length === 0) continue;
+		assert.match(text, /^assertMarketStructureCurrent\(\);$/m, `${page} renders ${rendered.join(", ")} without checking the snapshot's age`);
 	}
 	const home = readFileSync(resolve(WEBSITE_ROOT, "src/pages/index.astro"), "utf8");
 	assert.match(home, /^assertMarketStructureCurrent\(\);$/m, "the home page build checks the snapshot's age");
 });
+
+function listPages(directory) {
+	return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+		const path = resolve(directory, entry.name);
+		if (entry.isDirectory()) return listPages(path);
+		return entry.name.endsWith(".astro") ? [path] : [];
+	});
+}
 
 test("the snapshot carries no address and lists only listed markets of included dexes", () => {
 	assert.equal(ADDRESS_PATTERN.test(SNAPSHOT_TEXT), false);
@@ -307,10 +332,29 @@ test("deployer names, live inputs and terminal links come from the snapshot and 
 		getDeployers().map((deployer) => deployer.fullName),
 		MARKET_STRUCTURE.dexes.slice(1).map((dex) => dex.fullName),
 	);
+	const inputs = getLiveMarketInputs();
 	assert.deepEqual(
-		getLiveMarketInputs().map((input) => input.coin),
+		inputs.slice(0, FEATURED_MARKETS.length).map((input) => input.coin),
 		FEATURED_MARKETS.map((market) => market.coin),
+		"02's featured markets come first, so their dexes answer in the first round",
 	);
+	const tabRows = getCategoryCards(MARKET_TAB_ROWS).flatMap((card) => card.examples.map((example) => [example.coin, card.category]));
+	assert.deepEqual(
+		inputs.map((input) => input.coin).sort(),
+		[...new Set([...FEATURED_MARKETS.map((market) => market.coin), ...tabRows.map(([coin]) => coin)])].sort(),
+		"every 03 tab row has a live input, each coin once",
+	);
+	for (const [coin, category] of tabRows) {
+		const input = inputs.find((entry) => entry.coin === coin);
+		assert.equal(input.kind, liveKindOf(category), `${coin} reads as ${category}`);
+		if (category === "preipo" && !getPreIpoTerms(coin)) assert.equal(input.valuationPerPriceUsd, null, `${coin} has no verified unit`);
+	}
+	assert.deepEqual(getStatsDexes().map((entry) => entry.dex), ["", "io", "xyz"]);
+	assert.deepEqual(getStatsDexes().map((entry) => entry.label), ["Hyperliquid core perps", "EntropyIO", "XYZ"]);
+	assert.deepEqual(getListedTotals(), {
+		markets: MARKET_STRUCTURE.dexes.reduce((sum, dex) => sum + dex.markets.length, 0),
+		deployers: MARKET_STRUCTURE.dexes.length - 1,
+	});
 	assert.equal(getFeaturedMarkets().find((market) => market.coin === "io:OAI").preIpoTerms.scheduledSettlement, "2028-09-02");
 	assert.equal(
 		terminalTradeUrl("io:OAI", "hero_market"),
@@ -360,9 +404,10 @@ test("the snapshot reader drops delisted assets and refuses isDelisted values ot
 	assert.throws(() => readListedMarkets("xyz", io.body, annotations), /belongs to another dex/);
 
 	const main = JSON.parse(readFileSync(resolve(WEBSITE_ROOT, "tests/fixtures/meta-and-asset-ctxs-main.json"), "utf8"));
-	assert.deepEqual(
-		readListedMarkets("", main.body, new Map([["BTC", { category: "stocks" }]])).map((market) => market.category),
-		["crypto", "crypto"],
+	const mainCategories = readListedMarkets("", main.body, new Map([["BTC", { category: "stocks" }]])).map((market) => market.category);
+	assert.equal(mainCategories.length, main.body[0].universe.length);
+	assert.ok(
+		mainCategories.every((category) => category === "crypto"),
 		"main-dex perps are crypto by dex, not by annotation",
 	);
 });

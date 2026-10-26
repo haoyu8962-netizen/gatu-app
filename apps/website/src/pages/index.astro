@@ -2,10 +2,12 @@
 import Base from "@/layouts/Base.astro";
 import Nav from "@/components/Nav.astro";
 import Hero from "@/components/Hero.astro";
+import AccountExecution from "@/components/AccountExecution.astro";
 import LiveMarkets from "@/components/LiveMarkets.astro";
 import Markets from "@/components/Markets.astro";
 import Features from "@/components/Features.astro";
 import Fees from "@/components/Fees.astro";
+import Start from "@/components/Start.astro";
 import Trust from "@/components/Trust.astro";
 import Faq from "@/components/Faq.astro";
 import FactsBlock from "@/components/FactsBlock.astro";
@@ -31,13 +33,15 @@ const jsonLd = [organizationSchema(), websiteSchema(), softwareApplicationSchema
 	jsonLd={jsonLd}
 >
 	<Nav />
-	<main>
+	<main id="main">
 		<Hero />
+		<AccountExecution />
 		<div data-cta-group>
 			<LiveMarkets />
 			<Markets />
 		</div>
 		<Features />
+		<Start />
 		<Fees />
 		<Trust />
 		<Faq />

@@ -7,10 +7,13 @@ import {
 	getCategoryCards,
 	getDeployers,
 	getPreIpoRows,
+	liveKindOf,
+	MARKET_TAB_ROWS,
 	type PreIpoRow,
 	SNAPSHOT_FETCHED_AT,
 } from "@/lib/markets/structure";
 import { terminalTradeUrl } from "@/lib/terminal-links";
+import SectionHeader from "./SectionHeader.astro";
 
 const CATEGORY_LABELS: Record<CategoryCard, string> = {
 	crypto: "Crypto",
@@ -22,7 +25,7 @@ const CATEGORY_LABELS: Record<CategoryCard, string> = {
 	rates: "Rates",
 };
 
-const cards = getCategoryCards(4);
+const cards = getCategoryCards(MARKET_TAB_ROWS);
 const preIpoRows = getPreIpoRows();
 const allDeployers = joinNames(getDeployers().map((deployer) => deployer.fullName));
 const snapshotDate = formatIsoDate(SNAPSHOT_FETCHED_AT);
@@ -47,94 +50,153 @@ function rowNotes(row: PreIpoRow): string[] {
 	return notes;
 }
 
-const LG_LAST_CARD_SPAN = ["lg:col-span-1", "lg:col-span-3", "lg:col-span-2"];
-
-function lastCardSpan(count: number): string {
-	const small = count % 2 === 1 ? "sm:col-span-2" : "sm:col-span-1";
-	return `${small} ${LG_LAST_CARD_SPAN[count % 3]}`;
-}
-
 function marketCountLabel(count: number): string {
 	return count === 1 ? "1 market" : `${count} markets`;
 }
 ---
 
-<section id="markets" class="border-b border-stroke-weaker">
-	<div class="reveal mx-auto w-full max-w-6xl px-5 sm:px-6 py-20 md:py-28">
-		<div class="text-center">
-			<span class="text-3xs uppercase tracking-uppercase text-fg-faint">Markets</span>
-			<h2 class="font-display mt-3 text-xl md:text-2xl tracking-display">
-				Every market, <span class="text-signal">one account</span>
-			</h2>
-			<p class="mt-4 mx-auto max-w-lg text-sm text-fg-muted leading-relaxed">
-				Trade 24/7 across crypto and traditional markets from one account.
+<section id="markets" class="band">
+	<div class="mx-auto w-full max-w-site px-5 py-16 sm:px-8 md:py-24">
+		<div class="reveal">
+			<SectionHeader label="Markets">
+				Every market, <span class="text-marketing-accent">one account</span>
+				<p slot="intro">Trade 24/7 across crypto and traditional markets from one account.</p>
+			</SectionHeader>
+		</div>
+
+		<div class="@container reveal edge edge-panel mt-10 overflow-hidden rounded-24 shadow-card md:mt-12" data-tabs data-live-region>
+			<div
+				role="tablist"
+				aria-label="Market categories"
+				data-tablist
+				class="flex gap-1 overflow-x-auto border-b border-stroke-weaker p-2 scrollbar-none"
+			>
+				{cards.map((card, index) => (
+					<button
+						type="button"
+						role="tab"
+						id={`markets-tab-${card.category}`}
+						aria-controls={`markets-panel-${card.category}`}
+						aria-selected={index === 0 ? "true" : "false"}
+						tabindex={index === 0 ? undefined : "-1"}
+						class="market-tab press inline-flex min-h-11 shrink-0 items-center gap-2 rounded-8 border border-transparent px-3.5 text-sm text-fg-subtle hover:text-fg"
+					>
+						{CATEGORY_LABELS[card.category]}
+						<span class="font-mono text-2xs text-fg-faint">{card.listedCount}</span>
+					</button>
+				))}
+			</div>
+
+			{cards.map((card, index) => (
+				<div
+					id={`markets-panel-${card.category}`}
+					role="tabpanel"
+					aria-labelledby={`markets-tab-${card.category}`}
+					data-tabpanel
+					hidden={index > 0}
+				>
+					<h3 data-panel-heading class="px-5 pt-6 text-h3 font-medium @table:px-6">{CATEGORY_LABELS[card.category]}</h3>
+					<div class="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 px-5 pt-5 pb-4 @table:px-6">
+						<p class="text-sm text-fg-muted">
+							<span class="font-mono text-fg">{marketCountLabel(card.listedCount)}</span>
+							{card.deployers.length > 0 && <> · Run by {joinNames(card.deployers)}</>}
+						</p>
+						{card.category === "crypto" && <p class="text-sm text-fg-subtle">Spot in the same workspace</p>}
+					</div>
+					<table class="w-full border-collapse text-left">
+						<thead>
+							<tr class="border-y border-stroke-weaker font-mono text-2xs tracking-label text-fg-subtle uppercase">
+								<th scope="col" class="px-5 py-2.5 font-normal @table:px-6">Market</th>
+								<th scope="col" class="px-3 py-2.5 font-normal @max-table:hidden">Deployer</th>
+								<th scope="col" class="px-3 py-2.5 text-right font-normal whitespace-nowrap">Mark · 24h</th>
+								<th scope="col" class="px-5 py-2.5 @table:px-6"><span class="sr-only">Open in the terminal</span></th>
+							</tr>
+						</thead>
+						<tbody>
+							{card.examples.map((market) => (
+								<tr
+									class="border-b border-stroke-weaker last:border-b-0 hover:bg-fill-weaker"
+									data-market-coin={market.coin}
+									data-live-row={market.coin}
+									data-live-kind={liveKindOf(card.category)}
+								>
+									<td class="px-5 py-3.5 @table:px-6">
+										<span class="block text-base font-medium text-fg">{market.name}</span>
+										<span class="mt-0.5 block font-mono text-xs text-fg-subtle">
+											{market.displayName ?? market.coin}
+											{market.deployerFullName && <span class="@table:hidden"> · by {market.deployerFullName}</span>}
+										</span>
+									</td>
+									<td class="px-3 py-3.5 text-sm text-fg-muted @max-table:hidden">
+										{market.deployerFullName ? `by ${market.deployerFullName}` : "Hyperliquid"}
+									</td>
+									<td class="px-3 py-3.5 text-right font-mono text-sm whitespace-nowrap text-fg">
+										<span class="block min-h-5" data-live-primary></span>
+										<span class="block font-mono text-2xs text-fg-subtle" data-live-secondary></span>
+										<span class="block min-h-4 font-mono text-2xs" data-live-change></span>
+									</td>
+									<td class="px-5 py-2 text-right @table:px-6">
+										<a
+											href={terminalTradeUrl(market.coin, `markets_${card.category}`)}
+											class="press inline-flex min-h-11 items-center gap-1.5 rounded-8 border border-stroke-weak px-3 text-sm text-fg-muted hover:border-stroke-strong hover:text-fg active:bg-fill-weak @table:min-h-9"
+										>
+											Trade<span class="sr-only"> {market.name}</span>
+											<svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+												<path d="M3 9l6-6M5 3h4v4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+											</svg>
+										</a>
+									</td>
+								</tr>
+							))}
+						</tbody>
+					</table>
+				</div>
+			))}
+		</div>
+		<div class="mt-4 flex flex-col gap-1 text-xs text-fg-subtle">
+			<p class="text-sm text-fg-muted">Liquidity differs per market, and HIP-3 markets can be thin: check the order book before you trade.</p>
+			<p>
+				Markets not delisted on Hyperliquid as of {snapshotDate} (UTC), from a snapshot taken before this page was built.
+				Mark prices and 24h change are Hyperliquid public data, shown only while current.
 			</p>
 		</div>
 
-		<ul class="mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-px bg-stroke-weaker rounded-xs overflow-hidden border border-stroke-weak">
-			{cards.map((card, index) => (
-				<li class:list={["flex flex-col bg-surface p-5 md:p-6", index === cards.length - 1 && lastCardSpan(cards.length)]}>
-					<div class="flex items-baseline justify-between gap-3">
-						<h3 class="text-sm font-medium">{CATEGORY_LABELS[card.category]}</h3>
-						<span class="text-2xs tabular-nums text-fg-faint whitespace-nowrap">{marketCountLabel(card.listedCount)}</span>
-					</div>
-					{card.category === "crypto" && <p class="mt-1 text-2xs text-fg-subtle">Spot in the same workspace</p>}
-					<ul class="mt-4 space-y-1.5 text-xs">
-						{card.examples.map((market) => (
-							<li data-market-coin={market.coin}>
-								<a
-									href={terminalTradeUrl(market.coin, `markets_${card.category}`)}
-									class="group inline-flex flex-wrap items-baseline gap-x-1.5 hover:text-fg"
-								>
-									<span class="text-fg group-hover:underline underline-offset-2">{market.name}</span>
-									{market.deployerFullName && <span class="text-fg-faint">by {market.deployerFullName}</span>}
-								</a>
-							</li>
-						))}
-					</ul>
-					{card.deployers.length > 0 && (
-						<p class="mt-auto pt-4 text-2xs text-fg-subtle">Run by {joinNames(card.deployers)}</p>
-					)}
-				</li>
-			))}
-		</ul>
-		<p class="mt-3 text-2xs text-fg-faint">
-			Markets not delisted on Hyperliquid as of {snapshotDate} (UTC), from a snapshot taken before this page was built.
-		</p>
-
-		<div class="mt-12 rounded-xs border border-stroke-weak bg-surface p-5 md:p-7">
-			<h3 class="text-sm font-medium">Pre-IPO perpetuals</h3>
-			<p class="mt-2 text-sm text-fg-muted leading-relaxed">
-				Pre-IPO perpetuals are cash-settled contracts that track a reference price set by the deployer. They are not
-				shares and not an IPO allocation, and they give you no rights in the company.
-			</p>
-			{settlementSentences.map((sentence) => (
-				<p class="mt-2 text-sm text-fg-muted leading-relaxed">
-					<span class="text-fg">{sentence.deployer}:</span> {sentence.text}
+		<div class="reveal edge edge-raised mt-12 grid grid-cols-1 gap-8 rounded-24 p-6 md:mt-16 md:p-10 lg:grid-cols-12">
+			<div class="lg:col-span-5">
+				<p class="label">Pre-IPO</p>
+				<h3 class="mt-3 text-h3 font-medium">Pre-IPO perpetuals</h3>
+				<p class="mt-4 text-sm text-fg-muted">
+					Pre-IPO perpetuals are cash-settled contracts that track a reference price set by the deployer. They are not
+					shares and not an IPO allocation, and they give you no rights in the company.
 				</p>
-			))}
+				{settlementSentences.map((sentence) => (
+					<p class="mt-3 text-sm text-fg-muted">
+						<span class="text-fg">{sentence.deployer}:</span> {sentence.text}
+					</p>
+				))}
+			</div>
 
-			<ul class="mt-5 divide-y divide-stroke-weaker border-y border-stroke-weaker">
+			<ul class="divide-y divide-stroke-weaker border-y border-stroke-weaker lg:col-span-7">
 				{preIpoRows.map((row) => (
-					<li class="grid grid-cols-1 gap-1 py-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-baseline md:gap-6" data-market-coin={row.coin}>
-						<div class="text-xs leading-relaxed">
+					<li class="grid grid-cols-1 gap-2 py-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start sm:gap-6" data-market-coin={row.coin}>
+						<div class="text-xs">
 							<a
 								href={terminalTradeUrl(row.coin, "markets_preipo")}
-								class="text-sm font-medium text-fg underline-offset-2 hover:underline"
+								class="inline-flex min-h-11 items-center text-base font-medium text-fg underline-offset-2 hover:underline sm:min-h-0"
 							>{row.name}</a>
-							<span class="text-fg-faint"> · by {row.deployerFullName}</span>
-							{row.quotedPerShare && <span class="block text-fg-muted">Quoted per share of the company</span>}
+							<span class="font-mono text-xs text-fg-subtle"> · by {row.deployerFullName}</span>
+							{row.quotedPerShare && <span class="mt-1 block text-fg-muted">Quoted per share of the company</span>}
 							{row.preIpoTerms && (
-								<span class="block text-fg-muted">
+								<span class="mt-1 block text-fg-muted">
 									Unit: each US$1 of price is US${formatCompactUsd(row.preIpoTerms.valuationPerPriceUsd)} of implied valuation
 								</span>
 							)}
-							{rowNotes(row).length > 0 && <span class="block text-fg-subtle">{rowNotes(row).join(" · ")}</span>}
+							{rowNotes(row).length > 0 && <span class="mt-1 block font-mono text-xs text-fg-subtle">{rowNotes(row).join(" · ")}</span>}
 						</div>
 						<a
 							href={row.preIpoTerms ? row.preIpoTerms.unitSource.url : row.docsUrl}
 							rel="noopener"
-							class="text-xs text-fg-muted underline underline-offset-2 hover:text-fg whitespace-nowrap"
+							class="inline-flex min-h-11 items-center whitespace-nowrap text-sm text-fg-muted underline underline-offset-2 hover:text-fg sm:min-h-0"
 						>
 							{row.preIpoTerms ? "How the price is set →" : "Deployer documentation →"}
 						</a>
@@ -143,20 +205,23 @@ function marketCountLabel(count: number): string {
 			</ul>
 		</div>
 
-		<div class="mt-12 mx-auto max-w-3xl">
-			<p class="text-sm md:text-base text-fg-muted leading-relaxed">
-				Stocks, indices, commodities, FX and pre-IPO markets are HIP-3 perpetuals deployed on Hyperliquid by independent
-				third parties: {allDeployers}. Each deployer defines its markets, sets the reference price and can halt, settle or
-				delist a market. Hyperliquid matches and settles trades; {BRAND_NAME} is the interface and does not review these
-				markets. Outside a stock's exchange hours, prices come from the deployer's own mechanism. These contracts give
-				you no ownership, dividend or voting rights, and {BRAND_NAME} is not affiliated with the companies they
-				reference.
-				<a href={HIP3_DOCS_URL} rel="noopener" class="text-fg underline underline-offset-2 hover:text-fg-muted transition-colors duration-150">How HIP-3 works →</a>
-			</p>
-			<p class="mt-4 text-sm md:text-base text-fg-muted leading-relaxed">
-				{RISK_SENTENCE}
-				<a href={RISK_PATH} class="text-fg underline underline-offset-2 hover:text-fg-muted transition-colors duration-150">Risk disclosure →</a>
-			</p>
+		<div class="reveal mt-12 grid grid-cols-1 gap-6 border-t border-stroke-weaker pt-10 md:mt-16 lg:grid-cols-12">
+			<p class="label lg:col-span-3 lg:pt-1.5">Third-party markets</p>
+			<div class="max-w-3xl lg:col-span-9">
+				<p class="text-md text-fg-muted">
+					Stocks, indices, commodities, FX and pre-IPO markets are HIP-3 perpetuals deployed on Hyperliquid by independent
+					third parties: {allDeployers}. Each deployer defines its markets, sets the reference price and can halt, settle or
+					delist a market. Hyperliquid matches and settles trades; {BRAND_NAME} is the interface and does not review these
+					markets. Outside a stock's exchange hours, prices come from the deployer's own mechanism. These contracts give
+					you no ownership, dividend or voting rights, and {BRAND_NAME} is not affiliated with the companies they
+					reference.
+					<a href={HIP3_DOCS_URL} rel="noopener" class="text-fg underline underline-offset-2 hover:text-fg-muted">How HIP-3 works →</a>
+				</p>
+				<p class="mt-4 text-md text-fg-muted">
+					{RISK_SENTENCE}
+					<a href={RISK_PATH} class="text-fg underline underline-offset-2 hover:text-fg-muted">Risk disclosure →</a>
+				</p>
+			</div>
 		</div>
 	</div>
 </section>

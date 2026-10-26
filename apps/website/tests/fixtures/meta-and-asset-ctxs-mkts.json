@@ -1,0 +1,65 @@
+{
+	"recordedAt": "2026-10-26T06:26:01.638Z",
+	"note": "Real POST https://api.hyperliquid.xyz/info response, trimmed to the coins the site uses (meta.universe and ctxs kept index-aligned; marginTables dropped).",
+	"request": {
+		"type": "metaAndAssetCtxs",
+		"dex": "mkts"
+	},
+	"status": 200,
+	"body": [
+		{
+			"universe": [
+				{
+					"szDecimals": 3,
+					"name": "mkts:US500",
+					"maxLeverage": 25,
+					"marginTableId": 25,
+					"growthMode": "enabled",
+					"lastFeeScaleChangeTime": "2026-06-25T01:22:23.589215617",
+					"deployerFeeScale": "1.0"
+				},
+				{
+					"szDecimals": 3,
+					"name": "mkts:USTECH",
+					"maxLeverage": 25,
+					"marginTableId": 25,
+					"growthMode": "enabled",
+					"lastFeeScaleChangeTime": "2026-06-25T01:22:23.589215617",
+					"deployerFeeScale": "1.0"
+				}
+			]
+		},
+		[
+			{
+				"funding": "0.0000057078",
+				"openInterest": "2901.608",
+				"prevDayPx": "761.51",
+				"dayNtlVlm": "801942.86071",
+				"premium": "0.0001413191",
+				"oraclePx": "760.69",
+				"markPx": "760.72",
+				"midPx": "760.81",
+				"impactPxs": [
+					"760.601",
+					"760.994"
+				],
+				"dayBaseVlm": "1053.136"
+			},
+			{
+				"funding": "0.0000057078",
+				"openInterest": "7060.9",
+				"prevDayPx": "705.31",
+				"dayNtlVlm": "952691.5990800001",
+				"premium": "0.0001754909",
+				"oraclePx": "703.74",
+				"markPx": "703.87",
+				"midPx": "703.865",
+				"impactPxs": [
+					"703.688",
+					"704.039"
+				],
+				"dayBaseVlm": "1349.352"
+			}
+		]
+	]
+}

@@ -1,6 +1,7 @@
-// Live mark prices for the 02 strip. Runs only while the strip is at least 10% visible, the document is
-// visible, updates are not paused and this tab holds the `sairn-site-live` Web Lock; while another tab holds
-// it this one waits in the lock queue without sending. Requests follow createRequestPlan from
+// Live numbers for 02 (stats band and ticker cards) and the 03 market tabs. Runs only while one of those
+// regions is at least 10% visible, the document is visible, updates are not paused and this tab holds the
+// `sairn-site-live` Web Lock; while another tab holds it this one waits in the lock queue without sending.
+// The same Pause control stops the ticker's scrolling (WCAG 2.2.2); the ticker moves only once it is wired. Requests follow createRequestPlan from
 // src/lib/markets/live.js, time out after REQUEST_TIMEOUT_MS, and every answer is validated fail-closed.
 // Numbers are cleared once any planned dex has gone stale, and for the rest of the visit once a dex has used
 // up its retries. A market the exchange reports delisted (or no longer lists) is removed from 02 and 03 at
@@ -10,14 +11,18 @@ import {
 	backoffDelayMs,
 	canRetry,
 	change24h,
+	combineDexTotals,
 	createRequestPlan,
 	dexOfCoin,
 	evaluateFreshness,
 	formatCompactUsd,
 	formatMarkPrice,
+	formatStatUsd,
 	impliedValuationUsd,
 	INFO_URL,
 	nextAllowedSendAt,
+	type DexTotals,
+	readDexTotals,
 	readMetaAndAssetCtxs,
 	recordSend,
 	requestBody,
@@ -28,6 +33,7 @@ interface LiveInput {
 	dex: string;
 	szDecimals: number;
 	valuationPerPriceUsd: string | null;
+	kind: "preipo" | "rate" | "price";
 }
 
 interface Price {
@@ -52,8 +58,18 @@ function readInputs(root: Document): LiveInput[] {
 			typeof entry?.coin === "string" &&
 			typeof entry?.dex === "string" &&
 			Number.isInteger(entry?.szDecimals) &&
-			(entry?.valuationPerPriceUsd === null || typeof entry?.valuationPerPriceUsd === "string"),
+			(entry?.valuationPerPriceUsd === null || typeof entry?.valuationPerPriceUsd === "string") &&
+			["preipo", "rate", "price"].includes(entry?.kind),
 	);
+}
+
+function readStatsDexes(block: HTMLElement | null): string[] {
+	try {
+		const parsed: unknown = JSON.parse(block?.dataset.liveStatsDexes ?? "[]");
+		return Array.isArray(parsed) && parsed.every((dex) => typeof dex === "string") ? parsed : [];
+	} catch {
+		return [];
+	}
 }
 
 function utcTime(date: Date): string {
@@ -69,6 +85,12 @@ export function startLiveMarkets(root: Document): void {
 	const inputs = readInputs(root);
 	if (!strip || !list || pauseButtons.length === 0 || !asOf || !asOfTime || inputs.length === 0) return;
 	if (!("locks" in navigator) || !("IntersectionObserver" in window)) return;
+	const statsBlock = root.querySelector<HTMLElement>("[data-live-stats]");
+	const statsDexes = readStatsDexes(statsBlock);
+	const regions = [strip, ...root.querySelectorAll<HTMLElement>("[data-live-region]")];
+	const mirrors = new Map(
+		[...root.querySelectorAll<HTMLElement>("[data-live-mirror]")].map((mirror) => [mirror.dataset.liveMirror ?? "", mirror]),
+	);
 
 	const inputByCoin = new Map(inputs.map((input) => [input.coin, input]));
 	const plan = createRequestPlan(inputs.map((input) => input.coin));
@@ -80,11 +102,13 @@ export function startLiveMarkets(root: Document): void {
 	const receivedAt: Record<string, number | undefined> = {};
 	const receivedWallAt: Record<string, number> = {};
 	const prices: Record<string, Record<string, Price>> = {};
+	const totals: Record<string, DexTotals | undefined> = {};
 	const removed = new Set<string>();
 	let startedAt = performance.now();
 	const cardOrder = [...new Set(inputs.map((input) => input.dex))];
 	for (const dex of plan.dexes) nextDueAt[dex] = startedAt + (cardOrder.includes(dex) ? cardOrder.indexOf(dex) : cardOrder.length);
 
+	const visibleRegions = new Map<unknown, boolean>();
 	let inView = false;
 	let paused = false;
 	let exhausted = false;
@@ -126,6 +150,74 @@ export function startLiveMarkets(root: Document): void {
 		}
 	}
 
+	function fill(target: HTMLElement, input: LiveInput | undefined, price: Price | undefined): boolean {
+		clearCard(target);
+		if (!input || !price) return false;
+		const markText = formatMarkPrice(price.markPx, price.szDecimals);
+		const change = change24h(price.markPx, price.prevDayPx);
+		const primary = target.querySelector<HTMLElement>("[data-live-primary]");
+		const secondary = target.querySelector<HTMLElement>("[data-live-secondary]");
+		const changeSlot = target.querySelector<HTMLElement>("[data-live-change]");
+		if (!primary || !changeSlot || !markText || !change) return false;
+		if (input.kind === "preipo") {
+			const valuation = impliedValuationUsd(price.markPx, input.valuationPerPriceUsd);
+			if (!valuation || !secondary) return false;
+			const label = root.createElement("span");
+			label.className = "ml-1.5 text-2xs font-normal text-fg-subtle";
+			label.textContent = "implied valuation";
+			primary.append(`US$${formatCompactUsd(valuation)}`, label);
+			secondary.textContent = `Mark ${markText}`;
+		} else {
+			primary.textContent = input.kind === "rate" ? markText.replace(/^\$/, "") : markText;
+		}
+		const arrow = { up: " ▲", down: " ▼", flat: "" }[change.direction];
+		changeSlot.textContent = `${change.text}${arrow}`;
+		if (change.direction === "up") changeSlot.classList.add("text-success");
+		if (change.direction === "down") changeSlot.classList.add("text-error");
+		return true;
+	}
+
+	function copySlots(from: HTMLElement, to: HTMLElement) {
+		for (const name of ["data-live-primary", "data-live-secondary", "data-live-change"]) {
+			const source = from.querySelector(`[${name}]`);
+			const target = to.querySelector(`[${name}]`);
+			if (!source || !target) continue;
+			target.innerHTML = source.innerHTML;
+			target.className = source.className;
+		}
+	}
+
+	function renderStats(freshDexes: string[], clearAll: boolean) {
+		if (!statsBlock) return;
+		const combined = clearAll ? null : combineDexTotals(statsDexes.filter((dex) => freshDexes.includes(dex)).length === statsDexes.length ? statsDexes : [], totals);
+		const wallTimes = statsDexes.map((dex) => receivedWallAt[dex]).filter((at) => at !== undefined);
+		let shownCount = 0;
+		for (const stat of statsBlock.querySelectorAll<HTMLElement>("[data-live-stat]")) {
+			const value = stat.querySelector<HTMLElement>("[data-live-stat-value]");
+			const pending = stat.querySelector<HTMLElement>("[data-live-stat-pending]");
+			const slot = stat.querySelector<HTMLElement>("[data-live-stat-slot]");
+			const raw = combined ? (stat.dataset.liveStat === "volume" ? combined.dayNtlVlm : combined.openInterestUsd) : null;
+			const text = raw === null ? null : formatStatUsd(raw);
+			if (value) value.textContent = text ?? "";
+			if (pending) pending.hidden = text !== null;
+			slot?.setAttribute("aria-busy", text === null ? "true" : "false");
+			if (text !== null) shownCount += 1;
+		}
+		const statsAsOf = statsBlock.querySelector<HTMLElement>("[data-live-stats-asof]");
+		const time = statsAsOf?.querySelector("time");
+		if (statsAsOf && time) {
+			const stats = statsBlock.querySelectorAll("[data-live-stat]").length;
+			if (shownCount > 0 && shownCount === stats && wallTimes.length === statsDexes.length) {
+				const oldest = new Date(Math.min(...wallTimes));
+				time.dateTime = oldest.toISOString();
+				time.textContent = utcTime(oldest);
+				statsAsOf.hidden = false;
+			} else {
+				statsAsOf.hidden = true;
+			}
+		}
+	}
+
 	function render() {
 		const now = performance.now();
 		const { freshDexes, clearAll } = evaluateFreshness({
@@ -136,36 +228,16 @@ export function startLiveMarkets(root: Document): void {
 			staleAfterMs: plan.staleAfterMs,
 		});
 		let shown = 0;
-		for (const card of root.querySelectorAll<HTMLElement>("[data-live-card]")) {
-			const coin = card.dataset.liveCard ?? "";
+		for (const target of root.querySelectorAll<HTMLElement>("[data-live-card], [data-live-row]")) {
+			const coin = target.dataset.liveCard ?? target.dataset.liveRow ?? "";
 			const input = inputByCoin.get(coin);
 			const price = input && !clearAll && freshDexes.includes(input.dex) ? prices[input.dex]?.[coin] : undefined;
-			clearCard(card);
-			if (!input || !price) continue;
-			const markText = formatMarkPrice(price.markPx, price.szDecimals);
-			const change = change24h(price.markPx, price.prevDayPx);
-			const primary = card.querySelector<HTMLElement>("[data-live-primary]");
-			const secondary = card.querySelector<HTMLElement>("[data-live-secondary]");
-			const changeSlot = card.querySelector<HTMLElement>("[data-live-change]");
-			if (!primary || !secondary || !changeSlot || !markText || !change) continue;
-			const kind = card.dataset.liveKind;
-			if (kind === "preipo") {
-				const valuation = impliedValuationUsd(price.markPx, input.valuationPerPriceUsd);
-				if (!valuation) continue;
-				const label = root.createElement("span");
-				label.className = "ml-1.5 text-2xs font-normal text-fg-subtle";
-				label.textContent = "implied valuation";
-				primary.append(`US$${formatCompactUsd(valuation)}`, label);
-				secondary.textContent = `Mark ${markText}`;
-			} else {
-				primary.textContent = kind === "rate" ? markText.replace(/^\$/, "") : markText;
-			}
-			const arrow = { up: " ▲", down: " ▼", flat: "" }[change.direction];
-			changeSlot.textContent = `${change.text}${arrow}`;
-			if (change.direction === "up") changeSlot.classList.add("text-success");
-			if (change.direction === "down") changeSlot.classList.add("text-error");
-			shown += 1;
+			const filled = fill(target, input, price);
+			if (filled && target.dataset.liveCard !== undefined) shown += 1;
+			const mirror = target.dataset.liveCard ? mirrors.get(coin) : undefined;
+			if (mirror) copySlots(target, mirror);
 		}
+		renderStats(freshDexes, clearAll);
 		list?.setAttribute("aria-busy", shown > 0 ? "false" : "true");
 		const shownWallTimes = freshDexes.map((dex) => receivedWallAt[dex]).filter((at) => at !== undefined);
 		if (shown > 0 && shownWallTimes.length > 0 && asOf && asOfTime) {
@@ -204,7 +276,11 @@ export function startLiveMarkets(root: Document): void {
 			signal.removeEventListener("abort", abort);
 		}
 		const reading = readMetaAndAssetCtxs({ status, body }, { dex, coins: pricedCoins(dex) });
-		return { reading, linkedDelisted: reading.ok ? delistedAmong(body, linkedCoins(dex)) : [] };
+		return {
+			reading,
+			linkedDelisted: reading.ok ? delistedAmong(body, linkedCoins(dex)) : [],
+			dexTotals: reading.ok && statsDexes.includes(dex) ? readDexTotals({ status, body }, dex) : null,
+		};
 	}
 
 	function sleep(ms: number, signal: AbortSignal) {
@@ -226,6 +302,7 @@ export function startLiveMarkets(root: Document): void {
 		for (const dex of plan.dexes) {
 			receivedAt[dex] = undefined;
 			delete prices[dex];
+			delete totals[dex];
 		}
 		render();
 		stopSession();
@@ -243,13 +320,14 @@ export function startLiveMarkets(root: Document): void {
 				continue;
 			}
 			sendLog = recordSend(sendLog, now, plan.weightPerRequest);
-			const { reading, linkedDelisted } = await fetchDex(dex, signal);
+			const { reading, linkedDelisted, dexTotals } = await fetchDex(dex, signal);
 			if (signal.aborted) return;
 			const received = performance.now();
 			if (reading.ok) {
 				failures[dex] = 0;
 				for (const coin of [...reading.delisted, ...reading.missing, ...linkedDelisted]) removeMarket(coin);
 				prices[dex] = reading.prices;
+				totals[dex] = dexTotals ?? undefined;
 				receivedAt[dex] = received;
 				receivedWallAt[dex] = Date.now();
 				nextDueAt[dex] = received + plan.refreshIntervalMs;
@@ -290,6 +368,7 @@ export function startLiveMarkets(root: Document): void {
 					if (received !== undefined && now - received > plan.staleAfterMs) {
 						receivedAt[dex] = undefined;
 						delete prices[dex];
+						delete totals[dex];
 					}
 				}
 				render();
@@ -336,22 +415,28 @@ export function startLiveMarkets(root: Document): void {
 	}
 
 	for (const separator of root.querySelectorAll<HTMLElement>("[data-live-pause-separator]")) separator.hidden = false;
+	strip.dataset.ticker = "moving";
 	for (const button of pauseButtons) {
 		button.hidden = false;
 		button.addEventListener("click", () => {
 			paused = !paused;
 			for (const each of pauseButtons) each.setAttribute("aria-pressed", String(paused));
+			strip.dataset.ticker = paused ? "paused" : "moving";
 			update();
 		});
 	}
 	root.addEventListener("visibilitychange", update);
-	new IntersectionObserver(
+	const observer = new IntersectionObserver(
 		(entries) => {
-			for (const entry of entries) inView = entry.isIntersecting && entry.intersectionRatio >= VISIBLE_RATIO;
+			for (const entry of entries) {
+				visibleRegions.set(entry.target, entry.isIntersecting && entry.intersectionRatio >= VISIBLE_RATIO);
+			}
+			inView = [...visibleRegions.values()].some(Boolean);
 			update();
 		},
 		{ threshold: [0, VISIBLE_RATIO] },
-	).observe(strip);
+	);
+	for (const region of regions) observer.observe(region);
 	setInterval(render, FRESHNESS_CHECK_MS);
 	window.addEventListener("pagehide", () => {
 		clearTimeout(stopTimer);

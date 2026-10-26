@@ -1,6 +1,6 @@
 {
 	"recordedAt": "2026-10-25T17:39:45.095Z",
-	"note": "Real POST https://api.hyperliquid.xyz/info response, trimmed to the coins the site uses (meta.universe and ctxs kept index-aligned; marginTables dropped).",
+	"note": "Real POST https://api.hyperliquid.xyz/info response, trimmed to the coins the site uses (meta.universe and ctxs kept index-aligned; marginTables dropped). Entries for SOL, NEAR, HYPE, ZEC appended from a response recorded at 2026-10-26T06:26:01.545Z so every coin the home page shows is present.",
 	"request": {
 		"type": "metaAndAssetCtxs"
 	},
@@ -19,6 +19,30 @@
 					"name": "ETH",
 					"maxLeverage": 25,
 					"marginTableId": 55
+				},
+				{
+					"szDecimals": 2,
+					"name": "SOL",
+					"maxLeverage": 20,
+					"marginTableId": 54
+				},
+				{
+					"szDecimals": 1,
+					"name": "NEAR",
+					"maxLeverage": 10,
+					"marginTableId": 52
+				},
+				{
+					"szDecimals": 2,
+					"name": "HYPE",
+					"maxLeverage": 10,
+					"marginTableId": 52
+				},
+				{
+					"szDecimals": 2,
+					"name": "ZEC",
+					"maxLeverage": 10,
+					"marginTableId": 52
 				}
 			],
 			"collateralToken": 0
@@ -53,6 +77,66 @@
 					"2356.3"
 				],
 				"dayBaseVlm": "206203.9453"
+			},
+			{
+				"funding": "0.0000125",
+				"openInterest": "5527493.6199999992",
+				"prevDayPx": "101.82",
+				"dayNtlVlm": "104583859.2892999947",
+				"premium": "-0.0001980198",
+				"oraclePx": "101.0",
+				"markPx": "100.97",
+				"midPx": "100.975",
+				"impactPxs": [
+					"100.97",
+					"100.98"
+				],
+				"dayBaseVlm": "1035145.1399999998"
+			},
+			{
+				"funding": "-0.0000022069",
+				"openInterest": "58873212.8000000119",
+				"prevDayPx": "4.4315",
+				"dayNtlVlm": "129064980.2403800786",
+				"premium": "-0.0007654432",
+				"oraclePx": "4.468",
+				"markPx": "4.4651",
+				"midPx": "4.464",
+				"impactPxs": [
+					"4.46306",
+					"4.46458"
+				],
+				"dayBaseVlm": "28518589.2999999933"
+			},
+			{
+				"funding": "0.0000125",
+				"openInterest": "20807053.2199999951",
+				"prevDayPx": "76.056",
+				"dayNtlVlm": "288846952.0411499739",
+				"premium": "-0.000417914",
+				"oraclePx": "76.3315",
+				"markPx": "76.302",
+				"midPx": "76.2985",
+				"impactPxs": [
+					"76.2827",
+					"76.2996"
+				],
+				"dayBaseVlm": "3787250.4500000002"
+			},
+			{
+				"funding": "0.0000125",
+				"openInterest": "480858.56",
+				"prevDayPx": "1202.8",
+				"dayNtlVlm": "289641565.6659998894",
+				"premium": "0.0",
+				"oraclePx": "1204.4",
+				"markPx": "1204.4",
+				"midPx": "1204.3",
+				"impactPxs": [
+					"1204.1064",
+					"1204.4"
+				],
+				"dayBaseVlm": "239919.23"
 			}
 		]
 	]

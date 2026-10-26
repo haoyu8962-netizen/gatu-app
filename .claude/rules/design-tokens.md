@@ -58,10 +58,11 @@ Each works as `bg-*` and `text-*`:
 
 For **borders / rings / outlines / dividers** using these semantic colors, use the stroke variants (see Strokes section) to preserve the intended alpha values.
 
-### Brand roles — `--signal`, `--action`, `--focus`
+### Brand roles — `--signal`, `--action`, `--focus` (and the website-only `--marketing-accent`)
 - `--signal` is the Sairn accent (light `#176b64` teal, dark `#86e5d3` mint; hover `#0f524d` / `#a8eee1`; soft 10 % / 14 %). `text-brand`, `text-signal`, `bg-signal-soft` and the focus ring (`--focus: var(--signal)`) use it. The values live in `brand/brand.json` and must be identical in `packages/ui/src/globals.css`, the terminal and the website; `tests/brand-cross-app.test.mjs` pins the equality and a 4.5:1 text contrast on every terminal surface.
 - `--action` stays neutral (light `#15171e`, dark `#edeef2`): filled primary buttons are not tinted with the brand, so they cannot be mistaken for the green Buy button.
 - Waiting spinners use `text-fg-muted`, never `text-signal`: the kit's mint is also its success colour, and a mint spinner reads as "done".
+- **Website only:** `--marketing-accent` (`text-marketing-accent`) is the logo's choice amber from `websiteColors.*.marketingAccent` in `brand/brand.json` (each must equal `logo.*.choice`, ADR 0043): `#99621f` on the website's default light theme, `#e6b766` in its `?theme=dark` comparison theme and dark product windows (ADR 0044). It marks marketing emphasis on the website (hero reel, section accent words, marketing icons, Fig. 1 connectors, ambient glow via `--glow-accent`), never warnings, risk or state. On the website `--signal` stays for focus, `::selection`, prose links and the live indicator. `packages/ui` and the terminal must not define it; the terminal keeps ADR 0028 (no amber outside the logo). `pnpm brand:check` and `tests/brand-cross-app.test.mjs` enforce this.
 
 ### Fills — interactive state backgrounds
 - `bg-fill-weak` / `bg-fill-weaker` subtle tinted fills (for hover, chips)

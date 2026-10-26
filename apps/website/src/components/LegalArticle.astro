@@ -12,7 +12,7 @@ if (!entry) throw new Error(`Missing legal entry: ${entryId}`);
 const { Content } = await render(entry);
 ---
 
-<main>
+<main id="main">
 	<article class="mx-auto w-full max-w-2xl px-5 sm:px-6 pt-16 pb-20 md:pt-20 md:pb-28">
 		<span class="text-3xs uppercase tracking-uppercase text-fg-faint">{eyebrow}</span>
 		<div class="prose-body mt-6 text-sm md:text-base text-fg-weak leading-relaxed">

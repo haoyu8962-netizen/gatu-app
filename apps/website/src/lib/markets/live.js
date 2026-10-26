@@ -323,3 +323,81 @@ function groupThousands(fixed) {
 	const grouped = integer.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 	return fraction === undefined ? grouped : `${grouped}.${fraction}`;
 }
+
+/**
+ * @typedef {object} DexTotals
+ * @property {string} dex
+ * @property {string} dayNtlVlm Sum of every listed asset's 24h notional volume in USD, as a decimal string.
+ * @property {string} openInterestUsd Sum of openInterest × markPx over every listed asset, as a decimal string.
+ * @property {number} markets Listed assets summed.
+ */
+
+/**
+ * Totals for the stats band over every listed asset of one metaAndAssetCtxs answer. Fails closed: the
+ * answer must pass readMetaAndAssetCtxs's shape and dex checks, and any listed asset with a missing or
+ * non-decimal dayNtlVlm, openInterest or markPx rejects the whole dex (null), so a partial sum is never shown.
+ * Delisted assets (isDelisted: true) are left out; any other isDelisted value rejects the answer.
+ * @param {{ status: number, body: unknown }} result
+ * @param {string} dex
+ * @returns {DexTotals | null}
+ */
+export function readDexTotals(result, dex) {
+	const shape = readMetaAndAssetCtxs(result, { dex, coins: [] });
+	if (!shape.ok) return null;
+	const [meta, ctxs] = /** @type {[{ universe: { name: string, isDelisted?: unknown }[] }, any[]]} */ (result.body);
+	let volume = new Big(0);
+	let openInterest = new Big(0);
+	let markets = 0;
+	for (let index = 0; index < meta.universe.length; index += 1) {
+		const asset = meta.universe[index];
+		if (asset.isDelisted === true) continue;
+		if (asset.isDelisted !== undefined && asset.isDelisted !== false) return null;
+		const ctx = ctxs[index];
+		if (!isDecimal(ctx?.dayNtlVlm) || !isDecimal(ctx?.openInterest) || !isPositiveDecimal(ctx?.markPx)) return null;
+		volume = volume.plus(ctx.dayNtlVlm);
+		openInterest = openInterest.plus(new Big(ctx.openInterest).times(ctx.markPx));
+		markets += 1;
+	}
+	if (markets === 0) return null;
+	return { dex, dayNtlVlm: volume.toFixed(), openInterestUsd: openInterest.toFixed(), markets };
+}
+
+/**
+ * Sums the totals of exactly the dexes in `dexes`; null unless every one of them has totals, so the label
+ * that names the dexes is always true of the number shown.
+ * @param {readonly string[]} dexes
+ * @param {Readonly<Record<string, DexTotals | undefined>>} totals
+ * @returns {{ dayNtlVlm: string, openInterestUsd: string, markets: number } | null}
+ */
+export function combineDexTotals(dexes, totals) {
+	if (dexes.length === 0) return null;
+	let volume = new Big(0);
+	let openInterest = new Big(0);
+	let markets = 0;
+	for (const dex of dexes) {
+		const entry = totals[dex];
+		if (!entry || entry.dex !== dex) return null;
+		volume = volume.plus(entry.dayNtlVlm);
+		openInterest = openInterest.plus(entry.openInterestUsd);
+		markets += entry.markets;
+	}
+	return { dayNtlVlm: volume.toFixed(), openInterestUsd: openInterest.toFixed(), markets };
+}
+
+/**
+ * Stats-band money: "$3.13B"; null for anything that is not a positive decimal, so the band shows nothing
+ * rather than "$0".
+ * @param {string} value
+ */
+export function formatStatUsd(value) {
+	if (!isPositiveDecimal(value)) return null;
+	return `$${formatCompactUsd(value)}`;
+}
+
+/**
+ * @param {unknown} value
+ * @returns {value is string}
+ */
+function isDecimal(value) {
+	return typeof value === "string" && DECIMAL.test(value);
+}

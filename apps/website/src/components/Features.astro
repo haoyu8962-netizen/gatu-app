@@ -1,77 +1,177 @@
 ---
+import translateIcon from "@phosphor-icons/core/assets/regular/translate.svg?raw";
+import envelopeIcon from "@phosphor-icons/core/assets/regular/envelope-simple.svg?raw";
+import targetIcon from "@phosphor-icons/core/assets/regular/target.svg?raw";
+import layoutIcon from "@phosphor-icons/core/assets/regular/layout.svg?raw";
+import phoneIcon from "@phosphor-icons/core/assets/regular/device-mobile.svg?raw";
+import plusIcon from "@phosphor-icons/core/assets/regular/plus-circle.svg?raw";
+import languageAvif from "@/assets/features/language.avif";
+import languageWebp from "@/assets/features/language.webp";
+import emailAvif from "@/assets/features/email.avif";
+import emailWebp from "@/assets/features/email.webp";
+import tpslAvif from "@/assets/features/tpsl.avif";
+import tpslWebp from "@/assets/features/tpsl.webp";
+import workspaceAvif from "@/assets/features/workspace.avif";
+import workspaceWebp from "@/assets/features/workspace.webp";
+import phoneAvif from "@/assets/features/phone.avif";
+import phoneWebp from "@/assets/features/phone.webp";
+import moreAvif from "@/assets/features/more.avif";
+import moreWebp from "@/assets/features/more.webp";
+import record from "@/assets/features/features-capture.json";
+import { APP_HOST } from "@/config/brand";
+import { formatUtcTimestamp } from "@/config/copy";
+import SectionHeader from "./SectionHeader.astro";
+
+type Fit = "screen" | "portrait" | "strip";
+
+// Plan §4 04: benefit titles; the first card is the verified differentiator. Each tab shows one real,
+// signed-out screenshot captured by scripts/capture-features.mjs and encoded by scripts/optimize-images.mjs.
 const features = [
 	{
-		title: "Pro charts",
-		desc: "Candles with live order, position, and liquidation overlays",
-		icon: "chart",
-	},
-	{
-		title: "Set TP/SL as you enter",
-		desc: "Market, limit, stop, take-profit, TWAP and scale orders on perpetuals",
-		icon: "orders",
-	},
-	{
-		title: "Position control",
-		desc: "Close, reverse, edit TP/SL, transfer margin and adjust leverage",
-		icon: "target",
-	},
-	{
+		id: "language",
 		title: "Trade in your language",
-		desc: "English, 简体中文, हिन्दी, Español, Français and العربية, with a right-to-left layout for Arabic",
-		icon: "globe",
+		desc: "English, 简体中文, हिन्दी, Español, Français and العربية, with a right-to-left layout for Arabic.",
+		icon: translateIcon,
+		avif: languageAvif,
+		webp: languageWebp,
+		fit: "portrait" as Fit,
 	},
 	{
-		title: "Mobile-native",
-		desc: "Dedicated mobile views with native gestures, not a shrunk desktop",
-		icon: "phone",
+		id: "email",
+		title: "No wallet? Use your email.",
+		desc: "Sign in with email and start without installing a wallet, or connect the wallet you already use.",
+		icon: envelopeIcon,
+		avif: emailAvif,
+		webp: emailWebp,
+		fit: "portrait" as Fit,
 	},
 	{
-		title: "Multi-DEX",
-		desc: "Perp, spot, and builder markets in one unified interface",
-		icon: "layers",
+		id: "tpsl",
+		title: "Set TP/SL as you enter",
+		desc: "Market, limit, stop, take-profit, TWAP and scale orders on perpetuals.",
+		icon: targetIcon,
+		avif: tpslAvif,
+		webp: tpslWebp,
+		fit: "portrait" as Fit,
 	},
 	{
-		title: "Wallet or email",
-		desc: "Sign in with email, or connect the Ethereum wallet you already use",
-		icon: "wallet",
+		id: "workspace",
+		title: "Everything in one workspace",
+		desc: "Perpetuals and spot side by side, with charts, order book and recent trades.",
+		icon: layoutIcon,
+		avif: workspaceAvif,
+		webp: workspaceWebp,
+		fit: "screen" as Fit,
 	},
 	{
-		title: "Deposit & withdraw",
-		desc: "USDC in from Arbitrum via Circle CCTP, and back out to Arbitrum",
-		icon: "bridge",
+		id: "phone",
+		title: "Trade from your phone",
+		desc: "A dedicated mobile layout that you can install as an app.",
+		icon: phoneIcon,
+		avif: phoneAvif,
+		webp: phoneWebp,
+		fit: "portrait" as Fit,
+	},
+	{
+		id: "more",
+		title: "More in the terminal",
+		desc: "Earn, vaults, staking, referrals and a leaderboard.",
+		icon: plusIcon,
+		avif: moreAvif,
+		webp: moreWebp,
+		fit: "strip" as Fit,
 	},
 ];
 
-// Phosphor (regular) — paths from @phosphor-icons/core, scaled for 24x24 viewBox.
-const iconSvg: Record<string, string> = {
-	chart: '<polyline points="208,72 128,152 96,120 32,184" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><polyline points="160,72 208,72 208,120" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/>',
-	orders: '<line x1="40" y1="64" x2="216" y2="64" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><line x1="40" y1="128" x2="216" y2="128" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><line x1="40" y1="192" x2="216" y2="192" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/>',
-	target: '<circle cx="128" cy="128" r="96" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><circle cx="128" cy="128" r="56" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><circle cx="128" cy="128" r="16" fill="currentColor"/>',
-	globe: '<path fill="currentColor" d="M128,24h0A104,104,0,1,0,232,128,104.12,104.12,0,0,0,128,24Zm88,104a87.61,87.61,0,0,1-3.33,24H174.16a157.44,157.44,0,0,0,0-48h38.51A87.61,87.61,0,0,1,216,128ZM102,168H154a115.11,115.11,0,0,1-26,45A115.27,115.27,0,0,1,102,168Zm-3.9-16a140.84,140.84,0,0,1,0-48h59.88a140.84,140.84,0,0,1,0,48ZM40,128a87.61,87.61,0,0,1,3.33-24H81.84a157.44,157.44,0,0,0,0,48H43.33A87.61,87.61,0,0,1,40,128ZM154,88H102a115.11,115.11,0,0,1,26-45A115.27,115.27,0,0,1,154,88Zm52.33,0H170.71a135.28,135.28,0,0,0-22.3-45.6A88.29,88.29,0,0,1,206.37,88ZM107.59,42.4A135.28,135.28,0,0,0,85.29,88H49.63A88.29,88.29,0,0,1,107.59,42.4ZM49.63,168H85.29a135.28,135.28,0,0,0,22.3,45.6A88.29,88.29,0,0,1,49.63,168Zm98.78,45.6a135.28,135.28,0,0,0,22.3-45.6h35.66A88.29,88.29,0,0,1,148.41,213.6Z"/>',
-	phone: '<rect x="64" y="24" width="128" height="208" rx="16" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><line x1="112" y1="200" x2="144" y2="200" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/>',
-	layers: '<polygon points="128,32 24,80 128,128 232,80 128,32" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><polyline points="24,128 128,176 232,128" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><polyline points="24,176 128,224 232,176" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/>',
-	wallet: '<path d="M40,72H216a0,0,0,0,1,0,0V192a8,8,0,0,1-8,8H48a8,8,0,0,1-8-8V72A0,0,0,0,1,40,72Z" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><path d="M40,72V64a16,16,0,0,1,16-16H192" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><circle cx="180" cy="136" r="12" fill="currentColor"/>',
-	bridge: '<line x1="32" y1="128" x2="224" y2="128" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><polyline points="168,72 224,128 168,184" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><polyline points="88,184 32,128 88,72" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/>',
+const captures = record.captures as Record<string, { capturedAt: string; alt: string; viewport: { width: number } }>;
+const visuals = features.map((feature) => {
+	const capture = captures[feature.id];
+	if (!capture) throw new Error(`features-capture.json has no ${feature.id} capture`);
+	return {
+		...feature,
+		alt: capture.alt,
+		caption: `Screenshot of ${APP_HOST}, signed out · ${formatUtcTimestamp(capture.capturedAt)}`,
+	};
+});
+
+function inlineIcon(svg: string, size: number): string {
+	return svg.replace("<svg ", `<svg width="${size}" height="${size}" aria-hidden="true" focusable="false" `);
+}
+
+const imageClass: Record<Fit, string> = {
+	screen: "h-full w-full object-cover object-left-top",
+	portrait: "h-[165%] w-auto max-w-none shrink-0 rounded-16 border border-stroke-weak shadow-card",
+	strip: "w-full h-auto rounded-16 border border-stroke-weak shadow-card",
+};
+const stageClass: Record<Fit, string> = {
+	screen: "",
+	portrait: "flex items-start justify-center px-6 pt-6 sm:pt-8",
+	strip: "flex items-center px-4 sm:px-8",
 };
 ---
 
-<section id="features" class="border-b border-stroke-weaker">
-	<div class="reveal mx-auto w-full max-w-6xl px-6 py-20 md:py-28">
-		<div class="text-center mb-12 md:mb-16">
-			<span class="text-3xs uppercase tracking-uppercase text-fg-faint">What's inside</span>
-			<h2 class="font-display mt-3 text-xl md:text-2xl tracking-display">Everything serious traders need.</h2>
+<section id="features">
+	<div class="@container mx-auto w-full max-w-site px-5 py-16 sm:px-8 md:py-24">
+		<div class="reveal">
+			<SectionHeader label="Features">Built for how you trade</SectionHeader>
 		</div>
 
-		<div class="grid grid-cols-2 md:grid-cols-4 gap-px bg-stroke-weaker rounded-xs overflow-hidden border border-stroke-weak">
-			{features.map((f) => (
-				<div class="bg-surface p-5 md:p-7 group hover:bg-overlay transition-colors duration-200">
-					<div class="h-9 w-9 rounded-xs bg-fill-weaker flex items-center justify-center text-fg-muted group-hover:text-fg transition-colors duration-200">
-						<svg width="16" height="16" viewBox="0 0 256 256" aria-hidden="true" set:html={iconSvg[f.icon]} />
+		<div class="mt-10 grid grid-cols-1 gap-6 md:mt-12 @split:grid-cols-12 @split:gap-10" data-tabs>
+			<div
+				role="tablist"
+				aria-label="Features"
+				aria-orientation="vertical"
+				data-tablist
+				class="reveal-stagger -mx-5 flex gap-2 overflow-x-auto px-5 pb-1 scrollbar-none sm:-mx-8 sm:px-8 @split:mx-0 @split:flex-col @split:self-start @split:overflow-visible @split:px-0 @split:col-span-5"
+			>
+				{visuals.map((feature, index) => (
+					<button
+						type="button"
+						role="tab"
+						id={`feature-tab-${feature.id}`}
+						aria-controls={`feature-panel-${feature.id}`}
+						aria-selected={index === 0 ? "true" : "false"}
+						tabindex={index === 0 ? undefined : "-1"}
+						class="feature-tab press flex min-h-11 shrink-0 items-center gap-3 rounded-16 border border-transparent px-4 py-2.5 text-left text-sm text-fg-subtle hover:text-fg @split:min-h-16 @split:px-5 @split:text-base"
+					>
+						<span class="feature-tab-icon inline-flex shrink-0 text-fg-faint" set:html={inlineIcon(feature.icon, 20)} />
+						<span class="whitespace-nowrap @split:whitespace-normal">{feature.title}</span>
+					</button>
+				))}
+			</div>
+
+			<div class="reveal @split:col-span-7">
+				{visuals.map((feature, index) => (
+					<div
+						id={`feature-panel-${feature.id}`}
+						role="tabpanel"
+						aria-labelledby={`feature-tab-${feature.id}`}
+						data-tabpanel
+						hidden={index > 0}
+					>
+						<h3 class="text-h3 font-medium">{feature.title}</h3>
+						<p class="mt-2 max-w-xl text-base text-fg-muted">{feature.desc}</p>
+						<figure class="mt-6">
+							<div class={`surface-dark edge relative isolate aspect-[16/10] overflow-hidden rounded-24 bg-window shadow-card ${stageClass[feature.fit]}`}>
+								<div class="hero-ambient opacity-70" aria-hidden="true"></div>
+								<picture class="contents">
+									<source srcset={feature.avif.src} type="image/avif" />
+									<img
+										src={feature.webp.src}
+										width={feature.webp.width}
+										height={feature.webp.height}
+										alt={feature.alt}
+										loading="lazy"
+										decoding="async"
+										class={imageClass[feature.fit]}
+									/>
+								</picture>
+							</div>
+							<figcaption class="mt-3 font-mono text-xs text-fg-subtle">{feature.caption}</figcaption>
+						</figure>
 					</div>
-					<h3 class="mt-5 text-sm font-medium">{f.title}</h3>
-					<p class="mt-1.5 text-xs text-fg-muted leading-relaxed">{f.desc}</p>
-				</div>
-			))}
+				))}
+			</div>
 		</div>
 	</div>
 </section>

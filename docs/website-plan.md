@@ -26,6 +26,8 @@
 
 **本版不做：** 日语页（以后的版本可以加，日本不再受阻）；带声音的自动播放；把 Agent 录屏当首屏内容；Open Book 实时画布（推迟到阶段 4，默认关闭）；官网组件里的公司 Logo 与外链币标；表单与邮件订阅；分析 SDK、Cookie 与浏览器存储；写死的杠杆倍数；投资人、用户数、审计徽标与媒体墙（{BRAND_NAME} 目前一样都没有）；成交额一类的证明数字（Sairn builder code 的公开聚合数据源没有实测，数字低时反而减分，以后的版本再议）。
 
+**2026-10-26 实施修订：** 首页按本文实施时有以下偏离，各节在原文之后加了同日的修订说明，原文保留：首屏文案与预览页签（第 4 节 01）；新增 `#account` 区块（01 之后）；02 加了统计带并改为可暂停的连续滚动行情条；03 的市场表显示实时数字；04 改为带真实截图的页签；08 的 Fig. 1 改用 Phosphor 图标并加 Official links；Open Book 作为首屏预览的非默认页签上线（第 6 节、第 10 节阶段 4）；运行时请求覆盖 5 个 dex（第 7 节）；营销强调色改为琥珀（第 6 节、[ADR 0043](adr/0043-website-marketing-accent.md)）。
+
 **需要运营方提供的：** 视频本身（第 5 节）；AWS 与 Cloudflare 上的操作；Hyperliquid `/apps` 收录申请；阶段 2 之前的一次真实卡购买与一次主网自动存款；第 11 节的几项确认与决定。
 
 ## 1 2026-10-25 运营方决定与旧规划的关系
@@ -119,6 +121,15 @@
 - 内容：第 3 节的文案。
 - 视觉：一张真实终端截图：未登录的 BTC 页上打开市场选择器，停在 Traditional Finance 的 Pre-IPO 页签，一张图同时看到品类页签与 OpenAI、Anthropic 两行；所选市场仍是 BTC，不会弹出 HIP-3 免责弹窗。`<picture>` 分手机与桌面两份，AVIF/WebP，写明宽高；说明行 'Screenshot of {APP_HOST}, signed out · <date> UTC'。H1 是 LCP 元素，不为动画隐藏。
 - 阶段 1 由实施方用无头浏览器按现有 1600×900 JPEG 规格重拍这一张，不沿用 BTC-USDC 旧图，并去掉假浏览器框；阶段 2 改由采集脚本生成（第 6 节）。
+- 2026-10-26 实施修订：
+  - H1 仍以 'Every market on Hyperliquid. One account, 24/7.' 为可访问名称；可见部分的「Every market」是轮播词（Crypto、US stocks、Indices、Commodities、FX、Pre-IPO，最后停回 Every market），减少动态时直接显示终态。
+  - 首段改为 'Trade crypto, stock and pre-IPO perpetuals on Hyperliquid. Sign in with email or your wallet. Your funds stay in your own Hyperliquid account.'，后接 'Pre-IPO perpetuals such as' 与 OpenAI、Anthropic 两个深链小按钮（`utm_content=hero_market`，读屏名称带部署方）。
+  - CTA 组：'Start trading' 与 'Browse markets ↓'，下方是一行正文字号的执行事实 'Orders execute on Hyperliquid's on-chain order books. {BRAND_NAME} provides the interface.'，再下是风险句与第三方部署说明（R6）。
+  - 预览区是 'Terminal'（默认，真实截图）与 'Live market'（Open Book 画布）两个页签；预览之下是三条理由：'Email or wallet'、'Six languages, including right-to-left'、'Desktop and mobile trading'。
+
+**01b 账户与执行（`#account`，'Your account. Hyperliquid execution.'）**（2026-10-26 实施修订新增）
+- 目的：在行情之前先回答「资金在谁手里、订单在哪里执行、{BRAND_NAME} 提供什么」。
+- 内容：三张卡 'Funds in your own account'、'Signed for your account'（按登录方式写签名方，R9）、'One order book per market'（只限「同一市场」共享订单簿，附机制链接）；左栏一句 '{BRAND_NAME} is the interface; Hyperliquid matches and settles every trade.' 并链到 08。
 
 **02 行情条（'Markets now'）**
 - 目的：证明市场是真实的、范围很广，一点就能进到终端里的那个市场。
@@ -126,6 +137,9 @@
 - 每张卡：名称（配置里按部署方写法的公司或资产名，例如 'Anthropic'；下面一行小字是 displayName）；HIP-3 卡写部署方 fullName（'by EntropyIO'）；标记价；24h 涨跌（带符号和 ▲▼）。Pre-IPO 卡的主数字是隐含估值，例如 'US$1.90T implied valuation'，用 Big.js 按 `deployers.ts` 的单位算，单位缺失时整张卡不显示数字；标记价放第二行。不显示杠杆。
 - 标题行：'Hyperliquid public data · mark prices · as of hh:mm UTC'，旁边 'Pause updates'（`aria-pressed`）；下一行：'Stock and pre-IPO markets are perpetuals run by third-party deployers such as {DEPLOYERS}. They are not shares.'
 - 视觉：横向滚动加吸附，不做自动滚动的跑马灯，数字用 Plex Mono。
+- 2026-10-26 实施修订：
+  - 行情条改为连续滚动：实时脚本在有数据、没有减少动态偏好时才把它切换为连续滚动，'Pause updates' 同时暂停数据与滚动（WCAG 2.2.2）；没有 JS 或减少动态时仍是横向滚动加吸附。原文「不做自动滚动的跑马灯」由此作废。
+  - 行情条之上加一条统计带，分两组：'Market catalogue'（构建时快照的未下架永续市场数与 HIP-3 部署方数，写快照日期）与 'Live activity'（只统计页面展示市场所在的 venue 的 24h 成交额与未平仓量，写 as of 时间）；下面一个可展开的口径说明，写明两组的来源与计算方法，并说明活动量不等于深度。这些是公共接口的聚合数，不是 {BRAND_NAME} 的成交额，与第 0 节不放成交额证明数字的决定不冲突。
 - 02 与 03 共用一个 `[data-cta-group]`，风险句放在 03 的事实句之后。没有 JS 或数据失败时，名称和链接照常显示，数字位留空。
 
 **03 全部市场（`#markets`，'Every market, one account'）**
@@ -133,6 +147,7 @@
 - 内容：6 张品类卡，依次为 Crypto（主 dex 永续，与终端的 crypto 范围一致；另写一行 'Spot in the same workspace'）、Stocks、Indices、Commodities、FX、Pre-IPO；Rates 有未下架市场时（2026-10-25 Paragon 有 3 个）再加一张。每张卡：
   - 构建时的未下架市场数；
   - 3–4 个示例：先取 `FEATURED_MARKETS`，不够再按快照里的 24h 成交额补；名称加部署方，深链到 `/trade/<coin>`，不显示实时数字；
+  - （2026-10-26 实施修订：品类卡改为页签加市场表，表格列为 Market、Deployer、'Mark · 24h' 与终端链接，显示与 02 同一套校验与新鲜度规则下的实时标记价和 24h 涨跌；数据失败时数字位留空，规则同第 7 节。）
   - 'Run by …' 一行，部署方名取 `perpDexs` 的 fullName。
 - 文案：H2 'Every market, one account'；Intro 'Trade 24/7 across crypto and traditional markets from one account.'
 - Pre-IPO 说明卡：
@@ -154,6 +169,7 @@
   - 'Trade from your phone': 'A dedicated mobile layout that you can install as an app.'
   - 'More in the terminal': 'Earn, vaults, staking, referrals and a leaderboard.'（不写收益率，不写盈亏）
 - 卡片不点名 Privy 与钱包品牌；签名方的说明放 FAQ 与 08（R9）。
+- 2026-10-26 实施修订：6 张卡改为页签（桌面竖排、手机横排），每个页签配一张未登录的真实终端截图（`scripts/capture-features.mjs` 采集、`scripts/optimize-images.mjs` 编码），标题与正文同上；选中页签的图标用营销强调色（第 6 节）。
 
 **05 视频位** 见第 5 节。视频交付之前，页面上没有这个区块，也不放占位图。
 
@@ -171,6 +187,7 @@
 - 上半是流程图 Fig. 1，标注 'Illustration'：浏览器 → 签名（邮箱：Privy 为账户创建的钱包；外部钱包：你批准的交易密钥）→ Hyperliquid 订单簿 → 在你自己的 Hyperliquid 地址结算。{BRAND_NAME} 的方框只标「界面 + builder fee」。节点图标只用 `brand/loader/glyphs/mono/`。
 - 下半是清单：非托管（条款 §1.3）；独立界面，不是 Hyperliquid Corp. 或 Hyper Foundation（条款 §1.1）；提款与划转总要由拥有账户的钱包签名，交易密钥不能转出资金（发布前按当时代码复核）；本站（sairn.ai）只连 `api.hyperliquid.xyz`，不加分析工具；'We will never ask for your private key, seed phrase, verification code or password.'；官方网址，纯文本，从 `brand.json` 的 `domains.primary` 读取。
 - 不放审计、投资人、用户数、媒体、状态徽标或成交额数字。
+- 2026-10-26 实施修订：Fig. 1 的节点图标改用 Phosphor（与全站图标一致，构建时内联），不再用 `brand/loader/glyphs/mono/`；清单旁加 'Official links' 卡片，列出 `brand.json` `domains.primary` 的每个主机及用途，提醒访客核对地址栏。
 
 **09 FAQ（`#faq`）与结尾 CTA**
 - FAQ 由 `config/faq.ts` 同时生成页面和 FAQPage：Who holds my funds? · What can I trade? · Am I buying shares when I trade a stock or pre-IPO market?（答：没有，R2）· Who runs HIP-3 markets? · How is a pre-IPO price quoted?（按部署方写单位与隐含估值）· Can I trade when the stock market is closed? · What does a trade cost? · What do I need to deposit? · How does email sign-in work?（这里写 Privy 与签名方）· Which order types are supported? · How does leverage work?（讲保证金、逐仓与清算，不写倍数）· Where am I not able to trade?（引条款 §2.2 与 §2.3 的禁止规避）· Where does the live data come from? · Is this investment advice?
@@ -223,12 +240,15 @@
 
 - 画布与表面：页面用石墨色 #12131a；产品窗口和截图框用终端的 #0F1A1F，浮层 #212d33。只做深色主题。`seo.ts` 的 themeColor 改为读取 `brand.json` 的 `pwa.themeColor`。
 - 强调色：`--action` 保持中性，用于所有填充按钮；薄荷 `--signal` 只用于焦点、链接、Logo 与每节最多一个强调词；琥珀只用在 Logo 里（ADR 0028）；涨跌色复制终端令牌，由跨应用测试钉住。
+  - 2026-10-26 实施修订（运营方决定，[ADR 0043](adr/0043-website-marketing-accent.md)）：营销强调改用官网专用角色 `--marketing-accent`（`text-marketing-accent`），取 Logo 的选择琥珀 `#e6b766`，来源 `brand.json` 的 `websiteColors.dark.marketingAccent`（必须等于 `logo.dark.choice`）。用于首屏轮播词、市场区「one account」、FAQ 结尾「One account.」、宣传图标（首屏理由、`#account` 卡、安全清单的勾、Official links 盾牌、Fig. 1 节点）、功能页签选中图标、Fig. 1 连线与箭头，以及氛围光（`--glow-accent` 10%、`--glow-accent-faint` 5%）。薄荷 `--signal` 在官网只留焦点环、`::selection`、正文链接、实时指示与 Logo，不再做强调词。琥珀不得用于警告、风险与状态，官网组件不使用警告色。上一条里「每节最多一个强调词用薄荷」「琥珀只用在 Logo 里」两句对官网作废；终端仍按 ADR 0028。
+  - 2026-10-26 实施修订（运营方反馈「太古老、太暗」后选定方向，[ADR 0044](adr/0044-website-light-default-theme.md)，待看截图确认）：官网默认改为浅色。画布 `#fafaf5`（套件 `paper-50`），条带 `#f5f4ee`，卡片白色加 1px 墨色细线与柔和多层阴影；标题用 Logo 字标墨色 `#08262e`，正文用中性 `--action` 墨色（80% / 70% / 65%）；营销强调用浅色琥珀 `#99621f`；涨跌色在浅色表面用终端浅色值。首屏预览与功能截图仍是深色产品窗口（`.surface-dark`，`#0f1a1f`）。原深色令牌保留在 `:root[data-theme="dark"]`，`?theme=dark` 切换供对比。第一条「只做深色主题」与 themeColor 读 `pwa.themeColor` 两句对官网作废（浅色读 `pwa.lightThemeColor`）。
 - 字体：IBM Plex Sans Variable 5.2.8（与终端同版本）用于标题与正文；IBM Plex Mono 用于数字、代码与标签；去掉 Inter 与 Instrument Serif；数字一律 `tabular-nums`。
-- 仿冒防护：官网色与 Hyperliquid 的 #97fce3、#03211c、#23524C 的 ΔE76 ≥15（近黑中性色豁免），扩展 `brand-contract.test.mjs`；该测试现在直接读 `Hero.astro`、`Markets.astro` 与 `--bg-*` 变量，组件与令牌改名时同步改。
+- 仿冒防护：官网色与 Hyperliquid 的 #97fce3、#03211c、#23524C 的 ΔE76 ≥15（近黑中性色豁免），扩展 `brand-contract.test.mjs`；该测试现在直接读 `Hero.astro`、`Markets.astro` 与 `--bg-*` 变量，组件与令牌改名时同步改。（2026-10-26 补记：共享的 `--signal` 与 `--signal-hover` 仍是登记理由的待决例外（ΔE 8.5 / 11.7）；营销强调已改为琥珀，ΔE76 ≥ 63，测试另外钉住琥珀的色差与 AA 对比度。）
 - 图像：只用真实界面截图（以及运营方的视频），不用素材库 3D、AI 渲染或币标球；官网自己的组件不放公司 Logo，市场只用文字，CSP 的 `img-src` 因此保持 `'self' data:`。终端界面自带的市场图标（可能是公司 Logo，未核实）属于真实界面，截图里保留。
 - 截图采集：`capture-ui.mjs` 未登录实拍 {APP_HOST}，记录 URL、UTC 时间与 `build-meta.json`。只拍主 dex 市场页与市场选择器，不触发 HIP-3 免责弹窗；以后要拍单个 HIP-3 市场页时，由运营方在一次性浏览器配置里自己勾选免责声明后再采集。DOM 守卫拦钱包地址、非零余额（零值占位放行）、测试或开发标记，以及画面里打开的阻塞对话框；不拦 `xyz:` 前缀、部署方名与杠杆控件：截图是带日期的真实界面，杠杆规则只约束文字。
 - 动效：从 `brand/loader/sairn-motion.tokens.json` 读令牌并加等值测试；优先用 CSS，只动 transform 与 opacity；元素的默认样式就是终态（修掉 `.reveal` 默认 opacity 0）；减少动态时停下全部动效；不做滚动劫持和视差；实时数字更新时不做滚动动画（不引入 NumberFlow）；不在页面加载时播放 `brand-intro`。
 - Open Book：推迟到阶段 4，用构建开关控制，默认关闭。开启之前要完成 24 h 浸泡测试（V2）、真机 Safari/iOS 与中端 Android 检查，并且只放在 02 以下作为附加视图。止损线不变：开关一关，就退回静态站。
+  - 2026-10-26 实施修订：Open Book 已作为首屏预览的非默认页签 'Live market' 上线到本次改版（不是 02 以下，也没有构建开关）：只有页签打开、画布在屏幕上且页面可见时才连接公共 WebSocket `wss://api.hyperliquid.xyz/ws`（一个币种的 `l2Book`、`bbo` 与 `trades`），减少动态或省流量模式下先显示海报、由访客点开始；以后上 meta CSP 时 `connect-src` 要同时放行这个 `wss://` 地址（第 8 节）。画布带价格轴与时间轴、当前价格线和图例（挂单亮度、买入/卖出成交、中间价），并写明档数与限制。上面列的 24 h 浸泡测试与真机检查，本文没有核实是否已完成，发布前须在任务记录中补齐或说明。
 
 ## 7 实时数据
 
@@ -245,6 +265,7 @@
 - 快照：`apps/website/src/data/market-structure.json` 由 `pnpm --filter @sairn/website markets:snapshot` 生成并提交，带 `fetchedAt`，不手改；`fetchedAt` 超过 7 天时构建失败。测试断言其中没有 `/0x[0-9a-fA-F]{40}/`。每次发布前刷新快照，并在任务记录里写明 diff。
 - 每日检查：GitHub Actions 每天跑一次 `markets:snapshot --check`（约 1 分钟，每月约 30 分钟，在 3,000 分钟的额度内）。`FEATURED_MARKETS` 或已发布的 Pre-IPO 行下架、改分类时检查失败并通知运营方；下一次构建也会失败。新工作流同步写进 `scripts/ci-workflows.test.mjs`。
 - 数据体积：接口不压缩（2026-10-25 带 `Accept-Encoding: gzip, br` 实测也没有 `content-encoding`）；主 dex 约 72 KB、xyz 约 61 KB、io 约 7 KB，一轮约 140 KB。实时数据不计入交互前预算，首轮在 `load` 之后才发，稳态约 70 KB/min；手机 ≤120 KB/min、桌面 ≤400 KB/min 的上限保留，超出时拉长间隔。备选：主 dex 改用 `allMids`（权重 2，约 25 KB，但没有 24h 涨跌）；阶段 3 实测只订阅展示币种的 WebSocket `activeAssetCtx`。
+- 2026-10-26 实施修订：02 的行情卡与 03 的市场表共用一个请求计划，覆盖页面上所有市场所在的 dex：主 dex、xyz、io、para、mkts 共 5 个（上表「实时数值」一行原写 3 个）。每次 `metaAndAssetCtxs` 权重 20，60 s 滑动窗口内最多 3 次，所以请求间隔至少 20 s，每个 dex 的刷新周期按下一条的公式为 200 s；统计带的 Live activity 只读同一批响应，不另发请求。
 - 刷新周期：首轮各 dex 同时请求，之后每个 dex 间隔 max(120 s, 请求总数 × 40 s)，请求总数含主 dex；退避重试计入同一个 60 s 滑动窗口，合计 ≤60 权重/分钟（Hyperliquid 单 IP 上限 1200 的 5%），由单测覆盖。（2026-10-26 实施时修订：原定 ≤30 权重/分钟只能每 60 s 发一次请求，行情条要约 2 分钟才出齐数字。）只有持锁的标签页发请求；页面隐藏或区块离屏 30 s 后停止。
 - 校验（fail closed）：数值必须是十进制字符串，`markPx`、`prevDayPx` 大于 0；coin 必须在快照里，dex 与请求一致；运行时读到已下架的市场，在 02 与 03 当场移除；涨跌、隐含估值与求和用 Big.js（`big.js` 7.0.1，与终端同版本），精度按 Hyperliquid 的有效数字规则；不显示 `maxLeverage`。
 - 新鲜度：以 `performance.now()` 计接收时间，不拿墙钟比较交易所时间。超过两个刷新周期再加 30 s 仍没有有效数据时，移除全部数字，数字位留出固定宽度的空白，并设 `aria-busy` 与读屏专用说明；不显示错误原文、'offline'、'—' 或 '$0'。
@@ -262,6 +283,8 @@
 - SEO：全部文案写在静态 HTML 里；结构化数据输出 Organization、WebSite、SoftwareApplication、FAQPage，视频上线后加 VideoObject；`seo.ts` 保留 `hip-3` 关键词，并加 'stock perpetuals'、'pre-IPO perpetuals'；不用「How to buy X stock」一类的标题；Search Console 与 Bing 用 DNS TXT 验证、`/apps` 收录申请，都由运营方操作。
 - 安全：随 Astro 6 输出 meta CSP：`connect-src 'self' https://api.hyperliquid.xyz`（以后用 WebSocket 时再加 `wss://`）、`media-src 'self'`、`img-src 'self' data:`、`font-src 'self'`；HSTS、`frame-ancestors`、nosniff 与 Referrer-Policy 靠 CloudFront 响应头策略，由运营方在 AWS 操作。
 - 衡量：官网指向终端的每个链接（CTA、首屏点名市场、行情卡、品类示例、`/markets/`）都带 `utm_source=website&utm_medium=site&utm_campaign=en_home&utm_content=<槽位>`，R6 的测试也按这个参数找链接。官网不写 Cookie，不用浏览器存储，不做地址级指标。
+
+**2026-10-26 实施修订（平台升级）。** 上面「版本路径」一条已被取代：官网一次性升到 Astro 7.4.2（Vite 8 / Rolldown、Rust 编译器）、`tailwindcss` 与 `@tailwindcss/vite` 4.3.3、`@astrojs/sitemap` 3.7.4，均固定版本；`pnpm-lock.yaml` 只改官网自己的 importer，终端与 packages 的解析不变。Astro 7.4.2 要求 Node ≥22.23.4（在 22.18 上直接拒绝启动），官网 `package.json` 写 `engines`，两份官网工作流改用 Node 22.23.4，其余工作流仍是 22.15.0（ADR 0016 同日补记）。按 v6/v7 升级指南保留 `compressHTML: true`（v7 默认的 `'jsx'` 会吞掉行内元素与换行文字之间的空格）、改用 `astro/zod` 与 `z.looseObject()`、关闭 Shiki（内联样式过不了 CSP）。实际采用的新特性：Fonts API 从本地 Fontsource 文件自托管两款字体并只预加载 Plex Sans，但关闭了自动生成的回退字体度量（Astro 7.4.2 生成的回退字体不带子集的 `unicode-range`，会接管链接箭头 → 与涨跌 ▲▼ 的字形，截图可见）；CSP API 在每页输出上面「安全」一条的 meta CSP，`connect-src` 已加 `wss://api.hyperliquid.xyz`（Open Book 用 WebSocket），`script-src` / `style-src` 只有 `'self'` 与哈希，`Base.astro` 的两个内联块经 `Astro.csp` 加哈希；meta 写在 `<head>` 末尾，对其后的样式表、脚本、请求与 WebSocket 生效，`frame-ancestors` 等仍只能靠 CloudFront 响应头。动效与排版：跨文档 View Transitions（200 ms 根淡入淡出、页头不动、不用 `<ClientRouter />`）、`sibling-index()` 错开显现（放在 `@supports` 之后）、`@starting-style` 页签与折叠内容进入、`::details-content` 加 `interpolate-size` 的平滑展开（第 6 节「只动 transform 与 opacity」的唯一登记例外，由运营方本次要求）、容器查询、`color-mix()` 派生光晕色、标题 `balance` 与正文 `pretty` 换行、Tailwind 4.3 的 `scrollbar-none`。凡是会动的都在 `prefers-reduced-motion: no-preference` 之内。brotli 体积（首页 HTML / 全部 CSS / 全部 JS / 字体）由 18.1 / 8.1 / 13.4 / 60.4 kB 变为 18.9 / 8.4 / 13.2 / 60.4 kB（1 kB = 1000 字节），仍在本节预算之内。细节见 `apps/website/README.md` 的 Platform 一节。
 
 ## 9 文案准确性规则
 
@@ -295,6 +318,8 @@ copy-contract 的改动：删除旧规划第 18 节拟议过、但从未实施�
 | 2b 搜索内容（不依赖视频，可与阶段 2 并行） | `/markets/` 与逐市场页；`/learn/` 的 HIP-3 与 Pre-IPO 两篇；`/llms.txt` | `/markets/` 与逐市场页没有已下架市场；站点地图包含它们；axe 通过 |
 | 3 视频（视频交付后） | 05 视频位，按运营方选的放法；VideoObject；S3 上传与清单；实测 WebSocket `activeAssetCtx` | 用 ffprobe 核对第 5 节规格（含音频编码与响度）；字幕与文字稿齐全；键盘可以播放和暂停；有声内容不自动播放 |
 | 4 可选：Open Book | 按旧规划第 7 节重写设计后实现，放在构建开关之后，默认关闭 | 24 h 浸泡测试、真机 Safari/iOS 与中端 Android 检查通过，并且不突破第 8 节的预算，之后才默认开启 |
+
+2026-10-26 实施修订：阶段 4 的 Open Book 已随首页改版提前实现，形式是首屏预览的非默认页签（第 6 节），没有构建开关；该行的验收项仍然适用，结果记入任务记录。
 
 **阶段 1 交付物：**
 - 首屏换成第 3 节的文案，重拍首屏截图（第 4 节 01）；
@@ -332,3 +357,5 @@ copy-contract 的改动：删除旧规划第 18 节拟议过、但从未实施�
 | 6 | 隐私政策是否加一句用途「官网聚合到达统计」（改 `legal/*.md`，按 W1 由运营方书面确认） | 加 |
 | 7 | 确认 {BRAND_NAME} 与收录的部署方（XYZ、Paragon、EntropyIO、Markets By Kinetiq）以及被参考的公司之间没有赞助、合作或付费关系 | 阶段 1 上线前确认；确认之前 'independent' 只按条款 §1.4 的含义使用 |
 | 8 | 选择 {BRAND_NAME} 的理由：本文只核实到界面语言一项（第 3 节）；如有更强、可核实的理由，提供后放进首屏副标题与 04 的第一张卡 | 没有时按第 3 节上线 |
+
+**2026-10-26 实施修订。** 平台升级后与第 3 项相关的两点：一是官网页面已自带 meta CSP（第 8 节），给 sairn.ai 分发挂响应头策略时，CSP 头应与 meta 一致（以构建产物里的 meta 为准），并另加 meta 表达不了的 `frame-ancestors 'none'`；两者同时存在时浏览器取交集，不一致会挡掉页面自己的脚本。二是发布用的构建机或 CI 必须是 Node ≥22.23.4。另有一项不需运营方决定、但要跟进的技术事项：Astro 修复回退字体缺 `unicode-range` 之后，再打开 Fonts API 的回退字体度量。

@@ -3,97 +3,200 @@ import desktopScreenshot from "@/assets/terminal-desktop.jpeg";
 import mobileScreenshot from "@/assets/terminal-mobile.jpeg";
 import capture from "@/assets/terminal-capture.json";
 import { APP_HOST, BRAND_NAME } from "@/config/brand";
-import { formatUtcTimestamp, joinNames, RESTRICTED_SHORT, RISK_PATH, RISK_SENTENCE, TERMS_RESTRICTED_PATH } from "@/config/copy";
+import {
+	formatUtcTimestamp,
+	HERO_HEADLINE,
+	HERO_REEL_WORDS,
+	joinNames,
+	RESTRICTED_SHORT,
+	RISK_PATH,
+	RISK_SENTENCE,
+	TERMS_RESTRICTED_PATH,
+} from "@/config/copy";
 import { getDeployerFullNames, getFeaturedMarkets, getHeroMarkets } from "@/lib/markets/structure";
 import { terminalTradeUrl } from "@/lib/terminal-links";
+import envelopeIcon from "@phosphor-icons/core/assets/regular/envelope-simple.svg?raw";
+import translateIcon from "@phosphor-icons/core/assets/regular/translate.svg?raw";
+import devicesIcon from "@phosphor-icons/core/assets/regular/devices.svg?raw";
+import OpenBook from "./OpenBook.astro";
 
 const heroMarkets = getHeroMarkets();
 const heroDeployers = joinNames(getDeployerFullNames(getFeaturedMarkets().map((market) => market.coin)));
 const startUrl = terminalTradeUrl("BTC", "hero_cta");
-function listSeparator(index: number, count: number): string {
-	if (index === 0) return "";
-	return index === count - 1 ? " and " : ", ";
+// Review 2026-10-26 item 6: three reasons next to the preview, each checked against the terminal
+// (apps/terminal/src/config/i18n.ts lists the six languages; the terminal switches to its mobile layout at 1000px).
+const benefits = [
+	{ title: "Email or wallet", desc: "Start with an email address, or connect the wallet you already use.", icon: envelopeIcon },
+	{
+		title: "Six languages, including right-to-left",
+		desc: "English, 简体中文, हिन्दी, Español, Français and العربية.",
+		icon: translateIcon,
+	},
+	{
+		title: "Desktop and mobile trading",
+		desc: "A full desktop workspace and a dedicated mobile layout you can install as an app.",
+		icon: devicesIcon,
+	},
+];
+
+function inlineIcon(svg: string, size: number): string {
+	return svg.replace("<svg ", `<svg width="${size}" height="${size}" aria-hidden="true" focusable="false" `);
 }
 
 const caption = `Screenshot of ${APP_HOST}, signed out · ${formatUtcTimestamp(capture.capturedAt)}`;
+const [firstLine] = HERO_HEADLINE.split(" on ");
+if (HERO_REEL_WORDS[0] !== firstLine || HERO_REEL_WORDS.at(-1) !== firstLine) {
+	throw new Error("the hero reel must start and end on the headline's first words");
+}
 ---
 
-<section class="relative overflow-hidden border-b border-stroke-weaker">
-	<div class="absolute inset-0 bg-grid opacity-40 [mask-image:radial-gradient(ellipse_at_center,black,transparent_75%)]"></div>
-
-	<div class="relative mx-auto w-full max-w-6xl px-5 sm:px-6 pt-14 pb-16 md:pt-24 md:pb-24">
-		<div class="flex flex-col items-center text-center">
-			<p class="text-2xs uppercase tracking-uppercase text-fg-faint">Independent trading terminal for Hyperliquid</p>
-
-			<h1 class="font-display mt-6 md:mt-7 max-w-3xl text-3xl md:text-4xl leading-[1.02] tracking-display">
-				Every market on <span class="text-signal">Hyperliquid</span>.<br />
-				One account, 24/7.
-			</h1>
-
-			<p class="mt-5 md:mt-6 max-w-2xl text-sm md:text-base text-fg-muted leading-relaxed">
-				Sign in with email or your own wallet. Trade perpetuals on crypto, US stocks, indices, commodities, FX and
-				pre-IPO companies such as {heroMarkets.map((market, index) => [
-					listSeparator(index, heroMarkets.length),
-					<a
-						href={terminalTradeUrl(market.coin, "hero_market")}
-						class="text-fg underline underline-offset-4 decoration-stroke-strong hover:decoration-fg transition-colors duration-150"
-					>{market.name}</a>,
-				])}, plus spot.
+<section aria-labelledby="hero-title" class="relative isolate overflow-hidden">
+	<div class="hero-ambient" aria-hidden="true"></div>
+	<div class="mx-auto w-full max-w-site px-5 sm:px-8">
+		<div class="pt-6 pb-8 sm:pt-12 md:pt-16 md:pb-12 lg:pt-16">
+			<p class="edge edge-panel inline-flex items-center rounded-full px-3 py-1 font-mono text-3xs tracking-normal text-fg-muted uppercase sm:px-3.5 sm:py-1.5 sm:text-2xs sm:tracking-label">
+				Independent trading terminal for Hyperliquid
 			</p>
 
-			<div data-cta-group class="mt-8 md:mt-10 flex w-full max-w-2xl flex-col items-center">
-				<div class="flex w-full flex-col items-stretch gap-3 sm:w-auto sm:flex-row sm:items-center">
-					<a
-						href={startUrl}
-						class="press inline-flex h-11 items-center justify-center gap-2 rounded-xs bg-action px-5 text-sm font-medium text-on-action transition-[background-color,transform] duration-200 hover:bg-action-hover active:bg-action-active"
-					>
-						Start trading
-						<svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
-							<path d="M3 9l6-6M5 3h4v4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-						</svg>
-					</a>
-					<a
-						href="#markets"
-						class="press inline-flex h-11 items-center justify-center gap-2 rounded-xs border border-stroke-weak px-5 text-sm text-fg-muted hover:text-fg hover:border-stroke-strong transition-colors duration-200"
-					>
-						Browse markets ↓
-					</a>
+			<h1 id="hero-title" class="mt-4 text-display font-medium sm:mt-6">
+				<span class="sr-only">{HERO_HEADLINE}</span>
+				<span aria-hidden="true" class="block">
+					<span class="reel text-marketing-accent">
+						<span class="reel-track">{HERO_REEL_WORDS.map((word) => <span>{word}</span>)}</span>
+					</span>
+					on Hyperliquid.
+					<span class="hero-h1-secondary text-fg-subtle">One account, 24/7.</span>
+				</span>
+			</h1>
+
+			<div class="mt-5 grid grid-cols-1 gap-6 sm:mt-10 md:mt-12 lg:grid-cols-12 lg:items-start lg:gap-10">
+				<div class="lg:col-span-6">
+					<p class="max-w-xl text-base text-fg-muted sm:text-md">
+						Trade crypto, stock and pre-IPO perpetuals on Hyperliquid. Sign in with email or your wallet.
+						<span class="text-fg">Your funds stay in your own Hyperliquid account.</span>
+					</p>
+					<p class="mt-4 flex flex-wrap items-center gap-x-2 gap-y-2 text-sm text-fg-muted sm:mt-5">
+						<span class="sm:hidden">Pre-IPO:</span><span class="max-sm:hidden">Pre-IPO perpetuals such as</span>
+						{heroMarkets.map((market) => (
+							<a
+								href={terminalTradeUrl(market.coin, "hero_market")}
+								class="press inline-flex min-h-11 items-center gap-1.5 rounded-full border border-stroke-weak bg-panel px-3 text-sm font-medium shadow-soft sm:px-3.5 text-fg hover:border-stroke-strong active:bg-fill-weak sm:min-h-9"
+							>
+								{market.name}<span class="sr-only"> pre-IPO perpetual, by {market.deployerFullName}</span>
+								<svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+									<path d="M3 9l6-6M5 3h4v4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+								</svg>
+							</a>
+						))}
+					</p>
 				</div>
 
-				<p class="mt-6 text-xs md:text-sm text-fg-muted leading-relaxed">
-					{RISK_SENTENCE} Stock and pre-IPO markets are perpetuals run by third-party deployers such as {heroDeployers},
-					not shares; outside exchange hours their prices come from the deployer.
-					<a href={RISK_PATH} class="text-fg underline underline-offset-2 hover:text-fg-muted transition-colors duration-150">Risk disclosure →</a>
-				</p>
+				<div data-cta-group class="flex flex-col lg:col-span-6 lg:col-start-7 xl:col-span-5 xl:col-start-8">
+					<div class="grid grid-cols-2 gap-3 sm:flex sm:flex-row">
+						<a
+							href={startUrl}
+							class="press inline-flex h-12 items-center justify-center gap-2 rounded-8 bg-action px-4 text-base font-medium text-on-action hover:bg-action-hover active:bg-action-active sm:px-6"
+						>
+							Start trading
+							<svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+								<path d="M3 9l6-6M5 3h4v4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+							</svg>
+						</a>
+						<a
+							href="#markets"
+							class="press inline-flex h-12 items-center justify-center gap-2 rounded-8 border border-stroke-weak bg-panel px-4 text-base text-fg-muted shadow-soft hover:border-stroke-strong hover:text-fg active:bg-fill-weak sm:px-6"
+						>
+							Browse markets ↓
+						</a>
+					</div>
 
-				<p class="mt-3 text-2xs text-fg-subtle">
-					Funds stay in your own Hyperliquid account · 0.01% builder fee ·
-					<a href={TERMS_RESTRICTED_PATH} class="underline underline-offset-2 hover:text-fg-muted transition-colors duration-150">{RESTRICTED_SHORT}</a>
-				</p>
+					<p class="mt-4 text-base text-fg" data-hero-fact>
+						Orders execute on Hyperliquid's on-chain order books. {BRAND_NAME} provides the interface.
+					</p>
+
+					<div class="mt-4 border-t border-stroke-weaker pt-4 text-sm text-fg-muted">
+						<p>
+							{RISK_SENTENCE} Stock and pre-IPO markets are perpetuals run by third-party deployers such as {heroDeployers},
+							not shares; outside exchange hours their prices come from the deployer.
+							<a href={RISK_PATH} class="text-fg underline underline-offset-2 hover:text-fg-muted">Risk disclosure →</a>
+						</p>
+						<p class="mt-2 text-xs text-fg-subtle">
+							0.01% builder fee ·
+							<a href={TERMS_RESTRICTED_PATH} class="underline underline-offset-2 hover:text-fg-muted">{RESTRICTED_SHORT}</a>
+						</p>
+					</div>
+				</div>
 			</div>
 		</div>
 
-		<figure class="relative mx-auto mt-12 md:mt-16 max-w-5xl">
-			<div class="overflow-hidden rounded-12 border border-stroke-weak bg-surface shadow-2xl">
-				<picture>
-					<source
-						media="(min-width: 640px)"
-						srcset={desktopScreenshot.src}
-						width={desktopScreenshot.width}
-						height={desktopScreenshot.height}
-					/>
-					<img
-						src={mobileScreenshot.src}
-						alt={`${BRAND_NAME} terminal, signed out, on BTC with the market selector open at Traditional Finance, Pre-IPO`}
-						class="block w-full h-auto bg-background"
-						loading="eager"
-						decoding="async"
-						width={mobileScreenshot.width}
-						height={mobileScreenshot.height}
-					/>
-				</picture>
+		<div class="surface-dark edge relative overflow-hidden rounded-24 shadow-window" data-tabs data-preview>
+			<h2 class="sr-only">Product preview</h2>
+			<div class="flex items-center justify-between gap-3 border-b border-stroke-weaker px-2 py-2 sm:px-3">
+				<div role="tablist" aria-label="Preview" data-tablist class="flex gap-1">
+					<button
+						type="button"
+						role="tab"
+						id="preview-tab-terminal"
+						aria-controls="preview-terminal"
+						aria-selected="true"
+						class="preview-tab press inline-flex min-h-11 items-center rounded-8 px-3.5 text-sm text-fg-subtle hover:text-fg sm:min-h-9"
+					>
+						Terminal
+					</button>
+					<button
+						type="button"
+						role="tab"
+						id="preview-tab-live"
+						aria-controls="preview-live"
+						aria-selected="false"
+						tabindex="-1"
+						class="preview-tab press inline-flex min-h-11 items-center rounded-8 px-3.5 text-sm text-fg-subtle hover:text-fg sm:min-h-9"
+					>
+						Live market
+					</button>
+				</div>
+				<p class="hidden font-mono text-xs text-fg-subtle sm:block">Real interface · public data</p>
 			</div>
-			<figcaption class="mt-3 text-center text-2xs text-fg-faint">{caption}</figcaption>
-		</figure>
+
+			<div id="preview-terminal" role="tabpanel" aria-labelledby="preview-tab-terminal" data-tabpanel>
+				<figure>
+					<div class="bg-window">
+						<picture>
+							<source
+								media="(min-width: 640px)"
+								srcset={desktopScreenshot.src}
+								width={desktopScreenshot.width}
+								height={desktopScreenshot.height}
+							/>
+							<img
+								src={mobileScreenshot.src}
+								alt={`${BRAND_NAME} terminal, signed out, on BTC with the market selector open at Traditional Finance, Pre-IPO`}
+								class="block h-auto w-full bg-window"
+								loading="eager"
+								decoding="async"
+								width={mobileScreenshot.width}
+								height={mobileScreenshot.height}
+							/>
+						</picture>
+					</div>
+					<figcaption class="border-t border-stroke-weaker px-4 py-3 font-mono text-xs text-fg-subtle sm:px-5">{caption}</figcaption>
+				</figure>
+			</div>
+			<div id="preview-live" role="tabpanel" aria-labelledby="preview-tab-live" data-tabpanel data-requires-js hidden>
+				<OpenBook />
+			</div>
+		</div>
+
+		<ul class="grid grid-cols-1 gap-x-8 gap-y-4 pt-6 pb-12 sm:grid-cols-3 sm:pt-8 md:pb-16" aria-label={`Why ${BRAND_NAME}`}>
+			{benefits.map((benefit) => (
+				<li class="flex gap-3">
+					<span class="mt-0.5 shrink-0 text-marketing-accent" set:html={inlineIcon(benefit.icon, 20)} />
+					<span class="flex flex-col">
+						<span class="text-base font-medium text-fg">{benefit.title}</span>
+						<span class="mt-0.5 text-sm text-fg-muted">{benefit.desc}</span>
+					</span>
+				</li>
+			))}
+		</ul>
 	</div>
 </section>

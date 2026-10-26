@@ -89,12 +89,15 @@ export interface CategoryCardView {
 	examples: MarketSummary[];
 }
 
-/** What the browser script needs per featured market; small enough to inline into the page. */
+export type LiveKind = "preipo" | "rate" | "price";
+
+/** What the browser script needs per market with a live number (02 cards and 03 tab rows); inlined into the page. */
 export interface LiveMarketInput {
 	coin: string;
 	dex: string;
 	szDecimals: number;
 	valuationPerPriceUsd: string | null;
+	kind: LiveKind;
 }
 
 function requireMarket(coin: string): { dexFullName: string | null; market: SnapshotMarket } {
@@ -236,11 +239,53 @@ export function getPreIpoRows(): PreIpoRow[] {
 		});
 }
 
+/** Rows per category tab in 03. */
+export const MARKET_TAB_ROWS = 6;
+
+/** How a market's live number reads: Pre-IPO as an implied valuation, FX as a bare rate, the rest as a price. */
+export function liveKindOf(category: string | null): LiveKind {
+	if (category === "preipo") return "preipo";
+	return category === "fx" ? "rate" : "price";
+}
+
+/**
+ * Featured markets first (02 cards, in config order), then every 03 tab row not already listed, so the
+ * request plan asks the featured dexes first and the stats band's dexes answer in the first round.
+ */
 export function getLiveMarketInputs(): LiveMarketInput[] {
-	return getFeaturedMarkets().map((market) => ({
+	const inputs: LiveMarketInput[] = getFeaturedMarkets().map((market) => ({
 		coin: market.coin,
 		dex: market.dex,
 		szDecimals: market.szDecimals,
 		valuationPerPriceUsd: market.preIpoTerms?.valuationPerPriceUsd ?? null,
+		kind: liveKindOf(market.featuredCategory),
 	}));
+	for (const card of getCategoryCards(MARKET_TAB_ROWS)) {
+		for (const market of card.examples) {
+			if (inputs.some((input) => input.coin === market.coin)) continue;
+			inputs.push({
+				coin: market.coin,
+				dex: market.dex,
+				szDecimals: market.szDecimals,
+				valuationPerPriceUsd: card.category === "preipo" ? (getPreIpoTerms(market.coin)?.valuationPerPriceUsd ?? null) : null,
+				kind: liveKindOf(card.category),
+			});
+		}
+	}
+	return inputs;
+}
+
+/** The dexes whose totals the stats band sums: the main dex and the featured dexes, which answer first. */
+export function getStatsDexes(): { dex: string; label: string }[] {
+	const dexes: { dex: string; label: string }[] = [{ dex: MAIN_DEX, label: "Hyperliquid core perps" }];
+	for (const market of getFeaturedMarkets()) {
+		if (market.dex === MAIN_DEX || dexes.some((entry) => entry.dex === market.dex)) continue;
+		dexes.push({ dex: market.dex, label: market.deployerFullName ?? market.dex });
+	}
+	return dexes;
+}
+
+/** Listed perp markets across every included dex, and the HIP-3 deployers among them, from the snapshot. */
+export function getListedTotals(): { markets: number; deployers: number } {
+	return { markets: allMarkets().length, deployers: getDeployers().length };
 }

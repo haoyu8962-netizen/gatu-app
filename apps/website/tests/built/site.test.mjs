@@ -198,7 +198,7 @@ test("the built pages keep the brand contract: theme colour, social card, logo a
 	const meta = (attribute, value) =>
 		findAll(HOME, (element) => element.name === "meta" && element.attrs[attribute] === value)[0]?.attrs.content;
 	assert.equal(meta("name", "theme-color"), THEME_COLOR);
-	assert.equal(THEME_COLOR, brand.pwa.themeColor);
+	assert.equal(THEME_COLOR, brand.pwa.lightThemeColor, "the default theme is light");
 	assert.equal(meta("property", "og:site_name"), BRAND_NAME);
 	assert.equal(meta("property", "og:image"), `${SITE_URL}/og-website-1200x630.png`);
 	assert.ok(FILES.includes("og-website-1200x630.png"), "the declared social card is in the build");
@@ -211,7 +211,71 @@ test("the built pages keep the brand contract: theme colour, social card, logo a
 	}
 
 	const css = FILES.filter((file) => file.endsWith(".css")).map((file) => readFileSync(resolve(DIST, file), "utf8"));
-	assert.ok(css.some((sheet) => sheet.includes(`--signal:${brand.colors.dark.signal}`)), "the built CSS keeps the dark signal colour");
+	for (const theme of ["light", "dark"]) {
+		assert.ok(css.some((sheet) => sheet.includes(`--signal:${brand.colors[theme].signal}`)), `the built CSS carries the ${theme} signal colour`);
+	}
+	for (const theme of ["light", "dark"]) {
+		const variants = logos.filter((logo) => logo.attrs["data-logo-theme"] === theme);
+		assert.ok(variants.length >= 1, `the header renders the ${theme} artwork`);
+		// The SVG is inlined as a data URI; the kit's on-light and on-dark files differ in their logo colours.
+		for (const logo of variants) {
+			assert.ok(decodeURIComponent(logo.attrs.src).toLowerCase().includes(`fill='${brand.logo[theme].signal.toLowerCase()}'`), `${theme} artwork`);
+		}
+	}
+});
+
+// ADR 0043: marketing emphasis is the website-only amber accent; the mint signal no longer marks it, and amber never
+// marks risk, warnings or state.
+test("marketing emphasis uses the amber accent and never sits on risk text (ADR 0043)", () => {
+	const hasClass = (name) => (element) => (element.attrs.class ?? "").split(/\s+/).includes(name);
+	const isAccent = hasClass("text-marketing-accent");
+
+	const css = FILES.filter((file) => file.endsWith(".css")).map((file) => readFileSync(resolve(DIST, file), "utf8"));
+	for (const theme of ["light", "dark"]) {
+		assert.ok(
+			css.some((sheet) => sheet.includes(`--marketing-accent:${brand.websiteColors[theme].marketingAccent}`)),
+			`the built CSS carries the ${theme} marketing accent from brand.json`,
+		);
+	}
+
+	const reel = findAll(HOME_BODY, hasClass("reel"));
+	assert.equal(reel.length, 1, "the hero has one reel");
+	assert.ok(isAccent(reel[0]), "the hero reel uses the marketing accent");
+	const marketsAccent = findAll(sectionById("markets"), isAccent).map((element) => normalizedText(element));
+	assert.ok(marketsAccent.includes("one account"), "the markets heading accent uses the marketing accent");
+	const faqAccent = findAll(sectionById("faq"), isAccent).filter((element) => closest(element, hasAttr("data-cta-group")));
+	assert.deepEqual(
+		faqAccent.map((element) => normalizedText(element)),
+		["One account."],
+		"the closing call to action's accent uses the marketing accent",
+	);
+
+	const allowedSections = new Set(["hero-title", "account", "markets", "features", "security", "faq"]);
+	for (const page of MARKETING_PAGES) {
+		const body = findAll(readPage(page), byName("body"))[0];
+		assert.deepEqual(
+			findAll(body, hasClass("text-signal")).map((element) => element.name),
+			[],
+			`${page}: the signal no longer marks marketing emphasis`,
+		);
+		for (const element of findAll(body, isAccent)) {
+			const where = normalizedText(element).slice(0, 40) || element.name;
+			assert.equal(closest(element, (parent) => ["header", "footer", "nav"].includes(parent.name)), null, `${page}: ${where}`);
+			const section = closest(element, byName("section"));
+			assert.ok(
+				page === "index.html" && section && allowedSections.has(section.attrs.id ?? section.attrs["aria-labelledby"]),
+				`${page}: the marketing accent "${where}" is outside the home page's marketing sections`,
+			);
+			const paragraph = element.name === "p" ? element : closest(element, byName("p"));
+			assert.ok(!paragraph || !normalizedText(paragraph).includes(RISK_SENTENCE), `${page}: "${where}" shares a paragraph with the risk sentence`);
+		}
+		const riskParagraphs = findAll(body, (element) => element.name === "p" && normalizedText(element).includes(RISK_SENTENCE));
+		const factsBlocks = findAll(body, (element) => element.name === "section" && element.attrs["aria-labelledby"] === "facts-title");
+		for (const block of [...riskParagraphs, ...factsBlocks]) {
+			assert.deepEqual(findAll(block, isAccent), [], `${page}: risk text carries the marketing accent`);
+			assert.equal(closest(block, isAccent), null, `${page}: risk text sits inside the marketing accent`);
+		}
+	}
 });
 
 test("the hero screenshot has no mock browser frame and shows when it was captured", () => {

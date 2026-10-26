@@ -146,16 +146,28 @@ test("components and pages never write a dex-prefixed market by hand (R10)", () 
 // Every brand literal outside src/config/brand.ts, with the reason it may stay (R11).
 const BRAND_LITERAL_EXCEPTIONS = {
 	"src/components/Logo.astro": {
-		tokens: ["sairn-lockup-on-dark.svg", "sairn-mark-on-dark.svg"],
-		reason: "file names of the logo kit under brand/svg, pinned by brand-contract",
+		tokens: ["sairn-lockup-on-light.svg", "sairn-mark-on-light.svg", "sairn-lockup-on-dark.svg", "sairn-mark-on-dark.svg"],
+		reason: "file names of the logo kit under brand/svg (on-light for the default theme, on-dark for ?theme=dark), pinned by brand-contract",
 	},
 	"src/config/seo.ts": {
 		tokens: ["sairn-avatar-light-1024.png"],
 		reason: "file name of the social avatar under brand/social",
 	},
+	"src/lib/motion.ts": {
+		tokens: ["sairn-motion.tokens.json"],
+		reason: "file name of the brand motion tokens under brand/loader, read at build time (plan §6)",
+	},
 	"src/scripts/live-markets.ts": {
 		tokens: ["sairn-site-live", "sairn-site-live"],
 		reason: "Web Lock name: an internal identifier, which AGENTS.md keeps as a sairn literal",
+	},
+	"src/scripts/open-book.ts": {
+		tokens: ["sairn-site-book", "sairn-site-book"],
+		reason: "Web Lock name of the hero's Live market view: an internal identifier, kept as a sairn literal",
+	},
+	"src/assets/features/features-capture.json": {
+		tokens: ["sairn", "app.sairn.ai", "app.sairn.ai", "app.sairn.ai", "app.sairn.ai", "app.sairn.ai", "app.sairn.ai"],
+		reason: "capture record written by scripts/capture-features.mjs: the live build-meta name and the six captured URLs, not copy",
 	},
 	"src/assets/terminal-capture.json": {
 		tokens: ["app.sairn.ai", "sairn"],

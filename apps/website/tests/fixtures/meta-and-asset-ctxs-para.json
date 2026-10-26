@@ -1,0 +1,95 @@
+{
+	"recordedAt": "2026-10-26T06:26:01.818Z",
+	"note": "Real POST https://api.hyperliquid.xyz/info response, trimmed to the coins the site uses (meta.universe and ctxs kept index-aligned; marginTables dropped).",
+	"request": {
+		"type": "metaAndAssetCtxs",
+		"dex": "para"
+	},
+	"status": 200,
+	"body": [
+		{
+			"universe": [
+				{
+					"szDecimals": 1,
+					"name": "para:10Y",
+					"maxLeverage": 20,
+					"marginTableId": 20,
+					"onlyIsolated": true,
+					"marginMode": "noCross",
+					"growthMode": "enabled",
+					"lastFeeScaleChangeTime": "2026-08-12T13:27:03.650289647",
+					"deployerFeeScale": "1.0"
+				},
+				{
+					"szDecimals": 1,
+					"name": "para:30Y",
+					"maxLeverage": 20,
+					"marginTableId": 20,
+					"onlyIsolated": true,
+					"marginMode": "noCross",
+					"growthMode": "enabled",
+					"lastFeeScaleChangeTime": "2026-09-23T16:11:52.711407780",
+					"deployerFeeScale": "1.0"
+				},
+				{
+					"szDecimals": 1,
+					"name": "para:2Y",
+					"maxLeverage": 20,
+					"marginTableId": 20,
+					"onlyIsolated": true,
+					"marginMode": "noCross",
+					"growthMode": "enabled",
+					"lastFeeScaleChangeTime": "2026-09-23T16:11:52.711407780",
+					"deployerFeeScale": "1.0"
+				}
+			]
+		},
+		[
+			{
+				"funding": "0.00000125",
+				"openInterest": "254998.4",
+				"prevDayPx": "5.0247",
+				"dayNtlVlm": "136196.66488",
+				"premium": "-0.000865173",
+				"oraclePx": "4.999",
+				"markPx": "4.995",
+				"midPx": "4.9945",
+				"impactPxs": [
+					"4.98996",
+					"4.99939"
+				],
+				"dayBaseVlm": "27210.0"
+			},
+			{
+				"funding": "0.00000125",
+				"openInterest": "68464.6",
+				"prevDayPx": "5.3389",
+				"dayNtlVlm": "50.14441",
+				"premium": "-0.0004809864",
+				"oraclePx": "5.312",
+				"markPx": "5.3111",
+				"midPx": "5.30945",
+				"impactPxs": [
+					"5.30541",
+					"5.31348"
+				],
+				"dayBaseVlm": "9.4"
+			},
+			{
+				"funding": "0.00000125",
+				"openInterest": "329244.4",
+				"prevDayPx": "4.7208",
+				"dayNtlVlm": "6235.85826",
+				"premium": "0.0002200723",
+				"oraclePx": "4.703",
+				"markPx": "4.703",
+				"midPx": "4.70435",
+				"impactPxs": [
+					"4.69968",
+					"4.70839"
+				],
+				"dayBaseVlm": "1321.7"
+			}
+		]
+	]
+}

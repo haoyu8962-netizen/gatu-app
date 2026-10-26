@@ -13,6 +13,8 @@
   "commits": [],
   "sources": [
     {"path": "docs/website-plan.md"},
+    {"path": "docs/adr/0043-website-marketing-accent.md"},
+    {"path": "docs/adr/0044-website-light-default-theme.md"},
     {"path": "apps/website/src/lib/markets/live.js"},
     {"path": "apps/website/src/config/featured-markets.ts"},
     {"path": "docs/website-rebuild-plan.md"},
@@ -192,6 +194,20 @@
 - 发布阻断：`pnpm --filter @sairn/website terminal:check` 对线上 p32（`9ccb88c0`）失败，因为 T1 与 ADR 0042 都还没有随终端发布；终端发布后重跑通过才能发布官网。
 - 待运营方决定：品牌主色 `--signal` 与 Hyperliquid 主色的 ΔE76 只有 8.5（规划第 6 节要求 ≥15），已作为待决例外列在 `brand-contract.test.mjs`；快照满 7 天后首页构建失败，会连带阻断只改法律页或品牌的 PR，是否只在发布构建里拦截待定。
 - 预期事件：xyz:JIO 预计 2026-10-28 上市后转为普通股票永续，届时每日检查会报红，需要更新快照与 `deployers.ts`。
+
+## 追加：阶段 2 首页重做、两轮 GPT 评审、琥珀强调、平台升级与浅色版（2026-10-26 UTC，同一会话）
+
+- 运营方三次反馈推动方向：阶段 1 后「样式颜色跟之前的官网一模一样」；只换字体与底色的第一版阶段 2 后「样式还是没有什么变化，要学习应用调研里其他官方的做法」；按调研重做后又说「设计太古老、不新颖、技术落后、太暗」。
+- 实施（子代理，主会话审看每轮截图）：
+  - 按调研第 4、9 节重做首页结构：轮换品类词首屏、Terminal / Live market 预览窗口（实时订单簿画布从原型移植）、统计带、跑马灯行情条、分标签行情表、分标签功能截图（新采集 6 张）、订单流转图与官方网址防钓鱼区块、CSS 滚动驱动显现。
+  - gpt-6-astra（Codex CLI，只读，medium）两轮评审：7.4 → 8.2 / 10。第一轮的 8 条全部落实（首屏写明资金在自己账户与链上订单簿执行、手机首屏压缩、订单簿画布加坐标与图例、统计分「市场目录 / 实时活动」两组并附方法、`#account` 账户与执行说明等）。报告存于 `.worklog/2026-10-26/c1e345bd-069b-4821-ab73-a7bd5e2b03b2/snapshot-website-redesign/`。
+  - 运营方看过薄荷与琥珀并排对比后选定方案 B：官网营销强调色用 Logo 的选择琥珀，`brand.json` 新增 `websiteColors.*.marketingAccent`，[ADR 0043](../../adr/0043-website-marketing-accent.md)，ADR 0028 追加更新；琥珀不进风险、警告与状态（测试钉住）。
+  - 平台升级（只限官网）：Astro 5.14.6 → 7.4.2（Vite 8）、Tailwind 4.0.6 → 4.3.3、`@tailwindcss/vite` 4.3.3；官网工作流 Node 22.15.0 → 22.23.4（Astro 7 拒绝在 22.18 上运行）；lockfile 合并后只有官网 importer 变化。新特性：CSP meta（含 `wss://api.hyperliquid.xyz`）、Fonts API（回退度量因 Astro 7.4.2 缺 `unicode-range` 而关闭）、跨文档 View Transitions（减少动态守卫内）、`sibling-index()` 错开显现、`@starting-style`、容器查询、`color-mix(in oklab)` 派生光晕、`text-wrap`。构建 wall 时间 2.4–3.0 s → 1.6–2.2 s。
+  - 运营方选定浅色明亮版并确认采用：纸色画布 `#fafaf5`、字标墨色标题、中性墨色正文、浅色琥珀 `#99621f`，产品窗口保持深色，`?theme=dark` 保留深色令牌对比；[ADR 0044](../../adr/0044-website-light-default-theme.md) 已接受。
+- 本轮还修了：Live 行情条首轮要约 2 分钟才出齐（自设预算 ≤30 权重 → ≤60 权重/分钟，首轮同时请求）；页签选中样式在 `@layer components` 里被工具类覆盖从未生效；首页卡片滚动行第一张贴窗口边。
+- 验证（2026-10-26，本工作树，Node 24.15）：`pnpm --filter @sairn/website test` 73 项、`build`、`test:dist` 37 项、`node --test tests/brand-cross-app.test.mjs` 7 项、`pnpm brand:check`、`pnpm og:check`、`node --test scripts/ci-workflows.test.mjs` 17 项全部通过（以提交前主会话复跑为准，见下一条）；无头 Chromium 1440 / 390 截图，无 CSP 违规、无横向溢出。没有在 Node 22.23.x、Safari、Firefox、真机、200% 缩放与键盘走查下验证；Live market 底部指标在本机未确认实时连接；终端包体积未测（终端读取 `brand.json`，新增 `websiteColors` 可能占用约 460 字节余量中的几十字节）。
+- 待运营方决定：三个与 Hyperliquid 色差不足 15 的既有品牌值（标题墨色 `#08262e`、浅色焦点 `#176b64` 及其悬停色）；`?theme=dark` 上线后是否保留；Astro 字体回退度量待上游修复后再开。
+- 运营方另问 Tailwind 与前端技术现状：主会话按 npm 官方仓库 2026-10-26 的版本作答（Tailwind 4.3.3 无 v5、Vite 8.3、React 19.3、TypeScript 7.0、Astro 7.4）；终端的 Vite 8 / TypeScript 7 / Biome 2.6 升级建议另行立项，未做。
 
 ## 后续与替代关系
 

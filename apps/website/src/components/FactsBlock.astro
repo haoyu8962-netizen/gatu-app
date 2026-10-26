@@ -2,13 +2,13 @@
 import { BRAND_NAME } from "@/config/brand";
 import { RISK_PATH, TERMS_RESTRICTED_PATH } from "@/config/copy";
 
-const linkClass = "text-fg underline underline-offset-2 hover:text-fg-muted transition-colors duration-150";
+const linkClass = "text-fg underline underline-offset-2 hover:text-fg-muted";
 ---
 
-<section aria-labelledby="facts-title" class="border-b border-stroke-weaker">
-	<div class="mx-auto w-full max-w-3xl px-5 sm:px-6 py-12 md:py-16">
-		<h2 id="facts-title" class="text-3xs uppercase tracking-uppercase text-fg-faint">Before you trade</h2>
-		<p class="mt-4 text-sm md:text-base text-fg-muted leading-relaxed">
+<section aria-labelledby="facts-title" class="band">
+	<div class="mx-auto grid w-full max-w-site grid-cols-1 gap-4 px-5 py-14 sm:px-8 md:py-20 lg:grid-cols-12 lg:gap-8">
+		<h2 id="facts-title" class="label lg:col-span-3 lg:pt-1">Before you trade</h2>
+		<p class="max-w-3xl text-base text-fg-muted lg:col-span-9">
 			Perpetual futures use leverage and can be liquidated; you can lose all of your margin. HIP-3 markets are deployed
 			by independent third parties and can be halted, settled or delisted, and their liquidity can be thin. Contracts
 			that reference companies give you no ownership in them, and {BRAND_NAME} is not affiliated with or endorsed by

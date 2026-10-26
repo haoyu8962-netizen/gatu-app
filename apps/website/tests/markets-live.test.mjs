@@ -9,14 +9,17 @@ import {
 	BACKOFF_MAX_MS,
 	canRetry,
 	change24h,
+	combineDexTotals,
 	createRequestPlan,
 	evaluateFreshness,
 	formatCompactUsd,
 	formatImpliedValuation,
 	formatMarkPrice,
+	formatStatUsd,
 	impliedValuationUsd,
 	nextAllowedSendAt,
 	priceDecimals,
+	readDexTotals,
 	readMetaAndAssetCtxs,
 	recordSend,
 	requestBody,
@@ -255,4 +258,58 @@ test("mark prices follow Hyperliquid's five significant figures and 6 - szDecima
 			assert.ok(digits.length <= 5 || !shown.includes("."), `${shown} exceeds five significant figures`);
 		}
 	}
+});
+
+function totalsBody(entries) {
+	return [
+		{ universe: entries.map(([name, extra]) => ({ name, szDecimals: 2, ...extra })) },
+		entries.map(([, , ctx]) => ({ markPx: "1", prevDayPx: "1", dayNtlVlm: "0", openInterest: "0", ...ctx })),
+	];
+}
+
+test("stats totals add 24h volume and open interest × mark price exactly, over listed assets only", () => {
+	const body = totalsBody([
+		["xyz:A", {}, { dayNtlVlm: "0.1", openInterest: "0.1", markPx: "3" }],
+		["xyz:B", {}, { dayNtlVlm: "0.2", openInterest: "0.7", markPx: "0.1" }],
+		["xyz:C", { isDelisted: true }, { dayNtlVlm: "1000", openInterest: "1000", markPx: "1000" }],
+	]);
+	const totals = readDexTotals({ status: 200, body }, "xyz");
+	assert.equal(0.1 + 0.2 === 0.3, false, "floating point would get the first sum wrong");
+	assert.deepEqual(totals, { dex: "xyz", dayNtlVlm: "0.3", openInterestUsd: "0.37", markets: 2 });
+	const main = readDexTotals({ status: 200, body: totalsBody([["BTC", {}, { dayNtlVlm: "123456789.12", openInterest: "2", markPx: "80000.5" }]]) }, "");
+	assert.deepEqual(combineDexTotals(["", "xyz"], { "": main, xyz: totals }), {
+		dayNtlVlm: "123456789.42",
+		openInterestUsd: "160001.37",
+		markets: 3,
+	});
+	assert.equal(combineDexTotals(["", "xyz", "io"], { "": main, xyz: totals }), null, "a missing dex hides the sum");
+	assert.equal(combineDexTotals([], {}), null);
+	assert.equal(combineDexTotals(["xyz"], { xyz: { ...totals, dex: "io" } }), null, "totals must belong to the dex they are filed under");
+	assert.equal(formatStatUsd("3127456789.5"), "$3.13B");
+	assert.equal(formatStatUsd("0"), null, "the band never shows $0");
+	assert.equal(formatStatUsd("abc"), null);
+
+	for (const dex of ["", "xyz", "io"]) {
+		const recorded = fixture(dex === "" ? "main" : dex);
+		const read = readDexTotals({ status: 200, body: recorded.body }, dex);
+		assert.ok(read && read.markets === recorded.body[0].universe.filter((asset) => asset.isDelisted !== true).length);
+		assert.match(read.dayNtlVlm, /^\d+(\.\d+)?$/);
+	}
+});
+
+test("stats totals fail closed on any doubtful asset or response", () => {
+	const good = [["io:A", {}, { dayNtlVlm: "1", openInterest: "1", markPx: "1" }]];
+	const cases = [
+		readDexTotals({ status: 429, body: totalsBody(good) }, "io"),
+		readDexTotals({ status: 200, body: totalsBody(good) }, "xyz"),
+		readDexTotals({ status: 200, body: totalsBody([["io:A", {}, { dayNtlVlm: "1e3" }]]) }, "io"),
+		readDexTotals({ status: 200, body: totalsBody([["io:A", {}, { dayNtlVlm: 12 }]]) }, "io"),
+		readDexTotals({ status: 200, body: totalsBody([["io:A", {}, { openInterest: "-1" }]]) }, "io"),
+		readDexTotals({ status: 200, body: totalsBody([["io:A", {}, { openInterest: null }]]) }, "io"),
+		readDexTotals({ status: 200, body: totalsBody([["io:A", {}, { markPx: "0" }]]) }, "io"),
+		readDexTotals({ status: 200, body: totalsBody([["io:A", { isDelisted: "no" }, {}]]) }, "io"),
+		readDexTotals({ status: 200, body: totalsBody([["io:A", { isDelisted: true }, {}]]) }, "io"),
+		readDexTotals({ status: 200, body: [totalsBody(good)[0], []] }, "io"),
+	];
+	for (const reading of cases) assert.equal(reading, null);
 });

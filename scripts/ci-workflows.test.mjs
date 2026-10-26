@@ -544,6 +544,25 @@ test("tests the built website after building it, and keeps the source tests in t
 	);
 });
 
+// Astro 7 requires Node >=22.23.4 (apps/website/package.json engines), above the repository's >=22.15.0, so the two
+// website workflows pin their own exact 22.x; the terminal workflows keep theirs (ADR 0016, 2026-10-26 note).
+const WEBSITE_NODE_VERSION = "22.23.4";
+
+test("runs the website workflows on an exact Node version that satisfies the website's engines", () => {
+	const engines = JSON.parse(readFileSync(new URL("../apps/website/package.json", import.meta.url), "utf8")).engines.node;
+	const minimum = /^>=(\d+)\.(\d+)\.(\d+)$/.exec(engines);
+	assert.ok(minimum, `apps/website engines.node is ${engines}, expected a >=x.y.z minimum`);
+	const pinned = WEBSITE_NODE_VERSION.split(".").map(Number);
+	const required = minimum.slice(1).map(Number);
+	const compare = pinned.map((part, index) => part - required[index]).find((difference) => difference !== 0) ?? 0;
+	assert.equal(compare >= 0, true, `Node ${WEBSITE_NODE_VERSION} does not satisfy ${engines}`);
+	assert.equal(pinned[0], required[0], "stay on the same Node major as the website's minimum");
+	for (const name of ["website-build.yml", "website-markets-check.yml"]) {
+		const versions = [...readWorkflow(name).matchAll(/node-version: (\S+)/g)].map((match) => match[1]);
+		assert.deepEqual(versions, [WEBSITE_NODE_VERSION], `${name} must set node-version: ${WEBSITE_NODE_VERSION}`);
+	}
+});
+
 test("checks the website market snapshot daily, read-only, with the website workflow's pinned setup", () => {
 	const markets = readWorkflow("website-markets-check.yml");
 	const website = readWorkflow("website-build.yml");
@@ -556,7 +575,7 @@ test("checks the website market snapshot daily, read-only, with the website work
 	assert.equal(Number(/timeout-minutes: (\d+)/.exec(markets)?.[1]) <= 10, true, "keep the check short");
 	assert.deepEqual(actions(markets), actions(website), "use the same pinned action commits as the website workflow");
 	for (const uses of actions(markets)) assert.match(uses, /@[0-9a-f]{40}$/, `${uses} is not pinned to a commit`);
-	assert.equal(markets.includes("node-version: 22.15.0"), true);
+	assert.equal(markets.includes(`node-version: ${WEBSITE_NODE_VERSION}`), true);
 	assert.equal(markets.includes(CONCURRENCY_GROUP), true);
 
 	const steps = workflowListItems(markets).filter((item) => item.lines.some((line) => /^\s*run:/.test(line)));

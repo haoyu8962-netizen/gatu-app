@@ -8,7 +8,15 @@ import { dirname, resolve } from "node:path";
 import { mock, test } from "node:test";
 import { fileURLToPath } from "node:url";
 import { JSDOM } from "jsdom";
-import { createRequestPlan } from "../../src/lib/markets/live.js";
+import {
+	combineDexTotals,
+	createRequestPlan,
+	formatStatUsd,
+	META_AND_ASSET_CTXS_WEIGHT,
+	readDexTotals,
+	WEIGHT_LIMIT,
+	WEIGHT_WINDOW_MS,
+} from "../../src/lib/markets/live.js";
 import { REQUEST_TIMEOUT_MS, startLiveMarkets } from "../../src/scripts/live-markets.ts";
 
 const WEBSITE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
@@ -174,13 +182,18 @@ async function boot(respond, { lockElsewhere = false, visible = true } = {}) {
 const ok = (dex) => ({ status: 200, body: fixtureBody(dex) });
 const INPUTS = JSON.parse(new JSDOM(HOME_HTML).window.document.querySelector("[data-live-inputs]").textContent);
 const PLAN = createRequestPlan(INPUTS.map((input) => input.coin));
+const FIRST_ROUND = Math.floor(WEIGHT_LIMIT / META_AND_ASSET_CTXS_WEIGHT);
 
 test("the page under test has the live strip, both pause controls and ten featured cards", () => {
 	const { document } = new JSDOM(HOME_HTML).window;
 	assert.equal(document.querySelectorAll("[data-live-card]").length, 10);
 	assert.equal(document.querySelectorAll("[data-live-pause]").length, 2, "02's Pause updates and the footer's Pause live data");
 	assert.ok(document.querySelector("footer [data-live-pause]"));
-	assert.deepEqual(PLAN.dexes, ["", "io", "xyz"]);
+	assert.deepEqual(PLAN.dexes.slice(0, 3), ["", "io", "xyz"], "the stats band's and the featured cards' dexes come first");
+	assert.deepEqual(PLAN.dexes.slice(3).sort(), ["mkts", "para"], "03's tab rows add the other listed dexes");
+	assert.ok(document.querySelectorAll("[data-live-row]").length >= 20, "03 tab rows carry live slots");
+	assert.equal(document.querySelectorAll("[data-live-mirror]").length, 10, "the marquee's mirror copy has one card per featured market");
+	assert.equal(document.querySelector("[data-live-strip]").dataset.ticker, "static", "the ticker is a scroll-snap row until the script runs");
 });
 
 test("numbers appear only from validated answers, and the strip stays blank until they arrive", async () => {
@@ -231,6 +244,7 @@ test("pausing from the footer stops requests; numbers clear once stale and reque
 		for (const button of page.document.querySelectorAll("[data-live-pause]")) {
 			assert.equal(button.getAttribute("aria-pressed"), "true");
 		}
+		assert.equal(page.document.querySelector("[data-live-strip]").dataset.ticker, "paused", "Pause also stops the marquee (WCAG 2.2.2)");
 		const sent = page.calls.length;
 		await page.advance(PLAN.staleAfterMs + 10_000);
 		assert.equal(page.calls.length, sent, "no request while paused");
@@ -238,7 +252,9 @@ test("pausing from the footer stops requests; numbers clear once stale and reque
 		assert.equal(page.document.querySelector("[data-live-list]").getAttribute("aria-busy"), "true");
 		page.document.querySelector("#markets-now [data-live-pause]").click();
 		await flush();
-		assert.equal(page.calls.length, sent + PLAN.dexes.length, "unpausing sends the whole round at once");
+		assert.equal(page.calls.length, sent + FIRST_ROUND, "unpausing sends as much of the round as 60 weight per minute allows at once");
+		await page.advance(WEIGHT_WINDOW_MS + 1_000);
+		assert.deepEqual([...new Set(page.calls.slice(sent).map((call) => call.dex))].sort(), [...PLAN.dexes].sort(), "the rest of the round follows within the window");
 	} finally {
 		page.close();
 	}
@@ -252,7 +268,7 @@ test("while another tab holds the lock this tab sends nothing, and it takes over
 		assert.equal(page.allNumberText(), "");
 		page.locks.releaseElsewhere();
 		await flush();
-		assert.equal(page.calls.length, PLAN.dexes.length, "the queued lock request is granted without waiting for a retry timer");
+		assert.equal(page.calls.length, FIRST_ROUND, "the queued lock request is granted without waiting for a retry timer");
 		assert.equal(page.locks.isHeldHere(), true);
 	} finally {
 		page.close();
@@ -268,7 +284,7 @@ test("a market reported delisted is removed from 02 and 03 while the hero senten
 		assert.ok(page.document.querySelector('[data-market-coin="io:OAI"]'));
 		const hero = page.document.querySelector("h1").closest("section");
 		assert.ok(hero.querySelector('a[href*="/trade/io:ANTH"]'), "the hero link is not removed at run time");
-		assert.match(hero.textContent.replace(/\s+/g, " "), /such as OpenAI and Anthropic, plus spot\./);
+		assert.match(hero.textContent.replace(/\s+/g, " "), /Pre-IPO perpetuals such as OpenAI\b[^.]*\bAnthropic\b/);
 	} finally {
 		page.close();
 	}
@@ -313,5 +329,70 @@ test("pagehide releases the lock; a page restored from the back-forward cache dr
 		assert.equal(page.locks.isHeldHere(), true);
 	} finally {
 		page.close();
+	}
+});
+
+function statsSlots(document) {
+	return [...document.querySelectorAll("[data-live-stat]")].map((stat) => ({
+		key: stat.dataset.liveStat,
+		value: stat.querySelector("[data-live-stat-value]").textContent,
+		pending: stat.querySelector("[data-live-stat-pending]").hidden,
+		busy: stat.querySelector("[data-live-stat-slot]").getAttribute("aria-busy"),
+		asOf: document.querySelector("[data-live-stats] [data-live-stats-asof]").hidden,
+	}));
+}
+
+test("the stats band sums exactly the dexes it names, with Big.js, once all of them have answered", async () => {
+	const dexes = JSON.parse(new JSDOM(HOME_HTML).window.document.querySelector("[data-live-stats]").dataset.liveStatsDexes);
+	assert.deepEqual(dexes, ["", "io", "xyz"]);
+	const totals = Object.fromEntries(dexes.map((dex) => [dex, readDexTotals(ok(dex), dex)]));
+	const expected = combineDexTotals(dexes, totals);
+	const page = await boot((dex) => ok(dex));
+	try {
+		assert.deepEqual(
+			statsSlots(page.document).map(({ value, busy }) => [value, busy]),
+			[["", "true"], ["", "true"]],
+			"one dex is not enough: the band shows nothing until every named dex has answered",
+		);
+		await page.advance(2 * PLAN.requestSpacingMs + 1_000);
+		const shown = statsSlots(page.document);
+		assert.deepEqual(shown.map((stat) => stat.key), ["volume", "openInterest"]);
+		assert.equal(shown[0].value, formatStatUsd(expected.dayNtlVlm));
+		assert.equal(shown[1].value, formatStatUsd(expected.openInterestUsd));
+		for (const stat of shown) {
+			assert.match(stat.value, /^\$\d[\d,]*(\.\d\d)?[MBT]?$/);
+			assert.equal(stat.pending, true);
+			assert.equal(stat.busy, "false");
+			assert.equal(stat.asOf, false, "a shown number carries its time");
+		}
+		await page.advance(PLAN.staleAfterMs + 10_000);
+	} finally {
+		page.close();
+	}
+});
+
+test("the stats band stays empty, never '—' or '$0', when a named dex fails or answers with a bad number", async () => {
+	const badXyz = await boot((dex) =>
+		dex === "xyz" ? { status: 200, body: setEntry(fixtureBody("xyz"), "xyz:CL", "ctx", { dayNtlVlm: "n/a" }) } : ok(dex),
+	);
+	try {
+		await badXyz.advance(2 * PLAN.requestSpacingMs + 1_000);
+		assert.ok(badXyz.filledCards().length > 0, "prices still show: only the totals failed");
+		for (const stat of statsSlots(badXyz.document)) {
+			assert.equal(stat.value, "");
+			assert.equal(stat.pending, false);
+			assert.equal(stat.busy, "true");
+			assert.equal(stat.asOf, true);
+		}
+	} finally {
+		badXyz.close();
+	}
+	const rejected = await boot((dex) => (dex === "io" ? { status: 429, body: null } : ok(dex)));
+	try {
+		await rejected.advance(2 * PLAN.requestSpacingMs + 1_000);
+		assert.deepEqual(statsSlots(rejected.document).map(({ value }) => value), ["", ""]);
+		assert.doesNotMatch(rejected.document.querySelector("[data-live-stats]").textContent, /—|\$0\b|NaN/);
+	} finally {
+		rejected.close();
 	}
 });

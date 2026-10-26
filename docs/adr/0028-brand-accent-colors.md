@@ -89,3 +89,7 @@
   - 后续最终一轮的全量结果见 ADR 0027「验证」。
 - **撰写本 ADR 时的复查**（HEAD `7a511af3`，工作区含另一会话未提交的改动）：`node --test tests/brand-cross-app.test.mjs` 4 项通过，`brand-semantics-contract.test.ts` 4 项通过。
 - **没有做的**：官网配色的人工检查与焦点环的键盘走查（执行记录没有记载）；真机、Safari、Firefox；发布。
+
+## 更新（2026-10-26）
+
+[ADR 0043](0043-website-marketing-accent.md) 为官网新增一个专用角色 `--marketing-accent`，取 Logo 的选择琥珀（`brand.json` 的 `websiteColors.*.marketingAccent`，必须等于 `logo.*.choice`），只用于官网的营销强调；官网的薄荷 `--signal` 只留给焦点、选中、正文链接、实时指示与 Logo。本 ADR 的决定不变：共享 `--signal` 取值、焦点等于 signal、`--action` 中性、终端不用琥珀，第 6 条「Logo 颜色不是界面强调色」对终端与共享 UI 继续成立。

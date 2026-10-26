@@ -1,17 +1,10 @@
 @import "tailwindcss";
-@import "@fontsource-variable/inter";
-@import "@fontsource/instrument-serif";
 
 @theme {
-	--font-sans: "Inter Variable", "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
-	--font-display: "Instrument Serif", ui-serif, Georgia, serif;
-	--font-mono: ui-monospace, "SF Mono", monospace;
-
-	/* Strong custom easings — built-in CSS easings lack punch.
-	   Source: easings.dev / Emil Kowalski's animations.dev course. */
-	--ease-out-quint: cubic-bezier(0.23, 1, 0.32, 1);
-	--ease-out-expo: cubic-bezier(0.19, 1, 0.22, 1);
-	--ease-in-out-quart: cubic-bezier(0.77, 0, 0.175, 1);
+	/* The faces, their latin subset, preload and metric-matched fallbacks come from the Astro Fonts API
+	   (astro.config.mjs `fonts`, written into each page by <Font /> in Base.astro). */
+	--font-sans: var(--font-plex-sans);
+	--font-mono: var(--font-plex-mono);
 
 	--text-3xs: 10px;
 	--text-3xs--line-height: 14px;
@@ -19,10 +12,14 @@
 	--text-2xs--line-height: 16px;
 	--text-xs: 12px;
 	--text-xs--line-height: 16px;
+	--text-2sm: 13px;
+	--text-2sm--line-height: 20px;
 	--text-sm: 14px;
 	--text-sm--line-height: 20px;
 	--text-base: 16px;
 	--text-base--line-height: 24px;
+	--text-md: 18px;
+	--text-md--line-height: 28px;
 	--text-lg: 20px;
 	--text-lg--line-height: 28px;
 	--text-xl: 28px;
@@ -33,10 +30,30 @@
 	--text-3xl--line-height: 64px;
 	--text-4xl: 72px;
 	--text-4xl--line-height: 80px;
+	--text-h2: clamp(2.25rem, 1.35rem + 2.9vw, 4rem);
+	--text-h2--line-height: 1.04;
+	--text-h2--letter-spacing: -0.035em;
+	--text-h3: clamp(1.375rem, 1.15rem + 0.7vw, 1.75rem);
+	--text-h3--line-height: 1.2;
+	--text-h3--letter-spacing: -0.015em;
+	--text-display: clamp(2.875rem, 1.2rem + 5.4vw, 6rem);
+	--text-display--line-height: 1;
+	--text-display--letter-spacing: -0.045em;
+	--text-stat: clamp(2rem, 1.25rem + 2.4vw, 3.25rem);
+	--text-stat--line-height: 1.1;
+	--text-stat--letter-spacing: -0.03em;
 
 	--spacing: 4px;
+	--container-site: 80rem;
+	/* Container-query sizes (@cards:, @table:, @split:). Each equals the content width its block had at the
+	   viewport breakpoint it replaces (sm 640, md 768, lg 1024, minus the 32px page gutters and, for the markets
+	   table, its 1px edge), so the layouts switch at the same window widths as before but follow the space they get. */
+	--container-cards: 36rem;
+	--container-table: 43.875rem;
+	--container-split: 60rem;
 
 	--tracking-uppercase: 2px;
+	--tracking-label: 0.08em;
 	--tracking-heading-1: -0.5px;
 	--tracking-display: -1.5px;
 
@@ -45,21 +62,97 @@
 	--radius-8: calc(8px * var(--radius-factor));
 	--radius-12: calc(12px * var(--radius-factor));
 	--radius-16: calc(16px * var(--radius-factor));
+	--radius-24: calc(24px * var(--radius-factor));
 	--radius-full: 9999px;
+
 }
 
 @layer base {
+	/* Colour tokens only: brand-contract reads every value in this block as a colour. Light theme, the default:
+	   the logo kit's paper (brand/tokens light.surface), the logo's wordmark ink and the light brand roles. */
 	:root {
+		color-scheme: light;
+
+		--bg-base: #fafaf5;
+		--bg-raised: #ffffff;
+		--bg-panel: #ffffff;
+		--bg-overlay: #ffffff;
+		--bg-band: #f5f4ee;
+		--bg-window: #0f1a1f;
+		--bg-sunken: #f0f3ed;
+		--bg-alternate: #f5f4ee;
+		--bg-brand: var(--action);
+		--bg-inverse: var(--text-strong);
+		--bg-selected: var(--bg-raised);
+
+		--action: #15171e;
+		--action-hover: #32363d;
+		--action-active: #08090d;
+		--on-action: #ffffff;
+		--signal: #176b64;
+		--signal-hover: #0f524d;
+		--signal-soft: rgb(23 107 100 / 10%);
+		--focus: var(--signal);
+		/* Website-only marketing emphasis (ADR 0043): the logo's choice amber, websiteColors.light.marketingAccent.
+		   Never for state, warnings or risk; focus, selection, live and links stay on --signal. */
+		--marketing-accent: #99621f;
+
+		/* Headings and primary text use the logo's wordmark ink; secondary text is the neutral action ink at three
+		   strengths, each at least 5:1 on every light surface. */
+		--text-strong: #08262e;
+		--text-weak: #15171ecc;
+		--text-muted: #15171eb3;
+		--text-faint: #15171ea6;
+		--text-brand: var(--signal);
+		--text-disabled: #15171e1f;
+		--text-error: #c73a3a;
+		--text-warning: #8f6c1a;
+		--text-success: #067a57;
+		--text-info: #1a74a8;
+		--text-inverse-strong: #ffffff;
+
+		--fill-strong: var(--text-strong);
+		--fill-weak: #08262e0a;
+		--fill-weaker: #08262e05;
+		--fill-hover: #08262e0d;
+		--fill-press: #08262e17;
+		--fill-brand-strong: var(--action);
+		--fill-brand-weak: var(--fill-weak);
+
+		--stroke-strong: #08262e42;
+		--stroke-weak: #08262e1c;
+		--stroke-weaker: #08262e12;
+		--stroke-focus: var(--focus);
+
+		--live: var(--signal);
+
+		/* Tints derived from their source colour, so a change of the accent carries into the glows (ADR 0043). On paper
+		   the darker light-theme amber reads as a warm wash at lower strengths than on the dark canvas. */
+		--glow-accent: color-mix(in oklab, var(--marketing-accent) 7%, transparent);
+		--glow-accent-faint: color-mix(in oklab, var(--marketing-accent) 3%, transparent);
+		--glow-neutral: color-mix(in oklab, var(--bg-raised) 90%, transparent);
+		--grid-line: #08262e0b;
+		--edge-strong: #08262e1f;
+		--edge-weak: #08262e17;
+	}
+
+	/* The dark theme: the full-page comparison (?theme=dark, Base.astro) and every product window (.surface-dark),
+	   which stays in the terminal's dark colours on the light page. Same roles as the light block above. */
+	.surface-dark,
+	:root[data-theme="dark"] {
 		color-scheme: dark;
 
-		/* Marketing surfaces stay unchanged while actions and signals use the new brand roles. */
 		--bg-base: #12131a;
 		--bg-raised: #1d1e26;
-		--bg-overlay: #292b33;
+		--bg-panel: #12131a;
+		--bg-overlay: #212d33;
+		--bg-band: #0f1a1f;
+		--bg-window: #0f1a1f;
 		--bg-sunken: #000000;
 		--bg-alternate: #1d1e26;
 		--bg-brand: var(--action);
 		--bg-inverse: #ffffff;
+		--bg-selected: var(--fill-weak);
 
 		--action: #edeef2;
 		--action-hover: #ffffff;
@@ -69,6 +162,7 @@
 		--signal-hover: #a8eee1;
 		--signal-soft: rgb(134 229 211 / 14%);
 		--focus: var(--signal);
+		--marketing-accent: #e6b766;
 
 		--text-strong: #ffffff;
 		--text-weak: #ffffffc7;
@@ -96,14 +190,42 @@
 		--stroke-focus: var(--focus);
 
 		--live: var(--signal);
+
+		--glow-accent: color-mix(in oklab, var(--marketing-accent) 10%, transparent);
+		--glow-accent-faint: color-mix(in oklab, var(--marketing-accent) 5%, transparent);
+		--glow-neutral: color-mix(in oklab, var(--action) 7%, transparent);
+		--grid-line: rgb(255 255 255 / 4%);
+		--edge-strong: rgb(255 255 255 / 18%);
+		--edge-weak: rgb(255 255 255 / 5%);
 	}
 
+	/* Elevation (not colours): soft, layered ink shadows on paper; the dark theme keeps its deep drop shadows. */
+	:root {
+		--elevation-soft: 0 1px 2px rgb(8 38 46 / 5%), 0 2px 6px -2px rgb(8 38 46 / 6%);
+		--elevation-card:
+			0 1px 2px rgb(8 38 46 / 4%), 0 6px 16px -6px rgb(8 38 46 / 8%), 0 24px 48px -24px rgb(8 38 46 / 12%);
+		--elevation-window:
+			0 1px 2px rgb(8 38 46 / 6%), 0 12px 32px -12px rgb(8 38 46 / 18%), 0 48px 96px -40px rgb(8 38 46 / 32%);
+	}
+	.surface-dark,
+	:root[data-theme="dark"] {
+		--elevation-soft: 0 8px 24px -16px rgb(0 0 0 / 60%);
+		--elevation-card: 0 24px 64px -32px rgb(0 0 0 / 70%);
+		--elevation-window: 0 40px 120px -40px rgb(0 0 0 / 80%), 0 0 0 1px rgb(255 255 255 / 4%);
+	}
+
+	/* A product window on the light page draws its own text in the dark theme's colours. */
+	.surface-dark {
+		color: var(--text-strong);
+	}
 }
 
 @theme inline {
 	--color-background: var(--bg-base);
 	--color-surface: var(--bg-raised);
 	--color-overlay: var(--bg-overlay);
+	--color-window: var(--bg-window);
+	--color-panel: var(--bg-panel);
 	--color-sunken: var(--bg-sunken);
 	--color-alternate: var(--bg-alternate);
 	--color-inverse-surface: var(--bg-inverse);
@@ -122,6 +244,7 @@
 	--color-signal: var(--signal);
 	--color-signal-hover: var(--signal-hover);
 	--color-signal-soft: var(--signal-soft);
+	--color-marketing-accent: var(--marketing-accent);
 	--color-focus: var(--focus);
 	--color-brand: var(--text-brand);
 	--color-brand-soft: var(--fill-brand-weak);
@@ -142,6 +265,15 @@
 	--color-stroke-focus: var(--stroke-focus);
 
 	--color-live: var(--live);
+	--color-band: var(--bg-band);
+
+	--shadow-soft: var(--elevation-soft);
+	--shadow-card: var(--elevation-card);
+	--shadow-window: var(--elevation-window);
+
+	/* Durations and easings come from the brand motion tokens (src/lib/motion.ts), written by Base.astro. */
+	--ease-enter: var(--motion-ease-enter);
+	--ease-fade: var(--motion-ease-fade);
 }
 
 @layer base {
@@ -151,10 +283,14 @@
 
 	html {
 		scroll-behavior: smooth;
+		scroll-padding-top: 5rem;
+		font-synthesis-weight: none;
+		-webkit-text-size-adjust: 100%;
 	}
 
 	body {
 		font-family: var(--font-sans);
+		font-variant-numeric: tabular-nums;
 		background-color: var(--bg-base);
 		color: var(--text-strong);
 		-webkit-font-smoothing: antialiased;
@@ -169,6 +305,14 @@
 	::selection {
 		background: var(--signal);
 		color: var(--on-action);
+	}
+
+	/* Wrap style only (the longhand), so nowrap utilities and inherited white-space keep their wrap mode. */
+	:where(h1, h2, h3, h4) {
+		text-wrap-style: balance;
+	}
+	:where(p, li, dd, figcaption, blockquote) {
+		text-wrap-style: pretty;
 	}
 
 	@media (prefers-reduced-motion: reduce) {
@@ -200,81 +344,427 @@
 }
 
 @layer components {
-	.grain {
-		position: relative;
-		isolation: isolate;
-	}
-	.grain::after {
-		content: "";
-		position: absolute;
-		inset: 0;
-		pointer-events: none;
-		opacity: 0.035;
-		background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-		mix-blend-mode: overlay;
+	.label {
+		font-family: var(--font-mono);
+		font-size: var(--text-2xs);
+		line-height: var(--text-2xs--line-height);
+		letter-spacing: var(--tracking-label);
+		text-transform: uppercase;
+		color: var(--text-muted);
 	}
 
-	.bg-grid {
-		background-image:
-			linear-gradient(to right, var(--stroke-weaker) 1px, transparent 1px),
-			linear-gradient(to bottom, var(--stroke-weaker) 1px, transparent 1px);
-		background-size: 56px 56px;
-	}
-
-	/* The default style of every animated element is its final, visible state. Base.astro adds `motion` to
-	   <html> only when JavaScript runs and the reader allows motion; only then does anything start hidden. */
-	.motion .reveal:not(.reveal-in) {
-		opacity: 0;
-		transform: translateY(14px);
-	}
-	.motion .reveal {
-		transition:
-			opacity 700ms var(--ease-out-quint),
-			transform 700ms var(--ease-out-quint);
-	}
-
-	.motion .stagger > .stagger-item {
-		animation: stagger-in 600ms var(--ease-out-quint) both;
-	}
-	.motion .stagger > .stagger-item:nth-child(2) { animation-delay: 60ms; }
-	.motion .stagger > .stagger-item:nth-child(3) { animation-delay: 120ms; }
-	.motion .stagger > .stagger-item:nth-child(4) { animation-delay: 180ms; }
-	.motion .stagger > .stagger-item:nth-child(5) { animation-delay: 240ms; }
-
-	@keyframes stagger-in {
-		from {
-			opacity: 0;
-			transform: translateY(8px) scale(0.98);
-		}
-	}
-
-	/* Press feedback: every interactive element should feel responsive.
-	   Transitions both opacity and transform so hover-fade and press-scale coexist. */
+	/* Colour changes on hover and press are instant; only the press scale moves. */
 	.press {
 		transition:
-			transform 160ms var(--ease-out-quint),
-			opacity 200ms var(--ease-out-quint),
-			background-color 200ms var(--ease-out-quint),
-			border-color 200ms var(--ease-out-quint),
-			color 200ms var(--ease-out-quint);
+			transform var(--motion-duration-press) var(--motion-ease-enter),
+			opacity var(--motion-duration-press) var(--motion-ease-fade);
 	}
 	.press:active {
 		transform: scale(0.97);
 	}
 
-	/* Gate hover-only effects to fine pointers (avoids stuck hover on touch). */
-	@media (hover: hover) and (pointer: fine) {
-		.hover-lift {
-			transition:
-				background-color 200ms var(--ease-out-quint),
-				border-color 200ms var(--ease-out-quint),
-				transform 200ms var(--ease-out-quint);
+	@media (prefers-reduced-motion: reduce) {
+		.press:active {
+			transform: none;
 		}
 	}
 
 	.tabular {
 		font-variant-numeric: tabular-nums;
 		font-feature-settings: "tnum";
+	}
+
+	/* Section rhythm: the canvas alternates with full-bleed bands (a deeper paper in the light theme, the terminal's
+	   window colour in the dark one), separated by 1px hairlines. */
+	.band {
+		background-color: var(--bg-band);
+		border-block: 1px solid var(--stroke-weaker);
+	}
+
+	/* A 1px edge that is brighter at the top, drawn as a border-box gradient behind the card's own fill. */
+	.edge {
+		border: 1px solid transparent;
+		background:
+			linear-gradient(var(--edge-fill, var(--bg-window)), var(--edge-fill, var(--bg-window))) padding-box,
+			linear-gradient(180deg, var(--edge-strong), var(--edge-weak) 55%, var(--edge-weak)) border-box;
+	}
+	.edge-raised {
+		--edge-fill: var(--bg-raised);
+	}
+	/* A panel set on a band or on the canvas: white in the light theme, the graphite canvas in the dark one. */
+	.edge-panel {
+		--edge-fill: var(--bg-panel);
+	}
+
+	/* Hero ambience: marketing-accent light and a faint 64px grid, pure CSS, behind everything and inert. */
+	.hero-ambient {
+		position: absolute;
+		inset: 0;
+		z-index: -1;
+		pointer-events: none;
+		background:
+			radial-gradient(55% 45% at 82% 12%, var(--glow-accent), transparent 70%),
+			radial-gradient(40% 35% at 8% 0%, var(--glow-neutral), transparent 70%),
+			radial-gradient(70% 45% at 50% 100%, var(--glow-accent-faint), transparent 75%);
+	}
+	.hero-ambient::after {
+		content: "";
+		position: absolute;
+		inset: 0;
+		background-image:
+			linear-gradient(var(--grid-line) 1px, transparent 1px),
+			linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+		background-size: 64px 64px;
+		background-position: center top;
+		mask-image: radial-gradient(ellipse 75% 60% at 50% 28%, #000 25%, transparent 72%);
+	}
+
+	/* The H1's second sentence. On phones it steps down to a supporting line so the subhead, the primary CTA and
+	   the execution fact fit the first screen (review 2026-10-26 item 2); the accessible H1 is unchanged. */
+	.hero-h1-secondary {
+		display: block;
+	}
+	@media (max-width: 639px) {
+		.hero-h1-secondary {
+			margin-top: 0.3em;
+			font-size: 0.56em;
+			line-height: 1.15;
+			letter-spacing: -0.03em;
+		}
+	}
+
+	/* The hero reel: a one-line window over a column of words that starts and ends on "Every market". */
+	.reel {
+		display: block;
+		height: 1.3em;
+		margin-block: -0.13em;
+		overflow: clip;
+	}
+	.reel-track {
+		display: flex;
+		flex-direction: column;
+	}
+	.reel-track > span {
+		display: block;
+		height: 1.3em;
+		line-height: 1.3em;
+		white-space: nowrap;
+	}
+
+	/* 02 ticker: a scroll-snap row by default. The live script sets data-ticker="moving" once the Pause control
+	   is wired; only then, and only without a reduced-motion preference, does the row become a marquee. */
+	.ticker-viewport {
+		overflow-x: auto;
+		scroll-snap-type: x mandatory;
+		/* The same inset as the track's padding, so the first card snaps to the page gutter, not the window edge. */
+		scroll-padding-inline: max(1.25rem, calc((100vw - 80rem) / 2 + 2rem));
+		scrollbar-width: thin;
+	}
+	.ticker-track {
+		display: flex;
+		width: max-content;
+	}
+	.ticker-list {
+		display: flex;
+		gap: 12px;
+		padding-inline-end: 12px;
+	}
+	.ticker-list > li {
+		scroll-snap-align: start;
+	}
+	.ticker-mirror {
+		display: none;
+	}
+
+	/* Tabs work without JavaScript: the tab list is hidden and every panel is shown with its own heading. */
+	html:not(.js) [data-tablist] {
+		display: none;
+	}
+	html:not(.js) [data-tabpanel][hidden]:not([data-requires-js]) {
+		display: block;
+	}
+	html:not(.js) [data-tabpanel] + [data-tabpanel] {
+		margin-top: 3rem;
+	}
+	html.js [data-panel-heading] {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		padding: 0;
+		margin: -1px;
+		overflow: hidden;
+		clip-path: inset(50%);
+		white-space: nowrap;
+		border: 0;
+	}
+
+	.feature-tab[aria-selected="true"] {
+		background-color: var(--bg-selected);
+		border-color: var(--stroke-weak);
+		box-shadow: var(--shadow-soft);
+	}
+
+	.market-tab[aria-selected="true"] {
+		background-color: var(--fill-hover);
+		border-color: var(--stroke-weak);
+	}
+
+	.preview-tab[aria-selected="true"] {
+		background-color: var(--fill-hover);
+	}
+
+	.open-book {
+		--ob-heat: rgb(170 180 188);
+		--ob-buy: var(--text-success);
+		--ob-sell: var(--text-error);
+		--ob-mid: var(--text-strong);
+		--ob-grid: var(--stroke-weaker);
+		--ob-axis: var(--text-muted);
+		--ob-axis-bg: var(--bg-window);
+	}
+	.stats-method[open] .disclosure-caret {
+		transform: rotate(90deg);
+	}
+	.faq-item[open] .disclosure-caret {
+		transform: rotate(45deg);
+	}
+
+	.ob-key-heat {
+		background: linear-gradient(
+			90deg,
+			color-mix(in srgb, var(--ob-heat) 10%, transparent),
+			color-mix(in srgb, var(--ob-heat) 55%, transparent)
+		);
+	}
+	.ob-key-buy {
+		background: var(--ob-buy);
+	}
+	.ob-key-sell {
+		border: 1.5px solid var(--ob-sell);
+	}
+	.ob-key-mid {
+		background: var(--ob-mid);
+	}
+
+	/* Fig. 1 connectors: a hairline that brightens towards the next node, ending in an arrow head. */
+	.flow-node + .flow-node::before,
+	.flow-node + .flow-node::after {
+		content: "";
+		position: absolute;
+	}
+	@media (max-width: 1023px) {
+		.flow::before {
+			content: "";
+			position: absolute;
+			left: 2.25rem;
+			top: 2.25rem;
+			bottom: 2.25rem;
+			width: 1px;
+			background: linear-gradient(180deg, var(--stroke-weak), var(--marketing-accent));
+		}
+	}
+	@media (min-width: 1024px) {
+		.flow-node + .flow-node::before {
+			top: 2.25rem;
+			left: calc(-100% + 3.75rem);
+			width: calc(100% - 4.5rem);
+			height: 1px;
+			background: linear-gradient(90deg, var(--stroke-weak), var(--marketing-accent));
+		}
+		.flow-node + .flow-node::after {
+			top: calc(2.25rem - 4px);
+			left: calc(-0.75rem - 5px);
+			border-block: 4px solid transparent;
+			border-left: 5px solid var(--marketing-accent);
+		}
+	}
+
+	/* Motion. Every animation moves transform and opacity only, runs only without a reduced-motion preference
+	   and leaves the default (final) state untouched where it does not run. */
+	@media (prefers-reduced-motion: no-preference) {
+		.reel-track {
+			animation: hero-reel calc(var(--motion-duration-loop-calm) * 1.75) var(--motion-ease-enter)
+				var(--motion-duration-brand) 1 both;
+		}
+
+		[data-ticker="moving"] .ticker-viewport {
+			overflow: hidden;
+			scroll-snap-type: none;
+			mask-image: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent);
+		}
+		[data-ticker="moving"] .ticker-mirror {
+			display: flex;
+		}
+		[data-ticker="moving"] .ticker-track {
+			animation: ticker-scroll calc(var(--motion-duration-loop-calm) * 22) linear infinite;
+		}
+		[data-ticker="moving"] .ticker-viewport:is(:hover, :focus-within) .ticker-track {
+			animation-play-state: paused;
+		}
+
+		@supports (animation-timeline: view()) {
+			.reveal {
+				animation: reveal-rise auto var(--motion-ease-enter) both;
+				animation-timeline: view();
+				animation-range: cover 0px cover 280px;
+			}
+
+			/* Card grids rise one after another: each card's range starts 40px of scroll after its previous sibling. */
+			@supports (animation-delay: calc(sibling-index() * 1ms)) {
+				.reveal-stagger > * {
+					animation: reveal-rise auto var(--motion-ease-enter) both;
+					animation-timeline: view();
+					animation-range: cover calc((sibling-index() - 1) * 40px) cover calc(280px + (sibling-index() - 1) * 40px);
+				}
+			}
+		}
+
+		/* A tab panel the visitor switches to fades in; the first render of the page is never animated, because
+		   tabs.ts marks a tab block only once it has switched. */
+		[data-tabs-switched] [data-tabpanel] {
+			transition:
+				opacity var(--motion-duration-swap) var(--motion-ease-fade),
+				transform var(--motion-duration-swap) var(--motion-ease-enter);
+		}
+		@starting-style {
+			[data-tabs-switched] [data-tabpanel] {
+				opacity: 0;
+				transform: translateY(6px);
+			}
+		}
+
+		/* The rows of a market category follow one after another. */
+		@supports (animation-delay: calc(sibling-index() * 1ms)) {
+			[data-tabs-switched] [data-tabpanel] tbody > tr {
+				transition:
+					opacity var(--motion-duration-swap) var(--motion-ease-fade),
+					transform var(--motion-duration-swap) var(--motion-ease-enter);
+				transition-delay: calc((sibling-index() - 1) * var(--motion-duration-swap) / 5);
+			}
+			@starting-style {
+				[data-tabs-switched] [data-tabpanel] tbody > tr {
+					opacity: 0;
+					transform: translateY(4px);
+				}
+			}
+		}
+
+		/* Disclosures (FAQ, stats method): the content fades in when opened, the caret turns. Where the browser can
+		   interpolate to auto, the height opens smoothly as well (::details-content). */
+		.disclosure-caret {
+			transition: transform var(--motion-duration-swap) var(--motion-ease-enter);
+		}
+		.disclosure[open] > :not(summary) {
+			transition:
+				opacity var(--motion-duration-swap) var(--motion-ease-fade),
+				transform var(--motion-duration-swap) var(--motion-ease-enter);
+		}
+		@starting-style {
+			.disclosure[open] > :not(summary) {
+				opacity: 0;
+				transform: translateY(-4px);
+			}
+		}
+		@supports selector(::details-content) and (interpolate-size: allow-keywords) {
+			.disclosure {
+				interpolate-size: allow-keywords;
+			}
+			.disclosure::details-content {
+				block-size: 0;
+				overflow-y: clip;
+				transition:
+					block-size var(--motion-duration-swap) var(--motion-ease-enter),
+					content-visibility var(--motion-duration-swap) var(--motion-ease-enter) allow-discrete;
+			}
+			.disclosure[open]::details-content {
+				block-size: auto;
+			}
+		}
+	}
+
+	/* One stop per HERO_REEL_WORDS entry after the first: each word holds, then the column moves up one line
+	   (12.5% of eight lines). It ends on the second "Every market", identical to the static headline. */
+	@keyframes hero-reel {
+		0%,
+		8% {
+			transform: translateY(0);
+		}
+		14.29%,
+		22.29% {
+			transform: translateY(-12.5%);
+		}
+		28.57%,
+		36.57% {
+			transform: translateY(-25%);
+		}
+		42.86%,
+		50.86% {
+			transform: translateY(-37.5%);
+		}
+		57.14%,
+		65.14% {
+			transform: translateY(-50%);
+		}
+		71.43%,
+		79.43% {
+			transform: translateY(-62.5%);
+		}
+		85.71%,
+		93.71% {
+			transform: translateY(-75%);
+		}
+		100% {
+			transform: translateY(-87.5%);
+		}
+	}
+
+	@keyframes ticker-scroll {
+		from {
+			transform: translateX(0);
+		}
+		to {
+			transform: translateX(-50%);
+		}
+	}
+
+	@keyframes reveal-rise {
+		from {
+			opacity: 0;
+			transform: translateY(24px);
+		}
+	}
+}
+
+/* Selected-tab colours sit outside the layers: the tab markup carries text utilities (text-fg-subtle, text-fg-faint),
+   and the utilities layer would otherwise win over a layered selected state. */
+[role="tab"][aria-selected="true"] {
+	color: var(--text-strong);
+}
+.feature-tab[aria-selected="true"] .feature-tab-icon {
+	color: var(--marketing-accent);
+}
+
+/* Cross-document view transitions between the home page and the legal and support pages: a short cross-fade of
+   the page while the header stays put. Browsers without them, and visitors who prefer reduced motion, get an
+   ordinary navigation. No client-side router: every page stays a full document load. */
+@media (prefers-reduced-motion: no-preference) {
+	@view-transition {
+		navigation: auto;
+	}
+	.site-header {
+		view-transition-name: site-header;
+	}
+	::view-transition-old(root),
+	::view-transition-new(root) {
+		animation-duration: var(--motion-duration-swap);
+		animation-timing-function: var(--motion-ease-fade);
+	}
+	::view-transition-group(site-header),
+	::view-transition-new(site-header) {
+		animation: none;
+	}
+	::view-transition-old(site-header) {
+		display: none;
 	}
 }
 
@@ -354,11 +844,8 @@
 	}
 }
 
-@layer components {
-	.font-display {
-		font-family: var(--font-display);
-		font-weight: 400;
-		letter-spacing: -0.01em;
-	}
-
+/* The logo kit's artwork for the active theme: on-light by default, on-dark in the dark comparison theme. */
+:root:not([data-theme="dark"]) [data-logo-theme="dark"],
+:root[data-theme="dark"] [data-logo-theme="light"] {
+	display: none;
 }

@@ -35,6 +35,14 @@
 			"signalSoft": "rgb(134 229 211 / 14%)"
 		}
 	},
+	"websiteColors": {
+		"light": {
+			"marketingAccent": "#99621f"
+		},
+		"dark": {
+			"marketingAccent": "#e6b766"
+		}
+	},
 	"logo": {
 		"light": {
 			"signal": "#176b64",
