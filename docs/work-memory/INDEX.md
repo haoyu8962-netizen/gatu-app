@@ -241,6 +241,7 @@
 
 当前规范：[docs/work-memory/README.md](../../docs/work-memory/README.md)
 
+- [周整理：日本地区与官网阶段 1 的本地成果、过期摘要及发布前置](sessions/2026-10-26-weekly-memory-review.md) — 2026-10-26；已整理，验证见正文。核对上周以来 12 个未进入远端 dev/main 的本地提交及两份任务记录。官网已从原型规划进入阶段 1 本地实施，旧律师前置条件已有来源中的后续决定；两份摘要及提交引用仍落后。保留官网 terminal:check 失败、真实验收与性能测量缺口；仅新增记忆记录和索引，没有合并、发布或发送邮件。
 - [周整理：p31/p32 交付、签名与滑杆修正，以及上周记忆同步](sessions/2026-10-19-weekly-memory-review.md) — 2026-10-19；已整理，验证见正文。核对上次整理以来 8 份新记录与滑杆记录后续，给 12 份记录补 17 个提交引用、7 条摘要和 10 条阶段补注。确认上周 95e12620 经 c9169980 / PR #111 同步，p31/p32 来源已交付新修正；10-05 本地整理仍待同步，真实自动入金、模式切换与物理交互验收保留。仅本地记忆维护。
 - [周整理：p30 交付、存款证据接续与仍待验收的功能](sessions/2026-10-12-weekly-memory-review.md) — 2026-10-12；已整理，验证见正文。核对 33 份新增或有变化的记录，补 94 个提交引用、11 条摘要和 21 条阶段补注；补写 PR #101 版本入口的事后记录。区分 p28 手动存款成功、p30 自动流程待验收和最新 dev 的未发布改动。上周 42f2bd23 仍待同步；只在独立工作树整理并本地提交。
 - [更换 Claude 账号的交接：私有记忆整理进仓库，新增 Agent 工作手册，清理过时的架构说法与发布状态](sessions/2026-10-08-agent-docs-handover.md) — 2026-10-08；已整理，验证见正文。用户要求整理开发文档，尤其是 agent 读的文档，保证换 Claude 账号后记忆不丢，现行文档不再引用旧架构与旧品牌。逐份核对本机 76 份 Claude 私有记忆：持久经验写进新的 docs/agent-handbook.md（协作约定、工作树、CI、Codex 审查、发布要点、换账号清单），产品知识写进手续费展示、协议实测行为、图表 K 线闸门等归属文档，AGENTS.md 加「Operator collaboration」指针节；改正 README、codex-onboard、agent.md 与代码规范里不存在的 hook 名、运行时 SSR、Node 24 等旧说法，替换签名文档里的旧实施方案，刷新 ADR 目录、文档地图和 16 份 ADR、8 份专题文档的发布状态。本文还给出 2026-10-08 的状态快照、待办汇总与每份私有记忆的去向。只做文档与链接检查，未运行应用测试。
@@ -253,6 +254,7 @@
 
 当前规范：[docs/adr/0005-spa-static-shell.md](../../docs/adr/0005-spa-static-shell.md) · [deploy/cloudfront/README.md](../../deploy/cloudfront/README.md)
 
+- [周整理：日本地区与官网阶段 1 的本地成果、过期摘要及发布前置](sessions/2026-10-26-weekly-memory-review.md) — 2026-10-26；已整理，验证见正文。核对上周以来 12 个未进入远端 dev/main 的本地提交及两份任务记录。官网已从原型规划进入阶段 1 本地实施，旧律师前置条件已有来源中的后续决定；两份摘要及提交引用仍落后。保留官网 terminal:check 失败、真实验收与性能测量缺口；仅新增记忆记录和索引，没有合并、发布或发送邮件。
 - [周整理：p31/p32 交付、签名与滑杆修正，以及上周记忆同步](sessions/2026-10-19-weekly-memory-review.md) — 2026-10-19；已整理，验证见正文。核对上次整理以来 8 份新记录与滑杆记录后续，给 12 份记录补 17 个提交引用、7 条摘要和 10 条阶段补注。确认上周 95e12620 经 c9169980 / PR #111 同步，p31/p32 来源已交付新修正；10-05 本地整理仍待同步，真实自动入金、模式切换与物理交互验收保留。仅本地记忆维护。
 - [CloudFront 生产发布 p32：生产审计两批修复、自动统一账户](sessions/2026-10-14-cloudfront-release-p32.md) — 2026-10-14；已验证，范围见正文。运营方要求把 dev 晋升到 main 并发布。晋升 PR #112 的配对开启构建因总量 +10,160 超允许量失败，经 PR #113 重定总量与桌面运行时基线后八项 CI 全绿，以 merge commit 合入 main（9ccb88c0）。在仓库外工作树 gatu-release-p32 用 Node 22.15.0 构建 cloudfront-2026-10-14-p32（三个闸门全开，总量 3,314,565），按 functions → lambda（版本 16）→ sync（1,645 个文件，发布标记一致）→ 两次失效 → verify 主网 15/15、测试网 16/16 → csp-coverage 33 步 0 违规。线上自 p31 升到 p32。新账号自动统一账户、外部钱包存款未知结果、现货兑换 Max 等真实验收与真机配对清单均未做。
 - [p32 晋升前重定总量与桌面运行时包体基线](sessions/2026-10-13-p32-rebaseline.md) — 2026-10-13；已验证，范围见正文。dev→main 晋升 PR #112（head f50e21a8）的配对开启生产构建失败：总量 3,314,639，比基线 3,304,479 多 10,160，超 10,000 允许量；同一头的配对关构建 3,311,212（+6,733）通过。无 chunk 拆分等异常，增长是 p30 以来 PR #101、#102、#107、#108、#109 各自在配对关允许量内合入的总和加上配对弹窗本身。在 gatu-release-p32 工作树以固定身份、Node 22.15.0、无 .env.local 构建：配对关（显式 false）3,311,757、配对开 3,314,259；总量基线重定为 3,311,757，桌面运行时增量基线重定为 202,683（距允许量只剩 483），手机运行时不动。记录了一个测量坑：标志未设置不等于配对关，产物会多出 mobile-pairing chunk。
@@ -302,6 +304,7 @@
 
 当前规范：[AGENTS.md](../../AGENTS.md) · [docs/documentation-system.md](../../docs/documentation-system.md) · [docs/README.md](../../docs/README.md) · [docs/agent-handbook.md](../../docs/agent-handbook.md)
 
+- [周整理：日本地区与官网阶段 1 的本地成果、过期摘要及发布前置](sessions/2026-10-26-weekly-memory-review.md) — 2026-10-26；已整理，验证见正文。核对上周以来 12 个未进入远端 dev/main 的本地提交及两份任务记录。官网已从原型规划进入阶段 1 本地实施，旧律师前置条件已有来源中的后续决定；两份摘要及提交引用仍落后。保留官网 terminal:check 失败、真实验收与性能测量缺口；仅新增记忆记录和索引，没有合并、发布或发送邮件。
 - [周整理：p31/p32 交付、签名与滑杆修正，以及上周记忆同步](sessions/2026-10-19-weekly-memory-review.md) — 2026-10-19；已整理，验证见正文。核对上次整理以来 8 份新记录与滑杆记录后续，给 12 份记录补 17 个提交引用、7 条摘要和 10 条阶段补注。确认上周 95e12620 经 c9169980 / PR #111 同步，p31/p32 来源已交付新修正；10-05 本地整理仍待同步，真实自动入金、模式切换与物理交互验收保留。仅本地记忆维护。
 - [版本号入口调整的事后补记：设置内可复制，行情加载页脚保留简写](sessions/2026-10-12-build-version-entry-retrospective.md) — 2026-10-12；已整理，验证见正文。PR #101 的设置版本入口已随 p31 发布；后续 b2ab32c7 删除设置行下方 Release 提示并随 PR #107/p32 交付，版本简写与复制完整版本的行为保留。仅凭共享组件代码不能认定双端剪贴板交互验收完成。
 - [CI：Terminal Tests 拆两片并行，只改单测的 PR 不跑浏览器回归](sessions/2026-10-12-ci-terminal-test-shards.md) — 2026-10-12；已验证，范围见正文。Terminal Tests 两片并行与测试文件路径过滤已随 PR #103 合入并进入 p31；PR #104 加固结构断言，PR #106 补入滑杆测试清单。首轮校验器失败及单片 585 秒的历史读数保留；本轮只查最终 head 的 CI 状态，没有重新测量等待时间或计费。
@@ -385,6 +388,7 @@
 
 当前规范：[docs/hyperliquid-sdk-reference.md](../../docs/hyperliquid-sdk-reference.md) · [docs/hyperliquid-sdk-coverage-review.md](../../docs/hyperliquid-sdk-coverage-review.md)
 
+- [周整理：日本地区与官网阶段 1 的本地成果、过期摘要及发布前置](sessions/2026-10-26-weekly-memory-review.md) — 2026-10-26；已整理，验证见正文。核对上周以来 12 个未进入远端 dev/main 的本地提交及两份任务记录。官网已从原型规划进入阶段 1 本地实施，旧律师前置条件已有来源中的后续决定；两份摘要及提交引用仍落后。保留官网 terminal:check 失败、真实验收与性能测量缺口；仅新增记忆记录和索引，没有合并、发布或发送邮件。
 - [新账号自动设为统一账户（ADR 0041）：实现、三轮 Codex 审查与修复](sessions/2026-10-12-automatic-unified-account.md) — 2026-10-12；已验证，范围见正文。ADR 0041 的新账号自动统一账户已经 PR #107 合入，并随 p32 来源记录发布；邮箱使用精确 embedded owner 的 userSetAbstraction，外部钱包使用已核验 Agent 的 agentSetAbstraction，default 本身仍不放行交易。原三轮审查及推送前第四轮、失败与测试边界保留，两条真实入金后自动设置路径均未验收。
 - [新注册账号的账户类型为空：协议 default 模式与官方自动设为统一账户的做法](sessions/2026-10-12-new-account-default-mode-review.md) — 2026-10-12；已整理，验证见正文。新账号协议 default 模式的取证保留；当时等待决定的自动设置后来由 ADR 0041 实施并随 p32 发布。邮箱路径最终采用 userSetAbstraction，外部钱包采用 agentSetAbstraction；有历史订单的账号强制迁移仍未实现。原官方打包代码阅读不是新账号真实流程验收。
 - [建立连接报「Too many extra agents」：普通交易连接改用无名默认 Agent（ADR 0038）](sessions/2026-10-09-unnamed-default-agent.md) — 2026-10-09；已整理，验证见正文。普通外部钱包交易连接改用无名默认 Agent 并按精确 owner 的 userRole 核验，后续竞争与取消修复随 PR #91 合入、p30 发布。真实外部钱包授权与首单仍未验收；命名 API 钱包和 Mobile QR 属独立槽位。
@@ -400,6 +404,7 @@
 
 当前规范：[docs/brand-migration-plan.md](../../docs/brand-migration-plan.md)
 
+- [周整理：日本地区与官网阶段 1 的本地成果、过期摘要及发布前置](sessions/2026-10-26-weekly-memory-review.md) — 2026-10-26；已整理，验证见正文。核对上周以来 12 个未进入远端 dev/main 的本地提交及两份任务记录。官网已从原型规划进入阶段 1 本地实施，旧律师前置条件已有来源中的后续决定；两份摘要及提交引用仍落后。保留官网 terminal:check 失败、真实验收与性能测量缺口；仅新增记忆记录和索引，没有合并、发布或发送邮件。
 - [更换 Claude 账号的交接：私有记忆整理进仓库，新增 Agent 工作手册，清理过时的架构说法与发布状态](sessions/2026-10-08-agent-docs-handover.md) — 2026-10-08；已整理，验证见正文。用户要求整理开发文档，尤其是 agent 读的文档，保证换 Claude 账号后记忆不丢，现行文档不再引用旧架构与旧品牌。逐份核对本机 76 份 Claude 私有记忆：持久经验写进新的 docs/agent-handbook.md（协作约定、工作树、CI、Codex 审查、发布要点、换账号清单），产品知识写进手续费展示、协议实测行为、图表 K 线闸门等归属文档，AGENTS.md 加「Operator collaboration」指针节；改正 README、codex-onboard、agent.md 与代码规范里不存在的 hook 名、运行时 SSR、Node 24 等旧说法，替换签名文档里的旧实施方案，刷新 ADR 目录、文档地图和 16 份 ADR、8 份专题文档的发布状态。本文还给出 2026-10-08 的状态快照、待办汇总与每份私有记忆的去向。只做文档与链接检查，未运行应用测试。
 - [CloudFront 生产发布 p28：存款按需切链、订单按钮不再要求切到 Arbitrum、gatu.ai 域名组退役（阶段 5.1）](sessions/2026-10-08-cloudfront-release-p28.md) — 2026-10-08；已验证，范围见正文。用户要求把最新代码部署到生产。先把 #80（存款按数字比较链 ID、点击存款时按需切链；订单按钮去掉 Switch to Arbitrum 预拦截，外部钱包签名客户端按连接自身的链取用）、#73（gatu.ai 域名组与过渡头退役，p25 清理代码）、#79（agent 文档迁入仓库）合入 dev，晋升 PR #87 七项 CI 全绿合入 main（d74dd616）。发布前核对切换方案阶段 5.1 前提：三条分发都没有 gatu.ai 别名，API 源站请求策略含 X-Sairn-Forwarded-Host（ETag ETVPDKIKX0DER 未变）。在仓库外工作树 gatu-release-p28 用 Node 22.15.0 从 d74dd616 构建 cloudfront-2026-10-08-p28（开关同 p27），按 functions → lambda（版本 13）→ sync（闸门 sponsored-mainnet-deposits=on mobile-pairing=off mainnet-card-funding=on，1,643 个文件，发布标记一致）→ 两次失效 → verify 主网 15/15、测试网 16/16（签名 POST allowed）→ csp-coverage 33 步 0 违规。线上不再识别 gatu 主机；阶段 5.2–5.4 的线上步骤未做；真机验收未做。
 - [gatu.ai 退役收尾：阶段 5.2 执行、5.3/5.4 权限不足、旧发布工作树清理](sessions/2026-10-08-gatu-retirement-cleanup.md) — 2026-10-08；已整理，验证见正文。p28 发布后用户说「gatu 相关的产物可以全部清理掉了，不需要等了」。只读核对后执行：5.2 从 API 源站请求策略删除 X-Gatu-Forwarded-Host（ETag ETVPDKIKX0DER → E3UN6WX5RRO2AG，9 个头，/api/geo 仍 200）；5.3 命令行被 lambda:UpdateFunctionConfiguration 拒绝，随后按用户要求在其 Chrome 的 Lambda 控制台改名为 SAIRN_TRUST_VIEWER_ADDRESS=true（保留 IPDATA_API_KEY），读回成功、geo 正常；5.4 命令行被 acm:DeleteCertificate 拒绝、浏览器操作被安全分类器拒绝，用户自己删除了两张 gatu 证书，读回只剩 sairn.ai。删除发布工作树 gatu-release-p24、p25，保留 p26 与 p28。未做：Cloudflare 的 gatu 验证与解析记录、临时 IAM 策略 gatu-edge-domain-cutover 的摘除（无权限读取）。
@@ -430,6 +435,7 @@
 
 | 记录日期 | 任务记录 | 来源任务 | 基线提交 | 状态 |
 | --- | --- | --- | --- | --- |
+| 2026-10-26 | [周整理：日本地区与官网阶段 1 的本地成果、过期摘要及发布前置](sessions/2026-10-26-weekly-memory-review.md) | 启动3006端口开发服务器（`01a08f6b-26ae-7642-a9a5-a074d906c899`） | `43b78f96ccae64ee19e61f01a04eed420ab92af9` | 已整理，验证见正文 |
 | 2026-10-19 | [周整理：p31/p32 交付、签名与滑杆修正，以及上周记忆同步](sessions/2026-10-19-weekly-memory-review.md) | 启动3006端口开发服务器（`01a08f6b-26ae-7642-a9a5-a074d906c899`） | `7ff72706f32364b89f33706d8fba500a0abb0676` | 已整理，验证见正文 |
 | 2026-10-14 | [CloudFront 生产发布 p32：生产审计两批修复、自动统一账户](sessions/2026-10-14-cloudfront-release-p32.md) | 未取得任务标识，见正文 | `ab8896ef` | 已验证，范围见正文 |
 | 2026-10-13 | [p32 晋升前重定总量与桌面运行时包体基线](sessions/2026-10-13-p32-rebaseline.md) | 未取得任务标识，见正文 | `f50e21a8` | 已验证，范围见正文 |
