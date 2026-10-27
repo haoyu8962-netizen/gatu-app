@@ -230,6 +230,8 @@ export function startOpenBook(root: HTMLElement): void {
 	let trades: Trade[] = [];
 	const seenTrades = new Set<string>();
 	let quote: Quote | null = null;
+	/** Once a bbo frame has arrived, the quote comes only from bbo: l2Book levels are aggregated to N_SIG_FIGS. */
+	let quoteFromBbo = false;
 	let mids: { t: number; mid: number }[] = [];
 	let firstBookT = 0;
 	let lastTrade: { px: string; t: number } | null = null;
@@ -304,6 +306,7 @@ export function startOpenBook(root: HTMLElement): void {
 		firstBookT = 0;
 		seenTrades.clear();
 		quote = null;
+		quoteFromBbo = false;
 		lastTrade = null;
 		liveSince = 0;
 		lastValidAt = 0;
@@ -343,7 +346,7 @@ export function startOpenBook(root: HTMLElement): void {
 			}));
 			if (columns.length === 0 || book.t > (columns.at(-1)?.t ?? 0)) columns.push({ t: book.t, levels });
 			if (firstBookT === 0) firstBookT = book.t;
-			if (!quote || book.t >= quote.t) quote = { bid: book.bids[0].px, ask: book.asks[0].px, t: book.t };
+			if (!quoteFromBbo && (!quote || book.t >= quote.t)) quote = { bid: book.bids[0].px, ask: book.asks[0].px, t: book.t };
 			recordMid(book.t);
 		} else if (message.channel === "bbo") {
 			const read = readBbo(message.data, coin);
@@ -351,7 +354,8 @@ export function startOpenBook(root: HTMLElement): void {
 			if (!read) return rejectFrame("bbo");
 			invalid.bbo = 0;
 			lastValidAt = now;
-			if (!quote || read.t >= quote.t) quote = read;
+			if (!quoteFromBbo || !quote || read.t >= quote.t) quote = read;
+			quoteFromBbo = true;
 			recordMid(read.t);
 			exchangeNow = Math.max(exchangeNow, read.t);
 			exchangeNowAt = now;
@@ -411,7 +415,9 @@ export function startOpenBook(root: HTMLElement): void {
 		ws.addEventListener("close", () => {
 			if (socket !== ws) return;
 			disconnect();
-			if (phase === "live") dropToRecorded(true);
+			// A close before the live handoff (including a failed first handshake) also retries, within the
+			// connection budget that connect() enforces.
+			if (phase === "live" || (phase === "recorded" && wanted())) dropToRecorded(true);
 		});
 	}
 
