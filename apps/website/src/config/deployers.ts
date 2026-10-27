@@ -64,16 +64,17 @@ export interface PreIpoDocumentation {
 	source: DeployerSource;
 }
 
-// XYZ lists JIO and OURA in its Pre-IPO specification index, not in the general one the terminal links.
-// Both reference one share of the company. XYZ converts each to a standard equity perpetual after the
+// XYZ lists ANT, JIO and OURA in its Pre-IPO specification index, not in the general one the terminal links.
+// Each references one share of the company (ANT: one Anthropic, PBC Class A common share, added 2026-10-27). XYZ converts each to a standard equity perpetual after the
 // IPO (JIO's anticipated listing date is 2026-10-28), which fails `markets:snapshot --check` until this
 // entry and the snapshot are updated in a reviewed commit.
 const XYZ_PRE_IPO_INDEX: DeployerSource = {
 	url: "https://docs.trade.xyz/perpetuals/specifications-and-schedules/pre-ipo-specification-index",
-	readOn: "2026-10-25",
+	readOn: "2026-10-27",
 };
 
 export const PRE_IPO_DOCS: readonly PreIpoDocumentation[] = [
 	{ coin: "xyz:JIO", quotedPerShare: true, source: XYZ_PRE_IPO_INDEX },
 	{ coin: "xyz:OURA", quotedPerShare: true, source: XYZ_PRE_IPO_INDEX },
+	{ coin: "xyz:ANT", quotedPerShare: true, source: XYZ_PRE_IPO_INDEX },
 ];
