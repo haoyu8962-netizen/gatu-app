@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<meta name="robots" content="noindex, nofollow" />
+		<meta name="color-scheme" content="dark" />
+		<title>Beyond crypto — legal review draft</title>
+		<link rel="stylesheet" href="./review.css" />
+		<script type="module" src="./review.js"></script>
+	</head>
+	<body>
+		<header class="review-bar" role="banner">
+			<p><strong>Draft for legal review — not for publication.</strong> Section draft for the English site, 25 Oct 2026. Nothing here is approved, live or linked from the site.</p>
+			<label class="toggle"><input type="checkbox" id="optional-columns" /> Show optional data columns (question J1)</label>
+		</header>
+
+		<main class="page">
+			<section class="block" aria-labelledby="beyond-title">
+				<p class="eyebrow">Third-party markets on Hyperliquid <span class="q">A3 · F4</span></p>
+				<h1 id="beyond-title">Markets beyond crypto <span class="q">T1 of 3</span></h1>
+				<p class="sub">
+					Independent deployers run perpetual markets on Hyperliquid that track reference prices linked to companies, including some that
+					are not publicly listed. Sairn shows these markets as an independent interface. It does not create, price or operate them.
+					<span class="q">D1 · D6 · E5 · BC-1 · BC-3</span>
+				</p>
+
+				<p class="core">
+					These are perpetual contracts that track a reference price set by an independent deployer. They do not make you an owner of any
+					company: you get no ownership, no dividends and no voting rights. A market can be halted, settled or delisted.
+					<span class="q">S0 · G1 · K1 · E5</span>
+				</p>
+
+				<p class="risk-third">
+					Third-party markets can have thin liquidity, and their prices can move while the referenced market is closed. A deployer can
+					settle or delist a market at a price you did not choose. <span class="q">H3 · BC-15</span>
+				</p>
+
+				<div class="table-wrap">
+					<table>
+						<caption>
+							Third-party perpetual markets on Hyperliquid. No ownership rights in any company.
+							<span class="q">E1 · A3</span>
+						</caption>
+						<thead>
+							<tr>
+								<th scope="col">Market</th>
+								<th scope="col">Run by (independent deployer)</th>
+								<th scope="col">What the price tracks (per the deployer)</th>
+								<th scope="col">How the price is set</th>
+								<th scope="col">Status</th>
+								<th scope="col" class="opt">Mark price · Hyperliquid public data · <span id="snapshot-time"></span></th>
+								<th scope="col" class="opt">24h notional volume</th>
+							</tr>
+						</thead>
+						<tbody id="rows"></tbody>
+					</table>
+				</div>
+				<p class="selection">
+					The markets listed here are examples chosen by Sairn because their deployers publish how the reference price is set. This is
+					not a complete list, and being listed here is not an audit, an approval or a recommendation. <span class="q">A3 · D2 · BC-7</span>
+				</p>
+				<p class="source">
+					Company names as each deployer writes them (XYZ's on-chain description, EntropyIO's documentation). What the price tracks:
+					paraphrased from each deployer's documentation and, for XYZ, its on-chain description (read 25 Oct 2026).
+					<span class="q">E1 · BC-18</span>
+				</p>
+				<p class="review-note">
+					Review note, not proposed copy: each table row follows the R1 or R2 sample in §4.4 of the review document, word for word.
+				</p>
+
+				<p class="disclaimer">
+					These markets are run by independent deployers on Hyperliquid. Each deployer defines its market, sets its reference price,
+					contract terms and limits, and can halt, settle or delist it. Sairn is an independent interface. It is not Hyperliquid Corp.,
+					the Hyper Foundation or any market deployer, and it is not affiliated with, sponsored by or endorsed by the companies these
+					prices reference. Company names are used only to identify what a reference price follows, and they belong to their owners.
+					Trading these contracts gives you no ownership, dividend, voting or other rights in any company. Sairn charges a 0.01% builder
+					fee on perpetual orders other than TWAP orders, and deployers can set their own fees. Trading through Sairn is not available to
+					persons in the United States or other restricted locations listed in the Terms of Use. Not financial advice.
+					<span class="q">E4 · E5 · K4 · C2 · C3 · B1 · BC-12</span>
+				</p>
+				<p class="risk" data-risk-note>
+					Perpetual futures use leverage. You can lose all of your margin. <a href="https://sairn.ai/risk/">Risk disclosure →</a>
+					<span class="q">H1 · H2</span>
+				</p>
+			</section>
+
+			<section class="reels" aria-labelledby="reels-title">
+				<h2 id="reels-title">Video drafts <span class="q">L1 · L2 · H4 · J4</span></h2>
+				<p>
+					Text and neutral shapes only: no third-party logos, no prices, no leverage figures. Every frame shows Sairn's own lockup
+					(question E4) and the review watermark. Neither plays automatically.
+				</p>
+				<div class="reel-grid">
+					<figure>
+						<video controls muted playsinline preload="none" poster="./media/reel-generic.jpg" width="1280" height="720">
+							<source src="./media/reel-generic.webm" type='video/webm; codecs="av01.0.08M.08"' />
+							<source src="./media/reel-generic.mp4" type="video/mp4" />
+						</video>
+						<figcaption>Generic: no company names or market codes.</figcaption>
+					</figure>
+					<figure>
+						<video controls muted playsinline preload="none" poster="./media/reel-named.jpg" width="1280" height="720">
+							<source src="./media/reel-named.webm" type='video/webm; codecs="av01.0.08M.08"' />
+							<source src="./media/reel-named.mp4" type="video/mp4" />
+						</video>
+						<figcaption>Named: market codes and company names as the deployers describe them, in plain text (question E1).</figcaption>
+					</figure>
+				</div>
+			</section>
+
+			<section class="asis" aria-labelledby="asis-title">
+				<h2 id="asis-title">Appendix: the terminal as it is today</h2>
+				<p>
+					<strong>Product as-is, not marketing material.</strong> Signed-out screenshots of app.sairn.ai taken on 25 Oct 2026. They show
+					leverage badges and deployer markers, which the site's own material must not show; they are here so the reviewer sees what a
+					visitor would find after clicking through. The HIP-3 market pages open behind the deployer risk disclaimer; nobody accepted it
+					for these captures.
+				</p>
+				<div class="asis-grid" id="asis-grid"></div>
+			</section>
+		</main>
+	</body>
+</html>

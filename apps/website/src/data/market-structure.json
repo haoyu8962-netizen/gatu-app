@@ -1,0 +1,3477 @@
+{
+	"schemaVersion": 1,
+	"fetchedAt": "2026-10-27T05:46:52.566Z",
+	"source": "POST https://api.hyperliquid.xyz/info: perpDexs, perpConciseAnnotations, metaAndAssetCtxs per dex",
+	"dexes": [
+		{
+			"dex": "",
+			"fullName": null,
+			"markets": [
+				{
+					"coin": "BTC",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 5,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "2200420735"
+				},
+				{
+					"coin": "ETH",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 4,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "729854988"
+				},
+				{
+					"coin": "ATOM",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 2,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "450746"
+				},
+				{
+					"coin": "DYDX",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 1,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "234510"
+				},
+				{
+					"coin": "SOL",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 2,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "121282421"
+				},
+				{
+					"coin": "AVAX",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 2,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "2094626"
+				},
+				{
+					"coin": "BNB",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 3,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "3849820"
+				},
+				{
+					"coin": "APE",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 1,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "163677"
+				},
+				{
+					"coin": "OP",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 1,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "700400"
+				},
+				{
+					"coin": "LTC",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 2,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "1702649"
+				},
+				{
+					"coin": "ARB",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 1,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "2836034"
+				},
+				{
+					"coin": "DOGE",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "5250814"
+				},
+				{
+					"coin": "INJ",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 1,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "5293635"
+				},
+				{
+					"coin": "SUI",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 1,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "18855076"
+				},
+				{
+					"coin": "kPEPE",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "8249562"
+				},
+				{
+					"coin": "CRV",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 1,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "5690122"
+				},
+				{
+					"coin": "LDO",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 1,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "816282"
+				},
+				{
+					"coin": "LINK",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 1,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "5009190"
+				},
+				{
+					"coin": "STX",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 1,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "525050"
+				},
+				{
+					"coin": "CFX",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "160827"
+				},
+				{
+					"coin": "GMX",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 2,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "282684"
+				},
+				{
+					"coin": "SNX",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 1,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "166659"
+				},
+				{
+					"coin": "XRP",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "43511392"
+				},
+				{
+					"coin": "BCH",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 3,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "997706"
+				},
+				{
+					"coin": "APT",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 2,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "1646156"
+				},
+				{
+					"coin": "AAVE",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 2,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "4429361"
+				},
+				{
+					"coin": "COMP",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 2,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "306152"
+				},
+				{
+					"coin": "WLD",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 1,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "25608238"
+				},
+				{
+					"coin": "YGG",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "123633"
+				},
+				{
+					"coin": "TRX",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "1026578"
+				},
+				{
+					"coin": "kSHIB",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "163378"
+				},
+				{
+					"coin": "UNI",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 1,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "7998393"
+				},
+				{
+					"coin": "SEI",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "903130"
+				},
+				{
+					"coin": "RUNE",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 1,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "226206"
+				},
+				{
+					"coin": "ZRO",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 1,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "12189143"
+				},
+				{
+					"coin": "DOT",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 1,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "1725590"
+				},
+				{
+					"coin": "BANANA",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 1,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "54536"
+				},
+				{
+					"coin": "TRB",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 2,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "71329"
+				},
+				{
+					"coin": "BIGTIME",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "72500"
+				},
+				{
+					"coin": "KAS",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "157134"
+				},
+				{
+					"coin": "BLUR",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "189354"
+				},
+				{
+					"coin": "TIA",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 1,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "2715129"
+				},
+				{
+					"coin": "BSV",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 2,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "134810"
+				},
+				{
+					"coin": "ADA",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "4048885"
+				},
+				{
+					"coin": "MINA",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "460834"
+				},
+				{
+					"coin": "POLYX",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "303680"
+				},
+				{
+					"coin": "GAS",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 1,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "48918"
+				},
+				{
+					"coin": "PENDLE",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "643427"
+				},
+				{
+					"coin": "FET",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "564412"
+				},
+				{
+					"coin": "NEAR",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 1,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "112719193"
+				},
+				{
+					"coin": "MEME",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "23882"
+				},
+				{
+					"coin": "ORDI",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 2,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "59527"
+				},
+				{
+					"coin": "NEO",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 2,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "43012"
+				},
+				{
+					"coin": "ZEN",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 2,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "106990"
+				},
+				{
+					"coin": "FIL",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 1,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "876074"
+				},
+				{
+					"coin": "PYTH",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "1014432"
+				},
+				{
+					"coin": "SUSHI",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 1,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "73880"
+				},
+				{
+					"coin": "IMX",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 1,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "101452"
+				},
+				{
+					"coin": "kBONK",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "574016"
+				},
+				{
+					"coin": "GMT",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "63266"
+				},
+				{
+					"coin": "SUPER",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "236802"
+				},
+				{
+					"coin": "JUP",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "2092725"
+				},
+				{
+					"coin": "kLUNC",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "38799"
+				},
+				{
+					"coin": "RSR",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "61185"
+				},
+				{
+					"coin": "GALA",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "109152"
+				},
+				{
+					"coin": "JTO",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "676610"
+				},
+				{
+					"coin": "ACE",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 2,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "144054"
+				},
+				{
+					"coin": "WIF",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "272191"
+				},
+				{
+					"coin": "CAKE",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 1,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "206787"
+				},
+				{
+					"coin": "PEOPLE",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "150166"
+				},
+				{
+					"coin": "ENS",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 2,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "110771"
+				},
+				{
+					"coin": "ETC",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 2,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "327862"
+				},
+				{
+					"coin": "XAI",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 1,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "59832"
+				},
+				{
+					"coin": "MANTA",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 1,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "138591"
+				},
+				{
+					"coin": "UMA",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 1,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "29558"
+				},
+				{
+					"coin": "ONDO",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "4635807"
+				},
+				{
+					"coin": "ALT",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "570830"
+				},
+				{
+					"coin": "ZETA",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 1,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "48652"
+				},
+				{
+					"coin": "DYM",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 1,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "134109"
+				},
+				{
+					"coin": "W",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 1,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "735682"
+				},
+				{
+					"coin": "STRK",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 1,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "5639159"
+				},
+				{
+					"coin": "TAO",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 3,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "3610948"
+				},
+				{
+					"coin": "AR",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 2,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "435298"
+				},
+				{
+					"coin": "kFLOKI",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "60025"
+				},
+				{
+					"coin": "BOME",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "68131"
+				},
+				{
+					"coin": "ETHFI",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 1,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "1987581"
+				},
+				{
+					"coin": "ENA",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "51088762"
+				},
+				{
+					"coin": "MNT",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 1,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "103891"
+				},
+				{
+					"coin": "TNSR",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 1,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "6533"
+				},
+				{
+					"coin": "SAGA",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 1,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "33587"
+				},
+				{
+					"coin": "MERL",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "215827"
+				},
+				{
+					"coin": "HBAR",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "1366019"
+				},
+				{
+					"coin": "POPCAT",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "124674"
+				},
+				{
+					"coin": "EIGEN",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 2,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "699820"
+				},
+				{
+					"coin": "REZ",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "755382"
+				},
+				{
+					"coin": "NOT",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "9782"
+				},
+				{
+					"coin": "TURBO",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "56145"
+				},
+				{
+					"coin": "BRETT",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "209889"
+				},
+				{
+					"coin": "IO",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 1,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "261232"
+				},
+				{
+					"coin": "ZK",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "786246"
+				},
+				{
+					"coin": "RENDER",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 1,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "1514081"
+				},
+				{
+					"coin": "POL",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "605236"
+				},
+				{
+					"coin": "CELO",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "214828"
+				},
+				{
+					"coin": "HMSTR",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "10606"
+				},
+				{
+					"coin": "kNEIRO",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 1,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "47975"
+				},
+				{
+					"coin": "GOAT",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "157422"
+				},
+				{
+					"coin": "MOODENG",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "142915"
+				},
+				{
+					"coin": "GRASS",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 1,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "1991956"
+				},
+				{
+					"coin": "PURR",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "914288"
+				},
+				{
+					"coin": "PNUT",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 1,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "107611"
+				},
+				{
+					"coin": "XLM",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "1023938"
+				},
+				{
+					"coin": "SAND",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "243868"
+				},
+				{
+					"coin": "IOTA",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "73742"
+				},
+				{
+					"coin": "ALGO",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "358389"
+				},
+				{
+					"coin": "HYPE",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 2,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "463507728"
+				},
+				{
+					"coin": "ME",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 1,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "70777"
+				},
+				{
+					"coin": "MOVE",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "93380"
+				},
+				{
+					"coin": "VIRTUAL",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 1,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "358307"
+				},
+				{
+					"coin": "PENGU",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "687010"
+				},
+				{
+					"coin": "USUAL",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 1,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "301818"
+				},
+				{
+					"coin": "FARTCOIN",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 1,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "6461368"
+				},
+				{
+					"coin": "AIXBT",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "49360"
+				},
+				{
+					"coin": "BIO",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "96222"
+				},
+				{
+					"coin": "GRIFFAIN",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "69000"
+				},
+				{
+					"coin": "SPX",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 1,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "1669018"
+				},
+				{
+					"coin": "S",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "264472"
+				},
+				{
+					"coin": "MORPHO",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 1,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "1369328"
+				},
+				{
+					"coin": "TRUMP",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 1,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "2736547"
+				},
+				{
+					"coin": "MELANIA",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 1,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "399896"
+				},
+				{
+					"coin": "ANIME",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "355695"
+				},
+				{
+					"coin": "VVV",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 2,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "9860270"
+				},
+				{
+					"coin": "BERA",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 1,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "167902"
+				},
+				{
+					"coin": "LAYER",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "42447"
+				},
+				{
+					"coin": "KAITO",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "151083"
+				},
+				{
+					"coin": "NIL",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "2610278"
+				},
+				{
+					"coin": "PAXG",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 3,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "1783186"
+				},
+				{
+					"coin": "BABY",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "1323848"
+				},
+				{
+					"coin": "WCT",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "93692"
+				},
+				{
+					"coin": "HYPER",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "134710"
+				},
+				{
+					"coin": "ZORA",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "360133"
+				},
+				{
+					"coin": "INIT",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "1242991"
+				},
+				{
+					"coin": "NXPC",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "149566"
+				},
+				{
+					"coin": "SOPH",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "325498"
+				},
+				{
+					"coin": "RESOLV",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "75421"
+				},
+				{
+					"coin": "SYRUP",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "591447"
+				},
+				{
+					"coin": "PUMP",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "54231034"
+				},
+				{
+					"coin": "PROVE",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "60584"
+				},
+				{
+					"coin": "XPL",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "4439002"
+				},
+				{
+					"coin": "WLFI",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "1852034"
+				},
+				{
+					"coin": "LINEA",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "73029"
+				},
+				{
+					"coin": "SKY",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "301869"
+				},
+				{
+					"coin": "ASTER",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "1262132"
+				},
+				{
+					"coin": "AVNT",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "249172"
+				},
+				{
+					"coin": "STBL",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "581859"
+				},
+				{
+					"coin": "0G",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "133674"
+				},
+				{
+					"coin": "HEMI",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "131470"
+				},
+				{
+					"coin": "APEX",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "95751"
+				},
+				{
+					"coin": "2Z",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "532241"
+				},
+				{
+					"coin": "ZEC",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 2,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "281632985"
+				},
+				{
+					"coin": "MON",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "2845478"
+				},
+				{
+					"coin": "MET",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "1968680"
+				},
+				{
+					"coin": "MEGA",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "917699"
+				},
+				{
+					"coin": "CC",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "774739"
+				},
+				{
+					"coin": "ICP",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 1,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "953714"
+				},
+				{
+					"coin": "AERO",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "2327633"
+				},
+				{
+					"coin": "STABLE",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "94651"
+				},
+				{
+					"coin": "FOGO",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "376171"
+				},
+				{
+					"coin": "LIT",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "11996622"
+				},
+				{
+					"coin": "XMR",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 3,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "51984990"
+				},
+				{
+					"coin": "AXS",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 1,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "87359"
+				},
+				{
+					"coin": "DASH",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 2,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "987173"
+				},
+				{
+					"coin": "SKR",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "2437521"
+				},
+				{
+					"coin": "AZTEC",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "162179"
+				},
+				{
+					"coin": "CHIP",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "22395985"
+				},
+				{
+					"coin": "GRAM",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "2316293"
+				},
+				{
+					"coin": "CASHCAT",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "4497805"
+				},
+				{
+					"coin": "PONS",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "3112557"
+				},
+				{
+					"coin": "USELESS",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": null,
+					"dayNtlVlm": "2028775"
+				}
+			]
+		},
+		{
+			"dex": "xyz",
+			"fullName": "XYZ",
+			"markets": [
+				{
+					"coin": "xyz:XYZ100",
+					"category": "indices",
+					"displayName": "XYZ100",
+					"szDecimals": 4,
+					"onlyIsolated": false,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "227887474"
+				},
+				{
+					"coin": "xyz:TSLA",
+					"category": "stocks",
+					"displayName": "TSLA",
+					"szDecimals": 3,
+					"onlyIsolated": false,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "58678201"
+				},
+				{
+					"coin": "xyz:NVDA",
+					"category": "stocks",
+					"displayName": "NVDA",
+					"szDecimals": 3,
+					"onlyIsolated": false,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "86804104"
+				},
+				{
+					"coin": "xyz:GOLD",
+					"category": "commodities",
+					"displayName": "GOLD",
+					"szDecimals": 4,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "35257894"
+				},
+				{
+					"coin": "xyz:HOOD",
+					"category": "stocks",
+					"displayName": "HOOD",
+					"szDecimals": 3,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "8358528"
+				},
+				{
+					"coin": "xyz:INTC",
+					"category": "stocks",
+					"displayName": "INTC",
+					"szDecimals": 2,
+					"onlyIsolated": false,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "49116553"
+				},
+				{
+					"coin": "xyz:PLTR",
+					"category": "stocks",
+					"displayName": "PLTR",
+					"szDecimals": 3,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "11252066"
+				},
+				{
+					"coin": "xyz:COIN",
+					"category": "stocks",
+					"displayName": "COIN",
+					"szDecimals": 3,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "4364630"
+				},
+				{
+					"coin": "xyz:META",
+					"category": "stocks",
+					"displayName": "META",
+					"szDecimals": 3,
+					"onlyIsolated": false,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "99509658"
+				},
+				{
+					"coin": "xyz:AAPL",
+					"category": "stocks",
+					"displayName": "AAPL",
+					"szDecimals": 3,
+					"onlyIsolated": false,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "29739542"
+				},
+				{
+					"coin": "xyz:MSFT",
+					"category": "stocks",
+					"displayName": "MSFT",
+					"szDecimals": 3,
+					"onlyIsolated": false,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "34589911"
+				},
+				{
+					"coin": "xyz:ORCL",
+					"category": "stocks",
+					"displayName": "ORCL",
+					"szDecimals": 3,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "13691822"
+				},
+				{
+					"coin": "xyz:GOOGL",
+					"category": "stocks",
+					"displayName": "GOOGL",
+					"szDecimals": 3,
+					"onlyIsolated": false,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "43027861"
+				},
+				{
+					"coin": "xyz:AMZN",
+					"category": "stocks",
+					"displayName": "AMZN",
+					"szDecimals": 3,
+					"onlyIsolated": false,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "12572197"
+				},
+				{
+					"coin": "xyz:AMD",
+					"category": "stocks",
+					"displayName": "AMD",
+					"szDecimals": 3,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "25656016"
+				},
+				{
+					"coin": "xyz:MU",
+					"category": "stocks",
+					"displayName": "MU",
+					"szDecimals": 3,
+					"onlyIsolated": false,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "119788176"
+				},
+				{
+					"coin": "xyz:SNDK",
+					"category": "stocks",
+					"displayName": "SNDK",
+					"szDecimals": 3,
+					"onlyIsolated": false,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "186325006"
+				},
+				{
+					"coin": "xyz:MSTR",
+					"category": "stocks",
+					"displayName": "MSTR",
+					"szDecimals": 3,
+					"onlyIsolated": true,
+					"growthMode": false,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "12940005"
+				},
+				{
+					"coin": "xyz:CRCL",
+					"category": "stocks",
+					"displayName": "CRCL",
+					"szDecimals": 3,
+					"onlyIsolated": false,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "43195242"
+				},
+				{
+					"coin": "xyz:NFLX",
+					"category": "stocks",
+					"displayName": "NFLX",
+					"szDecimals": 3,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "4003109"
+				},
+				{
+					"coin": "xyz:COST",
+					"category": "stocks",
+					"displayName": "COST",
+					"szDecimals": 4,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "226641"
+				},
+				{
+					"coin": "xyz:LLY",
+					"category": "stocks",
+					"displayName": "LLY",
+					"szDecimals": 4,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "655720"
+				},
+				{
+					"coin": "xyz:SKHX",
+					"category": "stocks",
+					"displayName": "SKHYNIX",
+					"szDecimals": 3,
+					"onlyIsolated": false,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "245250461"
+				},
+				{
+					"coin": "xyz:TSM",
+					"category": "stocks",
+					"displayName": "TSM",
+					"szDecimals": 3,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "1648207"
+				},
+				{
+					"coin": "xyz:JPY",
+					"category": "fx",
+					"displayName": "USDJPY",
+					"szDecimals": 2,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "3103814"
+				},
+				{
+					"coin": "xyz:EUR",
+					"category": "fx",
+					"displayName": "EURUSD",
+					"szDecimals": 1,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "3277547"
+				},
+				{
+					"coin": "xyz:SILVER",
+					"category": "commodities",
+					"displayName": "SILVER",
+					"szDecimals": 2,
+					"onlyIsolated": false,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "53158844"
+				},
+				{
+					"coin": "xyz:RIVN",
+					"category": "stocks",
+					"displayName": "RIVN",
+					"szDecimals": 2,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "251352"
+				},
+				{
+					"coin": "xyz:BABA",
+					"category": "stocks",
+					"displayName": "BABA",
+					"szDecimals": 3,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "1198688"
+				},
+				{
+					"coin": "xyz:CL",
+					"category": "commodities",
+					"displayName": "WTIOIL",
+					"szDecimals": 3,
+					"onlyIsolated": false,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "172960318"
+				},
+				{
+					"coin": "xyz:COPPER",
+					"category": "commodities",
+					"displayName": "COPPER",
+					"szDecimals": 2,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "3058381"
+				},
+				{
+					"coin": "xyz:NATGAS",
+					"category": "commodities",
+					"displayName": "NATGAS",
+					"szDecimals": 1,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "8451023"
+				},
+				{
+					"coin": "xyz:SMSN",
+					"category": "stocks",
+					"displayName": "SAMSUNG",
+					"szDecimals": 3,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "37281435"
+				},
+				{
+					"coin": "xyz:PLATINUM",
+					"category": "commodities",
+					"displayName": "PLATINUM",
+					"szDecimals": 4,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "2728466"
+				},
+				{
+					"coin": "xyz:USAR",
+					"category": "stocks",
+					"displayName": "USAR",
+					"szDecimals": 2,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "841590"
+				},
+				{
+					"coin": "xyz:CRWV",
+					"category": "stocks",
+					"displayName": "CRWV",
+					"szDecimals": 2,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "28954906"
+				},
+				{
+					"coin": "xyz:URNM",
+					"category": "stocks",
+					"displayName": "URNM",
+					"szDecimals": 2,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "198926"
+				},
+				{
+					"coin": "xyz:PALLADIUM",
+					"category": "commodities",
+					"displayName": "PALLADIUM",
+					"szDecimals": 4,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "845821"
+				},
+				{
+					"coin": "xyz:GME",
+					"category": "stocks",
+					"displayName": "GME",
+					"szDecimals": 2,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "2637227"
+				},
+				{
+					"coin": "xyz:KR200",
+					"category": "indices",
+					"displayName": "KR200",
+					"szDecimals": 4,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "1065075"
+				},
+				{
+					"coin": "xyz:SOFTBANK",
+					"category": "stocks",
+					"displayName": "SOFTBANK",
+					"szDecimals": 3,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "343460"
+				},
+				{
+					"coin": "xyz:JP225",
+					"category": "indices",
+					"displayName": "JP225",
+					"szDecimals": 5,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "3292576"
+				},
+				{
+					"coin": "xyz:HYUNDAI",
+					"category": "stocks",
+					"displayName": "HYUNDAI",
+					"szDecimals": 3,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "513227"
+				},
+				{
+					"coin": "xyz:KIOXIA",
+					"category": "stocks",
+					"displayName": "KIOXIA",
+					"szDecimals": 3,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "13176784"
+				},
+				{
+					"coin": "xyz:EWY",
+					"category": "stocks",
+					"displayName": "EWY",
+					"szDecimals": 3,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "23547499"
+				},
+				{
+					"coin": "xyz:EWJ",
+					"category": "stocks",
+					"displayName": "EWJ",
+					"szDecimals": 3,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "568002"
+				},
+				{
+					"coin": "xyz:BRENTOIL",
+					"category": "commodities",
+					"displayName": "BRENTOIL",
+					"szDecimals": 2,
+					"onlyIsolated": false,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "112528402"
+				},
+				{
+					"coin": "xyz:HIMS",
+					"category": "stocks",
+					"displayName": "HIMS",
+					"szDecimals": 2,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "1488140"
+				},
+				{
+					"coin": "xyz:SP500",
+					"category": "indices",
+					"displayName": "S&P500",
+					"szDecimals": 3,
+					"onlyIsolated": false,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "234276347"
+				},
+				{
+					"coin": "xyz:DKNG",
+					"category": "stocks",
+					"displayName": "DKNG",
+					"szDecimals": 2,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "139242"
+				},
+				{
+					"coin": "xyz:LITE",
+					"category": "stocks",
+					"displayName": "LITE",
+					"szDecimals": 3,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "8543653"
+				},
+				{
+					"coin": "xyz:XLE",
+					"category": "stocks",
+					"displayName": "XLE",
+					"szDecimals": 2,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "167527"
+				},
+				{
+					"coin": "xyz:BX",
+					"category": "stocks",
+					"displayName": "BX",
+					"szDecimals": 2,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "336829"
+				},
+				{
+					"coin": "xyz:PURRDAT",
+					"category": "stocks",
+					"displayName": "PURRDAT",
+					"szDecimals": 0,
+					"onlyIsolated": true,
+					"growthMode": false,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "3635103"
+				},
+				{
+					"coin": "xyz:MRVL",
+					"category": "stocks",
+					"displayName": "MRVL",
+					"szDecimals": 2,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "19375545"
+				},
+				{
+					"coin": "xyz:RKLB",
+					"category": "stocks",
+					"displayName": "RKLB",
+					"szDecimals": 2,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "11498953"
+				},
+				{
+					"coin": "xyz:BIRD",
+					"category": "stocks",
+					"displayName": "BIRD",
+					"szDecimals": 1,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "30879"
+				},
+				{
+					"coin": "xyz:DRAM",
+					"category": "stocks",
+					"displayName": "DRAM",
+					"szDecimals": 1,
+					"onlyIsolated": false,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "82599729"
+				},
+				{
+					"coin": "xyz:CBRS",
+					"category": "stocks",
+					"displayName": "CBRS",
+					"szDecimals": 2,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "12113534"
+				},
+				{
+					"coin": "xyz:EWZ",
+					"category": "stocks",
+					"displayName": "EWZ",
+					"szDecimals": 2,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "95857295"
+				},
+				{
+					"coin": "xyz:ZM",
+					"category": "stocks",
+					"displayName": "ZM",
+					"szDecimals": 3,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "88146"
+				},
+				{
+					"coin": "xyz:EBAY",
+					"category": "stocks",
+					"displayName": "EBAY",
+					"szDecimals": 2,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "247970"
+				},
+				{
+					"coin": "xyz:NIFTY",
+					"category": "indices",
+					"displayName": "NIFTY",
+					"szDecimals": 4,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "2492"
+				},
+				{
+					"coin": "xyz:ARM",
+					"category": "stocks",
+					"displayName": "ARM",
+					"szDecimals": 2,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "1831549"
+				},
+				{
+					"coin": "xyz:EWT",
+					"category": "stocks",
+					"displayName": "EWT",
+					"szDecimals": 2,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "139165"
+				},
+				{
+					"coin": "xyz:GBP",
+					"category": "fx",
+					"displayName": "GBPUSD",
+					"szDecimals": 0,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "183864"
+				},
+				{
+					"coin": "xyz:SPCX",
+					"category": "stocks",
+					"displayName": "SPCX",
+					"szDecimals": 2,
+					"onlyIsolated": false,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "107965375"
+				},
+				{
+					"coin": "xyz:ASML",
+					"category": "stocks",
+					"displayName": "ASML",
+					"szDecimals": 3,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "1817161"
+				},
+				{
+					"coin": "xyz:MINIMAX",
+					"category": "stocks",
+					"displayName": "MINIMAX",
+					"szDecimals": 2,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "4348982"
+				},
+				{
+					"coin": "xyz:BB",
+					"category": "stocks",
+					"displayName": "BB",
+					"szDecimals": 1,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "3447537"
+				},
+				{
+					"coin": "xyz:QNT",
+					"category": "stocks",
+					"displayName": "QNT",
+					"szDecimals": 2,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "672167"
+				},
+				{
+					"coin": "xyz:DELL",
+					"category": "stocks",
+					"displayName": "DELL",
+					"szDecimals": 2,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "4380366"
+				},
+				{
+					"coin": "xyz:IBM",
+					"category": "stocks",
+					"displayName": "IBM",
+					"szDecimals": 2,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "982319"
+				},
+				{
+					"coin": "xyz:AVGO",
+					"category": "stocks",
+					"displayName": "AVGO",
+					"szDecimals": 2,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "3788268"
+				},
+				{
+					"coin": "xyz:NOW",
+					"category": "stocks",
+					"displayName": "NOW",
+					"szDecimals": 2,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "285680"
+				},
+				{
+					"coin": "xyz:NBIS",
+					"category": "stocks",
+					"displayName": "NBIS",
+					"szDecimals": 2,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "53947174"
+				},
+				{
+					"coin": "xyz:WDC",
+					"category": "stocks",
+					"displayName": "WDC",
+					"szDecimals": 3,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "2366797"
+				},
+				{
+					"coin": "xyz:NOK",
+					"category": "stocks",
+					"displayName": "NOK",
+					"szDecimals": 2,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "1975603"
+				},
+				{
+					"coin": "xyz:SMH",
+					"category": "stocks",
+					"displayName": "SMH",
+					"szDecimals": 3,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "1350858"
+				},
+				{
+					"coin": "xyz:BE",
+					"category": "stocks",
+					"displayName": "BE",
+					"szDecimals": 2,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "9683300"
+				},
+				{
+					"coin": "xyz:ZHIPU",
+					"category": "stocks",
+					"displayName": "ZHIPU",
+					"szDecimals": 3,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "11332679"
+				},
+				{
+					"coin": "xyz:QCOM",
+					"category": "stocks",
+					"displayName": "QCOM",
+					"szDecimals": 2,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "696500"
+				},
+				{
+					"coin": "xyz:STRC",
+					"category": "stocks",
+					"displayName": "STRC",
+					"szDecimals": 1,
+					"onlyIsolated": true,
+					"growthMode": false,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "959418"
+				},
+				{
+					"coin": "xyz:BOT",
+					"category": "stocks",
+					"displayName": "BOT",
+					"szDecimals": 2,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "804164"
+				},
+				{
+					"coin": "xyz:AMAT",
+					"category": "stocks",
+					"displayName": "AMAT",
+					"szDecimals": 3,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "954558"
+				},
+				{
+					"coin": "xyz:GIGADEV",
+					"category": "stocks",
+					"displayName": "GIGADEV",
+					"szDecimals": 2,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "364589"
+				},
+				{
+					"coin": "xyz:SHAZ",
+					"category": "stocks",
+					"displayName": "SHAZ",
+					"szDecimals": 2,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "613927"
+				},
+				{
+					"coin": "xyz:SKHY",
+					"category": "stocks",
+					"displayName": "SKHY",
+					"szDecimals": 2,
+					"onlyIsolated": false,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "84737640"
+				},
+				{
+					"coin": "xyz:KSTR",
+					"category": "stocks",
+					"displayName": "KSTR",
+					"szDecimals": 2,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "116138"
+				},
+				{
+					"coin": "xyz:CXMT",
+					"category": "stocks",
+					"displayName": "CXMT",
+					"szDecimals": 1,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "18592300"
+				},
+				{
+					"coin": "xyz:GEV",
+					"category": "stocks",
+					"displayName": "GEV",
+					"szDecimals": 3,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "355424"
+				},
+				{
+					"coin": "xyz:KORU",
+					"category": "stocks",
+					"displayName": "KORU",
+					"szDecimals": 1,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "33960655"
+				},
+				{
+					"coin": "xyz:UNITREE",
+					"category": "stocks",
+					"displayName": "UNITREE",
+					"szDecimals": 2,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "52757541"
+				},
+				{
+					"coin": "xyz:LYTE",
+					"category": "stocks",
+					"displayName": "LYTE",
+					"szDecimals": 2,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "92755"
+				},
+				{
+					"coin": "xyz:NCLD",
+					"category": "stocks",
+					"displayName": "NCLD",
+					"szDecimals": 2,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "924732"
+				},
+				{
+					"coin": "xyz:SOXL",
+					"category": "stocks",
+					"displayName": "SOXL",
+					"szDecimals": 2,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "107110585"
+				},
+				{
+					"coin": "xyz:MAGS",
+					"category": "stocks",
+					"displayName": "MAGS",
+					"szDecimals": 2,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "162274"
+				},
+				{
+					"coin": "xyz:IREN",
+					"category": "stocks",
+					"displayName": "IREN",
+					"szDecimals": 1,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "4007801"
+				},
+				{
+					"coin": "xyz:NET",
+					"category": "stocks",
+					"displayName": "NET",
+					"szDecimals": 2,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "3419182"
+				},
+				{
+					"coin": "xyz:CRWD",
+					"category": "stocks",
+					"displayName": "CRWD",
+					"szDecimals": 2,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "2994445"
+				},
+				{
+					"coin": "xyz:RDDT",
+					"category": "stocks",
+					"displayName": "RDDT",
+					"szDecimals": 2,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "424051"
+				},
+				{
+					"coin": "xyz:AAOI",
+					"category": "stocks",
+					"displayName": "AAOI",
+					"szDecimals": 2,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "5543469"
+				},
+				{
+					"coin": "xyz:MRNA",
+					"category": "stocks",
+					"displayName": "MRNA",
+					"szDecimals": 2,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "32146577"
+				},
+				{
+					"coin": "xyz:XBI",
+					"category": "stocks",
+					"displayName": "XBI",
+					"szDecimals": 2,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "4460"
+				},
+				{
+					"coin": "xyz:SHEIN",
+					"category": "stocks",
+					"displayName": "SHEIN",
+					"szDecimals": 1,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "484670"
+				},
+				{
+					"coin": "xyz:BMNR",
+					"category": "stocks",
+					"displayName": "BMNR",
+					"szDecimals": 2,
+					"onlyIsolated": true,
+					"growthMode": false,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "493889"
+				},
+				{
+					"coin": "xyz:SNXX",
+					"category": "stocks",
+					"displayName": "SNXX",
+					"szDecimals": 1,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "10901351"
+				},
+				{
+					"coin": "xyz:CVX",
+					"category": "stocks",
+					"displayName": "CVX",
+					"szDecimals": 2,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "102158"
+				},
+				{
+					"coin": "xyz:TLT",
+					"category": "stocks",
+					"displayName": "TLT",
+					"szDecimals": 2,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "496633"
+				},
+				{
+					"coin": "xyz:HO",
+					"category": "commodities",
+					"displayName": "DIESEL",
+					"szDecimals": 0,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "1236309"
+				},
+				{
+					"coin": "xyz:OURA",
+					"category": "preipo",
+					"displayName": "OURA",
+					"szDecimals": 1,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "2665"
+				},
+				{
+					"coin": "xyz:LRCX",
+					"category": "stocks",
+					"displayName": "LRCX",
+					"szDecimals": 2,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "143033"
+				},
+				{
+					"coin": "xyz:UMC",
+					"category": "stocks",
+					"displayName": "UMC",
+					"szDecimals": 1,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "42180"
+				},
+				{
+					"coin": "xyz:CAMBRICON",
+					"category": "stocks",
+					"displayName": "CAMBRICON",
+					"szDecimals": 2,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "10550"
+				},
+				{
+					"coin": "xyz:TWST",
+					"category": "stocks",
+					"displayName": "TWST",
+					"szDecimals": 2,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "14421"
+				},
+				{
+					"coin": "xyz:GLW",
+					"category": "stocks",
+					"displayName": "GLW",
+					"szDecimals": 2,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "311931"
+				},
+				{
+					"coin": "xyz:JIO",
+					"category": "preipo",
+					"displayName": "JIO",
+					"szDecimals": 1,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "341287"
+				},
+				{
+					"coin": "xyz:ANT",
+					"category": "preipo",
+					"displayName": "ANT",
+					"szDecimals": 2,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "12819624"
+				}
+			]
+		},
+		{
+			"dex": "para",
+			"fullName": "Paragon",
+			"markets": [
+				{
+					"coin": "para:TOTAL2",
+					"category": "crypto",
+					"displayName": "TOTAL2",
+					"szDecimals": 3,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "101331"
+				},
+				{
+					"coin": "para:OTHERS",
+					"category": "crypto",
+					"displayName": "OTHERS",
+					"szDecimals": 2,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "106496"
+				},
+				{
+					"coin": "para:BTCD",
+					"category": "crypto",
+					"displayName": "BTC.D",
+					"szDecimals": 1,
+					"onlyIsolated": false,
+					"growthMode": false,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "6067"
+				},
+				{
+					"coin": "para:AVGO",
+					"category": "stocks",
+					"displayName": null,
+					"szDecimals": 2,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "38991"
+				},
+				{
+					"coin": "para:COHR",
+					"category": "stocks",
+					"displayName": null,
+					"szDecimals": 2,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "185776"
+				},
+				{
+					"coin": "para:GLW",
+					"category": "stocks",
+					"displayName": null,
+					"szDecimals": 2,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "67859"
+				},
+				{
+					"coin": "para:CRDO",
+					"category": "stocks",
+					"displayName": null,
+					"szDecimals": 2,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "280940"
+				},
+				{
+					"coin": "para:LRCX",
+					"category": "stocks",
+					"displayName": null,
+					"szDecimals": 2,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "149426"
+				},
+				{
+					"coin": "para:NET",
+					"category": "stocks",
+					"displayName": null,
+					"szDecimals": 2,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "37152"
+				},
+				{
+					"coin": "para:STX",
+					"category": "stocks",
+					"displayName": null,
+					"szDecimals": 3,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "130919"
+				},
+				{
+					"coin": "para:IREN",
+					"category": "stocks",
+					"displayName": null,
+					"szDecimals": 2,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "150928"
+				},
+				{
+					"coin": "para:VST",
+					"category": "stocks",
+					"displayName": null,
+					"szDecimals": 2,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "530668"
+				},
+				{
+					"coin": "para:TER",
+					"category": "stocks",
+					"displayName": null,
+					"szDecimals": 2,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "69210"
+				},
+				{
+					"coin": "para:AAOI",
+					"category": "stocks",
+					"displayName": null,
+					"szDecimals": 2,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "117686"
+				},
+				{
+					"coin": "para:10Y",
+					"category": "rates",
+					"displayName": null,
+					"szDecimals": 1,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "431539"
+				},
+				{
+					"coin": "para:CIEN",
+					"category": "stocks",
+					"displayName": null,
+					"szDecimals": 2,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "5206"
+				},
+				{
+					"coin": "para:RDDT",
+					"category": "stocks",
+					"displayName": null,
+					"szDecimals": 2,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "29049"
+				},
+				{
+					"coin": "para:UNITREE",
+					"category": "stocks",
+					"displayName": null,
+					"szDecimals": 2,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "1114210"
+				},
+				{
+					"coin": "para:CRWD",
+					"category": "stocks",
+					"displayName": null,
+					"szDecimals": 2,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "56429"
+				},
+				{
+					"coin": "para:MELI",
+					"category": "stocks",
+					"displayName": null,
+					"szDecimals": 3,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "1731392"
+				},
+				{
+					"coin": "para:SMCI",
+					"category": "stocks",
+					"displayName": null,
+					"szDecimals": 2,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "82030"
+				},
+				{
+					"coin": "para:ANSEM",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": true,
+					"growthMode": false,
+					"deployerFeeScale": "0.5",
+					"dayNtlVlm": "116955"
+				},
+				{
+					"coin": "para:30Y",
+					"category": "rates",
+					"displayName": null,
+					"szDecimals": 1,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "4978"
+				},
+				{
+					"coin": "para:2Y",
+					"category": "rates",
+					"displayName": null,
+					"szDecimals": 1,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "218697"
+				},
+				{
+					"coin": "para:IGV",
+					"category": "stocks",
+					"displayName": "IGV",
+					"szDecimals": 2,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "6069"
+				},
+				{
+					"coin": "para:SOFI",
+					"category": "stocks",
+					"displayName": null,
+					"szDecimals": 2,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "105624"
+				},
+				{
+					"coin": "para:TTWO",
+					"category": "stocks",
+					"displayName": null,
+					"szDecimals": 2,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "134358"
+				},
+				{
+					"coin": "para:CIFR",
+					"category": "stocks",
+					"displayName": null,
+					"szDecimals": 2,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "101951"
+				},
+				{
+					"coin": "para:TREAD",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": true,
+					"growthMode": false,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "29514"
+				},
+				{
+					"coin": "para:DRV",
+					"category": "crypto",
+					"displayName": null,
+					"szDecimals": 0,
+					"onlyIsolated": true,
+					"growthMode": false,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "59477"
+				},
+				{
+					"coin": "para:GDX",
+					"category": "stocks",
+					"displayName": null,
+					"szDecimals": 2,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "17387"
+				},
+				{
+					"coin": "para:SMH",
+					"category": "stocks",
+					"displayName": null,
+					"szDecimals": 3,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "135682"
+				}
+			]
+		},
+		{
+			"dex": "mkts",
+			"fullName": "Markets By Kinetiq",
+			"markets": [
+				{
+					"coin": "mkts:US500",
+					"category": "indices",
+					"displayName": null,
+					"szDecimals": 3,
+					"onlyIsolated": false,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "538669"
+				},
+				{
+					"coin": "mkts:USBOND",
+					"category": "stocks",
+					"displayName": "TLT",
+					"szDecimals": 3,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "66647"
+				},
+				{
+					"coin": "mkts:SMALL2000",
+					"category": "indices",
+					"displayName": "IWM",
+					"szDecimals": 3,
+					"onlyIsolated": false,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "221323"
+				},
+				{
+					"coin": "mkts:USTECH",
+					"category": "indices",
+					"displayName": "QQQ",
+					"szDecimals": 3,
+					"onlyIsolated": false,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "629393"
+				},
+				{
+					"coin": "mkts:BVIV",
+					"category": null,
+					"displayName": null,
+					"szDecimals": 2,
+					"onlyIsolated": true,
+					"growthMode": false,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "288729"
+				}
+			]
+		},
+		{
+			"dex": "io",
+			"fullName": "EntropyIO",
+			"markets": [
+				{
+					"coin": "io:OAI",
+					"category": "preipo",
+					"displayName": "OPENAI",
+					"szDecimals": 3,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "1359776"
+				},
+				{
+					"coin": "io:ANTH",
+					"category": "preipo",
+					"displayName": "ANT",
+					"szDecimals": 3,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "23683251"
+				},
+				{
+					"coin": "io:SNDK",
+					"category": "stocks",
+					"displayName": "SNDK",
+					"szDecimals": 4,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "20635193"
+				},
+				{
+					"coin": "io:IONQ",
+					"category": "stocks",
+					"displayName": "IONQ",
+					"szDecimals": 2,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "78046"
+				},
+				{
+					"coin": "io:NBIS",
+					"category": "stocks",
+					"displayName": "NBIS",
+					"szDecimals": 2,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "3705666"
+				},
+				{
+					"coin": "io:EWY",
+					"category": null,
+					"displayName": null,
+					"szDecimals": 2,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "352283"
+				},
+				{
+					"coin": "io:GPRO",
+					"category": "stocks",
+					"displayName": "GOPRO",
+					"szDecimals": 1,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "23295"
+				},
+				{
+					"coin": "io:TCNT",
+					"category": "stocks",
+					"displayName": "TENCENT",
+					"szDecimals": 3,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "62698"
+				},
+				{
+					"coin": "io:DRAM",
+					"category": "stocks",
+					"displayName": "DRAM",
+					"szDecimals": 2,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "3083905"
+				},
+				{
+					"coin": "io:PRL",
+					"category": "crypto",
+					"displayName": "PEARL",
+					"szDecimals": 1,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "1638012"
+				},
+				{
+					"coin": "io:XIAOMI",
+					"category": "stocks",
+					"displayName": "XIAOMI",
+					"szDecimals": 2,
+					"onlyIsolated": true,
+					"growthMode": true,
+					"deployerFeeScale": "1.0",
+					"dayNtlVlm": "113901"
+				}
+			]
+		}
+	]
+}

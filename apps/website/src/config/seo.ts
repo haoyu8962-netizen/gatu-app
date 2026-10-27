@@ -1,5 +1,5 @@
 import logoImageUrl from "../../../../brand/social/sairn-avatar-light-1024.png?url";
-import { APP_URL, BRAND_NAME, SITE_URL } from "./brand";
+import { APP_URL, BRAND_NAME, SITE_URL, THEME_COLOR } from "./brand";
 
 export const SEO_DEFAULTS = {
 	siteName: BRAND_NAME,
@@ -7,9 +7,10 @@ export const SEO_DEFAULTS = {
 	appUrl: APP_URL,
 	defaultTitle: `${BRAND_NAME} — See the market clearly. Decide for yourself.`,
 	defaultOgTitle: BRAND_NAME,
-	defaultDescription: "Perpetual and spot trading on Hyperliquid—direct on-chain access from your own wallet.",
+	defaultDescription:
+		"An independent trading terminal for every market on Hyperliquid: perpetuals on crypto, stocks, indices, commodities, FX and pre-IPO companies, plus spot. Sign in with email or your own wallet.",
 	locale: "en_US",
-	themeColor: "#0a0a0a",
+	themeColor: THEME_COLOR,
 	ogImage: "/og-website-1200x630.png",
 	ogImageWidth: 1200,
 	ogImageHeight: 630,
@@ -37,7 +38,7 @@ export const ROUTE_SEO = {
 		ogTitle: SEO_DEFAULTS.defaultOgTitle,
 		description: SEO_DEFAULTS.defaultDescription,
 		path: "/",
-		keywords: ["wallet-native", "non-custodial", "websocket", "leverage"],
+		keywords: ["wallet-native", "non-custodial", "stock perpetuals", "pre-IPO perpetuals"],
 	},
 	BLOG_INDEX: {
 		title: "Blog",

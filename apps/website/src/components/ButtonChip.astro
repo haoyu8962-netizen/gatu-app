@@ -1,0 +1,21 @@
+---
+import type { ButtonIcon } from "@/lib/buttons";
+
+interface Props {
+	icon: Exclude<ButtonIcon, "none">;
+}
+
+const { icon } = Astro.props;
+
+const ARROW_PATHS: Record<Exclude<ButtonIcon, "none">, string> = {
+	external: "M3.5 8.5l5-5M4.75 3.5H8.5v3.75",
+	right: "M2.5 6h7M6.5 3l3 3-3 3",
+	down: "M6 2.5v7M3 6.5l3 3 3-3",
+};
+---
+
+<span class="btn-chip" aria-hidden="true">
+	<svg class={`btn-arrow btn-arrow-${icon}`} viewBox="0 0 12 12" fill="none" focusable="false">
+		<path d={ARROW_PATHS[icon]} stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+	</svg>
+</span>

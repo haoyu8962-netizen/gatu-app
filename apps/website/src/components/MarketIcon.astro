@@ -1,0 +1,52 @@
+---
+import type { ImageMetadata } from "astro";
+import manifest from "@/data/market-icons.json";
+import { marketIconFileName, marketMonogram } from "@/lib/markets/icons";
+
+export type MarketIconSize = 20 | 24 | 28;
+
+interface Props {
+	coin: string;
+	size: MarketIconSize;
+	class?: string;
+}
+
+// Marks that vanish on the dark window: scripts/market-icons.mjs measures each icon and records the decision.
+const BACKPLATE_COINS = new Set(manifest.icons.filter((entry) => entry.backplate).map((entry) => entry.coin));
+const ICONS = import.meta.glob<ImageMetadata>("../assets/coins/*.svg", { eager: true, import: "default" });
+
+const SIZE_CLASSES: Record<MarketIconSize, string> = { 20: "size-5", 24: "size-6", 28: "size-7" };
+const MONOGRAM_TEXT_CLASSES: Record<MarketIconSize, string> = { 20: "text-3xs", 24: "text-3xs", 28: "text-2xs" };
+
+const { coin, size, class: className } = Astro.props;
+const icon = ICONS[`../assets/coins/${marketIconFileName(coin)}`];
+const shared = ["shrink-0 rounded-full outline -outline-offset-1 outline-stroke-weak", SIZE_CLASSES[size], className];
+---
+
+{icon ? (
+	<img
+		src={icon.src}
+		alt=""
+		aria-hidden="true"
+		width={size}
+		height={size}
+		decoding="async"
+		loading="lazy"
+		draggable="false"
+		class:list={[shared, "block object-cover"]}
+		data-market-icon={coin}
+		data-market-icon-backplate={BACKPLATE_COINS.has(coin) ? "" : undefined}
+	/>
+) : (
+	<span
+		aria-hidden="true"
+		class:list={[
+			shared,
+			MONOGRAM_TEXT_CLASSES[size],
+			"inline-flex items-center justify-center bg-fill-hover font-mono leading-none text-fg-muted before:content-[attr(data-monogram)]",
+		]}
+		data-market-icon={coin}
+		data-market-icon-fallback=""
+		data-monogram={marketMonogram(coin)}
+	></span>
+)}

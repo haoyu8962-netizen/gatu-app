@@ -1,0 +1,187 @@
+---
+import { formatIsoDate, joinNames } from "@/config/copy";
+import {
+	getDeployerFullNames,
+	getDeployers,
+	getFeaturedMarkets,
+	getListedTotals,
+	getLiveMarketInputs,
+	getStatsDexes,
+	liveKindOf,
+	SNAPSHOT_FETCHED_AT,
+} from "@/lib/markets/structure";
+import { coinSlot, terminalTradeUrl } from "@/lib/terminal-links";
+import Button from "./Button.astro";
+import MarketIcon from "./MarketIcon.astro";
+
+const markets = getFeaturedMarkets();
+const deployers = joinNames(getDeployerFullNames(markets.map((market) => market.coin)));
+const liveInputs = getLiveMarketInputs();
+const listed = getListedTotals();
+const statsDexes = getStatsDexes();
+const statsVenues = joinNames(statsDexes.map((entry) => entry.label.replace(/^Hyperliquid /, "")));
+const snapshotDate = formatIsoDate(SNAPSHOT_FETCHED_AT);
+const deployerNames = joinNames(getDeployers().map((deployer) => deployer.fullName));
+
+const buildStats = [
+	{ label: "Perp markets listed", value: String(listed.markets), source: "Core perps and every HIP-3 deployer" },
+	{ label: "HIP-3 deployers", value: String(listed.deployers), source: deployerNames },
+];
+const liveStats = [
+	{ key: "volume", label: "24h volume", method: "Sum of 24h notional volume" },
+	{ key: "openInterest", label: "Open interest", method: "Sum of open interest × mark price" },
+];
+const cardClass =
+	"press flex h-full w-68 flex-col rounded-16 edge edge-raised p-5 hover:[--edge-strong:var(--stroke-strong)] active:opacity-90";
+---
+
+<section id="markets-now" aria-labelledby="markets-now-title" data-live-strip data-ticker="static">
+	<div class="band">
+		<div
+			class="mx-auto grid w-full max-w-site grid-cols-1 px-5 sm:px-8 lg:grid-cols-12"
+			data-live-stats
+			data-live-stats-dexes={JSON.stringify(statsDexes.map((entry) => entry.dex))}
+		>
+			<div class="border-stroke-weaker pt-6 pb-2 max-lg:border-b lg:col-span-5 lg:border-r lg:py-8 lg:pr-8">
+				<p class="text-sm text-fg-subtle" id="markets-now-catalogue-title"><span class="font-medium text-fg">Market catalogue</span> · snapshot {snapshotDate}</p>
+				<dl class="reveal-stagger mt-2 grid grid-cols-2" aria-labelledby="markets-now-catalogue-title">
+					{buildStats.map((stat) => (
+						<div class="flex flex-col gap-1.5 border-stroke-weaker py-4 pr-4 odd:border-r even:pl-4 lg:py-3">
+							<dt class="text-sm text-fg-muted">{stat.label}</dt>
+							<dd class="order-first font-mono text-stat text-fg">{stat.value}</dd>
+							<dd class="text-xs text-fg-subtle">{stat.source}</dd>
+						</div>
+					))}
+				</dl>
+			</div>
+			<div class="pt-6 pb-2 lg:col-span-7 lg:py-8 lg:pl-8">
+				<p class="text-sm text-fg-subtle" id="markets-now-activity-title">
+					<span class="font-medium text-fg">Live activity</span> · Selected Hyperliquid venues: {statsVenues}<span data-live-stats-asof hidden> · as of <time></time> UTC</span>
+				</p>
+				<dl class="reveal-stagger mt-2 grid grid-cols-2" aria-labelledby="markets-now-activity-title">
+					{liveStats.map((stat) => (
+						<div class="flex flex-col gap-1.5 border-stroke-weaker py-4 pr-4 odd:border-r even:pl-4 lg:py-3" data-live-stat={stat.key}>
+							<dt class="text-sm text-fg-muted">{stat.label}</dt>
+							<dd class="order-first h-[1.1em] font-mono text-stat text-fg" aria-busy="true" data-live-stat-slot>
+								<span data-live-stat-value></span><span class="sr-only" data-live-stat-pending>Shown once Hyperliquid public data has loaded</span>
+							</dd>
+							<dd class="text-xs text-fg-subtle">{stat.method}</dd>
+						</div>
+					))}
+				</dl>
+			</div>
+			<details class="disclosure stats-method border-t border-stroke-weaker py-4 lg:col-span-12">
+				<summary class="inline-flex min-h-11 cursor-pointer list-none items-center gap-2 text-sm text-fg-muted hover:text-fg sm:min-h-8 [&::-webkit-details-marker]:hidden">
+					<svg class="disclosure-caret" width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M3.5 2l3 3-3 3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+					How these are calculated
+				</summary>
+				<div class="mt-2 grid max-w-4xl grid-cols-1 gap-2 pb-2 text-sm text-fg-muted">
+					<p>
+						Market catalogue: perpetual markets that are not delisted on Hyperliquid core and on every HIP-3 deployer
+						with listed markets ({deployerNames}), counted from a snapshot taken on {snapshotDate}, before this page was
+						built.
+					</p>
+					<p>
+						Live activity: only {statsVenues}, the venues of the markets shown below. 24h volume is the sum of each
+						market's 24h notional volume; open interest is the sum of each market's open interest × mark price. Both come
+						from Hyperliquid public data, and a total is shown only once every venue has answered with valid numbers.
+					</p>
+					<p class="text-fg">
+						Volume and open interest describe activity, not the depth available to fill an order. Liquidity differs per
+						market, and HIP-3 markets can be thin.
+					</p>
+				</div>
+			</details>
+		</div>
+	</div>
+
+	<div class="mx-auto w-full max-w-site px-5 pt-12 sm:px-8 md:pt-16">
+		<div class="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
+			<div>
+				<h2 id="markets-now-title" class="label">
+					Hyperliquid public data · mark prices<span data-live-asof hidden> · as of <time data-live-asof-time></time> UTC</span>
+				</h2>
+				<p class="mt-3 max-w-3xl text-sm text-fg-muted">
+					Stock and pre-IPO markets are perpetuals run by third-party deployers such as {deployers}. They are not shares.
+				</p>
+			</div>
+			<Button pressed={false} size="sm" data-live-pause="" hidden>
+				<svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M2.5 1.5v7M7.5 1.5v7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" /></svg>
+				Pause updates<span class="sr-only"> and scrolling</span>
+			</Button>
+		</div>
+		<p id="markets-now-status" class="sr-only" data-live-status>
+			Live prices are shown here once Hyperliquid public data has loaded.
+		</p>
+	</div>
+
+	<div class="ticker-viewport mt-8 pb-10 md:pb-12">
+		<div class="ticker-track px-[max(1.25rem,calc((100vw_-_80rem)/2_+_2rem))] max-sm:px-5">
+			<ul class="ticker-list py-1" aria-busy="true" aria-describedby="markets-now-status" data-live-list>
+				{markets.map((market) => (
+					<li class="shrink-0" data-market-coin={market.coin}>
+						<a
+							href={terminalTradeUrl(market.coin, `ticker_${coinSlot(market.coin)}`)}
+							class={cardClass}
+							data-live-card={market.coin}
+							data-live-kind={liveKindOf(market.featuredCategory)}
+						>
+							<span class="flex items-center gap-3">
+								<MarketIcon coin={market.coin} size={28} />
+								<span class="flex min-w-0 flex-col">
+									<span class="text-base font-medium text-fg">{market.name}</span>
+									<span class="mt-0.5 font-mono text-xs text-fg-subtle">
+										{market.displayName ?? market.coin}
+										{market.deployerFullName && <> · by {market.deployerFullName}</>}
+									</span>
+								</span>
+							</span>
+							<span class="mt-6 block h-7 whitespace-nowrap font-mono text-lg text-fg" data-live-primary></span>
+							<span class="mt-1 flex h-4 items-center justify-between gap-2 whitespace-nowrap font-mono text-xs">
+								<span class="text-fg-subtle" data-live-secondary></span>
+								<span data-live-change></span>
+							</span>
+						</a>
+					</li>
+				))}
+			</ul>
+			<ul class="ticker-list ticker-mirror py-1" aria-hidden="true" inert>
+				{markets.map((market) => (
+					<li class="shrink-0" data-market-coin={market.coin}>
+						<a href={terminalTradeUrl(market.coin, `ticker_${coinSlot(market.coin)}`)} tabindex="-1" class={cardClass} data-live-mirror={market.coin}>
+							<span class="flex items-center gap-3">
+								<MarketIcon coin={market.coin} size={28} />
+								<span class="flex min-w-0 flex-col">
+									<span class="text-base font-medium text-fg">{market.name}</span>
+									<span class="mt-0.5 font-mono text-xs text-fg-subtle">
+										{market.displayName ?? market.coin}
+										{market.deployerFullName && <> · by {market.deployerFullName}</>}
+									</span>
+								</span>
+							</span>
+							<span class="mt-6 block h-7 whitespace-nowrap font-mono text-lg text-fg" data-live-primary></span>
+							<span class="mt-1 flex h-4 items-center justify-between gap-2 whitespace-nowrap font-mono text-xs">
+								<span class="text-fg-subtle" data-live-secondary></span>
+								<span data-live-change></span>
+							</span>
+						</a>
+					</li>
+				))}
+			</ul>
+		</div>
+	</div>
+	<script type="application/json" data-live-inputs set:html={JSON.stringify(liveInputs)} />
+</section>
+
+<script>
+	import { startLiveMarkets } from "@/scripts/live-markets";
+
+	function boot() {
+		const start = () => startLiveMarkets(document);
+		if ("requestIdleCallback" in window) window.requestIdleCallback(start, { timeout: 4_000 });
+		else setTimeout(start, 1_000);
+	}
+
+	if (document.readyState === "complete") boot();
+	else window.addEventListener("load", boot, { once: true });
+</script>

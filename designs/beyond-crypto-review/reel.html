@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="robots" content="noindex, nofollow" />
+		<title>Beyond crypto reel — legal review draft</title>
+		<style>
+			@font-face {
+				font-family: "IBM Plex Sans Variable";
+				font-weight: 100 700;
+				src: url("../website-hero-prototype/fonts/ibm-plex-sans-latin-wght-normal.woff2") format("woff2-variations");
+			}
+
+			:root {
+				--page: #12131a;
+				--fg: #edeef2;
+				--muted: #a3adb5;
+				--faint: #8d979e;
+				--review: #e6c27a;
+			}
+
+			html,
+			body {
+				margin: 0;
+				width: 1280px;
+				height: 720px;
+				overflow: hidden;
+				background: var(--page);
+				color: var(--fg);
+				font-family: "IBM Plex Sans Variable", system-ui, sans-serif;
+				-webkit-font-smoothing: antialiased;
+			}
+
+			.stage {
+				position: relative;
+				width: 1280px;
+				height: 720px;
+				background:
+					linear-gradient(rgb(237 238 242 / 2%) 1px, transparent 1px),
+					linear-gradient(90deg, rgb(237 238 242 / 2%) 1px, transparent 1px),
+					var(--page);
+				background-size: 64px 64px;
+			}
+
+			.brand {
+				position: absolute;
+				left: 72px;
+				top: 56px;
+				height: 26px;
+			}
+
+			.mark {
+				position: absolute;
+				right: 72px;
+				top: 60px;
+				padding: 4px 10px;
+				border: 1px dashed var(--review);
+				border-radius: 6px;
+				color: var(--review);
+				font: 500 15px/20px ui-monospace, "SF Mono", Menlo, monospace;
+			}
+
+			.screen {
+				position: absolute;
+				left: 72px;
+				right: 72px;
+				top: 196px;
+				opacity: 0;
+			}
+
+			.screen h1 {
+				margin: 0;
+				max-width: 1000px;
+				font-size: 60px;
+				line-height: 66px;
+				font-weight: 500;
+				letter-spacing: -0.02em;
+			}
+
+			.screen p {
+				max-width: 1000px;
+				margin: 24px 0 0;
+				color: var(--muted);
+				font-size: 26px;
+				line-height: 36px;
+			}
+
+			.rows {
+				margin: 28px 0 0;
+				padding: 0;
+				list-style: none;
+			}
+
+			.rows li {
+				display: grid;
+				grid-template-columns: 170px 1fr;
+				gap: 24px;
+				padding: 12px 0;
+				border-top: 1px solid rgb(237 238 242 / 10%);
+				font-size: 24px;
+				line-height: 32px;
+				opacity: 0;
+			}
+
+			.rows code {
+				font: 500 24px/32px ui-monospace, "SF Mono", Menlo, monospace;
+			}
+
+			.rows span {
+				color: var(--muted);
+			}
+
+			.foot {
+				position: absolute;
+				left: 72px;
+				right: 72px;
+				bottom: 52px;
+				color: var(--faint);
+				font-size: 18px;
+				line-height: 26px;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="stage">
+			<img class="brand" src="../website-hero-prototype/assets/sairn-lockup-on-dark.svg" alt="" />
+			<div class="mark">Draft for legal review — not for publication</div>
+			<div id="screens"></div>
+			<p class="foot">Not financial advice. Not available to persons in the United States or other restricted locations. Risk disclosure: sairn.ai/risk/</p>
+		</div>
+		<script>
+			const VARIANTS = {
+				generic: [
+					{ title: "Markets beyond crypto", body: "Third-party perpetual markets on Hyperliquid." },
+					{
+						title: "Reference prices set by independent deployers",
+						body: "Some of these markets reference companies that are not publicly listed. Sairn is an interface. It does not create, price or operate these markets.",
+					},
+					{
+						title: "A contract, not ownership of a company",
+						body: "No ownership, dividends, voting or IPO allocation rights. A market can be halted, settled or delisted.",
+					},
+					{ title: "Perpetual futures use leverage.", body: "You can lose all of your margin." },
+					{
+						title: "Not available to persons in the United States or other restricted locations.",
+						body: "Not financial advice. Risk disclosure: sairn.ai/risk/",
+					},
+				],
+				named: [
+					{
+						title: "Markets beyond crypto",
+						body: "Perpetual markets on Hyperliquid, run by independent deployers. Sairn is an interface and does not run them.",
+					},
+					{
+						title: "Markets that reference listed companies",
+						rows: [
+							["SNDK", "Sandisk Corporation (Nasdaq: SNDK) · run by XYZ"],
+							["NBIS", "Nebius Group N.V. (Nasdaq: NBIS) · run by XYZ"],
+						],
+						after: "XYZ's reference price follows US market prices. When no outside price is available, such as at weekends, XYZ sets it from its own market.",
+					},
+					{
+						title: "Markets that reference companies that are not publicly listed",
+						rows: [
+							["ANTH", "Anthropic PBC · not publicly listed · run by EntropyIO"],
+							["OAI", "OpenAI Group PBC · not publicly listed · run by EntropyIO"],
+						],
+						after: "These are perpetual contracts, and the companies have no exchange price. EntropyIO quotes each market as company market capitalisation, under a method described in its documentation, and can settle the market if no listing happens.",
+					},
+					{
+						title: "A contract, not ownership of a company",
+						body: "No ownership, dividends, voting or IPO allocation rights in any company. A deployer can halt, settle or delist a market at a price you did not choose.",
+					},
+					{ title: "Perpetual futures use leverage.", body: "You can lose all of your margin." },
+					{
+						title: "Not available to persons in the United States or other restricted locations.",
+						body: "Not financial advice. Sairn is not affiliated with, sponsored by or endorsed by these companies. Their names only identify what a reference price follows and belong to their owners. Risk disclosure: sairn.ai/risk/",
+					},
+				],
+			};
+			const SCREEN = 3;
+			const FADE = 0.35;
+			const variant = new URLSearchParams(location.search).get("variant") === "named" ? "named" : "generic";
+			const screens = VARIANTS[variant];
+			const host = document.getElementById("screens");
+			const nodes = screens.map((s) => {
+				const el = document.createElement("section");
+				el.className = "screen";
+				const h = document.createElement("h1");
+				h.textContent = s.title;
+				el.append(h);
+				if (s.body) {
+					const p = document.createElement("p");
+					p.textContent = s.body;
+					el.append(p);
+				}
+				if (s.rows) {
+					const ul = document.createElement("ul");
+					ul.className = "rows";
+					for (const [code, text] of s.rows) {
+						const li = document.createElement("li");
+						const c = document.createElement("code");
+						c.textContent = code;
+						const t = document.createElement("span");
+						t.textContent = text;
+						li.append(c, t);
+						ul.append(li);
+					}
+					el.append(ul);
+				}
+				if (s.after) {
+					const p = document.createElement("p");
+					p.textContent = s.after;
+					el.append(p);
+				}
+				host.append(el);
+				return el;
+			});
+			const ease = (k) => 1 - (1 - Math.min(1, Math.max(0, k))) ** 3;
+			// Deterministic: the renderer calls seek(t) for every frame.
+			window.duration = screens.length * SCREEN;
+			window.seek = (t) => {
+				nodes.forEach((el, i) => {
+					const local = t - i * SCREEN;
+					const fadeIn = ease(local / FADE);
+					const last = i === nodes.length - 1;
+					const fadeOut = last ? 1 : 1 - ease((local - (SCREEN - FADE)) / FADE);
+					const k = local < 0 || local > SCREEN ? 0 : Math.min(fadeIn, fadeOut);
+					el.style.opacity = String(k);
+					el.style.translate = `0 ${(1 - fadeIn) * 14}px`;
+					el.querySelectorAll(".rows li").forEach((li, j) => {
+						const rk = ease((local - 0.25 - j * 0.3) / FADE);
+						li.style.opacity = String(Math.min(rk, k));
+					});
+				});
+			};
+			window.seek(0);
+		</script>
+	</body>
+</html>

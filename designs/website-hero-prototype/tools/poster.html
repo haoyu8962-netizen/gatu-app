@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="robots" content="noindex, nofollow" />
+		<title>Open Book poster renderer</title>
+	</head>
+	<body>
+		<p>Renders the cold-start posters by replaying a recording through the Open Book worker. Driven by render-posters.cjs.</p>
+		<script type="module">
+			const CONFIGS = [
+				{ key: "a-wide", variant: "a", cssW: 640, cssH: 200, dpr: 2, windowMs: 120000, maxRadius: 8 },
+				{ key: "a-tall", variant: "a", cssW: 910, cssH: 490, dpr: 2, windowMs: 120000, maxRadius: 8 },
+				{ key: "b-wide", variant: "b", cssW: 640, cssH: 200, dpr: 2, windowMs: 120000, maxRadius: 8 },
+				{ key: "b-tall", variant: "b", cssW: 910, cssH: 490, dpr: 2, windowMs: 120000, maxRadius: 8 },
+				{ key: "a-mobile", variant: "a", cssW: 300, cssH: 333, dpr: 2.5, windowMs: 60000, maxRadius: 6 },
+				{ key: "b-mobile", variant: "b", cssW: 300, cssH: 333, dpr: 2.5, windowMs: 60000, maxRadius: 6 },
+			];
+			const file = new URLSearchParams(location.search).get("rec");
+			window.posterResults = (async () => {
+				const recording = await (await fetch(`../recorded/${file}`)).json();
+				const worker = new Worker(new URL("../open-book.worker.js", import.meta.url), { type: "module" });
+				const pending = [];
+				const posters = await new Promise((resolve) => {
+					worker.onmessage = (event) => {
+						if (event.data.type === "poster") {
+							const { key, blob, ui } = event.data;
+							pending.push(
+								blob.arrayBuffer().then((buffer) => {
+									let binary = "";
+									for (const byte of new Uint8Array(buffer)) binary += String.fromCharCode(byte);
+									return { key, jpeg: btoa(binary), ui };
+								}),
+							);
+						} else if (event.data.type === "replay-done") {
+							resolve(Promise.all(pending));
+						}
+					};
+					worker.postMessage({ type: "replay", recording, configs: CONFIGS });
+				});
+				return { file, coin: recording.coin, startedAt: recording.startedAt, closes24h: recording.closes24h, configs: CONFIGS, posters };
+			})();
+		</script>
+	</body>
+</html>

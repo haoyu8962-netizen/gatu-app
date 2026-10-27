@@ -40,6 +40,7 @@ describe("HIP-3 disclaimer requirement", () => {
 		["cash", "https://docs.dreamcash.xyz"],
 		["mkts", "https://docs.markets.xyz"],
 		["para", "https://docs.paragon.trade/"],
+		["io", "https://docs.entropy.io/"],
 	])("uses the verified documentation URL for %s", (dex, expectedUrl) => {
 		expect(getHip3DeployerDocumentationUrl(dex)).toBe(expectedUrl);
 	});

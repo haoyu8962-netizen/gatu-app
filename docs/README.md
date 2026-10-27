@@ -10,6 +10,9 @@
 | 查目录、路由、Provider、命令 | [Terminal Reference](../apps/terminal/README.md)、[开发约定](../agent.md) |
 | Agent 协作、工作树、审查与交接 | [Agent 工作手册](agent-handbook.md)：与运营方的协作约定、共享检出与工作树、Codex 对抗审查、发布要点与更换账号清单；当前状态看工作记忆里最新的交接与发布记录 |
 | 查共享包与营销站点 | [hl-react](../packages/hl-react/README.md)、[UI](../packages/ui/README.md)、[Website](../apps/website/README.md) |
+| 营销邮件模板 | [日本用户营销邮件](marketing/jp-launch-email/README.md)：日语 HTML 与纯文本模板、中文对照、发送闸门与法规调研摘要（草案，闸门满足前禁止发送；配套 [ADR 0042](adr/0042-japan-allowed-trading-region.md)） |
+| 官网规划 | [官网规划](website-plan.md)：2026-10-25 的英文官网规划（拟议，已按运营方决定做出取舍；首页 10 个区块、宣传全部 Hyperliquid 市场含 HIP-3 美股与未上市公司、运营方自制视频的位置与规格、实时数据、文案准确性规则、分阶段实施）。背景材料：[官网行业调研（2026-10）](website-industry-research-2026-10.md)；[官网重建规划](website-rebuild-plan.md)已被取代，保留为历史；首屏原型在 `designs/website-hero-prototype/`（未上线）；任务记录见[官网行业调研与重建规划](work-memory/sessions/2026-10-24-website-research-and-rebuild-plan.md) |
+| 「加密之外的市场」事实表 | [审阅文档](marketing/beyond-crypto-review.md)：HIP-3 第三方股票与上市前市场的事实底稿（第 2 节，新规划引用）；原定的律师审阅已按运营方 2026-10-25 的决定取消，问题清单作废，保留为历史；区块草稿与两版视频在 `designs/beyond-crypto-review/` |
 | 看用户可见变化 | [Changelog / Unreleased](../CHANGELOG.md)，不代表已经发布 |
 | 部署、入口保护与回滚 | [CloudFront 发布](../deploy/cloudfront/README.md)（现行宿主；移动配对为纯客户端传输、无服务端路由，配对开关在真机清单记录前保持关闭，见 [ADR 0015](adr/0015-link-device-alignment.md) D7 与 D8）、[产物清单](../deploy/manifests/README.md)、[部署夹具](../deploy/fixtures/README.md) |
 | 接手续作与查历史证据 | 持续任务使用项目 `docs/work-memory/` 入口；[历史资料说明](../notes/README.md)、[历史与文档审查索引](../notes/index.md)补足原始 review |

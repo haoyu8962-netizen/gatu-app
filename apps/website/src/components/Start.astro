@@ -1,0 +1,63 @@
+---
+import { RISK_PATH, RISK_SENTENCE } from "@/config/copy";
+import { terminalTradeUrl } from "@/lib/terminal-links";
+import ButtonLink from "./ButtonLink.astro";
+import SectionHeader from "./SectionHeader.astro";
+
+const startUrl = terminalTradeUrl("BTC", "start_cta");
+const steps = [
+	{
+		title: "Sign in with email or your own wallet.",
+		note: "Email needs only the code you receive, and the wallet created for your account signs your orders. With your own wallet, a trading key you approve signs them.",
+		link: null,
+	},
+	{
+		title: "Deposit USDC on Arbitrum.",
+		note: "Open Deposit in the terminal and send USDC on Arbitrum. With your own wallet, keep a little ETH there for gas. USDC on another network cannot be recovered.",
+		link: { label: "Deposit questions in the FAQ ↓", href: "#faq" },
+	},
+	{
+		title: "Place your first order.",
+		note: "Pick a market, an order type and a size, then check the order value, margin and fees in the summary before you submit.",
+		link: null,
+	},
+];
+---
+
+<section id="start" class="band">
+	<div class="mx-auto w-full max-w-site px-5 py-16 sm:px-8 md:py-24">
+		<div class="reveal">
+			<SectionHeader label="Get started">Start in three steps</SectionHeader>
+		</div>
+
+		<ol class="reveal mt-10 grid grid-cols-1 gap-4 md:mt-12 lg:grid-cols-3">
+			{steps.map((step, index) => (
+				<li class="edge edge-panel flex flex-col rounded-24 p-6 shadow-card md:p-8">
+					<span class="font-mono text-stat text-fg-faint" aria-hidden="true">{String(index + 1).padStart(2, "0")}</span>
+					<h3 class="mt-6 text-h3 font-medium md:mt-8">{step.title}</h3>
+					<p class="mt-3 text-sm text-fg-muted">
+						{step.note}
+						{step.link && (
+							<>
+								{" "}
+								<a href={step.link.href} class="text-fg underline underline-offset-2 hover:text-fg-muted">{step.link.label}</a>
+							</>
+						)}
+					</p>
+				</li>
+			))}
+		</ol>
+
+		<p class="reveal mt-6 text-base text-fg-muted">
+			<span class="text-fg">Already use Hyperliquid?</span> Connect the same wallet to reach your existing account.
+		</p>
+
+		<div data-cta-group class="reveal mt-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
+			<ButtonLink href={startUrl} variant="primary" size="lg" icon="external" class="shrink-0 self-start sm:self-auto">Start trading</ButtonLink>
+			<p class="text-sm text-fg-muted">
+				{RISK_SENTENCE}
+				<a href={RISK_PATH} class="text-fg underline underline-offset-2 hover:text-fg-muted">Risk disclosure →</a>
+			</p>
+		</div>
+	</div>
+</section>

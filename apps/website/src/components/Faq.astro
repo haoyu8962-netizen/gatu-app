@@ -1,46 +1,65 @@
 ---
+import { RISK_PATH, RISK_SENTENCE } from "@/config/copy";
 import { FAQS as faqs } from "@/config/faq";
+import { terminalTradeUrl } from "@/lib/terminal-links";
+import ButtonLink from "./ButtonLink.astro";
+
+const startUrl = terminalTradeUrl("BTC", "faq_cta");
 ---
 
-<section id="faq" class="border-b border-stroke-weaker">
-	<div class="reveal mx-auto w-full max-w-3xl px-5 sm:px-6 py-20 md:py-24">
-		<div class="text-center mb-10 md:mb-12">
-			<span class="text-3xs uppercase tracking-uppercase text-fg-faint">FAQ</span>
-			<h2 class="font-display mt-3 text-xl md:text-2xl tracking-display">Common questions.</h2>
+<section id="faq">
+	<div class="mx-auto w-full max-w-site px-5 py-16 sm:px-8 md:py-24">
+		<div class="grid grid-cols-1 gap-10 lg:grid-cols-12 lg:gap-8">
+			<div class="reveal lg:col-span-4">
+				<p class="label">FAQ</p>
+				<h2 class="mt-4 text-h2 font-medium">Common questions</h2>
+			</div>
+
+			<div class="border-t border-stroke-weak lg:col-span-8">
+				{faqs.map((f) => (
+					<details class="disclosure faq-item border-b border-stroke-weak">
+						<summary class="flex min-h-14 cursor-pointer list-none items-center justify-between gap-6 py-4 text-base font-medium hover:text-fg-muted [&::-webkit-details-marker]:hidden">
+							<span>{f.q}</span>
+							<svg
+								width="14"
+								height="14"
+								viewBox="0 0 12 12"
+								fill="none"
+								aria-hidden="true"
+								class="disclosure-caret shrink-0 text-fg-faint"
+							>
+								<path d="M6 1.5v9M1.5 6h9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+							</svg>
+						</summary>
+						<p class="max-w-2xl pb-6 text-sm text-fg-muted">
+							{f.a}
+							{f.link && (
+								<>
+									{" "}
+									<a href={f.link.href} class="text-fg underline underline-offset-2 hover:text-fg-muted">
+										{f.link.label}
+									</a>
+								</>
+							)}
+						</p>
+					</details>
+				))}
+			</div>
 		</div>
 
-		<div class="divide-y divide-stroke-weaker border-y border-stroke-weaker">
-			{faqs.map((f) => (
-				<details class="group">
-					<summary class="flex cursor-pointer items-center justify-between py-5 text-sm font-medium hover:text-fg-muted transition-colors duration-200 list-none gap-4">
-						<span>{f.q}</span>
-						<svg
-							width="14"
-							height="14"
-							viewBox="0 0 12 12"
-							fill="none"
-							aria-hidden="true"
-							class="text-fg-faint group-open:rotate-45 transition-transform duration-200 shrink-0"
-						>
-							<path d="M6 1.5v9M1.5 6h9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
-						</svg>
-					</summary>
-					<p class="pb-5 -mt-1 text-sm text-fg-muted leading-relaxed">
-						{f.a}
-						{f.link && (
-							<>
-								{" "}
-								<a
-									href={f.link.href}
-									class="text-fg underline underline-offset-2 hover:text-fg-muted transition-colors duration-150"
-								>
-									{f.link.label}
-								</a>
-							</>
-						)}
-					</p>
-				</details>
-			))}
+		<div
+			data-cta-group
+			class="reveal edge edge-raised relative isolate mt-20 flex flex-col gap-8 overflow-hidden rounded-24 p-6 shadow-card md:mt-32 md:p-12 lg:flex-row lg:items-end lg:justify-between"
+		>
+			<div class="hero-ambient" aria-hidden="true"></div>
+			<div class="max-w-3xl">
+				<p class="text-h2 font-medium">Every market. <span class="text-marketing-accent">One account.</span></p>
+				<p class="mt-4 text-sm text-fg-muted">
+					{RISK_SENTENCE}
+					<a href={RISK_PATH} class="text-fg underline underline-offset-2 hover:text-fg-muted">Risk disclosure →</a>
+				</p>
+			</div>
+			<ButtonLink href={startUrl} variant="primary" size="lg" icon="external" class="shrink-0 self-start lg:self-auto">Start trading</ButtonLink>
 		</div>
 	</div>
 </section>

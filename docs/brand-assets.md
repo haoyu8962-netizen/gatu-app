@@ -6,7 +6,7 @@
 
 | 内容 | 来源 | 说明 |
 |---|---|---|
-| 名称、法律实体、域名、邮箱、界面品牌色、Logo 颜色、PWA 与浏览器主题色（深色 `pwa.themeColor`、浅色 `pwa.lightThemeColor`） | [`brand/brand.json`](../brand/brand.json) | 应用、脚本和测试只读这里；不要在代码里再写品牌名、域名或邮箱字面量 |
+| 名称、法律实体、域名、邮箱、界面品牌色、官网营销强调色、Logo 颜色、PWA 与浏览器主题色（深色 `pwa.themeColor`、浅色 `pwa.lightThemeColor`） | [`brand/brand.json`](../brand/brand.json) | 应用、脚本和测试只读这里；不要在代码里再写品牌名、域名或邮箱字面量 |
 | Logo 与图标 | `brand/svg`、`brand/png`、`brand/web`、`brand/social` | 设计方原件，规则见 [`brand/LOGO-KIT.md`](../brand/LOGO-KIT.md) |
 | 加载与状态动效 | `brand/loader` | 由 `pnpm brand:export-motion` 从 `brand/tools` 的动效库导出，`PROVENANCE.json` 记录哈希 |
 | 补充状态符号（部分成交、提示、警告） | `brand/loader-supplement` | 动效库 v1.3 缺这三个符号；同一条导出命令用库自己的引擎渲染 `definitions.js`，待设计方确认，设计方交付后删除（`brand/loader-supplement/README.md`） |
@@ -106,13 +106,25 @@
 | 深色 `#86e5d3` 在 `#0f1a1f` / `#212d33` 上 | 11.92 / 9.52 |
 | 浅色 `#176b64` 在 `#ffffff` / `#f5f6fa` 上 | 6.32 / 5.85 |
 
+### 官网营销强调色（只限官网）
+
+官网另有一个专用角色 `--marketing-accent`，取 Logo 的选择琥珀：`brand.json` 的 `websiteColors.dark.marketingAccent` = `#e6b766`（浅色 `websiteColors.light.marketingAccent` = `#99621f`，官网暂无浅色主题），两者必须等于 `logo.*.choice`（[ADR 0043](adr/0043-website-marketing-accent.md)）。
+
+2026-10-26 起官网默认是浅色主题（[ADR 0044](adr/0044-website-light-default-theme.md)，待运营方确认）：浅色 `:root` 用 `websiteColors.light.marketingAccent` `#99621f`，深色值留在 `?theme=dark` 对比主题与深色产品窗口（`.surface-dark`）里；浅色画布与卡片取 Logo 套件令牌的纸色（`paper-50/100/200` 与白），标题用 `logo.light.wordmark`，页面 Logo 用套件的 on-light 文件（深色主题换 on-dark）。
+
+- 用途只限营销强调：首屏轮播词、市场区标题与 FAQ 结尾的强调词、宣传图标（首屏理由、账户与执行卡、安全清单的勾、Official links 盾牌、Fig. 1 节点）、功能页签选中图标、Fig. 1 连线与箭头、首屏与结尾卡片的氛围光（`--glow-accent` 10%、`--glow-accent-faint` 5%）。工具类是 `text-marketing-accent`。
+- 官网的薄荷 `--signal` 只用于焦点环、`::selection`、正文链接（`--text-brand`）、实时指示（`--live`）与 Logo。主按钮仍是中性 `--action`，涨跌色仍复制终端令牌。
+- 琥珀不得用于警告、风险、错误或任何状态；官网组件不使用警告色（`--text-warning` `#e0be70` 与琥珀的 ΔE76 只有 6.5）。
+- 终端与 `packages/ui` 不定义这个角色，终端按 ADR 0028 不用琥珀。
+- 对比度：`#e6b766` 在官网画布 `#12131a` / 窗口 `#0f1a1f` / 卡片 `#1d1e26` / 浮层 `#212d33` 上为 9.99 / 9.54 / 8.95 / 7.62；与 Hyperliquid `#97fce3` 的 ΔE76 为 63.7。
+
 ## 校验
 
 | 命令 | 覆盖 |
 |---|---|
-| `pnpm brand:check` | 上面的静态文件与动效导出、几何模块与同步的公共文件是否最新、图标 PNG 的尺寸与不透明度；同时校验 `brand.json` 的结构（域名小写、子域名属于同一顶级域、邮箱使用主域名、主机不重复） |
+| `pnpm brand:check` | 上面的静态文件与动效导出、几何模块与同步的公共文件是否最新、图标 PNG 的尺寸与不透明度；同时校验 `brand.json` 的结构（域名小写、子域名属于同一顶级域、邮箱使用主域名、主机不重复；`websiteColors.*.marketingAccent` 等于 `logo.*.choice`），以及官网 `--marketing-accent` 与两个氛围光令牌取自它、共享 UI 与终端不定义它 |
 | `pnpm brand:sync` | 重新生成 Logo 几何、状态动效模块与样式，复制公共文件，然后执行同样的检查；不会重新导出 `brand/loader`、`brand/loader-supplement/glyphs`、`brand/tokens`（用 `pnpm brand:export-motion`）或重新派生图标与邮件 Logo（用 `pnpm brand:derive-icons`） |
-| `node --test tests/brand-cross-app.test.mjs` | `packages/ui`、终端、官网三份样式表的品牌色等于 `brand.json` |
+| `node --test tests/brand-cross-app.test.mjs` | `packages/ui`、终端、官网三份样式表的品牌色等于 `brand.json`；官网营销强调色等于 `websiteColors.dark.marketingAccent` 且只在官网定义 |
 | `pnpm test:brand` | 以上两项、OG 卡、终端品牌契约测试与官网测试 |
 | `pnpm brand:export-motion`、`node scripts/brand-export-motion.mjs --check` | 重新导出动效与补充符号，并确认导出可以复现（需要 Chromium，不在 CI 中运行） |
 | `pnpm --dir apps/terminal test:browser:brand-surfaces` | 真实浏览器中的品牌表面填色与动画；`BRAND_SURFACES_ENGINES=webkit,firefox`（Firefox 另需 `BRAND_SURFACES_FIREFOX` 指向可执行文件）加测其他引擎 |
