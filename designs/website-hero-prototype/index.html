@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="en" data-variant="a">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<meta name="robots" content="noindex, nofollow" />
+		<meta name="color-scheme" content="dark" />
+		<title>Sairn hero prototype</title>
+		<link rel="preload" href="./fonts/ibm-plex-sans-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin />
+		<link rel="stylesheet" href="./styles.css" />
+		<script>
+			(() => {
+				const params = new URLSearchParams(location.search);
+				document.documentElement.dataset.variant = params.get("v") === "b" ? "b" : "a";
+			})();
+		</script>
+		<script type="module" src="./main.js"></script>
+	</head>
+	<body>
+		<a class="skip" href="#hero">Skip to content</a>
+		<p class="official">
+			<span class="long">Official addresses: sairn.ai · www.sairn.ai · app.sairn.ai</span>
+			<span class="short">Official: sairn.ai · www.sairn.ai · app.sairn.ai</span>
+		</p>
+		<div class="shell">
+			<header class="nav">
+				<a href="#hero" aria-label="Sairn home"><img src="./assets/sairn-lockup-on-dark.svg" alt="Sairn" width="106" height="28" /></a>
+				<ul class="nav-links">
+					<li><a href="#hero">Terminal</a></li>
+					<li><a href="#hero">Get started</a></li>
+					<li><a href="#hero">Markets</a></li>
+					<li><a href="#hero">Fees</a></li>
+					<li><a href="#hero">Security</a></li>
+					<li><a href="#hero">FAQ</a></li>
+				</ul>
+				<a class="btn-primary small" id="cta-header" href="https://app.sairn.ai/trade/BTC">Open terminal</a>
+			</header>
+
+			<main class="hero" id="hero">
+				<div class="hero-copy">
+					<p class="eyebrow">Independent web terminal for Hyperliquid</p>
+					<h1>Trade Hyperliquid perps and spot.</h1>
+					<p class="sub enter" style="--i: 1">Sign in with email or your own wallet. Your funds stay at your own Hyperliquid address.</p>
+					<div class="cta-group enter" style="--i: 2" data-cta-group>
+						<div class="cta-row">
+							<a class="btn-primary" id="cta-trade" href="https://app.sairn.ai/trade/BTC">Trade BTC</a>
+							<a class="btn-link" id="cta-email" href="#start" title="Planned section: three steps to start"><span class="opt">No wallet? </span>How email sign-in works →</a>
+						</div>
+						<p class="risk" data-risk-note>
+							Perpetual futures use leverage. You can lose all of your margin.
+							<a href="https://sairn.ai/risk/">Risk disclosure →</a>
+						</p>
+						<p class="need">
+							To deposit, you need USDC on Arbitrum.
+							<a href="#start" title="Planned page (phase 2 of the rebuild plan)">Deposit guide →</a>
+						</p>
+					</div>
+					<p class="fine fine-in-copy enter" style="--i: 3">
+						Non-custodial · 0.01% builder fee · Independent interface: not Hyperliquid Corp. or the Hyper Foundation
+					</p>
+				</div>
+
+				<section class="window enter" style="--i: 2" id="window" aria-labelledby="window-title" data-phase="recorded" data-live="false">
+					<h2 id="window-title" class="sr-only">Product preview</h2>
+					<div class="win-bar">
+						<div class="views" role="tablist" aria-label="Preview">
+							<button class="view-tab" role="tab" type="button" id="view-terminal" data-view="terminal" aria-controls="terminal-panel" aria-selected="true">Terminal</button>
+							<button class="view-tab" role="tab" type="button" id="view-live" data-view="live" aria-controls="market-panel" aria-selected="false" tabindex="-1">
+								<span class="view-dot" aria-hidden="true"></span>Live market
+							</button>
+						</div>
+						<div class="win-bar-end" id="live-controls">
+							<span class="state-badge" id="state-badge" hidden>
+								<span class="live-dot" aria-hidden="true"></span><span id="state-text">RECORDED</span>
+							</span>
+							<button class="bar-btn snapshot-btn" id="snapshot" type="button">Read snapshot</button>
+							<button class="bar-btn" id="pause" type="button" aria-pressed="false">Pause</button>
+						</div>
+					</div>
+					<p class="sr-only" id="snapshot-out" role="status"></p>
+
+					<div class="panels">
+						<div class="terminal-panel" id="terminal-panel" role="tabpanel" aria-labelledby="view-terminal">
+							<p class="view-caption"><strong>Screen recording</strong> of app.sairn.ai, signed out · 25 Oct 2026 UTC</p>
+							<div class="demo">
+								<picture class="demo-poster" id="demo-poster">
+									<source media="(max-width: 640px)" srcset="./media/demo-mobile.jpg" width="780" height="1210" />
+									<img
+										src="./media/demo-desktop.jpg"
+										width="1440"
+										height="732"
+										alt="First frame of a screen recording of the Sairn terminal, signed out, on the HYPE/USDC spot market"
+										fetchpriority="high"
+										decoding="async"
+									/>
+								</picture>
+								<video
+									class="terminal-video"
+									id="terminal-video"
+									muted
+									loop
+									playsinline
+									preload="none"
+									hidden
+								></video>
+								<button class="demo-toggle" id="demo-toggle" type="button" aria-controls="terminal-video" hidden>Pause</button>
+							</div>
+							<div class="regions" aria-hidden="true">
+								<span class="r-chart">Chart</span><span class="r-book">Order book</span><span class="r-form">Order form</span>
+							</div>
+						</div>
+
+						<div class="market-panel" id="market-panel" role="tabpanel" aria-labelledby="view-live" data-inactive>
+							<p class="view-caption"><strong>Public market data</strong> · not a terminal feature</p>
+							<div class="market-head">
+								<div class="tabs" role="tablist" aria-label="Market">
+									<button class="tab" role="tab" type="button" id="tab-btc" data-coin="BTC" aria-controls="market-body" aria-selected="true">BTC</button>
+									<button class="tab" role="tab" type="button" id="tab-eth" data-coin="ETH" aria-controls="market-body" aria-selected="false" tabindex="-1">ETH</button>
+									<button class="tab" role="tab" type="button" id="tab-sol" data-coin="SOL" aria-controls="market-body" aria-selected="false" tabindex="-1">SOL</button>
+									<button class="tab" role="tab" type="button" id="tab-hype" data-coin="HYPE" aria-controls="market-body" aria-selected="false" tabindex="-1">HYPE</button>
+								</div>
+								<div class="quote">
+									<span class="last-label" id="last-label" data-empty>Last trade</span>
+									<span class="last" id="last" data-empty></span>
+									<span class="change" id="change" data-empty></span>
+									<svg class="spark" id="spark" viewBox="0 0 120 32" preserveAspectRatio="none" aria-hidden="true" data-empty>
+										<path id="spark-path" fill="none" stroke="currentColor" stroke-width="1.5" vector-effect="non-scaling-stroke" />
+									</svg>
+								</div>
+							</div>
+
+							<div id="market-body" role="tabpanel" aria-labelledby="tab-btc">
+								<p class="legend">
+									<span><i class="sw heat" aria-hidden="true"></i>Resting orders (brighter = more size)</span>
+									<span><i class="sw buy" aria-hidden="true"></i>Buy trades</span>
+									<span><i class="sw sell" aria-hidden="true"></i>Sell trades</span>
+									<span><i class="sw size" aria-hidden="true"></i>Dot size = trade value</span>
+									<span><i class="sw mid" aria-hidden="true"></i>Mid price</span>
+								</p>
+
+								<div class="win-body">
+									<div class="stage" id="stage">
+										<div class="plot" id="plot">
+											<canvas id="open-book" aria-hidden="true"></canvas>
+											<img class="poster" id="poster" alt="" hidden />
+											<button class="show-live" id="show-live" type="button" hidden>Show live view</button>
+										</div>
+										<div class="gutter" aria-hidden="true">
+											<span class="axis-label" id="axis-top" hidden></span>
+											<span class="axis-label" id="axis-bottom" hidden></span>
+											<span class="mid-label" id="mid-label" hidden></span>
+										</div>
+										<div class="time-axis" aria-hidden="true">
+											<span id="t-left"></span><span id="t-mid"></span><span id="t-right"></span>
+										</div>
+										<div class="unit" aria-hidden="true">USD</div>
+									</div>
+									<div class="book" id="book">
+										<table>
+											<caption id="book-caption">Top 5</caption>
+											<thead>
+												<tr>
+													<th scope="col">Price (USD)</th>
+													<th scope="col" id="book-size-head">Size (BTC)</th>
+												</tr>
+											</thead>
+											<tbody id="book-asks"></tbody>
+											<tbody>
+												<tr class="spread">
+													<td colspan="2" id="book-spread"></td>
+												</tr>
+											</tbody>
+											<tbody id="book-bids"></tbody>
+										</table>
+									</div>
+								</div>
+								<div class="bbo" id="bbo" data-empty>
+									<span>Best bid <span class="b" id="bbo-bid"></span></span>
+									<span>Best ask <span class="a" id="bbo-ask"></span></span>
+								</div>
+
+								<div class="win-foot">
+									<p class="state-note" id="state-note"></p>
+									<p class="foot-note" id="foot-note">BTC-USD perpetual · Not advice.</p>
+								</div>
+							</div>
+						</div>
+					</div>
+				</section>
+				<p class="fine fine-after">
+					Non-custodial · 0.01% builder fee · Independent interface: not Hyperliquid Corp. or the Hyper Foundation
+				</p>
+			</main>
+		</div>
+		<div class="proto-bar" role="group" aria-label="Prototype variant">
+			<span class="proto-label">Prototype · not the live site</span>
+			<div class="proto-switch">
+				<button type="button" data-variant-btn="a" aria-pressed="true">A Restrained</button>
+				<button type="button" data-variant-btn="b" aria-pressed="false">B Bold</button>
+			</div>
+		</div>
+	</body>
+</html>

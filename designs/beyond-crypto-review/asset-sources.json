@@ -1,0 +1,54 @@
+{
+	"as-is/selector-hip-3.png": {
+		"source": "Signed-out screenshot of https://app.sairn.ai taken 2026-10-25 UTC by a research agent (Playwright, 1440×900 viewport, cropped to 1440×729); product as-is, not marketing material",
+		"sha256": "b5d0db55bb4bc0461eabdaa6ae920a781edb9657c51dadaf544aaca2bca2e0f8"
+	},
+	"as-is/selector-pre-launch.png": {
+		"source": "Signed-out screenshot of https://app.sairn.ai taken 2026-10-25 UTC by a research agent (Playwright, 1440×900 viewport, not cropped); product as-is, not marketing material",
+		"sha256": "a7bc79408f3a40c440e22737b66fd2a923e38906abec18a3d7850f72880b882b"
+	},
+	"as-is/selector-traditional-finance.png": {
+		"source": "Signed-out screenshot of https://app.sairn.ai taken 2026-10-25 UTC by a research agent (Playwright, 1440×900 viewport, cropped to 1440×729); product as-is, not marketing material",
+		"sha256": "955c02e66288f51287cb3722d3abe429267e1daffbce660b86c93f2f65811a7b"
+	},
+	"as-is/trade-io-anth-disclaimer.png": {
+		"source": "Signed-out screenshot of https://app.sairn.ai taken 2026-10-25 UTC by a research agent (Playwright, 1440×900 viewport, not cropped); product as-is, not marketing material",
+		"sha256": "25ce06e2c95e8303c310f262fb34e05c40be2e666c59f19e53df9ba2ec90b47c"
+	},
+	"as-is/trade-io-oai-disclaimer.png": {
+		"source": "Signed-out screenshot of https://app.sairn.ai taken 2026-10-25 UTC by a research agent (Playwright, 1440×900 viewport, not cropped); product as-is, not marketing material",
+		"sha256": "4d9edd5f8e0bdd9b3eb4b94446a13d589d99bf6732f6471fb222e8f73539cf99"
+	},
+	"as-is/trade-xyz-sndk-disclaimer.png": {
+		"source": "Signed-out screenshot of https://app.sairn.ai taken 2026-10-25 UTC by a research agent (Playwright, 1440×900 viewport, not cropped); product as-is, not marketing material",
+		"sha256": "b7bf9e33a1c0c5499c2b61a288935e16aa4a5de295f1cbe238cc08339db2bf2a"
+	},
+	"data/markets-snapshot.json": {
+		"source": "Hyperliquid public info API (perpAnnotation, perpDexs, metaAndAssetCtxs), 2026-10-25T04:55:47Z; no addresses",
+		"sha256": "87067f6282defe14bb325ea22388508bdab9204e54aa39bc11a949a7dbe88a19"
+	},
+	"media/reel-generic.jpg": {
+		"source": "Rendered from reel.html by tools/render-reel.cjs",
+		"sha256": "e070d344f81a6a6077754732c8b6d22c87844a3744353a7590a6de3b855eac89"
+	},
+	"media/reel-generic.mp4": {
+		"source": "Rendered from reel.html by tools/render-reel.cjs",
+		"sha256": "e287e0cb56ec4279595368c651ca7fa6d3ed3d9602e8264f94ae6482ce8fa03d"
+	},
+	"media/reel-generic.webm": {
+		"source": "Rendered from reel.html by tools/render-reel.cjs",
+		"sha256": "c5025be6151a6ec61cb4b77687e7f4ba10a7fe044caf310eb783907720891289"
+	},
+	"media/reel-named.jpg": {
+		"source": "Rendered from reel.html by tools/render-reel.cjs",
+		"sha256": "9a8a517dfe0c792d411375297d89c75e0fde748fd57d9ec31f52254f8bfb2bbe"
+	},
+	"media/reel-named.mp4": {
+		"source": "Rendered from reel.html by tools/render-reel.cjs",
+		"sha256": "f8a47cbd6f8b4ed20259736defa51f264ac56a7dd174a8673b227248b169d0dc"
+	},
+	"media/reel-named.webm": {
+		"source": "Rendered from reel.html by tools/render-reel.cjs",
+		"sha256": "ebf73c3fb69f0870ce48f14f94de02279bfdf52c769d99fcc14c9261589b5547"
+	}
+}

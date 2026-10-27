@@ -57,9 +57,10 @@ const formatter = new Intl.DateTimeFormat("en-US", {
 	modifiedTime={modifiedTime}
 	author={post.data.author}
 	jsonLd={jsonLd}
+	noIndex
 >
 	<Nav />
-	<main>
+	<main id="main">
 		<article class="mx-auto w-full max-w-2xl px-5 sm:px-6 pt-16 pb-20 md:pt-24 md:pb-28">
 			<a
 				href="/blog/"

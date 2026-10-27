@@ -67,5 +67,10 @@
 		"id": "wallet-onboarding",
 		"title": "钱包身份与首次交易引导",
 		"documents": ["docs/trading-onboarding.md", "docs/email-trading-signing.md"]
+	},
+	{
+		"id": "jurisdiction-marketing",
+		"title": "地区限制与市场推广",
+		"documents": ["docs/adr/0042-japan-allowed-trading-region.md", "docs/marketing/jp-launch-email/README.md"]
 	}
 ]

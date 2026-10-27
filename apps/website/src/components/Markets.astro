@@ -1,64 +1,234 @@
 ---
-const markets = [
-	{ symbol: "TSLA", coin: "xyz:TSLA", name: "Tesla", tag: "Equity perp" },
-	{ symbol: "NVDA", coin: "xyz:NVDA", name: "NVIDIA", tag: "Equity perp" },
-	{ symbol: "AAPL", coin: "xyz:AAPL", name: "Apple", tag: "Equity perp" },
-	{ symbol: "JP225", coin: "xyz:JP225", name: "Nikkei 225", tag: "Index perp" },
-	{ symbol: "SILVER", coin: "xyz:SILVER", name: "Silver", tag: "Metal perp" },
-	{ symbol: "BTC", coin: "BTC", name: "Bitcoin", tag: "Crypto perp" },
-	{ symbol: "ETH", coin: "ETH", name: "Ethereum", tag: "Crypto perp" },
-	{ symbol: "HYPE", coin: "HYPE", name: "Hyperliquid", tag: "Crypto perp" },
-];
+import { BRAND_NAME } from "@/config/brand";
+import { formatIsoDate, HIP3_DOCS_URL, joinNames, RISK_PATH, RISK_SENTENCE } from "@/config/copy";
+import { formatCompactUsd } from "@/lib/markets/live.js";
+import type { CategoryCard } from "@/lib/markets/rules";
+import {
+	getCategoryCards,
+	getDeployers,
+	getPreIpoRows,
+	liveKindOf,
+	MARKET_TAB_ROWS,
+	type PreIpoRow,
+	SNAPSHOT_FETCHED_AT,
+} from "@/lib/markets/structure";
+import { terminalTradeUrl } from "@/lib/terminal-links";
+import ButtonLink from "./ButtonLink.astro";
+import MarketIcon from "./MarketIcon.astro";
+import SectionHeader from "./SectionHeader.astro";
 
-const points = [
-	{
-		title: "Around the clock",
-		body: "Equity and index perps don't close with the exchange bell — manage exposure nights and weekends.",
-	},
-	{
-		title: "Your wallet is the account",
-		body: "No brokerage onboarding, no transfer delays. Connect, fund, trade — all onchain.",
-	},
-	{
-		title: "Perps, not securities",
-		body: "These are perpetual futures tracking the underlying price, with the same margin engine as every other market.",
-	},
-];
+const CATEGORY_LABELS: Record<CategoryCard, string> = {
+	crypto: "Crypto",
+	stocks: "Stocks",
+	indices: "Indices",
+	commodities: "Commodities",
+	fx: "FX",
+	preipo: "Pre-IPO",
+	rates: "Rates",
+};
+
+const cards = getCategoryCards(MARKET_TAB_ROWS);
+const preIpoRows = getPreIpoRows();
+const allDeployers = joinNames(getDeployers().map((deployer) => deployer.fullName));
+const snapshotDate = formatIsoDate(SNAPSHOT_FETCHED_AT);
+
+const settlementByDeployer = new Map<string, boolean>();
+for (const row of preIpoRows) {
+	if (!row.preIpoTerms || !row.deployerFullName) continue;
+	const earlier = settlementByDeployer.get(row.deployerFullName) ?? true;
+	settlementByDeployer.set(row.deployerFullName, earlier && row.preIpoTerms.earlySettlementOnNotice);
+}
+const settlementSentences = [...settlementByDeployer].map(([deployer, onNotice]) => ({
+	deployer,
+	text: onNotice
+		? "If the company does not list by the scheduled date, or earlier if the deployer gives notice, the market is settled."
+		: "If the company does not list by the scheduled date, the market is settled.",
+}));
+
+function rowNotes(row: PreIpoRow): string[] {
+	const notes: string[] = [];
+	if (row.onlyIsolated) notes.push("Isolated margin only");
+	if (row.preIpoTerms) notes.push(`Settlement scheduled for ${formatIsoDate(row.preIpoTerms.scheduledSettlement)}`);
+	return notes;
+}
+
+function marketCountLabel(count: number): string {
+	return count === 1 ? "1 market" : `${count} markets`;
+}
 ---
 
-<section id="markets" class="border-b border-stroke-weaker">
-	<div class="reveal mx-auto w-full max-w-5xl px-6 py-20 md:py-28">
-		<div class="text-center">
-			<span class="text-3xs uppercase tracking-uppercase text-fg-faint">Markets</span>
-			<h2 class="font-display mt-3 text-xl md:text-2xl tracking-display">
-				Stocks, indices, metals, crypto — <span class="text-signal">one venue</span>.
-			</h2>
-			<p class="mt-4 mx-auto max-w-lg text-sm text-fg-muted leading-relaxed">
-				Trade TSLA, NVDA, and AAPL perps next to BTC and HYPE — live prices below are streamed straight from
-				Hyperliquid, the same source the terminal uses.
+<section id="markets" class="band">
+	<div class="mx-auto w-full max-w-site px-5 py-16 sm:px-8 md:py-24">
+		<div class="reveal">
+			<SectionHeader label="Markets">
+				Every market, <span class="text-marketing-accent">one account</span>
+				<p slot="intro">Trade 24/7 across crypto and traditional markets from one account.</p>
+			</SectionHeader>
+		</div>
+
+		<div class="@container reveal edge edge-panel mt-10 overflow-hidden rounded-24 shadow-card md:mt-12" data-tabs data-live-region>
+			<div
+				role="tablist"
+				aria-label="Market categories"
+				data-tablist
+				class="flex gap-1 overflow-x-auto border-b border-stroke-weaker p-2 scrollbar-none"
+			>
+				{cards.map((card, index) => (
+					<button
+						type="button"
+						role="tab"
+						id={`markets-tab-${card.category}`}
+						aria-controls={`markets-panel-${card.category}`}
+						aria-selected={index === 0 ? "true" : "false"}
+						tabindex={index === 0 ? undefined : "-1"}
+						class="market-tab press inline-flex min-h-11 shrink-0 items-center gap-2 rounded-full border border-transparent px-4 text-sm text-fg-subtle hover:text-fg"
+					>
+						{CATEGORY_LABELS[card.category]}
+						<span class="font-mono text-2xs text-fg-faint">{card.listedCount}</span>
+					</button>
+				))}
+			</div>
+
+			{cards.map((card, index) => (
+				<div
+					id={`markets-panel-${card.category}`}
+					role="tabpanel"
+					aria-labelledby={`markets-tab-${card.category}`}
+					data-tabpanel
+					data-tabpanel-deferred={index > 0 ? "" : undefined}
+				>
+					<h3 data-panel-heading class="px-5 pt-6 text-h3 font-medium @table:px-6">{CATEGORY_LABELS[card.category]}</h3>
+					<div class="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 px-5 pt-5 pb-4 @table:px-6">
+						<p class="text-sm text-fg-muted">
+							<span class="font-mono text-fg">{marketCountLabel(card.listedCount)}</span>
+							{card.deployers.length > 0 && <> · Run by {joinNames(card.deployers)}</>}
+						</p>
+						{card.category === "crypto" && <p class="text-sm text-fg-subtle">Spot in the same workspace</p>}
+					</div>
+					<table role="table" class="w-full border-collapse text-left @max-cells:block">
+						<thead role="rowgroup" class="@max-cells:sr-only">
+							<tr role="row" class="border-y border-stroke-weaker font-mono text-2xs tracking-label text-fg-subtle uppercase">
+								<th role="columnheader" scope="col" class="py-2.5 pr-2 pl-4 font-normal @table:px-6">Market</th>
+								<th role="columnheader" scope="col" class="px-3 py-2.5 font-normal @max-table:hidden">Deployer</th>
+								<th role="columnheader" scope="col" class="px-2 py-2.5 text-right font-normal whitespace-nowrap @table:px-3">Mark · 24h</th>
+								<th role="columnheader" scope="col" class="py-2.5 pr-4 pl-1 @table:px-6"><span class="sr-only">Open in the terminal</span></th>
+							</tr>
+						</thead>
+						<tbody role="rowgroup" class="@max-cells:block @max-cells:border-t @max-cells:border-stroke-weaker">
+							{card.examples.map((market) => (
+								<tr
+									role="row"
+									class="border-b border-stroke-weaker last:border-b-0 hover:bg-fill-weaker @max-cells:grid @max-cells:grid-cols-[minmax(0,1fr)_auto] @max-cells:items-center"
+									data-market-coin={market.coin}
+									data-live-row={market.coin}
+									data-live-kind={liveKindOf(card.category)}
+								>
+									<td role="cell" class="py-3.5 pr-2 pl-4 @table:px-6 @max-cells:col-span-full @max-cells:pr-4 @max-cells:pb-1.5">
+										<div class="flex items-center gap-2.5 @table:gap-3">
+											<MarketIcon coin={market.coin} size={24} class="@max-table:size-5" />
+											<div class="min-w-0">
+												<span class="block text-base font-medium text-fg">{market.name}</span>
+												<span class="mt-0.5 block font-mono text-xs text-fg-subtle">
+													{market.displayName ?? market.coin}
+													{market.deployerFullName && <span class="@table:hidden"> · by {market.deployerFullName}</span>}
+												</span>
+											</div>
+										</div>
+									</td>
+									<td role="cell" class="px-3 py-3.5 text-sm text-fg-muted @max-table:hidden">
+										{market.deployerFullName ? `by ${market.deployerFullName}` : "Hyperliquid"}
+									</td>
+									<td role="cell" class="px-2 py-3.5 text-right font-mono text-sm whitespace-nowrap text-fg @table:px-3 @max-cells:min-w-0 @max-cells:pt-0 @max-cells:pr-2 @max-cells:pl-4 @max-cells:text-left">
+										<span class="block min-h-5" data-live-primary></span>
+										<span class="block font-mono text-xs text-fg-subtle" data-live-secondary></span>
+										<span class="block min-h-4 font-mono text-xs" data-live-change></span>
+									</td>
+									<td role="cell" class="py-2 pr-4 pl-1 text-right @table:px-6 @max-cells:pt-0 @max-cells:pb-3.5">
+										<ButtonLink href={terminalTradeUrl(market.coin, `markets_${card.category}`)} variant="secondary" size="sm" icon="external">
+											Trade<span class="sr-only"> {market.name}</span>
+										</ButtonLink>
+									</td>
+								</tr>
+							))}
+						</tbody>
+					</table>
+				</div>
+			))}
+		</div>
+		<div class="mt-4 flex flex-col gap-1 text-xs text-fg-subtle">
+			<p class="text-sm text-fg-muted">Liquidity differs per market, and HIP-3 markets can be thin: check the order book before you trade.</p>
+			<p>
+				Markets not delisted on Hyperliquid as of {snapshotDate} (UTC), from a snapshot taken before this page was built.
+				Mark prices and 24h change are Hyperliquid public data, shown only while current.
 			</p>
 		</div>
 
-		<div class="mt-12 grid grid-cols-2 md:grid-cols-4 gap-px bg-stroke-weaker rounded-xs overflow-hidden border border-stroke-weak">
-			{markets.map((m) => (
-				<div class="bg-surface p-5 hover:bg-fill-weaker transition-colors duration-200">
-					<div class="flex items-baseline justify-between gap-2">
-						<span class="text-sm font-medium">{m.symbol}</span>
-						<span class="text-3xs uppercase tracking-uppercase text-fg-faint whitespace-nowrap">{m.tag}</span>
-					</div>
-					<div class="mt-2 text-lg font-medium tabular-nums" data-hl-price={m.coin}>—</div>
-					<div class="mt-1 text-2xs text-fg-faint">{m.name}</div>
-				</div>
-			))}
+		<div class="reveal edge edge-raised mt-12 grid grid-cols-1 gap-8 rounded-24 p-6 md:mt-16 md:p-10 lg:grid-cols-12">
+			<div class="lg:col-span-5">
+				<p class="label">Pre-IPO</p>
+				<h3 class="mt-3 text-h3 font-medium">Pre-IPO perpetuals</h3>
+				<p class="mt-4 text-sm text-fg-muted">
+					Pre-IPO perpetuals are cash-settled contracts that track a reference price set by the deployer. They are not
+					shares and not an IPO allocation, and they give you no rights in the company.
+				</p>
+				{settlementSentences.map((sentence) => (
+					<p class="mt-3 text-sm text-fg-muted">
+						<span class="text-fg">{sentence.deployer}:</span> {sentence.text}
+					</p>
+				))}
+			</div>
+
+			<ul class="divide-y divide-stroke-weaker border-y border-stroke-weaker lg:col-span-7">
+				{preIpoRows.map((row) => (
+					<li class="grid grid-cols-1 gap-2 py-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start sm:gap-6" data-market-coin={row.coin}>
+						<div class="flex gap-3">
+							<MarketIcon coin={row.coin} size={20} class="mt-3 sm:mt-0.5" />
+							<div class="min-w-0 text-xs">
+								<a
+									href={terminalTradeUrl(row.coin, "markets_preipo")}
+									class="inline-flex min-h-11 items-center text-base font-medium text-fg underline-offset-2 hover:underline sm:min-h-0"
+								>{row.name}</a>
+								<span class="font-mono text-xs text-fg-subtle"> · by {row.deployerFullName}</span>
+								{row.quotedPerShare && <span class="mt-1 block text-fg-muted">Quoted per share of the company</span>}
+								{row.preIpoTerms && (
+									<span class="mt-1 block text-fg-muted">
+										Unit: each US$1 of price is US${formatCompactUsd(row.preIpoTerms.valuationPerPriceUsd)} of implied valuation
+									</span>
+								)}
+								{rowNotes(row).length > 0 && <span class="mt-1 block font-mono text-xs text-fg-subtle">{rowNotes(row).join(" · ")}</span>}
+							</div>
+						</div>
+						<a
+							href={row.preIpoTerms ? row.preIpoTerms.unitSource.url : row.docsUrl}
+							rel="noopener"
+							class="inline-flex min-h-11 items-center whitespace-nowrap text-sm text-fg-muted underline underline-offset-2 hover:text-fg max-sm:ml-8 sm:min-h-0"
+						>
+							{row.preIpoTerms ? "How the price is set →" : "Deployer documentation →"}
+						</a>
+					</li>
+				))}
+			</ul>
 		</div>
 
-		<div class="mt-10 grid grid-cols-1 md:grid-cols-3 gap-6">
-			{points.map((p) => (
-				<div>
-					<div class="text-sm font-medium">{p.title}</div>
-					<p class="mt-1.5 text-xs text-fg-muted leading-relaxed">{p.body}</p>
-				</div>
-			))}
+		<div class="reveal mt-12 border-t border-stroke-weaker pt-10 md:mt-16">
+			<p class="label">Third-party markets</p>
+			<div class="mt-4 max-w-3xl">
+				<p class="text-base text-fg-muted">
+					Stocks, indices, commodities, FX and pre-IPO markets are HIP-3 perpetuals deployed on Hyperliquid by independent
+					third parties: {allDeployers}. Each deployer defines its markets, sets the reference price and can halt, settle or
+					delist a market; outside a stock's exchange hours, prices come from the deployer's own mechanism.
+				</p>
+				<p class="mt-3 text-base text-fg-muted">
+					Hyperliquid matches and settles trades; {BRAND_NAME} is the interface and does not review these markets. These
+					contracts give you no ownership, dividend or voting rights, and {BRAND_NAME} is not affiliated with the companies
+					they reference.
+					<a href={HIP3_DOCS_URL} rel="noopener" class="text-fg underline underline-offset-2 hover:text-fg-muted">How HIP-3 works →</a>
+				</p>
+				<p class="mt-3 text-base text-fg-muted">
+					{RISK_SENTENCE}
+					<a href={RISK_PATH} class="text-fg underline underline-offset-2 hover:text-fg-muted">Risk disclosure →</a>
+				</p>
+			</div>
 		</div>
 	</div>
 </section>

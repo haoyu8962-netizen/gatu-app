@@ -1,49 +1,113 @@
 ---
-const pillars = [
+import browserIcon from "@phosphor-icons/core/assets/regular/browser.svg?raw";
+import signatureIcon from "@phosphor-icons/core/assets/regular/signature.svg?raw";
+import stackIcon from "@phosphor-icons/core/assets/regular/stack.svg?raw";
+import vaultIcon from "@phosphor-icons/core/assets/regular/vault.svg?raw";
+import appWindowIcon from "@phosphor-icons/core/assets/regular/app-window.svg?raw";
+import shieldIcon from "@phosphor-icons/core/assets/regular/shield-check.svg?raw";
+import checkIcon from "@phosphor-icons/core/assets/regular/check.svg?raw";
+import { BRAND_NAME, OFFICIAL_HOSTS, SUPPORT_EMAIL } from "@/config/brand";
+import SectionHeader from "./SectionHeader.astro";
+
+// Plan §4 08: Fig. 1 is an illustration of where an order goes; the brand box carries only "interface + builder fee".
+// The order-flow diagram follows Lighter's pattern; the Official links block follows its anti-phishing list.
+const nodes = [
+	{ title: "Your browser", lines: ["You place an order in the terminal."], icon: browserIcon },
 	{
-		title: "Self-custody",
-		body: "Your wallet is your account. Funds never pass through us — orders are signed locally and settle on Hyperliquid.",
-		icon: "key",
+		title: "Signer",
+		lines: ["Email: the wallet Privy creates for your account.", "Own wallet: a trading key you approve."],
+		icon: signatureIcon,
 	},
-	{
-		title: "Onchain order book",
-		body: "A real central limit order book, onchain — not an AMM, not a dark pool. Every order and fill is verifiable.",
-		icon: "book",
-	},
-	{
-		title: "Fees on the record",
-		body: "Hyperliquid's trading fee, plus a 0.01% builder fee on perp orders and spot sells — both charged by the protocol and shown on your fills.",
-		icon: "receipt",
-	},
+	{ title: "Hyperliquid on-chain order book", lines: ["Matches the signed order."], icon: stackIcon },
+	{ title: "Your Hyperliquid address", lines: ["The trade settles here, in your own account."], icon: vaultIcon },
 ];
 
-const iconSvg: Record<string, string> = {
-	key: '<circle cx="96" cy="164" r="52" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><line x1="132" y1="128" x2="208" y2="52" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><line x1="176" y1="84" x2="204" y2="112" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/>',
-	book: '<path d="M128,88a32,32,0,0,1,32-32h72V200H160a32,32,0,0,0-32,32" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><path d="M24,200H96a32,32,0,0,1,32,32V88A32,32,0,0,0,96,56H24Z" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/>',
-	receipt: '<path d="M32,208V56a8,8,0,0,1,8-8H216a8,8,0,0,1,8,8V208l-32-16-32,16-32-16-32,16-32-16Z" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><line x1="80" y1="104" x2="176" y2="104" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><line x1="80" y1="136" x2="176" y2="136" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/>',
-};
+const checklist = [
+	`Non-custodial: your funds stay in your own Hyperliquid account, and ${BRAND_NAME} never takes custody of them.`,
+	`${BRAND_NAME} is an independent interface, not Hyperliquid Corp. or the Hyper Foundation.`,
+	"Withdrawals and sends to another address always need a signature from the wallet that owns the account; a trading key cannot move funds out of it.",
+	"Apart from its own files, this site requests data only from api.hyperliquid.xyz, and it runs no analytics.",
+	`No one at ${BRAND_NAME}, support included, will ever ask you to share your private key, seed phrase, sign-in code or password.`,
+];
+
+function inlineIcon(svg: string, size: number): string {
+	return svg.replace("<svg ", `<svg width="${size}" height="${size}" aria-hidden="true" focusable="false" `);
+}
 ---
 
-<section id="trust" class="border-b border-stroke-weaker">
-	<div class="reveal mx-auto w-full max-w-5xl px-6 py-20 md:py-28">
-		<div class="text-center">
-			<span class="text-3xs uppercase tracking-uppercase text-fg-faint">Trust</span>
-			<h2 class="font-display mt-3 text-xl md:text-2xl tracking-display">Verify, don't trust.</h2>
-			<p class="mt-4 mx-auto max-w-md text-sm text-fg-muted leading-relaxed">
-				Your funds, orders, and fees all live on Hyperliquid's public ledger, so you can check every one of them.
-			</p>
+<section id="security" class="band">
+	<div class="mx-auto w-full max-w-site px-5 py-16 sm:px-8 md:py-24">
+		<div class="reveal">
+			<SectionHeader label="Security">How your account works</SectionHeader>
 		</div>
 
-		<div class="mt-12 grid grid-cols-1 md:grid-cols-3 gap-px bg-stroke-weaker rounded-xs overflow-hidden border border-stroke-weak">
-			{pillars.map((p) => (
-				<div class="group bg-surface p-6 md:p-8">
-					<div class="inline-flex h-9 w-9 items-center justify-center rounded-xs bg-fill-weaker text-fg-muted transition-colors duration-200 group-hover:text-signal">
-						<svg width="16" height="16" viewBox="0 0 256 256" aria-hidden="true" set:html={iconSvg[p.icon]} />
-					</div>
-					<div class="mt-4 text-sm font-medium">{p.title}</div>
-					<p class="mt-1.5 text-xs text-fg-muted leading-relaxed">{p.body}</p>
+		<figure class="reveal edge edge-panel mt-10 rounded-24 p-6 shadow-card md:mt-12 md:p-10">
+			<div class="flex items-center justify-between gap-4">
+				<span class="label">Fig. 1</span>
+				<span class="rounded-full border border-stroke-weak px-2.5 py-0.5 font-mono text-xs text-fg-subtle">Illustration</span>
+			</div>
+
+			<ol class="flow relative mt-8 grid grid-cols-1 gap-6 lg:grid-cols-4">
+				{nodes.map((node, index) => (
+					<li class="flow-node relative flex gap-4 lg:flex-col">
+						<span class="edge edge-raised relative z-1 inline-flex h-18 w-18 shrink-0 items-center justify-center rounded-16 text-marketing-accent" set:html={inlineIcon(node.icon, 28)} />
+						<div class="flex flex-col">
+							<span class="font-mono text-2xs text-fg-faint">{String(index + 1).padStart(2, "0")}</span>
+							<span class="mt-1 text-lg font-medium">{node.title}</span>
+							{node.lines.map((line) => <span class="mt-1 text-sm text-fg-muted">{line}</span>)}
+						</div>
+					</li>
+				))}
+			</ol>
+
+			<div class="mt-8 flex items-stretch gap-4 lg:mt-6 lg:w-1/4">
+				<span class="ml-9 w-px shrink-0 border-l border-dashed border-stroke-strong lg:hidden" aria-hidden="true"></span>
+				<div class="flex flex-1 items-start gap-3 rounded-16 border border-dashed border-stroke-strong p-4">
+					<span class="mt-0.5 shrink-0 text-fg-muted" set:html={inlineIcon(appWindowIcon, 20)} />
+					<span class="flex flex-col">
+						<span class="text-base font-medium">{BRAND_NAME}</span>
+						<span class="mt-1 block text-sm text-fg-muted">Interface + builder fee</span>
+					</span>
 				</div>
-			))}
+			</div>
+
+			<figcaption class="mt-8 border-t border-stroke-weaker pt-5 text-sm text-fg-subtle">
+				Fig. 1, illustration: where an order goes. {BRAND_NAME} provides the interface and charges a 0.01%
+				builder fee on perp orders and spot sells (TWAP orders carry none), which Hyperliquid collects with each fill.
+			</figcaption>
+		</figure>
+
+		<div class="mt-10 grid grid-cols-1 gap-6 md:mt-12 lg:grid-cols-12 lg:gap-10">
+			<ul class="reveal flex flex-col lg:col-span-7">
+				{checklist.map((item) => (
+					<li class="flex gap-3 border-b border-stroke-weaker py-4 text-base text-fg-muted first:border-t">
+						<span class="mt-1 shrink-0 text-marketing-accent" set:html={inlineIcon(checkIcon, 16)} />
+						<span>{item}</span>
+					</li>
+				))}
+			</ul>
+
+			<aside class="reveal edge edge-raised self-start rounded-24 p-6 md:p-8 lg:col-span-5" aria-labelledby="official-links-title">
+				<div class="flex items-center gap-3">
+					<span class="text-marketing-accent" set:html={inlineIcon(shieldIcon, 22)} />
+					<h3 id="official-links-title" class="text-lg font-medium">Official links</h3>
+				</div>
+				<p class="mt-3 text-sm text-fg-muted">
+					These are the only addresses {BRAND_NAME} uses. Type or bookmark them, and check the address bar before you sign in.
+				</p>
+				<dl class="mt-5 divide-y divide-stroke-weaker border-y border-stroke-weaker">
+					{OFFICIAL_HOSTS.map((entry) => (
+						<div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 py-3">
+							<dt class="font-mono text-sm text-fg">{entry.host}</dt>
+							<dd class="text-xs text-fg-subtle">{entry.serves}</dd>
+						</div>
+					))}
+					<div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 py-3">
+						<dt class="font-mono text-sm text-fg">{SUPPORT_EMAIL}</dt>
+						<dd class="text-xs text-fg-subtle">Support email</dd>
+					</div>
+				</dl>
+			</aside>
 		</div>
 	</div>
 </section>

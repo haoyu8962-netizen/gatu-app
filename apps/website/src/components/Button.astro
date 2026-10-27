@@ -1,0 +1,24 @@
+---
+import type { HTMLAttributes } from "astro/types";
+import { buttonClasses, type ButtonIcon, type ButtonSize, type ButtonVariant } from "@/lib/buttons";
+import ButtonChip from "./ButtonChip.astro";
+
+interface Props extends Omit<HTMLAttributes<"button">, "type" | "aria-pressed"> {
+	variant?: ButtonVariant;
+	size?: ButtonSize;
+	icon?: ButtonIcon;
+	pressed?: boolean;
+}
+
+const { variant = "secondary", size = "sm", icon = "none", pressed, class: className, ...rest } = Astro.props;
+const toggle = pressed !== undefined;
+---
+
+<button
+	type="button"
+	aria-pressed={toggle ? String(pressed) : undefined}
+	class:list={[buttonClasses({ variant: toggle ? "toggle" : variant, size, icon: toggle ? "none" : icon }), className]}
+	{...rest}
+>
+	<slot />{!toggle && icon !== "none" && <ButtonChip icon={icon} />}
+</button>

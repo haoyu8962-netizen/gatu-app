@@ -1,42 +1,97 @@
 ---
+import { formatIsoDate, RISK_PATH, RISK_SENTENCE } from "@/config/copy";
+import { findGrowthModeFeeExample } from "@/lib/markets/fees";
+import { getFeaturedMarkets, MARKET_STRUCTURE, SNAPSHOT_FETCHED_AT } from "@/lib/markets/structure";
+import { terminalUrl } from "@/lib/terminal-links";
+import SectionHeader from "./SectionHeader.astro";
+
+const FEE_SCOPE = "Core perps, base tier";
+const fundingComparisonUrl = terminalUrl("/fundingComparison", "fees_funding");
+
 const fees = [
-	{ value: "0.025%", label: "Maker fee", note: "0.015% Hyperliquid + 0.01% builder fee, base tier" },
-	{ value: "0.055%", label: "Taker fee", note: "0.045% Hyperliquid + 0.01% builder fee, base tier" },
+	{ value: "0.055%", label: "Taker fee", note: "0.045% Hyperliquid + 0.01% builder fee" },
+	{ value: "0.025%", label: "Maker fee", note: "0.015% Hyperliquid + 0.01% builder fee" },
 ];
+
+const featured = getFeaturedMarkets();
+const growthExample = findGrowthModeFeeExample(
+	MARKET_STRUCTURE,
+	featured.map((market) => market.coin),
+);
+const exampleMarket = featured.find((market) => market.coin === growthExample?.coin);
+const snapshotDate = formatIsoDate(SNAPSHOT_FETCHED_AT);
 ---
 
-<section id="fees" class="border-b border-stroke-weaker">
-	<div class="reveal mx-auto w-full max-w-5xl px-6 py-20 md:py-28">
-		<div class="text-center">
-			<span class="text-3xs uppercase tracking-uppercase text-fg-faint">Fees</span>
-			<h2 class="font-display mt-3 text-xl md:text-2xl tracking-display">Fees start low and go lower.</h2>
-			<p class="mt-4 mx-auto max-w-md text-sm text-fg-muted leading-relaxed">
-				Hyperliquid's trading fee plus a flat 0.01% builder fee on perp orders and spot sells. No gas per trade, no subscription, no spread markup.
+<section id="fees">
+	<div class="mx-auto w-full max-w-site px-5 py-16 sm:px-8 md:py-24">
+		<div class="reveal">
+		<SectionHeader label="Fees">
+			Know what each trade costs.
+			<p slot="intro">
+				Hyperliquid's trading fee plus a flat 0.01% builder fee on perp orders (not TWAP) and spot sells. No gas per trade, no
+				subscription, no spread markup.
+			</p>
+		</SectionHeader>
+		</div>
+
+		<div class="reveal mt-10 grid grid-cols-1 gap-4 md:mt-12 lg:grid-cols-12 lg:gap-8">
+			<div class="grid grid-cols-1 gap-4 self-start sm:grid-cols-2 lg:col-span-6">
+				{fees.map((fee) => (
+					<div class="edge edge-raised flex flex-col rounded-24 p-6 shadow-card md:p-8">
+						<span class="label">{fee.label}</span>
+						<span class="mt-6 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+							<span class="font-mono text-stat text-fg">{fee.value}</span>
+							<span class="rounded-full border border-stroke-weak px-2.5 py-0.5 text-xs text-fg-muted">{FEE_SCOPE}</span>
+						</span>
+						<span class="mt-3 text-sm text-fg-subtle">{fee.note}</span>
+					</div>
+				))}
+			</div>
+
+			<dl class="divide-y divide-stroke-weaker border-y border-stroke-weaker text-sm lg:col-span-6">
+				<div class="grid grid-cols-1 gap-1 py-4 sm:grid-cols-[8rem_minmax(0,1fr)] sm:gap-6">
+					<dt class="label pt-0.5">Volume</dt>
+					<dd class="text-fg-muted">
+						Core perp rates at the base tier are shown above. Hyperliquid's share drops with volume and HYPE staking, to as low as 0% maker / 0.0144%
+						taker; the 0.01% builder fee stays the same.
+					</dd>
+				</div>
+				<div class="grid grid-cols-1 gap-1 py-4 sm:grid-cols-[8rem_minmax(0,1fr)] sm:gap-6">
+					<dt class="label pt-0.5">Spot</dt>
+					<dd class="text-fg-muted">Spot starts at 0.04% maker / 0.07% taker, with the builder fee on sells only.</dd>
+				</div>
+				<div class="grid grid-cols-1 gap-1 py-4 sm:grid-cols-[8rem_minmax(0,1fr)] sm:gap-6">
+					<dt class="label pt-0.5">TWAP</dt>
+					<dd class="text-fg-muted">TWAP orders carry no builder fee.</dd>
+				</div>
+				<div class="grid grid-cols-1 gap-1 py-4 sm:grid-cols-[8rem_minmax(0,1fr)] sm:gap-6">
+					<dt class="label pt-0.5">HIP-3</dt>
+					<dd class="text-fg-muted">
+						HIP-3 deployers can set different Hyperliquid fees for their markets.
+						{growthExample && exampleMarket && (
+							<span data-fee-example={growthExample.coin}>
+								On {exampleMarket.displayName ?? exampleMarket.name} ({exampleMarket.deployerFullName}, growth mode; a perpetual, not shares) on {snapshotDate}:
+								<span class="font-mono text-fg">{growthExample.takerPercent}</span> Hyperliquid taker fee +
+								<span class="font-mono text-fg">{growthExample.builderPercent}</span> builder fee, or
+								<span class="font-mono text-fg">{growthExample.makerPercent}</span> +
+								<span class="font-mono text-fg">{growthExample.builderPercent}</span> as a maker.{growthExample.builderFeeIsLargerPart && " Here the builder fee is more than half of what a taker pays."}
+							</span>
+						)}
+					</dd>
+				</div>
+			</dl>
+		</div>
+
+		<div data-cta-group class="reveal mt-10 flex flex-col gap-3">
+			<p class="text-sm text-fg-muted">
+				<a href={fundingComparisonUrl} class="text-fg underline underline-offset-2 hover:text-fg-muted">
+					Compare funding rates across venues in the terminal →
+				</a>
+			</p>
+			<p class="text-sm text-fg-muted">
+				{RISK_SENTENCE}
+				<a href={RISK_PATH} class="text-fg underline underline-offset-2 hover:text-fg-muted">Risk disclosure →</a>
 			</p>
 		</div>
-
-		<div class="mt-12 mx-auto max-w-2xl grid grid-cols-1 md:grid-cols-2 gap-px bg-stroke-weaker rounded-xs overflow-hidden border border-stroke-weak">
-			{fees.map((f) => (
-				<div class="bg-surface p-6 md:p-8 text-center">
-					<div class="text-2xl md:text-3xl font-medium tabular-nums tracking-tight">{f.value}</div>
-					<div class="mt-1 text-2xs uppercase tracking-uppercase text-fg-muted">{f.label}</div>
-					<div class="mt-1 text-2xs text-fg-faint">{f.note}</div>
-				</div>
-			))}
-		</div>
-
-		<p class="mt-6 text-center text-2xs text-fg-faint">
-			Perp rates shown. Hyperliquid's share drops with volume and HYPE staking, to as low as 0% maker /
-			0.0144% taker; the 0.01% builder fee stays the same. Spot starts at 0.04% maker / 0.07% taker, with the
-			builder fee on sells only; TWAP orders carry no builder fee, and builder-deployed (HIP-3) markets can set
-			their own rates.
-			<a
-				href="https://app.hyperliquid.xyz/fundingComparison"
-				rel="noopener"
-				class="underline underline-offset-2 hover:text-fg-muted transition-colors duration-150"
-			>
-				Funding rates are public and comparable across venues.
-			</a>
-		</p>
 	</div>
 </section>

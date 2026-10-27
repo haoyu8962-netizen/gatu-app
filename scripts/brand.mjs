@@ -16,6 +16,8 @@ const LOGO_VARIANTS = {
 };
 const LOGO_COLORWAYS = ["on-light", "on-dark", "black", "white", "mono"];
 const LOADER_SOURCE = "brand/loader/svg/on-light/page-loading.svg";
+const WEBSITE_STYLES = "apps/website/src/styles/global.css";
+const SHARED_AND_TERMINAL_STYLES = ["packages/ui/src/globals.css", "apps/terminal/src/styles.css"];
 // Domains taken offline (docs/adr/0032-gatu-offline-cutover-to-sairn.md). They must not return to brand.json or the legal text.
 const RETIRED_APEXES = ["gatu.ai"];
 
@@ -220,8 +222,48 @@ export function checkBrand() {
 		problems.push(`legal/terms.md does not name the legal entity ${brand.name.legalEntity}`);
 	}
 
+	problems.push(...checkWebsiteMarketingAccent(brand));
 	problems.push(...checkLoaderProvenance());
 	problems.push(...checkSyncedAssets(brand));
+	return problems;
+}
+
+// The website-only marketing accent (docs/adr/0043-website-marketing-accent.md) is the logo's choice amber, used for
+// marketing emphasis only: the light value on the default light theme, the dark value in the dark comparison theme and
+// the dark product windows. The website stylesheet carries both and their glow tints; the shared UI and the terminal
+// must not define it, so the role cannot spread into trading surfaces by a shared token.
+function checkWebsiteMarketingAccent(brand) {
+	const problems = [];
+	const WEBSITE_THEME_BLOCKS = { light: ":root {", dark: ':root[data-theme="dark"] {' };
+	const styles = readText(WEBSITE_STYLES);
+	for (const [theme, opener] of Object.entries(WEBSITE_THEME_BLOCKS)) {
+		const accent = brand.websiteColors[theme].marketingAccent;
+		const start = styles.indexOf(opener);
+		const block = start === -1 ? "" : styles.slice(start, styles.indexOf("}", start));
+		const declared = /--marketing-accent:\s*([^;]+);/.exec(block)?.[1]?.trim();
+		if (declared?.toLowerCase() !== accent.toLowerCase()) {
+			problems.push(`${WEBSITE_STYLES} ${opener.slice(0, -2)} --marketing-accent is ${declared ?? "missing"}, expected websiteColors.${theme}.marketingAccent ${accent}`);
+		}
+		// The glows mix the accent token itself with transparent, so they cannot drift from it; a literal copy of the
+		// accent's channels anywhere in the stylesheet would be a second source.
+		for (const glow of ["--glow-accent", "--glow-accent-faint"]) {
+			const value = new RegExp(`${glow}:\\s*([^;]+);`).exec(block)?.[1]?.trim();
+			if (!/^color-mix\(in oklab, var\(--marketing-accent\) \d+(?:\.\d+)?%, transparent\)$/.test(value ?? "")) {
+				problems.push(
+					`${WEBSITE_STYLES} ${opener.slice(0, -2)} ${glow} is ${value ?? "missing"}, expected a tint of the marketing accent color-mix(in oklab, var(--marketing-accent) N%, transparent)`,
+				);
+			}
+		}
+		const channels = [1, 3, 5].map((offset) => Number.parseInt(accent.slice(offset, offset + 2), 16)).join(" ");
+		if (styles.includes(`rgb(${channels}`)) {
+			problems.push(`${WEBSITE_STYLES} repeats the ${theme} marketing accent's channels rgb(${channels} …); derive the tint from var(--marketing-accent)`);
+		}
+	}
+	for (const file of SHARED_AND_TERMINAL_STYLES) {
+		if (readText(file).includes("--marketing-accent")) {
+			problems.push(`${file} defines --marketing-accent, which is a website-only role (ADR 0043)`);
+		}
+	}
 	return problems;
 }
 
@@ -302,6 +344,23 @@ function checkSource(brand) {
 		}
 	}
 	if (!brand?.emails?.support) problems.push(`${BRAND_SOURCE} emails.support is missing`);
+
+	for (const key of Object.keys(brand?.websiteColors ?? {})) {
+		if (key !== "light" && key !== "dark") problems.push(`${BRAND_SOURCE} websiteColors.${key} is not a theme`);
+	}
+	for (const theme of ["light", "dark"]) {
+		const roles = brand?.websiteColors?.[theme] ?? {};
+		for (const key of Object.keys(roles)) {
+			if (key !== "marketingAccent") problems.push(`${BRAND_SOURCE} websiteColors.${theme}.${key} is not read by anything`);
+		}
+		const accent = roles.marketingAccent;
+		const choice = brand?.logo?.[theme]?.choice;
+		if (typeof accent !== "string" || !/^#[0-9a-f]{6}$/i.test(accent)) {
+			problems.push(`${BRAND_SOURCE} websiteColors.${theme}.marketingAccent must be a six-digit hex colour`);
+		} else if (typeof choice !== "string" || accent.toLowerCase() !== choice.toLowerCase()) {
+			problems.push(`${BRAND_SOURCE} websiteColors.${theme}.marketingAccent is ${accent}; ADR 0043 makes it the logo's choice colour logo.${theme}.choice (${choice})`);
+		}
+	}
 	return problems;
 }
 

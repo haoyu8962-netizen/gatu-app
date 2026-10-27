@@ -1,30 +1,21 @@
 ---
 import Base from "@/layouts/Base.astro";
 import Nav from "@/components/Nav.astro";
+import ButtonLink from "@/components/ButtonLink.astro";
 import Footer from "@/components/Footer.astro";
 import { SEO_DEFAULTS } from "@/config/seo";
 ---
 
 <Base title="Page not found" description="This page does not exist." path="/404" noIndex>
 	<Nav />
-	<main class="flex min-h-[60vh] items-center justify-center px-6">
+	<main id="main" class="flex min-h-[60vh] items-center justify-center px-6">
 		<div class="text-center">
 			<div class="text-3xs uppercase tracking-uppercase text-fg-faint">404</div>
 			<h1 class="mt-3 text-xl md:text-2xl font-medium tracking-display">This page doesn't exist.</h1>
 			<p class="mt-4 text-sm text-fg-muted">The chart you're looking for is probably in the terminal.</p>
-			<div class="mt-8 flex items-center justify-center gap-3">
-				<a
-					href={SEO_DEFAULTS.appUrl}
-					class="press inline-flex h-10 items-center justify-center rounded-xs bg-action px-4 text-sm font-medium text-on-action transition-colors duration-200 hover:bg-action-hover active:bg-action-active"
-				>
-					Open the terminal
-				</a>
-				<a
-					href="/"
-					class="press inline-flex h-10 items-center justify-center rounded-xs border border-stroke-weak px-4 text-sm text-fg-muted hover:text-fg hover:border-stroke-strong transition-colors duration-200"
-				>
-					Back home
-				</a>
+			<div class="mt-8 flex flex-col items-stretch gap-3 min-[360px]:flex-row min-[360px]:items-center min-[360px]:justify-center">
+				<ButtonLink href={SEO_DEFAULTS.appUrl} variant="primary" size="md" icon="external">Open the terminal</ButtonLink>
+				<ButtonLink href="/" variant="secondary" size="md" icon="right">Back home</ButtonLink>
 			</div>
 		</div>
 	</main>

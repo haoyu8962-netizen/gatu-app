@@ -1,0 +1,15 @@
+{
+	"source": "scripts/render-open-book-posters.mjs: the built site's own canvas (src/scripts/open-book.ts) replaying the recording below at its recorded pace, saved at the end of the recording",
+	"recording": "btc-20261024T1554Z.json",
+	"coin": "BTC",
+	"recordedFrom": "2026-10-24T15:54:57.246Z",
+	"recordedTo": "2026-10-24T15:57:12.015Z",
+	"posters": {
+		"desktop": {
+			"file": "btc-desktop.jpg"
+		},
+		"mobile": {
+			"file": "btc-mobile.jpg"
+		}
+	}
+}

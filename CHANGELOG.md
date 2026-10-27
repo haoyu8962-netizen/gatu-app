@@ -58,6 +58,13 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Changed
 
+- The HIP-3 deployer notice for EntropyIO markets (the `io` deployer, such as the OpenAI and
+  Anthropic pre-IPO markets) now links to EntropyIO's documentation, as it already did for the
+  other listed deployers.
+- Japan is no longer a restricted region. Visitors located in Japan can place orders, enable
+  trading, deposit and withdraw like visitors from other unrestricted countries; access through a
+  VPN or proxy is still blocked, and the countries and regions named in the Terms are unchanged
+  (ADR 0042).
 - A new account no longer has to choose an account type before it can be used. As on the official
   terminal, once a new account has funds, has accepted the terms and has not traded yet, the
   terminal sets it to Unified account by itself, without a prompt: an email account signs with its

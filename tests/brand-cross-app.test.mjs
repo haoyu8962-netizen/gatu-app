@@ -35,7 +35,7 @@ test("every stylesheet carries the brand colors recorded in brand/brand.json", (
 	for (const [label, source, themes] of [
 		["packages/ui", SHARED_STYLES, { ":root": "light", ".dark": "dark" }],
 		["apps/terminal", TERMINAL_STYLES, { ":root": "light", ".dark": "dark" }],
-		["apps/website (dark only)", WEBSITE_STYLES, { ":root": "dark" }],
+		["apps/website", WEBSITE_STYLES, { ":root": "light", ':root[data-theme="dark"]': "dark" }],
 	]) {
 		for (const [selector, theme] of Object.entries(themes)) {
 			for (const [key, variable] of Object.entries(BRAND_COLOR_VARIABLES)) {
@@ -72,6 +72,37 @@ test("the terminal logo roles and the share card logo carry the logo colors reco
 	}
 });
 
+test("the website's marketing accent is the logo's choice colour from brand/brand.json and stays website-only (ADR 0043)", () => {
+	for (const theme of ["light", "dark"]) {
+		assert.equal(
+			BRAND.websiteColors[theme].marketingAccent.toLowerCase(),
+			BRAND.logo[theme].choice.toLowerCase(),
+			`brand.json websiteColors.${theme}.marketingAccent must equal logo.${theme}.choice`,
+		);
+	}
+	for (const [selector, theme] of [
+		[":root", "light"],
+		[':root[data-theme="dark"]', "dark"],
+	]) {
+		assert.equal(
+			readCssVariable(WEBSITE_STYLES, selector, "--marketing-accent").toLowerCase(),
+			BRAND.websiteColors[theme].marketingAccent.toLowerCase(),
+			`apps/website ${selector} --marketing-accent must equal brand.json websiteColors.${theme}.marketingAccent`,
+		);
+		assert.notEqual(
+			BRAND.websiteColors[theme].marketingAccent.toLowerCase(),
+			BRAND.colors[theme].signal.toLowerCase(),
+			"the marketing accent is a separate role from --signal",
+		);
+	}
+	for (const [label, source] of [
+		["packages/ui", SHARED_STYLES],
+		["apps/terminal", TERMINAL_STYLES],
+	]) {
+		assert.doesNotMatch(source, /--marketing-accent/, `${label} must not define the website-only marketing accent`);
+	}
+});
+
 test("the brand signal stays readable as text on every terminal surface in both themes", () => {
 	for (const [selector, theme] of [
 		[":root", "light"],
@@ -85,6 +116,32 @@ test("the brand signal stays readable as text on every terminal surface in both 
 			}
 		}
 	}
+});
+
+test("the website's 24h up and down colours are the terminal's market colours of the same theme", () => {
+	// Light surfaces use the terminal's light market colours; the dark theme and the dark product windows use its
+	// .dark values (plan §6).
+	for (const [websiteSelector, terminalSelector] of [
+		[":root", ":root"],
+		[':root[data-theme="dark"]', ".dark"],
+	]) {
+		for (const [direction, token] of [
+			["up", "--text-success"],
+			["down", "--text-error"],
+		]) {
+			assert.equal(readCssVariable(TERMINAL_STYLES, terminalSelector, `--market-${direction}`), `var(${token})`);
+			assert.equal(
+				readCssVariable(WEBSITE_STYLES, websiteSelector, token).toLowerCase(),
+				readCssVariable(TERMINAL_STYLES, terminalSelector, token).toLowerCase(),
+				`website ${websiteSelector} ${token} must equal the terminal's ${terminalSelector} --market-${direction}`,
+			);
+		}
+	}
+	assert.match(WEBSITE_STYLES, /--color-success:\s*var\(--text-success\);/);
+	assert.match(WEBSITE_STYLES, /--color-error:\s*var\(--text-error\);/);
+	const liveScript = readFileSync(resolve(REPOSITORY_ROOT, "apps/website/src/scripts/live-markets.ts"), "utf8");
+	assert.match(liveScript, /direction === "up"\) changeSlot\.classList\.add\("text-success"\)/);
+	assert.match(liveScript, /direction === "down"\) changeSlot\.classList\.add\("text-error"\)/);
 });
 
 test("Terminal and Website ship distinct large social cards", () => {

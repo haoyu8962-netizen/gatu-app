@@ -1,13 +1,22 @@
 ---
-import { APP_URL as appUrl, BRAND_NAME, SUPPORT_EMAIL } from "@/config/brand";
+import { APP_HOST, LEGAL_ENTITY, SITE_HOST, SUPPORT_EMAIL } from "@/config/brand";
+import Button from "./Button.astro";
 import Logo from "./Logo.astro";
 
-const year = new Date().getFullYear();
+interface Props {
+	livePause?: boolean;
+}
+
+const { livePause = false } = Astro.props;
+const builtAt = new Date();
+const year = builtAt.getUTCFullYear();
+const buildDate = builtAt.toISOString().slice(0, 10);
 
 const product = [
-	{ label: "Open terminal", href: appUrl, icon: "terminal", external: true },
+	{ label: "Markets", href: "/#markets", icon: "terminal" },
 	{ label: "Features", href: "/#features", icon: "sparkle" },
-	{ label: "Blog", href: "/blog/", icon: "article" },
+	{ label: "Fees", href: "/#fees", icon: "article" },
+	{ label: "Security", href: "/#security", icon: "scale" },
 	{ label: "FAQ", href: "/#faq", icon: "question" },
 ];
 
@@ -15,6 +24,7 @@ const resources = [
 	{ label: "Hyperliquid", href: "https://hyperliquid.xyz", icon: "link", external: true },
 	{ label: "Support", href: "/support/", icon: "question" },
 	{ label: "Risk disclosure", href: "/risk/", icon: "scale" },
+	{ label: "Terms of Use", href: "/terms/", icon: "article" },
 	{ label: "Contact", href: `mailto:${SUPPORT_EMAIL}`, icon: "mail" },
 ];
 
@@ -30,99 +40,66 @@ const iconSvg: Record<string, string> = {
 };
 ---
 
-<footer class="relative mt-auto border-t border-stroke-weaker">
-	<div class="mx-auto w-full max-w-6xl px-5 sm:px-6 pt-12 md:pt-16 pb-8">
-		<div class="flex flex-col md:flex-row md:items-center md:justify-between gap-5 rounded-xs border border-stroke-weak bg-fill-weaker px-5 md:px-7 py-5 md:py-6">
-			<div>
-				<div class="text-3xs uppercase tracking-uppercase text-fg-faint">Ready when you are</div>
-				<p class="mt-1.5 text-sm md:text-base text-fg">
-					Open the terminal and start trading on Hyperliquid.
-				</p>
-			</div>
-			<a
-				href={appUrl}
-				class="press inline-flex h-10 items-center justify-center gap-2 self-start rounded-xs bg-action px-4 text-sm font-medium text-on-action transition-[background-color,transform] duration-200 hover:bg-action-hover active:bg-action-active md:self-auto"
-			>
-				Open terminal
-				<svg width="12" height="12" viewBox="0 0 256 256" aria-hidden="true" set:html={iconSvg.arrowUpRight} />
-			</a>
-		</div>
-
-		<div class="mt-12 md:mt-16 grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-10">
-			<div class="col-span-2">
+<footer class="mt-auto">
+	<div class="mx-auto w-full max-w-site px-5 pt-14 pb-8 sm:px-8 md:pt-20">
+		<div class="grid grid-cols-2 gap-8 md:grid-cols-12 md:gap-8">
+			<div class="col-span-2 md:col-span-6">
 				<Logo />
-				<p class="mt-4 max-w-xs text-xs text-fg-muted leading-relaxed">
+				<p class="mt-5 max-w-xs text-sm text-fg-muted">
 					The trading terminal for Hyperliquid. See the market clearly. Decide for yourself.
 				</p>
+				<p class="mt-4 font-mono text-xs text-fg-subtle">Official addresses: {SITE_HOST} · {APP_HOST}</p>
 			</div>
 
-			<div>
-				<div class="text-3xs uppercase tracking-uppercase text-fg-faint">Product</div>
-				<ul class="mt-4 space-y-1 text-xs text-fg-muted">
-					{product.map((item) => (
-						<li>
-							<a
-								href={item.href}
-								rel={item.external ? "noopener" : undefined}
-								class="group inline-flex items-center gap-2 -ml-1.5 px-1.5 py-1 rounded-xs hover:text-fg hover:bg-fill-weaker transition-colors duration-150"
-							>
-								<span class="text-fg-faint group-hover:text-fg-muted transition-colors duration-150">
-									<svg width="12" height="12" viewBox="0 0 256 256" aria-hidden="true" set:html={iconSvg[item.icon]} />
-								</span>
-								<span>{item.label}</span>
-								{item.external && (
-									<svg width="9" height="9" viewBox="0 0 256 256" aria-hidden="true" class="opacity-0 -translate-x-0.5 group-hover:opacity-60 group-hover:translate-x-0 transition" set:html={iconSvg.arrowUpRight} />
-								)}
-							</a>
-						</li>
-					))}
-				</ul>
-			</div>
-
-			<div>
-				<div class="text-3xs uppercase tracking-uppercase text-fg-faint">Resources</div>
-				<ul class="mt-4 space-y-1 text-xs text-fg-muted">
-					{resources.map((item) => (
-						<li>
-							<a
-								href={item.href}
-								rel={item.external ? "noopener" : undefined}
-								class="group inline-flex items-center gap-2 -ml-1.5 px-1.5 py-1 rounded-xs hover:text-fg hover:bg-fill-weaker transition-colors duration-150"
-							>
-								<span class="text-fg-faint group-hover:text-fg-muted transition-colors duration-150">
-									<svg width="12" height="12" viewBox="0 0 256 256" aria-hidden="true" set:html={iconSvg[item.icon]} />
-								</span>
-								<span>{item.label}</span>
-								{item.external && (
-									<svg width="9" height="9" viewBox="0 0 256 256" aria-hidden="true" class="opacity-0 -translate-x-0.5 group-hover:opacity-60 group-hover:translate-x-0 transition" set:html={iconSvg.arrowUpRight} />
-								)}
-							</a>
-						</li>
-					))}
-				</ul>
-			</div>
+			{[
+				{ title: "Product", items: product },
+				{ title: "Resources", items: resources },
+			].map((column) => (
+				<div class="md:col-span-3">
+					<p class="label">{column.title}</p>
+					<ul class="mt-4 text-sm text-fg-muted">
+						{column.items.map((item) => (
+							<li>
+								<a
+									href={item.href}
+									rel={"external" in item && item.external ? "noopener" : undefined}
+									class="group -ml-2 inline-flex min-h-11 items-center gap-2 rounded-8 px-2 hover:bg-fill-weaker hover:text-fg md:min-h-9"
+								>
+									<span class="text-fg-faint group-hover:text-fg-muted">
+										<svg width="12" height="12" viewBox="0 0 256 256" aria-hidden="true" set:html={iconSvg[item.icon]} />
+									</span>
+									<span>{item.label}</span>
+									{"external" in item && item.external && (
+										<svg width="9" height="9" viewBox="0 0 256 256" aria-hidden="true" class="opacity-60" set:html={iconSvg.arrowUpRight} />
+									)}
+								</a>
+							</li>
+						))}
+					</ul>
+				</div>
+			))}
 		</div>
 
-		<div class="mt-10 md:mt-14 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-t border-stroke-weaker pt-6">
-			<p class="text-2xs text-fg-faint">
-				© {year} {BRAND_NAME} · Not financial advice. Trade at your own risk. ·
-				<a href="/privacy/" class="hover:text-fg-muted transition-colors duration-150">Privacy</a> ·
-				<a href="/terms/" class="hover:text-fg-muted transition-colors duration-150">Terms</a> ·
-				<a href="/risk/" class="hover:text-fg-muted transition-colors duration-150">Risk</a>
+		<div class="mt-12 flex flex-col items-start justify-between gap-4 border-t border-stroke-weaker pt-6 md:mt-16 md:flex-row md:items-center">
+			<p class="text-xs text-fg-faint">
+				© {year} {LEGAL_ENTITY} · Not financial advice. Trade at your own risk. ·
+				<a href="/privacy/" class="hover:text-fg-muted">Privacy</a> ·
+				<a href="/terms/" class="hover:text-fg-muted">Terms</a> ·
+				<a href="/risk/" class="hover:text-fg-muted">Risk</a>
 			</p>
-			<div class="flex items-center gap-3 text-2xs text-fg-faint">
+			<div class="flex flex-wrap items-center gap-3 font-mono text-2xs text-fg-faint">
 				<span class="inline-flex items-center gap-1.5">
 					<svg width="11" height="11" viewBox="0 0 256 256" aria-hidden="true" set:html={iconSvg.scale} />
-					<span class="uppercase tracking-uppercase">Non-custodial</span>
+					<span class="uppercase tracking-label">Non-custodial</span>
 				</span>
-				<span class="h-3 w-px bg-stroke-weaker"></span>
-				<span class="inline-flex items-center gap-1.5">
-					<span class="relative inline-flex">
-						<span class="inline-block h-1.5 w-1.5 rounded-full bg-live"></span>
-						<span class="absolute inset-0 inline-block h-1.5 w-1.5 rounded-full bg-live opacity-75 animate-ping"></span>
-					</span>
-					<span class="tabular uppercase tracking-uppercase">Live on mainnet</span>
-				</span>
+				<span class="h-3 w-px bg-stroke-weak"></span>
+				<span>Built <time datetime={buildDate}>{buildDate}</time></span>
+				{livePause && (
+					<>
+						<span class="h-3 w-px bg-stroke-weak" data-live-pause-separator hidden></span>
+						<Button pressed={false} size="sm" data-live-pause="" hidden>Pause live data</Button>
+					</>
+				)}
 			</div>
 		</div>
 	</div>

@@ -1,0 +1,109 @@
+{
+	"build": {
+		"name": "sairn",
+		"version": "0.1.0",
+		"commit": "9ccb88c0066d8083fc43371b5286d8a81d91183b",
+		"release": "cloudfront-2026-10-14-p32",
+		"builtAt": "2026-10-13T18:02:16.581Z"
+	},
+	"captures": {
+		"language": {
+			"file": "language.jpeg",
+			"url": "https://app.sairn.ai/trade/BTC",
+			"capturedAt": "2026-10-26T06:11:04.478Z",
+			"locale": "ar",
+			"viewport": {
+				"width": 390,
+				"height": 844
+			},
+			"deviceScaleFactor": 2,
+			"clip": null,
+			"alt": "The terminal on a phone in Arabic with a right-to-left layout, signed out, on BTC"
+		},
+		"email": {
+			"file": "email.jpeg",
+			"url": "https://app.sairn.ai/trade/BTC",
+			"capturedAt": "2026-10-26T06:11:11.900Z",
+			"locale": "en",
+			"viewport": {
+				"width": 1440,
+				"height": 900
+			},
+			"deviceScaleFactor": 1.5,
+			"clip": {
+				"x": 1000,
+				"y": 0,
+				"width": 440,
+				"height": 660
+			},
+			"alt": "The signed-out order form on BTC with the Connect control, where you choose email or your own wallet"
+		},
+		"tpsl": {
+			"file": "tpsl.jpeg",
+			"url": "https://app.sairn.ai/trade/BTC",
+			"capturedAt": "2026-10-26T06:08:33.183Z",
+			"locale": "en",
+			"viewport": {
+				"width": 1440,
+				"height": 900
+			},
+			"deviceScaleFactor": 1.5,
+			"clip": {
+				"x": 1000,
+				"y": 56,
+				"width": 440,
+				"height": 660
+			},
+			"alt": "The order form on BTC, signed out, on the Limit tab, with Reduce Only and TP/SL options"
+		},
+		"workspace": {
+			"file": "workspace.jpeg",
+			"url": "https://app.sairn.ai/trade/HYPE/USDC",
+			"capturedAt": "2026-10-26T06:08:40.934Z",
+			"locale": "en",
+			"viewport": {
+				"width": 1440,
+				"height": 900
+			},
+			"deviceScaleFactor": 1.5,
+			"clip": {
+				"x": 0,
+				"y": 0,
+				"width": 1440,
+				"height": 900
+			},
+			"alt": "The terminal signed out on the HYPE/USDC spot market: chart, order book and order form"
+		},
+		"phone": {
+			"file": "phone.jpeg",
+			"url": "https://app.sairn.ai/trade/ETH",
+			"capturedAt": "2026-10-26T06:08:48.199Z",
+			"locale": "en",
+			"viewport": {
+				"width": 390,
+				"height": 844
+			},
+			"deviceScaleFactor": 2,
+			"clip": null,
+			"alt": "The terminal on a phone, signed out, on ETH"
+		},
+		"more": {
+			"file": "more.jpeg",
+			"url": "https://app.sairn.ai/earn",
+			"capturedAt": "2026-10-26T06:11:18.212Z",
+			"locale": "en",
+			"viewport": {
+				"width": 1440,
+				"height": 900
+			},
+			"deviceScaleFactor": 1.5,
+			"clip": {
+				"x": 0,
+				"y": 0,
+				"width": 1440,
+				"height": 470
+			},
+			"alt": "The top of the terminal's Earn page, signed out, with the navigation to Portfolio, Earn, Vaults, Staking, Referrals and Leaderboard"
+		}
+	}
+}

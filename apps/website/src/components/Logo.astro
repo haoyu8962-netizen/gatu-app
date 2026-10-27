@@ -1,7 +1,9 @@
 ---
 import { BRAND_NAME } from "@/config/brand";
-import lockupUrl from "../../../../brand/svg/lockup/sairn-lockup-on-dark.svg?url";
-import markUrl from "../../../../brand/svg/mark/sairn-mark-on-dark.svg?url";
+import lockupOnLightUrl from "../../../../brand/svg/lockup/sairn-lockup-on-light.svg?url";
+import markOnLightUrl from "../../../../brand/svg/mark/sairn-mark-on-light.svg?url";
+import lockupOnDarkUrl from "../../../../brand/svg/lockup/sairn-lockup-on-dark.svg?url";
+import markOnDarkUrl from "../../../../brand/svg/mark/sairn-mark-on-dark.svg?url";
 
 interface Props {
 	withWordmark?: boolean;
@@ -13,18 +15,26 @@ const { withWordmark = true, href = "/" } = Astro.props;
 const height = 24;
 const width = withWordmark ? 91 : 18;
 const Tag = href ? "a" : "span";
+// The page is light by default; the dark comparison theme (?theme=dark) swaps in the on-dark artwork (global.css).
+const variants = [
+	{ theme: "light", src: withWordmark ? lockupOnLightUrl : markOnLightUrl },
+	{ theme: "dark", src: withWordmark ? lockupOnDarkUrl : markOnDarkUrl },
+];
 ---
 
 <Tag
 	href={href ?? undefined}
-	class:list={["inline-flex items-center text-fg", href && "hover:opacity-90 transition"]}
+	class:list={["inline-flex items-center text-fg", href && "min-h-11 hover:opacity-90"]}
 >
-	<img
-		src={withWordmark ? lockupUrl : markUrl}
-		width={width}
-		height={height}
-		class="h-6 w-auto shrink-0"
-		alt={BRAND_NAME}
-		data-brand-logo={withWordmark ? "lockup" : "mark"}
-	/>
+	{variants.map((variant) => (
+		<img
+			src={variant.src}
+			width={width}
+			height={height}
+			class="h-6 w-auto shrink-0"
+			alt={BRAND_NAME}
+			data-brand-logo={withWordmark ? "lockup" : "mark"}
+			data-logo-theme={variant.theme}
+		/>
+	))}
 </Tag>
