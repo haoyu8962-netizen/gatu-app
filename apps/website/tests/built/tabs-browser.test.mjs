@@ -160,8 +160,8 @@ test("wired blocks show one panel, follow the list's real orientation and make t
 				assert.equal(await page.evaluate(() => document.querySelector('#features [aria-selected="true"]').id), "feature-tab-email");
 			}
 			// The cross-fading features block shows its panels with `visibility`, which the reduced-motion context's
-			// 0.01ms transitions hold for a frame (see readTabBlocks).
-			await page.evaluate(() => new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done))));
+			// 0.01ms transitions hold until the next animation tick (see readTabBlocks).
+			await page.waitForFunction(() => getComputedStyle(document.getElementById("feature-panel-email")).visibility === "visible");
 			await page.keyboard.press("Tab");
 			assert.equal(await page.evaluate(() => document.activeElement.id), "feature-panel-email", "Tab moves from the tab into its panel");
 		} finally {
