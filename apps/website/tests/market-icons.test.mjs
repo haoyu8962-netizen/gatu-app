@@ -113,6 +113,14 @@ test("the sanitizer removes scripts, handlers, foreign content and external refe
 	assert.equal(sanitizeSvg(svg).svg, svg, "sanitizing is idempotent");
 });
 
+test("the sanitizer drops xml:base, which would point fragment references at another document", () => {
+	const { svg, removed } = sanitizeSvg(`${SVG_OPEN}<g xml:base="https://x/y.svg"><g><use href="#a"/></g></g><path id="a" d="M0 0h1"/></svg>`);
+	assert.doesNotMatch(svg, /xml:base|https:\/\/x/);
+	assert.match(svg, /<use href="#a"\/>/);
+	assert.ok(removed.some((entry) => entry.startsWith("xml:base")));
+	assert.ok(findSvgProblems(`${SVG_OPEN}<g xml:base="https://x/y.svg"><use href="#a"/></g></svg>`).some((problem) => /rebases/.test(problem)));
+});
+
 test("the sanitizer refuses what it cannot make safe or does not understand", () => {
 	assert.throws(() => sanitizeSvg("<svg"), /not well-formed/);
 	assert.throws(() => sanitizeSvg("<html><body/></html>"), /root element is not <svg>/);
@@ -120,6 +128,9 @@ test("the sanitizer refuses what it cannot make safe or does not understand", ()
 	assert.throws(() => sanitizeSvg(`${SVG_OPEN}<style>@import url(https://x/y.css);</style></svg>`), /still unsafe.*@import/);
 	assert.throws(() => sanitizeSvg(`${SVG_OPEN}<rect width="1" height="1" style="fill:url(https://x/y)"/></svg>`), /still unsafe/);
 	assert.throws(() => sanitizeSvg(`${SVG_OPEN}<rect width="1" height="1" fill="url(http://x/#g)"/></svg>`), /still unsafe/);
+	// Pre-push review 2026-10-27: CSS escapes hid an import or an external url() from the patterns.
+	assert.throws(() => sanitizeSvg(`${SVG_OPEN}<style>@\\69mport "https://x/y.css";</style></svg>`), /still unsafe.*CSS escape/);
+	assert.throws(() => sanitizeSvg(`${SVG_OPEN}<rect width="1" height="1" style="fill:u\\72l(https://x/y.svg#a)"/></svg>`), /still unsafe.*CSS escape/);
 	assert.throws(() => sanitizeSvg('<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em"/>'), /no viewBox/);
 	assert.throws(() => sanitizeSvg(`${SVG_OPEN}${"<g/>".repeat(70_000)}</svg>`), /larger than/);
 	assert.match(sanitizeSvg('<svg xmlns="http://www.w3.org/2000/svg" width="56" height="56"/>').svg, /viewBox="0 0 56 56"/);

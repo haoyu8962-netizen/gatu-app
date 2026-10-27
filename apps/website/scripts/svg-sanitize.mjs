@@ -64,6 +64,8 @@ function isSafeHref(element, value) {
 /** Problems with CSS text in a <style> element or a style/presentation attribute; empty when it only uses fragments. */
 function cssProblems(text) {
 	const problems = [];
+	// CSS escapes (`@\69mport`, `u\72l(`) would hide an import or an external url() from the patterns below.
+	if (text.includes("\\")) problems.push("CSS escape");
 	if (/@import/i.test(text)) problems.push("@import");
 	if (/javascript:|expression\s*\(|behavior\s*:|-moz-binding/i.test(text)) problems.push("script in CSS");
 	for (const [, , target] of text.matchAll(URL_REFERENCE)) {
@@ -115,6 +117,8 @@ export function findSvgProblems(source) {
 			if (/^on/i.test(attribute.localName)) problems.push(`${label} event handler`);
 			else if (attribute.localName === "href") {
 				if (!isSafeHref(element, attribute.value.trim())) problems.push(`${label} ${attribute.value.slice(0, 40)}`);
+			} else if (attribute.namespaceURI === XML_NS && attribute.localName === "base") {
+				problems.push(`${label} rebases fragment references`);
 			} else if (attribute.namespaceURI && ![XLINK_NS, XML_NS, XMLNS_NS].includes(attribute.namespaceURI)) {
 				problems.push(`${label} foreign namespace`);
 			}
@@ -184,6 +188,9 @@ export function sanitizeSvg(source) {
 					removed.push(`${name}="${value.slice(0, 40)}" on <${element.localName}>`);
 					element.removeAttributeNode(attribute);
 				}
+			} else if (namespaceURI === XML_NS && localName === "base") {
+				removed.push(`${name} on <${element.localName}>`);
+				element.removeAttributeNode(attribute);
 			} else if (localName.startsWith("data-") || (localName === "id" && element === root)) {
 				element.removeAttributeNode(attribute);
 			} else if (namespaceURI && ![XLINK_NS, XML_NS].includes(namespaceURI)) {
