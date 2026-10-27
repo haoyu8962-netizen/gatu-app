@@ -6,7 +6,7 @@
   "title": "CloudFront 生产发布 p33（日本解封、EntropyIO 文档链接）与官网首页改版上线",
   "kind": "task",
   "status": "verified",
-  "topics": ["static-hosting", "brand-identity", "geo-restriction", "hip3"],
+  "topics": ["static-hosting", "brand-identity", "jurisdiction-marketing"],
   "summary": "运营方同意整条流程：PR #115 合入 dev（c2d57946），晋升 PR #116 八项 CI 全绿后合入 main（2dcfd3e0）。在仓库外工作树 gatu-release-p33 用 Node 22.15.0 构建 cloudfront-2026-10-27-p33（三个闸门全开，总量 3,314,849），按 functions → lambda（版本 17）→ sync（1,645 个文件，发布标记一致）→ 两次失效 → verify 主网 15/15、测试网 16/16 → csp-coverage 33 步 0 违规。线上终端自 p32 升到 p33，带上 ADR 0042（日本不再受限）与 T1（io → EntropyIO 文档链接），terminal:check 随后通过。官网从同一提交构建（test 97、test:dist 56），备份线上 34 个对象后按资源 → 其余非 HTML → HTML 上传并失效 EP2DIBP3T7M3G，手册的发布后检查全部符合，线上无头浏览器桌面与手机均无控制台错误。真实日本 IP 交易、真实钱包与社交卡片抓取未做。",
   "thread": null,
   "baseCommit": "9ccb88c0",
