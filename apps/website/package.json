@@ -12,6 +12,7 @@
 		"test": "node --experimental-strip-types --disable-warning=ExperimentalWarning --test tests/*.test.mjs",
 		"test:dist": "node --experimental-strip-types --disable-warning=ExperimentalWarning --test tests/built/*.test.mjs",
 		"markets:snapshot": "node --experimental-strip-types --disable-warning=ExperimentalWarning scripts/markets-snapshot.mjs",
+		"markets:icons": "node --experimental-strip-types --disable-warning=ExperimentalWarning scripts/market-icons.mjs",
 		"terminal:check": "node --experimental-strip-types --disable-warning=ExperimentalWarning scripts/check-terminal-release.mjs",
 		"astro": "astro"
 	},

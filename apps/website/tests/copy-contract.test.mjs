@@ -236,7 +236,7 @@ test("website fee figures add the terminal builder fee to Hyperliquid's base rat
 });
 
 test("every file that scopes the builder fee to perp orders and spot sells also exempts TWAP orders (R8)", () => {
-	const scoped = SOURCES.filter(({ text }) => /builder fee on perp orders and spot sells/i.test(text));
+	const scoped = SOURCES.filter(({ text }) => /builder fee on perp orders(?: \(not TWAP\))? and spot sells/i.test(text));
 	assert.ok(scoped.length >= 3, "expected Fees, Trust and the FAQ to state the scope");
 	for (const { file, text } of scoped) {
 		assert.match(text, /TWAP orders (?:and spot buys )?carry (?:none|no builder fee)/, `${file} states the scope without the TWAP exemption`);
@@ -246,7 +246,11 @@ test("every file that scopes the builder fee to perp orders and spot sells also 
 test("hero screenshots are imported assets with hashed URLs, never public files", () => {
 	const hero = readSource("src/components/Hero.astro");
 	const imports = [...hero.matchAll(/^import (\w+) from "@\/assets\/([\w-]+\.(?:jpe?g|png|webp|avif))";$/gm)];
-	assert.equal(imports.length, 2, "Hero.astro imports a desktop and a mobile screenshot from src/assets");
+	assert.deepEqual(
+		imports.map(([, , file]) => file).sort(),
+		["avif", "webp", "jpeg"].flatMap((format) => [`terminal-desktop.${format}`, `terminal-mobile.${format}`]).sort(),
+		"Hero.astro imports the desktop and mobile capture as AVIF, WebP (scripts/optimize-images.mjs) and the JPEG fallback",
+	);
 	for (const [, binding, file] of imports) {
 		assert.ok(existsSync(resolve(SOURCE_ROOT, "assets", file)), `missing src/assets/${file}`);
 		assert.match(hero, new RegExp(`\\{${binding}\\.src\\}`), `${binding} must be rendered through its hashed .src`);
@@ -268,11 +272,17 @@ test("hero screenshots are imported assets with hashed URLs, never public files"
 	}
 });
 
-test("hero screenshots keep the captured viewport proportions", () => {
+test("hero screenshots keep the captured viewport, or the recorded clip of it", () => {
+	const capture = JSON.parse(readSource("src/assets/terminal-capture.json"));
 	const desktop = jpegSize(resolve(SOURCE_ROOT, "assets/terminal-desktop.jpeg"));
 	const mobile = jpegSize(resolve(SOURCE_ROOT, "assets/terminal-mobile.jpeg"));
 	assert.deepEqual(desktop, { width: 1600, height: 900 });
-	assert.equal(mobile.width * 844, mobile.height * 390, "mobile screenshot is a 390 × 844 viewport");
+	const { viewport, clip } = capture.captures.mobile;
+	assert.deepEqual(viewport, { width: 390, height: 844 }, "the phone capture is a 390 × 844 viewport");
+	const shown = clip ?? { width: viewport.width, height: viewport.height };
+	assert.equal(shown.width, viewport.width, "a clip keeps the full phone width");
+	assert.ok(shown.height <= viewport.height);
+	assert.equal(mobile.width * shown.height, mobile.height * shown.width, "the JPEG has the clip's proportions");
 	assert.ok(mobile.width >= 390, "mobile screenshot is at least one CSS pixel per device pixel");
 });
 
@@ -289,11 +299,12 @@ test("hero screenshots come from a recorded capture of the live, signed-out term
 		["desktop", "terminal-desktop.jpeg"],
 		["mobile", "terminal-mobile.jpeg"],
 	]) {
-		const { file: recorded, viewport, deviceScaleFactor } = capture.captures[name];
+		const { file: recorded, viewport, deviceScaleFactor, clip } = capture.captures[name];
 		assert.equal(recorded, file);
+		const area = clip ?? viewport;
 		assert.deepEqual(jpegSize(resolve(SOURCE_ROOT, "assets", file)), {
-			width: viewport.width * deviceScaleFactor,
-			height: viewport.height * deviceScaleFactor,
+			width: area.width * deviceScaleFactor,
+			height: area.height * deviceScaleFactor,
 		});
 	}
 });

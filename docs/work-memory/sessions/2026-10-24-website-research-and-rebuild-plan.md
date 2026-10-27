@@ -219,3 +219,12 @@
 - 首屏原型与录屏工具（`designs/website-hero-prototype/`）只作参考与技术占位；`designs/beyond-crypto-review/` 只作事实表与草稿参考。两段视频在真机与 Safari 上的播放没有测。
 - 没有发布或上线任何内容；2026-10-25 的改动在本地分支提交，没有推送。
 - 下次先查：本记录、`docs/website-plan.md`、审阅文档第 2 节事实表、`docs/agent-handbook.md` 第 2 节。
+
+## 追加：按钮统一、首屏减密、交易对图标与第三轮 GPT 评审修复（2026-10-27 UTC，同一会话，未提交）
+
+- 按钮：运营方选定「胶囊 + 右侧圆形箭头」，全站统一为 `ButtonLink` / `Button` / `ButtonChip`（`src/lib/buttons.ts` 生成类名，`.btn*` 规则在 `@layer` 外）；切换按钮无箭头、保留 `aria-pressed`。`tests/button-contract.test.mjs`、`tests/built/buttons.test.mjs` 钉住；`motion-contract` 只为 `.btn` 放开 box-shadow 过渡。
+- 首屏减密：运营方认为首屏字太密。执行事实移交 01b，builder fee 只留 07 与 FAQ，受限地区短版只留 FAQ（R7 修订）；CTA 下只留一条风险脚注（R4/R6 仍满足）。
+- 交易对图标：从 `app.hyperliquid.xyz/coins` 本地化 27 个 SVG（清理白名单、单文件 ≤8 KB、合计 35 KB），7 个无官方图标的市场用字母圆标；ETH、NEAR、ANTH 按实测在深色上加白底。首屏公司按钮不带图标，可见写出部署方与 'not shares'。
+- 第三轮 gpt-6-astra 对抗评审：8.0/10（较 8.2 降，主因功能缺陷）。已核实并修复：无 JS 时页签面板被 preflight `[hidden]` 隐藏；JIO/OURA 按每股报价导致行情为空；功能页签方向固定为 vertical；安全文案「never ask for verification code」与邮箱登录冲突；320px 市场表溢出。十项建议全部实施（另含首屏截图改为完整工作区并出 AVIF/WebP，达到 72 KB / 39 KB；三步上手补全；按钮阴影减轻）。
+- 验证（构建产物，2026-10-27）：`pnpm --filter @sairn/website test` 96 通过，`test:dist` 55 通过（含禁用 JS、拦截页签模块与 320/360/390 窄屏的 Chromium 测试），`tests/brand-cross-app.test.mjs` 7 通过，`pnpm brand:check` 通过。未做：Safari/Firefox、真机、VoiceOver/axe、线上 LCP；390px 下 LCP 是首屏文字段落而非 H1；公司图标的商标使用范围待运营方决定。
+- 功能区切换卡顿（运营方 2026-10-27 电脑实测反馈）：逐帧取证为整面板淡入导致深色窗口闪灰（12ms 透明度 0、约 210ms 才不透明）、截图懒加载到首次点击才下载、说明行数不同导致高度差 24px；主线程无长帧。修复为叠放交叉淡入、提前预加载解码、固定区块高度，`tabs-browser` 逐帧测试钉住；构建版录屏已给运营方。`test` 96、`test:dist` 56 通过。

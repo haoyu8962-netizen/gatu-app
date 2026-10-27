@@ -37,6 +37,7 @@ import {
 	getListedCount,
 	getListedTotals,
 	getLiveMarketInputs,
+	getPreIpoQuoteBasis,
 	getPreIpoRows,
 	getPreIpoTerms,
 	getStatsDexes,
@@ -280,6 +281,26 @@ test("Pre-IPO rows list every listed preipo market and leave units off where non
 	]);
 });
 
+test("every Pre-IPO input states its quote basis: a verified valuation unit, per share, or unknown", () => {
+	for (const row of getPreIpoRows()) {
+		const expected = row.preIpoTerms ? "valuation" : row.quotedPerShare ? "per-share" : "unknown";
+		assert.equal(getPreIpoQuoteBasis(row.coin), expected, row.coin);
+	}
+	// The committed configs: EntropyIO publishes a valuation unit; XYZ quotes JIO and OURA per share.
+	assert.equal(getPreIpoQuoteBasis("io:OAI"), "valuation");
+	assert.equal(getPreIpoQuoteBasis("xyz:JIO"), "per-share");
+	assert.equal(getPreIpoQuoteBasis("xyz:OURA"), "per-share");
+	const preIpoInputs = getLiveMarketInputs().filter((input) => input.kind === "preipo");
+	assert.ok(preIpoInputs.length >= 4);
+	for (const input of preIpoInputs) {
+		if (input.quoteBasis === "valuation") assert.match(input.valuationPerPriceUsd, /^\d+$/, `${input.coin} carries its unit`);
+		else assert.equal(input.valuationPerPriceUsd, null, `${input.coin} carries no unit, so no valuation can be derived`);
+	}
+	for (const terms of PRE_IPO_TERMS) {
+		assert.ok(!PRE_IPO_DOCS.some((entry) => entry.coin === terms.coin && entry.quotedPerShare), `${terms.coin} has one quote basis`);
+	}
+});
+
 test("category cards count listed markets and leave out HIP-3 crypto and uncategorized markets", () => {
 	const cards = getCategoryCards();
 	assert.deepEqual(
@@ -348,6 +369,7 @@ test("deployer names, live inputs and terminal links come from the snapshot and 
 		const input = inputs.find((entry) => entry.coin === coin);
 		assert.equal(input.kind, liveKindOf(category), `${coin} reads as ${category}`);
 		if (category === "preipo" && !getPreIpoTerms(coin)) assert.equal(input.valuationPerPriceUsd, null, `${coin} has no verified unit`);
+		assert.equal(input.quoteBasis, category === "preipo" ? getPreIpoQuoteBasis(coin) : null, `${coin} quote basis`);
 	}
 	assert.deepEqual(getStatsDexes().map((entry) => entry.dex), ["", "io", "xyz"]);
 	assert.deepEqual(getStatsDexes().map((entry) => entry.label), ["Hyperliquid core perps", "EntropyIO", "XYZ"]);

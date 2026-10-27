@@ -1,6 +1,8 @@
-// Captures the hero screenshots from the live, signed-out terminal: BTC with the market selector open at
-// Traditional Finance › Pre-IPO. Writes src/assets/terminal-desktop.jpeg (1600 × 900),
-// src/assets/terminal-mobile.jpeg (390 × 844 viewport at 2×) and src/assets/terminal-capture.json.
+// Captures the hero screenshots from the live, signed-out terminal: the full BTC trading workspace (chart, order
+// book and order form; 2026-10-27, it used to show the market selector open at Pre-IPO). Writes
+// src/assets/terminal-desktop.jpeg (1600 × 900), src/assets/terminal-mobile.jpeg (the top 390 × 604 of a
+// 390 × 844 viewport at 2×) and src/assets/terminal-capture.json; then run scripts/optimize-images.mjs for the
+// AVIF and WebP renditions.
 //
 //   node apps/website/scripts/capture-hero.mjs
 //
@@ -34,11 +36,16 @@ const SURFACES = [
 		name: "desktop",
 		file: "terminal-desktop.jpeg",
 		context: { viewport: { width: 1600, height: 900 }, deviceScaleFactor: 1 },
+		chart: true,
 	},
 	{
 		name: "mobile",
 		file: "terminal-mobile.jpeg",
 		context: { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true },
+		// The phone layout opens on the order form beside the order book; its chart sits behind a toggle. The clip
+		// ends under Connect Wallet and the book, before the empty, signed-out positions list and the bottom navigation.
+		chart: false,
+		clip: { x: 0, y: 0, width: 390, height: 604 },
 	},
 ];
 
@@ -62,21 +69,25 @@ async function waitForTerminal(page) {
 	await page.waitForTimeout(4_000);
 }
 
-async function openPreIpo(page) {
-	await page.locator('[aria-label="Select token"]:visible').first().click();
-	const selector = page.getByRole("dialog").filter({ has: page.getByRole("heading", { name: "Select market" }) });
-	await selector.waitFor({ state: "visible" });
-	await selector.locator("button", { hasText: /^Traditional Finance$/ }).first().click();
-	await selector.locator("button", { hasText: /^Pre-IPO$/ }).first().click();
-	for (const name of [/^OPENAI\b/, /^ANTH\b/]) {
-		await selector.getByText(name).first().waitFor({ state: "visible", timeout: 30_000 });
-	}
+// The chart draws inside the TradingView iframe; wait until its canvases have painted and the order book has rows.
+async function waitForWorkspace(page, surface) {
+	if (surface.chart) await waitForChart(page);
+	await page.locator('[aria-label^="Ask, Price"]').first().waitFor({ state: "visible", timeout: 60_000 });
 	await page.mouse.move(0, 0);
-	await page.waitForTimeout(1_500);
+	await page.waitForTimeout(3_000);
 }
 
-// Before the selector opens the Connect control must be visible; a modal phone sheet then hides it from
-// the accessibility tree, so afterwards it only has to remain in the page.
+async function waitForChart(page) {
+	const iframe = page.locator('iframe[id^="tradingview_"]').first();
+	await iframe.waitFor({ state: "visible", timeout: 60_000 });
+	const chart = await (await iframe.elementHandle()).contentFrame();
+	await chart.waitForFunction(
+		() => [...document.querySelectorAll("canvas")].filter((canvas) => canvas.width > 0 && canvas.height > 0).length >= 2,
+		undefined,
+		{ timeout: 60_000 },
+	);
+}
+
 async function guard(page, surface, { connectVisible }) {
 	const problems = [];
 	if (new URL(page.url()).host !== APP_HOST) problems.push(`left ${APP_HOST}: ${page.url()}`);
@@ -88,6 +99,7 @@ async function guard(page, surface, { connectVisible }) {
 	const marker = TEST_MARKERS.exec(text);
 	if (marker) problems.push(`test or dev marker "${marker[0]}"`);
 	if (await page.getByText("HIP-3 Deployer Disclaimer").isVisible()) problems.push("the HIP-3 deployer disclaimer is open");
+	if ((await page.locator('[role="dialog"]:visible').count()) > 0) problems.push("a dialog is open over the workspace");
 	if (problems.length > 0) throw new Error(`${surface.name} capture refused:\n  - ${problems.join("\n  - ")}`);
 }
 
@@ -100,14 +112,15 @@ try {
 		const page = await context.newPage();
 		await waitForTerminal(page);
 		await guard(page, surface, { connectVisible: true });
-		await openPreIpo(page);
-		await guard(page, surface, { connectVisible: false });
+		await waitForWorkspace(page, surface);
+		await guard(page, surface, { connectVisible: true });
 		const path = resolve(ASSETS, surface.file);
-		await page.screenshot({ path, type: "jpeg", quality: JPEG_QUALITY });
+		await page.screenshot({ path, type: "jpeg", quality: JPEG_QUALITY, ...(surface.clip ? { clip: surface.clip } : {}) });
 		captures[surface.name] = {
 			file: surface.file,
 			viewport: surface.context.viewport,
 			deviceScaleFactor: surface.context.deviceScaleFactor,
+			clip: surface.clip ?? null,
 		};
 		await context.close();
 	}

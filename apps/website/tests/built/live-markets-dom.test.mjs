@@ -95,9 +95,9 @@ async function flush() {
 }
 
 /** Starts the script on a fresh copy of the built page; `respond(dex, call)` returns { status, body } or "hang". */
-async function boot(respond, { lockElsewhere = false, visible = true } = {}) {
+async function boot(respond, { lockElsewhere = false, visible = true, html = HOME_HTML } = {}) {
 	mock.timers.enable({ apis: ["setTimeout", "setInterval", "Date"], now: START });
-	const dom = new JSDOM(HOME_HTML, { pretendToBeVisual: true, url: "https://example.test/" });
+	const dom = new JSDOM(html, { pretendToBeVisual: true, url: "https://example.test/" });
 	const { window } = dom;
 	const calls = [];
 	const locks = createLocks();
@@ -210,7 +210,61 @@ test("numbers appear only from validated answers, and the strip stays blank unti
 		assert.equal(page.document.querySelector("[data-live-asof]").hidden, false);
 		await page.advance(2 * PLAN.requestSpacingMs + 1_000);
 		assert.equal(page.filledCards().length, 10);
-		assert.doesNotMatch(page.allNumberText(), /—|NaN|undefined|e[+-]?\d/);
+		assert.doesNotMatch(page.allNumberText(), /—|NaN|undefined|\de[+-]?\d/);
+	} finally {
+		page.close();
+	}
+});
+
+test("Pre-IPO rows show EntropyIO's implied valuation and XYZ's per-share mark price from the recorded answers", async () => {
+	const basis = Object.fromEntries(INPUTS.filter((input) => input.kind === "preipo").map((input) => [input.coin, input.quoteBasis]));
+	assert.deepEqual(basis, { "io:OAI": "valuation", "io:ANTH": "valuation", "xyz:JIO": "per-share", "xyz:OURA": "per-share" });
+	const page = await boot((dex) => ok(dex));
+	try {
+		await page.advance(2 * PLAN.requestSpacingMs + 1_000);
+		const slots = (coin) => {
+			const row = page.document.querySelector(`[data-live-row="${coin}"]`);
+			return ["primary", "secondary", "change"].map((name) => row.querySelector(`[data-live-${name}]`).textContent);
+		};
+		assert.deepEqual(slots("xyz:JIO"), ["$12.961", "Quoted per share", "-1.00% ▼"]);
+		assert.deepEqual(slots("xyz:OURA"), ["$48.707", "Quoted per share", "-0.56% ▼"]);
+		const [primary, secondary, change] = slots("io:OAI");
+		assert.match(primary, /^US\$\d[\d.,]*[KMBT]implied valuation$/);
+		assert.match(secondary, /^Mark \$\d/);
+		assert.match(change, /^[+-]?\d+\.\d{2}%/);
+		const label = page.document.querySelector('[data-live-row="io:OAI"] [data-live-primary] span');
+		assert.match(label.className, /\btext-xs\b/, "the unit label is at least 12px");
+		const perShare = page.document.querySelector('[data-live-row="xyz:JIO"] [data-live-secondary] span');
+		assert.equal(perShare.textContent, "Quoted per share");
+	} finally {
+		page.close();
+	}
+});
+
+test("a Pre-IPO input without a verified unit, or without a quote basis, shows no number and derives no valuation", async () => {
+	const inputs = INPUTS.map((input) => {
+		if (input.coin === "xyz:JIO") return { ...input, quoteBasis: "unknown" };
+		if (input.coin === "xyz:OURA") {
+			const { quoteBasis: _dropped, ...rest } = input;
+			return rest;
+		}
+		if (input.coin === "io:ANTH") return { ...input, valuationPerPriceUsd: null };
+		return input;
+	});
+	const html = HOME_HTML.replace(
+		/(<script type="application\/json" data-live-inputs>)[\s\S]*?(<\/script>)/,
+		(_match, open, close) => `${open}${JSON.stringify(inputs)}${close}`,
+	);
+	assert.notEqual(html, HOME_HTML);
+	const page = await boot((dex) => ok(dex), { html });
+	try {
+		await page.advance(2 * PLAN.requestSpacingMs + 1_000);
+		for (const coin of ["xyz:JIO", "xyz:OURA", "io:ANTH"]) {
+			const row = page.document.querySelector(`[data-live-row="${coin}"]`);
+			const text = [...row.querySelectorAll("[data-live-primary], [data-live-secondary], [data-live-change]")].map((slot) => slot.textContent).join("");
+			assert.equal(text, "", `${coin} shows nothing`);
+		}
+		assert.match(page.document.querySelector('[data-live-row="io:OAI"] [data-live-primary]').textContent, /implied valuation$/);
 	} finally {
 		page.close();
 	}
@@ -284,7 +338,7 @@ test("a market reported delisted is removed from 02 and 03 while the hero senten
 		assert.ok(page.document.querySelector('[data-market-coin="io:OAI"]'));
 		const hero = page.document.querySelector("h1").closest("section");
 		assert.ok(hero.querySelector('a[href*="/trade/io:ANTH"]'), "the hero link is not removed at run time");
-		assert.match(hero.textContent.replace(/\s+/g, " "), /Pre-IPO perpetuals such as OpenAI\b[^.]*\bAnthropic\b/);
+		assert.match(hero.textContent.replace(/\s+/g, " "), /Pre-IPO perpetuals by EntropyIO — not shares OpenAI\b[^.]*\bAnthropic\b/);
 	} finally {
 		page.close();
 	}

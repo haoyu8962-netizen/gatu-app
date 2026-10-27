@@ -151,7 +151,7 @@ test("restricted-location sentences link to a Terms anchor that exists (R7)", ()
 			assert.ok(anchors.has(anchor), `/terms/ has no element with id "${anchor}"`);
 		}
 	});
-	assert.ok(sentences >= 3, "expected the hero, FAQ and facts block to mention restricted locations");
+	assert.ok(sentences >= 2, "expected the FAQ and facts block to mention restricted locations");
 	assert.match(normalizedText(HOME_BODY), /deployers may apply their own restrictions/i);
 });
 

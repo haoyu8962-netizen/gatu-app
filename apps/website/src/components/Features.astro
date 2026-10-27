@@ -22,10 +22,11 @@ import { APP_HOST } from "@/config/brand";
 import { formatUtcTimestamp } from "@/config/copy";
 import SectionHeader from "./SectionHeader.astro";
 
-type Fit = "screen" | "portrait" | "strip";
+type Fit = "screen" | "portrait" | "detail" | "strip";
 
 // Plan §4 04: benefit titles; the first card is the verified differentiator. Each tab shows one real,
-// signed-out screenshot captured by scripts/capture-features.mjs and encoded by scripts/optimize-images.mjs.
+// signed-out screenshot captured by scripts/capture-features.mjs and encoded by scripts/optimize-images.mjs
+// ("detail": the encoder keeps only the top of the Arabic phone capture, shown large enough to read).
 const features = [
 	{
 		id: "language",
@@ -34,7 +35,7 @@ const features = [
 		icon: translateIcon,
 		avif: languageAvif,
 		webp: languageWebp,
-		fit: "portrait" as Fit,
+		fit: "detail" as Fit,
 	},
 	{
 		id: "email",
@@ -101,11 +102,13 @@ function inlineIcon(svg: string, size: number): string {
 const imageClass: Record<Fit, string> = {
 	screen: "h-full w-full object-cover object-left-top",
 	portrait: "h-[165%] w-auto max-w-none shrink-0 rounded-16 border border-stroke-weak shadow-card",
+	detail: "h-[125%] w-auto max-w-none shrink-0 rounded-16 border border-stroke-weak shadow-card",
 	strip: "w-full h-auto rounded-16 border border-stroke-weak shadow-card",
 };
 const stageClass: Record<Fit, string> = {
 	screen: "",
 	portrait: "flex items-start justify-center px-6 pt-6 sm:pt-8",
+	detail: "flex items-start justify-center px-4 pt-5 sm:pt-8",
 	strip: "flex items-center px-4 sm:px-8",
 };
 ---
@@ -116,11 +119,10 @@ const stageClass: Record<Fit, string> = {
 			<SectionHeader label="Features">Built for how you trade</SectionHeader>
 		</div>
 
-		<div class="mt-10 grid grid-cols-1 gap-6 md:mt-12 @split:grid-cols-12 @split:gap-10" data-tabs>
+		<div class="mt-10 grid grid-cols-1 gap-6 md:mt-12 @split:grid-cols-12 @split:gap-10" data-tabs data-tabs-crossfade>
 			<div
 				role="tablist"
 				aria-label="Features"
-				aria-orientation="vertical"
 				data-tablist
 				class="reveal-stagger -mx-5 flex gap-2 overflow-x-auto px-5 pb-1 scrollbar-none sm:-mx-8 sm:px-8 @split:mx-0 @split:flex-col @split:self-start @split:overflow-visible @split:px-0 @split:col-span-5"
 			>
@@ -132,7 +134,7 @@ const stageClass: Record<Fit, string> = {
 						aria-controls={`feature-panel-${feature.id}`}
 						aria-selected={index === 0 ? "true" : "false"}
 						tabindex={index === 0 ? undefined : "-1"}
-						class="feature-tab press flex min-h-11 shrink-0 items-center gap-3 rounded-16 border border-transparent px-4 py-2.5 text-left text-sm text-fg-subtle hover:text-fg @split:min-h-16 @split:px-5 @split:text-base"
+						class="feature-tab press flex min-h-11 shrink-0 items-center gap-3 rounded-full border border-transparent px-4 py-2.5 text-left text-sm text-fg-subtle hover:text-fg @split:min-h-14 @split:px-5 @split:text-base"
 					>
 						<span class="feature-tab-icon inline-flex shrink-0 text-fg-faint" set:html={inlineIcon(feature.icon, 20)} />
 						<span class="whitespace-nowrap @split:whitespace-normal">{feature.title}</span>
@@ -140,17 +142,20 @@ const stageClass: Record<Fit, string> = {
 				))}
 			</div>
 
-			<div class="reveal @split:col-span-7">
+			<div class="reveal @split:col-span-7" data-tab-panels>
 				{visuals.map((feature, index) => (
 					<div
 						id={`feature-panel-${feature.id}`}
 						role="tabpanel"
 						aria-labelledby={`feature-tab-${feature.id}`}
 						data-tabpanel
-						hidden={index > 0}
+						data-tabpanel-deferred={index > 0 ? "" : undefined}
+						class="flex flex-col"
 					>
-						<h3 class="text-h3 font-medium">{feature.title}</h3>
-						<p class="mt-2 max-w-xl text-base text-fg-muted">{feature.desc}</p>
+						<div class="feature-copy grow">
+							<h3 class="text-h3 font-medium">{feature.title}</h3>
+							<p class="mt-2 max-w-xl text-base text-fg-muted">{feature.desc}</p>
+						</div>
 						<figure class="mt-6">
 							<div class={`surface-dark edge relative isolate aspect-[16/10] overflow-hidden rounded-24 bg-window shadow-card ${stageClass[feature.fit]}`}>
 								<div class="hero-ambient opacity-70" aria-hidden="true"></div>

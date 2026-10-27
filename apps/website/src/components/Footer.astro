@@ -1,5 +1,6 @@
 ---
 import { APP_HOST, LEGAL_ENTITY, SITE_HOST, SUPPORT_EMAIL } from "@/config/brand";
+import Button from "./Button.astro";
 import Logo from "./Logo.astro";
 
 interface Props {
@@ -96,15 +97,7 @@ const iconSvg: Record<string, string> = {
 				{livePause && (
 					<>
 						<span class="h-3 w-px bg-stroke-weak" data-live-pause-separator hidden></span>
-						<button
-							type="button"
-							data-live-pause
-							aria-pressed="false"
-							hidden
-							class="press inline-flex min-h-11 items-center rounded-8 px-2 font-mono text-2xs text-fg-faint hover:text-fg-muted active:bg-fill-weak aria-pressed:text-fg md:min-h-8"
-						>
-							Pause live data
-						</button>
+						<Button pressed={false} size="sm" data-live-pause="" hidden>Pause live data</Button>
 					</>
 				)}
 			</div>

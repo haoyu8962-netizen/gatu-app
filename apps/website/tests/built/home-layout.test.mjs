@@ -115,7 +115,7 @@ test("Security draws Fig. 1 as an illustration with the brand box limited to int
 	}
 	assert.match(text, new RegExp(`${BRAND_NAME} Interface \\+ builder fee`));
 	const checklist = normalizedText(section("security"));
-	assert.ok(checklist.includes("We will never ask for your private key, seed phrase, verification code or password."));
+	assert.ok(checklist.includes(`No one at ${BRAND_NAME}, support included, will ever ask you to share your private key, seed phrase, sign-in code or password.`));
 	assert.ok(checklist.includes("not Hyperliquid Corp. or the Hyper Foundation"));
 });
 
@@ -244,26 +244,57 @@ function tabBlocks(root) {
 	});
 }
 
-test("every tab block is a complete WAI-ARIA tab set whose first panel shows without JavaScript", () => {
+test("every tab block is a complete WAI-ARIA tab set that renders its static panels for readers without JavaScript", () => {
 	const blocks = tabBlocks(MAIN);
 	assert.equal(blocks.length, 3, "the hero preview, 03 markets and 04 features");
 	for (const { block, tabs, panels } of blocks) {
 		const list = findAll(block, hasAttr("data-tablist"))[0];
 		assert.equal(list.attrs.role, "tablist");
 		assert.ok(list.attrs["aria-label"], "the tab list is named");
+		assert.equal(list.attrs["aria-orientation"], undefined, "tabs.ts sets the orientation from the list's real layout");
 		assert.deepEqual(tabs.map((tab) => tab.attrs["aria-selected"]), tabs.map((_, index) => (index === 0 ? "true" : "false")));
 		tabs.forEach((tab, index) => {
 			const panel = panels[index];
 			assert.ok(panel, `${tab.attrs.id} controls a panel that exists`);
 			assert.equal(panel.attrs.role, "tabpanel");
 			assert.equal(panel.attrs["aria-labelledby"], tab.attrs.id);
-			assert.equal("hidden" in panel.attrs, index > 0, "only the first panel is shown before the script runs");
+			const requiresJs = "data-requires-js" in panel.attrs;
+			assert.equal("hidden" in panel.attrs, requiresJs, "only a panel that needs JavaScript is hidden in the markup");
+			assert.equal("data-tabpanel-deferred" in panel.attrs, index > 0 && !requiresJs, "later static panels wait for tabs.ts");
 			assert.equal(tab.attrs.tabindex, index === 0 ? undefined : "-1");
 		});
 	}
+	// tests/built/tabs-browser.test.mjs checks the rendered result in Chromium; this pins that the rules ship.
 	const css = FILES.filter((file) => file.endsWith(".css")).map((file) => readFileSync(resolve(DIST, file), "utf8")).join("\n");
-	assert.match(css, /html:not\(\.js\) \[data-tablist\]\{display:none\}/, "without JavaScript the tab lists are hidden");
-	assert.match(css, /html:not\(\.js\) \[data-tabpanel\]\[hidden\]:not\(\[data-requires-js\]\)\{display:block\}/, "and every panel shows");
+	assert.match(css, /html\.js:not\(\.js-loaded\) \[data-tabs\]:not\(\[data-tabs-ready\]\) \[data-tabpanel-deferred\]\{display:none\}/);
+	assert.match(css, /html:not\(\.js\) \[data-tablist\],html\.js-loaded \[data-tabs\]:not\(\[data-tabs-ready\]\) \[data-tablist\]\{display:none\}/);
+	assert.doesNotMatch(css, /\[data-tabpanel\]\[hidden\]/, "no rule tries to un-hide [hidden] panels against the preflight");
+});
+
+test("the hero screenshot ships AVIF and WebP within the first-screen budget, with a JPEG fallback and intrinsic sizes", () => {
+	const picture = findAll(findAll(MAIN, (element) => element.attrs.id === "preview-terminal")[0], byName("picture"))[0];
+	const sources = findAll(picture, byName("source"));
+	const image = findAll(picture, byName("img"))[0];
+	const budget = { "(min-width: 640px)": 80_000, undefined: 45_000 };
+	const seen = [];
+	for (const source of sources) {
+		assert.ok(Number(source.attrs.width) > 0 && Number(source.attrs.height) > 0, "every source states its size");
+		const bytes = readFileSync(resolve(DIST, source.attrs.srcset.replace(/^\//, ""))).length;
+		const type = source.attrs.type ?? "image/jpeg";
+		seen.push(`${source.attrs.media ?? "phone"} ${type}`);
+		if (type === "image/avif") assert.ok(bytes <= budget[source.attrs.media], `${source.attrs.srcset}: ${bytes} B over the plan §8 budget`);
+	}
+	assert.deepEqual(seen, [
+		"(min-width: 640px) image/avif",
+		"(min-width: 640px) image/webp",
+		"(min-width: 640px) image/jpeg",
+		"phone image/avif",
+		"phone image/webp",
+	]);
+	assert.match(image.attrs.src, /\.jpe?g$/, "the <img> falls back to the captured JPEG");
+	assert.ok(Number(image.attrs.width) > 0 && Number(image.attrs.height) > 0);
+	assert.equal(image.attrs.loading, "eager");
+	assert.doesNotMatch(image.attrs.alt, /market selector/, "the alt text describes the trading workspace now shown");
 });
 
 test("03 has one tab per category with the counts, deployers and up to six deep-linked rows (no-JS content in the build)", () => {
@@ -341,12 +372,15 @@ test("an early block explains the account and execution model without calling th
 	assert.doesNotMatch(text, /decentrali[sz]ed|\bprotocol\b|no intermediar/i);
 	const hero = normalizedText(SECTIONS[0]);
 	assert.match(hero, /Your funds stay in your own Hyperliquid account\./);
-	const fact = findAll(SECTIONS[0], hasAttr("data-hero-fact"))[0];
-	assert.equal(normalizedText(fact), `Orders execute on Hyperliquid's on-chain order books. ${BRAND_NAME} provides the interface.`);
-	const group = closest(fact, hasAttr("data-cta-group"));
-	assert.ok(group, "the execution fact sits next to the CTAs, in the hero's risk group");
-	assert.ok(normalizedText(group).includes(RISK_SENTENCE));
-	assert.match(normalizedText(group), /not shares; outside exchange hours their prices come from the deployer/);
+	// 2026-10-26 hero density review: the execution fact moved to #account, the builder fee to #fees and the
+	// restricted-locations line to the FAQ and the facts block; the hero keeps one risk footnote under its CTAs.
+	assert.deepEqual(findAll(SECTIONS[0], hasAttr("data-hero-fact")), []);
+	const risk = findAll(SECTIONS[0], hasAttr("data-hero-risk"))[0];
+	const group = closest(risk, hasAttr("data-cta-group"));
+	assert.ok(group, "the risk footnote sits under the CTAs, in the hero's risk group");
+	assert.ok(normalizedText(risk).startsWith(RISK_SENTENCE));
+	assert.match(normalizedText(risk), /not shares; outside exchange hours, prices come from the deployer\. Risk disclosure$/);
+	assert.doesNotMatch(normalizedText(SECTIONS[0]), /builder fee|restricted locations/i);
 });
 
 test("the hero's H1 is the plan's sentence, with the category reel decorative and the preview defaulting to Terminal", () => {

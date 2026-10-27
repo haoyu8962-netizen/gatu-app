@@ -74,7 +74,7 @@ export const FAQS: readonly FaqItem[] = [
 	},
 	{
 		q: "What does a trade cost?",
-		a: `On each trade you pay Hyperliquid's protocol fees — 0.045% taker / 0.015% maker on perps at the base tier (spot starts at 0.07% / 0.04%), dropping with volume and HYPE staking — plus a small 0.01% builder fee on perp orders and spot sells (TWAP orders and spot buys carry none). HIP-3 deployers can set different Hyperliquid fees for their markets. The builder fee is what funds ${BRAND_NAME}. No subscription, no monthly fee, no gas per trade.`,
+		a: `On each trade you pay Hyperliquid's protocol fees — 0.045% taker / 0.015% maker on perps at the base tier (spot starts at 0.07% / 0.04%), dropping with volume and HYPE staking — plus a 0.01% builder fee on perp orders and spot sells (TWAP orders and spot buys carry none). HIP-3 deployers can set different Hyperliquid fees for their markets. The builder fee is what funds ${BRAND_NAME}. No subscription, no monthly fee, no gas per trade.`,
 	},
 	{
 		q: "What do I need to deposit?",

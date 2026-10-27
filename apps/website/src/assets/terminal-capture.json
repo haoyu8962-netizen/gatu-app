@@ -1,6 +1,6 @@
 {
 	"url": "https://app.sairn.ai/trade/BTC",
-	"capturedAt": "2026-10-25T17:55:27.958Z",
+	"capturedAt": "2026-10-27T02:54:18.131Z",
 	"build": {
 		"name": "sairn",
 		"version": "0.1.0",
@@ -15,7 +15,8 @@
 				"width": 1600,
 				"height": 900
 			},
-			"deviceScaleFactor": 1
+			"deviceScaleFactor": 1,
+			"clip": null
 		},
 		"mobile": {
 			"file": "terminal-mobile.jpeg",
@@ -23,7 +24,13 @@
 				"width": 390,
 				"height": 844
 			},
-			"deviceScaleFactor": 2
+			"deviceScaleFactor": 2,
+			"clip": {
+				"x": 0,
+				"y": 0,
+				"width": 390,
+				"height": 604
+			}
 		}
 	}
 }

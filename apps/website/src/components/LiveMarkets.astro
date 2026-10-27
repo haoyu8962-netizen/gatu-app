@@ -11,6 +11,8 @@ import {
 	SNAPSHOT_FETCHED_AT,
 } from "@/lib/markets/structure";
 import { coinSlot, terminalTradeUrl } from "@/lib/terminal-links";
+import Button from "./Button.astro";
+import MarketIcon from "./MarketIcon.astro";
 
 const markets = getFeaturedMarkets();
 const deployers = joinNames(getDeployerFullNames(markets.map((market) => market.coin)));
@@ -103,16 +105,10 @@ const cardClass =
 					Stock and pre-IPO markets are perpetuals run by third-party deployers such as {deployers}. They are not shares.
 				</p>
 			</div>
-			<button
-				type="button"
-				data-live-pause
-				aria-pressed="false"
-				hidden
-				class="press inline-flex min-h-11 items-center gap-2 rounded-8 border border-stroke-weak px-4 font-mono text-2xs text-fg-muted hover:border-stroke-strong hover:text-fg active:bg-fill-weak aria-pressed:bg-fill-weak aria-pressed:text-fg md:min-h-9"
-			>
+			<Button pressed={false} size="sm" data-live-pause="" hidden>
 				<svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M2.5 1.5v7M7.5 1.5v7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" /></svg>
 				Pause updates<span class="sr-only"> and scrolling</span>
-			</button>
+			</Button>
 		</div>
 		<p id="markets-now-status" class="sr-only" data-live-status>
 			Live prices are shown here once Hyperliquid public data has loaded.
@@ -130,13 +126,18 @@ const cardClass =
 							data-live-card={market.coin}
 							data-live-kind={liveKindOf(market.featuredCategory)}
 						>
-							<span class="text-base font-medium text-fg">{market.name}</span>
-							<span class="mt-1 font-mono text-xs text-fg-subtle">
-								{market.displayName ?? market.coin}
-								{market.deployerFullName && <> · by {market.deployerFullName}</>}
+							<span class="flex items-center gap-3">
+								<MarketIcon coin={market.coin} size={28} />
+								<span class="flex min-w-0 flex-col">
+									<span class="text-base font-medium text-fg">{market.name}</span>
+									<span class="mt-0.5 font-mono text-xs text-fg-subtle">
+										{market.displayName ?? market.coin}
+										{market.deployerFullName && <> · by {market.deployerFullName}</>}
+									</span>
+								</span>
 							</span>
 							<span class="mt-6 block h-7 whitespace-nowrap font-mono text-lg text-fg" data-live-primary></span>
-							<span class="mt-1 flex h-4 items-center justify-between gap-2 whitespace-nowrap font-mono text-2xs">
+							<span class="mt-1 flex h-4 items-center justify-between gap-2 whitespace-nowrap font-mono text-xs">
 								<span class="text-fg-subtle" data-live-secondary></span>
 								<span data-live-change></span>
 							</span>
@@ -148,13 +149,18 @@ const cardClass =
 				{markets.map((market) => (
 					<li class="shrink-0" data-market-coin={market.coin}>
 						<a href={terminalTradeUrl(market.coin, `ticker_${coinSlot(market.coin)}`)} tabindex="-1" class={cardClass} data-live-mirror={market.coin}>
-							<span class="text-base font-medium text-fg">{market.name}</span>
-							<span class="mt-1 font-mono text-xs text-fg-subtle">
-								{market.displayName ?? market.coin}
-								{market.deployerFullName && <> · by {market.deployerFullName}</>}
+							<span class="flex items-center gap-3">
+								<MarketIcon coin={market.coin} size={28} />
+								<span class="flex min-w-0 flex-col">
+									<span class="text-base font-medium text-fg">{market.name}</span>
+									<span class="mt-0.5 font-mono text-xs text-fg-subtle">
+										{market.displayName ?? market.coin}
+										{market.deployerFullName && <> · by {market.deployerFullName}</>}
+									</span>
+								</span>
 							</span>
 							<span class="mt-6 block h-7 whitespace-nowrap font-mono text-lg text-fg" data-live-primary></span>
-							<span class="mt-1 flex h-4 items-center justify-between gap-2 whitespace-nowrap font-mono text-2xs">
+							<span class="mt-1 flex h-4 items-center justify-between gap-2 whitespace-nowrap font-mono text-xs">
 								<span class="text-fg-subtle" data-live-secondary></span>
 								<span data-live-change></span>
 							</span>

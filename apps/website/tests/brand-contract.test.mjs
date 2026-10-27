@@ -42,8 +42,9 @@ test("website uses the brand action, signal and focus roles in both themes", () 
 		assert.equal(readCssVariable(WEBSITE_STYLES, selector, "--text-brand"), "var(--signal)");
 	}
 	assert.match(cssRule(WEBSITE_STYLES, "::selection"), /background:\s*var\(--signal\)/);
-	assert.match(WEBSITE_HERO, /bg-action/);
-	assert.match(WEBSITE_HERO, /text-on-action/);
+	// Filled buttons take the neutral action role (the shared pill in tests/button-contract.test.mjs).
+	assert.match(cssRule(WEBSITE_STYLES, ".btn-primary"), /background-color:\s*var\(--action\);\s*color:\s*var\(--on-action\);/);
+	assert.match(WEBSITE_HERO, /<ButtonLink href=\{startUrl\} variant="primary"/);
 });
 
 // ADR 0043: marketing emphasis uses the website-only amber accent (the logo's choice colour); --signal is kept

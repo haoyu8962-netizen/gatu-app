@@ -3,7 +3,7 @@
 // the committed snapshot and configs with the exchange without writing. Runs with --experimental-strip-types
 // so it can read the TypeScript configs (see package.json).
 //
-//   pnpm --filter @sairn/website markets:snapshot           # write, then report problems (exit 1 if any)
+//   pnpm --filter @sairn/website markets:snapshot           # write, report problems (exit 1 if any), else vendor icons
 //   pnpm --filter @sairn/website markets:snapshot --check   # exit 1 when the site would publish stale facts
 
 import { readFileSync, writeFileSync } from "node:fs";
@@ -197,6 +197,11 @@ async function main() {
 		return;
 	}
 	console.log(check ? "markets:snapshot --check passed" : "snapshot and configs are consistent");
+	if (!check) {
+		// Imported only now, so structure.ts reads the snapshot written above.
+		const { vendorMarketIcons } = await import("./market-icons.mjs");
+		await vendorMarketIcons();
+	}
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {

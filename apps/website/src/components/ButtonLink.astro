@@ -1,0 +1,18 @@
+---
+import type { HTMLAttributes } from "astro/types";
+import { buttonClasses, type ButtonIcon, type ButtonSize, type ButtonVariant } from "@/lib/buttons";
+import ButtonChip from "./ButtonChip.astro";
+
+interface Props extends Omit<HTMLAttributes<"a">, "href"> {
+	href: string;
+	variant?: ButtonVariant;
+	size?: ButtonSize;
+	icon?: ButtonIcon;
+}
+
+const { href, variant = "primary", size = "md", icon = "external", class: className, ...rest } = Astro.props;
+---
+
+<a href={href} class:list={[buttonClasses({ variant, size, icon }), className]} {...rest}>
+	<slot />{icon !== "none" && <ButtonChip icon={icon} />}
+</a>

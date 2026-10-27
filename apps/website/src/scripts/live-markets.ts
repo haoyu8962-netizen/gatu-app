@@ -34,7 +34,11 @@ interface LiveInput {
 	szDecimals: number;
 	valuationPerPriceUsd: string | null;
 	kind: "preipo" | "rate" | "price";
+	/** src/lib/markets/structure.ts PreIpoQuoteBasis for preipo inputs, null for the others. */
+	quoteBasis: "valuation" | "per-share" | "unknown" | null;
 }
+
+const PRE_IPO_QUOTE_BASES = ["valuation", "per-share", "unknown"];
 
 interface Price {
 	markPx: string;
@@ -160,13 +164,7 @@ export function startLiveMarkets(root: Document): void {
 		const changeSlot = target.querySelector<HTMLElement>("[data-live-change]");
 		if (!primary || !changeSlot || !markText || !change) return false;
 		if (input.kind === "preipo") {
-			const valuation = impliedValuationUsd(price.markPx, input.valuationPerPriceUsd);
-			if (!valuation || !secondary) return false;
-			const label = root.createElement("span");
-			label.className = "ml-1.5 text-2xs font-normal text-fg-subtle";
-			label.textContent = "implied valuation";
-			primary.append(`US$${formatCompactUsd(valuation)}`, label);
-			secondary.textContent = `Mark ${markText}`;
+			if (!secondary || !fillPreIpo(target, input, price, markText, primary, secondary)) return false;
 		} else {
 			primary.textContent = input.kind === "rate" ? markText.replace(/^\$/, "") : markText;
 		}
@@ -174,6 +172,39 @@ export function startLiveMarkets(root: Document): void {
 		changeSlot.textContent = `${change.text}${arrow}`;
 		if (change.direction === "up") changeSlot.classList.add("text-success");
 		if (change.direction === "down") changeSlot.classList.add("text-error");
+		return true;
+	}
+
+	// A valuation shows the derived figure with its unit and the mark price below it; a per-share market shows its
+	// mark price with the basis; an unknown basis shows nothing rather than guess a valuation (plan R3). The unit
+	// label sits under the figure in a table row and beside it on a 02 card, at 12px in both.
+	function fillPreIpo(
+		target: HTMLElement,
+		input: LiveInput,
+		price: Price,
+		markText: string,
+		primary: HTMLElement,
+		secondary: HTMLElement,
+	): boolean {
+		if (input.quoteBasis === "per-share") {
+			const basis = root.createElement("span");
+			basis.className = "font-sans";
+			basis.textContent = "Quoted per share";
+			primary.textContent = markText;
+			secondary.append(basis);
+			return true;
+		}
+		if (input.quoteBasis !== "valuation") return false;
+		const valuation = impliedValuationUsd(price.markPx, input.valuationPerPriceUsd);
+		if (!valuation) return false;
+		const label = root.createElement("span");
+		label.className =
+			target.dataset.liveRow !== undefined
+				? "block font-sans text-xs font-normal text-fg-subtle"
+				: "ml-1.5 font-sans text-xs font-normal text-fg-subtle";
+		label.textContent = "implied valuation";
+		primary.append(`US$${formatCompactUsd(valuation)}`, label);
+		secondary.textContent = `Mark ${markText}`;
 		return true;
 	}
 

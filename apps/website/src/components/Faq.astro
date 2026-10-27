@@ -2,6 +2,7 @@
 import { RISK_PATH, RISK_SENTENCE } from "@/config/copy";
 import { FAQS as faqs } from "@/config/faq";
 import { terminalTradeUrl } from "@/lib/terminal-links";
+import ButtonLink from "./ButtonLink.astro";
 
 const startUrl = terminalTradeUrl("BTC", "faq_cta");
 ---
@@ -58,15 +59,7 @@ const startUrl = terminalTradeUrl("BTC", "faq_cta");
 					<a href={RISK_PATH} class="text-fg underline underline-offset-2 hover:text-fg-muted">Risk disclosure →</a>
 				</p>
 			</div>
-			<a
-				href={startUrl}
-				class="press inline-flex h-12 shrink-0 items-center justify-center gap-2 rounded-8 bg-action px-6 text-base font-medium text-on-action hover:bg-action-hover active:bg-action-active"
-			>
-				Start trading
-				<svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
-					<path d="M3 9l6-6M5 3h4v4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-				</svg>
-			</a>
+			<ButtonLink href={startUrl} variant="primary" size="lg" icon="external" class="shrink-0 self-start lg:self-auto">Start trading</ButtonLink>
 		</div>
 	</div>
 </section>

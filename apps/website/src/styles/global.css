@@ -47,7 +47,10 @@
 	--container-site: 80rem;
 	/* Container-query sizes (@cards:, @table:, @split:). Each equals the content width its block had at the
 	   viewport breakpoint it replaces (sm 640, md 768, lg 1024, minus the 32px page gutters and, for the markets
-	   table, its 1px edge), so the layouts switch at the same window widths as before but follow the space they get. */
+	   table, its 1px edge), so the layouts switch at the same window widths as before but follow the space they get.
+	   @cells: is where a markets-table row fits its market, number and Trade side by side; below it the row stacks
+	   into two lines (2026-10-27, measured at 320–390px). */
+	--container-cells: 30rem;
 	--container-cards: 36rem;
 	--container-table: 43.875rem;
 	--container-split: 60rem;
@@ -206,17 +209,42 @@
 			0 1px 2px rgb(8 38 46 / 4%), 0 6px 16px -6px rgb(8 38 46 / 8%), 0 24px 48px -24px rgb(8 38 46 / 12%);
 		--elevation-window:
 			0 1px 2px rgb(8 38 46 / 6%), 0 12px 32px -12px rgb(8 38 46 / 18%), 0 48px 96px -40px rgb(8 38 46 / 32%);
+		/* Buttons: a 1px top highlight and a short, light action-ink drop under the filled pill (2026-10-27 review: the
+		   deeper drop made the pills read heavy), a soft lift under the outlined one. */
+		--button-shadow: inset 0 1px 0 rgb(255 255 255 / 14%), 0 4px 12px -6px rgb(21 23 30 / 28%);
+		--button-shadow-hover: inset 0 1px 0 rgb(255 255 255 / 14%), 0 6px 16px -6px rgb(21 23 30 / 34%);
+		--button-shadow-press: inset 0 1px 0 rgb(255 255 255 / 10%), 0 2px 6px -4px rgb(21 23 30 / 24%);
+		--button-shadow-secondary: 0 1px 2px rgb(8 38 46 / 5%), 0 4px 12px -6px rgb(8 38 46 / 10%);
+		--button-shadow-secondary-hover: 0 1px 2px rgb(8 38 46 / 6%), 0 10px 20px -10px rgb(8 38 46 / 18%);
+		--button-shadow-secondary-press: 0 1px 2px rgb(8 38 46 / 5%);
 	}
 	.surface-dark,
 	:root[data-theme="dark"] {
 		--elevation-soft: 0 8px 24px -16px rgb(0 0 0 / 60%);
 		--elevation-card: 0 24px 64px -32px rgb(0 0 0 / 70%);
 		--elevation-window: 0 40px 120px -40px rgb(0 0 0 / 80%), 0 0 0 1px rgb(255 255 255 / 4%);
+		--button-shadow: inset 0 -1px 0 rgb(0 0 0 / 14%), 0 4px 12px -6px rgb(0 0 0 / 50%);
+		--button-shadow-hover: inset 0 -1px 0 rgb(0 0 0 / 14%), 0 6px 16px -6px rgb(0 0 0 / 60%);
+		--button-shadow-press: inset 0 -1px 0 rgb(0 0 0 / 10%), 0 2px 6px -4px rgb(0 0 0 / 45%);
+		--button-shadow-secondary: 0 6px 16px -12px rgb(0 0 0 / 70%);
+		--button-shadow-secondary-hover: 0 10px 22px -12px rgb(0 0 0 / 80%);
+		--button-shadow-secondary-press: 0 2px 6px -4px rgb(0 0 0 / 60%);
 	}
 
 	/* A product window on the light page draws its own text in the dark theme's colours. */
 	.surface-dark {
 		color: var(--text-strong);
+	}
+}
+
+/* Market icon backplate: white in both themes, drawn only behind the marks that scripts/market-icons.mjs measured
+   as vanishing on the dark window (manifest `backplate`, MarketIcon.astro); colours of the mark are never changed. */
+@layer base {
+	:root {
+		--market-icon-backplate: #ffffff;
+	}
+	[data-market-icon-backplate] {
+		background-color: var(--market-icon-backplate);
 	}
 }
 
@@ -476,27 +504,6 @@
 		display: none;
 	}
 
-	/* Tabs work without JavaScript: the tab list is hidden and every panel is shown with its own heading. */
-	html:not(.js) [data-tablist] {
-		display: none;
-	}
-	html:not(.js) [data-tabpanel][hidden]:not([data-requires-js]) {
-		display: block;
-	}
-	html:not(.js) [data-tabpanel] + [data-tabpanel] {
-		margin-top: 3rem;
-	}
-	html.js [data-panel-heading] {
-		position: absolute;
-		width: 1px;
-		height: 1px;
-		padding: 0;
-		margin: -1px;
-		overflow: hidden;
-		clip-path: inset(50%);
-		white-space: nowrap;
-		border: 0;
-	}
 
 	.feature-tab[aria-selected="true"] {
 		background-color: var(--bg-selected);
@@ -510,7 +517,8 @@
 	}
 
 	.preview-tab[aria-selected="true"] {
-		background-color: var(--fill-hover);
+		background-color: var(--bg-overlay);
+		box-shadow: var(--shadow-soft);
 	}
 
 	.open-book {
@@ -621,16 +629,25 @@
 
 		/* A tab panel the visitor switches to fades in; the first render of the page is never animated, because
 		   tabs.ts marks a tab block only once it has switched. */
-		[data-tabs-switched] [data-tabpanel] {
+		[data-tabs-switched]:not([data-tabs-crossfade]) [data-tabpanel] {
 			transition:
 				opacity var(--motion-duration-swap) var(--motion-ease-fade),
 				transform var(--motion-duration-swap) var(--motion-ease-enter);
 		}
 		@starting-style {
-			[data-tabs-switched] [data-tabpanel] {
+			[data-tabs-switched]:not([data-tabs-crossfade]) [data-tabpanel] {
 				opacity: 0;
 				transform: translateY(6px);
 			}
+		}
+
+		/* 04 features cross-fade (tabs.ts, data-tabs-crossfade): the leaving panel's figure fades out over the
+		   selected one, whose dark stage is already opaque underneath, and the selected panel's copy fades in. */
+		[data-tabs-crossfade] [data-tab-state="leaving"] figure {
+			transition: opacity var(--motion-duration-feedback) var(--motion-ease-fade);
+		}
+		[data-tabs-crossfade] [data-tab-state="active"] .feature-copy {
+			transition: opacity var(--motion-duration-swap) var(--motion-ease-fade);
 		}
 
 		/* The rows of a market category follow one after another. */
@@ -742,6 +759,272 @@
 }
 .feature-tab[aria-selected="true"] .feature-tab-icon {
 	color: var(--marketing-accent);
+}
+
+/* 04 features cross-fade (tabs.ts, data-tabs-crossfade). Once wired, every panel stays rendered in one grid
+   cell, so the block keeps the tallest panel's height and every stage sits at the same place; the copy grows to
+   fill the panel. An inactive panel is invisible and inert; the leaving one sits on top while its figure fades.
+   Without JavaScript none of this applies (no data-tab-state) and the panels stay stacked. Outside @layer: the
+   panels carry a display utility (flex). */
+[data-tabs-crossfade][data-tabs-ready] [data-tab-panels] {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+}
+[data-tabs-crossfade][data-tabs-ready] [data-tab-panels] > [data-tabpanel] {
+	grid-area: 1 / 1;
+}
+[data-tabs-crossfade] [data-tabpanel][data-tab-state="inactive"] {
+	visibility: hidden;
+}
+[data-tabs-crossfade] [data-tabpanel][data-tab-state="leaving"] {
+	z-index: 1;
+}
+[data-tabs-crossfade] [data-tab-state="inactive"] .feature-copy,
+[data-tabs-crossfade] [data-tab-state="leaving"] .feature-copy,
+[data-tabs-crossfade] [data-tab-state="leaving"] figure {
+	opacity: 0;
+}
+
+/* Tabs work without JavaScript: the markup renders every static panel with its own heading, and the tab list is
+   hidden. With JavaScript the panels after the first (data-tabpanel-deferred) and the tab list wait, without
+   reflow, until tabs.ts marks the block data-tabs-ready. A block still unmarked once the page has loaded
+   (`js-loaded`: the tab module failed) falls back to the no-JavaScript layout, so nothing stays hidden. The rules
+   sit outside @layer: the tab lists carry a display utility (flex), which a layered rule would lose to. */
+html:not(.js) [data-tablist],
+html.js-loaded [data-tabs]:not([data-tabs-ready]) [data-tablist] {
+	display: none;
+}
+html.js:not(.js-loaded) [data-tabs]:not([data-tabs-ready]) [data-tablist] {
+	visibility: hidden;
+}
+html.js:not(.js-loaded) [data-tabs]:not([data-tabs-ready]) [data-tabpanel-deferred] {
+	display: none;
+}
+html:not(.js) [data-tabpanel] + [data-tabpanel],
+html.js-loaded [data-tabs]:not([data-tabs-ready]) [data-tabpanel] + [data-tabpanel] {
+	margin-top: 3rem;
+}
+html.js:not(.js-loaded) [data-panel-heading],
+[data-tabs-ready] [data-panel-heading] {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip-path: inset(50%);
+	white-space: nowrap;
+	border: 0;
+}
+
+/* Buttons (operator decision 2026-10-26, "style 4"): every button on the site is a pill; links and actions carry a round
+   arrow chip on the right, toggles do not. src/components/ButtonLink.astro and Button.astro write the classes
+   (src/lib/buttons.ts). The rules sit outside @layer on purpose: a layered rule loses to any utility on the element,
+   which once left buttons in the utilities' colours. Call sites add layout only (shrink-0, position, width).
+   One height, chip and inset per size: the chip sits concentric in the pill's right end. */
+.btn {
+	--btn-height: 40px;
+	--btn-chip: 26px;
+	--btn-pad: 18px;
+	--btn-gap: 10px;
+	--btn-icon: 11px;
+	--btn-border: 1px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: var(--btn-gap);
+	min-height: var(--btn-height);
+	padding-block: 0;
+	padding-inline: var(--btn-pad) calc((var(--btn-height) - var(--btn-chip)) / 2 - var(--btn-border));
+	border: var(--btn-border) solid transparent;
+	border-radius: 999px;
+	font-family: var(--font-sans);
+	font-size: var(--text-sm);
+	line-height: var(--text-sm--line-height);
+	font-weight: 500;
+	letter-spacing: 0;
+	white-space: nowrap;
+	text-decoration: none;
+	cursor: pointer;
+	user-select: none;
+	-webkit-tap-highlight-color: transparent;
+}
+.btn-plain {
+	padding-inline: var(--btn-pad);
+}
+.btn-lg {
+	--btn-height: 48px;
+	--btn-chip: 30px;
+	--btn-pad: 22px;
+	--btn-gap: 12px;
+	--btn-icon: 12px;
+	font-size: var(--text-base);
+	line-height: var(--text-base--line-height);
+}
+.btn-md {
+	--btn-height: 40px;
+	--btn-chip: 26px;
+	--btn-pad: 18px;
+	--btn-gap: 10px;
+	--btn-icon: 11px;
+}
+.btn-sm {
+	--btn-height: 36px;
+	--btn-chip: 24px;
+	--btn-pad: 14px;
+	--btn-gap: 8px;
+	--btn-icon: 10px;
+	font-size: var(--text-2sm);
+	line-height: var(--text-2sm--line-height);
+}
+/* Touch targets: 44px below the breakpoints where the old controls grew to min-h-11. */
+@media (max-width: 767px) {
+	.btn-md {
+		--btn-height: 44px;
+		--btn-chip: 28px;
+	}
+}
+@media (max-width: 639px) {
+	.btn-lg {
+		--btn-pad: 18px;
+		--btn-gap: 10px;
+	}
+	.btn-sm {
+		--btn-height: 44px;
+		--btn-chip: 28px;
+		--btn-pad: 16px;
+	}
+}
+
+.btn-chip {
+	display: inline-grid;
+	flex: none;
+	place-items: center;
+	width: var(--btn-chip);
+	height: var(--btn-chip);
+	border-radius: 999px;
+}
+.btn-arrow {
+	width: var(--btn-icon);
+	height: var(--btn-icon);
+}
+
+.btn-primary {
+	background-color: var(--action);
+	color: var(--on-action);
+	box-shadow: var(--button-shadow);
+}
+.btn-primary .btn-chip {
+	background-color: var(--bg-base);
+	color: var(--action);
+}
+.btn-secondary,
+.btn-toggle {
+	background-color: var(--bg-panel);
+	border-color: var(--stroke-weak);
+	color: var(--text-strong);
+	box-shadow: var(--button-shadow-secondary);
+}
+.btn-secondary .btn-chip {
+	background-color: var(--fill-weak);
+	color: var(--text-strong);
+}
+/* Small outlined pills (the markets table's Trade links, the hero's market links) sit flat: a lift on every row's
+   action outweighs the data next to it. */
+.btn-secondary.btn-sm {
+	--button-shadow-secondary: none;
+	--button-shadow-secondary-hover: none;
+	--button-shadow-secondary-press: none;
+}
+.btn-toggle[aria-pressed="true"] {
+	background-color: var(--bg-sunken);
+	border-color: var(--stroke-strong);
+	box-shadow: none;
+}
+
+@media (hover: hover) {
+	.btn-primary:hover {
+		background-color: var(--action-hover);
+		box-shadow: var(--button-shadow-hover);
+	}
+	.btn-secondary:hover,
+	.btn-toggle:hover {
+		border-color: var(--stroke-strong);
+		box-shadow: var(--button-shadow-secondary-hover);
+	}
+	.btn-secondary:hover .btn-chip {
+		background-color: var(--fill-press);
+	}
+}
+.btn-primary:active {
+	background-color: var(--action-active);
+	box-shadow: var(--button-shadow-press);
+}
+.btn-secondary:active,
+.btn-toggle:active {
+	box-shadow: var(--button-shadow-secondary-press);
+}
+
+.btn:focus-visible {
+	outline: 2px solid var(--focus);
+	outline-offset: 2px;
+}
+
+.btn:disabled,
+.btn[aria-disabled="true"] {
+	opacity: 0.5;
+	cursor: not-allowed;
+	box-shadow: none;
+	pointer-events: none;
+}
+
+/* Hover lifts the pill 1px and nudges the arrow towards where it leads; the press settles it at 98%. */
+@media (prefers-reduced-motion: no-preference) {
+	.btn {
+		transition:
+			transform var(--motion-duration-press) var(--motion-ease-enter),
+			box-shadow var(--motion-duration-press) var(--motion-ease-fade);
+	}
+	.btn-chip,
+	.btn-arrow {
+		transition: transform var(--motion-duration-press) var(--motion-ease-enter);
+	}
+	@media (hover: hover) {
+		.btn:hover {
+			transform: translateY(-1px);
+		}
+		.btn:hover .btn-chip {
+			transform: scale(1.04);
+		}
+		.btn:hover .btn-arrow-external {
+			transform: translate(2px, -2px);
+		}
+		.btn:hover .btn-arrow-right {
+			transform: translateX(3px);
+		}
+		.btn:hover .btn-arrow-down {
+			transform: translateY(2px);
+		}
+	}
+	.btn:active {
+		transform: scale(0.98);
+	}
+	.btn:disabled,
+	.btn[aria-disabled="true"] {
+		transform: none;
+	}
+}
+
+/* The skip link is the same pill, parked above the viewport (clear of its own drop shadow) until it takes keyboard focus. */
+.skip-link {
+	position: fixed;
+	top: 12px;
+	left: 12px;
+	z-index: 60;
+	translate: 0 calc(-100% - 64px);
+}
+.skip-link:focus {
+	translate: none;
 }
 
 /* Cross-document view transitions between the home page and the legal and support pages: a short cross-fade of

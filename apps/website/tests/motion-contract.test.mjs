@@ -57,6 +57,10 @@ const DETAILS_CONTENT_EXCEPTIONS = {
 	"content-visibility": "keeps the closing ::details-content painted until its block-size transition ends",
 };
 
+// The buttons' lift (operator decision 2026-10-26, "style 4") deepens the pill's shadow as it rises; that one
+// box-shadow transition runs only on the .btn rule, beside its transform.
+const BUTTON_SHADOW_EXCEPTION = { property: "box-shadow", selector: ".btn" };
+
 test("the stylesheet takes every transition duration and easing from the motion properties and moves only transform and opacity", () => {
 	const declarations = [...STYLES.matchAll(/([^{};]*)\{[^{}]*?\btransition\s*:\s*([^;]+);/g)].map((match) => ({
 		selector: match[1].trim(),
@@ -68,7 +72,11 @@ test("the stylesheet takes every transition duration and easing from the motion 
 		if (/^0\.01ms\b/.test(value.trim())) continue;
 		for (const part of value.split(/,(?![^(]*\))/)) {
 			const [property, duration, easing, ...rest] = part.trim().split(/\s+(?![^(]*\))/);
-			if (property in DETAILS_CONTENT_EXCEPTIONS) {
+			if (property === BUTTON_SHADOW_EXCEPTION.property) {
+				assert.equal(selector.replace(/\/\*[\s\S]*?\*\//g, "").trim(), BUTTON_SHADOW_EXCEPTION.selector, "box-shadow transitions only on .btn");
+				exceptionsUsed.add(property);
+				assert.deepEqual(rest, []);
+			} else if (property in DETAILS_CONTENT_EXCEPTIONS) {
 				assert.equal(selector, ".disclosure::details-content", `${property} transitions only on ::details-content`);
 				exceptionsUsed.add(property);
 				assert.deepEqual(rest, property === "content-visibility" ? ["allow-discrete"] : []);
@@ -80,7 +88,11 @@ test("the stylesheet takes every transition duration and easing from the motion 
 			assert.match(easing, /^var\(--motion-ease-[a-z]+\)$/, `"${part.trim()}" has a literal easing`);
 		}
 	}
-	assert.deepEqual([...exceptionsUsed].sort(), Object.keys(DETAILS_CONTENT_EXCEPTIONS).sort(), "a listed exception is no longer used");
+	assert.deepEqual(
+		[...exceptionsUsed].sort(),
+		[...Object.keys(DETAILS_CONTENT_EXCEPTIONS), BUTTON_SHADOW_EXCEPTION.property].sort(),
+		"a listed exception is no longer used",
+	);
 	const longhands = [...STYLES.matchAll(/(?<![\w-])transition-([a-z-]+)\s*:\s*([^;]+);/g)].filter(([, , value]) => !/^0\.01ms\b/.test(value.trim()));
 	assert.deepEqual(
 		longhands.map(([, property, value]) => [property, value.trim()]),
@@ -155,10 +167,20 @@ test("the ticker becomes a marquee only once its Pause control is wired, and pau
 test("default styles are the final state and motion stops under prefers-reduced-motion", () => {
 	const withoutKeyframes = KEYFRAMES.reduce((css, name) => css.replace(blockAfter(css, `@keyframes ${name}`), ""), STYLES);
 	const withoutStartingStyles = allBlocksAfter(withoutKeyframes, "@starting-style").reduce((css, block) => css.replace(block, ""), withoutKeyframes);
-	assert.doesNotMatch(withoutStartingStyles, /opacity:\s*0\s*;/, "nothing starts hidden outside a keyframe or a @starting-style entry");
+	// The one registered state-driven hide (2026-10-27, features cross-fade): tabs.ts sets data-tab-state only on a
+	// wired block, so without JavaScript, and on first render, every copy and figure keeps its own opacity.
+	const crossfadeHide =
+		/\[data-tabs-crossfade\] \[data-tab-state="inactive"\] \.feature-copy,\s*\[data-tabs-crossfade\] \[data-tab-state="leaving"\] \.feature-copy,\s*\[data-tabs-crossfade\] \[data-tab-state="leaving"\] figure \{\s*opacity: 0;\s*\}/;
+	assert.match(withoutStartingStyles, crossfadeHide, "the features cross-fade hides only non-active copy and the leaving figure");
+	assert.match(TABS_SCRIPT, /panel\.dataset\.tabState = state;/, "tabs.ts owns data-tab-state");
+	assert.doesNotMatch(withoutStartingStyles.replace(crossfadeHide, ""), /opacity:\s*0\s*;/, "nothing starts hidden outside a keyframe or a @starting-style entry");
 	assert.match(blockAfter(STYLES, "@keyframes reveal-rise"), /^\s*from \{/, "the reveal ends on the element's own style");
 	assert.ok(24 <= tokens.maxPanelTranslationAt1024, "the reveal offset stays within the brand's panel translation");
-	assert.match(CSP, /export const JS_CLASS_SCRIPT = 'document\.documentElement\.classList\.add\("js"\);';/);
+	assert.match(
+		CSP,
+		/export const JS_CLASS_SCRIPT =\s*'document\.documentElement\.classList\.add\("js"\);addEventListener\("load",function\(\)\{document\.documentElement\.classList\.add\("js-loaded"\)\}\);';/,
+		"the head script marks JavaScript before first paint and `js-loaded` once module scripts have run (tab fallback)",
+	);
 	assert.match(BASE, /<script is:inline set:html=\{JS_CLASS_SCRIPT\} \/>/);
 	assert.doesNotMatch(BASE, /IntersectionObserver|reveal-in/, "reveals no longer depend on a script");
 	const reduced = STYLES.slice(STYLES.indexOf("@media (prefers-reduced-motion: reduce)"));
@@ -203,7 +225,7 @@ test("card grids stagger with sibling-index() only where it is supported, on the
 test("switched tab panels, market rows and opened disclosures enter with @starting-style, never on first render", () => {
 	const noPreference = blockAfter(STYLES, "@media (prefers-reduced-motion: no-preference)");
 	const entries = allBlocksAfter(noPreference, "@starting-style").map((block) => block.trim().split("{")[0].trim());
-	assert.deepEqual(entries, ["[data-tabs-switched] [data-tabpanel]", "[data-tabs-switched] [data-tabpanel] tbody > tr", ".disclosure[open] > :not(summary)"]);
+	assert.deepEqual(entries, ["[data-tabs-switched]:not([data-tabs-crossfade]) [data-tabpanel]", "[data-tabs-switched] [data-tabpanel] tbody > tr", ".disclosure[open] > :not(summary)"]);
 	assert.match(TABS_SCRIPT, /root\.dataset\.tabsSwitched = "";/, "tabs.ts marks a block only when it switches");
 	for (const { file, text } of COMPONENTS) {
 		assert.doesNotMatch(text, /data-tabs-switched/, `${file}: the first render is never marked as switched`);

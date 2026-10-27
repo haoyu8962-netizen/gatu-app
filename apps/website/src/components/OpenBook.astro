@@ -7,6 +7,7 @@ import poster from "@/assets/open-book/poster.json";
 import { formatIsoDate } from "@/config/copy";
 import { getFeaturedMarkets } from "@/lib/markets/structure";
 import { MAX_LEVELS, N_SIG_FIGS as SIG_FIGS } from "@/scripts/open-book";
+import Button from "./Button.astro";
 
 const coin = poster.coin;
 const market = getFeaturedMarkets().find((entry) => entry.coin === coin);
@@ -41,15 +42,7 @@ const stats = [
 			<span class="rounded-full border border-stroke-weak px-2.5 py-0.5 font-mono text-2xs uppercase tracking-label text-fg-muted" data-ob-state>
 				Recorded
 			</span>
-			<button
-				type="button"
-				data-ob-pause
-				aria-pressed="false"
-				hidden
-				class="press inline-flex min-h-11 items-center rounded-8 border border-stroke-weak px-3 font-mono text-xs text-fg-muted hover:border-stroke-strong hover:text-fg active:bg-fill-weak sm:min-h-8"
-			>
-				Pause
-			</button>
+			<Button pressed={false} size="sm" data-ob-pause="" hidden>Pause</Button>
 		</div>
 	</div>
 
@@ -69,14 +62,7 @@ const stats = [
 			/>
 		</picture>
 		<canvas data-ob-canvas aria-hidden="true" hidden class="absolute inset-0 block h-full w-full"></canvas>
-		<button
-			type="button"
-			data-ob-start
-			hidden
-			class="press absolute right-4 bottom-4 inline-flex min-h-11 items-center rounded-8 bg-action px-4 text-sm font-medium text-on-action hover:bg-action-hover active:bg-action-active"
-		>
-			Show live view
-		</button>
+		<Button variant="primary" size="md" icon="right" data-ob-start="" hidden class="absolute right-4 bottom-4">Show live view</Button>
 	</div>
 
 	<dl class="grid grid-cols-2 border-t border-stroke-weaker sm:grid-cols-4">

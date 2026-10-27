@@ -91,6 +91,13 @@ export interface CategoryCardView {
 
 export type LiveKind = "preipo" | "rate" | "price";
 
+/**
+ * What a Pre-IPO market's price stands for: an implied valuation (deployers.ts has the deployer's verified unit),
+ * one share of the company (the deployer's page says so), or nothing the site has verified, in which case no
+ * number is shown and no valuation is derived.
+ */
+export type PreIpoQuoteBasis = "valuation" | "per-share" | "unknown";
+
 /** What the browser script needs per market with a live number (02 cards and 03 tab rows); inlined into the page. */
 export interface LiveMarketInput {
 	coin: string;
@@ -98,6 +105,8 @@ export interface LiveMarketInput {
 	szDecimals: number;
 	valuationPerPriceUsd: string | null;
 	kind: LiveKind;
+	/** Set for every preipo input, null for the other kinds. */
+	quoteBasis: PreIpoQuoteBasis | null;
 }
 
 function requireMarket(coin: string): { dexFullName: string | null; market: SnapshotMarket } {
@@ -137,6 +146,14 @@ export function getPreIpoTerms(coin: string): PreIpoTerms | null {
 }
 
 /** HIP-3 dexes with at least one listed market, in perpDexs order. */
+export function getPreIpoQuoteBasis(coin: string): PreIpoQuoteBasis {
+	const quotedPerShare = PRE_IPO_DOCS.some((entry) => entry.coin === coin && entry.quotedPerShare);
+	const terms = getPreIpoTerms(coin);
+	if (terms && quotedPerShare) throw new Error(`${coin} has both a valuation unit and a per-share quote; keep one`);
+	if (terms) return "valuation";
+	return quotedPerShare ? "per-share" : "unknown";
+}
+
 export function getDeployers(): Deployer[] {
 	return MARKET_STRUCTURE.dexes
 		.filter((dex) => dex.dex !== MAIN_DEX)
@@ -242,7 +259,10 @@ export function getPreIpoRows(): PreIpoRow[] {
 /** Rows per category tab in 03. */
 export const MARKET_TAB_ROWS = 6;
 
-/** How a market's live number reads: Pre-IPO as an implied valuation, FX as a bare rate, the rest as a price. */
+/**
+ * How a market's live number reads: Pre-IPO by its quote basis (an implied valuation, or the mark price quoted per
+ * share), FX as a bare rate, the rest as a price.
+ */
 export function liveKindOf(category: string | null): LiveKind {
 	if (category === "preipo") return "preipo";
 	return category === "fx" ? "rate" : "price";
@@ -259,6 +279,7 @@ export function getLiveMarketInputs(): LiveMarketInput[] {
 		szDecimals: market.szDecimals,
 		valuationPerPriceUsd: market.preIpoTerms?.valuationPerPriceUsd ?? null,
 		kind: liveKindOf(market.featuredCategory),
+		quoteBasis: market.featuredCategory === "preipo" ? getPreIpoQuoteBasis(market.coin) : null,
 	}));
 	for (const card of getCategoryCards(MARKET_TAB_ROWS)) {
 		for (const market of card.examples) {
@@ -269,10 +290,22 @@ export function getLiveMarketInputs(): LiveMarketInput[] {
 				szDecimals: market.szDecimals,
 				valuationPerPriceUsd: card.category === "preipo" ? (getPreIpoTerms(market.coin)?.valuationPerPriceUsd ?? null) : null,
 				kind: liveKindOf(card.category),
+				quoteBasis: card.category === "preipo" ? getPreIpoQuoteBasis(market.coin) : null,
 			});
 		}
 	}
 	return inputs;
+}
+
+/**
+ * Every market the site renders by name: the featured markets (02 cards and the hero, a subset of them), the 03 tab
+ * rows and the Pre-IPO list. scripts/market-icons.mjs vendors an icon for each.
+ */
+export function getRenderedMarketCoins(): string[] {
+	const coins = new Set<string>(getFeaturedMarkets().map((market) => market.coin));
+	for (const card of getCategoryCards(MARKET_TAB_ROWS)) for (const market of card.examples) coins.add(market.coin);
+	for (const row of getPreIpoRows()) coins.add(row.coin);
+	return [...coins];
 }
 
 /** The dexes whose totals the stats band sums: the main dex and the featured dexes, which answer first. */
