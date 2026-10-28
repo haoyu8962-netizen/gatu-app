@@ -23,7 +23,7 @@ function escapePoMessage(message: string): string {
 }
 
 describe("CCTP deposit catalogs", () => {
-	for (const locale of ["ar", "en", "es", "fr", "hi", "zh"]) {
+	for (const locale of ["ar", "en", "es", "fr", "hi", "zh", "ja"]) {
 		const catalog = readFileSync(new URL(`../../locales/${locale}/messages.po`, import.meta.url), "utf8");
 
 		for (const message of cctpMessages) {

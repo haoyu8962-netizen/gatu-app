@@ -10,7 +10,7 @@ const orders = [
 	"TWAP",
 	"Scale",
 ];
-const chineseOrders = ["市场", "限价", "止损市价", "止损限价", "止盈市价", "止盈限价", "TWAP", "分段订单"];
+const chineseOrders = ["市价", "限价", "止损市价", "止损限价", "止盈市价", "止盈限价", "TWAP", "分段订单"];
 async function openFixture(page: Page, query = "") {
 	await page.goto(`/mobile-trade-all-orders.html${query}`);
 	const theme = page.getByRole("button", { name: "Theme", exact: true });

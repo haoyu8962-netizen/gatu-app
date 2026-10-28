@@ -415,6 +415,11 @@ msgstr "الوصول مقيّد"
 msgid "Account"
 msgstr "الحساب"
 
+#: src/config/trade-panel-labels.ts
+msgctxt "Account mode placeholder"
+msgid "Account"
+msgstr "الحساب"
+
 #: src/lib/errors/exchange-error-text.ts
 msgid "Account {user} has no balance on Hyperliquid. Deposit first."
 msgstr "لا يوجد رصيد للحساب {user} على Hyperliquid. أودع أولاً."
@@ -4927,7 +4932,6 @@ msgstr "سعر العلامة: يُستخدم لحسابات الهامش، وا
 #: src/components/trade/positions/twap-fill-history-table.tsx
 #: src/components/trade/positions/twap-history-table.tsx
 #: src/config/funding-comparison.ts
-#: src/config/trade-panel-labels.ts
 msgid "Market"
 msgstr "السوق"
 

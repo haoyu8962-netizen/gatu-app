@@ -30,7 +30,7 @@ const WIDTHS = FULL_MATRIX
 			DESKTOP_NAV_NARROW_MAX_PX,
 			MOBILE_BREAKPOINT_PX + 1,
 		];
-const LOCALES = FULL_MATRIX ? (["en", "zh", "hi", "es", "fr", "ar"] as const) : (["en", "es", "fr"] as const);
+const LOCALES = FULL_MATRIX ? (["en", "zh", "ja", "hi", "es", "fr", "ar"] as const) : (["en", "es", "fr"] as const);
 const SESSIONS = FULL_MATRIX ? (["address", "ens", "email"] as const) : (["address", "email"] as const);
 const DEPOSITS = ["available", "unavailable"] as const;
 const PAIRINGS = FULL_MATRIX ? (["off", "on"] as const) : (["on"] as const);

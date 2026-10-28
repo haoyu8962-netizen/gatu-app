@@ -24,7 +24,7 @@ const orderLabels: Record<"en" | "zh", Record<OrderType, string>> = {
 		scale: "Scale",
 	},
 	zh: {
-		market: "市场",
+		market: "市价",
 		limit: "限价",
 		stopMarket: "止损市价",
 		stopLimit: "止损限价",

@@ -1,7 +1,7 @@
 import { useLingui } from "@lingui/react/macro";
 import { Dropdown } from "@sairn/ui";
 import { orderControl } from "@/components/trade/mobile/mobile-trade-header-view";
-import { ADVANCED_ORDER_TYPES, type OrderType, SPOT_ALLOWED_TYPES } from "@/config/trade";
+import { ADVANCED_ORDER_TYPES, ORDER_TYPE_MESSAGES, type OrderType, SPOT_ALLOWED_TYPES } from "@/config/trade";
 import { TRADE_PANEL_LABELS } from "@/config/trade-panel-labels";
 import type { SideLabels } from "@/config/ui-text";
 import type { AccountAbstraction } from "@/hooks/trade/use-account-balances";
@@ -71,7 +71,7 @@ export function TradeHeader({
 		tabsOrderType === "advanced"
 			? getAdvancedOrderLabel(orderType, t(TRADE_PANEL_LABELS.other))
 			: tabsOrderType === "market"
-				? t(TRADE_PANEL_LABELS.market)
+				? t(ORDER_TYPE_MESSAGES.market)
 				: t(TRADE_PANEL_LABELS.limit);
 
 	const isSpot = marketKind === "spot";
@@ -85,7 +85,7 @@ export function TradeHeader({
 	}));
 	const mobileOrderTypeItems = [
 		{
-			label: t(TRADE_PANEL_LABELS.market),
+			label: t(ORDER_TYPE_MESSAGES.market),
 			active: orderType === "market",
 			onSelect: () => onOrderTypeChange("market"),
 		},
@@ -113,7 +113,7 @@ export function TradeHeader({
 		displayedAccountMode === "dexAbstraction"
 			? t`Legacy`
 			: displayedAccountMode === "default" || displayedAccountMode == null
-				? t(TRADE_PANEL_LABELS.account)
+				? t(TRADE_PANEL_LABELS.accountModePlaceholder)
 				: accountModeLabel;
 	const handleMarginModeClick = onMarginModeClick ?? onMarginLeverageClick;
 	const handleLeverageClick = onLeverageClick ?? onMarginLeverageClick;
@@ -208,7 +208,7 @@ export function TradeHeader({
 					<OrderTypeTabView
 						active={tabsOrderType === "market"}
 						onClick={() => onOrderTypeChange("market")}
-						label={t(TRADE_PANEL_LABELS.market)}
+						label={t(ORDER_TYPE_MESSAGES.market)}
 					/>
 					<OrderTypeTabView
 						active={tabsOrderType === "limit"}

@@ -1,5 +1,9 @@
 /** @vitest-environment jsdom */
 
+import { createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+import { i18n, type Messages } from "@lingui/core";
 import { act } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -8,6 +12,29 @@ import type { OrderType } from "@/config/trade";
 import { createI18nRoot } from "./harness/react";
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
+
+function readCatalogTranslation(locale: string, message: string, context = ""): string {
+	const catalog = readFileSync(resolve(process.cwd(), `src/locales/${locale}/messages.po`), "utf8");
+	const entry = context
+		? `msgctxt ${JSON.stringify(context)}\\nmsgid ${JSON.stringify(message)}`
+		: `\\n(?:#[^\\n]*\\n)*msgid ${JSON.stringify(message)}`;
+	const match = catalog.match(new RegExp(`${entry}\\nmsgstr (".*")\\n`));
+	return match ? (JSON.parse(match[1]) as string) : "";
+}
+
+function getMessageId(message: string, context = ""): string {
+	return createHash("sha256").update(`${message}\x1f${context}`).digest("base64").slice(0, 6);
+}
+
+function loadCatalogMessages(locale: string, entries: ReadonlyArray<readonly [string, string]>): Messages {
+	const messages: Messages = {};
+	for (const [message, context] of entries) {
+		const translation = readCatalogTranslation(locale, message, context);
+		expect(translation, `${context}:${message}`).not.toBe("");
+		messages[getMessageId(message, context)] = translation;
+	}
+	return messages;
+}
 
 describe("TradeHeader mobile margin actions", () => {
 	let container: HTMLDivElement;
@@ -23,6 +50,7 @@ describe("TradeHeader mobile margin actions", () => {
 		act(() => root.unmount());
 		container.remove();
 		vi.clearAllMocks();
+		i18n.loadAndActivate({ locale: "en", messages: {} });
 	});
 
 	function renderHeader(callbacks: {
@@ -177,6 +205,45 @@ describe("TradeHeader mobile margin actions", () => {
 		expect(accountModeButton.title).toBe("Select mode");
 		expect(accountModeButton.querySelector(".trade-account-value-full")?.textContent).toBe("Select mode");
 		expect(accountModeButton.querySelector(".trade-account-value-compact")?.textContent).toBe("Account");
+	});
+
+	it("labels the market order type and the account placeholder with their own Japanese messages", async () => {
+		const jaMessages = loadCatalogMessages("ja", [
+			["Market", "Order type"],
+			["Market", ""],
+			["Account", "Account mode placeholder"],
+			["Account", ""],
+			["Account mode", ""],
+			["Order type", ""],
+		]);
+		expect(jaMessages[getMessageId("Market", "Order type")]).not.toBe(jaMessages[getMessageId("Market")]);
+		expect(jaMessages[getMessageId("Account", "Account mode placeholder")]).not.toBe(
+			jaMessages[getMessageId("Account")],
+		);
+		act(() => i18n.loadAndActivate({ locale: "ja", messages: jaMessages }));
+
+		renderHeader({ accountMode: null, layout: "desktop" });
+		expect(getButton(container, "成行")).toBeTruthy();
+		expect(container.textContent).not.toContain("市場");
+		const accountModeButton = container.querySelector<HTMLButtonElement>('button[aria-label="アカウントモード"]');
+		if (!accountModeButton) throw new Error("Expected the Japanese account mode button");
+		expect(accountModeButton.title).toBe("アカウント");
+		expect(accountModeButton.querySelector(".trade-account-value-full")?.textContent).toBe("アカウント");
+		expect(accountModeButton.querySelector(".trade-account-value-compact")?.textContent).toBe("口座");
+		expect(accountModeButton.querySelector(".trade-card-label-compact")?.textContent).toBe("アカウント");
+
+		const onOrderTypeChange = vi.fn();
+		renderHeader({ accountMode: null, layout: "mobile", onOrderTypeChange });
+		expect(container.textContent).toContain("成行");
+		expect(container.textContent).not.toContain("市場");
+		const orderTypeButton = container.querySelector<HTMLButtonElement>('button[aria-label="注文タイプ"]');
+		if (!orderTypeButton) throw new Error("Expected the Japanese mobile order-type control");
+		await act(async () => orderTypeButton.click());
+		const menuItems = [...document.querySelectorAll<HTMLElement>('[role="menuitem"]')];
+		expect(menuItems[0]?.textContent?.trim()).toBe("成行");
+		expect(menuItems.map((item) => item.textContent?.trim())).not.toContain("市場");
+		act(() => menuItems[0]?.click());
+		expect(onOrderTypeChange).toHaveBeenCalledWith("market");
 	});
 
 	it("shows the mode a new account is being set to while the automatic setup applies", () => {

@@ -1,6 +1,7 @@
 export const locales = {
 	en: "English",
 	zh: "简体中文",
+	ja: "日本語",
 	hi: "हिन्दी",
 	es: "Español",
 	fr: "Français",
@@ -60,6 +61,7 @@ export function normalizeNumberFormatLocale(value: unknown): NumberFormatLocale 
 export const languageToIntlLocale: Record<LocaleCode, string> = {
 	en: "en-US",
 	zh: "zh-CN",
+	ja: "ja-JP",
 	hi: "hi-IN",
 	es: "es-ES",
 	fr: "fr-FR",
