@@ -12,7 +12,7 @@ async function confirm(page: Page) {
 }
 
 for (const width of [320, 375, 390, 565, 1000]) {
-	for (const locale of ["en", "zh", "fr"]) {
+	for (const locale of ["en", "zh", "ja", "fr"]) {
 		test(`keeps mobile actions and confirmation usable at ${width}px in ${locale}`, async ({ page }, testInfo) => {
 			await page.setViewportSize({ width, height: 871 });
 			await page.goto(`/position-close-all.html?locale=${locale}`);

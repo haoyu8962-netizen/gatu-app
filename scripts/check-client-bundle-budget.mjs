@@ -95,7 +95,12 @@ const budgets = {
 	// the +7,278 that dev had used since p30 across PR #101 (version entry), #102 (slider basis), #107 (ADR 0041
 	// automatic unified account), #108 and #109 (production audit fixes), each merged under the pairing-off allowance;
 	// the pairing-on promotion build of #112 had read 3,314,639 (+10,160) and sits +2,502 over this baseline locally.
-	totalGzipBaselineBytes: 3_311_757,
+	// Raised 2026-10-28 by +38,736 for the Japanese interface language: the lazy ja catalog chunk is 38,653 of it and
+	// a viewer loads only the catalog of the active language (trade startup +190 for the language table and the
+	// bootstrap error copy, mobile and desktop runtime startup +4 each). Measured as the fixed-identity Node 22.15.0
+	// build with VITE_MOBILE_PAIRING_ENABLED=false of the Japanese branch (3,350,633) minus that of dev f7423d70
+	// (3,311,897), both without .env.local; the +140 dev had already used stays counted.
+	totalGzipBaselineBytes: 3_350_493,
 	totalGzipAllowedIncreaseBytes: 10_000,
 	tradeStartup: {
 		requiredRouteIds: ["__root__", "/trade/$symbol"],

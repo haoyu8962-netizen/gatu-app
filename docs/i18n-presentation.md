@@ -1,5 +1,7 @@
 # Runtime localization
 
+The maintained interface languages are English, Chinese, Japanese, Hindi, Spanish, French and Arabic. Japanese uses `ja-JP` for dates with Latin digits, `ja` for TradingView and left-to-right layout; numbers retain the independent number-format setting. Hyperliquid asset snapshots without Japanese descriptions keep the existing unsupported-language fallback.
+
 Terminal language changes must update visible text, tooltips and accessible names without reloading the page, remounting panels or resetting user input. Apply these rules before changing localized presentation.
 
 - React components and hooks that render translated text normally use `useLingui` or `Trans` from `@lingui/react/macro`. When a helper requires a reactive translation function, use the public `useLingui` hook from `@lingui/react` and its `_` function with `msg` descriptors from `@lingui/core/macro`. The macro hook exposes `t`, not `_`; do not combine two locale subscriptions or assert past that API difference. A core translation call alone does not subscribe its component to locale changes.

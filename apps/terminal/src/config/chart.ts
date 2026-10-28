@@ -47,6 +47,7 @@ export const CHART_LOCALE = "en" satisfies LanguageCode;
 const chartLocaleByAppLocale: Record<LocaleCode, LanguageCode> = {
 	en: "en",
 	zh: "zh",
+	ja: "ja",
 	hi: "en",
 	es: "es",
 	fr: "fr",

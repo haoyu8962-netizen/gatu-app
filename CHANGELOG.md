@@ -8,6 +8,9 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Added
 
+- Japanese interface language (日本語) in the language menu, including the TradingView chart and
+  Japanese dates; numbers keep following the separate number-format setting.
+
 - Card funding, off by default: when a network's flag is on, the Deposit dialog opens on two
   separate choices, as on the official terminal: transfer USDC on Arbitrum, or buy USDC by card or
   bank transfer through Privy's payment providers (the amount is prefilled with 100 US dollars and

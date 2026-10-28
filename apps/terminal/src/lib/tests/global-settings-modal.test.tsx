@@ -432,6 +432,7 @@ describe("GlobalSettingsModal", () => {
 		const translations = {
 			en: "Order book animations",
 			zh: "订单簿动画",
+			ja: "板のアニメーション",
 			hi: "ऑर्डर बुक एनिमेशन",
 			es: "Animaciones del libro de órdenes",
 			fr: "Animations du carnet d’ordres",

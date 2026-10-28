@@ -18,6 +18,11 @@ const BOOTSTRAP_FATAL_COPY: Readonly<Record<LocaleCode, TerminalFatalCopy>> = {
 		description: "交易终端无法安全启动。请重新加载后再交易。",
 		reload: "重新加载交易终端",
 	},
+	ja: {
+		heading: "エラーが発生しました",
+		description: "取引ターミナルを安全に起動できませんでした。取引する前に再読み込みしてください。",
+		reload: "ターミナルを再読み込み",
+	},
 	hi: {
 		heading: "कुछ गलत हो गया",
 		description: "टर्मिनल सुरक्षित रूप से शुरू नहीं हो सका। ट्रेडिंग से पहले इसे फिर से लोड करें।",

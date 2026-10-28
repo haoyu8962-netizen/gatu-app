@@ -58,6 +58,8 @@ describe("spot asset info snapshot", () => {
 
 		await expect(loadSpotAssetDescription(identity, "ar")).resolves.toBeNull();
 		await expect(loadSpotAssetDescription(identity, "hi")).resolves.toBeNull();
+		await expect(loadSpotAssetDescription(identity, "ja")).resolves.toBeNull();
+		await expect(loadSpotAssetDescription(identity, "ja-JP")).resolves.toBeNull();
 		await expect(loadSpotAssetDescription(identity, "en-US")).resolves.toEqual({
 			kind: "asset",
 			text: expect.stringContaining("first native spot asset"),
