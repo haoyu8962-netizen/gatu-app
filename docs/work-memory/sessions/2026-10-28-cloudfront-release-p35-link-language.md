@@ -50,6 +50,6 @@
 
 ## 后续与替代关系
 
-- 2026-10-29 Codex 对抗审查（gpt-6-astra，只读 high）：无 P0/P1、无安全发现；四项问题在分支 `claude/link-language-review-fixes`（`23fb89c0`，未推送）处理：Service Worker 对带 `lang` 的导航改为网络优先，避免回访者第一次点语言链接启动上一版缓存壳（已受旧 SW 控制的那一次导航仍可能是旧壳）；启动顺序测试改为真实执行客户端入口并补启动错误页、重复参数与存储写入失败用例，变异验证会失败；`link-locale.test.ts`、`client-bootstrap-error.test.ts`、`sw-navigation-cache.test.ts` 加入 CI 与 AGENTS 回归清单；本记录补上命令与版本。另记产品语义：链接语言会覆盖回访者此前的选择，`lang=en` 会清除它。
+- 2026-10-29 Codex 对抗审查（gpt-6-astra，只读 high）：无 P0/P1、无安全发现；四项问题在分支 `claude/link-language-review-fixes`（`23fb89c0` 起，未推送）处理：Service Worker 对带 `lang` 的导航改为网络优先，避免回访者第一次点语言链接启动上一版缓存壳（已受旧 SW 控制的那一次导航仍可能是旧壳）；启动顺序测试改为真实执行客户端入口并补启动错误页、重复参数与存储写入失败用例，变异验证会失败；`link-locale.test.ts`、`client-bootstrap-error.test.ts`、`sw-navigation-cache.test.ts` 加入 CI 与 AGENTS 回归清单；本记录补上命令与版本。另记产品语义：链接语言会覆盖回访者此前的选择，`lang=en` 会清除它。 第二、三轮复审：三项已修复；为补剩余的旧 SW 首次导航，曾让新 SW 激活时重载带 `lang` 的页面（`c606864e`），第三轮指出 Firefox 的 `Client.url` 是创建地址会误重载并丢输入、带 fragment 时可能不取新壳、且拖住激活，已撤回（`518ea8a0`），取舍写入 `docs/i18n-presentation.md`（`e577bcc6`）；剩余情况为发布后回访者的第一次点击仍可能是旧壳。
 
 - 上一次发布记录：[p34](2026-10-28-cloudfront-release-p34.md)。
