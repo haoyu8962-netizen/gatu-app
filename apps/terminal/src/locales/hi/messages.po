@@ -415,6 +415,11 @@ msgstr "पहुँच प्रतिबंधित"
 msgid "Account"
 msgstr "खाता"
 
+#: src/config/trade-panel-labels.ts
+msgctxt "Account mode placeholder"
+msgid "Account"
+msgstr "खाता"
+
 #: src/lib/errors/exchange-error-text.ts
 msgid "Account {user} has no balance on Hyperliquid. Deposit first."
 msgstr "खाते {user} का Hyperliquid पर कोई बैलेंस नहीं है। पहले जमा करें।"
@@ -4927,7 +4932,6 @@ msgstr "मार्क प्राइस: मार्जिन गणना, 
 #: src/components/trade/positions/twap-fill-history-table.tsx
 #: src/components/trade/positions/twap-history-table.tsx
 #: src/config/funding-comparison.ts
-#: src/config/trade-panel-labels.ts
 msgid "Market"
 msgstr "बाज़ार"
 

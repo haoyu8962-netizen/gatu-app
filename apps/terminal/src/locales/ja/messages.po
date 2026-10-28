@@ -371,6 +371,11 @@ msgstr "アクセス制限"
 msgid "Account"
 msgstr "アカウント"
 
+#: src/config/trade-panel-labels.ts
+msgctxt "Account mode placeholder"
+msgid "Account"
+msgstr "口座"
+
 #: src/lib/errors/exchange-error-text.ts
 msgid "Account {user} has no balance on Hyperliquid. Deposit first."
 msgstr "アカウント {user} には Hyperliquid の残高がありません。先に入金してください。"
@@ -4396,7 +4401,6 @@ msgstr "マーク価格：証拠金の計算、未実現損益、清算、TP/SL 
 #: src/components/trade/positions/twap-fill-history-table.tsx
 #: src/components/trade/positions/twap-history-table.tsx
 #: src/config/funding-comparison.ts
-#: src/config/trade-panel-labels.ts
 msgid "Market"
 msgstr "市場"
 

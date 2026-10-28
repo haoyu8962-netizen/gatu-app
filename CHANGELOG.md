@@ -576,6 +576,11 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Fixed
 
+- The Market order-type tab and menu entry in the order form use the order-type wording instead of
+  the market-list wording: 市价 in Chinese, 成行 in Japanese, मार्केट in Hindi, Au marché in French
+  and سعر السوق in Arabic (English and Spanish are unchanged). The compact account-mode placeholder
+  on narrow desktop panels has its own short Japanese label (口座) so it is no longer cut off.
+
 - CSV exports of trade history, TWAP fills and the trade-history page write prices, sizes, fees and
   PNL exactly as the exchange reports them, in a plain numeric form, with the fee token in its own
   column. They used to go through the on-screen formatter, which compacted `95001.5` to `$95K`,

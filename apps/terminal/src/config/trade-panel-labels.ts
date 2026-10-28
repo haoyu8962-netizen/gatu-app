@@ -11,7 +11,7 @@ export const TRADE_PANEL_LABELS = {
 	leverage: msg`Leverage`,
 	accountMode: msg`Account mode`,
 	account: msg`Account`,
-	market: msg`Market`,
+	accountModePlaceholder: msg({ message: "Account", context: "Account mode placeholder" }),
 	limit: msg`Limit`,
 	advanced: msg`Advanced`,
 	other: msg`Other`,
