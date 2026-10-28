@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 
 const MESSAGE = "{requestedPercent}% requested; {effectivePercent}% after size precision";
 const EXPECTED_TRANSLATIONS = {
-	ja: "指定 {requestedPercent}%；数量精度の適用後 {effectivePercent}%",
+	ja: "指定 {requestedPercent}%、数量精度の適用後 {effectivePercent}%",
 	ar: "طُلب {requestedPercent}٪؛ {effectivePercent}٪ بعد تطبيق دقة الحجم",
 	es: "Se solicitó el {requestedPercent} %; queda en el {effectivePercent} % tras aplicar la precisión del tamaño",
 	fr: "{requestedPercent} % demandé ; {effectivePercent} % après application de la précision de taille",

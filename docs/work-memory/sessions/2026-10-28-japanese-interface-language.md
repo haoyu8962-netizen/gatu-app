@@ -41,7 +41,7 @@
 
 - **接入点**：`lingui.config.ts` 的 `locales` 加 `ja`（在 `zh` 之后）；`config/i18n.ts` 的 `locales` 显示名「日本語」、`languageToIntlLocale.ja = "ja-JP"`；`config/chart.ts` 映射 TradingView `ja`；`bootstrap-error-copy.ts` 增加日语启动失败文案。非英语目录本来就是 `import.meta.glob` 懒加载块，加载器、哈希校验（`lib/i18n-catalog.ts`）不需改动。
 - **不变的部分**：数字格式（`legacyNumberFormatLocaleMap` 已有 `ja-JP → en-US`）、其他 6 个目录（`i18n:extract` 后零差异）、SEO 静态文案、现货资产描述（Hyperliquid 快照只有 en/es/fr/zh-CN，日语沿用不支持语言的回退，测试已覆盖 `ja` 与 `ja-JP` 返回 null）。
-- **术语**：入金／出金（资金 Deposit/Withdraw）与 Earn 的預け入れ／引き出し（Supply/Withdraw）分开，与中文「存款/提款」和 Earn 用词的区分方式一致；成行／指値／逆指値、板、証拠金、清算価格、資金調達率、無期限先物／現物、利確／損切り、統合アカウント，Reverse 统一为ドテン；品牌、代币符号、协议缩写保留原文。「Earn」作为产品名保留英文。
+- **术语**：资金的 Deposit/Withdraw 译为入金／出金；Earn 的 Supply 译为預け入れ，它的说明和结果通知里的 withdraw 写作引き出す。Earn 的 Withdraw 按钮与弹窗标题和资金出金共用同一个 msgid `Withdraw`（中文同样共用「提款」），所以显示为「出金」；要分开，得给源码加消息上下文，所有语言都要跟着改，本任务没做。其余术语：成行／指値／逆指値、板、証拠金、清算価格、資金調達率、無期限先物／現物、利確／損切り、統合アカウント，Reverse 统一为ドテン；品牌、代币符号、协议缩写保留原文。「Earn」作为产品名保留英文。
 - **审查修正**（Codex 产出之后）：
   - 两条复数消息（`cancel-all-orders-modal`、`position-close-all-modal`）的英文单数分支语义不同（「该笔订单」「可能不再受保护」），日语只保留了 `other`，数量为 1 时会显示「1 件をすべて」且把「可能」写成必然。补了 `=1` 精确分支。
   - 代币分类标签 `AI/Defi/Gaming/Layer 1/Layer 2/Meme` 在所有语言（含中文）都保留英文，Codex 译成了日语并在测试里为日语开了特例；改回英文并删掉特例，口径与其他语言一致。
