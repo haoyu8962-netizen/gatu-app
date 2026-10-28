@@ -41,7 +41,7 @@
 
 ## 验证与限制
 
-- 本地：`link-locale.test.ts` 14 项（解析、清理、存储、入口与 i18n 启动顺序契约）；国际化、启动渲染、语言切换器等 13 个文件 392 项通过；Biome、typecheck、Node 22.15 生产构建与预渲染通过。本地开发服务器上 `ja-JP` 浏览器打开 `/trade/xyz:ANT?lang=ja&utm_…`：日语、参数去掉、UTM 保留、刷新仍为日语、无参数仍为英语。开发环境没有弹出 HIP-3 免责弹窗，当时改在线上 p34 预设日语核对其日语文案。
+- 本地（提交 `160a5c6a`，即 PR #121 的头，2026-10-28）：`pnpm --dir apps/terminal exec vitest run src/lib/tests/link-locale.test.ts src/lib/tests/i18n-reactivity-contract.test.ts src/lib/tests/i18n-hot-switch.test.tsx src/lib/tests/lingui-helper-translator-contract.test.ts src/lib/tests/root-startup-fallback.test.tsx src/lib/tests/root-route-transition.test.tsx src/lib/tests/theme-bootstrap.test.ts src/lib/tests/trade-terminal-page-boot.test.tsx src/lib/tests/root-provider-split.test.ts src/lib/tests/language-switcher.test.tsx src/lib/tests/i18n-catalog.test.ts src/lib/tests/client-root-fatal.test.tsx src/lib/tests/market-catalog-bootstrap-dependency.test.ts`：13 个文件 392 项通过，其中 `link-locale.test.ts` 14 项。另跑 `pnpm exec biome check`（四个改动文件）、`pnpm --filter @sairn/terminal typecheck`，以及 Node 22.15 下 `SAIRN_BUILD_SHA=local SAIRN_RELEASE_ID=local-lang VITE_MOBILE_PAIRING_ENABLED=false pnpm --filter @sairn/terminal build`（预渲染 1 页，总量 3,351,027）。**未跑全量终端 Vitest**；当时 `link-locale.test.ts` 不在 CI 的手选清单里，所以 PR #121 与 #122 的「CI 全绿」不包含这 14 项。本地开发服务器（`vite dev --port 3025`）上 `ja-JP` 浏览器打开 `/trade/xyz:ANT?lang=ja&utm_…`：日语、参数去掉、UTM 保留、刷新仍为日语、无参数仍为英语。开发环境没有弹出 HIP-3 免责弹窗，当时改在线上 p34 预设日语核对其日语文案。
 - 线上 p35：`verify --origin https://app.sairn.ai --network mainnet` 15/15、`--origin https://testnet.sairn.ai --network testnet` 16/16，两网 parity 为 `cdb47637 / cloudfront-2026-10-28-p35 / sponsored-mainnet-deposits=on mobile-pairing=on mainnet-card-funding=on`；`csp-coverage.mjs` 33 步、2 步跳过（同前几次）、0 违规、0 控制台错误。
 - 线上邮件链接：`ja-JP` 无头 Chromium（390 与 1440 宽）打开 `https://app.sairn.ai/trade/xyz:ANT?lang=ja&utm_source=newsletter&utm_medium=email&utm_campaign=anthropic_ipo_jp&utm_content=preipo_trade_cta`：`<html lang="ja">`，免责弹窗为「HIP-3 デプロイヤー免責事項」，地址变为不含 `lang` 的同一路径与 UTM，localStorage 存 `ja`，无页面错误；不带参数时仍为英语。
 - 邮件 v3（仓库外 `~/Downloads/sairn-ant-preipo-email-v3.html`）：两个按钮带 `lang=ja`，删去「英文确认画面、用地球图标切换」的说明，只保留「首次打开会出现第三方市场的确认画面」。
@@ -49,5 +49,7 @@
 - 发布工作树 `gatu-release-p35` 保留到下次发布；`gatu-release-p34` 是回滚产物；更早的发布工作树可删除（未删除）。
 
 ## 后续与替代关系
+
+- 2026-10-29 Codex 对抗审查（gpt-6-astra，只读 high）：无 P0/P1、无安全发现；四项问题在分支 `claude/link-language-review-fixes`（`23fb89c0`，未推送）处理：Service Worker 对带 `lang` 的导航改为网络优先，避免回访者第一次点语言链接启动上一版缓存壳（已受旧 SW 控制的那一次导航仍可能是旧壳）；启动顺序测试改为真实执行客户端入口并补启动错误页、重复参数与存储写入失败用例，变异验证会失败；`link-locale.test.ts`、`client-bootstrap-error.test.ts`、`sw-navigation-cache.test.ts` 加入 CI 与 AGENTS 回归清单；本记录补上命令与版本。另记产品语义：链接语言会覆盖回访者此前的选择，`lang=en` 会清除它。
 
 - 上一次发布记录：[p34](2026-10-28-cloudfront-release-p34.md)。
