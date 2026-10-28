@@ -2,6 +2,7 @@ import { i18n } from "@lingui/core";
 import { STORAGE_KEYS } from "@/config/app";
 import { defaultLocale, isRtlLocale, isValidLocale, type LocaleCode } from "@/config/i18n";
 import { expandCatalogMessages, type LoadableCatalogModule } from "@/lib/i18n-catalog";
+import { applyWindowLinkLocale, storeLocale } from "@/lib/link-locale";
 
 export { resolveNumberFormatLocale } from "@/config/i18n";
 
@@ -22,19 +23,10 @@ export function getPersistedLocale(): LocaleCode {
 	}
 }
 
-function persistLocale(locale: string): boolean {
-	if (typeof window === "undefined") return false;
-	try {
-		if (locale === defaultLocale) {
-			window.localStorage.removeItem(STORAGE_KEYS.LOCALE);
-		} else {
-			window.localStorage.setItem(STORAGE_KEYS.LOCALE, locale);
-		}
-		return true;
-	} catch {
-		return false;
-	}
-}
+// A link that names a language (`?lang=ja`) is stored before the boot below reads the stored
+// language, while this module is evaluated and before the router reads the location (link-locale.ts;
+// the client entry has normally applied it already).
+applyWindowLinkLocale();
 
 // Keeps <html lang/dir> in sync with the active locale, re-asserting past any document-shell
 // re-render via a MutationObserver. The idempotent `!==` guards make it settle in one pass.
@@ -73,11 +65,11 @@ let activationSeq = 0;
 export async function dynamicActivate(locale: string): Promise<boolean> {
 	const seq = ++activationSeq;
 	if (i18n.locale === locale) {
-		if (!persistLocale(locale)) throw new Error(`Unable to persist locale "${locale}"`);
+		if (!storeLocale(locale)) throw new Error(`Unable to persist locale "${locale}"`);
 		return true;
 	}
 	if (locale === defaultLocale) {
-		if (!persistLocale(locale)) throw new Error(`Unable to persist locale "${locale}"`);
+		if (!storeLocale(locale)) throw new Error(`Unable to persist locale "${locale}"`);
 		i18n.loadAndActivate({ locale, messages: enMessages });
 	} else {
 		const loader = catalogImports[`../locales/${locale}/messages.po`];
@@ -87,7 +79,7 @@ export async function dynamicActivate(locale: string): Promise<boolean> {
 		const catalog = await loader();
 		if (seq !== activationSeq) return false;
 		const messages = expandCatalogMessages(enMessages, catalog);
-		if (!persistLocale(locale)) throw new Error(`Unable to persist locale "${locale}"`);
+		if (!storeLocale(locale)) throw new Error(`Unable to persist locale "${locale}"`);
 		i18n.loadAndActivate({ locale, messages });
 	}
 	if (seq !== activationSeq) return false;
