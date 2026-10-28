@@ -16,8 +16,51 @@ self.addEventListener("activate", (event) => {
 		.then(() => caches.keys())
 		.then((keys) => Promise.allSettled(keys.filter(isRetiredManagedCache).map((key) => caches.delete(key))))
 		.catch(() => undefined);
-	event.waitUntil(settleWithin(Promise.all([claimClients, cleanupRetiredCaches]), RETIRED_CACHE_CLEANUP_TIMEOUT_MS));
+	// A language link answered by the previous worker booted a shell from an older release that ignores and keeps
+	// `?lang=`; once this worker controls the page, load it again so the current shell applies the language.
+	const reloadLanguageLinks = claimClients
+		.then(() => self.clients.matchAll({ type: "window" }))
+		.then((clients) =>
+			Promise.allSettled(
+				clients
+					.filter((client) => hasLanguageParam(client.url))
+					.map((client) => client.navigate(client.url)),
+			),
+		)
+		.catch(() => undefined);
+	event.waitUntil(
+		settleWithin(Promise.all([claimClients, cleanupRetiredCaches, reloadLanguageLinks]), RETIRED_CACHE_CLEANUP_TIMEOUT_MS),
+	);
 });
+
+// Application routes answered with the shared shell; /join, the pairing page, server endpoints and files are left
+// to the network.
+function isShellNavigation(url) {
+	const pathname = url.pathname.replace(/\/+$/, "") || "/";
+	const segment = pathname.slice(pathname.lastIndexOf("/") + 1);
+	const dot = segment.lastIndexOf(".");
+	return !(
+		pathname === "/join" ||
+		pathname.startsWith("/join/") ||
+		pathname === "/api" ||
+		pathname.startsWith("/api/") ||
+		pathname === "/client-error-report" ||
+		pathname === "/mobile-agent-sync-ticket" ||
+		pathname.startsWith("/mobile-agent-sync-ticket/") ||
+		/^\/mobile-agent-sync(\/|$)/i.test(pathname) ||
+		pathname.startsWith("/_serverFn/") ||
+		(dot >= 0 && /^[A-Za-z0-9]{1,16}$/.test(segment.slice(dot + 1)))
+	);
+}
+
+function hasLanguageParam(href) {
+	try {
+		const url = new URL(href);
+		return url.origin === self.location.origin && isShellNavigation(url) && url.searchParams.has("lang");
+	} catch {
+		return false;
+	}
+}
 
 function isRetiredManagedCache(key) {
 	return (
@@ -48,26 +91,11 @@ self.addEventListener("fetch", (event) => {
 
 	if (request.mode === "navigate") {
 		if (url.origin !== self.location.origin) return;
-		const pathname = url.pathname.replace(/\/+$/, "") || "/";
-		const segment = pathname.slice(pathname.lastIndexOf("/") + 1);
-		const dot = segment.lastIndexOf(".");
-		if (
-			pathname === "/join" ||
-			pathname.startsWith("/join/") ||
-			pathname === "/api" ||
-			pathname.startsWith("/api/") ||
-			pathname === "/client-error-report" ||
-			pathname === "/mobile-agent-sync-ticket" ||
-			pathname.startsWith("/mobile-agent-sync-ticket/") ||
-			/^\/mobile-agent-sync(\/|$)/i.test(pathname) ||
-			pathname.startsWith("/_serverFn/") ||
-			(dot >= 0 && /^[A-Za-z0-9]{1,16}$/.test(segment.slice(dot + 1)))
-		)
-			return;
+		if (!isShellNavigation(url)) return;
 		const cacheKey = new URL(SHELL_CACHE, self.location.origin).href;
 		// A link that names a language (`?lang=`, lib/link-locale.ts) is often the first visit after a release, and a
 		// cached shell from an older release would boot an entry that ignores the parameter: fetch the current shell.
-		if (url.searchParams.has("lang")) {
+		if (hasLanguageParam(url.href)) {
 			event.respondWith(navigationNetworkFirst(request, SHELL_CACHE, cacheKey, event));
 			return;
 		}

@@ -18,7 +18,7 @@ function html(body: string) {
 	});
 }
 
-function createHarness() {
+function createHarness(windowClients: { url: string; navigate: (url: string) => Promise<unknown> }[] = []) {
 	const stores = new Map<string, Map<string, Response>>();
 	const listeners = new Map<string, (event: Record<string, unknown>) => void>();
 	const fetch = vi.fn<(request: Request) => Promise<Response>>().mockResolvedValue(html("new"));
@@ -39,8 +39,13 @@ function createHarness() {
 			},
 		};
 	});
+	const clients = {
+		claim: vi.fn(async () => {}),
+		matchAll: vi.fn(async () => windowClients),
+	};
 	const self = {
 		location: { origin },
+		clients,
 		addEventListener: (name: string, callback: (event: Record<string, unknown>) => void) => {
 			listeners.set(name, callback);
 		},
@@ -63,7 +68,16 @@ function createHarness() {
 		});
 		return { response, background, request };
 	}
-	return { stores, open, fetch, navigate, context };
+	async function activate() {
+		const pending: Promise<unknown>[] = [];
+		listeners.get("activate")?.({
+			waitUntil: (value: Promise<unknown>) => {
+				pending.push(value);
+			},
+		});
+		await Promise.all(pending);
+	}
+	return { stores, open, fetch, navigate, activate, clients, context };
 }
 
 describe("service worker navigation caching", () => {
@@ -273,5 +287,29 @@ describe("service worker navigation for a language link", () => {
 		await cache.put(`${origin}/shell-v10`, html("cached"));
 		harness.fetch.mockReturnValueOnce(new Promise(() => {}));
 		expect(await (await harness.navigate("/trade/BTC?utm_source=newsletter").response)?.text()).toBe("cached");
+	});
+
+	it("reloads, once it controls them, pages a previous worker opened from a language link", async () => {
+		const reloaded: string[] = [];
+		const navigate = async (url: string) => {
+			reloaded.push(url);
+		};
+		const harness = createHarness([
+			{ url: `${origin}/trade/xyz:ANT?lang=ja&utm_source=newsletter`, navigate },
+			{ url: `${origin}/trade/BTC?utm_source=newsletter`, navigate },
+			{ url: `${origin}/mobile-agent-sync?lang=ja#payload`, navigate },
+			{ url: `${origin}/join/CODE?lang=ja`, navigate },
+			{ url: "https://example.com/trade/BTC?lang=ja", navigate },
+		]);
+		await harness.activate();
+		expect(harness.clients.claim).toHaveBeenCalledOnce();
+		expect(reloaded).toEqual([`${origin}/trade/xyz:ANT?lang=ja&utm_source=newsletter`]);
+	});
+
+	it("still activates when a reload is refused", async () => {
+		const harness = createHarness([
+			{ url: `${origin}/trade/BTC?lang=ja`, navigate: () => Promise.reject(new TypeError("not controlled")) },
+		]);
+		await expect(harness.activate()).resolves.toBeUndefined();
 	});
 });
