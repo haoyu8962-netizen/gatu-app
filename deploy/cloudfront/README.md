@@ -55,6 +55,8 @@
 
 2026-09-27 更正（[ADR 0020](../../docs/adr/0020-legal-pages-in-app-shell.md)，代码实现不代表已发布）：六个文档路径不再单独预渲染，也不再单独缓存。SW 升到 v10，删除 `documents-*` 缓存，六个路径与其他应用路径共用 `shell-v10` 的唯一条目，激活时清理 `shell-v9` 与 `documents-v9`；viewer-request 函数把它们改写到 `_shell.html`。对齐官方（任何路径都回到 SPA 壳，不存在过期的独立页面）：`sync --execute` 上传完成后用本次的壳覆盖六个遗留的 `<route>/index.html`，`verify` 逐页核对，避免显式的文件路径继续读到内容和 CSP 哈希都已过期的旧页面。不删除这些对象：跨 ADR 0020 回滚时，`functions` 会先发布旧请求函数（把 `/terms` 改写到 `/terms/index.html`），删除会让这段时间返回 404 并中断 CSP 哈希采集。
 
+2026-10-28 补充（代码实现不代表已发布）：带语言参数 `?lang=` 的应用导航不走缓存优先，改为网络优先：拿到未重定向的 200 `text/html` 就返回并替换 `shell-v10` 的条目，网络失败才回退到缓存。原因是语言链接常是发布后回访者的第一次访问，缓存里上一版的壳会启动不认识该参数的旧入口（`docs/i18n-presentation.md`）。已受旧 SW 控制的那一次导航仍由旧 SW 回答，新 SW 在之后的导航生效。
+
 发布时 `/*` 失效只影响 CloudFront，不清浏览器 CacheStorage，因此第一条导航可能仍显示上一版壳。已核对 `deploy.mjs` 的 `buildSyncCommands` 不包含 `--delete`：旧壳引用的哈希资源继续留在 S3；`prepareResponseFunction` 配合 `terminal-response.template.js` 合并 CURRENT/PREVIOUS 的内联脚本哈希，保留上一版一个发布周期。SW 保存的旧 Response 还自带当时的 CSP（不与新正文/新头混用）。保持现有“发布函数 → 上传资源和页面 → 失效 → 验证”顺序；不要在同步时清理旧哈希资源。`sw.js` 仍在 `NO_STORE_FILES` 中（`no-store`），`routes/__root.tsx` 注册仍用 `updateViaCache: "none"`；有问题的 SW 可在下次访问时更新替换，新版本激活会清理退休缓存，但发现更新的当次导航可能仍由旧 SW 回答。上线后需验证连续导航、离线后恢复、跨版本首次导航与 iOS Safari；本次 Node harness 不替代这些验收。
 
 `pnpm test:cloudfront` 运行以上生成器、函数与部署脚本的 node 测试。

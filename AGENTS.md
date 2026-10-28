@@ -393,12 +393,15 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/desktop-nav-layout.test.ts \
   src/lib/tests/mobile-nav-drawer.test.tsx \
   src/lib/tests/mobile-nav-drawer-navigation.test.tsx \
-  src/lib/tests/dashboard-frame-view.test.tsx
+  src/lib/tests/dashboard-frame-view.test.tsx \
+  src/lib/tests/client-bootstrap-error.test.ts \
+  src/lib/tests/sw-navigation-cache.test.ts
 
 # Runtime translation contract (Change discipline) and error text (ADR 0024)
 pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/i18n-reactivity-contract.test.ts \
   src/lib/tests/i18n-hot-switch.test.tsx \
+  src/lib/tests/link-locale.test.ts \
   src/lib/tests/action-error.test.ts \
   src/lib/tests/errors.test.ts \
   src/lib/tests/lingui-helper-translator-contract.test.ts

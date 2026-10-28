@@ -2,7 +2,7 @@
 
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { STORAGE_KEYS } from "@/config/app";
 import {
 	applyLinkLocale,
@@ -48,6 +48,13 @@ describe("withoutLinkLocale", () => {
 		);
 		expect(withoutLinkLocale("/trade/BTC", "?lang=ja", "#book")).toBe("/trade/BTC#book");
 		expect(withoutLinkLocale("/trade/BTC", "?lang=de&scope=all", "")).toBe("/trade/BTC?scope=all");
+	});
+
+	it("removes every repeated language parameter; the first one decides", () => {
+		expect(parseLinkLocale("?lang=ja&lang=zh")).toBe("ja");
+		expect(parseLinkLocale("?lang=de&lang=ja")).toBeNull();
+		expect(withoutLinkLocale("/trade/BTC", "?lang=de&utm_source=x&lang=ja", "")).toBe("/trade/BTC?utm_source=x");
+		expect(withoutLinkLocale("/trade/BTC", "", "#lang=ja")).toBeNull();
 	});
 
 	it("leaves a URL without the parameter alone", () => {
@@ -114,23 +121,73 @@ describe("applyLinkLocale", () => {
 	});
 });
 
-// The real modules cannot be evaluated in this test config (the Lingui catalog loader is a Vite plugin), so this
-// pins the order that makes the link language reach every first screen: the client entry applies it before any
-// dynamic import (the bootstrap error page included), and lib/i18n.ts applies it again at module evaluation,
-// with the same store function as the language menu, before the boot reads the stored language.
-describe("terminal boot order", () => {
-	const i18nSource = readFileSync(resolve(process.cwd(), "src/lib/i18n.ts"), "utf8");
-	const clientSource = readFileSync(resolve(process.cwd(), "src/client.ts"), "utf8");
-
-	it("applies the link language in the client entry before any dynamic import", () => {
-		const apply = clientSource.indexOf("\napplyWindowLinkLocale();\n");
-		expect(apply).toBeGreaterThan(-1);
-		expect(clientSource.indexOf("import(")).toBeGreaterThan(apply);
-		expect(clientSource).toMatch(/^import \{ applyWindowLinkLocale \} from "\.\/lib\/link-locale";$/m);
+// The client entry is executed for real (its dynamic imports mocked, as in client-bootstrap-error.test.ts): the link
+// language must be stored and the address cleaned before hydration starts, and the bootstrap error page shown when
+// the runtime fails to load must already use it. lib/i18n.ts cannot be evaluated in this config (the Lingui catalog
+// loader is a Vite plugin), so its second, top-level call is pinned by source: an unindented statement (Biome
+// formatting indents anything inside a function) placed before the boot reads the stored language.
+describe("client entry", () => {
+	beforeEach(() => {
+		vi.resetModules();
+		window.localStorage.clear();
+		document.body.replaceChildren();
+	});
+	afterEach(() => {
+		vi.doUnmock("../error-reporting/client");
+		vi.doUnmock("../../client-hydrate");
+		vi.doUnmock("../bootstrap/early-prefetch");
+		vi.restoreAllMocks();
+		window.history.replaceState(null, "", "/");
+		window.localStorage.clear();
+		document.body.replaceChildren();
 	});
 
-	it("applies it again in lib/i18n.ts at module level, before the boot reads the stored language", () => {
-		const apply = i18nSource.indexOf("\napplyWindowLinkLocale();\n");
+	function mockEntryImports(hydrate: () => Record<string, never>) {
+		vi.doMock("../bootstrap/early-prefetch", () => ({ startEarlyPrefetches: vi.fn() }));
+		vi.doMock("../error-reporting/client", () => ({
+			installGlobalErrorReporting: vi.fn(() => () => {}),
+			reportClientError: vi.fn(),
+		}));
+		vi.doMock("../../client-hydrate", hydrate);
+	}
+
+	it("stores the link language and cleans the address before hydration starts", async () => {
+		window.history.replaceState({ key: "kept" }, "", "/trade/xyz:ANT?lang=ja&utm_source=newsletter#chart");
+		let atHydration: { stored: string | null; address: string; state: unknown } | undefined;
+		mockEntryImports(() => {
+			atHydration = {
+				stored: window.localStorage.getItem(STORAGE_KEYS.LOCALE),
+				address: `${window.location.pathname}${window.location.search}${window.location.hash}`,
+				state: window.history.state,
+			};
+			return {};
+		});
+		await import("../../client");
+		await vi.waitFor(() => expect(atHydration).toBeDefined());
+		expect(atHydration).toEqual({
+			stored: "ja",
+			address: "/trade/xyz:ANT?utm_source=newsletter#chart",
+			state: { key: "kept" },
+		});
+	});
+
+	it("shows the bootstrap error page in the link language when the runtime cannot load", async () => {
+		window.history.replaceState(null, "", "/trade/BTC?lang=ja");
+		mockEntryImports(() => {
+			throw new Error("chunk failed");
+		});
+		await import("../../client");
+		await vi.waitFor(() => expect(document.querySelector('[role="alert"]')).not.toBeNull());
+		expect(document.body.textContent).toContain("エラーが発生しました");
+		expect(document.documentElement.lang).toBe("ja");
+	});
+});
+
+describe("lib/i18n.ts", () => {
+	const i18nSource = readFileSync(resolve(process.cwd(), "src/lib/i18n.ts"), "utf8");
+
+	it("applies the link language again as a top-level statement before the boot reads the stored language", () => {
+		const apply = i18nSource.search(/^applyWindowLinkLocale\(\);$/m);
 		const boot = i18nSource.indexOf("const initialLocale = getPersistedLocale();");
 		expect(apply).toBeGreaterThan(-1);
 		expect(boot).toBeGreaterThan(apply);
@@ -149,6 +206,14 @@ describe("storeLocale", () => {
 		expect(window.localStorage.getItem(STORAGE_KEYS.LOCALE)).toBe("ja");
 		expect(storeLocale("en")).toBe(true);
 		expect(window.localStorage.getItem(STORAGE_KEYS.LOCALE)).toBeNull();
+	});
+
+	it("reports a failure when storage refuses the write", () => {
+		vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+			throw new DOMException("QuotaExceededError");
+		});
+		expect(storeLocale("ja")).toBe(false);
+		vi.restoreAllMocks();
 	});
 
 	it("applies a link language from the window through storage", () => {

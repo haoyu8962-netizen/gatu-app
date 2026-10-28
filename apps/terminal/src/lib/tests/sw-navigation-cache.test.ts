@@ -230,3 +230,48 @@ describe("service worker navigation caching", () => {
 		}
 	});
 });
+
+// 2026-10-28 review: a language link (`?lang=`) is often a returning visitor's first visit after a release; a
+// cached shell from the previous release would boot an entry that ignores the parameter, so it goes to the network.
+describe("service worker navigation for a language link", () => {
+	it("serves the current shell from the network instead of an older cached one, and caches it", async () => {
+		const harness = createHarness();
+		const cache = await harness.open("shell-v10");
+		await cache.put(`${origin}/shell-v10`, html("previous release"));
+		harness.fetch.mockResolvedValueOnce(html("current release"));
+		const navigation = harness.navigate("/trade/xyz:ANT?lang=ja&utm_source=newsletter");
+		expect(await (await navigation.response)?.text()).toBe("current release");
+		await Promise.all(navigation.background);
+		expect(await harness.stores.get("shell-v10")?.get(`${origin}/shell-v10`)?.clone().text()).toBe("current release");
+	});
+
+	it("falls back to the cached shell when the network fails", async () => {
+		const harness = createHarness();
+		const cache = await harness.open("shell-v10");
+		await cache.put(`${origin}/shell-v10`, html("cached"));
+		harness.fetch.mockRejectedValueOnce(new TypeError("offline"));
+		const navigation = harness.navigate("/trade/BTC?lang=ja");
+		expect(await (await navigation.response)?.text()).toBe("cached");
+	});
+
+	it("does not cache an error page and fails like the network when nothing is cached", async () => {
+		const harness = createHarness();
+		harness.fetch.mockResolvedValueOnce(
+			new Response("busy", { status: 503, headers: { "content-type": "text/html" } }),
+		);
+		const failed = harness.navigate("/trade/BTC?lang=ja");
+		expect((await failed.response)?.status).toBe(503);
+		await Promise.all(failed.background);
+		expect(harness.stores.get("shell-v10")?.get(`${origin}/shell-v10`)).toBeUndefined();
+		harness.fetch.mockRejectedValueOnce(new TypeError("offline"));
+		await expect(harness.navigate("/trade/BTC?lang=ja").response).rejects.toThrow("offline");
+	});
+
+	it("keeps serving other navigations from the cache first", async () => {
+		const harness = createHarness();
+		const cache = await harness.open("shell-v10");
+		await cache.put(`${origin}/shell-v10`, html("cached"));
+		harness.fetch.mockReturnValueOnce(new Promise(() => {}));
+		expect(await (await harness.navigate("/trade/BTC?utm_source=newsletter").response)?.text()).toBe("cached");
+	});
+});

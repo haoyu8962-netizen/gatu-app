@@ -65,6 +65,12 @@ self.addEventListener("fetch", (event) => {
 		)
 			return;
 		const cacheKey = new URL(SHELL_CACHE, self.location.origin).href;
+		// A link that names a language (`?lang=`, lib/link-locale.ts) is often the first visit after a release, and a
+		// cached shell from an older release would boot an entry that ignores the parameter: fetch the current shell.
+		if (url.searchParams.has("lang")) {
+			event.respondWith(navigationNetworkFirst(request, SHELL_CACHE, cacheKey, event));
+			return;
+		}
 		event.respondWith(navigationStaleWhileRevalidate(request, SHELL_CACHE, cacheKey, event));
 		return;
 	}
@@ -86,13 +92,7 @@ function navigationStaleWhileRevalidate(request, cacheName, cacheKey, event) {
 	const fetched = fetch(request);
 	const refresh = fetched
 		.then(async (response) => {
-			const contentType = response.headers.get("content-type") ?? "";
-			if (
-				response.status !== 200 ||
-				response.redirected ||
-				contentType.split(";")[0].trim().toLowerCase() !== "text/html"
-			)
-				return;
+			if (!isCacheableShell(response)) return;
 			const copy = response.clone();
 			const value = await cache;
 			if (value) await value.put(cacheKey, copy);
@@ -100,6 +100,31 @@ function navigationStaleWhileRevalidate(request, cacheName, cacheKey, event) {
 		.catch(() => undefined);
 	event.waitUntil(refresh);
 	return cached.then((value) => value || fetched);
+}
+
+function isCacheableShell(response) {
+	const contentType = response.headers.get("content-type") ?? "";
+	return (
+		response.status === 200 &&
+		!response.redirected &&
+		contentType.split(";")[0].trim().toLowerCase() === "text/html"
+	);
+}
+
+async function navigationNetworkFirst(request, cacheName, cacheKey, event) {
+	const cache = caches.open(cacheName).catch(() => undefined);
+	try {
+		const response = await fetch(request);
+		if (isCacheableShell(response)) {
+			const copy = response.clone();
+			event.waitUntil(cache.then((value) => value?.put(cacheKey, copy)).catch(() => undefined));
+		}
+		return response;
+	} catch (error) {
+		const cached = await cache.then((value) => value?.match(cacheKey)).catch(() => undefined);
+		if (cached) return cached;
+		throw error;
+	}
 }
 
 async function cacheFirst(request, cacheName, event) {
