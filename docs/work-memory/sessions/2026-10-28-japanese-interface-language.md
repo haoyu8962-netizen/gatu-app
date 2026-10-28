@@ -97,6 +97,10 @@
   - 验证：全量 Vitest（沙箱外）685 个文件通过、1 跳过；typecheck、Biome 通过。浏览器用真实语言菜单切换后测 DOM：日语在 1440 与 1100 宽下标签页「成行」、紧凑值「口座」（26/26px）、无截断；1440 宽下 fr「Au marché」、ar「سعر السوق」（RTL，两个标签页同高 34px）、zh「市价」都没有溢出；手机下拉选项为「成行、指値、逆指値成行…」。
 - **第 5 轮**（窄范围，只审 19a8d85f..b66b365f，约 5.5 万 token，9.3 分）：修复本身无问题，按 Lingui 算法核对了上下文消息 ID 确实不同。1 项 P3：新用例没有打开手机下拉菜单，也没断言完整值、`title` 和日语 `aria-label`。已补：用例打开菜单，断言第一项是「成行」并回调 `market`，按日语「アカウントモード」查找按钮并断言 `title` 与完整值。只回退手机下拉项的变异已确认会被抓到。
   - 第 5 轮另报一项既有 P2（不计分，本任务不处理）：三处价格值仍用无上下文 `Market`，日语显示「市場」，分别是反向开仓确认的价格（`position-reverse-confirmation-modal.tsx`）、市价触发单的价格单元格（`orders-tab.tsx`、`mobile-orders-tab.tsx`）。它们表达的是按市价执行，与已修好的订单类型标签不一致。
+- **PR #118 首轮 CI**（head e72480cc）：只有 `Terminal browser regressions (1/2)` 失败，10 项。
+  - 8 项是 `desktop-order-entry-layout.pw.ts` 和 `mobile-trade-all-orders.pw.ts` 按名字点击中文订单类型标签页「市场」。上下文修复后中文标签页是「市价」，这两个文件和 CI 清单外的 `trade-panel-all-orders.pw.ts` 都写死了旧标签，三处已改为「市价」。这些浏览器套件我之前没在本地跑，是这次 CI 才暴露的。
+  - 另 2 项是分片的前两个用例（`keeps shared option spacing…`、`keeps TWAP option hit areas…`），超过了 30 秒的整体超时，它们没有用到「市场」。dev 最近一次成功运行（40460795415）里，同样两个用例分别用了约 25 秒和 22 秒，本来就贴近上限，判断是 CI 机器冷启动偏慢，没有改代码。
+  - 修复后本地实跑：`mobile-trade-all-orders.playwright.config.ts` 47 项通过，`trade-panel-all-orders.pw.ts` 7 项通过。
 - 审查方列出的既有、非本改动引入的英文显示（不计分，本任务不处理）：命令菜单 `command-menu.tsx` 的硬编码英文、推荐奖励的 `Token #` 回退、法律页正文只有英文（`legal-doc-page.tsx` 以 `lang="en"` 渲染）、Staking 验证者与 Vault 描述直接显示上游原文。
 
 未做：交易页以外各业务页面（Portfolio、Vault、Staking、Earn、推荐等）在日语下的布局检查、连接钱包后的状态、日语母语审校、真机验收。浏览器检查用的是开发服务器上的 DOM 测量，不是像素级比对；工作树嵌在主仓库目录下，开发服务器报字体文件超出 Vite 允许范围，页面可能用了回退字体，宽度读数与生产字体可能略有差别。
