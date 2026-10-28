@@ -1,4 +1,5 @@
-import { isValidLocale, type LocaleCode } from "@/config/i18n";
+import { STORAGE_KEYS } from "@/config/app";
+import { defaultLocale, isValidLocale, type LocaleCode } from "@/config/i18n";
 
 /** The query parameter a link uses to open the terminal in a language: `/trade/xyz:ANT?lang=ja`. */
 export const LINK_LOCALE_PARAM = "lang";
@@ -52,4 +53,29 @@ export function applyLinkLocale(
 		}
 	}
 	return stored;
+}
+
+/** Stores the interface language the way the language menu does: English is the absence of a choice. */
+export function storeLocale(locale: string): boolean {
+	if (typeof window === "undefined") return false;
+	try {
+		if (locale === defaultLocale) {
+			window.localStorage.removeItem(STORAGE_KEYS.LOCALE);
+		} else {
+			window.localStorage.setItem(STORAGE_KEYS.LOCALE, locale);
+		}
+		return true;
+	} catch {
+		return false;
+	}
+}
+
+/**
+ * Runs first in the client entry (`client.ts`), before any dynamic import, so even the bootstrap error
+ * page shown when the runtime fails to load reads the link's language; `lib/i18n.ts` runs it again when
+ * it is evaluated, which finds the parameter already removed.
+ */
+export function applyWindowLinkLocale(): LocaleCode | null {
+	if (typeof window === "undefined") return null;
+	return applyLinkLocale(window.location, window.history, storeLocale);
 }

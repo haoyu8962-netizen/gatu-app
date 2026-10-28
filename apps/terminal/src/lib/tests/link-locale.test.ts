@@ -3,7 +3,15 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { applyLinkLocale, LINK_LOCALE_PARAM, parseLinkLocale, withoutLinkLocale } from "@/lib/link-locale";
+import { STORAGE_KEYS } from "@/config/app";
+import {
+	applyLinkLocale,
+	applyWindowLinkLocale,
+	LINK_LOCALE_PARAM,
+	parseLinkLocale,
+	storeLocale,
+	withoutLinkLocale,
+} from "@/lib/link-locale";
 
 describe("parseLinkLocale", () => {
 	it("reads a maintained interface language from ?lang=", () => {
@@ -106,18 +114,48 @@ describe("applyLinkLocale", () => {
 	});
 });
 
-// The real module cannot be evaluated in this test config (the Lingui catalog loader is a Vite plugin), so this
-// pins the order that makes the link language reach the first render: the link is applied at module evaluation
-// with the same persist function as the language menu, before the boot reads the stored language.
+// The real modules cannot be evaluated in this test config (the Lingui catalog loader is a Vite plugin), so this
+// pins the order that makes the link language reach every first screen: the client entry applies it before any
+// dynamic import (the bootstrap error page included), and lib/i18n.ts applies it again at module evaluation,
+// with the same store function as the language menu, before the boot reads the stored language.
 describe("terminal boot order", () => {
-	const source = readFileSync(resolve(process.cwd(), "src/lib/i18n.ts"), "utf8");
+	const i18nSource = readFileSync(resolve(process.cwd(), "src/lib/i18n.ts"), "utf8");
+	const clientSource = readFileSync(resolve(process.cwd(), "src/client.ts"), "utf8");
 
-	it("applies the link language with the menu's persist function before the boot reads the stored language", () => {
-		const apply = source.indexOf("applyLinkLocale(window.location, window.history, persistLocale);");
-		const boot = source.indexOf("const initialLocale = getPersistedLocale();");
+	it("applies the link language in the client entry before any dynamic import", () => {
+		const apply = clientSource.indexOf("\napplyWindowLinkLocale();\n");
+		expect(apply).toBeGreaterThan(-1);
+		expect(clientSource.indexOf("import(")).toBeGreaterThan(apply);
+		expect(clientSource).toMatch(/^import \{ applyWindowLinkLocale \} from "\.\/lib\/link-locale";$/m);
+	});
+
+	it("applies it again in lib/i18n.ts at module level, before the boot reads the stored language", () => {
+		const apply = i18nSource.indexOf("\napplyWindowLinkLocale();\n");
+		const boot = i18nSource.indexOf("const initialLocale = getPersistedLocale();");
 		expect(apply).toBeGreaterThan(-1);
 		expect(boot).toBeGreaterThan(apply);
-		expect(source.slice(0, apply)).toMatch(/if \(typeof window !== "undefined"\) $/);
-		expect(source.slice(source.lastIndexOf("\n", apply), apply)).not.toMatch(/^\s*(?:function|=>)/);
+		expect(i18nSource).toContain("if (!storeLocale(locale))");
+		expect(i18nSource).not.toMatch(/localStorage\.(?:setItem|removeItem)/);
+	});
+});
+
+describe("storeLocale", () => {
+	afterEach(() => {
+		window.localStorage.clear();
+	});
+
+	it("stores a language and removes the key for English, like the language menu", () => {
+		expect(storeLocale("ja")).toBe(true);
+		expect(window.localStorage.getItem(STORAGE_KEYS.LOCALE)).toBe("ja");
+		expect(storeLocale("en")).toBe(true);
+		expect(window.localStorage.getItem(STORAGE_KEYS.LOCALE)).toBeNull();
+	});
+
+	it("applies a link language from the window through storage", () => {
+		window.history.replaceState(null, "", "/trade/BTC?lang=ja&utm_source=newsletter");
+		expect(applyWindowLinkLocale()).toBe("ja");
+		expect(window.localStorage.getItem(STORAGE_KEYS.LOCALE)).toBe("ja");
+		expect(window.location.search).toBe("?utm_source=newsletter");
+		window.history.replaceState(null, "", "/");
 	});
 });

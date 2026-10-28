@@ -1,4 +1,7 @@
 import { renderBootstrapErrorPage } from "./lib/bootstrap-error-page";
+import { applyWindowLinkLocale } from "./lib/link-locale";
+
+applyWindowLinkLocale();
 
 void import("./lib/bootstrap/early-prefetch")
 	.then(({ startEarlyPrefetches }) => startEarlyPrefetches())
