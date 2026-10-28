@@ -7,7 +7,7 @@
   "kind": "task",
   "status": "verified",
   "topics": ["i18n-runtime"],
-  "summary": "运营方要求在新工作树里安排 Codex（gpt-6-astra）为交易终端增加日语。新增 ja 目录（2,158 条现行消息全部翻译，占位符、标签与 ICU 结构逐条一致），语言菜单显示「日本語」，日期用 ja-JP（拉丁数字），TradingView 用 ja，数字仍跟随独立的数字格式设置。审查后修正了两条复数消息缺少的单数分支，并把代币分类标签改回与其他语言一致的英文。全量 Vitest 通过（唯一失败为沙箱端口限制，沙箱外重跑通过）；新目录块使客户端总量 +38,736 gzip 字节（成对固定身份构建），总量基线相应抬高。未推送、未做真实浏览器检查与母语审校，官网语言清单未改。",
+  "summary": "运营方要求在新工作树里安排 Codex（gpt-6-astra）为交易终端增加日语。新增 ja 目录（2,158 条现行消息全部翻译，占位符、标签与 ICU 结构逐条一致），语言菜单显示「日本語」，日期用 ja-JP（拉丁数字），TradingView 用 ja，数字仍跟随独立的数字格式设置。审查后修正了两条复数消息缺少的单数分支，并把代币分类标签改回与其他语言一致的英文。之后按运营方要求做了 5 轮 Codex 轻度只读审查（8.2/8.4/8.4/9.3/9.3），修正了十几处语境误译和两个没加载日语目录的浏览器夹具。开发服务器检查发现两处共用文案问题，按运营方决定改了源码：下单表单的订单类型标签改用 Order type 上下文（各语言都从「市场」类措辞变成「市价」类，例如 zh 市价、ja 成行），账户模式的紧凑占位值用独立上下文（日语「口座」，不再被截断）。全量 Vitest 通过；新目录块使客户端总量 +38,736 gzip 字节（成对固定身份构建），总量基线相应抬高。未推送；交易页以外页面的日语布局、母语审校未做，官网语言清单未改，三处价格值仍显示「市場」。",
   "thread": null,
   "baseCommit": "f7423d70",
   "commits": [],
@@ -19,6 +19,10 @@
     {"path": "apps/terminal/src/locales/ja/messages.po"},
     {"path": "apps/terminal/src/lib/tests/chart-locale.test.ts"},
     {"path": "apps/terminal/src/lib/tests/token-selector-category-catalogs.test.ts"},
+    {"path": "apps/terminal/src/components/trade/tradebox/trade-header.tsx"},
+    {"path": "apps/terminal/src/config/trade-panel-labels.ts"},
+    {"path": "apps/terminal/src/lib/tests/trade-header-mobile-actions.test.tsx"},
+    {"path": "apps/terminal/src/lib/tests/i18n-hot-switch.test.tsx"},
     {"path": "docs/i18n-presentation.md"},
     {"path": "docs/terminal-performance-baseline.md"},
     {"path": "scripts/check-client-bundle-budget.mjs"},
@@ -81,17 +85,27 @@
   - 现货兑换的 `From` / `To` 误用了账户振替的「振替元/振替先」，改为「交換元/交換先」。
   - 存款方式选择里带 `Deposit method` 上下文的 `Transfer USDC` 原来和内部划转同译，改为「USDC を送金して入金」。
   - API 钱包的 `Validity` / `Current validity` 指天数和到期日，改为「有効期間/現在の有効期限」。
-  - 另报一项既有 P2（不计分）：下单表单的订单类型标签页用的是无上下文的 `Market`。这条 msgid 被十几个组件当作「市场」列头共用，所以日语显示「市場」而不是「成行」，中文同样显示「市场」而不是「市价」。只改目录修不了，要改源码改用 `Order type` 上下文，会影响所有语言，本任务没改，待运营方决定。
+  - 另报一项既有 P2（不计分）：下单表单的订单类型标签页用的是无上下文的 `Market`。这条 msgid 被十几个组件当作「市场」列头共用，所以日语显示「市場」而不是「成行」，中文同样显示「市场」而不是「市价」。只改目录修不了，要改源码改用 `Order type` 上下文，会影响所有语言；后来按运营方决定修了，见下文「上下文修复」。
 - **第 4 轮**（窄范围，审 e88dea31..4bc653d0 的第 3 轮修复，并补查前三轮未覆盖的 4 词以上中长句：设置、主题、语言、PWA、启动与恢复、空状态、市场信息、图表、HIP-3、排行榜；约 10.4 万 token，9.3 分）：无 P0–P3 新发现，第 3 轮修复均确认。
 - 第 4 轮后对 HEAD 4bc653d0 重跑：全量 Vitest（沙箱外，`--maxWorkers=4`）686 个文件中 684 通过、1 跳过，`client-bootstrap-error.test.ts` 一项 `vi.waitFor` 超时（手册登记的负载偶发项），与 `bootstrap-error-page.test.ts` 一起单独连跑 3 次，每次 7 项通过；typecheck 通过；PO 结构检查 2,158 条无空译文、无占位符不一致。审查修复只改了译文，没有重新做生产构建，包体数字仍是 4e760836 的测量。
+- **开发服务器目视检查**（运营方要求启动开发服务器查看）：工作树复制了主检出的 `apps/terminal/.env.local`（未读内容，Git 忽略），`preview_start terminal` 在 3005 端口运行，`lsof` 确认进程的工作目录是本工作树。通过真实语言菜单切到日语：热切换、`lang="ja"`、手机布局（568px）没有残留英文，也没有截断文字。发现两处只改目录修不了的显示问题：一是上面那个订单类型「市場」；二是 1440 宽桌面、未连接钱包时，账户模式按钮的紧凑占位值用共用的 `Account`，「アカウント」需要 65px、只有 53px，截断成「アカウ…」（连接后显示「統合」，放得下）。
+- **上下文修复**（运营方决定在本分支修，其他语言保持现有译文；提交 b66b365f）：
+  - `trade-header.tsx` 三处订单类型 Market 标签（桌面标签页、手机下拉触发器、手机下拉项）改用已有的 `ORDER_TYPE_MESSAGES.market`（`msgctxt "Order type"`），删除不再使用的 `TRADE_PANEL_LABELS.market`。
+  - 新增 `TRADE_PANEL_LABELS.accountModePlaceholder`（`msgctxt "Account mode placeholder"`），只用于紧凑占位值。译文：日语「口座」，其他语言等于各自原有的 `Account` 译文（en Account、zh 账户、hi खाता、es Cuenta、fr Compte、ar الحساب）。
+  - 其他语言可见的变化只有订单类型标签：zh 市场→市价、hi बाज़ार→मार्केट、fr Marché→Au marché、ar السوق→سعر السوق，es 与 en 不变。已写进 CHANGELOG 的 Fixed。
+  - 测试：`i18n-hot-switch.test.tsx` 原来把无上下文 `Market` 手工映射成「市价」，与真实中文目录（市场）不一致，掩盖了这个缺陷；改为无上下文「市场」、`Order type` 上下文「市价」。`trade-header-mobile-actions.test.tsx` 新增日语用例，从真实 `.po` 读译文。三个变异都会让测试失败：去掉 `ORDER_TYPE_MESSAGES.market` 的上下文，去掉占位值的上下文，以及只把手机下拉项改回无上下文。
+  - 验证：全量 Vitest（沙箱外）685 个文件通过、1 跳过；typecheck、Biome 通过。浏览器用真实语言菜单切换后测 DOM：日语在 1440 与 1100 宽下标签页「成行」、紧凑值「口座」（26/26px）、无截断；1440 宽下 fr「Au marché」、ar「سعر السوق」（RTL，两个标签页同高 34px）、zh「市价」都没有溢出；手机下拉选项为「成行、指値、逆指値成行…」。
+- **第 5 轮**（窄范围，只审 19a8d85f..b66b365f，约 5.5 万 token，9.3 分）：修复本身无问题，按 Lingui 算法核对了上下文消息 ID 确实不同。1 项 P3：新用例没有打开手机下拉菜单，也没断言完整值、`title` 和日语 `aria-label`。已补：用例打开菜单，断言第一项是「成行」并回调 `market`，按日语「アカウントモード」查找按钮并断言 `title` 与完整值。只回退手机下拉项的变异已确认会被抓到。
+  - 第 5 轮另报一项既有 P2（不计分，本任务不处理）：三处价格值仍用无上下文 `Market`，日语显示「市場」，分别是反向开仓确认的价格（`position-reverse-confirmation-modal.tsx`）、市价触发单的价格单元格（`orders-tab.tsx`、`mobile-orders-tab.tsx`）。它们表达的是按市价执行，与已修好的订单类型标签不一致。
 - 审查方列出的既有、非本改动引入的英文显示（不计分，本任务不处理）：命令菜单 `command-menu.tsx` 的硬编码英文、推荐奖励的 `Token #` 回退、法律页正文只有英文（`legal-doc-page.tsx` 以 `lang="en"` 渲染）、Staking 验证者与 Vault 描述直接显示上游原文。
 
-未做：真实浏览器里切换日语的目视检查（各业务页面的布局与长文案截断）、日语母语审校、真机验收。
+未做：交易页以外各业务页面（Portfolio、Vault、Staking、Earn、推荐等）在日语下的布局检查、连接钱包后的状态、日语母语审校、真机验收。浏览器检查用的是开发服务器上的 DOM 测量，不是像素级比对；工作树嵌在主仓库目录下，开发服务器报字体文件超出 Vite 允许范围，页面可能用了回退字体，宽度读数与生产字体可能略有差别。
 
 ## 后续与替代关系
 
-- 推送前按手册第 7 节跑一轮 Codex 只读 `low` 审查；分支尚未推送，PR 未开。
+- 分支尚未推送，PR 未开；推送前的 Codex 只读 `low` 审查已做（第 1–5 轮）。
 - 日语母语者审校交易、风险与法律相关文案。
-- 浏览器里按 `docs/i18n-presentation.md` 的热切换要求目视检查日语下的桌面、紧凑与手机布局；`top-nav-connected` 的完整矩阵只跑过日语子集。
+- 交易页以外的业务页面在日语下的布局检查；`top-nav-connected` 的完整矩阵只跑过日语子集。
+- 三处价格值（反向开仓确认、市价触发单的价格）仍显示无上下文的「市場」，要修需改源码用 `Order type` 上下文。
 - 既有的英文显示（命令菜单等，见上）若要修，需要在源码加翻译并补齐全部 6 种非英语语言。
 - 官网 `apps/website` 的 Features/Hero 语言清单与 `docs/website-plan.md` 若要宣传日语，需另行修改。

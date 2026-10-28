@@ -207,12 +207,14 @@ describe("TradeHeader mobile margin actions", () => {
 		expect(accountModeButton.querySelector(".trade-account-value-compact")?.textContent).toBe("Account");
 	});
 
-	it("labels the market order type and the account placeholder with their own Japanese messages", () => {
+	it("labels the market order type and the account placeholder with their own Japanese messages", async () => {
 		const jaMessages = loadCatalogMessages("ja", [
 			["Market", "Order type"],
 			["Market", ""],
 			["Account", "Account mode placeholder"],
 			["Account", ""],
+			["Account mode", ""],
+			["Order type", ""],
 		]);
 		expect(jaMessages[getMessageId("Market", "Order type")]).not.toBe(jaMessages[getMessageId("Market")]);
 		expect(jaMessages[getMessageId("Account", "Account mode placeholder")]).not.toBe(
@@ -223,13 +225,25 @@ describe("TradeHeader mobile margin actions", () => {
 		renderHeader({ accountMode: null, layout: "desktop" });
 		expect(getButton(container, "成行")).toBeTruthy();
 		expect(container.textContent).not.toContain("市場");
-		const accountModeButton = container.querySelector<HTMLButtonElement>('button[aria-label="Account mode"]');
-		expect(accountModeButton?.querySelector(".trade-account-value-compact")?.textContent).toBe("口座");
-		expect(accountModeButton?.querySelector(".trade-card-label-compact")?.textContent).toBe("アカウント");
+		const accountModeButton = container.querySelector<HTMLButtonElement>('button[aria-label="アカウントモード"]');
+		if (!accountModeButton) throw new Error("Expected the Japanese account mode button");
+		expect(accountModeButton.title).toBe("アカウント");
+		expect(accountModeButton.querySelector(".trade-account-value-full")?.textContent).toBe("アカウント");
+		expect(accountModeButton.querySelector(".trade-account-value-compact")?.textContent).toBe("口座");
+		expect(accountModeButton.querySelector(".trade-card-label-compact")?.textContent).toBe("アカウント");
 
-		renderHeader({ accountMode: null, layout: "mobile" });
+		const onOrderTypeChange = vi.fn();
+		renderHeader({ accountMode: null, layout: "mobile", onOrderTypeChange });
 		expect(container.textContent).toContain("成行");
 		expect(container.textContent).not.toContain("市場");
+		const orderTypeButton = container.querySelector<HTMLButtonElement>('button[aria-label="注文タイプ"]');
+		if (!orderTypeButton) throw new Error("Expected the Japanese mobile order-type control");
+		await act(async () => orderTypeButton.click());
+		const menuItems = [...document.querySelectorAll<HTMLElement>('[role="menuitem"]')];
+		expect(menuItems[0]?.textContent?.trim()).toBe("成行");
+		expect(menuItems.map((item) => item.textContent?.trim())).not.toContain("市場");
+		act(() => menuItems[0]?.click());
+		expect(onOrderTypeChange).toHaveBeenCalledWith("market");
 	});
 
 	it("shows the mode a new account is being set to while the automatic setup applies", () => {
