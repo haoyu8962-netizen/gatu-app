@@ -10,6 +10,9 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 - Japanese interface language (日本語) in the language menu, including the TradingView chart and
   Japanese dates; numbers keep following the separate number-format setting.
+- A link can open the terminal in a language: `?lang=ja` (or any other interface language) shows the
+  first screen, including the HIP-3 deployer disclaimer, in that language and keeps it as the chosen
+  language; the parameter is removed from the address bar and the other link parameters are kept.
 
 - Card funding, off by default: when a network's flag is on, the Deposit dialog opens on two
   separate choices, as on the official terminal: transfer USDC on Arbitrum, or buy USDC by card or

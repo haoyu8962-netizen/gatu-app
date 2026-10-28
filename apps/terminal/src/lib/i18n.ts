@@ -2,6 +2,7 @@ import { i18n } from "@lingui/core";
 import { STORAGE_KEYS } from "@/config/app";
 import { defaultLocale, isRtlLocale, isValidLocale, type LocaleCode } from "@/config/i18n";
 import { expandCatalogMessages, type LoadableCatalogModule } from "@/lib/i18n-catalog";
+import { applyLinkLocale } from "@/lib/link-locale";
 
 export { resolveNumberFormatLocale } from "@/config/i18n";
 
@@ -35,6 +36,10 @@ function persistLocale(locale: string): boolean {
 		return false;
 	}
 }
+
+// A link that names a language (`?lang=ja`) is stored before the boot below reads the stored
+// language, while this module is evaluated and before the router reads the location (link-locale.ts).
+if (typeof window !== "undefined") applyLinkLocale(window.location, window.history, persistLocale);
 
 // Keeps <html lang/dir> in sync with the active locale, re-asserting past any document-shell
 // re-render via a MutationObserver. The idempotent `!==` guards make it settle in one pass.
