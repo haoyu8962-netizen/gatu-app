@@ -57,11 +57,33 @@
 - `pnpm --filter @sairn/terminal test --maxWorkers=4`：686 个文件中 684 通过、1 跳过、1 失败；失败的 `vite-development-cache.test.ts` 是沙箱禁止监听端口（`listen EPERM 127.0.0.1:5173`），在沙箱外单独重跑通过。
 - 生产构建（各自工作树、无 `.env.local`、Node 22.15.0、协议规定的固定构建身份加 `VITE_MOBILE_PAIRING_ENABLED=false`）：本分支第一次构建在总量预算处失败（3,350,633，比 3,311,757 的基线多 38,876，允许 10,000），chunk 循环检查通过（443 个 chunk）。在临时工作树 `ja-budget-baseline` 构建 dev f7423d70 作对照：3,311,897（442 个 chunk），差值 +38,736，其中新 `ja` 目录块占 38,653；交易页静态启动 +190，手机与桌面运行时启动各 +4。按 `docs/terminal-performance-baseline.md` 的规则把总量基线抬到 3,350,493 并在该文档与 `scripts/check-client-bundle-budget.mjs` 写明测量；改后对同一产物重跑预算检查通过（+140），`node --test scripts/check-client-bundle-budget.test.mjs` 19 项通过，补跑 `inject-shell-preloads` 与 `collect-inline-script-hashes` 成功。CI 的元数据不同，读数可能相差几百字节。
 
-未做：真实浏览器里切换日语的目视检查（布局、长文案截断）、Playwright 浏览器套件（日语已加入三个矩阵但未运行）、日语母语审校、真机验收。
+以上是首个提交 4e760836 的验证；当时三个含日语的 Playwright 矩阵尚未运行。
+
+### Codex 只读审查（运营方要求 gpt-6-astra、`low`、至少 3 轮）
+
+命令：`codex exec -m gpt-6-astra -s read-only -c approval_policy='"never"' -c model_reasoning_effort='"low"' --output-last-message <报告>`，每轮把上一轮的发现与处理交给下一轮证伪。审查方在只读沙箱里没有运行 Vitest、构建或浏览器，结论是静态核对加内存脚本。
+
+- **第 1 轮**（审 4e760836，约 13.8 万 token，8.2 分）：2 项 P2、4 项 P3，均已核实。修复提交 3ada121c：
+  - 推荐码与全部平仓两个浏览器夹具没有注册 `ja` 目录，日语用例实际渲染英文。现在两个夹具都导入 `ja`，遇到未注册的语言直接抛错，不再静默回退。
+  - 二维码网络不一致提示把扫码设备译反，已改为「扫描桌面上显示的新二维码」。
+  - 手机分页摘要 `{0} of {1}` 译成了件数，改为 `{0} / {1} ページ`。
+  - 「両建て」有歧义，改为「未決済建玉（両側合計）」。
+  - 唯一一处全角分号改为读点，测试期望同步。
+  - Earn 的 Withdraw 与资金出金共用 msgid，只更正了本记录的说法（见上文术语）。
+  - 修复后在沙箱外实跑：`referral-code-card.pw.ts` 20 项通过，`position-close-all.playwright.config.ts` 46 项通过，`TOP_NAV_CONNECTED_MATRIX=full` 下用 `--grep " ja"` 只跑日语的顶部导航 12 项通过（不是完整矩阵）。
+- **第 2 轮**（审 3ada121c，约 14.4 万 token，8.4 分）：确认第 1 轮修复正确；新报 1 项 P2、3 项 P3，均已核实。
+  - 修正了三条语境错误：Staking 验证者列头 `Commission` 误作推荐奖励（紹介報酬），改为「手数料率」；Vault 徽标 `Child` 改为「子ボールト」，`Closed` 改为「閉鎖済み」。
+  - Earn 独有的 `Available to Withdraw` 改为「引き出し可能額」。
+  - 本记录补上了第 1 轮的修复经过（就是这一节）。
+  - 另用脚本扫描了 Vault、Staking、Referral、Earn、Leaderboard、API wallet 文件中含「注文/紹介/決済/出金/清算/ポジション」的短标签，并与中文对照，没有发现其他语境错误。
+- 审查方列出的既有、非本改动引入的英文显示（不计分，本任务不处理）：命令菜单 `command-menu.tsx` 的硬编码英文、推荐奖励的 `Token #` 回退、法律页正文只有英文（`legal-doc-page.tsx` 以 `lang="en"` 渲染）、Staking 验证者与 Vault 描述直接显示上游原文。
+
+未做：真实浏览器里切换日语的目视检查（各业务页面的布局与长文案截断）、日语母语审校、真机验收。
 
 ## 后续与替代关系
 
 - 推送前按手册第 7 节跑一轮 Codex 只读 `low` 审查；分支尚未推送，PR 未开。
 - 日语母语者审校交易、风险与法律相关文案。
-- 浏览器里按 `docs/i18n-presentation.md` 的热切换要求目视检查日语下的桌面、紧凑与手机布局，并跑含日语的 Playwright 矩阵（`top-nav-connected` 的 `FULL_MATRIX`、`referral-code-card`、`position-close-all`）。
+- 浏览器里按 `docs/i18n-presentation.md` 的热切换要求目视检查日语下的桌面、紧凑与手机布局；`top-nav-connected` 的完整矩阵只跑过日语子集。
+- 既有的英文显示（命令菜单等，见上）若要修，需要在源码加翻译并补齐全部 6 种非英语语言。
 - 官网 `apps/website` 的 Features/Hero 语言清单与 `docs/website-plan.md` 若要宣传日语，需另行修改。

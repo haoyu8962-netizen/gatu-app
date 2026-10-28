@@ -1002,7 +1002,7 @@ msgstr "決済可能"
 
 #: src/components/earn/earn-action-modal.tsx
 msgid "Available to Withdraw"
-msgstr "出金可能"
+msgstr "引き出し可能額"
 
 #: src/components/trade/positions/twap-tab.tsx
 msgid "Average Fill Price"
@@ -1436,7 +1436,7 @@ msgstr "送信したブリッジトランザクションを確認中..."
 
 #: src/components/vaults/vaults-list.tsx
 msgid "Child"
-msgstr "子注文"
+msgstr "子ボールト"
 
 #: src/components/funding-history/funding-history-page.tsx
 msgid "Choose another market or side."
@@ -1727,7 +1727,7 @@ msgstr "読み取れない操作の詳細を閉じる"
 
 #: src/components/vaults/vaults-list.tsx
 msgid "Closed"
-msgstr "決済済み"
+msgstr "閉鎖済み"
 
 #: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
 #: src/components/trade/positions/twap-fill-history-table.tsx
@@ -1787,7 +1787,7 @@ msgstr "市場の詳細を折りたたむ"
 
 #: src/components/staking/staking-view.tsx
 msgid "Commission"
-msgstr "紹介報酬"
+msgstr "手数料率"
 
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Commodities"
