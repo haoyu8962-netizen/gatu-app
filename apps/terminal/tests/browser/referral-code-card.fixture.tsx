@@ -9,10 +9,11 @@ import { messages as en } from "@/locales/en/messages.po";
 import { messages as es } from "@/locales/es/messages.po";
 import { messages as fr } from "@/locales/fr/messages.po";
 import { messages as hi } from "@/locales/hi/messages.po";
+import { messages as ja } from "@/locales/ja/messages.po";
 import { messages as zh } from "@/locales/zh/messages.po";
 import "./referral-code-card.css";
 
-const catalogs = { en, zh, fr, es, hi, ar };
+const catalogs = { en, zh, ja, fr, es, hi, ar };
 const params = new URLSearchParams(location.search);
 
 const DATA: ReferralData = {
@@ -56,7 +57,8 @@ function Fixture() {
 const root = document.getElementById("root");
 if (!root) throw new Error("Missing fixture root");
 const requested = params.get("locale") ?? "en";
-const locale = requested in catalogs ? (requested as keyof typeof catalogs) : "en";
+if (!Object.hasOwn(catalogs, requested)) throw new Error(`Fixture has no catalog for ${requested}`);
+const locale = requested as keyof typeof catalogs;
 i18n.loadAndActivate({ locale, messages: catalogs[locale] });
 document.documentElement.lang = locale;
 document.documentElement.dir = locale === "ar" ? "rtl" : "ltr";

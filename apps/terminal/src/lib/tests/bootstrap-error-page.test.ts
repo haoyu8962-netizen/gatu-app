@@ -57,6 +57,17 @@ describe("bootstrap error page", () => {
 		expect(fallback?.textContent).toContain("إعادة تحميل المنصة");
 	});
 
+	it("renders the persisted Japanese fallback without loading a catalog", () => {
+		window.localStorage.setItem("locale-v1", "ja");
+		renderBootstrapErrorPage();
+		expect(document.documentElement.lang).toBe("ja");
+		expect(document.documentElement.dir).toBe("ltr");
+		expect(document.body.textContent).toContain(
+			"取引ターミナルを安全に起動できませんでした。取引する前に再読み込みしてください。",
+		);
+		expect(document.querySelector("button")?.textContent).toBe("ターミナルを再読み込み");
+	});
+
 	it("fails closed to English when persisted locale storage cannot be read", () => {
 		vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
 			throw new Error("storage unavailable");

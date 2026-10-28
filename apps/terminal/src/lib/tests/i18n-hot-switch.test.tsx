@@ -64,7 +64,7 @@ const zhTranslations: Record<string, string> = {
 	"Language and number format": "语言和数字格式",
 	"Primary navigation": "主导航",
 	Markets: "市场",
-	Market: "市价",
+	Market: "市场",
 	Limit: "限价",
 	Trade: "交易",
 	Account: "账户",
@@ -90,6 +90,7 @@ const zhMessages: Messages = Object.fromEntries(
 	Object.entries(zhTranslations).map(([message, translation]) => [getMessageId(message), translation]),
 );
 zhMessages[getMessageId("Limit", "Order type")] = "限价";
+zhMessages[getMessageId("Market", "Order type")] = "市价";
 
 function activateLocale(locale: "en" | "zh") {
 	i18n.loadAndActivate({ locale, messages: locale === "zh" ? zhMessages : {} });

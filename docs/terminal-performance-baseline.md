@@ -94,7 +94,7 @@ pnpm --dir apps/terminal i18n:compile
 
 The official [Lingui extraction documentation](https://lingui.dev/ref/cli#extract) defines `--clean` as removing obsolete messages while extraction merges existing translations. Do not delete `#~` entries manually before extraction: a message restored in source must first recover its existing translations. The pinned [Lingui 5.7.0 catalog implementation](https://github.com/lingui/js-lingui/blob/v5.7.0/packages/cli/src/api/catalog/getTranslationsForCatalog.ts) explains why retained obsolete entries affect compiled output.
 
-Validate all six locales after cleaning: currently extracted IDs must be present, existing translations for retained and restored IDs must be unchanged, dynamic message descriptors must still be extracted, and compilation and locale-switch tests must pass. Only the complete production build determines budget acceptance; a standalone catalog gzip comparison is diagnostic and does not justify changing a baseline.
+Validate every locale after cleaning: currently extracted IDs must be present, existing translations for retained and restored IDs must be unchanged, dynamic message descriptors must still be extracted, and compilation and locale-switch tests must pass. Only the complete production build determines budget acceptance; a standalone catalog gzip comparison is diagnostic and does not justify changing a baseline.
 
 The 2026-09-09 diagnostic with Node 22.15.0 first compared the existing catalogs with an in-memory obsolete-only cleanup. The subsequent complete extraction preserved all 1,919 previously active source IDs and restored `Failed to load trades.` with its existing six translations, producing 1,920 active IDs per locale. Every retained translation was unchanged, including 81 descriptors from navigation, account-ledger, trade configuration, and order-confirmation helpers. No obsolete entries remained, and compilation succeeded. Minified standalone locale modules decreased by 58,436 gzip bytes in total (en 8,211; zh 9,697; hi 10,841; es 9,591; fr 9,612; ar 10,484). Catalog, reactive-presentation, locale-switch, and TWAP-label regression suites passed 79 tests across six files.
 
@@ -432,6 +432,26 @@ against an allowance of 10,000, and the desktop runtime increment 921 bytes unde
 The sixth round (commit `4af147fd`) changed one classification function in the deposit dialog chunk. Its build reads
 3,286,638 in total (+16), 1,626,663 static trade startup, 117,769 mobile and 201,070 desktop, with the desktop runtime
 increment 918 bytes under its allowance. Later commits on the branch change tests and documents only.
+
+## Japanese catalog total-client re-baseline (2026-10-28)
+
+Adding Japanese as a seventh interface language (`claude/japanese-locale`, base `f7423d70`) adds one lazy catalog
+chunk, and the production build failed only the total-client budget. Both sides were built in their own worktree
+without `.env.local`, with Node 22.15.0, pnpm 10.21.0 and the fixed identity of the reproduction protocol plus
+`VITE_MOBILE_PAIRING_ENABLED=false`:
+
+| Metric | dev `f7423d70` | Japanese branch | Change |
+| --- | ---: | ---: | ---: |
+| All client JS + CSS | 3,311,897 (442 chunks) | 3,350,633 (443 chunks) | +38,736 |
+| Static trade startup | 1,640,608 | 1,640,798 | +190 |
+| Mobile runtime increment | 118,318 | 118,322 | +4 |
+| Desktop runtime increment | 202,664 | 202,668 | +4 |
+
+The new `messages-*.js` chunk for `ja` is 38,653 gzip bytes (148,235 raw), in the range of the other non-English
+catalogs (33,249 to 45,941), and a viewer downloads only the catalog of the active language. The startup increase is
+the language table entry and the Japanese bootstrap error copy. The total-client baseline is raised by the measured
++38,736 to 3,350,493; the +140 that dev had already used stays counted, so the branch reads +140 against the new
+baseline. The startup baselines are unchanged.
 
 ## Total-client and desktop runtime re-baseline before release p32 (2026-10-13)
 

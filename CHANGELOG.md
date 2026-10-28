@@ -8,6 +8,9 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Added
 
+- Japanese interface language (日本語) in the language menu, including the TradingView chart and
+  Japanese dates; numbers keep following the separate number-format setting.
+
 - Card funding, off by default: when a network's flag is on, the Deposit dialog opens on two
   separate choices, as on the official terminal: transfer USDC on Arbitrum, or buy USDC by card or
   bank transfer through Privy's payment providers (the amount is prefilled with 100 US dollars and
@@ -572,6 +575,11 @@ changes, not evidence that a build has been deployed or accepted on real devices
   says so, together with the expiry date and the desktop revoke path.
 
 ### Fixed
+
+- The Market order-type tab and menu entry in the order form use the order-type wording instead of
+  the market-list wording: 市价 in Chinese, 成行 in Japanese, मार्केट in Hindi, Au marché in French
+  and سعر السوق in Arabic (English and Spanish are unchanged). The compact account-mode placeholder
+  on narrow desktop panels has its own short Japanese label (口座) so it is no longer cut off.
 
 - CSV exports of trade history, TWAP fills and the trade-history page write prices, sizes, fees and
   PNL exactly as the exchange reports them, in a plain numeric form, with the fee token in its own

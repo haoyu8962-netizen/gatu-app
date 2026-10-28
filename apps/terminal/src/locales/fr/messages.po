@@ -415,6 +415,11 @@ msgstr "Accès restreint"
 msgid "Account"
 msgstr "Compte"
 
+#: src/config/trade-panel-labels.ts
+msgctxt "Account mode placeholder"
+msgid "Account"
+msgstr "Compte"
+
 #: src/lib/errors/exchange-error-text.ts
 msgid "Account {user} has no balance on Hyperliquid. Deposit first."
 msgstr "Le compte {user} n'a aucun solde sur Hyperliquid. Déposez d'abord."
@@ -4927,7 +4932,6 @@ msgstr "Prix de marque : utilisé pour les calculs de marge, le PnL non réalis�
 #: src/components/trade/positions/twap-fill-history-table.tsx
 #: src/components/trade/positions/twap-history-table.tsx
 #: src/config/funding-comparison.ts
-#: src/config/trade-panel-labels.ts
 msgid "Market"
 msgstr "Marché"
 

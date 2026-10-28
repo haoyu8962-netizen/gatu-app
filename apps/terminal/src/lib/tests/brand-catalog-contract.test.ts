@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
-const LOCALES = ["en", "zh", "hi", "es", "fr", "ar"] as const;
+const LOCALES = ["en", "zh", "ja", "hi", "es", "fr", "ar"] as const;
 const LITERAL_BRAND_NAMES = /\b(?:gatu|sairn|hyperterminal)\b/i;
 const PLACEHOLDER = "{BRAND_NAME}";
 

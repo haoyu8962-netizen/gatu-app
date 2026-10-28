@@ -149,7 +149,7 @@ The remaining non-exact badge, warning, underlay, and shadow rows continue to re
 
 ## Internationalization
 
-Lingui source messages remain English. The existing catalogs cover English, Chinese, Hindi, Spanish, French, and Arabic.
+Lingui source messages remain English. The existing catalogs cover English, Chinese, Japanese, Hindi, Spanish, French, and Arabic.
 
 Existing keys cover the seven tabs and most base field labels, including `Balances`, `Positions`, `Open Orders`, `TWAP`, `Trade History`, `Funding History`, `Order History`, `Account Value`, `Margin Ratio`, `Entry Price`, `Mark Price`, `Liquidation Price`, `Funding`, `TP/SL`, `Limit Close`, `Market Close`, `Reverse`, `Cancel All`, and `Export CSV`.
 
