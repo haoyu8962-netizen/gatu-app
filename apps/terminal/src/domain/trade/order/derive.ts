@@ -7,7 +7,12 @@ import {
 	type SpotBalanceData,
 } from "@/domain/trade/balances";
 import { getExecutedPrice } from "@/domain/trade/order/price";
-import { getMaxSizeForOrderEntry, getOrderValue, getSizeStringFromInput } from "@/domain/trade/order/size";
+import {
+	capSizeToQuoteAmount,
+	getMaxSizeForOrderEntry,
+	getOrderValue,
+	getSizeStringFromInput,
+} from "@/domain/trade/order/size";
 import { formatPriceForOrder } from "@/domain/trade/orders";
 import type { SpotBalance } from "@/hooks/trade/use-account-balances";
 import { getMarketCapabilities, type MarketCapabilities } from "@/lib/hyperliquid";
@@ -129,7 +134,7 @@ export function deriveOrderEntry(inputs: OrderEntryInputs): OrderEntryDerived {
 					maxTradeSzs: inputs.maxTradeSzs,
 				});
 
-	const sizeForOrder =
+	const convertedSize =
 		inputs.selectedBaseSize ??
 		getSizeStringFromInput({
 			sizeInput: inputs.sizeInput,
@@ -137,6 +142,10 @@ export function deriveOrderEntry(inputs: OrderEntryInputs): OrderEntryDerived {
 			price: inputs.conversionPrice,
 			szDecimals,
 		});
+	const sizeForOrder =
+		inputs.selectedBaseSize === undefined && inputs.sizeMode === "quote" && inputs.orderValueForSize
+			? capSizeToQuoteAmount(convertedSize, inputs.sizeInput, szDecimals, inputs.orderValueForSize)
+			: convertedSize;
 
 	const sizeValue = Number(sizeForOrder);
 	const orderValue =

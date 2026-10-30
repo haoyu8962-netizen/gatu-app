@@ -2,7 +2,7 @@ import Big from "big.js";
 import { describe, expect, it } from "vitest";
 import { deriveOrderEntry } from "@/domain/trade/order/derive";
 import { getOrderEntryLimitPx, getOrderEntryValueForSize } from "@/domain/trade/order/entry-limit-price";
-import { getOrderValue, getSizeStringFromInput } from "@/domain/trade/order/size";
+import { capSizeToQuoteAmount, getOrderValue, getSizeStringFromInput } from "@/domain/trade/order/size";
 import { createScaleOrderLevelPlan, getScaleAveragePrice, getScaleOrderNotional } from "@/domain/trade/orders";
 
 const scale = {
@@ -72,6 +72,18 @@ describe("scale order conversion price", () => {
 		expect(getOrderEntryLimitPx({ ...input, orderType: "twap" })).toBeUndefined();
 	});
 
+	it("lowers a size typed as an amount by whole lots until its levels cost no more than the amount", () => {
+		const costs: Record<string, number> = { "3.0": 220, "2.9": 199, "2.8": 175, "2.7": 170 };
+		const valueForSize = (size: string) => costs[size];
+
+		expect(capSizeToQuoteAmount("3", "180", 1, valueForSize)).toBe("2.8");
+		expect(capSizeToQuoteAmount("3", "220", 1, valueForSize)).toBe("3");
+		expect(capSizeToQuoteAmount("3", "180", 1, () => undefined)).toBe("3");
+		expect(capSizeToQuoteAmount("3", "180", 1, (size) => (size === "3.0" ? 220 : undefined))).toBe("3");
+		expect(capSizeToQuoteAmount("3", "1", 0, () => 220)).toBe("3");
+		expect(capSizeToQuoteAmount("0", "180", 1, valueForSize)).toBe("0");
+	});
+
 	it("values a scale order at its lot-rounded levels, which can differ from size × average price", () => {
 		const coarse = {
 			assetId: 0,
@@ -121,7 +133,29 @@ describe("scale order conversion price", () => {
 			availableToTrade: null,
 			marketOrderSizing: null,
 		});
-		expect(derived.sizeForOrder).toBe("3");
-		expect(derived.orderValue).toBe(220);
+		expect(derived.sizeForOrder).toBe("2");
+		expect(derived.orderValue).toBe(120);
+
+		const derivedFor = (overrides: Partial<Parameters<typeof deriveOrderEntry>[0]>) =>
+			deriveOrderEntry({
+				isConnected: true,
+				market: { kind: "perp", name: "COARSE", pairName: "COARSE-USDC", szDecimals: 0 } as never,
+				side: "buy",
+				conversionPrice: 60,
+				orderValueForSize: (size) => getOrderEntryValueForSize(input, size),
+				sizeMode: "quote",
+				sizeInput: "180",
+				spotBalances: [],
+				maxTradeSzs: null,
+				availableToTrade: null,
+				marketOrderSizing: null,
+				...overrides,
+			});
+		expect(derivedFor({ sizeInput: "220" })).toMatchObject({ sizeForOrder: "3", orderValue: 220 });
+		expect(derivedFor({ sizeMode: "base", sizeInput: "3" })).toMatchObject({ sizeForOrder: "3", orderValue: 220 });
+		expect(
+			derivedFor({ sizeMode: "base", sizeInput: "3", orderValueForSize: (size) => Number(size) * 1.4 }).sizeForOrder,
+		).toBe("3");
+		expect(derivedFor({ selectedBaseSize: "3" })).toMatchObject({ sizeForOrder: "3", orderValue: 220 });
 	});
 });

@@ -6102,6 +6102,10 @@ msgstr "Las órdenes con un ID de orden de cliente no se pueden modificar aquí.
 msgid "Orders with linked TP/SL orders cannot be modified here."
 msgstr "Las órdenes con órdenes TP/SL vinculadas no se pueden modificar aquí."
 
+#: src/components/trade/components/global-settings-modal.tsx
+msgid "Orders, cancels and other trading actions expire if the exchange has not accepted them within 15 seconds."
+msgstr "Las órdenes, cancelaciones y demás acciones de trading caducan si el exchange no las acepta en 15 segundos."
+
 #: src/components/historical-orders/historical-orders-page.tsx
 #~ msgid "Ordinary order history for {0}"
 #~ msgstr ""
@@ -10158,6 +10162,11 @@ msgstr "Transacción"
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 msgid "Transaction breakdown"
 msgstr "Desglose de la transacción"
+
+#: src/components/trade/components/global-settings-modal.tsx
+#: src/components/trade/components/global-settings-modal.tsx
+msgid "Transaction delay protection"
+msgstr "Protección contra retrasos de transacción"
 
 #: src/lib/errors/action-error.ts
 msgid "Transaction reverted on Arbitrum"

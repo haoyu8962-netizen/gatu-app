@@ -141,6 +141,22 @@
 5. 受限地区是否允许只减仓类动作（平仓、TP/SL、撤单、逐仓保证金调整）。
 6. 是否补官方新功能：Chase、Trailing Stop、现货 Strict 名单的维护方式、多资产存款（ADR 0004 已规划）、子账户等。
 
+### 2026-10-30 按官方实践处理的待定事项
+
+第一批 P1 修完后留下九项待定事项。运营方当天回复：「需要我决定的事情，你可以调试其他交易终端的实践，再去根据这些实践去判断应该如何处理」。依据是本机保存的官方前端包（2026-10-30 抓取，`config-BoKXN-kV.js`、`VaultWithdrawModal-EThLm_Fy.js`、`en-US.js`）与 SDK 0.33.3 的类型注释。上面列表第 2–4、6 项不在这一轮里，仍待决定；第 5 项即下表第二行。
+
+| 事项 | 官方做法 | 决定 | 落点 |
+| --- | --- | --- | --- |
+| 交易延迟保护开关 | 设置「Trading」组有 `transaction.delay.protection` 开关，默认开启；关闭后签名时 `expiresAfter` 为 `null` | 照做：加开关，默认开启 | `claude/p1-order-safety`，ADR 0045 第 6 条 |
+| 受限地区的只减仓动作 | IP 受限（`ipBlocked`、`userIpBlocked`、`ipLoading`）时不渲染下单表单，持仓表去掉平仓列，委托表去掉撤单列；存款与提款显示不可用，发送、划转、兑换都禁用 | 保持现行的全部拦截，不放开只减仓动作 | 不改代码；`claude/p1-funds-safety` 记录 |
+| 发送 Max 是否预留激活费 | Max 是可提余额向下取整到 2 位（现货按代币精度），不预留费用；有费用或对方从未发过交易时弹出确认 | 照做：不预留（D1 已加确认步骤） | 不改代码；`claude/p1-funds-safety` 记录 |
+| 金库全额提取 | 点 Max 后不再改金额时发送 `usd: "0"`（提取全部），改过金额就按输入值发送；成功提示不带金额 | 照做 | `claude/p1-vault-dashboard` |
+| Scale 用 USD 输入的总额 | 每档数量各自向下取整：总额不超过输入，但发出的总数量可能少于界面显示的数量 | 取官方「不超过输入金额」的结果，同时保留「显示即发送」：按整手调低数量 | `claude/p1-order-safety` |
+| CCTP 流水的来源链 | 请求 Across 的 `hyperliquid-transfers?direction=in|out&user=` | 原则上照做；但这是新的第三方数据流（把地址发给 Across、改 CSP），另开任务，先写 ADR | 后续任务 |
+| 子账户与持仓量奖励流水 | `internalTransfer` 来自两个固定地址时记为 `open.interest.reward`；与自己子账户之间的转账（`subAccountTransfer`，以及涉及子账户的 `internalTransfer`、`spotTransfer`、`send`）记为 `sub.account.transfer` | 照做 | `claude/p1-history-tables` |
+| 触发单改单 | 改单一律带 `a: true`（SDK 注释：撤原单失败也照样下新单），触发单可改 | 只对不分组的只减仓触发单照做；开仓类触发单仍需撤单重下，因为原单若刚好触发，`a: true` 会再下一张开仓单 | `claude/p1-order-modify` |
+| 其余价格字段的取整 | 提交前只校验限价是否在最小变动单位上；其他价格输入框按价格量级限制可输的小数位，非法值输不进去 | 与主价格一致：校验并给出示例，不再在提交时静默取整 | `claude/p1-order-safety` |
+
 ### 下一次先查
 
 本记录「二审结果」各表；Codex 三路报告与浏览器截图只在本机草稿目录，未入库。本记录不替代任何早先记录；2026-10-13 生产就绪审计的未修项仍以那份记录为准。

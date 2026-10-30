@@ -211,6 +211,26 @@ describe("exchange clients", () => {
 		expect(Math.abs(Number(mainnetRequest?.payload.expiresAfter) - (http.serverTime + 15_000))).toBeLessThan(1_000);
 	});
 
+	it("signs without an expiry and asks for no server time while Transaction Delay Protection is off", async () => {
+		const { getTradingClient, setTransactionDelayProtectionReader } = await import("@sairn/hl-react/clients");
+		const agent = privateKeyToAccount(`0x${"0".repeat(63)}7`);
+		const client = getTradingClient(agent, false);
+		let enabled = false;
+		setTransactionDelayProtectionReader(() => enabled);
+		try {
+			await client.cancel({ cancels: [{ a: 0, o: 1 }] });
+			enabled = true;
+			await client.cancel({ cancels: [{ a: 0, o: 2 }] });
+		} finally {
+			setTransactionDelayProtectionReader(() => true);
+		}
+
+		expect(http.requests[0]?.endpoint).toBe("exchange");
+		expect(http.requests[0]?.payload).not.toHaveProperty("expiresAfter");
+		const [, protectedRequest] = http.requests.filter((entry) => entry.endpoint === "exchange");
+		expect(Math.abs(Number(protectedRequest?.payload.expiresAfter) - (http.serverTime + 15_000))).toBeLessThan(1_000);
+	});
+
 	it("leaves user-signed actions without an expiry", async () => {
 		const { createExchangeClient } = await import("@sairn/hl-react/clients");
 		const owner = privateKeyToAccount(`0x${"0".repeat(63)}4`);

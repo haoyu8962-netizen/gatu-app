@@ -159,9 +159,22 @@ function getServerClock(isTestnet: boolean): ServerClock {
 	);
 }
 
-/** `expiresAfter` for every L1 action; the SDK leaves user-signed actions without it. */
+let readTransactionDelayProtection: () => boolean = () => true;
+
+/** Lets the app turn Transaction Delay Protection off; the preference is read whenever an L1 action is signed. */
+export function setTransactionDelayProtectionReader(read: () => boolean): void {
+	readTransactionDelayProtection = read;
+}
+
+/**
+ * `expiresAfter` for every L1 action while Transaction Delay Protection is on. The SDK omits the
+ * field when this resolves to `undefined`, and always for user-signed actions.
+ */
 function getActionExpiry(isTestnet: boolean): () => Promise<number> {
-	return () => getServerClock(isTestnet).getExpiresAfter();
+	return (async () =>
+		readTransactionDelayProtection()
+			? getServerClock(isTestnet).getExpiresAfter()
+			: undefined) as () => Promise<number>;
 }
 
 export function createExchangeClient(

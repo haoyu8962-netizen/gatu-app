@@ -192,6 +192,8 @@ pnpm --filter @sairn/terminal typecheck
 pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/trading-onboarding-domain.test.ts \
   src/lib/tests/exchange-action-expiry.test.ts \
+  src/lib/tests/global-settings-store.test.ts \
+  src/lib/tests/global-settings-modal.test.tsx \
   src/lib/tests/trading-onboarding-gate.test.tsx \
   src/lib/tests/account-mode-setup.test.ts \
   src/lib/tests/account-mode-setup-attempts.test.ts \

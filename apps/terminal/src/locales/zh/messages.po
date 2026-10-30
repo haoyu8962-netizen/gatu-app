@@ -6102,6 +6102,10 @@ msgstr "带客户端订单 ID 的委托不能在此修改，请取消后重新�
 msgid "Orders with linked TP/SL orders cannot be modified here."
 msgstr "关联止盈止损的委托不能在此修改。"
 
+#: src/components/trade/components/global-settings-modal.tsx
+msgid "Orders, cancels and other trading actions expire if the exchange has not accepted them within 15 seconds."
+msgstr "下单、撤单等交易操作若在 15 秒内未被交易所接受，将自动失效。"
+
 #: src/components/historical-orders/historical-orders-page.tsx
 #~ msgid "Ordinary order history for {0}"
 #~ msgstr ""
@@ -10158,6 +10162,11 @@ msgstr "交易哈希"
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 msgid "Transaction breakdown"
 msgstr "交易明细"
+
+#: src/components/trade/components/global-settings-modal.tsx
+#: src/components/trade/components/global-settings-modal.tsx
+msgid "Transaction delay protection"
+msgstr "交易延迟保护"
 
 #: src/lib/errors/action-error.ts
 msgid "Transaction reverted on Arbitrum"
