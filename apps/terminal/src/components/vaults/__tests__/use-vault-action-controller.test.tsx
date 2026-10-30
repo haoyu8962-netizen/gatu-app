@@ -27,6 +27,7 @@ const HASH = `0x${"ab".repeat(32)}`;
 
 interface QueryState {
 	data: unknown;
+	isSuccess: boolean;
 	refetch: ReturnType<typeof vi.fn>;
 }
 
@@ -417,6 +418,100 @@ describe("useVaultActionController", () => {
 		expect(getFundsActionMarkers()).toHaveLength(0);
 	});
 
+	function refetching(cached: unknown, fresh: { data: unknown; error: unknown }): QueryState {
+		return { data: cached, isSuccess: true, refetch: vi.fn().mockResolvedValue(fresh) };
+	}
+
+	function setUnifiedSpot(total: string) {
+		mocks.queries.set(
+			"spotClearinghouseState",
+			query({ balances: [{ coin: "USDC", token: 0, total, hold: "0.0", entryNtl: "0.0" }] }),
+		);
+		mocks.queries.set("userAbstraction", query("unifiedAccount"));
+	}
+
+	function vaultErrorText() {
+		const error = current().action?.error;
+		return error ? describeActionFailure(error, (descriptor) => i18n._(descriptor)) : null;
+	}
+
+	it("signs nothing when the balance re-read before signing no longer covers the reviewed deposit", async () => {
+		setUnifiedSpot("100");
+		mocks.queries.set(
+			"spotClearinghouseState",
+			refetching(
+				{ balances: [{ coin: "USDC", token: 0, total: "100", hold: "0.0", entryNtl: "0.0" }] },
+				{ data: { balances: [{ coin: "USDC", token: 0, total: "2", hold: "0.0", entryNtl: "0.0" }] }, error: null },
+			),
+		);
+		act(() => root.render(<Probe />));
+		await openAndReview();
+		await act(async () => current().confirm());
+
+		expect(current().action).toMatchObject({ state: { stage: "review", result: null } });
+		expect(mocks.exchangeMutate).not.toHaveBeenCalled();
+		expect(getFundsActionMarkers()).toHaveLength(0);
+	});
+
+	it("signs nothing when a failed re-read still carries the earlier balance or the mode became default", async () => {
+		const balance = { balances: [{ coin: "USDC", token: 0, total: "100", hold: "0.0", entryNtl: "0.0" }] };
+		setUnifiedSpot("100");
+		mocks.queries.set("spotClearinghouseState", refetching(balance, { data: balance, error: new Error("timeout") }));
+		act(() => root.render(<Probe />));
+		await openAndReview();
+		await act(async () => current().confirm());
+
+		expect(vaultErrorText()).not.toBeNull();
+		expect(mocks.exchangeMutate).not.toHaveBeenCalled();
+
+		mocks.queries.set("spotClearinghouseState", query(balance));
+		mocks.queries.set("userAbstraction", refetching("unifiedAccount", { data: "default", error: null }));
+		act(() => root.render(<Probe />));
+		await act(async () => current().confirm());
+
+		expect(mocks.exchangeMutate).not.toHaveBeenCalled();
+		expect(getFundsActionMarkers()).toHaveLength(0);
+	});
+
+	it("does not offer Max from a balance whose last refresh failed", async () => {
+		setUnifiedSpot("100");
+		mocks.queries.set("spotClearinghouseState", {
+			...query({ balances: [{ coin: "USDC", token: 0, total: "100", hold: "0.0", entryNtl: "0.0" }] }),
+			isSuccess: false,
+		});
+		act(() => root.render(<Probe />));
+		await act(async () => current().requestAction("deposit"));
+		act(() => current().setAmount("5"));
+
+		expect(current().availableAmount).toBeNull();
+		expect(current().maxAmount).toBeNull();
+		expect(current().canReview).toBe(false);
+	});
+
+	it.each(["disabled", "dexAbstraction"])(
+		"deposits from the perp balance in %s mode even when the unused spot re-read fails",
+		async (mode) => {
+			mocks.queries.set("userAbstraction", query(mode));
+			mocks.queries.set(
+				"spotClearinghouseState",
+				refetching({ balances: [] }, { data: undefined, error: new Error("down") }),
+			);
+			act(() => root.render(<Probe />));
+			await openAndReview();
+			await act(async () => current().confirm());
+
+			expect(mocks.exchangeMutate).toHaveBeenCalledWith({ vaultAddress: VAULT, isDeposit: true, usd: 5_000_000 });
+		},
+	);
+
+	it("rounds Max down to micro-USDC", async () => {
+		mocks.queries.set("clearinghouseState", query({ withdrawable: "12.3456789" }));
+		act(() => root.render(<Probe />));
+		await act(async () => current().requestAction("deposit"));
+
+		expect(current().maxAmount).toBe("12.345678");
+	});
+
 	it("fails a fresh closed-Vault preflight before persisting or calling the SDK", async () => {
 		mocks.queries.set("vaultDetails", query({ ...RAW_DETAIL, isClosed: true }));
 		await openAndReview();
@@ -772,6 +867,7 @@ describe("useVaultActionController", () => {
 		const freshDetail = deferred<{ data: unknown; error: null }>();
 		mocks.queries.set("vaultDetails", {
 			data: RAW_DETAIL,
+			isSuccess: true,
 			refetch: vi.fn().mockReturnValue(freshDetail.promise),
 		});
 		await openAndReview();
@@ -828,6 +924,7 @@ describe("useVaultActionController", () => {
 		const freshDetail = deferred<{ data: unknown; error: null }>();
 		mocks.queries.set("vaultDetails", {
 			data: RAW_DETAIL,
+			isSuccess: true,
 			refetch: vi.fn().mockReturnValue(freshDetail.promise),
 		});
 		await openAndReview();
@@ -1086,7 +1183,7 @@ describe("useVaultActionController", () => {
 });
 
 function query(data: unknown): QueryState {
-	return { data, refetch: vi.fn().mockResolvedValue({ data, error: null }) };
+	return { data, isSuccess: true, refetch: vi.fn().mockResolvedValue({ data, error: null }) };
 }
 
 function messageId(message: string): string {

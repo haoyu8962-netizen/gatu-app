@@ -63,6 +63,7 @@ import {
 	type VaultActionReceipt,
 	type VaultFundsAction,
 	VaultLocalPreDispatchError,
+	vaultDepositUsesSpotBalance,
 	verifyVaultActionPreflight,
 } from "./vault-action-domain";
 
@@ -344,9 +345,9 @@ export function useVaultActionController({
 	});
 
 	const currentDepositAvailable = getVaultDepositAvailable({
-		accountAbstraction: accountAbstractionQuery.data,
-		clearinghouseSnapshot: clearinghouseQuery.data,
-		spotClearinghouseSnapshot: spotClearinghouseQuery.data,
+		accountAbstraction: accountAbstractionQuery.isSuccess ? accountAbstractionQuery.data : undefined,
+		clearinghouseSnapshot: clearinghouseQuery.isSuccess ? clearinghouseQuery.data : undefined,
+		spotClearinghouseSnapshot: spotClearinghouseQuery.isSuccess ? spotClearinghouseQuery.data : undefined,
 	});
 	const minimumDeposit = detail ? getVaultMinimumDeposit(detail) : null;
 	const availableAmount = visibleAction
@@ -568,12 +569,13 @@ export function useVaultActionController({
 			if (!requirements.isSignerReady) {
 				throw new LocalizedActionError(SIGNER_UNVERIFIED);
 			}
+			const isDeposit = current.action === "deposit";
 			if (
 				freshDetail.error ||
 				freshEquities.error ||
 				freshClearinghouse.error ||
-				freshSpotClearinghouse.error ||
-				freshAccountAbstraction.error
+				(isDeposit && freshAccountAbstraction.error) ||
+				(isDeposit && vaultDepositUsesSpotBalance(freshAccountAbstraction.data) && freshSpotClearinghouse.error)
 			) {
 				throw new LocalizedActionError(VAULT_DATA_UNVERIFIED);
 			}
@@ -586,7 +588,7 @@ export function useVaultActionController({
 				detailSnapshot: freshDetail.data,
 				equitiesSnapshot: freshEquities.data,
 				clearinghouseSnapshot: freshClearinghouse.data,
-				spotClearinghouseSnapshot: freshSpotClearinghouse.data,
+				spotClearinghouseSnapshot: freshSpotClearinghouse.error ? undefined : freshSpotClearinghouse.data,
 				accountAbstraction: freshAccountAbstraction.data,
 				now: Date.now(),
 			});

@@ -1,3 +1,4 @@
+import { getAddress } from "viem";
 import { describe, expect, it } from "vitest";
 import {
 	atomicAmountFits,
@@ -113,6 +114,13 @@ describe("Vault action preflight", () => {
 		expect(
 			deposit({ detailSnapshot: rawDetail({ allowDeposits: false, isClosed: true }), ownerAddress: LEADER }),
 		).toEqual({ valid: false, error: "depositsClosed" });
+		const checksummedLeader = getAddress("0xabcdefabcdefabcdefabcdefabcdefabcdefabcd");
+		expect(
+			deposit({
+				detailSnapshot: rawDetail({ allowDeposits: false, leader: checksummedLeader }),
+				ownerAddress: checksummedLeader.toLowerCase() as `0x${string}`,
+			}),
+		).toMatchObject({ valid: true });
 	});
 
 	it("requires the official minimum deposit, which rises to 10 USDC above $100M of TVL", () => {
@@ -132,6 +140,16 @@ describe("Vault action preflight", () => {
 			error: "belowMinimumDeposit",
 		});
 		expect(deposit({ detailSnapshot: largeVault, amountAtomic: "10000000" })).toMatchObject({ valid: true });
+		const boundarySnapshot = { accountValueHistory: [[NOW, "100000000"]], pnlHistory: [[NOW, "0"]], vlm: "0" };
+		const boundaryVault = rawDetail({
+			portfolio: [
+				["day", boundarySnapshot],
+				["week", boundarySnapshot],
+				["month", boundarySnapshot],
+				["allTime", boundarySnapshot],
+			],
+		});
+		expect(deposit({ detailSnapshot: boundaryVault, amountAtomic: "5000000" })).toMatchObject({ valid: true });
 	});
 
 	it("fails withdrawals closed for missing exact equity, server locks, and fresh maximum changes", () => {

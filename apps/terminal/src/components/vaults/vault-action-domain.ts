@@ -143,14 +143,17 @@ interface VaultDepositBalanceSnapshots {
  * hold when the account shares its quote balance with perps (Unified account, Portfolio Margin),
  * otherwise the perp withdrawable. Any other or unknown account mode fails closed.
  */
+/** Unified and Portfolio Margin accounts fund a Vault deposit from spot USDC, like the official terminal. */
+export function vaultDepositUsesSpotBalance(accountAbstraction: unknown): boolean {
+	return accountAbstraction === "unifiedAccount" || accountAbstraction === "portfolioMargin";
+}
+
 export function getVaultDepositAvailable({
 	accountAbstraction,
 	clearinghouseSnapshot,
 	spotClearinghouseSnapshot,
 }: VaultDepositBalanceSnapshots): string | null {
-	if (accountAbstraction === "unifiedAccount" || accountAbstraction === "portfolioMargin") {
-		return parseSpotUsdcAvailable(spotClearinghouseSnapshot);
-	}
+	if (vaultDepositUsesSpotBalance(accountAbstraction)) return parseSpotUsdcAvailable(spotClearinghouseSnapshot);
 	if (accountAbstraction === "disabled" || accountAbstraction === "dexAbstraction") {
 		return parseClearinghouseWithdrawable(clearinghouseSnapshot);
 	}
