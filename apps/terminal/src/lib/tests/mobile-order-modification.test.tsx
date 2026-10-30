@@ -563,6 +563,7 @@ describe("mobile order modification", () => {
 		mocks.markPriceLive = true;
 		mocks.orders = [reduceOnlyStopOrder];
 		const { trigger } = openEditor();
+		expect(trigger?.closest("label")?.textContent).not.toContain("USDC");
 		await act(async () => {
 			if (!trigger) return;
 			changeInput(trigger, "175");

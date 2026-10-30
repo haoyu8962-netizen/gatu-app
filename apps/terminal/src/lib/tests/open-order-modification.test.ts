@@ -308,6 +308,60 @@ describe("trigger order modification plans", () => {
 		}
 	});
 
+	it("rebuilds the whole replacement: a market trigger's price follows the trigger, a limit trigger keeps its price", () => {
+		const cases = [
+			["Stop Market", "B", "112", "123.2", true, "sl"],
+			["Stop Market", "A", "95", "85.5", true, "sl"],
+			["Take Profit Market", "A", "112", "100.8", true, "tp"],
+			["Take Profit Market", "B", "95", "104.5", true, "tp"],
+			["Stop Limit", "B", "112", "115", false, "sl"],
+			["Take Profit Limit", "A", "112", "115", false, "tp"],
+		] as const;
+		for (const [orderType, side, trigger, price, isMarket, tpsl] of cases) {
+			const order = makeTriggerOrder(orderType, { side });
+			const plan = buildPlan(captureTarget(order, "triggerPrice"), order, trigger);
+			expect(plan.status === "ready" ? plan.params.modifies[0]?.order : plan).toEqual({
+				a: 0,
+				b: side === "B",
+				p: price,
+				s: "2",
+				r: true,
+				t: { trigger: { isMarket, triggerPx: trigger, tpsl } },
+			});
+		}
+		const stop = makeTriggerOrder("Stop Market");
+		const sizePlan = buildPlan(captureTarget(stop, "size"), stop, "1");
+		expect(sizePlan.status === "ready" ? sizePlan.params.modifies[0]?.order : sizePlan).toEqual({
+			a: 0,
+			b: true,
+			p: "121",
+			s: "1",
+			r: true,
+			t: { trigger: { isMarket: true, triggerPx: "110", tpsl: "sl" } },
+		});
+	});
+
+	it("refuses a trigger on the wrong side of the mark, on the mark, or without a live mark", () => {
+		const cases = [
+			["Stop Market", "B", "95"],
+			["Stop Market", "A", "112"],
+			["Take Profit Market", "A", "95"],
+			["Take Profit Market", "B", "112"],
+			["Stop Limit", "B", "95"],
+			["Take Profit Limit", "A", "95"],
+		] as const;
+		for (const [orderType, side, wrongSide] of cases) {
+			const order = makeTriggerOrder(orderType, { side });
+			const target = captureTarget(order, "triggerPrice");
+			expect(buildPlan(target, order, wrongSide)).toEqual({ status: "blocked", reason: "invalid-trigger-direction" });
+			expect(buildPlan(target, order, "100")).toEqual({ status: "blocked", reason: "invalid-trigger-direction" });
+		}
+		const stop = makeTriggerOrder("Stop Market");
+		expect(
+			buildPlan(captureTarget(stop, "triggerPrice"), stop, "112", { market: { ...market, markPx: undefined } }),
+		).toEqual({ status: "blocked", reason: "mark-price-unavailable" });
+	});
+
 	it("keeps triggers that can open a position on cancel and replace, and limit replacements without the flag", () => {
 		expect(
 			createOpenOrderModifyTarget({

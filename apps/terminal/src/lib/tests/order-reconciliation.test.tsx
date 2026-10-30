@@ -943,6 +943,74 @@ describe("OrderReconciliation", () => {
 		);
 	});
 
+	it.each([
+		["the requested trigger", "112", "success", "Modified"],
+		[
+			"a trigger changed elsewhere",
+			"105",
+			"failed",
+			"The order changed before the requested modification was confirmed. Review the latest order before retrying.",
+		],
+		["the original trigger", "110", null, null],
+	] as const)("reconciles a trigger price modification against %s", (_case, triggerPx, status, message) => {
+		const now = Date.now();
+		const monotonicNow = performance.now();
+		const action = getPendingTradingActionActions().claimModification({
+			env: "Mainnet",
+			owner: USER,
+			oid: 54,
+			originalSize: "2",
+			originalTriggerPx: "110",
+			originalLimitPx: "121",
+			expectedTriggerPx: "112",
+		});
+		if (!action) throw new Error("Expected modification claim");
+		getPendingTradingActionActions().markModificationRequestStarted(action.id, now - 2, monotonicNow - 2);
+		getPendingTradingActionActions().markModificationAwaiting(action.id, now - 1, monotonicNow - 1);
+		mocks.openOrdersData = { orders: [{ oid: 54, sz: "2", triggerPx, limitPx: "123.2" }] };
+		mocks.openOrdersLastMessageAt = now;
+		mocks.openOrdersMonotonicLastMessageAt = monotonicNow;
+
+		act(() => root.render(createReconciliation()));
+
+		if (status === null) {
+			expect(getPendingTradingActionSnapshot().modifications).toHaveLength(1);
+			return;
+		}
+		expect(getPendingTradingActionSnapshot().modifications).toHaveLength(0);
+		expectActionFeedback(action.id, status, message);
+	});
+
+	it("does not treat a lower size as fills when the trigger it carries is not the requested one", () => {
+		const now = Date.now();
+		const monotonicNow = performance.now();
+		const action = getPendingTradingActionActions().claimModification({
+			env: "Mainnet",
+			owner: USER,
+			oid: 55,
+			originalSize: "2",
+			originalTriggerPx: "110",
+			originalLimitPx: "121",
+			expectedSize: "3",
+			expectedTriggerPx: "112",
+		});
+		if (!action) throw new Error("Expected modification claim");
+		getPendingTradingActionActions().markModificationRequestStarted(action.id, now - 2, monotonicNow - 2);
+		getPendingTradingActionActions().markModificationAwaiting(action.id, now - 1, monotonicNow - 1);
+		mocks.openOrdersData = { orders: [{ oid: 55, sz: "2.5", triggerPx: "105", limitPx: "115.5" }] };
+		mocks.openOrdersLastMessageAt = now;
+		mocks.openOrdersMonotonicLastMessageAt = monotonicNow;
+
+		act(() => root.render(createReconciliation()));
+
+		expect(getPendingTradingActionSnapshot().modifications).toHaveLength(0);
+		expectActionFeedback(
+			action.id,
+			"failed",
+			"The order changed before the requested modification was confirmed. Review the latest order before retrying.",
+		);
+	});
+
 	it("releases an unconfirmed modification after a fresh snapshot shows the original order", () => {
 		const now = Date.now();
 		const monotonicNow = performance.now();

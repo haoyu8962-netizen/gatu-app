@@ -461,6 +461,31 @@ describe("desktop cancel all orders confirmation", () => {
 		});
 	});
 
+	it("refuses a trigger edit at the SDK boundary once the mark price is no longer live", async () => {
+		mocks.markPriceLive = true;
+		mocks.orders = [triggerOrder];
+		const broadcast = vi.fn();
+		mocks.modifyOrders.mockImplementation(async (params: unknown) => {
+			mocks.markPriceLive = false;
+			mocks.batchModifyGuard?.(params);
+			broadcast(params);
+			return { response: { data: { statuses: [{ resting: { oid: 42 } }] } } };
+		});
+		act(() => root.render(<ReviewedOrders />));
+		act(() => container.querySelector<HTMLButtonElement>('button[aria-label="Edit xyz:ORCL trigger price"]')?.click());
+		const input = container.querySelector<HTMLInputElement>('input[aria-label="Edit xyz:ORCL trigger price"]');
+
+		await act(async () => {
+			if (!input) return;
+			changeInput(input, "165");
+			pressKey(input, "Enter");
+			await Promise.resolve();
+		});
+
+		expect(mocks.modifyOrders).toHaveBeenCalledOnce();
+		expect(broadcast).not.toHaveBeenCalled();
+	});
+
 	it("formats HIP-3 order notional in its verified non-USDC quote token", () => {
 		mocks.quoteSymbol = "USDT0";
 		act(() => root.render(<ReviewedOrders />));

@@ -128,7 +128,6 @@ export function MobileOrderModificationModal({
 								onChange={(event) => onTriggerPriceChange(normalizeDecimalInputEvent(event).target.value)}
 								onKeyDown={handleInputKeyDown}
 							/>
-							<span className="ms-2 shrink-0 text-xs text-market-close-muted">USDC</span>
 						</label>
 					) : null}
 
