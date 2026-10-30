@@ -62,7 +62,14 @@
 - 变异：抵押币回落改回 USDC、手机类型改回按对象判断、去掉 spot 条件、保证金改回 `formatUSD`，各自让对应新测试失败（2、1、2、1 项），均已还原。
 - 第二轮只读窄审（范围 `55c0b62e → 562c8687`）：上一轮发现都已修，未发现修复引入的新问题，评分 9.0。修复后全量（测试工作树，`562c8687`）：9296 通过，1 失败为沙箱内已知的 `vite-development-cache`（EPERM）。
 
+## 按官方实践处理的待定事项
+
+运营方授权按官方实践决定后，本分支补上流水分类（官方前端包：`internalTransfer` 的发送方是两个固定地址时记为 `open.interest.reward`，转账一方是自己的子账户时记为 `sub.account.transfer`；`spotTransfer`、`send` 同样先看子账户）：
+
+- `account-ledger.ts` 新增 `openInterestReward` 动作；`buildAccountLedgerRows` 多一个可选的子账户集合，`internalTransfer`、`spotTransfer`、`send` 都先判断子账户。`useAccountLedger` 另查 `info.subAccounts`（失败或缺失时为空集合，这些行保持原标签），CSV 导出同样查一次。新增文案「Open Interest Reward」，七种语言都有译文。
+- 测试与变异：奖励地址清空、三种转账各自不判断子账户、hook 不把子账户交给分类、奖励地址按大小写比较，六个变异各自让对应测试失败，均已还原。
+
 ## 后续与替代关系
 
-- CCTP 流水显示具体链需要接入 Across `hyperliquid-transfers` 接口（官方做法），属于新的外部依赖，留给运营方决定。
-- 子账户转账、`internalTransfer` 的开放利息奖励分类未做（官方另有分支）。
+- CCTP 流水显示具体链：按官方实践决定照做，但它把地址发给 Across、要改 CSP，另开任务、先写 ADR（审查记录「2026-10-30 按官方实践处理的待定事项」）。
+- 子账户转账与持仓量奖励的分类已按官方补上（见上文「按官方实践处理的待定事项」）。

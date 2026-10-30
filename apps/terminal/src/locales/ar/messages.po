@@ -5849,6 +5849,10 @@ msgstr "العقود المفتوحة"
 msgid "Open interest cap"
 msgstr "حد العقود المفتوحة"
 
+#: src/config/account-ledger.ts
+msgid "Open Interest Reward"
+msgstr "مكافأة العقود المفتوحة"
+
 #: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
 #: src/components/trade/positions/twap-fill-history-table.tsx
 #: src/lib/trade/fill-direction.ts

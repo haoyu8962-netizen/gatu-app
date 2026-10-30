@@ -4,6 +4,7 @@ import {
 	type AccountLedgerUpdate,
 	buildAccountLedgerRow,
 	fetchAccountLedgerHistory,
+	getAccountLedgerSubAccounts,
 	getAccountLedgerUpdateKey,
 	getAccountLedgerUsdcBridge,
 	mergeAccountLedgerUpdates,
@@ -203,6 +204,43 @@ describe("account ledger", () => {
 			expect(row).toMatchObject({ action: "transfer", destination });
 		},
 	);
+
+	it("labels open interest rewards and transfers with the owner's sub-accounts as the official terminal does", () => {
+		const SUB_ACCOUNT = "0x4444444444444444444444444444444444444444";
+		const subAccounts = getAccountLedgerSubAccounts([
+			{ name: "alpha", subAccountUser: SUB_ACCOUNT.toUpperCase().replace("0X", "0x"), master: USER },
+		]);
+		const internal = (user: string, destination: string) =>
+			createUpdate({ type: "internalTransfer", usdc: "3", user, destination, fee: "0" });
+		const reward = internal("0x995E92D4BB508276F839F1F191DF0FBDDB8582BA", USER);
+
+		expect(buildAccountLedgerRow(reward, USER, BRIDGE, subAccounts)).toMatchObject({
+			action: "openInterestReward",
+			amount: "3",
+		});
+		expect(
+			buildAccountLedgerRow(internal("0x4e8b59f6f39fde9e908dff6554c31f232f8a9d0f", USER), USER, BRIDGE),
+		).toMatchObject({ action: "openInterestReward" });
+		expect(buildAccountLedgerRow(internal(USER, SUB_ACCOUNT), USER, BRIDGE, subAccounts)).toMatchObject({
+			action: "subAccountTransfer",
+			amount: "-3",
+		});
+		expect(buildAccountLedgerRow(internal(USER, OTHER), USER, BRIDGE, subAccounts)).toMatchObject({ action: "send" });
+		expect(buildAccountLedgerRow(internal(USER, SUB_ACCOUNT), USER, BRIDGE)).toMatchObject({ action: "send" });
+		expect(
+			buildAccountLedgerRow(createUpdate(createSpotTransfer({ destination: SUB_ACCOUNT })), USER, BRIDGE, subAccounts),
+		).toMatchObject({ action: "subAccountTransfer", token: "HYPE" });
+		expect(
+			buildAccountLedgerRow(
+				createUpdate(createSend({ user: SUB_ACCOUNT, destination: USER, destinationDex: "" })),
+				USER,
+				BRIDGE,
+				subAccounts,
+			),
+		).toMatchObject({ action: "subAccountTransfer", amount: "5" });
+		expect(getAccountLedgerSubAccounts(null).size).toBe(0);
+		expect(getAccountLedgerSubAccounts([{ subAccountUser: 1 }, "bad"]).size).toBe(0);
+	});
 
 	it("labels USDC arriving from the network's CoreDepositWallet as a deposit from HyperEVM", () => {
 		const delta = createSend({ destination: USER, destinationDex: "", user: MAINNET_CORE_DEPOSIT_WALLET });

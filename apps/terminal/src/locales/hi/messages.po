@@ -5849,6 +5849,10 @@ msgstr "ओपन इंटरेस्ट"
 msgid "Open interest cap"
 msgstr "ओपन इंटरेस्ट सीमा"
 
+#: src/config/account-ledger.ts
+msgid "Open Interest Reward"
+msgstr "ओपन इंटरेस्ट रिवॉर्ड"
+
 #: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
 #: src/components/trade/positions/twap-fill-history-table.tsx
 #: src/lib/trade/fill-direction.ts

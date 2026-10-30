@@ -595,6 +595,8 @@ changes, not evidence that a build has been deployed or accepted on real devices
   transfers between HyperCore and HyperEVM as Transfer, with HyperEVM as their source or destination.
   The chain beyond HyperEVM is not shown yet: the official terminal reads it from Across's transfer
   records, which this terminal does not use.
+- As on the official terminal, Deposits and withdrawals labels transfers with your sub-accounts as
+  Sub-account Transfer and open interest reward payments as Open Interest Reward instead of Send.
 - The Market order-type tab and menu entry in the order form use the order-type wording instead of
   the market-list wording: 市价 in Chinese, 成行 in Japanese, मार्केट in Hindi, Au marché in French
   and سعر السوق in Arabic (English and Spanish are unchanged). The compact account-mode placeholder

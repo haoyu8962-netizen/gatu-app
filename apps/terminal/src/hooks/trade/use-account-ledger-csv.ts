@@ -5,6 +5,7 @@ import { getInfoClient } from "@/lib/hyperliquid";
 import {
 	buildAccountLedgerRows,
 	fetchAccountLedgerHistory,
+	getAccountLedgerSubAccounts,
 	getAccountLedgerUsdcBridge,
 } from "@/lib/trade/account-ledger";
 import { fetchHistoryPageWithRetry } from "@/lib/trade/history-pagination";
@@ -39,17 +40,21 @@ export function useAccountLedgerCsv(): AccountLedgerCsvResult {
 						),
 					{ endTime, signal },
 				);
-				return { history, owner: address };
+				const subAccounts = await client.subAccounts({ user: address }, signal).catch(() => null);
+				return { history, owner: address, subAccounts };
 			});
 			if (!result) {
 				toast.dismiss(toastId);
 				return;
 			}
-			const { history, owner } = result;
+			const { history, owner, subAccounts } = result;
 			const { truncated, updates } = history;
-			const rows = buildAccountLedgerRows(updates, owner, getAccountLedgerUsdcBridge(isTestnet)).sort(
-				(left, right) => left.time - right.time,
-			);
+			const rows = buildAccountLedgerRows(
+				updates,
+				owner,
+				getAccountLedgerUsdcBridge(isTestnet),
+				getAccountLedgerSubAccounts(subAccounts),
+			).sort((left, right) => left.time - right.time);
 			const csvRows = [
 				[t`Time`, t`Action`, t`Source`, t`Destination`, t`Account Value Change`, t`Fee`],
 				...rows.map((row) => [
