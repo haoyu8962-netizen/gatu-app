@@ -137,7 +137,7 @@ describe("open order limit price and client order id modifications", () => {
 });
 
 describe("open order modify capabilities", () => {
-	it("allows safe limit size edits and blocks trigger replacements that require the unsafe SDK flag", () => {
+	it("allows limit size and price edits and reduce-only trigger size and trigger edits", () => {
 		expect(getOpenOrderModifyCapabilities(makeLimitOrder())).toEqual({
 			size: { supported: true, reason: null },
 			triggerPrice: { supported: false, reason: "trigger-price-not-applicable" },
@@ -146,8 +146,8 @@ describe("open order modify capabilities", () => {
 
 		for (const orderType of ["Stop Market", "Stop Limit", "Take Profit Market", "Take Profit Limit"] as const) {
 			expect(getOpenOrderModifyCapabilities(makeTriggerOrder(orderType))).toEqual({
-				size: { supported: false, reason: "unsupported-order-type" },
-				triggerPrice: { supported: false, reason: "unsupported-order-type" },
+				size: { supported: true, reason: null },
+				triggerPrice: { supported: true, reason: null },
 				limitPrice: { supported: false, reason: "unsupported-order-type" },
 			});
 		}
@@ -289,17 +289,38 @@ describe("ordinary limit order modification plans", () => {
 });
 
 describe("trigger order modification plans", () => {
-	it("fails closed and directs callers to cancel and replace", () => {
+	it("replaces a reduce-only trigger with the always-place flag the exchange requires", () => {
 		for (const orderType of ["Stop Market", "Stop Limit", "Take Profit Market", "Take Profit Limit"] as const) {
-			const result = createOpenOrderModifyTarget({
+			const order = makeTriggerOrder(orderType);
+			const triggerPlan = buildPlan(captureTarget(order, "triggerPrice"), order, "112");
+			const sizePlan = buildPlan(captureTarget(order, "size"), order, "1");
+
+			expect(triggerPlan).toMatchObject({ status: "ready", normalizedValue: "112" });
+			expect(triggerPlan.status === "ready" ? triggerPlan.params.a : null).toBe(true);
+			expect(triggerPlan.status === "ready" ? triggerPlan.params.modifies[0]?.order : null).toMatchObject({
+				r: true,
+				t: { trigger: { triggerPx: "112", tpsl: orderType.startsWith("Stop") ? "sl" : "tp" } },
+			});
+			expect(sizePlan.status === "ready" ? sizePlan.params.a : null).toBe(true);
+			if (triggerPlan.status !== "ready") continue;
+			const { a: _alwaysPlace, ...withoutFlag } = triggerPlan.params;
+			expect(openOrderModifyParamsEqual(triggerPlan.params, withoutFlag)).toBe(false);
+		}
+	});
+
+	it("keeps triggers that can open a position on cancel and replace, and limit replacements without the flag", () => {
+		expect(
+			createOpenOrderModifyTarget({
 				owner: OWNER,
 				env: "Mainnet",
-				field: "size",
+				field: "triggerPrice",
 				market,
-				order: makeTriggerOrder(orderType),
-			});
-			expect(result).toEqual({ status: "blocked", reason: "unsupported-order-type" });
-		}
+				order: makeTriggerOrder("Stop Market", { reduceOnly: false }),
+			}),
+		).toEqual({ status: "blocked", reason: "unsupported-order-type" });
+		const limit = makeLimitOrder();
+		const plan = buildPlan(captureTarget(limit, "size"), limit, "1");
+		expect(plan.status === "ready" ? plan.params : null).not.toHaveProperty("a");
 	});
 });
 

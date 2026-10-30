@@ -132,15 +132,30 @@ describe("open order modification form", () => {
 	});
 
 	it.each(["Stop Market", "Stop Limit", "Take Profit Market", "Take Profit Limit"] as const)(
-		"does not expose unsafe direct editing for %s orders",
+		"edits the trigger price of a reduce-only %s order with the always-place flag",
 		(orderType) => {
 			const order = makeTriggerOrder(orderType);
-			expect(createOpenOrderModifyFormTarget({ owner: OWNER, env: "Mainnet", market, order })).toEqual({
-				status: "blocked",
-				reason: "unsupported-order-type",
-			});
+			const target = capture(order);
+			const plan = build(target, order, "2", "112");
+
+			expect(target.triggerPrice).not.toBeNull();
+			expect(target.limitPrice).toBeNull();
+			expect(plan).toMatchObject({ status: "ready", normalizedTriggerPrice: "112" });
+			expect(plan.status === "ready" ? plan.expectation : null).toEqual({ expectedTriggerPx: "112" });
+			expect(plan.status === "ready" ? plan.params.a : null).toBe(true);
 		},
 	);
+
+	it("keeps trigger orders that can open a position on cancel and replace", () => {
+		expect(
+			createOpenOrderModifyFormTarget({
+				owner: OWNER,
+				env: "Mainnet",
+				market,
+				order: makeTriggerOrder("Stop Market", { reduceOnly: false }),
+			}),
+		).toEqual({ status: "blocked", reason: "unsupported-order-type" });
+	});
 
 	it("preserves raw unchanged fields while validating the changed field exactly", () => {
 		const order = makeLimitOrder();

@@ -176,10 +176,6 @@ function getOrderShapeBlockReason(order: OpenOrder): OpenOrderModifyBlockReason 
 	if (order.orderType === "Market") return "unsupported-market-order";
 	if (SYSTEM_ORDER_TYPES.has(order.orderType)) return "unsupported-system-order";
 	if (order.orderType !== "Limit" && !isSupportedTriggerOrder(order)) return "unsupported-order-type";
-	// Hyperliquid requires batchModify.a=true for trigger replacements, which can
-	// place the replacement even when canceling the original order failed. Keep
-	// trigger edits fail-closed until they use an explicit cancel-then-place flow.
-	if (isSupportedTriggerOrder(order)) return "unsupported-order-type";
 	if (
 		!Number.isSafeInteger(order.oid) ||
 		order.oid < 0 ||
@@ -216,7 +212,12 @@ function getOrderShapeBlockReason(order: OpenOrder): OpenOrderModifyBlockReason 
 		return null;
 	}
 
-	if (!order.isTrigger || !triggerPx.gt(0) || !order.reduceOnly) return "invalid-order-shape";
+	if (!order.isTrigger || !triggerPx.gt(0)) return "invalid-order-shape";
+	// A trigger replacement needs batchModify.a=true, which places the replacement even when canceling
+	// the original failed (it may have just triggered). Only reduce-only triggers are offered, as the
+	// official terminal's always-place modify cannot then open a second position; others are cancelled
+	// and placed again.
+	if (!order.reduceOnly) return "unsupported-order-type";
 	if (order.tif !== null) return "unsupported-tif";
 	return null;
 }
@@ -452,10 +453,11 @@ function buildExchangeOrder(
 		t: orderType,
 	};
 
+	const modifies = [{ oid: latest.oid, order }];
 	return {
 		status: "ready",
 		normalizedValue,
-		params: { modifies: [{ oid: latest.oid, order }] },
+		params: latest.isTrigger ? { modifies, a: true } : { modifies },
 	};
 }
 

@@ -173,7 +173,9 @@ export function buildOpenOrderModifyFormPlan(params: BuildOpenOrderModifyFormPla
 
 	return {
 		status: "ready",
-		params: { modifies: [{ oid: baseModify.oid, order }] },
+		params: basePlan.params.a
+			? { modifies: [{ oid: baseModify.oid, order }], a: true }
+			: { modifies: [{ oid: baseModify.oid, order }] },
 		normalizedSize: readySizePlan?.normalizedValue ?? params.target.size.order.sz,
 		normalizedTriggerPrice:
 			params.target.triggerPrice === null

@@ -28,6 +28,7 @@ function ReviewedOrders() {
 }
 
 const mocks = vi.hoisted(() => ({
+	markPriceLive: false,
 	address: "0x1111111111111111111111111111111111111111",
 	assetId: 120_001 as number | undefined,
 	batchModifyGuard: undefined as ((params: unknown) => void) | undefined,
@@ -64,7 +65,7 @@ const triggerOrder = {
 	triggerPx: "0",
 } as OpenOrder;
 
-const unsafeTriggerOrder = {
+const reduceOnlyStopOrder = {
 	...triggerOrder,
 	isTrigger: true,
 	orderType: "Stop Market",
@@ -72,6 +73,8 @@ const unsafeTriggerOrder = {
 	triggerCondition: "Price above 170",
 	triggerPx: "170",
 } as OpenOrder;
+
+const unsafeTriggerOrder = { ...reduceOnlyStopOrder, reduceOnly: false } as OpenOrder;
 
 const MODIFICATION_UNCONFIRMED_MESSAGE =
 	"The order update was not confirmed by live data. Refresh before retrying; cancellation remains available.";
@@ -135,7 +138,13 @@ vi.mock("@/lib/hyperliquid", () => ({
 		getSzDecimals: () => 3,
 		isLoading: false,
 	}),
-	useMarketsInfo: () => ({ getMarketInfo: () => ({ markPx: mocks.markPx }) }),
+	useMarketsInfo: () => ({
+		getMarketInfo: () => ({
+			markPx: mocks.markPx,
+			markPriceStatus: mocks.markPriceLive ? "success" : undefined,
+			markPriceReceivedAt: mocks.markPriceLive ? Date.now() : undefined,
+		}),
+	}),
 	useSubscription: () => ({ data: { orders: mocks.orders }, error: null, isStale: false, status: "active" }),
 }));
 
@@ -202,6 +211,7 @@ describe("mobile order modification", () => {
 		mocks.clientKey = "0x1111111111111111111111111111111111111111";
 		mocks.env = "Mainnet";
 		mocks.markPx = "160";
+		mocks.markPriceLive = false;
 		mocks.orders = [triggerOrder];
 		mocks.cancelOrders.mockReset();
 		mocks.modifyOrders.mockReset();
@@ -547,6 +557,33 @@ describe("mobile order modification", () => {
 				phase: "awaiting",
 			}),
 		]);
+	});
+
+	it("changes the trigger price of a reduce-only stop with the always-place flag", async () => {
+		mocks.markPriceLive = true;
+		mocks.orders = [reduceOnlyStopOrder];
+		const { trigger } = openEditor();
+		await act(async () => {
+			if (!trigger) return;
+			changeInput(trigger, "175");
+			pressKey(trigger, "Enter");
+			await Promise.resolve();
+		});
+
+		expect(mocks.modifyOrders).toHaveBeenCalledOnce();
+		const params = mocks.modifyOrders.mock.calls[0]?.[0] as {
+			a?: boolean;
+			modifies: { order: { r: boolean; t: unknown } }[];
+		};
+		expect(params.a).toBe(true);
+		expect(params.modifies[0]?.order).toMatchObject({
+			r: true,
+			t: { trigger: { isMarket: true, triggerPx: "175", tpsl: "sl" } },
+		});
+		expect(getPendingTradingActionSnapshot().modifications[0]).toMatchObject({
+			expectedTriggerPx: "175",
+			expectedSize: null,
+		});
 	});
 
 	it("explains unsupported modifications on touch without submitting an order", () => {
