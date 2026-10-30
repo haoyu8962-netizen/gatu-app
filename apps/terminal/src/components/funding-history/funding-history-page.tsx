@@ -17,7 +17,7 @@ import { cn } from "@/lib/cn";
 import { buildCsvRows } from "@/lib/csv";
 import { formatDateTimeShort, shortenAddress, useNumberFormat } from "@/lib/format";
 import { useMarkets } from "@/lib/hyperliquid";
-import { getMarketCollateralSymbol } from "@/lib/trade/collateral-amount";
+import { getFundingCollateralSymbol } from "@/lib/trade/collateral-amount";
 import {
 	DEFAULT_FUNDING_HISTORY_PAGE_SIZE,
 	FUNDING_HISTORY_PAGE_SIZES,
@@ -88,7 +88,8 @@ export function FundingHistoryPage({ address }: Props) {
 				{ header: t`Payment`, getValue: (funding) => funding.usdc },
 				{
 					header: t`Payment Token`,
-					getValue: (funding) => getMarketCollateralSymbol(markets.getMarket(funding.coin)),
+					getValue: (funding) =>
+						getFundingCollateralSymbol(funding.coin, markets.getMarket(funding.coin)) ?? FALLBACK_VALUE_PLACEHOLDER,
 				},
 			]),
 	});
@@ -299,7 +300,9 @@ export function FundingHistoryPage({ address }: Props) {
 													)}
 												>
 													<bdi dir="ltr">
-														{formatToken(funding.usdc, { symbol: getMarketCollateralSymbol(market) })}
+														{formatToken(funding.usdc, {
+															symbol: getFundingCollateralSymbol(funding.coin, market) ?? undefined,
+														})}
 													</bdi>
 												</dd>
 											</div>
@@ -392,7 +395,9 @@ export function FundingHistoryPage({ address }: Props) {
 													)}
 												>
 													<bdi dir="ltr">
-														{formatToken(funding.usdc, { symbol: getMarketCollateralSymbol(market) })}
+														{formatToken(funding.usdc, {
+															symbol: getFundingCollateralSymbol(funding.coin, market) ?? undefined,
+														})}
 													</bdi>
 												</TableCell>
 												<TableCell className="px-5 py-0 text-right text-xs text-fg-muted">

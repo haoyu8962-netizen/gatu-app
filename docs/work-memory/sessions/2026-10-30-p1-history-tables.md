@@ -52,6 +52,15 @@
 - `pnpm --filter @sairn/terminal typecheck`、改动文件的 Biome、`pnpm memory:check` 与 `memory:test` 通过。Codex 推送前审查待做。
 - 未做：真实账户流水的逐行核对、真机。
 
+## Codex 推送前审查与修复
+
+- 只读审查（`gpt-6-astra`，low，约 13.3 万 token）审 `55c0b62e`：无 P0/P1，3 项 P2，评分 8.0。逐条核对后都成立，已修：
+  - **抵押币回落。** 资金费历史在市场已下架或报价币未加载时把 HIP-3 付款标成 USDC。新增 `getFundingCollateralSymbol(coin, market)`：`builderPerp` 只用已知的报价币，目录里没有且币名带 DEX 前缀时返回 null，界面只显示数额、CSV 写 `-`；主 DEX 永续仍为 USDC。持仓表的 `getMarketCollateralSymbol` 保留原有回落（持仓只来自在列市场，仓位价值早已如此）。
+  - **手机「强平」筛选缺测试。** 新增用例同时放本人强平、对手方强平与无 `liquidation` 对象的 `Auto-Deleveraging`，按「强平」与「交易」筛选并核对导出行。
+  - **流水 spot 条件缺测试。** 新增 `destinationDex` 为 `""` 与 `"xyz"` 时发往 USDC 系统地址记为划转、位置为永续的参数化用例。
+- 审查的变异表另指出持仓行保证金改回美元格式时没有测试能发现：新增真实 `PositionRow` 用例，USDE 抵押的 HIP-3 仓位的盈亏、保证金、资金费都带 USDE。
+- 变异：抵押币回落改回 USDC、手机类型改回按对象判断、去掉 spot 条件、保证金改回 `formatUSD`，各自让对应新测试失败（2、1、2、1 项），均已还原。
+
 ## 后续与替代关系
 
 - CCTP 流水显示具体链需要接入 Across `hyperliquid-transfers` 接口（官方做法），属于新的外部依赖，留给运营方决定。

@@ -536,6 +536,30 @@ describe("mobile history disclosure cards", () => {
 		expect(text).not.toContain("Liquidated");
 	});
 
+	it("filters and exports only the owner's own and protocol liquidations as liquidations", async () => {
+		const [ownFill, counterpartyFill] = createFills();
+		mocks.fills = [
+			{ ...ownFill, liquidation: { liquidatedUser: OWNER_A, markPx: "99000", method: "market" } },
+			{ ...counterpartyFill, liquidation: { liquidatedUser: OWNER_B, markPx: "3400", method: "market" } },
+			{ ...counterpartyFill, coin: "SOL", dir: "Auto-Deleveraging", hash: "0xadl", tid: 3 },
+		];
+		render(<MobileHistoryTab scrollMode="page" />);
+
+		await selectOption("Type", "Liquidated");
+		expect(container.querySelectorAll("article")).toHaveLength(2);
+		expect(container.querySelector('[aria-label="Switch to BTC market"]')).not.toBeNull();
+		expect(container.querySelector('[aria-label="Switch to SOL market"]')).not.toBeNull();
+		expect(container.querySelector('[aria-label="Switch to ETH market"]')).toBeNull();
+		clickButton("Export CSV");
+		const liquidationRows = mocks.downloadCsv.mock.calls.at(-1)?.[1] as string[][] | undefined;
+		expect(liquidationRows?.slice(1).map((row) => row[1])).toEqual(expect.arrayContaining(["BTC", "SOL"]));
+		expect(liquidationRows?.flat()).not.toContain("ETH");
+
+		await selectOption("Type", "Trade");
+		expect(container.querySelectorAll("article")).toHaveLength(1);
+		expect(container.querySelector('[aria-label="Switch to ETH market"]')).not.toBeNull();
+	});
+
 	it("keeps contained trade history internally scrollable", () => {
 		render(<MobileHistoryTab scrollMode="contained" />);
 

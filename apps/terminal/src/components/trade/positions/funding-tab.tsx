@@ -12,7 +12,7 @@ import { cn } from "@/lib/cn";
 import { buildCsvRows } from "@/lib/csv";
 import { formatDateTimeShort, useNumberFormat } from "@/lib/format";
 import { useMarkets } from "@/lib/hyperliquid";
-import { getMarketCollateralSymbol } from "@/lib/trade/collateral-amount";
+import { getFundingCollateralSymbol } from "@/lib/trade/collateral-amount";
 import { getFundingPositionPresentation, getFundingSideLabel } from "@/lib/trade/funding-position";
 import { toBig } from "@/lib/trade/numbers";
 import { getMarketCloseValueColorClass } from "@/lib/ui/value-color";
@@ -81,7 +81,8 @@ export function FundingTab({ toolbarTarget }: Props = {}) {
 				{ header: t`Payment`, getValue: (update) => update.usdc },
 				{
 					header: t`Payment Token`,
-					getValue: (update) => getMarketCollateralSymbol(markets.getMarket(update.coin)),
+					getValue: (update) =>
+						getFundingCollateralSymbol(update.coin, markets.getMarket(update.coin)) ?? FALLBACK_VALUE_PLACEHOLDER,
 				},
 			]),
 	});
@@ -202,7 +203,9 @@ export function FundingTab({ toolbarTarget }: Props = {}) {
 												className={cn(positionsPanelTableCellClass, fundingTableCellClass, "text-right font-semibold")}
 											>
 												<span className={paymentClass}>
-													{formatToken(update.usdc, { symbol: getMarketCollateralSymbol(market) })}
+													{formatToken(update.usdc, {
+														symbol: getFundingCollateralSymbol(update.coin, market) ?? undefined,
+													})}
 												</span>
 											</TableCell>
 

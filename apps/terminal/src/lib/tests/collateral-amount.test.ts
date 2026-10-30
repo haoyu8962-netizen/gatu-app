@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { getNumberFormatters } from "@/lib/format";
 import type { UnifiedMarket } from "@/lib/hyperliquid";
-import { formatCollateralAmount, getMarketCollateralSymbol } from "@/lib/trade/collateral-amount";
+import {
+	formatCollateralAmount,
+	getFundingCollateralSymbol,
+	getMarketCollateralSymbol,
+} from "@/lib/trade/collateral-amount";
 import { getFundingPositionPresentation } from "@/lib/trade/funding-position";
 import { getMarketPriceFormatOptions } from "@/lib/trade/market-price-format";
 
@@ -24,6 +28,14 @@ describe("collateral amounts", () => {
 		expect(formatCollateralAmount("1234567.5", "USDC", numberFormat)).toBe("$1,234,567.50");
 		expect(formatCollateralAmount("-12.345", "USDE", numberFormat)).toBe("-12.35 USDE");
 		expect(formatCollateralAmount("3", "USDE", numberFormat, { signDisplay: "exceptZero" })).toBe("+3.00 USDE");
+	});
+
+	it("names a funding payment's collateral only when the catalog knows it", () => {
+		expect(getFundingCollateralSymbol("BTC", USDC_PERP)).toBe("USDC");
+		expect(getFundingCollateralSymbol("xyz:TSLA", USDE_DEX)).toBe("USDE");
+		expect(getFundingCollateralSymbol("xyz:TSLA", { ...USDE_DEX, quoteToken: undefined } as UnifiedMarket)).toBeNull();
+		expect(getFundingCollateralSymbol("xyz:DELISTED", undefined)).toBeNull();
+		expect(getFundingCollateralSymbol("OLDPERP", undefined)).toBe("USDC");
 	});
 
 	it("keeps the side of a funded position next to its size", () => {

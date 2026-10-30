@@ -188,6 +188,22 @@ describe("account ledger", () => {
 		});
 	});
 
+	it.each([
+		["", { kind: "perps" }],
+		["xyz", { dex: "xyz", kind: "perpDex" }],
+	] as const)(
+		"treats a send to the USDC system address on DEX %j as a transfer, not a withdrawal",
+		(destinationDex, destination) => {
+			const row = buildAccountLedgerRow(
+				createUpdate(createSend({ destination: USDC_SYSTEM_ADDRESS, destinationDex })),
+				USER,
+				BRIDGE,
+			);
+
+			expect(row).toMatchObject({ action: "transfer", destination });
+		},
+	);
+
 	it("labels USDC arriving from the network's CoreDepositWallet as a deposit from HyperEVM", () => {
 		const delta = createSend({ destination: USER, destinationDex: "", user: MAINNET_CORE_DEPOSIT_WALLET });
 		const testnetDelta = { ...delta, user: TESTNET_CORE_DEPOSIT_WALLET };

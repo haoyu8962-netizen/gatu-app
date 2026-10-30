@@ -8,6 +8,17 @@ export function getMarketCollateralSymbol(market: UnifiedMarket | undefined): st
 }
 
 /**
+ * The collateral a funding payment on `coin` settled in, or null when the catalog cannot tell: a
+ * HIP-3 market that is no longer listed, or one whose quote token has not loaded. A HIP-3 payment is
+ * never labelled USDC by guess; main-DEX perpetuals always settle in USDC.
+ */
+export function getFundingCollateralSymbol(coin: string, market: UnifiedMarket | undefined): string | null {
+	if (market?.kind === "builderPerp") return market.quoteToken?.displayName ?? null;
+	if (market) return DEFAULT_QUOTE_TOKEN;
+	return coin.includes(":") ? null : DEFAULT_QUOTE_TOKEN;
+}
+
+/**
  * An amount a position settles in its collateral (PNL, margin, funding): US dollars for USDC
  * markets, otherwise an amount of the collateral token, like the position value next to it.
  */

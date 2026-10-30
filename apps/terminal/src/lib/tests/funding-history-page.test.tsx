@@ -307,6 +307,18 @@ describe("FundingHistoryPage", () => {
 		expect(rows[1]).toContain("USDC");
 	});
 
+	it("does not label a delisted HIP-3 market's funding as USDC", () => {
+		mocks.history.fundings = [
+			{ coin: "xyz:GONE", fundingRate: "0.0001", nSamples: null, szi: "3", time: 1_800_000_000_000, usdc: "-0.25" },
+		];
+		renderPage();
+
+		const rows = [...container.querySelectorAll("tbody tr")].map((row) => row.textContent ?? "");
+		expect(rows).toHaveLength(1);
+		expect(rows[0]).toContain("-0.25");
+		expect(rows[0]).not.toContain("USDC");
+	});
+
 	it("shows a confirmed empty state only after a ready response", () => {
 		mocks.history.status = "ready";
 		mocks.history.fundings = [];

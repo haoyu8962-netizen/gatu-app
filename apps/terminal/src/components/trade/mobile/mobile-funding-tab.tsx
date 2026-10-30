@@ -14,7 +14,7 @@ import { cn } from "@/lib/cn";
 import { buildCsvRows } from "@/lib/csv";
 import { formatDateTimeShort, useNumberFormat } from "@/lib/format";
 import { useHyperliquid, useMarkets } from "@/lib/hyperliquid";
-import { getMarketCollateralSymbol } from "@/lib/trade/collateral-amount";
+import { getFundingCollateralSymbol } from "@/lib/trade/collateral-amount";
 import {
 	type FundingHistorySideFilter,
 	getFundingHistorySide,
@@ -114,7 +114,8 @@ function MobileFundingTabContent({
 				{ header: t`Payment`, getValue: (update) => update.usdc },
 				{
 					header: t`Payment Token`,
-					getValue: (update) => getMarketCollateralSymbol(markets.getMarket(update.coin)),
+					getValue: (update) =>
+						getFundingCollateralSymbol(update.coin, markets.getMarket(update.coin)) ?? FALLBACK_VALUE_PLACEHOLDER,
 				},
 			]),
 	});
@@ -297,7 +298,8 @@ function MobileFundingTabContent({
 															)}
 														>
 															{formatToken(update.usdc, {
-																symbol: getMarketCollateralSymbol(markets.getMarket(update.coin)),
+																symbol:
+																	getFundingCollateralSymbol(update.coin, markets.getMarket(update.coin)) ?? undefined,
 															})}
 														</div>
 													</div>
