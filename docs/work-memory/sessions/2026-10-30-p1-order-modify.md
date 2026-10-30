@@ -40,6 +40,7 @@
 
 - 新增测试：`open-order-modification.test.ts`（带 cloid 订单可改且替换不带 `c`、改价的合法与非法与不变、非限价单无改价）、`open-order-modification-form.test.ts`（既有用例补 `normalizedLimitPrice`）、`order-reconciliation.test.tsx`（改价确认、别处改价判失败、原价继续等待）、`desktop-orders-cancel-all.test.tsx`（带 cloid 订单显示编辑按钮，改价提交的新订单价格正确、不带 `c`，待确认记录带原价与期望价）、`mobile-order-modification.test.tsx`（价格与数量一笔替换、非法价格标红并禁用提交）。原「client-id 订单被拦截」断言改为合法 cloid 放行、格式错误仍拦截；待确认记录相关测试夹具补 `originalLimitPx`。
 - 变异：重新拦截 cloid、去掉改价分支、对账忽略价格、桌面隐藏改价按钮、手机不传价格、表单合并时丢掉数量，各自让对应测试失败，均已还原。
+- 第一次全量（`7831e8cf`）另有两项契约失败，都由本组新增界面触发、已修：`mobile-input-zoom-contract` 按输入个数统计手机改单弹窗的 iOS 安全字号（新价格输入同样用 `text-base`，计数由 2 改为 3）；`design-token-ratchet` 发现新增的两处任意圆角（照抄相邻元素的 `rounded-[4px]`、`rounded-[10px]`），改用同像素的命名档位 `rounded-8`、`rounded-20`。
 - 测试与检查结果见下方补记。未做：真实账户改单（需要签名，属运营方操作）、真机。
 
 ## 后续与替代关系

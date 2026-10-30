@@ -135,7 +135,7 @@ export function MobileOrderModificationModal({
 					{limitPriceValue !== undefined ? (
 						<label
 							className={cn(
-								"flex min-h-11 items-center rounded-[10px] border bg-modal px-3 transition-colors duration-[120ms] focus-within:border-market-close-focus",
+								"flex min-h-11 items-center rounded-20 border bg-modal px-3 transition-colors duration-[120ms] focus-within:border-market-close-focus",
 								limitPriceInvalid ? "border-market-close-danger" : "border-market-close-stroke-input",
 							)}
 						>

@@ -1606,7 +1606,7 @@ function OrderRow({
 								<button
 									id={getOrderEditTriggerId(order.oid, "limitPrice")}
 									type="button"
-									className="inline-flex size-4 shrink-0 items-center justify-center rounded-[4px] text-market-close-subtle transition-colors duration-[120ms] hover:bg-market-close-hover hover:text-market-close-fg focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-market-close-focus disabled:cursor-not-allowed disabled:opacity-50"
+									className="inline-flex size-4 shrink-0 items-center justify-center rounded-8 text-market-close-subtle transition-colors duration-[120ms] hover:bg-market-close-hover hover:text-market-close-fg focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-market-close-focus disabled:cursor-not-allowed disabled:opacity-50"
 									aria-label={t`Edit ${order.coin} order price`}
 									disabled={editDisabled}
 									onClick={() => onStartEdit(order, "limitPrice")}
