@@ -1825,6 +1825,7 @@ msgstr "設定済み TP/SL 数量"
 #: src/components/trade/components/hip3-deployer-disclaimer.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/tradebox/account-mode-modal.tsx
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
@@ -1853,6 +1854,10 @@ msgstr "ウォレットで確認"
 #: src/components/trade/tradebox/order-confirmation-modal.tsx
 msgid "Confirm Order"
 msgstr "注文を確認"
+
+#: src/components/trade/positions/orders-tab.tsx
+msgid "Confirm order price change"
+msgstr "注文価格の変更を確認"
 
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Confirm order size change"
@@ -2730,6 +2735,12 @@ msgstr "獲得済み"
 #. placeholder {0}: order.coin
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
+msgid "Edit {0} order price"
+msgstr "{0} の注文価格を編集"
+
+#. placeholder {0}: order.coin
+#: src/components/trade/positions/orders-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
 msgid "Edit {0} order size"
 msgstr "{0} の注文数量を編集"
 
@@ -2814,6 +2825,11 @@ msgstr "有効な上限価格を入力してください"
 msgid "Enter a valid min price"
 msgstr "有効な下限価格を入力してください"
 
+#: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
+msgid "Enter a valid price using the market's price precision."
+msgstr "市場の価格精度に合った有効な価格を入力してください。"
+
 #: src/lib/errors/format.ts
 #: src/lib/trade/order-submission-feedback.ts
 msgid "Enter a valid scale skew"
@@ -2836,8 +2852,8 @@ msgstr "有効なトリガー価格を入力してください"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
-msgid "Enter a valid trigger price using the market's price precision."
-msgstr "市場の価格精度に合った有効なトリガー価格を入力してください。"
+#~ msgid "Enter a valid trigger price using the market's price precision."
+#~ msgstr "市場の価格精度に合った有効なトリガー価格を入力してください。"
 
 #: src/components/staking/staking-action-modal.tsx
 msgid "Enter an amount."
@@ -5457,8 +5473,8 @@ msgstr "注文"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
-msgid "Orders with a client order ID cannot be modified here. Cancel and replace the order instead."
-msgstr "クライアント注文 ID がある注文は、ここでは変更できません。キャンセルして再発注してください。"
+#~ msgid "Orders with a client order ID cannot be modified here. Cancel and replace the order instead."
+#~ msgstr "クライアント注文 ID がある注文は、ここでは変更できません。キャンセルして再発注してください。"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -5918,6 +5934,8 @@ msgstr "ボールトの前のページ"
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-order-modification-modal.tsx
+#: src/components/trade/mobile/mobile-order-modification-modal.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx

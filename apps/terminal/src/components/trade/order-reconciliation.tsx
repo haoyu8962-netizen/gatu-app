@@ -314,21 +314,23 @@ function markExpiredTradingActions(actions: AwaitingTradingAction[], now: number
 
 function matchesExpectedModification(
 	modification: ReturnType<typeof usePendingOrderModifications>[number],
-	order: { sz: string; triggerPx: string },
+	order: { sz: string; triggerPx: string; limitPx: string },
 ): boolean {
 	return (
 		(modification.expectedSize === null || decimalsEqual(order.sz, modification.expectedSize)) &&
-		(modification.expectedTriggerPx === null || decimalsEqual(order.triggerPx, modification.expectedTriggerPx))
+		(modification.expectedTriggerPx === null || decimalsEqual(order.triggerPx, modification.expectedTriggerPx)) &&
+		(modification.expectedLimitPx === null || decimalsEqual(order.limitPx, modification.expectedLimitPx))
 	);
 }
 
 function hasModificationTargetChanged(
 	modification: ReturnType<typeof usePendingOrderModifications>[number],
-	order: { sz: string; triggerPx: string },
+	order: { sz: string; triggerPx: string; limitPx: string },
 ): boolean {
 	return (
 		(modification.expectedSize !== null && !decimalsEqual(order.sz, modification.originalSize)) ||
-		(modification.expectedTriggerPx !== null && !decimalsEqual(order.triggerPx, modification.originalTriggerPx))
+		(modification.expectedTriggerPx !== null && !decimalsEqual(order.triggerPx, modification.originalTriggerPx)) ||
+		(modification.expectedLimitPx !== null && !decimalsEqual(order.limitPx, modification.originalLimitPx))
 	);
 }
 

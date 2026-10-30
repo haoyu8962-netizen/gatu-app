@@ -16,8 +16,10 @@ export interface PendingOrderModification extends TradingActionIdentity {
 	oid: number;
 	originalSize: string;
 	originalTriggerPx: string;
+	originalLimitPx: string;
 	expectedSize: string | null;
 	expectedTriggerPx: string | null;
+	expectedLimitPx: string | null;
 	phase: PendingTradingActionPhase;
 	createdAt: number;
 	requestStartedAt: number | null;
@@ -32,8 +34,10 @@ interface ClaimOrderModificationInput extends TradingActionIdentity {
 	oid: number;
 	originalSize: string;
 	originalTriggerPx: string;
+	originalLimitPx: string;
 	expectedSize?: string;
 	expectedTriggerPx?: string;
+	expectedLimitPx?: string;
 }
 
 export interface PendingOrderCancellation extends TradingActionIdentity {
@@ -248,6 +252,7 @@ const usePendingTradingActionStore = create<PendingTradingActionStore>()((set, g
 				owner,
 				expectedSize: input.expectedSize ?? null,
 				expectedTriggerPx: input.expectedTriggerPx ?? null,
+				expectedLimitPx: input.expectedLimitPx ?? null,
 				phase: "submitting",
 				createdAt: now,
 				requestStartedAt: null,

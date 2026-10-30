@@ -2018,6 +2018,7 @@ msgstr "कॉन्फ़िगर की गई TP/SL राशि"
 #: src/components/trade/components/hip3-deployer-disclaimer.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/tradebox/account-mode-modal.tsx
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
@@ -2046,6 +2047,10 @@ msgstr "वॉलेट में पुष्टि करें"
 #: src/components/trade/tradebox/order-confirmation-modal.tsx
 msgid "Confirm Order"
 msgstr "ऑर्डर की पुष्टि करें"
+
+#: src/components/trade/positions/orders-tab.tsx
+msgid "Confirm order price change"
+msgstr "ऑर्डर मूल्य परिवर्तन की पुष्टि करें"
 
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Confirm order size change"
@@ -3031,6 +3036,12 @@ msgstr "अर्जित"
 #. placeholder {0}: order.coin
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
+msgid "Edit {0} order price"
+msgstr "{0} ऑर्डर मूल्य संपादित करें"
+
+#. placeholder {0}: order.coin
+#: src/components/trade/positions/orders-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
 msgid "Edit {0} order size"
 msgstr "{0} ऑर्डर आकार संपादित करें"
 
@@ -3119,6 +3130,11 @@ msgstr "मान्य अधिकतम मूल्य दर्ज कर�
 msgid "Enter a valid min price"
 msgstr "मान्य न्यूनतम मूल्य दर्ज करें"
 
+#: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
+msgid "Enter a valid price using the market's price precision."
+msgstr "बाज़ार की मूल्य परिशुद्धता के अनुसार मान्य मूल्य दर्ज करें।"
+
 #: src/lib/errors/format.ts
 #: src/lib/trade/order-submission-feedback.ts
 msgid "Enter a valid scale skew"
@@ -3141,8 +3157,8 @@ msgstr "मान्य ट्रिगर मूल्य दर्ज कर�
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
-msgid "Enter a valid trigger price using the market's price precision."
-msgstr "बाज़ार की मूल्य परिशुद्धता के अनुसार मान्य ट्रिगर मूल्य दर्ज करें।"
+#~ msgid "Enter a valid trigger price using the market's price precision."
+#~ msgstr "बाज़ार की मूल्य परिशुद्धता के अनुसार मान्य ट्रिगर मूल्य दर्ज करें।"
 
 #: src/components/staking/staking-action-modal.tsx
 msgid "Enter an amount."
@@ -6094,8 +6110,8 @@ msgstr "ऑर्डर"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
-msgid "Orders with a client order ID cannot be modified here. Cancel and replace the order instead."
-msgstr "क्लाइंट ऑर्डर ID वाले ऑर्डर यहाँ संशोधित नहीं किए जा सकते। इसके बजाय ऑर्डर रद्द करें और नया ऑर्डर लगाएँ।"
+#~ msgid "Orders with a client order ID cannot be modified here. Cancel and replace the order instead."
+#~ msgstr "क्लाइंट ऑर्डर ID वाले ऑर्डर यहाँ संशोधित नहीं किए जा सकते। इसके बजाय ऑर्डर रद्द करें और नया ऑर्डर लगाएँ।"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -6611,6 +6627,8 @@ msgstr "वॉल्ट का पिछला पेज"
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-order-modification-modal.tsx
+#: src/components/trade/mobile/mobile-order-modification-modal.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx

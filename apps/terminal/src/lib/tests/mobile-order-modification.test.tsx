@@ -237,6 +237,7 @@ describe("mobile order modification", () => {
 		return {
 			size: document.body.querySelector<HTMLInputElement>('input[aria-label="Size"]'),
 			trigger: document.body.querySelector<HTMLInputElement>('input[aria-label="Trigger Price"]'),
+			price: document.body.querySelector<HTMLInputElement>('input[aria-label="Price"]'),
 		};
 	}
 
@@ -321,6 +322,48 @@ describe("mobile order modification", () => {
 		});
 		expect(mocks.toastSuccess).not.toHaveBeenCalled();
 		expect(document.body.querySelector('input[aria-label="Size"]')).toBeNull();
+	});
+
+	it("changes the price and size of this terminal's own limit order in one replacement", async () => {
+		mocks.orders = [{ ...triggerOrder, cloid: "0x0000000000000000000000000000abcd" }];
+		const { size, price } = openEditor();
+		expect(price?.value).toBe("170");
+		await act(async () => {
+			if (!size || !price) return;
+			changeInput(price, "171.5");
+			changeInput(size, "1.500");
+			pressKey(price, "Enter");
+			await Promise.resolve();
+		});
+
+		expect(mocks.modifyOrders).toHaveBeenCalledOnce();
+		expect(mocks.modifyOrders).toHaveBeenCalledWith({
+			modifies: [
+				{
+					oid: 42,
+					order: { a: 120_001, b: true, p: "171.5", s: "1.5", r: true, t: { limit: { tif: "Gtc" } } },
+				},
+			],
+		});
+		expect(getPendingTradingActionSnapshot().modifications[0]).toMatchObject({
+			originalLimitPx: "170",
+			expectedLimitPx: "171.5",
+			expectedSize: "1.5",
+		});
+	});
+
+	it("marks a price off the market tick as invalid without submitting", () => {
+		const { price } = openEditor();
+		act(() => {
+			if (price) changeInput(price, "170.123456");
+		});
+
+		expect(price?.getAttribute("aria-invalid")).toBe("true");
+		expect(document.body.querySelector('[role="alert"]')?.textContent).toContain(
+			"Enter a valid price using the market's price precision.",
+		);
+		expect(document.body.querySelector<HTMLButtonElement>('form button[type="submit"]')?.disabled).toBe(true);
+		expect(mocks.modifyOrders).not.toHaveBeenCalled();
 	});
 
 	it("closes with Escape without submitting", () => {

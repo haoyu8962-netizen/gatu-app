@@ -21,6 +21,7 @@ describe("pending trading action store", () => {
 			oid: 42,
 			originalSize: "2",
 			originalTriggerPx: "0",
+			originalLimitPx: "100",
 			expectedSize: "1",
 		};
 		expect(actions.claimModification(input)).not.toBeNull();
@@ -38,6 +39,7 @@ describe("pending trading action store", () => {
 			oid: 42,
 			originalSize: "2",
 			originalTriggerPx: "0",
+			originalLimitPx: "100",
 			expectedSize: "1",
 		});
 		if (!modification) throw new Error("Expected modification claim");
@@ -59,6 +61,7 @@ describe("pending trading action store", () => {
 			oid: 42,
 			originalSize: "2",
 			originalTriggerPx: "0",
+			originalLimitPx: "100",
 			expectedSize: "1",
 		});
 		expect(modification).not.toBeNull();
@@ -71,6 +74,7 @@ describe("pending trading action store", () => {
 				oid: 42,
 				originalSize: "2",
 				originalTriggerPx: "0",
+				originalLimitPx: "100",
 				expectedSize: "1",
 			}),
 		).toBeNull();
@@ -86,6 +90,7 @@ describe("pending trading action store", () => {
 				oid: 42,
 				originalSize: "2",
 				originalTriggerPx: "0",
+				originalLimitPx: "100",
 				expectedSize: "1",
 			}),
 		).toBeNull();
@@ -99,6 +104,7 @@ describe("pending trading action store", () => {
 			oid: 42,
 			originalSize: "2",
 			originalTriggerPx: "0",
+			originalLimitPx: "100",
 			expectedSize: "1",
 		});
 		if (!modification) throw new Error("Expected modification claim");
@@ -114,6 +120,7 @@ describe("pending trading action store", () => {
 				oid: 42,
 				originalSize: "2",
 				originalTriggerPx: "0",
+				originalLimitPx: "100",
 				expectedSize: "1",
 			}),
 		).not.toBeNull();
@@ -127,6 +134,7 @@ describe("pending trading action store", () => {
 			oid: 50,
 			originalSize: "2",
 			originalTriggerPx: "0",
+			originalLimitPx: "100",
 			expectedSize: "1",
 		});
 		if (!modification) throw new Error("Expected modification claim");
@@ -196,6 +204,7 @@ describe("pending trading action store", () => {
 			oid: 53,
 			originalSize: "2",
 			originalTriggerPx: "0",
+			originalLimitPx: "100",
 			expectedSize: "1",
 		});
 		if (!modification) throw new Error("Expected modification claim");

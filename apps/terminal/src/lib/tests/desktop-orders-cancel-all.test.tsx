@@ -396,6 +396,35 @@ describe("desktop cancel all orders confirmation", () => {
 		expect(container.querySelector('button[aria-label="Edit xyz:ORCL trigger price"]')).toBeNull();
 	});
 
+	it("lets this terminal's own orders change price and sends the new price without a client order id", async () => {
+		mocks.orders = [{ ...order, cloid: "0x0000000000000000000000000000abcd" } as OpenOrder];
+		act(() => root.render(<ReviewedOrders />));
+		expect(container.querySelector('button[aria-label="Edit xyz:ORCL order size"]')).not.toBeNull();
+		const edit = container.querySelector<HTMLButtonElement>('button[aria-label="Edit xyz:ORCL order price"]');
+		act(() => edit?.click());
+		const input = container.querySelector<HTMLInputElement>('input[aria-label="Edit xyz:ORCL order price"]');
+		expect(input?.value).toBe("149.00");
+
+		await act(async () => {
+			if (!input) return;
+			changeInput(input, "150.5");
+			pressKey(input, "Enter");
+			await Promise.resolve();
+		});
+
+		expect(mocks.modifyOrders).toHaveBeenCalledOnce();
+		const params = mocks.modifyOrders.mock.calls[0]?.[0] as {
+			modifies: { oid: number; order: { a: number; p: string; s: string; c?: string } }[];
+		};
+		expect(params.modifies).toEqual([{ oid: 42, order: expect.objectContaining({ a: 120_001, p: "150.5", s: "2" }) }]);
+		expect(params.modifies[0]?.order).not.toHaveProperty("c");
+		expect(getPendingTradingActionSnapshot().modifications[0]).toMatchObject({
+			originalLimitPx: "149.00",
+			expectedLimitPx: "150.5",
+			expectedSize: null,
+		});
+	});
+
 	it("formats HIP-3 order notional in its verified non-USDC quote token", () => {
 		mocks.quoteSymbol = "USDT0";
 		act(() => root.render(<ReviewedOrders />));

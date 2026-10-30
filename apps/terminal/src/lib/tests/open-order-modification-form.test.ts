@@ -95,6 +95,7 @@ describe("open order modification form", () => {
 			status: "ready",
 			normalizedSize: "1.25",
 			normalizedTriggerPrice: null,
+			normalizedLimitPrice: "100",
 			params: {
 				modifies: [
 					{

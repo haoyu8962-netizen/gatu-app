@@ -97,17 +97,58 @@ function buildPlan(target: OpenOrderModifyTarget, order: OpenOrder, value: strin
 	});
 }
 
+describe("open order limit price and client order id modifications", () => {
+	const ownOrder = makeLimitOrder({ cloid: "0x0000000000000000000000000000abcd" });
+
+	it("modifies this terminal's own orders and sends the replacement without a client order id", () => {
+		const plan = buildPlan(captureTarget(ownOrder, "size"), ownOrder, "1");
+
+		expect(plan).toMatchObject({ status: "ready", normalizedValue: "1" });
+		if (plan.status !== "ready") return;
+		expect(plan.params.modifies).toEqual([
+			{ oid: 42, order: { a: 0, b: true, p: "100", s: "1", r: false, t: { limit: { tif: "Gtc" } } } },
+		]);
+	});
+
+	it("moves a limit order to a new price on the market tick and keeps its size", () => {
+		const target = captureTarget(ownOrder, "limitPrice");
+		const plan = buildPlan(target, ownOrder, "101.5");
+
+		expect(plan).toMatchObject({ status: "ready", normalizedValue: "101.5" });
+		if (plan.status !== "ready") return;
+		expect(plan.params.modifies[0]?.order).toMatchObject({ p: "101.5", s: "2" });
+		expect(buildPlan(target, ownOrder, "100.1234")).toEqual({ status: "blocked", reason: "invalid-price" });
+		expect(buildPlan(target, ownOrder, "100.0")).toEqual({ status: "blocked", reason: "no-change" });
+		expect(buildPlan(target, ownOrder, "0")).toEqual({ status: "blocked", reason: "invalid-price" });
+	});
+
+	it("does not offer a limit price edit for orders without one", () => {
+		expect(getOpenOrderModifyCapabilities(makeTriggerOrder("Stop Limit")).limitPrice.supported).toBe(false);
+		expect(
+			createOpenOrderModifyTarget({
+				owner: OWNER,
+				env: "Mainnet",
+				field: "limitPrice",
+				market,
+				order: makeLimitOrder({ orderType: "Market", tif: "FrontendMarket" }),
+			}),
+		).toEqual({ status: "blocked", reason: "unsupported-market-order" });
+	});
+});
+
 describe("open order modify capabilities", () => {
 	it("allows safe limit size edits and blocks trigger replacements that require the unsafe SDK flag", () => {
 		expect(getOpenOrderModifyCapabilities(makeLimitOrder())).toEqual({
 			size: { supported: true, reason: null },
 			triggerPrice: { supported: false, reason: "trigger-price-not-applicable" },
+			limitPrice: { supported: true, reason: null },
 		});
 
 		for (const orderType of ["Stop Market", "Stop Limit", "Take Profit Market", "Take Profit Limit"] as const) {
 			expect(getOpenOrderModifyCapabilities(makeTriggerOrder(orderType))).toEqual({
 				size: { supported: false, reason: "unsupported-order-type" },
 				triggerPrice: { supported: false, reason: "unsupported-order-type" },
+				limitPrice: { supported: false, reason: "unsupported-order-type" },
 			});
 		}
 	});
@@ -122,7 +163,7 @@ describe("open order modify capabilities", () => {
 		},
 	);
 
-	it("blocks market, grouped, position TP/SL, client-id, unknown-TIF, and inconsistent orders", () => {
+	it("blocks market, grouped, position TP/SL, unknown-TIF, and inconsistent orders", () => {
 		expect(
 			getOpenOrderModifyCapabilities(makeLimitOrder({ orderType: "Market", tif: "FrontendMarket" })).size.reason,
 		).toBe("unsupported-market-order");
@@ -135,7 +176,10 @@ describe("open order modify capabilities", () => {
 		).toBe("position-tpsl");
 		expect(
 			getOpenOrderModifyCapabilities(makeLimitOrder({ cloid: "0x00000000000000000000000000000001" })).size.reason,
-		).toBe("client-order-id");
+		).toBeNull();
+		expect(getOpenOrderModifyCapabilities(makeLimitOrder({ cloid: "0x01" as `0x${string}` })).size.reason).toBe(
+			"invalid-order-shape",
+		);
 		expect(getOpenOrderModifyCapabilities(makeLimitOrder({ tif: "FrontendMarket" })).size.reason).toBe(
 			"unsupported-tif",
 		);
@@ -151,6 +195,7 @@ describe("open order modify capabilities", () => {
 		expect(getOpenOrderModifyCapabilities(makeLimitOrder({ coin: "#10" }))).toEqual({
 			size: { supported: false, reason: "invalid-market-binding" },
 			triggerPrice: { supported: false, reason: "invalid-market-binding" },
+			limitPrice: { supported: false, reason: "invalid-market-binding" },
 		});
 	});
 });

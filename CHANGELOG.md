@@ -579,6 +579,10 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Fixed
 
+- Orders placed in this terminal can be modified again: their size, and for limit orders their
+  price, can be changed from the open-orders table on desktop and from Modify Order on mobile. They
+  used to be refused because this terminal tags its orders with a client order id. Trigger orders
+  still have to be cancelled and placed again.
 - The Market order-type tab and menu entry in the order form use the order-type wording instead of
   the market-list wording: 市价 in Chinese, 成行 in Japanese, मार्केट in Hindi, Au marché in French
   and سعر السوق in Arabic (English and Spanish are unchanged). The compact account-mode placeholder

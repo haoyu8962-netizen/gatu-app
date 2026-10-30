@@ -68,7 +68,9 @@ const mocks = vi.hoisted(() => ({
 	errorToast: vi.fn(),
 	dismissToast: vi.fn(),
 	orderUpdatesData: undefined as Array<{ order: { cloid?: `0x${string}` }; status: OrderProcessingStatus }> | undefined,
-	openOrdersData: undefined as { orders: Array<{ oid: number; sz: string; triggerPx: string }> } | undefined,
+	openOrdersData: undefined as
+		| { orders: Array<{ oid: number; sz: string; triggerPx: string; limitPx?: string }> }
+		| undefined,
 	openOrdersLastMessageAt: undefined as number | undefined,
 	openOrdersMonotonicLastMessageAt: undefined as number | undefined,
 }));
@@ -809,6 +811,7 @@ describe("OrderReconciliation", () => {
 			oid: 42,
 			originalSize: "2",
 			originalTriggerPx: "0",
+			originalLimitPx: "100",
 			expectedSize: "1",
 		});
 		if (!action) throw new Error("Expected modification claim");
@@ -824,6 +827,44 @@ describe("OrderReconciliation", () => {
 		expectActionFeedback(action.id, "success", "Modified");
 	});
 
+	it.each([
+		["the requested price", "101", "success", "Modified"],
+		[
+			"a price changed elsewhere",
+			"99",
+			"failed",
+			"The order changed before the requested modification was confirmed. Review the latest order before retrying.",
+		],
+		["the original price", "100", null, null],
+	] as const)("reconciles a limit price modification against %s", (_case, limitPx, status, message) => {
+		const now = Date.now();
+		const monotonicNow = performance.now();
+		const action = getPendingTradingActionActions().claimModification({
+			env: "Mainnet",
+			owner: USER,
+			oid: 44,
+			originalSize: "2",
+			originalTriggerPx: "0",
+			originalLimitPx: "100",
+			expectedLimitPx: "101",
+		});
+		if (!action) throw new Error("Expected modification claim");
+		getPendingTradingActionActions().markModificationRequestStarted(action.id, now - 2, monotonicNow - 2);
+		getPendingTradingActionActions().markModificationAwaiting(action.id, now - 1, monotonicNow - 1);
+		mocks.openOrdersData = { orders: [{ oid: 44, sz: "2", triggerPx: "0", limitPx }] };
+		mocks.openOrdersLastMessageAt = now;
+		mocks.openOrdersMonotonicLastMessageAt = monotonicNow;
+
+		act(() => root.render(createReconciliation()));
+
+		if (status === null) {
+			expect(getPendingTradingActionSnapshot().modifications).toHaveLength(1);
+			return;
+		}
+		expect(getPendingTradingActionSnapshot().modifications).toHaveLength(0);
+		expectActionFeedback(action.id, status, message);
+	});
+
 	it("releases an unconfirmed modification after a fresh snapshot shows the original order", () => {
 		const now = Date.now();
 		const monotonicNow = performance.now();
@@ -833,6 +874,7 @@ describe("OrderReconciliation", () => {
 			oid: 43,
 			originalSize: "2",
 			originalTriggerPx: "0",
+			originalLimitPx: "100",
 			expectedSize: "1",
 		});
 		if (!action) throw new Error("Expected modification claim");
@@ -861,6 +903,7 @@ describe("OrderReconciliation", () => {
 			oid: 47,
 			originalSize: "2",
 			originalTriggerPx: "0",
+			originalLimitPx: "100",
 			expectedSize: "1",
 		});
 		if (!action) throw new Error("Expected modification claim");
@@ -895,6 +938,7 @@ describe("OrderReconciliation", () => {
 			oid: 48,
 			originalSize: "2",
 			originalTriggerPx: "0",
+			originalLimitPx: "100",
 			expectedSize: "1",
 		});
 		if (!action) throw new Error("Expected modification claim");
@@ -929,6 +973,7 @@ describe("OrderReconciliation", () => {
 			oid: 49,
 			originalSize: "2",
 			originalTriggerPx: "0",
+			originalLimitPx: "100",
 			expectedSize: "1",
 		});
 		if (!action) throw new Error("Expected modification claim");
@@ -963,6 +1008,7 @@ describe("OrderReconciliation", () => {
 			oid: 44,
 			originalSize: "2",
 			originalTriggerPx: "0",
+			originalLimitPx: "100",
 			expectedSize: "1",
 		});
 		if (!action) throw new Error("Expected modification claim");
@@ -987,6 +1033,7 @@ describe("OrderReconciliation", () => {
 			oid: 45,
 			originalSize: "2",
 			originalTriggerPx: "0",
+			originalLimitPx: "100",
 			expectedSize: "1",
 		});
 		if (!modification) throw new Error("Expected modification claim");
@@ -1143,6 +1190,7 @@ describe("OrderReconciliation", () => {
 			oid: 46,
 			originalSize: "2",
 			originalTriggerPx: "0",
+			originalLimitPx: "100",
 			expectedSize: "1",
 		});
 		if (!modification) throw new Error("Expected modification claim");
@@ -1186,6 +1234,7 @@ describe("OrderReconciliation", () => {
 			oid: 50,
 			originalSize: "2",
 			originalTriggerPx: "0",
+			originalLimitPx: "100",
 			expectedSize: "1",
 		});
 		if (!modification) throw new Error("Expected modification claim");
@@ -1220,6 +1269,7 @@ describe("OrderReconciliation", () => {
 			oid: 51,
 			originalSize: "2",
 			originalTriggerPx: "0",
+			originalLimitPx: "100",
 			expectedSize: "1",
 		});
 		if (!action) throw new Error("Expected modification claim");
@@ -1249,6 +1299,7 @@ describe("OrderReconciliation", () => {
 			oid: 52,
 			originalSize: "2",
 			originalTriggerPx: "0",
+			originalLimitPx: "100",
 			expectedSize: "1",
 		});
 		if (!action) throw new Error("Expected modification claim");
