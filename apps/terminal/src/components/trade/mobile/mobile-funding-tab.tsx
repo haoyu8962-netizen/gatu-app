@@ -14,11 +14,13 @@ import { cn } from "@/lib/cn";
 import { buildCsvRows } from "@/lib/csv";
 import { formatDateTimeShort, useNumberFormat } from "@/lib/format";
 import { useHyperliquid, useMarkets } from "@/lib/hyperliquid";
+import { getMarketCollateralSymbol } from "@/lib/trade/collateral-amount";
 import {
 	type FundingHistorySideFilter,
 	getFundingHistorySide,
 	isFundingHistorySideFilter,
 } from "@/lib/trade/funding-history";
+import { getFundingSideLabel } from "@/lib/trade/funding-position";
 import { getUserFundingKey } from "@/lib/trade/user-funding";
 import { getMarketCloseValueColorClass } from "@/lib/ui/value-color";
 import { MobileBulkDisclosureActions } from "./mobile-bulk-disclosure-actions";
@@ -103,21 +105,17 @@ function MobileFundingTabContent({
 				{ header: t`Time`, getValue: (update) => formatDateTimeShort(update.time, { locale: i18n.locale }) },
 				{ header: t`Asset`, getValue: (update) => update.coin },
 				{
-					header: t`Position`,
-					getValue: (update) => {
-						const market = markets.getMarket(update.coin);
-						return formatToken(getToolbarAbsoluteSize(update.szi), {
-							decimals: market?.szDecimals,
-							symbol: market?.shortName,
-						});
-					},
-				},
-				{
-					header: t`Rate`,
+					header: t`Side`,
 					getValue: (update) =>
-						formatPercent(update.fundingRate, { minimumFractionDigits: 4, maximumFractionDigits: 4 }),
+						getFundingSideLabel(update.szi, (descriptor) => t(descriptor)) ?? FALLBACK_VALUE_PLACEHOLDER,
 				},
-				{ header: t`Payment`, getValue: (update) => formatToken(update.usdc, { symbol: "USDC" }) },
+				{ header: t`Size`, getValue: (update) => getToolbarAbsoluteSize(update.szi) ?? update.szi },
+				{ header: t`Rate`, getValue: (update) => update.fundingRate },
+				{ header: t`Payment`, getValue: (update) => update.usdc },
+				{
+					header: t`Payment Token`,
+					getValue: (update) => getMarketCollateralSymbol(markets.getMarket(update.coin)),
+				},
 			]),
 	});
 	const exportFooter = (
@@ -298,7 +296,9 @@ function MobileFundingTabContent({
 																getMarketCloseValueColorClass(update.usdc),
 															)}
 														>
-															{formatToken(update.usdc, { symbol: "USDC" })}
+															{formatToken(update.usdc, {
+																symbol: getMarketCollateralSymbol(markets.getMarket(update.coin)),
+															})}
 														</div>
 													</div>
 													<div className="min-w-0">

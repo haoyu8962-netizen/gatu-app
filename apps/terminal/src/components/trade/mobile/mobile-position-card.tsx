@@ -1,7 +1,6 @@
 import { useLingui } from "@lingui/react/macro";
 import { PencilIcon, ShareIcon } from "@phosphor-icons/react";
 import { type ReactNode, useId, useState } from "react";
-import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import { LIQ_WARNING_PROXIMITY } from "@/config/trade";
 import { getPerpMarginConstraint } from "@/domain/trade/isolated-margin";
 import type { MarkPriceStatus } from "@/domain/trade/market-price";
@@ -10,6 +9,7 @@ import { cn } from "@/lib/cn";
 import { useNumberFormat } from "@/lib/format";
 import type { Position } from "@/lib/hyperliquid";
 import type { Markets } from "@/lib/hyperliquid/markets";
+import { formatCollateralAmount, getMarketCollateralSymbol } from "@/lib/trade/collateral-amount";
 import { toBig } from "@/lib/trade/numbers";
 import type { TpSlOrderInfo } from "@/lib/trade/open-orders";
 import type { Side } from "@/lib/trade/types";
@@ -100,6 +100,7 @@ export function MobilePositionCard({
 }: Props) {
 	const { formatLiquidationPrice, formatPercent, formatPrice, formatQuoteAmount, formatToken, formatUSD } =
 		useNumberFormat();
+	const collateralFormat = { formatQuoteAmount, formatUSD };
 	const { t } = useLingui();
 	const [internalExpanded, setInternalExpanded] = useState(false);
 	const detailsId = useId();
@@ -111,8 +112,7 @@ export function MobilePositionCard({
 	const market = markets.getMarket(p.coin);
 	const displayName = market?.pairName ?? p.coin;
 	const sizeSymbol = market?.shortName ?? p.coin.split(":").pop() ?? p.coin;
-	const quoteSymbol =
-		market?.kind === "builderPerp" ? (market.quoteToken?.displayName ?? DEFAULT_QUOTE_TOKEN) : DEFAULT_QUOTE_TOKEN;
+	const quoteSymbol = getMarketCollateralSymbol(market);
 	const assetId = market?.assetId;
 	const szDecimals = market?.szDecimals ?? 4;
 	const marginConstraint = market?.kind === "spot" ? undefined : getPerpMarginConstraint(market);
@@ -128,9 +128,7 @@ export function MobilePositionCard({
 		});
 
 	const fundingAmount = getPositionFundingPayment(p.cumFunding.sinceOpen);
-	const fundingValue = formatUSD(fundingAmount, {
-		compact: false,
-		currencyDisplay: "narrowSymbol",
+	const fundingValue = formatCollateralAmount(fundingAmount, quoteSymbol, collateralFormat, {
 		signDisplay: "exceptZero",
 	});
 	const fundingClass =
@@ -151,13 +149,11 @@ export function MobilePositionCard({
 	const hasTpSl = !!(tpSlInfo?.tpPrice || tpSlInfo?.slPrice);
 	const sizeDisplay = formatToken(absSize, { decimals: szDecimals, symbol: sizeSymbol });
 	const positionValueDisplay = formatQuoteAmount(p.positionValue, quoteSymbol, { decimals: 2, compact: false });
-	const pnlDisplay = formatUSD(p.unrealizedPnl, {
-		compact: false,
-		currencyDisplay: "narrowSymbol",
+	const pnlDisplay = formatCollateralAmount(p.unrealizedPnl, quoteSymbol, collateralFormat, {
 		signDisplay: "exceptZero",
 	});
 	const roeDisplay = formatPercent(p.returnOnEquity, 1);
-	const marginDisplay = formatUSD(p.marginUsed, { compact: false, currencyDisplay: "narrowSymbol" });
+	const marginDisplay = formatCollateralAmount(p.marginUsed, quoteSymbol, collateralFormat);
 	const markPriceDisplay = formatPrice(hasFreshMark ? markPxRaw : undefined, { szDecimals, style: "decimal" });
 
 	function buildReverseRef(): PositionReverseRef | null {

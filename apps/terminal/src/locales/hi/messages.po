@@ -95,6 +95,10 @@ msgstr "{days} दिन"
 msgid "{days} days left"
 msgstr "{days} दिन शेष"
 
+#: src/lib/trade/fill-direction.ts
+msgid "{direction} (Price Improved)"
+msgstr "{direction} (बेहतर मूल्य)"
+
 #: src/components/funding-history/funding-history-page.tsx
 msgid "{FUNDING_HISTORY_WINDOW_DAYS}-day API window"
 msgstr "{FUNDING_HISTORY_WINDOW_DAYS}-दिन की API अवधि"
@@ -1069,6 +1073,10 @@ msgstr "अधिकृत API वॉलेट"
 msgid "Authorizing request"
 msgstr "अनुरोध अधिकृत किया जा रहा है"
 
+#: src/lib/trade/fill-direction.ts
+msgid "Auto-Deleveraging"
+msgstr "ऑटो-डीलीवरेजिंग"
+
 #: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
 msgid "Automatic USDC deposit failed"
 msgstr "USDC का स्वचालित जमा विफल रहा"
@@ -1172,6 +1180,10 @@ msgstr "ट्रेड पर वापस जाएँ"
 #: src/components/vaults/vaults-page.tsx
 msgid "Back to Vaults"
 msgstr "वॉल्ट पर वापस जाएँ"
+
+#: src/lib/trade/fill-direction.ts
+msgid "Backstop Liquidation: {direction}"
+msgstr "बैकस्टॉप लिक्विडेशन: {direction}"
 
 #: src/config/ui-text.ts
 msgid "Balance"
@@ -1316,6 +1328,7 @@ msgstr "बिल्डर पुरस्कार स्रोत के अ�
 #: src/config/trade-panel-labels.ts
 #: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-order-display-labels.ts
+#: src/lib/trade/fill-direction.ts
 msgid "Buy"
 msgstr "खरीदें"
 
@@ -1808,13 +1821,10 @@ msgstr "API वॉलेट कार्रवाई बंद करें"
 msgid "Close close-all confirmation"
 msgstr "सभी बंद करने की पुष्टि बंद करें"
 
-#: src/components/trade-history/trade-history-page.tsx
-#: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
-#: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/twap-fill-history-table.tsx
 #: src/hooks/trade/use-order-display-labels.ts
-#: src/hooks/trade/use-twap-fill-history-csv.ts
+#: src/lib/trade/fill-direction.ts
 msgid "Close Long"
 msgstr "लॉन्ग क्लोज़"
 
@@ -1875,13 +1885,10 @@ msgstr "पोज़िशन बंद करें"
 msgid "Close reverse confirmation"
 msgstr "रिवर्स पुष्टि बंद करें"
 
-#: src/components/trade-history/trade-history-page.tsx
-#: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
-#: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/twap-fill-history-table.tsx
 #: src/hooks/trade/use-order-display-labels.ts
-#: src/hooks/trade/use-twap-fill-history-csv.ts
+#: src/lib/trade/fill-direction.ts
 msgid "Close Short"
 msgstr "शॉर्ट क्लोज़"
 
@@ -3769,6 +3776,10 @@ msgstr "से"
 msgid "From {startTime} to {endTime}. Latest funding rate {latestRate}; cumulative funding rate {cumulativeRate}. Highest {maxRate}; lowest {minRate}."
 msgstr "{startTime} से {endTime} तक। नवीनतम फंडिंग दर {latestRate}; संचयी फंडिंग दर {cumulativeRate}। उच्चतम {maxRate}; निम्नतम {minRate}।"
 
+#: src/lib/trade/fill-direction.ts
+msgid "Full Borrow Liquidation"
+msgstr "पूर्ण उधार लिक्विडेशन"
+
 #: src/components/trade/tradebox/order-toast.tsx
 msgid "Fully filled"
 msgstr "पूरी तरह निष्पादित"
@@ -4557,15 +4568,8 @@ msgstr "लिंक किया गया स्टेकिंग खात�
 msgid "Liq. Price"
 msgstr "लिक्विडेशन प्राइस"
 
-#: src/components/trade-history/trade-history-page.tsx
-#: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
-#: src/components/trade/mobile/mobile-history-tab.tsx
-#: src/components/trade/mobile/mobile-history-tab.tsx
-#: src/components/trade/positions/history-tab.tsx
-#: src/components/trade/positions/history-tab.tsx
 #: src/config/account-ledger.ts
-#: src/hooks/trade/use-twap-fill-history-csv.ts
 msgid "Liquidated"
 msgstr "लिक्विडेट हो गया"
 
@@ -4778,8 +4782,13 @@ msgstr "ईमेल से लॉग इन करें"
 #: src/components/trade/positions/position-row.tsx
 #: src/config/trade-panel-labels.ts
 #: src/domain/trade/order-confirmation.ts
+#: src/lib/trade/funding-position.ts
 msgid "Long"
 msgstr "लॉन्ग"
+
+#: src/lib/trade/fill-direction.ts
+msgid "Long > Short"
+msgstr "लॉन्ग > शॉर्ट"
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Long position"
@@ -4995,6 +5004,10 @@ msgstr "बाज़ार मेटाडेटा बदल गया। र�
 #: src/lib/errors/definitions/market.ts
 msgid "Market not ready"
 msgstr "मार्केट तैयार नहीं"
+
+#: src/lib/trade/fill-direction.ts
+msgid "Market Order Liquidation: {direction}"
+msgstr "मार्केट ऑर्डर लिक्विडेशन: {direction}"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -5836,12 +5849,9 @@ msgstr "ओपन इंटरेस्ट"
 msgid "Open interest cap"
 msgstr "ओपन इंटरेस्ट सीमा"
 
-#: src/components/trade-history/trade-history-page.tsx
-#: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
-#: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/twap-fill-history-table.tsx
-#: src/hooks/trade/use-twap-fill-history-csv.ts
+#: src/lib/trade/fill-direction.ts
 msgid "Open Long"
 msgstr "ओपन लॉन्ग"
 
@@ -5874,12 +5884,9 @@ msgstr "खुले ऑर्डर बदल गए। पुष्टि फ�
 msgid "Open related page"
 msgstr "संबंधित पेज खोलें"
 
-#: src/components/trade-history/trade-history-page.tsx
-#: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
-#: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/twap-fill-history-table.tsx
-#: src/hooks/trade/use-twap-fill-history-csv.ts
+#: src/lib/trade/fill-direction.ts
 msgid "Open Short"
 msgstr "ओपन शॉर्ट"
 
@@ -6165,6 +6172,10 @@ msgstr "बदलने पर पेज रीलोड होता है"
 msgid "Partial amount"
 msgstr "आंशिक राशि"
 
+#: src/lib/trade/fill-direction.ts
+msgid "Partial Borrow Liquidation"
+msgstr "आंशिक उधार लिक्विडेशन"
+
 #: src/components/trade/positions/position-close-all-modal.tsx
 #~ msgid "Partial result — reopen to retry"
 #~ msgstr "आंशिक परिणाम — पुनः प्रयास के लिए फिर से खोलें"
@@ -6201,6 +6212,12 @@ msgstr "पॉज़ अनुपलब्ध: Hyperliquid सक्रिय TW
 #: src/components/trade/positions/funding-tab.tsx
 msgid "Payment"
 msgstr "भुगतान"
+
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/positions/funding-tab.tsx
+msgid "Payment Token"
+msgstr "भुगतान टोकन"
 
 #: src/components/trade/tradebox/order-toast.tsx
 #~ msgid "pending"
@@ -6444,10 +6461,7 @@ msgstr "पोर्टफोलियो मूल्य"
 
 #: src/components/funding-history/funding-history-page.tsx
 #: src/components/funding-history/funding-history-page.tsx
-#: src/components/funding-history/funding-history-page.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
-#: src/components/trade/mobile/mobile-funding-tab.tsx
-#: src/components/trade/positions/funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
 #: src/config/trade-panel-labels.ts
 msgid "Position"
@@ -7830,6 +7844,7 @@ msgstr "चुनी गई अवधि का PNL"
 #: src/config/trade-panel-labels.ts
 #: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-order-display-labels.ts
+#: src/lib/trade/fill-direction.ts
 msgid "Sell"
 msgstr "बेचें"
 
@@ -7944,8 +7959,13 @@ msgstr "{displayName} का PNL साझा करें"
 #: src/components/trade/positions/position-row.tsx
 #: src/config/trade-panel-labels.ts
 #: src/domain/trade/order-confirmation.ts
+#: src/lib/trade/funding-position.ts
 msgid "Short"
 msgstr "शॉर्ट"
+
+#: src/lib/trade/fill-direction.ts
+msgid "Short > Long"
+msgstr "शॉर्ट > लॉन्ग"
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Short position"
@@ -7976,6 +7996,9 @@ msgid "Shows reward claims reported in the last 30 days. Claims can include refe
 msgstr "पिछले 30 दिनों में रिपोर्ट किए गए पुरस्कार प्राप्ति रिकॉर्ड दिखाता है। इनमें रेफ़रल और बिल्डर पुरस्कार शामिल हो सकते हैं।"
 
 #: src/components/funding-history/funding-history-page.tsx
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/positions/funding-tab.tsx
 msgid "Side"
 msgstr "साइड"
 
@@ -8016,6 +8039,7 @@ msgstr ""
 msgid "Signing..."
 msgstr "साइन हो रहा है..."
 
+#: src/components/funding-history/funding-history-page.tsx
 #: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/historical-orders/historical-orders-page.tsx
@@ -8024,6 +8048,7 @@ msgstr "साइन हो रहा है..."
 #: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
+#: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
@@ -8039,6 +8064,7 @@ msgstr "साइन हो रहा है..."
 #: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
 #: src/components/trade/orderbook/orderbook-row.tsx
 #: src/components/trade/orderbook/trades-panel.tsx
+#: src/components/trade/positions/funding-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx

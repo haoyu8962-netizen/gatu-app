@@ -8,6 +8,7 @@ import {
 	type AccountLedgerUpdate,
 	buildAccountLedgerRows,
 	getAccountLedgerUpdateKey,
+	getAccountLedgerUsdcBridge,
 	isAccountLedgerEarnUpdate,
 	isAccountLedgerRewardsClaimUpdate,
 	isValidAccountLedgerUpdate,
@@ -99,7 +100,7 @@ export function useAccountLedger({ enabled: requestedEnabled = true }: AccountLe
 		restUpdates,
 		hasMalformedRealtime || !Array.isArray(realtimeUpdates) ? undefined : realtimeUpdates,
 	);
-	const allRows = buildAccountLedgerRows(updates, user);
+	const allRows = buildAccountLedgerRows(updates, user, getAccountLedgerUsdcBridge(env === "Testnet"));
 	const rows = allRows.slice(0, MAX_HISTORY_ROWS);
 	const rewardClaimRows = allRows.filter((row) => row.action === "rewardsClaim").slice(0, MAX_HISTORY_ROWS);
 	const earnRows = allRows

@@ -2,8 +2,13 @@ import { useLingui } from "@lingui/react/macro";
 import { toast } from "sonner";
 import { downloadCsv } from "@/lib/csv";
 import { getInfoClient } from "@/lib/hyperliquid";
-import { buildAccountLedgerRows, fetchAccountLedgerHistory } from "@/lib/trade/account-ledger";
+import {
+	buildAccountLedgerRows,
+	fetchAccountLedgerHistory,
+	getAccountLedgerUsdcBridge,
+} from "@/lib/trade/account-ledger";
 import { fetchHistoryPageWithRetry } from "@/lib/trade/history-pagination";
+import { useIsTestnet } from "@/stores/use-global-settings-store";
 import { useAccountLedgerLabels } from "./use-account-ledger-labels";
 import { isHistoryAbortError, useHistoryExportRunner } from "./use-history-csv-export";
 
@@ -16,6 +21,7 @@ export function useAccountLedgerCsv(): AccountLedgerCsvResult {
 	const { t } = useLingui();
 	const { getActionLabel, getLocationLabel } = useAccountLedgerLabels();
 	const { isExporting, run } = useHistoryExportRunner();
+	const isTestnet = useIsTestnet();
 
 	async function exportCsv() {
 		const toastId = toast.loading(t`Exporting deposits and withdrawals...`);
@@ -41,7 +47,9 @@ export function useAccountLedgerCsv(): AccountLedgerCsvResult {
 			}
 			const { history, owner } = result;
 			const { truncated, updates } = history;
-			const rows = buildAccountLedgerRows(updates, owner).sort((left, right) => left.time - right.time);
+			const rows = buildAccountLedgerRows(updates, owner, getAccountLedgerUsdcBridge(isTestnet)).sort(
+				(left, right) => left.time - right.time,
+			);
 			const csvRows = [
 				[t`Time`, t`Action`, t`Source`, t`Destination`, t`Account Value Change`, t`Fee`],
 				...rows.map((row) => [

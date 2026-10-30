@@ -114,6 +114,7 @@ This file contains durable project instructions for coding agents. Read `agent.m
 - Typed decimal input stays a `.` protocol string; when the setting displays `,` as the decimal sign, a typed `,` is normalized to `.` before validation (`normalizeDecimalInput` / `normalizeDecimalInputEvent`), and every bare `<input inputMode="decimal">` must use that helper; `locale-format-contract` scans both rules.
 - A decimal string that is already rounded or truncated for display (a Big.js `toFixed` result, a protocol price or size shown as is, a viem amount) goes through `formatDecimalString` from `useNumberFormat()`, which keeps the caller's digits and swaps the separators; values that still need rounding keep the rounding formatters. Never build display text from `toFixed`/`toPrecision` or group thousands by hand (`docs/number-format-setting.md` rule 10, `docs/adr/0037-exact-decimal-display-separators.md`); `decimal-display-contract` requires every other `toFixed`/`toPrecision` call to be registered by file with its use and count.
 - The chart receives `numeric_formatting` at creation and follows a setting change through the same state-preserving rebuild as a locale change; a number-format change never reloads the page.
+- History tables and their CSV exports follow `docs/trading-toolbar-redesign.md` (History values): prices at the market's protocol decimals, a liquidation label only for the account's own or a protocol liquidation, HIP-3 amounts in their collateral, ledger rows classified by HyperCore system address, and exported numbers exactly as the exchange sent them.
 
 ## Desktop trading layout contract
 
@@ -299,7 +300,11 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/locale-format-contract.test.ts \
   src/lib/tests/decimal-display-contract.test.ts \
   src/lib/tests/decimal-input-normalization.test.tsx \
-  src/lib/tests/tradingview-chart.test.tsx
+  src/lib/tests/tradingview-chart.test.tsx \
+  src/lib/tests/fill-direction.test.ts \
+  src/lib/tests/collateral-amount.test.ts \
+  src/lib/tests/historical-order-price.test.tsx \
+  src/lib/tests/account-ledger.test.ts
 
 # Desktop trading layout and order entry
 pnpm --dir apps/terminal exec vitest run \

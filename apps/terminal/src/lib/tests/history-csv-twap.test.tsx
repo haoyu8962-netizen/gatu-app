@@ -433,7 +433,7 @@ describe("TWAP fill history CSV export", () => {
 			[
 				formatDateTimeShort(3_000),
 				"BTC",
-				"Liquidated",
+				"Market Order Liquidation: Open Long",
 				"TWAP",
 				"63000",
 				"0.01",

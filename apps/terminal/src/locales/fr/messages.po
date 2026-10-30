@@ -95,6 +95,10 @@ msgstr "{days} jours"
 msgid "{days} days left"
 msgstr "{days} jours restants"
 
+#: src/lib/trade/fill-direction.ts
+msgid "{direction} (Price Improved)"
+msgstr "{direction} (prix amélioré)"
+
 #: src/components/funding-history/funding-history-page.tsx
 msgid "{FUNDING_HISTORY_WINDOW_DAYS}-day API window"
 msgstr "Fenêtre API de {FUNDING_HISTORY_WINDOW_DAYS} jours"
@@ -1069,6 +1073,10 @@ msgstr "Portefeuilles API autorisés"
 msgid "Authorizing request"
 msgstr "Autorisation de la demande"
 
+#: src/lib/trade/fill-direction.ts
+msgid "Auto-Deleveraging"
+msgstr "Réduction automatique du levier"
+
 #: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
 msgid "Automatic USDC deposit failed"
 msgstr "Échec du dépôt automatique d'USDC"
@@ -1172,6 +1180,10 @@ msgstr "Retour au trading"
 #: src/components/vaults/vaults-page.tsx
 msgid "Back to Vaults"
 msgstr "Retour aux coffres"
+
+#: src/lib/trade/fill-direction.ts
+msgid "Backstop Liquidation: {direction}"
+msgstr "Liquidation de secours : {direction}"
 
 #: src/config/ui-text.ts
 msgid "Balance"
@@ -1316,6 +1328,7 @@ msgstr "Les récompenses Builder sont une ventilation cumulée par source, et no
 #: src/config/trade-panel-labels.ts
 #: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-order-display-labels.ts
+#: src/lib/trade/fill-direction.ts
 msgid "Buy"
 msgstr "Acheter"
 
@@ -1808,13 +1821,10 @@ msgstr "Fermer l’action du portefeuille API"
 msgid "Close close-all confirmation"
 msgstr "Fermer la confirmation de fermeture globale"
 
-#: src/components/trade-history/trade-history-page.tsx
-#: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
-#: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/twap-fill-history-table.tsx
 #: src/hooks/trade/use-order-display-labels.ts
-#: src/hooks/trade/use-twap-fill-history-csv.ts
+#: src/lib/trade/fill-direction.ts
 msgid "Close Long"
 msgstr "Fermer Long"
 
@@ -1875,13 +1885,10 @@ msgstr "Fermer la position"
 msgid "Close reverse confirmation"
 msgstr "Fermer la confirmation d'inversion"
 
-#: src/components/trade-history/trade-history-page.tsx
-#: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
-#: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/twap-fill-history-table.tsx
 #: src/hooks/trade/use-order-display-labels.ts
-#: src/hooks/trade/use-twap-fill-history-csv.ts
+#: src/lib/trade/fill-direction.ts
 msgid "Close Short"
 msgstr "Fermer Short"
 
@@ -3769,6 +3776,10 @@ msgstr "De"
 msgid "From {startTime} to {endTime}. Latest funding rate {latestRate}; cumulative funding rate {cumulativeRate}. Highest {maxRate}; lowest {minRate}."
 msgstr "Du {startTime} au {endTime}. Dernier taux de financement : {latestRate} ; taux de financement cumulé : {cumulativeRate}. Maximum : {maxRate} ; minimum : {minRate}."
 
+#: src/lib/trade/fill-direction.ts
+msgid "Full Borrow Liquidation"
+msgstr "Liquidation totale de l'emprunt"
+
 #: src/components/trade/tradebox/order-toast.tsx
 msgid "Fully filled"
 msgstr "Entièrement exécuté"
@@ -4557,15 +4568,8 @@ msgstr "Compte de staking lié : <0>{0}</0>."
 msgid "Liq. Price"
 msgstr "Prix liq."
 
-#: src/components/trade-history/trade-history-page.tsx
-#: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
-#: src/components/trade/mobile/mobile-history-tab.tsx
-#: src/components/trade/mobile/mobile-history-tab.tsx
-#: src/components/trade/positions/history-tab.tsx
-#: src/components/trade/positions/history-tab.tsx
 #: src/config/account-ledger.ts
-#: src/hooks/trade/use-twap-fill-history-csv.ts
 msgid "Liquidated"
 msgstr "Liquidé"
 
@@ -4778,8 +4782,13 @@ msgstr "Se connecter par e-mail"
 #: src/components/trade/positions/position-row.tsx
 #: src/config/trade-panel-labels.ts
 #: src/domain/trade/order-confirmation.ts
+#: src/lib/trade/funding-position.ts
 msgid "Long"
 msgstr "Achat"
+
+#: src/lib/trade/fill-direction.ts
+msgid "Long > Short"
+msgstr "Long > Short"
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Long position"
@@ -4995,6 +5004,10 @@ msgstr "Les métadonnées du marché ont changé. Actualisez et réessayez."
 #: src/lib/errors/definitions/market.ts
 msgid "Market not ready"
 msgstr "Marché non prêt"
+
+#: src/lib/trade/fill-direction.ts
+msgid "Market Order Liquidation: {direction}"
+msgstr "Liquidation par ordre au marché : {direction}"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -5836,12 +5849,9 @@ msgstr "Intérêt ouvert"
 msgid "Open interest cap"
 msgstr "Plafond d'intérêt ouvert"
 
-#: src/components/trade-history/trade-history-page.tsx
-#: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
-#: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/twap-fill-history-table.tsx
-#: src/hooks/trade/use-twap-fill-history-csv.ts
+#: src/lib/trade/fill-direction.ts
 msgid "Open Long"
 msgstr "Ouverture Long"
 
@@ -5874,12 +5884,9 @@ msgstr "Les ordres ouverts ont changé. Rouvrez la confirmation et réessayez."
 msgid "Open related page"
 msgstr "Ouvrir la page associée"
 
-#: src/components/trade-history/trade-history-page.tsx
-#: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
-#: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/twap-fill-history-table.tsx
-#: src/hooks/trade/use-twap-fill-history-csv.ts
+#: src/lib/trade/fill-direction.ts
 msgid "Open Short"
 msgstr "Ouverture Short"
 
@@ -6165,6 +6172,10 @@ msgstr "La page se recharge en cas de modification"
 msgid "Partial amount"
 msgstr "Montant partiel"
 
+#: src/lib/trade/fill-direction.ts
+msgid "Partial Borrow Liquidation"
+msgstr "Liquidation partielle de l'emprunt"
+
 #: src/components/trade/positions/position-close-all-modal.tsx
 #~ msgid "Partial result — reopen to retry"
 #~ msgstr "Résultat partiel — rouvrez pour réessayer"
@@ -6201,6 +6212,12 @@ msgstr "Pause indisponible : Hyperliquid ne permet pas de mettre en pause les or
 #: src/components/trade/positions/funding-tab.tsx
 msgid "Payment"
 msgstr "Paiement"
+
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/positions/funding-tab.tsx
+msgid "Payment Token"
+msgstr "Jeton de paiement"
 
 #: src/components/trade/tradebox/order-toast.tsx
 #~ msgid "pending"
@@ -6444,10 +6461,7 @@ msgstr "Valeur du portefeuille"
 
 #: src/components/funding-history/funding-history-page.tsx
 #: src/components/funding-history/funding-history-page.tsx
-#: src/components/funding-history/funding-history-page.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
-#: src/components/trade/mobile/mobile-funding-tab.tsx
-#: src/components/trade/positions/funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
 #: src/config/trade-panel-labels.ts
 msgid "Position"
@@ -7830,6 +7844,7 @@ msgstr "PnL de la période sélectionnée"
 #: src/config/trade-panel-labels.ts
 #: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-order-display-labels.ts
+#: src/lib/trade/fill-direction.ts
 msgid "Sell"
 msgstr "Vendre"
 
@@ -7944,8 +7959,13 @@ msgstr "Partager le PNL de {displayName}"
 #: src/components/trade/positions/position-row.tsx
 #: src/config/trade-panel-labels.ts
 #: src/domain/trade/order-confirmation.ts
+#: src/lib/trade/funding-position.ts
 msgid "Short"
 msgstr "Vente"
+
+#: src/lib/trade/fill-direction.ts
+msgid "Short > Long"
+msgstr "Short > Long"
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Short position"
@@ -7976,6 +7996,9 @@ msgid "Shows reward claims reported in the last 30 days. Claims can include refe
 msgstr "Affiche les réclamations de récompenses signalées au cours des 30 derniers jours. Elles peuvent inclure des récompenses de parrainage et de Builder."
 
 #: src/components/funding-history/funding-history-page.tsx
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/positions/funding-tab.tsx
 msgid "Side"
 msgstr "Côté"
 
@@ -8016,6 +8039,7 @@ msgstr ""
 msgid "Signing..."
 msgstr "Signature..."
 
+#: src/components/funding-history/funding-history-page.tsx
 #: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/historical-orders/historical-orders-page.tsx
@@ -8024,6 +8048,7 @@ msgstr "Signature..."
 #: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
+#: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
@@ -8039,6 +8064,7 @@ msgstr "Signature..."
 #: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
 #: src/components/trade/orderbook/orderbook-row.tsx
 #: src/components/trade/orderbook/trades-panel.tsx
+#: src/components/trade/positions/funding-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx

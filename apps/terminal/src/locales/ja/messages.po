@@ -79,6 +79,10 @@ msgstr "{days} 日"
 msgid "{days} days left"
 msgstr "残り {days} 日"
 
+#: src/lib/trade/fill-direction.ts
+msgid "{direction} (Price Improved)"
+msgstr "{direction}（価格改善）"
+
 #: src/components/funding-history/funding-history-page.tsx
 msgid "{FUNDING_HISTORY_WINDOW_DAYS}-day API window"
 msgstr "API の取得期間：{FUNDING_HISTORY_WINDOW_DAYS} 日間"
@@ -955,6 +959,10 @@ msgstr "承認済み API ウォレット"
 msgid "Authorizing request"
 msgstr "リクエストを承認中"
 
+#: src/lib/trade/fill-direction.ts
+msgid "Auto-Deleveraging"
+msgstr "自動デレバレッジ"
+
 #: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
 msgid "Automatic USDC deposit failed"
 msgstr "USDC の自動入金に失敗しました"
@@ -1054,6 +1062,10 @@ msgstr "取引に戻る"
 #: src/components/vaults/vaults-page.tsx
 msgid "Back to Vaults"
 msgstr "ボールトに戻る"
+
+#: src/lib/trade/fill-direction.ts
+msgid "Backstop Liquidation: {direction}"
+msgstr "バックストップ清算：{direction}"
 
 #: src/config/ui-text.ts
 msgid "Balance"
@@ -1181,6 +1193,7 @@ msgstr "ビルダー報酬は累計報酬の内訳であり、追加の報酬残
 #: src/config/trade-panel-labels.ts
 #: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-order-display-labels.ts
+#: src/lib/trade/fill-direction.ts
 msgid "Buy"
 msgstr "買い"
 
@@ -1619,13 +1632,10 @@ msgstr "API ウォレット操作を閉じる"
 msgid "Close close-all confirmation"
 msgstr "全決済の確認を閉じる"
 
-#: src/components/trade-history/trade-history-page.tsx
-#: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
-#: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/twap-fill-history-table.tsx
 #: src/hooks/trade/use-order-display-labels.ts
-#: src/hooks/trade/use-twap-fill-history-csv.ts
+#: src/lib/trade/fill-direction.ts
 msgid "Close Long"
 msgstr "ロングを決済"
 
@@ -1682,13 +1692,10 @@ msgstr "ポジションを決済"
 msgid "Close reverse confirmation"
 msgstr "ドテンの確認を閉じる"
 
-#: src/components/trade-history/trade-history-page.tsx
-#: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
-#: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/twap-fill-history-table.tsx
 #: src/hooks/trade/use-order-display-labels.ts
-#: src/hooks/trade/use-twap-fill-history-csv.ts
+#: src/lib/trade/fill-direction.ts
 msgid "Close Short"
 msgstr "ショートを決済"
 
@@ -3384,6 +3391,10 @@ msgstr "交換元"
 msgid "From {startTime} to {endTime}. Latest funding rate {latestRate}; cumulative funding rate {cumulativeRate}. Highest {maxRate}; lowest {minRate}."
 msgstr "{startTime} から {endTime} まで。最新資金調達率 {latestRate}、累積資金調達率 {cumulativeRate}。最高 {maxRate}、最低 {minRate}。"
 
+#: src/lib/trade/fill-direction.ts
+msgid "Full Borrow Liquidation"
+msgstr "借入の全額清算"
+
 #: src/components/trade/tradebox/order-toast.tsx
 msgid "Fully filled"
 msgstr "全約定"
@@ -4085,15 +4096,8 @@ msgstr "リンク済みステーキングアカウント：<0>{0}</0>。"
 msgid "Liq. Price"
 msgstr "清算価格"
 
-#: src/components/trade-history/trade-history-page.tsx
-#: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
-#: src/components/trade/mobile/mobile-history-tab.tsx
-#: src/components/trade/mobile/mobile-history-tab.tsx
-#: src/components/trade/positions/history-tab.tsx
-#: src/components/trade/positions/history-tab.tsx
 #: src/config/account-ledger.ts
-#: src/hooks/trade/use-twap-fill-history-csv.ts
 msgid "Liquidated"
 msgstr "清算済み"
 
@@ -4255,8 +4259,13 @@ msgstr "メールでログイン"
 #: src/components/trade/positions/position-row.tsx
 #: src/config/trade-panel-labels.ts
 #: src/domain/trade/order-confirmation.ts
+#: src/lib/trade/funding-position.ts
 msgid "Long"
 msgstr "ロング"
+
+#: src/lib/trade/fill-direction.ts
+msgid "Long > Short"
+msgstr "ロング > ショート"
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Long position"
@@ -4460,6 +4469,10 @@ msgstr "市場のメタデータが変更されました。更新して再試行
 #: src/lib/errors/definitions/market.ts
 msgid "Market not ready"
 msgstr "市場の準備ができていません"
+
+#: src/lib/trade/fill-direction.ts
+msgid "Market Order Liquidation: {direction}"
+msgstr "成行注文による清算：{direction}"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -5240,12 +5253,9 @@ msgstr "未決済建玉"
 msgid "Open interest cap"
 msgstr "未決済建玉の上限"
 
-#: src/components/trade-history/trade-history-page.tsx
-#: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
-#: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/twap-fill-history-table.tsx
-#: src/hooks/trade/use-twap-fill-history-csv.ts
+#: src/lib/trade/fill-direction.ts
 msgid "Open Long"
 msgstr "ロングを新規建て"
 
@@ -5278,12 +5288,9 @@ msgstr "未約定注文が変更されました。確認画面を開き直して
 msgid "Open related page"
 msgstr "関連ページを開く"
 
-#: src/components/trade-history/trade-history-page.tsx
-#: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
-#: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/twap-fill-history-table.tsx
-#: src/hooks/trade/use-twap-fill-history-csv.ts
+#: src/lib/trade/fill-direction.ts
 msgid "Open Short"
 msgstr "ショートを新規建て"
 
@@ -5516,6 +5523,10 @@ msgstr "変更するとページを再読み込みします"
 msgid "Partial amount"
 msgstr "一部の数量"
 
+#: src/lib/trade/fill-direction.ts
+msgid "Partial Borrow Liquidation"
+msgstr "借入の部分清算"
+
 #: src/lib/trade/order-notification-copy.ts
 msgid "Partially completed"
 msgstr "一部完了"
@@ -5548,6 +5559,12 @@ msgstr "一時停止は利用できません：Hyperliquid は稼働中の TWAP 
 #: src/components/trade/positions/funding-tab.tsx
 msgid "Payment"
 msgstr "支払い"
+
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/positions/funding-tab.tsx
+msgid "Payment Token"
+msgstr "支払いトークン"
 
 #: src/components/trade/tradebox/order-toast.tsx
 msgid "Pending"
@@ -5759,10 +5776,7 @@ msgstr "ポートフォリオ評価額"
 
 #: src/components/funding-history/funding-history-page.tsx
 #: src/components/funding-history/funding-history-page.tsx
-#: src/components/funding-history/funding-history-page.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
-#: src/components/trade/mobile/mobile-funding-tab.tsx
-#: src/components/trade/positions/funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
 #: src/config/trade-panel-labels.ts
 msgid "Position"
@@ -6998,6 +7012,7 @@ msgstr "選択期間の損益"
 #: src/config/trade-panel-labels.ts
 #: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-order-display-labels.ts
+#: src/lib/trade/fill-direction.ts
 msgid "Sell"
 msgstr "売り"
 
@@ -7092,8 +7107,13 @@ msgstr "{displayName} の損益を共有"
 #: src/components/trade/positions/position-row.tsx
 #: src/config/trade-panel-labels.ts
 #: src/domain/trade/order-confirmation.ts
+#: src/lib/trade/funding-position.ts
 msgid "Short"
 msgstr "ショート"
+
+#: src/lib/trade/fill-direction.ts
+msgid "Short > Long"
+msgstr "ショート > ロング"
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Short position"
@@ -7124,6 +7144,9 @@ msgid "Shows reward claims reported in the last 30 days. Claims can include refe
 msgstr "過去30日間に報告された報酬請求を表示します。紹介報酬とビルダー報酬が含まれる場合があります。"
 
 #: src/components/funding-history/funding-history-page.tsx
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/positions/funding-tab.tsx
 msgid "Side"
 msgstr "売買方向"
 
@@ -7164,6 +7187,7 @@ msgstr "メールウォレットで署名中"
 msgid "Signing..."
 msgstr "署名中..."
 
+#: src/components/funding-history/funding-history-page.tsx
 #: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/historical-orders/historical-orders-page.tsx
@@ -7172,6 +7196,7 @@ msgstr "署名中..."
 #: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
+#: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
@@ -7187,6 +7212,7 @@ msgstr "署名中..."
 #: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
 #: src/components/trade/orderbook/orderbook-row.tsx
 #: src/components/trade/orderbook/trades-panel.tsx
+#: src/components/trade/positions/funding-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx

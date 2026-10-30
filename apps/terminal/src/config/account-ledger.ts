@@ -37,7 +37,7 @@ export const ACCOUNT_LEDGER_ACTION_MESSAGES: Record<AccountLedgerAction, Message
 };
 
 export const ACCOUNT_LEDGER_LOCATION_MESSAGES: Record<
-	Exclude<AccountLedgerLocation["kind"], "arbitrum" | "perpDex">,
+	Exclude<AccountLedgerLocation["kind"], "arbitrum" | "hyperevm" | "perpDex">,
 	MessageDescriptor
 > = {
 	earn: msg`Earn`,
