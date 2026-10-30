@@ -7,20 +7,28 @@ import {
 } from "../../../../../packages/hl-react/src/internal/exchange/server-clock";
 
 const http = {
-	serverTime: 0,
-	testnetServerTime: 0,
-	requests: [] as Array<{ endpoint: string; testnet: boolean; payload: Record<string, unknown> }>,
+	serverOffset: 0,
+	testnetServerOffset: 0,
+	requests: [] as Array<{ endpoint: string; testnet: boolean; sentAt: number; payload: Record<string, unknown> }>,
 };
 
 async function fakeFetch(input: string | URL | Request, init?: RequestInit): Promise<Response> {
 	const endpoint = String(input).endsWith("/info") ? "info" : "exchange";
 	const testnet = String(input).includes("testnet");
-	http.requests.push({ endpoint, testnet, payload: JSON.parse(String(init?.body)) });
+	const sentAt = Date.now();
+	http.requests.push({ endpoint, testnet, sentAt, payload: JSON.parse(String(init?.body)) });
 	const body =
 		endpoint === "info"
-			? { time: testnet ? http.testnetServerTime : http.serverTime, specialStatuses: null }
+			? { time: sentAt + (testnet ? http.testnetServerOffset : http.serverOffset), specialStatuses: null }
 			: { status: "ok", response: { type: "order", data: { statuses: [{ resting: { oid: 1 } }] } } };
 	return new Response(JSON.stringify(body), { status: 200, headers: { "Content-Type": "application/json" } });
+}
+
+/** How far a signed expiry is from the exchange's clock plus 15 seconds when the request was sent. */
+function expiryDrift(request: (typeof http.requests)[number] | undefined): number {
+	if (!request) return Number.POSITIVE_INFINITY;
+	const offset = request.testnet ? http.testnetServerOffset : http.serverOffset;
+	return Math.abs(Number(request.payload.expiresAfter) - (request.sentAt + offset + 15_000));
 }
 
 function deferred<T>() {
@@ -155,8 +163,8 @@ describe("exchange clients", () => {
 		vi.stubGlobal("fetch", fakeFetch);
 		localStorage.clear();
 		http.requests = [];
-		http.serverTime = Date.now() + 120_000;
-		http.testnetServerTime = Date.now() - 300_000;
+		http.serverOffset = 120_000;
+		http.testnetServerOffset = -300_000;
 	});
 
 	afterEach(() => {
@@ -175,13 +183,13 @@ describe("exchange clients", () => {
 		await client.cancel({ cancels: [{ a: 0, o: 1 }] });
 
 		const statusRequests = http.requests.filter((request) => request.endpoint === "info");
-		expect(statusRequests).toEqual([{ endpoint: "info", testnet: false, payload: { type: "exchangeStatus" } }]);
+		expect(statusRequests).toEqual([
+			{ endpoint: "info", testnet: false, sentAt: expect.any(Number), payload: { type: "exchangeStatus" } },
+		]);
 		const exchangeRequests = http.requests.filter((request) => request.endpoint === "exchange");
 		expect(exchangeRequests).toHaveLength(2);
-		for (const { payload } of exchangeRequests) {
-			expect(payload.expiresAfter).toBeGreaterThanOrEqual(http.serverTime + EXCHANGE_ACTION_EXPIRY_MS);
-			expect(payload.expiresAfter).toBeLessThan(http.serverTime + EXCHANGE_ACTION_EXPIRY_MS + 5_000);
-		}
+		expect(EXCHANGE_ACTION_EXPIRY_MS).toBe(15_000);
+		for (const request of exchangeRequests) expect(expiryDrift(request)).toBeLessThan(1_000);
 	});
 
 	it("signs the owner's own L1 actions with the same 15-second expiry", async () => {
@@ -192,7 +200,7 @@ describe("exchange clients", () => {
 		await client.cancel({ cancels: [{ a: 0, o: 1 }] });
 
 		const [request] = http.requests.filter((entry) => entry.endpoint === "exchange");
-		expect(Math.abs(Number(request?.payload.expiresAfter) - (http.serverTime + 15_000))).toBeLessThan(1_000);
+		expect(expiryDrift(request)).toBeLessThan(1_000);
 	});
 
 	it("keeps the exchange clock of each network apart", async () => {
@@ -204,11 +212,9 @@ describe("exchange clients", () => {
 
 		const [testnetRequest, mainnetRequest] = http.requests.filter((entry) => entry.endpoint === "exchange");
 		expect(testnetRequest?.testnet).toBe(true);
-		expect(Math.abs(Number(testnetRequest?.payload.expiresAfter) - (http.testnetServerTime + 15_000))).toBeLessThan(
-			1_000,
-		);
+		expect(expiryDrift(testnetRequest)).toBeLessThan(1_000);
 		expect(mainnetRequest?.testnet).toBe(false);
-		expect(Math.abs(Number(mainnetRequest?.payload.expiresAfter) - (http.serverTime + 15_000))).toBeLessThan(1_000);
+		expect(expiryDrift(mainnetRequest)).toBeLessThan(1_000);
 	});
 
 	it("signs without an expiry and asks for no server time while Transaction Delay Protection is off", async () => {
@@ -228,7 +234,7 @@ describe("exchange clients", () => {
 		expect(http.requests[0]?.endpoint).toBe("exchange");
 		expect(http.requests[0]?.payload).not.toHaveProperty("expiresAfter");
 		const [, protectedRequest] = http.requests.filter((entry) => entry.endpoint === "exchange");
-		expect(Math.abs(Number(protectedRequest?.payload.expiresAfter) - (http.serverTime + 15_000))).toBeLessThan(1_000);
+		expect(expiryDrift(protectedRequest)).toBeLessThan(1_000);
 	});
 
 	it("lets the owner's own client follow the same switch, off and on again", async () => {
@@ -250,7 +256,7 @@ describe("exchange clients", () => {
 		const [first, second, third] = http.requests.filter((entry) => entry.endpoint === "exchange");
 		expect(http.requests[0]?.endpoint).toBe("exchange");
 		expect(first?.payload).not.toHaveProperty("expiresAfter");
-		expect(Math.abs(Number(second?.payload.expiresAfter) - (http.serverTime + 15_000))).toBeLessThan(1_000);
+		expect(expiryDrift(second)).toBeLessThan(1_000);
 		expect(third?.payload).not.toHaveProperty("expiresAfter");
 	});
 
