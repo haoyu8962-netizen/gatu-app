@@ -256,6 +256,9 @@ describe("account ledger", () => {
 		expect(buildAccountLedgerRow(internal(mixed, USER), USER, BRIDGE, lowerSet)).toMatchObject({
 			action: "subAccountTransfer",
 		});
+		expect(buildAccountLedgerRow(internal(USER, mixed), USER, BRIDGE, lowerSet)).toMatchObject({
+			action: "subAccountTransfer",
+		});
 		expect(
 			buildAccountLedgerRow(internal("0x995e92d4bb508276f839f1f191df0fbddb8582ba", mixed), USER, BRIDGE, lowerSet),
 		).toMatchObject({ action: "openInterestReward" });

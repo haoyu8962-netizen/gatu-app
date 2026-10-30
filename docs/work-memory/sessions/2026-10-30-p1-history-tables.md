@@ -69,6 +69,8 @@
 - `account-ledger.ts` 新增 `openInterestReward` 动作；`buildAccountLedgerRows` 多一个可选的子账户集合；与官方相同，`internalTransfer` 先判断奖励发送方、再判断子账户，`spotTransfer`、`send` 先判断子账户、再做原有分类。`useAccountLedger` 另查 `info.subAccounts`（失败或缺失时为空集合，这些行保持原标签），CSV 导出同样查一次。新增文案「Open Interest Reward」，七种语言都有译文。
 - 测试与变异：奖励地址清空、三种转账各自不判断子账户、hook 不把子账户交给分类、奖励地址按大小写比较，六个变异各自让对应测试失败，均已还原。
 - 只读审查（`gpt-6-astra`，low）审 `cfb73a0f`：无 P0/P1，2 项 P2、1 项 P3，评分 8.0；分类与官方包一致。已修：子账户大小写与判断先后没有测试钉住（补带字母的混合大小写地址，以及奖励与子账户、子账户与系统地址条件重叠的用例）；CSV 的子账户查询没有真实 hook 测试（新增 `account-ledger-csv-sub-accounts.test.tsx`：查询成功时导出子账户转账，查询失败时照常导出普通标签）；记录里把三种转账写成「都先判断子账户」，改为与代码一致的顺序。七个对应变异（集合或流水地址不归一化、奖励排到子账户之后、`spotTransfer` 或 `send` 先做原有分类、CSV 不用查询结果、CSV 查询失败时中止）都被新测试抓到，均已还原。全量（测试工作树，`cfb73a0f`）：9298 通过，1 失败为沙箱内已知的 `vite-development-cache`（EPERM）。
+- 第二轮只读窄审（范围 `cfb73a0f → ec17ac95`）：两项已修，评分 8.5；剩一处测试缺口：只有接收方的大小写归一化没有单独钉住（混合大小写的接收方用例被奖励分支提前返回）。补「转给混合大小写子账户地址」的用例，只去掉接收方或只去掉发送方归一化的变异都被抓到，已还原。全量（测试工作树，`ec17ac95`）：9301 通过，1 失败为沙箱内已知的 `vite-development-cache`（EPERM）。
+- 与 `claude/p1-funds-safety` 合并时有一处语义冲突：资金分支给 `PositionRow` 加了必填属性 `reverseBlocked`，本分支在 `position-market-close-entry.test.tsx` 新写的 HIP-3 保证金用例没有传它。两个分支各自都能通过，合在一起类型检查失败；后合进 `dev` 的那个 PR 需要给该用例补上 `reverseBlocked: false`（本地预览分支已这样补过）。
 
 ## 后续与替代关系
 
