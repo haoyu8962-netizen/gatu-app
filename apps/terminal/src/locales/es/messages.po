@@ -6653,6 +6653,10 @@ msgstr "Precio inferior a {price}"
 msgid "Price grouping"
 msgstr "Agrupación de precios"
 
+#: src/lib/errors/definitions/price-tick.ts
+msgid "Price must be a multiple of the tick size, with at most 5 significant figures. E.g., {validPrice}"
+msgstr "El precio debe ser un múltiplo del tamaño de tick, con un máximo de 5 cifras significativas. Por ejemplo: {validPrice}"
+
 #: src/lib/errors/exchange-error-text.ts
 msgid "Price must be a multiple of the tick size."
 msgstr "El precio debe ser un múltiplo del tamaño de tick."

@@ -6653,6 +6653,10 @@ msgstr "कीमत {price} से नीचे"
 msgid "Price grouping"
 msgstr "प्राइस ग्रुपिंग"
 
+#: src/lib/errors/definitions/price-tick.ts
+msgid "Price must be a multiple of the tick size, with at most 5 significant figures. E.g., {validPrice}"
+msgstr "मूल्य टिक साइज़ का गुणज होना चाहिए और उसमें अधिकतम 5 सार्थक अंक हों। उदाहरण: {validPrice}"
+
 #: src/lib/errors/exchange-error-text.ts
 msgid "Price must be a multiple of the tick size."
 msgstr "मूल्य टिक साइज़ का गुणज होना चाहिए।"

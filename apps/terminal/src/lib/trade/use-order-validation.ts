@@ -22,7 +22,10 @@ export interface BaseOrderInput {
 	side: Side;
 	usesLimitPrice: boolean;
 	usesTriggerPrice: boolean;
+	limitPriceInput: string;
+	triggerPriceInput: string;
 	triggerPriceNum: number | null;
+	formatDecimalString: (value: string) => string;
 	scaleOrder: boolean;
 	twapOrder: boolean;
 	scaleStartPriceNum: number | null;

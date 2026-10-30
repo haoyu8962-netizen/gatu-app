@@ -5960,6 +5960,10 @@ msgstr "{price} より低い価格"
 msgid "Price grouping"
 msgstr "価格の集約単位"
 
+#: src/lib/errors/definitions/price-tick.ts
+msgid "Price must be a multiple of the tick size, with at most 5 significant figures. E.g., {validPrice}"
+msgstr "価格は呼値単位の倍数で、有効数字は最大 5 桁にしてください。例：{validPrice}"
+
 #: src/lib/errors/exchange-error-text.ts
 msgid "Price must be a multiple of the tick size."
 msgstr "価格は呼値単位の倍数にしてください。"

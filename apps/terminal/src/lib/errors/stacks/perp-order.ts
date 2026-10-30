@@ -20,6 +20,7 @@ import {
 	minOrderNotionalValidator,
 	type OrderInputContext,
 } from "../definitions/order-input";
+import { limitPriceTickValidator, type PriceTickContext, triggerPriceTickValidator } from "../definitions/price-tick";
 import {
 	reduceOnlyPositionDirectionValidator,
 	reduceOnlyPositionExistsValidator,
@@ -68,7 +69,8 @@ export interface PerpOrderContext
 		TpSlContext,
 		TriggerContext,
 		ScaleContext,
-		TwapContext {
+		TwapContext,
+		PriceTickContext {
 	isConnected: boolean;
 	isWalletLoading: boolean;
 	isReadyToTrade: boolean;
@@ -100,6 +102,8 @@ const perpOrderValidators: Validator<PerpOrderContext>[] = [
 	noMarkPriceValidator,
 	enterLimitPriceValidator,
 	enterTriggerPriceValidator,
+	limitPriceTickValidator,
+	triggerPriceTickValidator,
 	enterSizeValidator,
 	minOrderNotionalValidator,
 	{ ...exceedsMaxSizeValidator, validate: (ctx) => ctx.reduceOnly || exceedsMaxSizeValidator.validate(ctx) },

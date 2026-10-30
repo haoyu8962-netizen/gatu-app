@@ -22,6 +22,11 @@ const testState = vi.hoisted(() => ({
 	openInterestCapped: false,
 	orderType: "limit",
 	triggerPrice: "",
+	scaleStart: "",
+	scaleEnd: "",
+	scaleLevels: null as number | null,
+	scaleSkew: "",
+	orderEntryInput: undefined as unknown,
 	requestSubmit: vi.fn(),
 	submitOrder: vi.fn(),
 	executionGuard: undefined as ((params: OrderParameters) => void) | undefined,
@@ -107,50 +112,53 @@ vi.mock("@/hooks/trade/use-order-confirmation", () => ({
 	}),
 }));
 vi.mock("@/hooks/trade/use-order-entry-data", () => ({
-	useOrderEntryData: () => ({
-		accountAbstraction: "disabled",
-		allowsIsolatedMarginRemoval: false,
-		applyMarginAndLeverage: vi.fn(),
-		applySizePercent: vi.fn(),
-		beginSizePercentGesture: vi.fn(),
-		endSizePercentGesture: vi.fn(),
-		availabilityMaxAgeMs: 20_000,
-		availabilityReceivedAt: Date.now(),
-		availabilityStatus: testState.accountModeBlocked ? "error" : "success",
-		availableBalance: testState.availableBalance,
-		baseToken: "BTC",
-		committedLeverage: null,
-		conversionPrice: 100,
-		currentLeverage: 10,
-		executionAvailability: { kind: "perp", maxBaseBySide: { buy: "10", sell: "10" } },
-		hasAvailabilityError: testState.accountModeBlocked,
-		hasPosition: false,
-		isAvailabilityBlocked: testState.accountModeBlocked,
-		isAwaitingFirstDeposit: testState.isAwaitingFirstDeposit,
-		isAvailabilityLoading: false,
-		isAvailabilityStale: false,
-		isLeverageUpdating: false,
-		isOpenInterestCapped: testState.openInterestCapped,
-		isSpotMarket: false,
-		isSwitchingMode: false,
-		leverage: 10,
-		leverageInteractionIdentity: "Mainnet:BTC",
-		marginMode: "cross",
-		maxLeverage: 50,
-		maxSize: 10,
-		orderValue: 100,
-		pendingLeverage: null,
-		positionStateReady: true,
-		quoteToken: "USDC",
-		resetPendingLeverage: vi.fn(),
-		setPendingLeverage: vi.fn(),
-		sideLabels: { buy: "Buy", sell: "Sell", buyAria: "Buy", sellAria: "Sell" },
-		sizeForOrder: "1",
-		sizeValue: 1,
-		spotBalance: { baseAvailable: 0, quoteAvailable: 0 },
-		szDecimals: 3,
-		toggleSizeDenomination: vi.fn(),
-	}),
+	useOrderEntryData: (input: unknown) => {
+		testState.orderEntryInput = input;
+		return {
+			accountAbstraction: "disabled",
+			allowsIsolatedMarginRemoval: false,
+			applyMarginAndLeverage: vi.fn(),
+			applySizePercent: vi.fn(),
+			beginSizePercentGesture: vi.fn(),
+			endSizePercentGesture: vi.fn(),
+			availabilityMaxAgeMs: 20_000,
+			availabilityReceivedAt: Date.now(),
+			availabilityStatus: testState.accountModeBlocked ? "error" : "success",
+			availableBalance: testState.availableBalance,
+			baseToken: "BTC",
+			committedLeverage: null,
+			conversionPrice: 100,
+			currentLeverage: 10,
+			executionAvailability: { kind: "perp", maxBaseBySide: { buy: "10", sell: "10" } },
+			hasAvailabilityError: testState.accountModeBlocked,
+			hasPosition: false,
+			isAvailabilityBlocked: testState.accountModeBlocked,
+			isAwaitingFirstDeposit: testState.isAwaitingFirstDeposit,
+			isAvailabilityLoading: false,
+			isAvailabilityStale: false,
+			isLeverageUpdating: false,
+			isOpenInterestCapped: testState.openInterestCapped,
+			isSpotMarket: false,
+			isSwitchingMode: false,
+			leverage: 10,
+			leverageInteractionIdentity: "Mainnet:BTC",
+			marginMode: "cross",
+			maxLeverage: 50,
+			maxSize: 10,
+			orderValue: 100,
+			pendingLeverage: null,
+			positionStateReady: true,
+			quoteToken: "USDC",
+			resetPendingLeverage: vi.fn(),
+			setPendingLeverage: vi.fn(),
+			sideLabels: { buy: "Buy", sell: "Sell", buyAria: "Buy", sellAria: "Sell" },
+			sizeForOrder: "1",
+			sizeValue: 1,
+			spotBalance: { baseAvailable: 0, quoteAvailable: 0 },
+			szDecimals: 3,
+			toggleSizeDenomination: vi.fn(),
+		};
+	},
 }));
 vi.mock("@/hooks/trade/use-order-submit", () => ({
 	useOrderSubmit: (options: { executionGuard?: (params: OrderParameters) => void }) => {
@@ -241,10 +249,10 @@ vi.mock("@/stores/use-order-entry-store", () => ({
 	useOrderSize: () => "1",
 	useOrderType: () => testState.orderType,
 	useReduceOnly: () => false,
-	useScaleEnd: () => "",
-	useScaleLevels: () => null,
-	useScaleSkew: () => "",
-	useScaleStart: () => "",
+	useScaleEnd: () => testState.scaleEnd,
+	useScaleLevels: () => testState.scaleLevels,
+	useScaleSkew: () => testState.scaleSkew,
+	useScaleStart: () => testState.scaleStart,
 	useSizeMode: () => "base",
 	useSlPrice: () => "",
 	useTif: () => "Gtc",
@@ -606,5 +614,63 @@ describe("desktop TradePanel trading approval errors", () => {
 		await act(async () => activateLocale("zh"));
 
 		expect(getRestriction(container)?.textContent).toBe(chinese);
+	});
+});
+
+describe("desktop TradePanel price precision and scale sizing", () => {
+	let container: HTMLDivElement;
+	let root: Root;
+
+	beforeEach(() => {
+		activateLocale("en");
+		testState.availableBalance = 100;
+		testState.limitPrice = "100";
+		testState.openInterestCapped = false;
+		testState.orderType = "limit";
+		testState.triggerPrice = "";
+		testState.scaleStart = "";
+		testState.scaleEnd = "";
+		testState.scaleLevels = null;
+		testState.scaleSkew = "";
+		testState.orderEntryInput = undefined;
+		container = document.createElement("div");
+		document.body.appendChild(container);
+		root = createRoot(container);
+	});
+
+	afterEach(async () => {
+		await act(async () => root.unmount());
+		container.remove();
+		vi.clearAllMocks();
+	});
+
+	it("marks an off-tick limit price, names a valid one and blocks the order", async () => {
+		testState.limitPrice = "100.1234";
+		await renderPanel(root);
+
+		expect(getRestriction(container)?.textContent).toBe(
+			"Price must be a multiple of the tick size, with at most 5 significant figures. E.g., 100.12",
+		);
+		await expectSubmissionBlocked(container);
+	});
+
+	it("marks an off-tick trigger price and blocks the order", async () => {
+		testState.orderType = "stopMarket";
+		testState.triggerPrice = "110.0009";
+		await renderPanel(root);
+
+		expect(getRestriction(container)?.textContent).toContain("E.g., 110");
+		await expectSubmissionBlocked(container);
+	});
+
+	it("sizes a scale order at the size-weighted average of its levels", async () => {
+		testState.orderType = "scale";
+		testState.scaleStart = "80";
+		testState.scaleEnd = "60";
+		testState.scaleLevels = 4;
+		testState.scaleSkew = "1";
+		await renderPanel(root);
+
+		expect((testState.orderEntryInput as { limitPx?: number } | undefined)?.limitPx).toBe(70);
 	});
 });

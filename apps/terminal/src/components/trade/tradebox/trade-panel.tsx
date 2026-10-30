@@ -16,6 +16,7 @@ import {
 	assertEntryTwapExecutionAllowed,
 	type EntryOrderExecutionState,
 } from "@/domain/trade/order/entry-execution-guard";
+import { getOrderEntryLimitPx } from "@/domain/trade/order/entry-limit-price";
 import {
 	canEstimateProspectiveLiquidationDraft,
 	estimateProspectiveLiquidation,
@@ -44,6 +45,7 @@ import { useGeoRestriction } from "@/hooks/use-geo-restriction";
 import { useLingeringValue } from "@/hooks/use-lingering-value";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { formatTransferError } from "@/lib/errors/format";
+import { useNumberFormat } from "@/lib/format";
 import {
 	getMarketCapabilities,
 	useMarketsInfo,
@@ -157,6 +159,11 @@ export function TradePanel() {
 
 	const orderType = useOrderType();
 	const limitPriceInput = useLimitPrice();
+	const scaleStartPriceInput = useScaleStart();
+	const scaleEndPriceInput = useScaleEnd();
+	const scaleLevelsNum = useScaleLevels();
+	const scaleSkewInput = useScaleSkew();
+	const { formatDecimalString } = useNumberFormat();
 	const position = market?.name ? userPositions.getPosition(market.name, getPositionDex(market)) : null;
 	const positionSize = toNumberOrZero(position?.szi);
 	const positionSnapshotReady = !userPositions.isLoading && !userPositions.hasError && !userPositions.isStale;
@@ -170,7 +177,16 @@ export function TradePanel() {
 		markPx,
 		sizeMode,
 		sizeInput,
-		limitPx: usesLimitPriceForOrder(orderType) ? toNumberOrZero(limitPriceInput) : undefined,
+		limitPx: getOrderEntryLimitPx({
+			orderType,
+			assetId: typeof market?.assetId === "number" ? market.assetId : null,
+			szDecimals: market?.szDecimals ?? 0,
+			limitPriceInput,
+			scaleStartPriceInput,
+			scaleEndPriceInput,
+			scaleLevelsNum,
+			scaleSkewInput,
+		}),
 		reduceOnly,
 		positionSnapshot: {
 			ready: positionSnapshotReady,
@@ -294,10 +310,6 @@ export function TradePanel() {
 	const builderFeeTenthsBps = useBuilderFeeTenthsBps();
 	const selectedPrice = useSelectedPrice();
 	const triggerPriceInput = useTriggerPrice();
-	const scaleStartPriceInput = useScaleStart();
-	const scaleEndPriceInput = useScaleEnd();
-	const scaleLevelsNum = useScaleLevels();
-	const scaleSkewInput = useScaleSkew();
 	const twapMinutesNum = useTwapMinutes();
 	const twapRandomize = useTwapRandomize();
 	const twapAdvancedEnabled = useTwapAdvancedEnabled();
@@ -458,6 +470,9 @@ export function TradePanel() {
 		side,
 		usesLimitPrice,
 		usesTriggerPrice: triggerOrder,
+		limitPriceInput,
+		triggerPriceInput,
+		formatDecimalString,
 		triggerPriceNum,
 		scaleOrder,
 		twapOrder,

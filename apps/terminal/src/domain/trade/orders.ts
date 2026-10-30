@@ -291,6 +291,40 @@ export function resolveScaleSkewNumber(input: string): number | null {
 	return toNumber(resolveScaleSkew(input));
 }
 
+function getScaleLevelWeights(levels: number, skew: Big): Big[] {
+	const span = Math.max(levels - 1, 1);
+	return Array.from({ length: levels }, (_, index) => skew.minus(1).times(index).plus(span));
+}
+
+/**
+ * Size-weighted average price of the scale levels, which the official terminal uses as a scale
+ * order's price for its quote-size conversion, order value and fees. It uses the exact level
+ * weights, so it does not depend on the total size; null while the range is incomplete.
+ */
+export function getScaleAveragePrice(params: Omit<ScaleOrderPlanParams, "sizeValue">): number | null {
+	if (!isValidSizeDecimalsForAsset(params.assetId, params.szDecimals)) return null;
+	const levels = params.scaleLevelsNum;
+	if (levels === null || !Number.isSafeInteger(levels) || levels < SCALE_LEVELS_MIN || levels > SCALE_LEVELS_MAX) {
+		return null;
+	}
+	const start = toBig(params.scaleStartPriceInput);
+	const end = toBig(params.scaleEndPriceInput);
+	const skew = resolveScaleSkew(params.scaleSkew);
+	if (!start?.gt(0) || !end?.gt(0) || start.eq(end) || !skew) return null;
+
+	const priceStep = end.minus(start).div(levels - 1);
+	const weights = getScaleLevelWeights(levels, skew);
+	let weightedPrice = Big(0);
+	let weightSum = Big(0);
+	for (const [index, weight] of weights.entries()) {
+		const price = toBig(formatPriceForOrder(start.plus(priceStep.times(index)), params));
+		if (!price?.gt(0)) return null;
+		weightedPrice = weightedPrice.plus(price.times(weight));
+		weightSum = weightSum.plus(weight);
+	}
+	return weightedPrice.div(weightSum).toNumber();
+}
+
 /**
  * Split integer size units across levels so sizes ramp linearly from the first level to the last
  * with last/first === skew. Weights are kept as exact decimals ((n-1) + (skew-1)*i) and the split
@@ -298,8 +332,7 @@ export function resolveScaleSkewNumber(input: string): number | null {
  * skew === 1 reproduces the plain equal split.
  */
 function allocateScaleSizeUnits(totalUnits: Big, levels: number, skew: Big): Big[] {
-	const span = Math.max(levels - 1, 1);
-	const weights = Array.from({ length: levels }, (_, index) => skew.minus(1).times(index).plus(span));
+	const weights = getScaleLevelWeights(levels, skew);
 	const weightSum = weights.reduce((sum, weight) => sum.plus(weight), Big(0));
 	const remainders = weights.map((weight) => totalUnits.times(weight).mod(weightSum));
 	const unitsByLevel = weights.map((weight, index) => totalUnits.times(weight).minus(remainders[index]).div(weightSum));
@@ -388,7 +421,7 @@ function buildTriggerOrder(orders: ExchangeOrder[], params: TriggerOrderParams):
 		if (!limitBig || limitBig.lte(0)) {
 			throw new Error("Limit price must be greater than zero");
 		}
-		orderPx = formatPriceForOrder(limitBig, params);
+		orderPx = formatLimitPriceForOrder(limitBig, params, params.isBuy ? "buy" : "sell");
 	}
 
 	orders.push({
@@ -439,7 +472,7 @@ function buildStandardOrder(orders: ExchangeOrder[], params: StandardOrderParams
 	orders.push({
 		a: params.assetId,
 		b: params.isBuy,
-		p: formatPriceForOrder(params.price, params),
+		p: formatLimitPriceForOrder(params.price, params, params.isBuy ? "buy" : "sell"),
 		s: params.formattedSize,
 		r: params.reduceOnly,
 		t: { limit: { tif: params.tif } },
@@ -529,6 +562,27 @@ interface PriceFormatOptions {
 
 export function formatPriceForOrder(value: Numeric, options?: PriceFormatOptions): string {
 	return formatPriceForOrderWithRounding(value, options, Big.roundHalfUp);
+}
+
+/**
+ * A limit price is the user's bound, so any rounding goes toward the side that keeps it: down for
+ * a buy, up for a sell. The form already rejects a limit price that is not on the tick.
+ */
+export function formatLimitPriceForOrder(value: Numeric, options: PriceFormatOptions | undefined, side: Side): string {
+	return formatPriceForOrderWithRounding(value, options, side === "buy" ? Big.roundDown : Big.roundUp);
+}
+
+/**
+ * Returns a valid order price next to `value` when `value` itself is not on the market's tick, or
+ * null when it is (or cannot be checked). The example is rounded toward the bound of `side`, or
+ * down without a side, as the official terminal does.
+ */
+export function getOffTickPriceExample(value: Numeric, options: PriceFormatOptions, side?: Side): string | null {
+	const price = toBig(value);
+	if (!price?.gt(0) || !isValidSizeDecimalsForAsset(options.assetId, options.szDecimals)) return null;
+	const example = formatPriceForOrderWithRounding(price, options, side === "sell" ? Big.roundUp : Big.roundDown);
+	if (toBig(example)?.eq(price)) return null;
+	return example === "0" ? formatPriceForOrderWithRounding(price, options, Big.roundUp) : example;
 }
 
 function formatPriceForOrderWithRounding(

@@ -89,7 +89,7 @@ pnpm --dir apps/terminal exec playwright test \
 
 开关与方向改变保留手输数量，超额不裁剪；提交仍保留签名、账户模式、地区和数据可用性守卫。不可判定状态只显示原占位并阻止动作；已知无仓、错方向和超额使用订阅语言的字段反馈。只减仓保证金为 `—`，费用、价值、滑点仍展示；强平价模型不扩展。
 
-普通手机订单保证金保留原有价格口径：共享 Hook 的 `conversionPrice`（限价类的有效限价，其余为标记价）进入 Big.js 域计算，触发价和 Scale 区间中点不改变该估算。只减仓返回不适用；TWAP 摘要继续不展示保证金行。此修复不改变桌面现有估算模型或交易所保证金规则。
+普通手机订单保证金保留原有价格口径：共享 Hook 的 `conversionPrice`（限价类的有效限价，Scale 为各档按数量加权的均价，见下文 2026-10-30 一节，其余为标记价）进入 Big.js 域计算，触发价不改变该估算。只减仓返回不适用；TWAP 摘要继续不展示保证金行。此修复不改变桌面现有估算模型或交易所保证金规则。
 
 入口执行守卫对市价、限价、四类条件单、TWAP 和 Scale 的主单复核最新持仓，Scale 合计检查；`normalTpsl` 子单不重复占用当前仓位。减仓主单不比较普通开仓容量，但仍要求原可用性上下文成功且新鲜；普通主单继续检查原方向容量。`r=true` 保持协议保护，不代表保证成交。TWAP 时间/最低价值规则继续生效，不新增小额平仓豁免。
 
@@ -104,3 +104,13 @@ pnpm --dir apps/terminal exec playwright test \
 只有当前、成功、同账户的快照列出该永续或 HIP-3 市场时，限价、止损限价、止盈限价（只减仓与所有 TIF 都不豁免）才显示限制说明并禁用提交；市价、止损市价、止盈市价、TWAP、分段与现货不受影响；未知快照与改动前完全相同。提示位置沿用各端已有的校验行：桌面在底部动作区 CTA 之上的错误行，手机在动作按钮上方的 `role="alert"` 行。CTA 名称保持 `Place … Order` / 方向标签，由 `canSubmit` 禁用。提示只取决于订单类型与快照，不影响数量控件的 `aria-invalid`，也不在滑杆手势中移动滑杆。切换市场重新判定，不重置草稿与订单类型。
 
 真实组件回归：`tests/trade-panel-open-interest-cap.test.tsx`（桌面）与 `tests/mobile-trade-size-validation-a11y.test.tsx`（移动）覆盖上限时的说明、禁用与未提交，市价单保持可用，未上限保持原状，执行守卫读取最新快照，以及语言热切换时同一节点更新。约 130 字符的说明在 1001px 与 320px 下可能折成三行，尚未用浏览器布局套件核对。设计与取舍见 [OI 上限说明](open-interest-cap.md) 与 [ADR 0023](adr/0023-open-interest-cap-advisory-check.md)。
+
+## 价格最小变动单位与 Scale 换算价（2026-10-30）
+
+依据[全功能审查](work-memory/sessions/2026-10-30-full-feature-audit.md) A8、A1 与官方前端包（`preSubmitValidation` 的 `price.must.be.divisible.explanation`、Scale 的加权均价 `Gq`）。
+
+- **限价与触发价不在最小变动单位上时拦截。** 限价类订单（限价、止损限价、止盈限价、现货限价）的价格，以及条件单的触发价，不符合 Hyperliquid 的价格规则（最多 5 位有效数字、小数位不超过永续 `6 - szDecimals` / 现货 `8 - szDecimals`，整数不限）时，校验器 `limit-price-tick` / `trigger-price-tick` 报 `Price must be a multiple of the tick size, with at most 5 significant figures. E.g., …` 并禁用提交，不再提交时静默四舍五入。示例价按数字格式设置显示：限价买单向下、卖单向上取（不越过用户设的边界），触发价向下取（与官方相同）。双端共用 `perpInput` / `spotInput` 的必填字段 `limitPriceInput`、`triggerPriceInput`、`formatDecimalString`；桌面在底部错误行显示并标红对应输入框，手机在动作按钮上方的 `role="alert"` 行显示。
+- **提交时限价只向用户边界一侧取整。** 校验之外的兜底：`buildStandardOrder` 与条件限价单的限价用 `formatLimitPriceForOrder`（买单向下、卖单向上）；确认弹窗的「价格」行与下单通知用同一取整，显示值与签名值一致。触发价、附带 TP/SL、TWAP 触发价与最高/最低价、持仓弹窗（限价平仓、TP/SL）的取整方式本次没有改。
+- **Scale 的换算价是各档按数量加权的均价。** `getOrderEntryLimitPx` 对 Scale 返回 `getScaleAveragePrice`：各档按最小变动单位取整后的价格，以数量偏斜的精确权重加权平均（与总数量无关），区间、订单数或偏斜不完整时回落标记价。它作为 `useOrderEntryData` 的 `limitPx`，进入 USD 数量换算、现货买入最大数量、百分比基数、订单价值、费用与手机保证金估算。修改前按标记价换算：买入 80→60、标记价 100 时输入 $1000，各档名义合计约 $700；修改后约 $999.6（数量按 `szDecimals` 向下取整）。
+
+回归：`order-validation.test.ts`（拦截、示例取整方向、整数与现货小数位、数字格式）、`order-intent.test.ts`（提交时的取整方向）、`scale-conversion-price.test.ts`（加权均价与 USD 换算）、`trade-form-fields-order-entry-data.test.tsx`（输入框标红）、`tests/trade-panel-open-interest-cap.test.tsx`（桌面拦截与 Scale 换算价接线）、`tests/mobile-trade-size-validation-a11y.test.tsx`（手机拦截与 Scale 换算价接线）。未做：浏览器布局套件核对错误行在 320px 的换行，真实下单验收。

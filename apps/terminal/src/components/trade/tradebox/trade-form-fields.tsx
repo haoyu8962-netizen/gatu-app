@@ -154,10 +154,15 @@ export function TradeFormFields({
 	const canUseTpSl = canUseTpSlForOrder(orderType);
 	const marketType = isSpotMarket ? "spot" : "perp";
 
-	const triggerHasError = sizeValue > 0 && visibleValidationErrors.some((error) => error.id === "enter-trigger-price");
+	const triggerHasError =
+		(sizeValue > 0 && visibleValidationErrors.some((error) => error.id === "enter-trigger-price")) ||
+		visibleValidationErrors.some((error) => error.id === "trigger-price-tick");
 	const limitHasError =
-		sizeValue > 0 &&
-		visibleValidationErrors.some((error) => error.id === "enter-limit-price" || error.id === "spot-enter-limit-price");
+		(sizeValue > 0 &&
+			visibleValidationErrors.some(
+				(error) => error.id === "enter-limit-price" || error.id === "spot-enter-limit-price",
+			)) ||
+		visibleValidationErrors.some((error) => error.id === "limit-price-tick");
 
 	const sliderValue = getSliderValue(sizeValue, maxSize);
 	const sliderInteractionIdentity = `${leverageInteractionIdentity}:${side}:${orderType}:${reduceOnly}:${sizeMode}:${szDecimals}`;

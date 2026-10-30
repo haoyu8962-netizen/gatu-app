@@ -6653,6 +6653,10 @@ msgstr "价格低于 {price}"
 msgid "Price grouping"
 msgstr "价格合并"
 
+#: src/lib/errors/definitions/price-tick.ts
+msgid "Price must be a multiple of the tick size, with at most 5 significant figures. E.g., {validPrice}"
+msgstr "价格必须是最小价格变动单位的整数倍，且最多 5 位有效数字。例如：{validPrice}"
+
 #: src/lib/errors/exchange-error-text.ts
 msgid "Price must be a multiple of the tick size."
 msgstr "价格必须是最小价格变动单位的整数倍。"

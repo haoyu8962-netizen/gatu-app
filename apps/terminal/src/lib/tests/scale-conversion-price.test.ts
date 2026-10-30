@@ -1,0 +1,73 @@
+import Big from "big.js";
+import { describe, expect, it } from "vitest";
+import { getOrderEntryLimitPx } from "@/domain/trade/order/entry-limit-price";
+import { getOrderValue, getSizeStringFromInput } from "@/domain/trade/order/size";
+import { createScaleOrderLevelPlan, getScaleAveragePrice } from "@/domain/trade/orders";
+
+const scale = {
+	assetId: 0,
+	szDecimals: 2,
+	scaleStartPriceInput: "80",
+	scaleEndPriceInput: "60",
+	scaleLevelsNum: 4,
+	scaleSkew: "1",
+};
+
+describe("scale order conversion price", () => {
+	it("is the size-weighted average of the tick-rounded level prices", () => {
+		expect(getScaleAveragePrice(scale)).toBe(70);
+		expect(getScaleAveragePrice({ ...scale, scaleSkew: "3" })).toBeCloseTo(
+			(80 * 3 + 73.333 * 5 + 66.667 * 7 + 60 * 9) / 24,
+			10,
+		);
+	});
+
+	it("is unavailable until the range, levels and skew are valid", () => {
+		expect(getScaleAveragePrice({ ...scale, scaleEndPriceInput: "" })).toBeNull();
+		expect(getScaleAveragePrice({ ...scale, scaleEndPriceInput: "80" })).toBeNull();
+		expect(getScaleAveragePrice({ ...scale, scaleLevelsNum: 1 })).toBeNull();
+		expect(getScaleAveragePrice({ ...scale, scaleSkew: "0" })).toBeNull();
+	});
+
+	it("sizes a quote amount so the scale orders add up to it, not to its value at the mark price", () => {
+		const averagePrice = getScaleAveragePrice(scale) ?? 0;
+		const sizeAtAverage = getSizeStringFromInput({
+			sizeInput: "1000",
+			sizeMode: "quote",
+			price: averagePrice,
+			szDecimals: 2,
+		});
+		const plan = createScaleOrderLevelPlan({ ...scale, sizeValue: sizeAtAverage });
+		const notional = plan.levels.reduce((sum, level) => sum.plus(level.notional), Big(0));
+
+		expect(plan.issues).toEqual([]);
+		expect(notional.gt(999)).toBe(true);
+		expect(notional.lte(1000)).toBe(true);
+		expect(getOrderValue(Number(sizeAtAverage), averagePrice)).toBeCloseTo(notional.toNumber(), 6);
+
+		const sizeAtMark = getSizeStringFromInput({ sizeInput: "1000", sizeMode: "quote", price: 100, szDecimals: 2 });
+		const markPlan = createScaleOrderLevelPlan({ ...scale, sizeValue: sizeAtMark });
+		expect(markPlan.levels.reduce((sum, level) => sum.plus(level.notional), Big(0)).toNumber()).toBeCloseTo(700, 0);
+	});
+
+	it("is the entry conversion price for scale orders, the limit price for limit orders and the mark otherwise", () => {
+		const input = {
+			orderType: "scale" as const,
+			assetId: 0,
+			szDecimals: 2,
+			limitPriceInput: "95",
+			scaleStartPriceInput: "80",
+			scaleEndPriceInput: "60",
+			scaleLevelsNum: 4,
+			scaleSkewInput: "1",
+		};
+
+		expect(getOrderEntryLimitPx(input)).toBe(70);
+		expect(getOrderEntryLimitPx({ ...input, scaleEndPriceInput: "" })).toBeUndefined();
+		expect(getOrderEntryLimitPx({ ...input, assetId: null })).toBeUndefined();
+		expect(getOrderEntryLimitPx({ ...input, orderType: "limit" })).toBe(95);
+		expect(getOrderEntryLimitPx({ ...input, orderType: "stopLimit" })).toBe(95);
+		expect(getOrderEntryLimitPx({ ...input, orderType: "market" })).toBeUndefined();
+		expect(getOrderEntryLimitPx({ ...input, orderType: "twap" })).toBeUndefined();
+	});
+});

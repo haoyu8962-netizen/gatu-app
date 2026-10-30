@@ -12,6 +12,7 @@ import type { AbstractWallet } from "@nktkas/hyperliquid/signing";
 import type { PrivateKeyAccount } from "viem/accounts";
 import { createCrossTabNonceManager } from "./internal/exchange/cross-tab-nonce-manager";
 import { invalidateExchangeClientRequests } from "./internal/exchange/request-scheduler";
+import { createServerClock, type ServerClock } from "./internal/exchange/server-clock";
 import { getSdkReconnectionDelayMs } from "./internal/websocket/reliability";
 import { createWsTransportMonitor, type WsTransportMonitor } from "./internal/websocket/transport-monitor";
 import { LRU } from "./lru";
@@ -145,6 +146,24 @@ export function getSubscriptionClient(isTestnet: boolean): CompactSubscriptionCl
 	});
 }
 
+function getServerClock(isTestnet: boolean): ServerClock {
+	return getOrCreate(`server-clock:${isTestnet}`, () =>
+		createServerClock(async (signal) => {
+			const status = await getHttpTransport(isTestnet).request<{ time: number }>(
+				"info",
+				{ type: "exchangeStatus" },
+				signal,
+			);
+			return status.time;
+		}),
+	);
+}
+
+/** `expiresAfter` for every L1 action; the SDK leaves user-signed actions without it. */
+function getActionExpiry(isTestnet: boolean): () => Promise<number> {
+	return () => getServerClock(isTestnet).getExpiresAfter();
+}
+
 export function createExchangeClient(
 	wallet: AbstractWallet,
 	isTestnet: boolean,
@@ -160,6 +179,7 @@ export function createExchangeClient(
 		transport: transport ?? getHttpTransport(isTestnet),
 		wallet,
 		nonceManager: createCrossTabNonceManager(isTestnet ? "Testnet" : "Mainnet"),
+		defaultExpiresAfter: getActionExpiry(isTestnet),
 	});
 	if (shouldCache && cacheKey) {
 		tradingClientCache.set(cacheKey, client);
@@ -180,6 +200,7 @@ export function getTradingClient(wallet: AbstractWallet & { address: string }, i
 		transport: getHttpTransport(isTestnet),
 		wallet: signingWallet,
 		nonceManager: createCrossTabNonceManager(isTestnet ? "Testnet" : "Mainnet"),
+		defaultExpiresAfter: getActionExpiry(isTestnet),
 	});
 	agentTradingClientCache.set(key, client);
 	return client;

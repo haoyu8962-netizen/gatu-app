@@ -579,6 +579,15 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Fixed
 
+- Orders, cancels and other trading actions now expire if the exchange has not accepted them within
+  15 seconds, as with the official terminal's default Transaction Delay Protection, so a delayed
+  request is rejected instead of executing late. The 15 seconds follow the exchange's clock, not the
+  device's, and transfers, withdrawals and approvals are unaffected (ADR 0045).
+- A limit or trigger price that is not a multiple of the market's tick (at most 5 significant figures
+  and the market's decimal limit) is no longer rounded silently when the order is sent: the order
+  form explains the rule, suggests a valid price and keeps the order button disabled.
+- Scale orders entered in USD are sized at the size-weighted average price of their levels instead of
+  the mark price, so their value, fees and margin match the orders that are placed.
 - The Market order-type tab and menu entry in the order form use the order-type wording instead of
   the market-list wording: 市价 in Chinese, 成行 in Japanese, मार्केट in Hindi, Au marché in French
   and سعر السوق in Arabic (English and Spanish are unchanged). The compact account-mode placeholder

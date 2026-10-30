@@ -6653,6 +6653,10 @@ msgstr "السعر أدنى من {price}"
 msgid "Price grouping"
 msgstr "تجميع الأسعار"
 
+#: src/lib/errors/definitions/price-tick.ts
+msgid "Price must be a multiple of the tick size, with at most 5 significant figures. E.g., {validPrice}"
+msgstr "يجب أن يكون السعر من مضاعفات حجم التكة، وألا يتجاوز 5 أرقام معنوية. مثال: {validPrice}"
+
 #: src/lib/errors/exchange-error-text.ts
 msgid "Price must be a multiple of the tick size."
 msgstr "يجب أن يكون السعر من مضاعفات حجم التكة."

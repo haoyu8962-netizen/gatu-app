@@ -31,6 +31,11 @@ const testState = vi.hoisted(() => ({
 	reduceOnly: false,
 	side: "buy" as "buy" | "sell",
 	sizeValue: 1,
+	scaleStart: "",
+	scaleEnd: "",
+	scaleLevels: null as number | null,
+	scaleSkew: "",
+	orderEntryInput: undefined as unknown,
 	requestSubmit: vi.fn(),
 	submitOrder: vi.fn(),
 	executionGuard: undefined as ((params: OrderParameters) => void) | undefined,
@@ -135,59 +140,62 @@ vi.mock("@/hooks/trade/use-order-confirmation", () => ({
 }));
 
 vi.mock("@/hooks/trade/use-order-entry-data", () => ({
-	useOrderEntryData: () => ({
-		accountAbstraction: "disabled",
-		allowsIsolatedMarginRemoval: false,
-		applyMarginAndLeverage: vi.fn(),
-		availabilityMaxAgeMs: 10_000,
-		availabilityReceivedAt: Date.now(),
-		availabilityStatus: testState.availabilityStatus,
-		availableBalance: testState.availableBalance,
-		availableBalanceToken: testState.side === "sell" && testState.kind === "spot" ? "BTC" : "USDC",
-		baseToken: "BTC",
-		capabilities: {
-			allowsCrossMargin: true,
-			hasReduceOnly: false,
-			hasTpSl: false,
-			isLeveraged: testState.kind === "perp",
-		},
-		committedLeverage: null,
-		toggleSizeDenomination: vi.fn(),
-		currentLeverage: 10,
-		executionAvailability: { kind: "perp", maxBaseBySide: { buy: "10", sell: "10" } },
-		applySizePercent: vi.fn(),
-		beginSizePercentGesture: vi.fn(),
-		endSizePercentGesture: vi.fn(),
-		hasAvailabilityError: testState.availabilityStatus === "error",
-		isAwaitingFirstDeposit: testState.isAwaitingFirstDeposit,
-		hasPosition: false,
-		isAvailabilityBlocked: testState.availabilityStatus !== "success",
-		isBalanceAvailabilityBlocked: testState.availabilityStatus !== "success",
-		conversionPrice: 100,
-		isAvailabilityLoading: testState.availabilityStatus === "loading",
-		isAvailabilityStale: testState.availabilityStatus === "stale",
-		isSpotMarket: testState.kind === "spot",
-		isOpenInterestCapped: testState.openInterestCapped,
-		isSwitchingMode: false,
-		leverage: 10,
-		marginMode: "cross",
-		maxLeverage: 50,
-		maxSize: testState.maxSize,
-		orderValue: testState.orderValue,
-		pendingLeverage: null,
-		positionStateReady: true,
-		quoteToken: "USDC",
-		resetPendingLeverage: vi.fn(),
-		setPendingLeverage: vi.fn(),
-		sideLabels: { buy: "Buy", sell: "Sell" },
-		sizeValue: testState.sizeValue,
-		spotBalance: {
-			baseAvailable: testState.baseAvailable,
-			quoteAvailable: testState.quoteAvailable,
-		},
-		switchModeError: null,
-		szDecimals: 3,
-	}),
+	useOrderEntryData: (input: unknown) => {
+		testState.orderEntryInput = input;
+		return {
+			accountAbstraction: "disabled",
+			allowsIsolatedMarginRemoval: false,
+			applyMarginAndLeverage: vi.fn(),
+			availabilityMaxAgeMs: 10_000,
+			availabilityReceivedAt: Date.now(),
+			availabilityStatus: testState.availabilityStatus,
+			availableBalance: testState.availableBalance,
+			availableBalanceToken: testState.side === "sell" && testState.kind === "spot" ? "BTC" : "USDC",
+			baseToken: "BTC",
+			capabilities: {
+				allowsCrossMargin: true,
+				hasReduceOnly: false,
+				hasTpSl: false,
+				isLeveraged: testState.kind === "perp",
+			},
+			committedLeverage: null,
+			toggleSizeDenomination: vi.fn(),
+			currentLeverage: 10,
+			executionAvailability: { kind: "perp", maxBaseBySide: { buy: "10", sell: "10" } },
+			applySizePercent: vi.fn(),
+			beginSizePercentGesture: vi.fn(),
+			endSizePercentGesture: vi.fn(),
+			hasAvailabilityError: testState.availabilityStatus === "error",
+			isAwaitingFirstDeposit: testState.isAwaitingFirstDeposit,
+			hasPosition: false,
+			isAvailabilityBlocked: testState.availabilityStatus !== "success",
+			isBalanceAvailabilityBlocked: testState.availabilityStatus !== "success",
+			conversionPrice: 100,
+			isAvailabilityLoading: testState.availabilityStatus === "loading",
+			isAvailabilityStale: testState.availabilityStatus === "stale",
+			isSpotMarket: testState.kind === "spot",
+			isOpenInterestCapped: testState.openInterestCapped,
+			isSwitchingMode: false,
+			leverage: 10,
+			marginMode: "cross",
+			maxLeverage: 50,
+			maxSize: testState.maxSize,
+			orderValue: testState.orderValue,
+			pendingLeverage: null,
+			positionStateReady: true,
+			quoteToken: "USDC",
+			resetPendingLeverage: vi.fn(),
+			setPendingLeverage: vi.fn(),
+			sideLabels: { buy: "Buy", sell: "Sell" },
+			sizeValue: testState.sizeValue,
+			spotBalance: {
+				baseAvailable: testState.baseAvailable,
+				quoteAvailable: testState.quoteAvailable,
+			},
+			switchModeError: null,
+			szDecimals: 3,
+		};
+	},
 }));
 
 vi.mock("@/hooks/trade/use-order-submit", () => ({
@@ -294,10 +302,10 @@ vi.mock("@/stores/use-order-entry-store", () => ({
 	useOrderSizeSource: () => null,
 	useOrderType: () => testState.orderType,
 	useReduceOnly: () => testState.reduceOnly,
-	useScaleEnd: () => "",
-	useScaleLevels: () => null,
-	useScaleSkew: () => "",
-	useScaleStart: () => "",
+	useScaleEnd: () => testState.scaleEnd,
+	useScaleLevels: () => testState.scaleLevels,
+	useScaleSkew: () => testState.scaleSkew,
+	useScaleStart: () => testState.scaleStart,
 	useSlPrice: () => "",
 	useTif: () => "Gtc",
 	useTpPrice: () => "",
@@ -405,6 +413,29 @@ describe("MobileTradeView order-size validation accessibility", () => {
 		expect(getValidationError(container)).toBeNull();
 		for (const control of getSizeControls(container)) expectDescriptionCleared(control);
 		await expectSubmissionBlocked(container);
+	});
+
+	it("blocks a limit price off the market tick and names a valid price", async () => {
+		testState.orderType = "limit";
+		testState.limitPrice = "100.1234";
+		await renderView(root);
+
+		expect(getValidationError(container)?.textContent).toContain(
+			"Price must be a multiple of the tick size, with at most 5 significant figures. E.g., 100.12",
+		);
+		await expectSubmissionBlocked(container);
+	});
+
+	it("sizes a scale order at the size-weighted average of its levels instead of the mark price", async () => {
+		testState.orderType = "scale";
+		testState.scaleStart = "80";
+		testState.scaleEnd = "60";
+		testState.scaleLevels = 4;
+		testState.scaleSkew = "3";
+		await renderView(root);
+
+		const limitPx = (testState.orderEntryInput as { limitPx?: number } | undefined)?.limitPx;
+		expect(limitPx).toBeCloseTo((80 * 3 + 73.333 * 5 + 66.667 * 7 + 60 * 9) / 24, 10);
 	});
 
 	it("offers Deposit to a new account awaiting its first deposit and never submits its valid-looking draft", async () => {
@@ -999,6 +1030,11 @@ function setValidPerpScenario() {
 	testState.reduceOnly = false;
 	testState.side = "buy";
 	testState.sizeValue = 1;
+	testState.scaleStart = "";
+	testState.scaleEnd = "";
+	testState.scaleLevels = null;
+	testState.scaleSkew = "";
+	testState.orderEntryInput = undefined;
 }
 
 function setPerpMinimumScenario() {
