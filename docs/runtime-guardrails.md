@@ -279,7 +279,9 @@ implementation.
   the check runs, and an answer that arrives after the account, network or
   draft changed is dropped. The review belongs to the account it was checked
   for: an account change discards it and its acknowledgement, and confirming
-  re-checks that identity. Max does not reserve the activation fee.
+  re-checks that identity. Max does not reserve the activation fee, as on the
+  official terminal (its Max is the withdrawable balance floored to 2 decimals,
+  or to the token's decimals for spot).
 - Email-wallet withdrawals name their Arbitrum destination. Refuse the wallet's
   own address (the automatic email-wallet deposit would put it straight back)
   and the native USDC token contracts of both networks, in the form and again at
@@ -292,6 +294,18 @@ implementation.
   live region check has turned restricted or unverified since the click, so a
   request waiting for a lock or the legal check cannot be signed after the
   region changed. Closing actions keep their current availability.
+- Exits stay open under this terminal's own region check: when only
+  `useGeoRestriction()` reports a restricted or unverified region, closing a
+  position (market, limit, Close All), TP/SL, cancelling and isolated-margin
+  changes remain available; opening trades, Swap, Reverse and funds actions are
+  blocked. The exchange's own verdict still blocks everything: `legalCheck`
+  `restrictions: "a"` makes `canPerformActions` false, and every signed action
+  fails closed on it. The official terminal goes further and hides its close and
+  cancel columns and the order form while its IP check is blocked or still
+  loading (bundle of 2026-10-30); that is not copied here, because a wrong or
+  failed lookup of the terminal's own check would then leave positions that
+  cannot be closed, and exchanges that withdraw from a region usually keep a
+  close-only mode.
 - Privy embedded EOA can sign, but it still needs gas for EVM transactions.
 - Smart Wallet sponsorship is a Privy/paymaster concern and must be configured
   per chain. UI must not claim sponsorship is available unless the chain is
