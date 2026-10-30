@@ -16,7 +16,7 @@ import {
 	assertEntryTwapExecutionAllowed,
 	type EntryOrderExecutionState,
 } from "@/domain/trade/order/entry-execution-guard";
-import { getOrderEntryLimitPx } from "@/domain/trade/order/entry-limit-price";
+import { getOrderEntryLimitPx, getOrderEntryValueForSize } from "@/domain/trade/order/entry-limit-price";
 import {
 	canEstimateProspectiveLiquidationDraft,
 	estimateProspectiveLiquidation,
@@ -275,6 +275,16 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 	const position = market?.name ? userPositions.getPosition(market.name, getPositionDex(market)) : null;
 	const positionSnapshotReady = !userPositions.isLoading && !userPositions.hasError && !userPositions.isStale;
 	const validatedPositionSize = positionSnapshotReady ? (position?.szi ?? "0") : null;
+	const entryPriceInput = {
+		orderType,
+		assetId: typeof market?.assetId === "number" ? market.assetId : null,
+		szDecimals: market?.szDecimals ?? 0,
+		limitPriceInput,
+		scaleStartPriceInput,
+		scaleEndPriceInput,
+		scaleLevelsNum,
+		scaleSkewInput,
+	};
 	const {
 		accountAbstraction,
 		availabilityStatus,
@@ -326,16 +336,8 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 		markPx,
 		sizeMode,
 		sizeInput,
-		limitPx: getOrderEntryLimitPx({
-			orderType,
-			assetId: typeof market?.assetId === "number" ? market.assetId : null,
-			szDecimals: market?.szDecimals ?? 0,
-			limitPriceInput,
-			scaleStartPriceInput,
-			scaleEndPriceInput,
-			scaleLevelsNum,
-			scaleSkewInput,
-		}),
+		limitPx: getOrderEntryLimitPx(entryPriceInput),
+		orderValueForSize: (size: string) => getOrderEntryValueForSize(entryPriceInput, size),
 		reduceOnly,
 		positionSnapshot: {
 			ready: positionSnapshotReady,

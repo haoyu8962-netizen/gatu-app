@@ -16,7 +16,7 @@ import {
 	assertEntryTwapExecutionAllowed,
 	type EntryOrderExecutionState,
 } from "@/domain/trade/order/entry-execution-guard";
-import { getOrderEntryLimitPx } from "@/domain/trade/order/entry-limit-price";
+import { getOrderEntryLimitPx, getOrderEntryValueForSize } from "@/domain/trade/order/entry-limit-price";
 import {
 	canEstimateProspectiveLiquidationDraft,
 	estimateProspectiveLiquidation,
@@ -171,22 +171,24 @@ export function TradePanel() {
 	const reduceOnlyChecked = useReduceOnly();
 	const capabilities = getMarketCapabilities(market);
 	const reduceOnly = capabilities.hasReduceOnly && reduceOnlyChecked;
+	const entryPriceInput = {
+		orderType,
+		assetId: typeof market?.assetId === "number" ? market.assetId : null,
+		szDecimals: market?.szDecimals ?? 0,
+		limitPriceInput,
+		scaleStartPriceInput,
+		scaleEndPriceInput,
+		scaleLevelsNum,
+		scaleSkewInput,
+	};
 	const orderEntryData = useOrderEntryData({
 		market,
 		side,
 		markPx,
 		sizeMode,
 		sizeInput,
-		limitPx: getOrderEntryLimitPx({
-			orderType,
-			assetId: typeof market?.assetId === "number" ? market.assetId : null,
-			szDecimals: market?.szDecimals ?? 0,
-			limitPriceInput,
-			scaleStartPriceInput,
-			scaleEndPriceInput,
-			scaleLevelsNum,
-			scaleSkewInput,
-		}),
+		limitPx: getOrderEntryLimitPx(entryPriceInput),
+		orderValueForSize: (size: string) => getOrderEntryValueForSize(entryPriceInput, size),
 		reduceOnly,
 		positionSnapshot: {
 			ready: positionSnapshotReady,

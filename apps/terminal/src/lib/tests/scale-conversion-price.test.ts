@@ -1,8 +1,9 @@
 import Big from "big.js";
 import { describe, expect, it } from "vitest";
-import { getOrderEntryLimitPx } from "@/domain/trade/order/entry-limit-price";
+import { deriveOrderEntry } from "@/domain/trade/order/derive";
+import { getOrderEntryLimitPx, getOrderEntryValueForSize } from "@/domain/trade/order/entry-limit-price";
 import { getOrderValue, getSizeStringFromInput } from "@/domain/trade/order/size";
-import { createScaleOrderLevelPlan, getScaleAveragePrice } from "@/domain/trade/orders";
+import { createScaleOrderLevelPlan, getScaleAveragePrice, getScaleOrderNotional } from "@/domain/trade/orders";
 
 const scale = {
 	assetId: 0,
@@ -69,5 +70,53 @@ describe("scale order conversion price", () => {
 		expect(getOrderEntryLimitPx({ ...input, orderType: "stopLimit" })).toBe(95);
 		expect(getOrderEntryLimitPx({ ...input, orderType: "market" })).toBeUndefined();
 		expect(getOrderEntryLimitPx({ ...input, orderType: "twap" })).toBeUndefined();
+	});
+
+	it("values a scale order at its lot-rounded levels, which can differ from size × average price", () => {
+		const coarse = {
+			assetId: 0,
+			szDecimals: 0,
+			scaleStartPriceInput: "100",
+			scaleEndPriceInput: "20",
+			scaleLevelsNum: 2,
+			scaleSkew: "1",
+		};
+		const input = {
+			orderType: "scale" as const,
+			assetId: 0,
+			szDecimals: 0,
+			limitPriceInput: "",
+			scaleStartPriceInput: "100",
+			scaleEndPriceInput: "20",
+			scaleLevelsNum: 2,
+			scaleSkewInput: "1",
+		};
+
+		expect(getScaleAveragePrice(coarse)).toBe(60);
+		expect(createScaleOrderLevelPlan({ ...coarse, sizeValue: "3" }).levels.map((level) => level.size)).toEqual([
+			"2",
+			"1",
+		]);
+		expect(getScaleOrderNotional({ ...coarse, sizeValue: "3" })?.toString()).toBe("220");
+		expect(getScaleOrderNotional({ ...coarse, scaleLevelsNum: 1, sizeValue: "3" })).toBeNull();
+		expect(getOrderEntryValueForSize(input, "3")).toBe(220);
+		expect(getOrderEntryValueForSize({ ...input, orderType: "limit" }, "3")).toBeUndefined();
+		expect(getOrderEntryValueForSize({ ...input, scaleEndPriceInput: "" }, "3")).toBeUndefined();
+
+		const derived = deriveOrderEntry({
+			isConnected: true,
+			market: { kind: "perp", name: "COARSE", pairName: "COARSE-USDC", szDecimals: 0 } as never,
+			side: "buy",
+			conversionPrice: 60,
+			orderValueForSize: (size) => getOrderEntryValueForSize(input, size),
+			sizeMode: "quote",
+			sizeInput: "180",
+			spotBalances: [],
+			maxTradeSzs: null,
+			availableToTrade: null,
+			marketOrderSizing: null,
+		});
+		expect(derived.sizeForOrder).toBe("3");
+		expect(derived.orderValue).toBe(220);
 	});
 });

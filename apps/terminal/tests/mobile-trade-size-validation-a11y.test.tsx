@@ -19,6 +19,7 @@ const testState = vi.hoisted(() => ({
 	openDeposit: vi.fn(),
 	kind: "perp" as "perp" | "spot",
 	limitPrice: "",
+	triggerPrice: "",
 	markPx: "100",
 	prevDayPx: undefined as string | undefined,
 	formatLocale: "en-US",
@@ -311,7 +312,7 @@ vi.mock("@/stores/use-order-entry-store", () => ({
 	useTpPrice: () => "",
 	useTpSlEnabled: () => false,
 	useTpSlReturnInvalid: () => false,
-	useTriggerPrice: () => "",
+	useTriggerPrice: () => testState.triggerPrice,
 	useTwapAdvancedEnabled: () => false,
 	useTwapMinutes: () => null,
 	useTwapRandomize: () => false,
@@ -329,6 +330,7 @@ import { MobileTradeView } from "@/components/trade/mobile/mobile-trade-view";
 import { EntryExecutionError } from "@/domain/trade/order/entry-execution-guard";
 import { notifyNumberFormatChange } from "@/lib/number-format-reactivity";
 import { LOADING_INDICATOR_SELECTOR } from "@/lib/tests/harness/loading-indicator";
+import { getScaleOrderNotional } from "@/domain/trade/orders";
 
 const LOCALES = ["en", "zh", "ja", "hi", "es", "fr", "ar"] as const;
 const OPEN_INTEREST_CAP_COPY =
@@ -426,6 +428,17 @@ describe("MobileTradeView order-size validation accessibility", () => {
 		await expectSubmissionBlocked(container);
 	});
 
+	it("blocks a trigger price off the market tick and names a valid price", async () => {
+		testState.orderType = "stopMarket";
+		testState.triggerPrice = "100.1234";
+		await renderView(root);
+
+		expect(getValidationError(container)?.textContent).toContain(
+			"Price must be a multiple of the tick size, with at most 5 significant figures. E.g., 100.12",
+		);
+		await expectSubmissionBlocked(container);
+	});
+
 	it("sizes a scale order at the size-weighted average of its levels instead of the mark price", async () => {
 		testState.orderType = "scale";
 		testState.scaleStart = "80";
@@ -436,6 +449,18 @@ describe("MobileTradeView order-size validation accessibility", () => {
 
 		const limitPx = (testState.orderEntryInput as { limitPx?: number } | undefined)?.limitPx;
 		expect(limitPx).toBeCloseTo((80 * 3 + 73.333 * 5 + 66.667 * 7 + 60 * 9) / 24, 10);
+		const valueForSize = (testState.orderEntryInput as { orderValueForSize?: (size: string) => number | undefined })
+			.orderValueForSize;
+		const levels = {
+			assetId: 0,
+			szDecimals: 3,
+			scaleStartPriceInput: "80",
+			scaleEndPriceInput: "60",
+			scaleLevelsNum: 4,
+			scaleSkew: "3",
+		};
+		expect(valueForSize?.("1.003")).toBe(getScaleOrderNotional({ ...levels, sizeValue: "1.003" })?.toNumber());
+		expect(valueForSize?.("1.003")).not.toBeUndefined();
 	});
 
 	it("offers Deposit to a new account awaiting its first deposit and never submits its valid-looking draft", async () => {
@@ -1018,6 +1043,7 @@ function setValidPerpScenario() {
 	testState.isAwaitingFirstDeposit = false;
 	testState.kind = "perp";
 	testState.limitPrice = "";
+	testState.triggerPrice = "";
 	testState.markPx = "100";
 	testState.prevDayPx = undefined;
 	testState.formatLocale = "en-US";

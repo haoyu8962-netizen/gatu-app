@@ -28,6 +28,8 @@ export interface OrderEntryInputs {
 	market: UnifiedMarketInfo | undefined;
 	side: Side;
 	conversionPrice: number;
+	/** The order value of a total size when it is not size × conversion price (a scale order's levels). */
+	orderValueForSize?: (size: string) => number | undefined;
 	sizeMode: SizeMode;
 	sizeInput: string;
 	spotBalances: SpotBalance[] | null | undefined;
@@ -137,7 +139,9 @@ export function deriveOrderEntry(inputs: OrderEntryInputs): OrderEntryDerived {
 		});
 
 	const sizeValue = Number(sizeForOrder);
-	const orderValue = getOrderValue(sizeValue, inputs.conversionPrice);
+	const orderValue =
+		(sizeValue > 0 ? inputs.orderValueForSize?.(sizeForOrder) : undefined) ??
+		getOrderValue(sizeValue, inputs.conversionPrice);
 	const sizeModeLabel = getSizeModeLabel(inputs.sizeMode, baseToken, quoteToken);
 
 	return {

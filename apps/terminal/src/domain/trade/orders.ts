@@ -326,6 +326,18 @@ export function getScaleAveragePrice(params: Omit<ScaleOrderPlanParams, "sizeVal
 }
 
 /**
+ * What the levels of a scale order cost once its total size is split into lots: the sum of each
+ * level's price times its size, which is what the exchange receives. It can differ from the total
+ * size times the average price, because whole lots land on unevenly priced levels. Null while the
+ * plan has no levels.
+ */
+export function getScaleOrderNotional(params: ScaleOrderPlanParams): Big | null {
+	const plan = createScaleOrderLevelPlan(params);
+	if (plan.levels.length === 0) return null;
+	return plan.levels.reduce((sum, level) => sum.plus(level.notional), Big(0));
+}
+
+/**
  * Split integer size units across levels so sizes ramp linearly from the first level to the last
  * with last/first === skew. Weights are kept as exact decimals ((n-1) + (skew-1)*i) and the split
  * uses floor + largest-remainder (lower index wins ties), so the total is preserved exactly and

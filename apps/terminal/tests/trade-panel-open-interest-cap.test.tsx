@@ -274,6 +274,7 @@ vi.mock("@/stores/use-orderbook-actions-store", () => ({
 
 import { TradePanel } from "@/components/trade/tradebox/trade-panel";
 import { EntryExecutionError } from "@/domain/trade/order/entry-execution-guard";
+import { getScaleOrderNotional } from "@/domain/trade/orders";
 
 const OPEN_INTEREST_CAP_COPY =
 	"The limit order would be canceled after resting because open interest is capped. Use market orders to close positions.";
@@ -672,5 +673,17 @@ describe("desktop TradePanel price precision and scale sizing", () => {
 		await renderPanel(root);
 
 		expect((testState.orderEntryInput as { limitPx?: number } | undefined)?.limitPx).toBe(70);
+		const valueForSize = (testState.orderEntryInput as { orderValueForSize?: (size: string) => number | undefined })
+			.orderValueForSize;
+		const levels = {
+			assetId: 0,
+			szDecimals: 3,
+			scaleStartPriceInput: "80",
+			scaleEndPriceInput: "60",
+			scaleLevelsNum: 4,
+			scaleSkew: "1",
+		};
+		expect(valueForSize?.("1.003")).toBe(getScaleOrderNotional({ ...levels, sizeValue: "1.003" })?.toNumber());
+		expect(valueForSize?.("1.003")).not.toBeUndefined();
 	});
 });
