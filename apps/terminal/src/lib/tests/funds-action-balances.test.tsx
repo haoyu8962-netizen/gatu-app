@@ -59,6 +59,7 @@ const testState = vi.hoisted(() => ({
 		env: "Mainnet" as "Mainnet" | "Testnet",
 		exchangeLifecycle: { active: true, id: Symbol("exchange-lifecycle") },
 		sessionMode: "wallet" as "wallet" | "agent-only" | "disconnected",
+		info: { preTransferCheck: vi.fn() },
 	},
 	walletSession: {
 		address: "0x1111111111111111111111111111111111111111" as string | undefined,
@@ -117,6 +118,28 @@ vi.mock("@sairn/ui", () => ({
 		open ? createElement("section", null, children) : null,
 	Button: ({ children, ...props }: { children: ReactNode; [key: string]: unknown }) =>
 		createElement("button", { ...props, type: "button" }, children),
+	Checkbox: ({
+		checked,
+		disabled,
+		label,
+		onCheckedChange,
+	}: {
+		checked: boolean;
+		disabled?: boolean;
+		label: ReactNode;
+		onCheckedChange: (checked: boolean) => void;
+	}) =>
+		createElement(
+			"label",
+			null,
+			createElement("input", {
+				type: "checkbox",
+				checked,
+				disabled,
+				onChange: (event: { target: { checked: boolean } }) => onCheckedChange(event.target.checked),
+			}),
+			label,
+		),
 	Modal: ({ children, open }: { children: ReactNode; open: boolean }) => (open ? renderChildren(children) : null),
 	ModalContent: ({ children }: { children: ReactNode }) => createElement("div", null, children),
 	ModalDescription: ({ children }: { children: ReactNode }) => createElement("p", null, children),
@@ -311,6 +334,13 @@ describe("funds action balance wiring", () => {
 		testState.assertAccountAbstraction.mockResolvedValue(undefined);
 		testState.assertFreshGeoAllowed.mockReset();
 		testState.assertFreshGeoAllowed.mockResolvedValue(undefined);
+		testState.exchangeIdentity.info.preTransferCheck.mockReset();
+		testState.exchangeIdentity.info.preTransferCheck.mockResolvedValue({
+			fee: "0.0",
+			isSanctioned: false,
+			userExists: true,
+			userHasSentTx: true,
+		});
 		container = document.createElement("div");
 		document.body.appendChild(container);
 		root = createI18nRoot(container);
@@ -539,7 +569,7 @@ describe("funds action balance wiring", () => {
 		expect(container.querySelector("h2")).toBe(title);
 	});
 
-	it("wires the fresh mode check into each mode-dependent SDK boundary", async () => {
+	it("wires the fresh mode and region checks into each mode-dependent SDK boundary", async () => {
 		act(() => root.render(createElement(SendModal, { onOpenChange: vi.fn(), open: true })));
 		const signal = new AbortController().signal;
 
@@ -548,12 +578,28 @@ describe("funds action balance wiring", () => {
 		expect(testState.assertAccountAbstraction).toHaveBeenCalledTimes(2);
 		expect(testState.assertAccountAbstraction).toHaveBeenNthCalledWith(1, signal);
 		expect(testState.assertAccountAbstraction).toHaveBeenNthCalledWith(2, signal);
+		expect(testState.assertFreshGeoAllowed).toHaveBeenCalledTimes(2);
 
 		act(() => root.render(createElement(TransferModal, { onOpenChange: vi.fn(), open: true })));
 		await testState.exchangeGuards.get("usdClassTransfer")?.({ amount: "1", toPerp: false }, signal);
 		expect(testState.assertAccountAbstraction).toHaveBeenNthCalledWith(3, signal);
-		expect(testState.assertFreshGeoAllowed).toHaveBeenCalledOnce();
-		expect(testState.assertFreshGeoAllowed).toHaveBeenCalledWith(signal);
+		expect(testState.assertFreshGeoAllowed).toHaveBeenCalledTimes(3);
+		for (const call of testState.assertFreshGeoAllowed.mock.calls) expect(call).toEqual([signal]);
+	});
+
+	it("fails the send SDK boundaries closed when fresh geo cannot be verified", async () => {
+		testState.assertFreshGeoAllowed.mockRejectedValue(new FundsActionGeoExecutionError("restricted"));
+		act(() => root.render(createElement(SendModal, { onOpenChange: vi.fn(), open: true })));
+		const signal = new AbortController().signal;
+
+		await expect(
+			testState.exchangeGuards.get("sendAsset")?.({ amount: "1", sourceDex: "spot", token: "USDC:0" }, signal),
+		).rejects.toThrow("Funds actions are not available in your region");
+		await expect(testState.exchangeGuards.get("spotSend")?.({ amount: "1", token: "USDC:0" }, signal)).rejects.toThrow(
+			"Funds actions are not available in your region",
+		);
+		expect(testState.exchangeMutations.sendAsset).not.toHaveBeenCalled();
+		expect(testState.exchangeMutations.spotSend).not.toHaveBeenCalled();
 	});
 
 	it("fails the internal-transfer SDK boundary closed when fresh geo cannot be verified", async () => {
@@ -1159,6 +1205,100 @@ describe("funds action balance wiring", () => {
 			);
 		}
 	});
+
+	it("checks the destination and sends at once when no fee or warning applies", async () => {
+		renderValidSend(root, container);
+		await clickAndFlush(getButton(container, "Send"));
+
+		expect(testState.exchangeIdentity.info.preTransferCheck).toHaveBeenCalledWith({
+			user: "0x2222222222222222222222222222222222222222",
+			source: "0x1111111111111111111111111111111111111111",
+		});
+		expect(testState.exchangeMutations.spotSend).toHaveBeenCalledOnce();
+	});
+
+	it("asks for an acknowledged review before sending to a new account with an activation fee", async () => {
+		testState.exchangeIdentity.info.preTransferCheck.mockResolvedValue({
+			fee: "1.0",
+			isSanctioned: false,
+			userExists: false,
+			userHasSentTx: false,
+		});
+		renderValidSend(root, container);
+		await clickAndFlush(getButton(container, "Send"));
+
+		expect(testState.exchangeMutations.spotSend).not.toHaveBeenCalled();
+		expect(container.textContent).toContain(
+			"This transfer will incur a one-time fee of 1.0 in a USD stablecoin to activate the destination account.",
+		);
+		expect(container.textContent).toContain("The destination address has never sent a transaction on Hyperliquid.");
+		expect(container.textContent).toContain("0x2222222222222222222222222222222222222222");
+		const confirm = getButton(container, "Send with Fee");
+		expect(confirm.disabled).toBe(true);
+
+		const acknowledgement = container.querySelector<HTMLInputElement>('input[type="checkbox"]');
+		act(() => acknowledgement?.click());
+		expect(confirm.disabled).toBe(false);
+		await clickAndFlush(confirm);
+
+		expect(testState.exchangeMutations.spotSend).toHaveBeenCalledOnce();
+		expect(testState.exchangeMutations.spotSend).toHaveBeenCalledWith(
+			expect.objectContaining({ amount: "1", destination: "0x2222222222222222222222222222222222222222" }),
+		);
+	});
+
+	it("returns from the review to the form without sending", async () => {
+		testState.exchangeIdentity.info.preTransferCheck.mockResolvedValue({
+			fee: "0.0",
+			isSanctioned: false,
+			userExists: true,
+			userHasSentTx: false,
+		});
+		renderValidSend(root, container);
+		await clickAndFlush(getButton(container, "Send"));
+
+		expect(container.textContent).not.toContain("one-time fee");
+		expect(getButton(container, "Send").disabled).toBe(true);
+		act(() => getButton(container, "Back").click());
+
+		expect(container.querySelector('input[placeholder="Destination address"]')).not.toBeNull();
+		expect(testState.exchangeMutations.spotSend).not.toHaveBeenCalled();
+		expect(testState.exchangeMutations.sendAsset).not.toHaveBeenCalled();
+	});
+
+	it("refuses a sanctioned destination without sending", async () => {
+		testState.exchangeIdentity.info.preTransferCheck.mockResolvedValue({
+			fee: "0.0",
+			isSanctioned: true,
+			userExists: true,
+			userHasSentTx: true,
+		});
+		renderValidSend(root, container);
+		await clickAndFlush(getButton(container, "Send"));
+
+		expect(toastMocks.error).toHaveBeenCalledWith("Unable to send funds to this address.");
+		expect(testState.exchangeMutations.spotSend).not.toHaveBeenCalled();
+	});
+
+	it.each([
+		["a failed request", () => testState.exchangeIdentity.info.preTransferCheck.mockRejectedValue(new Error("down"))],
+		[
+			"an unexpected answer",
+			() =>
+				testState.exchangeIdentity.info.preTransferCheck.mockResolvedValue({
+					fee: "unknown",
+					isSanctioned: false,
+					userHasSentTx: true,
+				}),
+		],
+	])("sends nothing after %s from the destination check", async (_case, arrange) => {
+		arrange();
+		renderValidSend(root, container);
+		await clickAndFlush(getButton(container, "Send"));
+
+		expect(toastMocks.error).toHaveBeenCalledWith("Unable to check the destination address. Nothing was sent.");
+		expect(testState.exchangeMutations.spotSend).not.toHaveBeenCalled();
+	});
 });
 
 function renderValidSend(
@@ -1184,8 +1324,6 @@ function renderValidTransfer(root: Root, container: HTMLElement, onOpenChange = 
 async function clickAndFlush(button: HTMLButtonElement) {
 	await act(async () => {
 		button.click();
-		await Promise.resolve();
-		await Promise.resolve();
-		await Promise.resolve();
+		for (let tick = 0; tick < 8; tick += 1) await Promise.resolve();
 	});
 }

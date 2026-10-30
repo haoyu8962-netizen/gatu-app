@@ -760,6 +760,7 @@ msgstr "ALO (إضافة سيولة فقط)"
 #: src/components/staking/staking-view.tsx
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 #: src/components/trade/positions/send-modal.tsx
+#: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #: src/components/vaults/vault-action-modal.tsx
@@ -1152,6 +1153,7 @@ msgstr "المتوسط {price}"
 #: src/components/trade/components/mobile-agent-qr-scanner.tsx
 #: src/components/trade/components/wallet-modal.tsx
 #: src/components/trade/positions/cancel-all-orders-modal.tsx
+#: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/tradebox/bridge/amount-entry-screen.tsx
 #: src/components/trade/tradebox/bridge/bridge-error-screen.tsx
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
@@ -1480,6 +1482,10 @@ msgstr "لا يمكن التبديل إلى الوضع المعزول مع وج�
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Cannot switch to Isolated mode with an open position. Close your position first."
 msgstr "لا يمكن التبديل إلى وضع الهامش المعزول مع وجود مركز مفتوح. أغلق مركزك أولاً."
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Cannot withdraw to the USDC contract address."
+msgstr "لا يمكن السحب إلى عنوان عقد USDC."
 
 #: src/components/trade/tradebox/deposit/deposit-method-chooser.tsx
 msgid "Card or bank transfer through a third-party payment provider. USDC arrives in your wallet on Arbitrum."
@@ -2037,6 +2043,7 @@ msgstr "تأكيد مسح السجل غير القابل للقراءة"
 
 #: src/components/trade/components/establish-connection-modal.tsx
 #: src/components/trade/components/legal-acceptance-modal.tsx
+#: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
@@ -2808,6 +2815,7 @@ msgstr "تخطيط سطح المكتب"
 msgid "Destination"
 msgstr "الوجهة"
 
+#: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
@@ -4126,6 +4134,10 @@ msgstr "يتحقق Hyperliquid من المكافآت غير المطالب به�
 #: src/components/referrals/referral-code-card.tsx
 msgid "Hyperliquid will unlock code creation when the required volume is confirmed."
 msgstr "سيتيح Hyperliquid إنشاء الرمز عند تأكيد حجم التداول المطلوب."
+
+#: src/components/trade/positions/send-modal.tsx
+msgid "I am sending assets on the Hyperliquid blockchain, not withdrawing to another chain. Assets sent to a platform that does not support Hyperliquid will be lost."
+msgstr "أنا أرسل أصولًا على سلسلة Hyperliquid، ولا أسحبها إلى سلسلة أخرى. الأصول المرسلة إلى منصة لا تدعم Hyperliquid ستُفقد."
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
 msgid "I have read and agree to the {BRAND_NAME} <0>Terms of Use</0>, <1>Privacy Policy</1>, and the <2>Hyperliquid Terms of Use</2>."
@@ -7847,6 +7859,7 @@ msgstr "بيع قصير"
 #: src/components/portfolio/portfolio-page.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/send-modal.tsx
+#: src/components/trade/positions/send-modal.tsx
 #: src/config/account-ledger.ts
 msgid "Send"
 msgstr "إرسال"
@@ -7878,6 +7891,10 @@ msgstr "إرسال الرموز"
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #~ msgid "Send USDC to your wallet address below."
 #~ msgstr "أرسل USDC إلى عنوان محفظتك أدناه."
+
+#: src/components/trade/positions/send-modal.tsx
+msgid "Send with Fee"
+msgstr "إرسال مع الرسوم"
 
 #: src/components/trade/positions/send-modal.tsx
 #~ msgid "Sending..."
@@ -8981,6 +8998,10 @@ msgstr ""
 msgid "The desktop-approved key expired or was replaced from desktop. Scan a new QR from Link mobile device."
 msgstr ""
 
+#: src/components/trade/positions/send-modal.tsx
+msgid "The destination address has never sent a transaction on Hyperliquid. Do not use Send to transfer to an exchange or another platform that does not support the Hyperliquid blockchain, or your funds will be lost. To move USDC to Arbitrum, use Withdraw instead."
+msgstr "لم يُرسل عنوان الوجهة أي معاملة على Hyperliquid من قبل. لا تستخدم الإرسال للتحويل إلى منصة تداول أو منصة أخرى لا تدعم سلسلة Hyperliquid، وإلا ستفقد أموالك. لنقل USDC إلى Arbitrum، استخدم السحب بدلًا من ذلك."
+
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "The exact name and public address are now present in fresh extraAgents data."
 msgstr "الاسم الدقيق والعنوان العام موجودان الآن في بيانات extraAgents الجديدة."
@@ -9765,6 +9786,10 @@ msgstr "لم تفعّل هذه المنصة فتح حسابات جديدة به�
 #~ msgid "This trading key is not the currently approved Mobile Agent. Create a new desktop QR."
 #~ msgstr "مفتاح التداول هذا ليس Mobile Agent المعتمد حاليًا. أنشئ رمز QR جديدًا على سطح المكتب."
 
+#: src/components/trade/positions/send-modal.tsx
+msgid "This transfer will incur a one-time fee of {reviewFee} in a USD stablecoin to activate the destination account."
+msgstr "سيُفرض على هذا التحويل رسم لمرة واحدة قدره {reviewFee} بعملة مستقرة بالدولار الأمريكي لتفعيل حساب الوجهة."
+
 #: src/components/vaults/vault-detail-view.tsx
 msgid "This Vault is closed and no longer accepts deposits."
 msgstr "هذه الخزنة مغلقة ولم تعد تقبل الإيداعات."
@@ -10119,6 +10144,7 @@ msgstr ""
 
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/config/trade-panel-labels.ts
+#: src/lib/trade/position-submit-feedback.ts
 msgid "Trading is not available in your region"
 msgstr "التداول غير متاح في منطقتك"
 
@@ -10409,6 +10435,10 @@ msgstr "الفائدة المفتوحة ثنائية الجانب: مجموع ا
 msgid "Type"
 msgstr "النوع"
 
+#: src/components/trade/positions/send-modal.tsx
+msgid "Unable to check the destination address. Nothing was sent."
+msgstr "تعذّر التحقق من عنوان الوجهة. لم يُرسل أي شيء."
+
 #: src/lib/trade/order-submission-feedback.ts
 msgid "Unable to identify this TWAP market. Refresh market data before retrying."
 msgstr "تعذر تحديد سوق TWAP هذا. حدّث بيانات السوق قبل إعادة المحاولة."
@@ -10422,6 +10452,10 @@ msgstr "تعذّر تحميل رصيد USDC على Arbitrum"
 #: src/lib/trade/funds-action-feedback.ts
 msgid "Unable to load the current CCTP withdrawal fee."
 msgstr "تعذر تحميل رسوم السحب الحالية عبر CCTP."
+
+#: src/components/trade/positions/send-modal.tsx
+msgid "Unable to send funds to this address."
+msgstr "لا يمكن إرسال الأموال إلى هذا العنوان."
 
 #. placeholder {0}: config.chainName
 #: src/lib/hyperliquid/use-deposit.ts
@@ -10463,6 +10497,7 @@ msgid "Unable to verify regional availability. This referral request was not sub
 msgstr "تعذّر التحقق من التوفر الإقليمي. لم يُرسَل طلب الإحالة هذا."
 
 #: src/lib/errors/action-error.ts
+#: src/lib/trade/position-submit-feedback.ts
 msgid "Unable to verify regional availability. Trading is temporarily unavailable."
 msgstr "تعذر التحقق من التوفر الإقليمي. التداول غير متاح مؤقتًا."
 
@@ -11290,6 +11325,10 @@ msgstr "تم إلغاء قفل السحب"
 #: src/lib/trade/funds-action-feedback.ts
 msgid "Withdrawals are unavailable for this address."
 msgstr "عمليات السحب غير متاحة لهذا العنوان."
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Withdrawing to yourself is not allowed because it would automatically trigger a deposit. Enter a different address."
+msgstr "لا يُسمح بالسحب إلى عنوانك نفسه لأنه سيؤدي تلقائيًا إلى إيداع. أدخل عنوانًا آخر."
 
 #: src/components/earn/earn-action-modal.tsx
 msgid "Withdraws your entire {token} supply at the moment it executes, including accrued interest."

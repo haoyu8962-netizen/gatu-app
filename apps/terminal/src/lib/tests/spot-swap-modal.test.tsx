@@ -23,7 +23,10 @@ const mocks = vi.hoisted(() => ({
 	executionGuard: null as null | ((params: unknown) => void),
 	modalType: "swap" as string | null,
 	submitOrder: vi.fn(),
+	geo: { actionsBlocked: false, tradeRestricted: false },
 }));
+
+vi.mock("@/hooks/use-geo-restriction", () => ({ useGeoRestriction: () => mocks.geo }));
 
 vi.mock("@sairn/ui", () => ({
 	Button: ({ children, ...props }: { children: ReactNode; [key: string]: unknown }) =>
@@ -151,6 +154,7 @@ describe("SpotSwapModal submission", () => {
 	let root: Root;
 
 	beforeEach(() => {
+		mocks.geo = { actionsBlocked: false, tradeRestricted: false };
 		mocks.modalType = "swap";
 		mocks.owner = "0x1111111111111111111111111111111111111111";
 		mocks.spotTotal = "1000";
@@ -198,6 +202,24 @@ describe("SpotSwapModal submission", () => {
 			},
 		};
 	}
+
+	it.each([
+		["restricted", { actionsBlocked: true, tradeRestricted: true }],
+		["not yet verified", { actionsBlocked: true, tradeRestricted: false }],
+	])("submits nothing while trading is %s in the region", (_case, geo) => {
+		act(() => root.unmount());
+		mocks.geo = geo;
+		root = createI18nRoot(container);
+		act(() => root.render(createElement(SpotSwapModal)));
+		const amount = container.querySelector<HTMLInputElement>('input[aria-label="Swap amount"]');
+		if (!amount) throw new Error("Expected the swap amount input");
+		act(() => setInputValue(amount, "100"));
+
+		expect(confirm().disabled).toBe(true);
+		act(() => confirm().click());
+		expect(mocks.submitOrder).not.toHaveBeenCalled();
+		expect(container.textContent?.includes("Trading is not available in your region")).toBe(geo.tradeRestricted);
+	});
 
 	it("fills Max from the exact protocol balance instead of a JavaScript number", () => {
 		const exactBalance = "100000000000.123454";

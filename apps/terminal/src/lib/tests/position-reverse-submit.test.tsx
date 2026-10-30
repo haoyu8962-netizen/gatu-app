@@ -84,7 +84,10 @@ const mocks = vi.hoisted(() => ({
 	guardCalls: 0,
 	lockRequest: vi.fn(),
 	hip3Accepted: true,
+	geo: { actionsBlocked: false, tradeRestricted: false },
 }));
+
+vi.mock("@/hooks/use-geo-restriction", () => ({ useGeoRestriction: () => mocks.geo }));
 
 vi.mock("@/stores/use-global-settings-store", async (importOriginal) => {
 	const actual = await importOriginal<typeof import("@/stores/use-global-settings-store")>();
@@ -308,6 +311,7 @@ describe("usePositionReverseSubmit", () => {
 			value: { request: mocks.lockRequest } as unknown as LockManager,
 		});
 		mocks.hip3Accepted = true;
+		mocks.geo = { actionsBlocked: false, tradeRestricted: false };
 		mocks.betweenExecutionGuards = null;
 		mocks.executionGuard = undefined;
 		mocks.clearinghouseState.mockReset().mockImplementation(async () => createAccountState());
@@ -493,6 +497,28 @@ describe("usePositionReverseSubmit", () => {
 		expect(caught).toBeInstanceOf(Error);
 		expect((caught as Error).message).toContain("Trading data changed");
 		expect(mocks.executeOrder).not.toHaveBeenCalled();
+	});
+
+	it.each([
+		["restricted", { actionsBlocked: true, tradeRestricted: true }, "Trading is not available in your region"],
+		[
+			"not yet verified",
+			{ actionsBlocked: true, tradeRestricted: false },
+			"Unable to verify regional availability. Trading is temporarily unavailable.",
+		],
+	])("submits no reverse order while trading is %s in the region", async (_case, geo, message) => {
+		mocks.geo = geo;
+		act(() => root.render(createElement(Probe)));
+
+		await expect(
+			act(async () => {
+				await currentHook().submit();
+			}),
+		).rejects.toThrow(message);
+		expect(mocks.clearinghouseState).not.toHaveBeenCalled();
+		expect(mocks.executeOrder).not.toHaveBeenCalled();
+		const queueId = queueItems.at(-1)?.id;
+		await vi.waitFor(() => expect(getOrderQueueItem(queueId)).toMatchObject({ status: "failed" }));
 	});
 
 	it("blocks an active TWAP before the REST refresh", async () => {

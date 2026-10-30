@@ -579,6 +579,15 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Fixed
 
+- Send checks the destination before anything is signed, as the official terminal does: a
+  sanctioned address is refused, and sending to a new account (which costs a one-time activation
+  fee of 1 USD stablecoin) or to an address that has never sent a transaction on Hyperliquid shows
+  the fee and a loss warning and needs an explicit confirmation first.
+- Email withdrawals no longer accept your own wallet address, which the automatic deposit would put
+  straight back, or the USDC token contract address, where the funds would be lost.
+- Send, Swap and Reverse Position follow the regional restriction like order entry and withdrawals:
+  they are unavailable where trading or funds actions are restricted, and Send and Reverse check the
+  region again just before submitting.
 - The Market order-type tab and menu entry in the order form use the order-type wording instead of
   the market-list wording: 市价 in Chinese, 成行 in Japanese, मार्केट in Hindi, Au marché in French
   and سعر السوق in Arabic (English and Spanish are unchanged). The compact account-mode placeholder

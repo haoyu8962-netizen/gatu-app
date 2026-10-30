@@ -625,8 +625,12 @@ vi.mock("@/components/trade/tradebox/deposit/withdraw-form", () => ({
 		activationFee,
 		amount,
 		available,
+		destination,
+		destinationError,
+		destinationRequired,
 		maxAmount,
 		onAmountChange,
+		onDestinationChange,
 		onRetryPrerequisites,
 		onSubmit,
 		routeFee,
@@ -643,8 +647,12 @@ vi.mock("@/components/trade/tradebox/deposit/withdraw-form", () => ({
 		activationFee: string;
 		amount: string;
 		available: string;
+		destination: string;
+		destinationError: string | null;
+		destinationRequired: boolean;
 		maxAmount: string;
 		onAmountChange: (amount: string) => void;
+		onDestinationChange: (destination: string) => void;
 		onRetryPrerequisites: () => void;
 		onSubmit: () => void;
 		routeFee: string | null;
@@ -667,6 +675,14 @@ vi.mock("@/components/trade/tradebox/deposit/withdraw-form", () => ({
 				"data-preflight-failed": routingPreflightFailed,
 			},
 			createElement("button", { onClick: () => onAmountChange(testState.withdrawDraft), type: "button" }, "Set amount"),
+			destinationRequired
+				? createElement("input", {
+						"aria-label": "Destination address",
+						value: destination,
+						onChange: (event: { target: { value: string } }) => onDestinationChange(event.target.value),
+					})
+				: null,
+			createElement("p", { "data-testid": "withdrawal-destination-error" }, destinationError),
 			createElement("p", { "data-testid": "withdrawal-prerequisite" }, prerequisiteError),
 			createElement("p", { "data-testid": "withdrawal-validation" }, validation.error),
 			createElement("button", { disabled: !canSubmit, onClick: onSubmit, type: "button" }, "Submit withdrawal"),
@@ -883,6 +899,42 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 		expect(container.querySelector('[data-testid="status-description"]')?.textContent).toContain(
 			"1.234,5 USDC → Hyperliquid",
 		);
+	});
+
+	it.each([
+		[
+			"the email wallet itself",
+			"0x1111111111111111111111111111111111111111",
+			"Withdrawing to yourself is not allowed because it would automatically trigger a deposit. Enter a different address.",
+		],
+		[
+			"the Arbitrum USDC contract",
+			"0xaf88d065e77c8cc2239327c5edb3a432268e5831",
+			"Cannot withdraw to the USDC contract address.",
+		],
+		[
+			"the Arbitrum Sepolia USDC contract",
+			"0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d",
+			"Cannot withdraw to the USDC contract address.",
+		],
+	])("refuses an email withdrawal to %s", async (_case, destination, message) => {
+		testState.modalOpen = true;
+		testState.activeTab = "withdraw";
+		testState.emailAddress = "trader@example.com";
+		await rerender();
+		act(() => getButton("Set amount").click());
+		const input = container.querySelector<HTMLInputElement>('input[aria-label="Destination address"]');
+		if (!input) throw new Error("Expected the destination input");
+		act(() => {
+			Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set?.call(input, destination);
+			input.dispatchEvent(new Event("input", { bubbles: true }));
+		});
+
+		expect(container.querySelector('[data-testid="withdrawal-destination-error"]')?.textContent).toBe(message);
+		expect(getButton("Submit withdrawal").disabled).toBe(true);
+		await act(async () => getButton("Submit withdrawal").click());
+		expect(testState.exchangeSdkCalls.get("sendToEvmWithData")).not.toHaveBeenCalled();
+		expect(testState.exchangeSdkCalls.get("withdraw3")).not.toHaveBeenCalled();
 	});
 
 	it("writes the CCTP minimum withdrawal with the number-format separators", async () => {

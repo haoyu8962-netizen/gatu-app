@@ -686,6 +686,7 @@ msgstr "ALO（流動性追加のみ）"
 #: src/components/staking/staking-view.tsx
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 #: src/components/trade/positions/send-modal.tsx
+#: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #: src/components/vaults/vault-action-modal.tsx
@@ -1034,6 +1035,7 @@ msgstr "平均 {price}"
 #: src/components/trade/components/mobile-agent-qr-scanner.tsx
 #: src/components/trade/components/wallet-modal.tsx
 #: src/components/trade/positions/cancel-all-orders-modal.tsx
+#: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/tradebox/bridge/amount-entry-screen.tsx
 #: src/components/trade/tradebox/bridge/bridge-error-screen.tsx
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
@@ -1333,6 +1335,10 @@ msgstr "ポジション保有中は分離モードに切り替えできません
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Cannot switch to Isolated mode with an open position. Close your position first."
 msgstr "ポジション保有中は分離モードに切り替えできません。先にポジションを決済してください。"
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Cannot withdraw to the USDC contract address."
+msgstr "USDC のコントラクトアドレスには出金できません。"
 
 #: src/components/trade/tradebox/deposit/deposit-method-chooser.tsx
 msgid "Card or bank transfer through a third-party payment provider. USDC arrives in your wallet on Arbitrum."
@@ -1844,6 +1850,7 @@ msgstr "読み取れない記録の削除を確定"
 
 #: src/components/trade/components/establish-connection-modal.tsx
 #: src/components/trade/components/legal-acceptance-modal.tsx
+#: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
@@ -2523,6 +2530,7 @@ msgstr "デスクトップレイアウト"
 msgid "Destination"
 msgstr "送信先"
 
+#: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
@@ -3694,6 +3702,10 @@ msgstr "Hyperliquid が表示された未請求報酬を確認し、対象報酬
 #: src/components/referrals/referral-code-card.tsx
 msgid "Hyperliquid will unlock code creation when the required volume is confirmed."
 msgstr "必要な取引高が確認されると、Hyperliquid がコード作成を有効にします。"
+
+#: src/components/trade/positions/send-modal.tsx
+msgid "I am sending assets on the Hyperliquid blockchain, not withdrawing to another chain. Assets sent to a platform that does not support Hyperliquid will be lost."
+msgstr "Hyperliquid ブロックチェーン上で資産を送金するものであり、他のチェーンへの出金ではないことを確認します。Hyperliquid に対応していないプラットフォームに送った資産は失われます。"
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
 msgid "I have read and agree to the {BRAND_NAME} <0>Terms of Use</0>, <1>Privacy Policy</1>, and the <2>Hyperliquid Terms of Use</2>."
@@ -7015,6 +7027,7 @@ msgstr "売り・ショート"
 #: src/components/portfolio/portfolio-page.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/send-modal.tsx
+#: src/components/trade/positions/send-modal.tsx
 #: src/config/account-ledger.ts
 msgid "Send"
 msgstr "送金"
@@ -7038,6 +7051,10 @@ msgstr "別の Hyperliquid アカウントへ送金します。Arbitrum 上で U
 #: src/components/trade/positions/send-modal.tsx
 msgid "Send Tokens"
 msgstr "トークンを送金"
+
+#: src/components/trade/positions/send-modal.tsx
+msgid "Send with Fee"
+msgstr "手数料を払って送金"
 
 #: src/components/trade/positions/send-modal.tsx
 msgid "Sent {sentAmount} {sentToken}"
@@ -8044,6 +8061,10 @@ msgstr "デスクトップでこのキーが承認されていません。デス
 msgid "The desktop-approved key expired or was replaced from desktop. Scan a new QR from Link mobile device."
 msgstr "デスクトップで承認したキーの期限が切れたか、デスクトップから置き換えられました。「モバイル端末をリンク」から新しい QR コードを読み取ってください。"
 
+#: src/components/trade/positions/send-modal.tsx
+msgid "The destination address has never sent a transaction on Hyperliquid. Do not use Send to transfer to an exchange or another platform that does not support the Hyperliquid blockchain, or your funds will be lost. To move USDC to Arbitrum, use Withdraw instead."
+msgstr "送信先アドレスは Hyperliquid で一度も取引を送信したことがありません。取引所など Hyperliquid ブロックチェーンに対応していないプラットフォームへの送金に「送金」を使わないでください。資金が失われます。USDC を Arbitrum に移すには「出金」を使ってください。"
+
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "The exact name and public address are now present in fresh extraAgents data."
 msgstr "最新の extraAgents データに、名前と公開アドレスの完全一致が確認されました。"
@@ -8660,6 +8681,10 @@ msgstr "この厳格な分離市場では、保有ポジションから証拠金
 msgid "This terminal has not enabled new portfolio margin activation. Existing accounts can switch to another mode."
 msgstr "このターミナルではポートフォリオマージンの新規有効化に対応していません。既存のアカウントは別のモードに切り替えできます。"
 
+#: src/components/trade/positions/send-modal.tsx
+msgid "This transfer will incur a one-time fee of {reviewFee} in a USD stablecoin to activate the destination account."
+msgstr "この送金では、送信先アカウントを有効化するために米ドル建てステーブルコインで {reviewFee} の手数料が 1 回だけかかります。"
+
 #: src/components/vaults/vault-detail-view.tsx
 msgid "This Vault is closed and no longer accepts deposits."
 msgstr "このボールトは閉鎖され、入金を受け付けていません。"
@@ -8986,6 +9011,7 @@ msgstr "このアカウントでは取引がまだ有効化されていません
 
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/config/trade-panel-labels.ts
+#: src/lib/trade/position-submit-feedback.ts
 msgid "Trading is not available in your region"
 msgstr "お住まいの地域では取引を利用できません"
 
@@ -9239,6 +9265,10 @@ msgstr "未決済建玉（両側合計）：このコントラクトのロング
 msgid "Type"
 msgstr "タイプ"
 
+#: src/components/trade/positions/send-modal.tsx
+msgid "Unable to check the destination address. Nothing was sent."
+msgstr "送信先アドレスを確認できませんでした。何も送金されていません。"
+
 #: src/lib/trade/order-submission-feedback.ts
 msgid "Unable to identify this TWAP market. Refresh market data before retrying."
 msgstr "この TWAP の市場を特定できません。再試行する前に市場データを更新してください。"
@@ -9252,6 +9282,10 @@ msgstr "Arbitrum の USDC 残高を読み込めません"
 #: src/lib/trade/funds-action-feedback.ts
 msgid "Unable to load the current CCTP withdrawal fee."
 msgstr "現在の CCTP 出金手数料を読み込めません。"
+
+#: src/components/trade/positions/send-modal.tsx
+msgid "Unable to send funds to this address."
+msgstr "このアドレスには送金できません。"
 
 #. placeholder {0}: config.chainName
 #: src/lib/hyperliquid/use-deposit.ts
@@ -9293,6 +9327,7 @@ msgid "Unable to verify regional availability. This referral request was not sub
 msgstr "地域別の利用可否を確認できません。この紹介リクエストは送信されていません。"
 
 #: src/lib/errors/action-error.ts
+#: src/lib/trade/position-submit-feedback.ts
 msgid "Unable to verify regional availability. Trading is temporarily unavailable."
 msgstr "地域別の利用可否を確認できません。取引は一時的に利用できません。"
 
@@ -10038,6 +10073,10 @@ msgstr "出金ロック解除済み"
 #: src/lib/trade/funds-action-feedback.ts
 msgid "Withdrawals are unavailable for this address."
 msgstr "このアドレスでは出金を利用できません。"
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Withdrawing to yourself is not allowed because it would automatically trigger a deposit. Enter a different address."
+msgstr "自分自身のアドレスへの出金は、自動的に入金が実行されるためできません。別のアドレスを入力してください。"
 
 #: src/components/earn/earn-action-modal.tsx
 msgid "Withdraws your entire {token} supply at the moment it executes, including accrued interest."
