@@ -60,6 +60,7 @@
   - 顺带把 `getOrderEntryLimitPx` 的注释移回它自己上方（上一轮插入新函数时放错了位置）。
 - 第二轮变异：保证金忽略按档价值、桌面不传按档价值、手机不传按档价值、两档时忽略偏斜，各自让对应新测试失败，均已还原。
 - 第二轮修复后浏览器（沙箱外）：`trade-panel-all-orders.pw.ts` 与 `trade-panel-layout.pw.ts` 12 项通过；`mobile-trade-all-orders.playwright.config.ts` 跑了两轮，各 46 通过、1 失败，两轮失败的不是同一项（`desktop-order-entry-layout.pw.ts:391` 缩短网格的滚动容器、`:296` 1421px 表单适配），当时系统负载平均值约 19；`:391` 单独重跑 3 次通过，整份 `desktop-order-entry-layout.pw.ts` 单独运行 9 项通过。含 Scale 保证金 $8.00 的 `reduce-only.pw.ts` 两轮都通过。
+- 全量（测试工作树）：第一轮修复 `7ba01e17` 9303 通过；第二轮修复 `9babf39f` 9306 通过；各 1 失败为沙箱内已知的 `vite-development-cache`（EPERM）。第三轮只读窄审（范围 `7ba01e17 → 9babf39f`）：保证金与两档偏斜两项都已修，未发现新问题，评分 9.0；审查方注明组件用例证明的是接线，真实 Hook 的完整运行链不在其中。
 
 ## 后续与替代关系
 
