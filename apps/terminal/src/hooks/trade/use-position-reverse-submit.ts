@@ -160,6 +160,7 @@ export function usePositionReverseSubmit(target: PositionReverseTarget) {
 	function assertExecutionContext(params: ExchangeParams<"order">): void {
 		const execution = executionContextRef.current;
 		if (!execution || phaseRef.current !== "submitting") throw tradingDataChangedError();
+		assertTradingRegionAllowed();
 		assertLifecycleActive(execution.lifecycleEpoch);
 
 		const currentTarget = targetRef.current;

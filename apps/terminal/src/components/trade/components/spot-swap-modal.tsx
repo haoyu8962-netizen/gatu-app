@@ -201,6 +201,8 @@ function SpotSwapModalContent({ initialFromToken, initialToToken, mode, onClose 
 	const executionStateRef = useRef<SpotSwapExecutionState>({
 		active: true,
 		accountDataReady,
+		tradeRestricted,
+		tradingActionsBlocked,
 		assetId: spotMarket?.assetId,
 		marketName: spotMarket?.name,
 		bookCoin: orderbook?.coin,
@@ -217,6 +219,8 @@ function SpotSwapModalContent({ initialFromToken, initialToToken, mode, onClose 
 	executionStateRef.current = {
 		active: true,
 		accountDataReady,
+		tradeRestricted,
+		tradingActionsBlocked,
 		assetId: spotMarket?.assetId,
 		marketName: spotMarket?.name,
 		bookCoin: orderbook?.coin,

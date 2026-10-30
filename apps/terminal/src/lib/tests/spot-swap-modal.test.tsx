@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 
+import { i18n } from "@lingui/core";
 import { ApiRequestError } from "@nktkas/hyperliquid";
 import { act, createElement, type ReactNode } from "react";
 import type { Root } from "react-dom/client";
@@ -24,9 +25,22 @@ const mocks = vi.hoisted(() => ({
 	modalType: "swap" as string | null,
 	submitOrder: vi.fn(),
 	geo: { actionsBlocked: false, tradeRestricted: false },
+	geoListeners: new Set<() => void>(),
 }));
 
-vi.mock("@/hooks/use-geo-restriction", () => ({ useGeoRestriction: () => mocks.geo }));
+vi.mock("@/hooks/use-geo-restriction", async () => {
+	const { useSyncExternalStore } = await import("react");
+	return {
+		useGeoRestriction: () =>
+			useSyncExternalStore(
+				(listener) => {
+					mocks.geoListeners.add(listener);
+					return () => mocks.geoListeners.delete(listener);
+				},
+				() => mocks.geo,
+			),
+	};
+});
 
 vi.mock("@sairn/ui", () => ({
 	Button: ({ children, ...props }: { children: ReactNode; [key: string]: unknown }) =>
@@ -141,6 +155,8 @@ vi.mock("@/stores/use-global-modal-store", () => ({
 
 import { SpotSwapModal } from "@/components/trade/components/spot-swap-modal";
 import { DEFAULT_SWAP_SLIPPAGE_BPS, getMaxSwapInput } from "@/domain/trade/swap";
+import { type ActionFailure, describeActionFailure } from "@/lib/errors/action-error";
+import { getSpotSwapFeedback } from "@/lib/trade/spot-swap-feedback";
 import { getOrderQueueItem, removeOrderQueueItem } from "@/stores/use-order-queue-store";
 
 function setInputValue(input: HTMLInputElement, value: string) {
@@ -294,6 +310,46 @@ describe("SpotSwapModal submission", () => {
 			expect(mocks.closeSwap).not.toHaveBeenCalled();
 		},
 	);
+
+	it.each([
+		["restricted", { actionsBlocked: true, tradeRestricted: true }, "Trading is not available in your region"],
+		[
+			"not yet verified",
+			{ actionsBlocked: true, tradeRestricted: false },
+			"Unable to verify regional availability. Trading is temporarily unavailable.",
+		],
+	])("refuses at the SDK boundary when the region becomes %s after the click", async (_case, geo, message) => {
+		let resolveSubmission: ((value: unknown) => void) | undefined;
+		mocks.submitOrder.mockImplementationOnce(
+			() =>
+				new Promise((resolve) => {
+					resolveSubmission = resolve;
+				}),
+		);
+		act(() => confirm().click());
+		const guard = mocks.executionGuard;
+		const params = mocks.submitOrder.mock.calls[0]?.[0];
+		expect(() => guard?.(params)).not.toThrow();
+
+		act(() => {
+			mocks.geo = geo;
+			for (const listener of mocks.geoListeners) listener();
+		});
+		let refusal: unknown;
+		try {
+			guard?.(params);
+		} catch (error) {
+			refusal = error;
+		}
+
+		expect(refusal).toBeInstanceOf(Error);
+		expect(
+			describeActionFailure(getSpotSwapFeedback(refusal) as ActionFailure, (descriptor) => i18n._(descriptor)),
+		).toBe(message);
+		await act(async () => {
+			resolveSubmission?.(filledResponse());
+		});
+	});
 
 	it("records a late error after the original controller has unmounted", async () => {
 		let rejectSubmission: ((value: unknown) => void) | undefined;

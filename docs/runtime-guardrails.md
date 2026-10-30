@@ -275,8 +275,11 @@ implementation.
   transaction on Hyperliquid, opens a review step in the same dialog with the fee
   and a loss warning, and its static `Send` / `Send with Fee` control stays
   disabled until the user acknowledges that this is not a withdrawal to another
-  chain; a failed or malformed answer sends nothing. Max does not reserve the
-  activation fee.
+  chain; a failed or malformed answer sends nothing. The draft is locked while
+  the check runs, and an answer that arrives after the account, network or
+  draft changed is dropped. The review belongs to the account it was checked
+  for: an account change discards it and its acknowledgement, and confirming
+  re-checks that identity. Max does not reserve the activation fee.
 - Email-wallet withdrawals name their Arbitrum destination. Refuse the wallet's
   own address (the automatic email-wallet deposit would put it straight back)
   and the native USDC token contracts of both networks, in the form and again at
@@ -285,7 +288,10 @@ implementation.
   (`useGeoRestriction().actionsBlocked`) like order entry: the balances table
   hides Swap, the swap dialog disables its control and names the restriction, the
   position rows disable Reverse, and the reverse submission re-checks the region
-  inside its asset lock. Closing actions keep their current availability.
+  inside its asset lock. Both also refuse in their SDK execution guard when the
+  live region check has turned restricted or unverified since the click, so a
+  request waiting for a lock or the legal check cannot be signed after the
+  region changed. Closing actions keep their current availability.
 - Privy embedded EOA can sign, but it still needs gas for EVM transactions.
 - Smart Wallet sponsorship is a Privy/paymaster concern and must be configured
   per chain. UI must not claim sponsorship is available unless the chain is

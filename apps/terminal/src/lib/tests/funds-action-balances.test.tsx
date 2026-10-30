@@ -1247,6 +1247,90 @@ describe("funds action balance wiring", () => {
 		);
 	});
 
+	it("locks the draft while the destination check runs and drops its answer once the account changed", async () => {
+		let resolveCheck!: (value: unknown) => void;
+		testState.exchangeIdentity.info.preTransferCheck.mockReturnValueOnce(
+			new Promise((resolve) => {
+				resolveCheck = resolve;
+			}),
+		);
+		renderValidSend(root, container);
+		act(() => getButton(container, "Send").click());
+
+		expect(getAmountInput(container).disabled).toBe(true);
+		expect(container.querySelector<HTMLInputElement>('input[placeholder="Destination address"]')?.disabled).toBe(true);
+
+		act(() => {
+			testState.walletSession.address = "0x3333333333333333333333333333333333333333";
+			testState.exchangeIdentity.clientKey = "0x3333333333333333333333333333333333333333";
+			root.render(createElement(SendModal, { onOpenChange: vi.fn(), open: true }));
+		});
+		await act(async () => {
+			resolveCheck({ fee: "0.0", isSanctioned: false, userExists: true, userHasSentTx: true });
+			for (let tick = 0; tick < 8; tick += 1) await Promise.resolve();
+		});
+
+		expect(testState.exchangeMutations.spotSend).not.toHaveBeenCalled();
+		expect(testState.exchangeMutations.sendAsset).not.toHaveBeenCalled();
+	});
+
+	it("discards an acknowledged review when the account changes, even after switching back", async () => {
+		testState.exchangeIdentity.info.preTransferCheck.mockResolvedValue({
+			fee: "1.0",
+			isSanctioned: false,
+			userExists: false,
+			userHasSentTx: false,
+		});
+		renderValidSend(root, container);
+		await clickAndFlush(getButton(container, "Send"));
+		act(() => container.querySelector<HTMLInputElement>('input[type="checkbox"]')?.click());
+		expect(getButton(container, "Send with Fee").disabled).toBe(false);
+
+		act(() => {
+			testState.exchangeIdentity.clientKey = "0x3333333333333333333333333333333333333333";
+			testState.walletSession.address = "0x3333333333333333333333333333333333333333";
+			root.render(createElement(SendModal, { onOpenChange: vi.fn(), open: true }));
+		});
+		expect(container.textContent).not.toContain("one-time fee");
+
+		act(() => {
+			testState.exchangeIdentity.clientKey = "0x1111111111111111111111111111111111111111";
+			testState.walletSession.address = "0x1111111111111111111111111111111111111111";
+			root.render(createElement(SendModal, { onOpenChange: vi.fn(), open: true }));
+		});
+		expect(container.textContent).not.toContain("one-time fee");
+		expect(container.querySelector('input[placeholder="Destination address"]')).not.toBeNull();
+		expect(testState.exchangeMutations.spotSend).not.toHaveBeenCalled();
+	});
+
+	it("sends exactly the amount and token the review shows", async () => {
+		testState.exchangeIdentity.info.preTransferCheck.mockResolvedValue({
+			fee: "1.0",
+			isSanctioned: false,
+			userExists: false,
+			userHasSentTx: true,
+		});
+		act(() => root.render(createElement(SendModal, { onOpenChange: vi.fn(), open: true })));
+		const destinationInput = container.querySelector<HTMLInputElement>('input[placeholder="Destination address"]');
+		act(() => {
+			if (destinationInput) setInputValue(destinationInput, "0x2222222222222222222222222222222222222222");
+			setInputValue(getAmountInput(container), "1.25");
+		});
+		await clickAndFlush(getButton(container, "Send"));
+
+		const amountRow = [...container.querySelectorAll("div")].find(
+			(element) => element.children.length === 2 && element.children[0]?.textContent === "Amount",
+		);
+		const shownAmount = amountRow?.children[1]?.textContent ?? "";
+		act(() => container.querySelector<HTMLInputElement>('input[type="checkbox"]')?.click());
+		await clickAndFlush(getButton(container, "Send with Fee"));
+
+		const sent = testState.exchangeMutations.spotSend.mock.calls[0]?.[0] as { amount: string; token: string };
+		expect(shownAmount).toBe(`${sent.amount} USDC`);
+		expect(sent.amount).toBe("1.25");
+		expect(sent.token).toContain("USDC");
+	});
+
 	it("returns from the review to the form without sending", async () => {
 		testState.exchangeIdentity.info.preTransferCheck.mockResolvedValue({
 			fee: "0.0",

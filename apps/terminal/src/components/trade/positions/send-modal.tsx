@@ -69,14 +69,28 @@ interface SendSubmission {
 	destinationDex: string | undefined;
 }
 
-interface SendReview {
+interface SendDraft {
 	destination: string;
 	amount: string;
 	token: string;
 	accountType: AccountType;
+}
+
+interface SendReview extends SendDraft {
+	identity: object;
+	identityKey: string;
 	fee: string;
 	feeDue: boolean;
 	destinationHasSentTx: boolean;
+}
+
+function isSameSendDraft(current: SendDraft, checked: SendDraft): boolean {
+	return (
+		current.destination === checked.destination &&
+		current.amount === checked.amount &&
+		current.token === checked.token &&
+		current.accountType === checked.accountType
+	);
 }
 
 interface Props {
@@ -174,6 +188,13 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 			submissionSequenceRef.current += 1;
 		};
 	}, [exchangeLifecycle, submissionIdentityKey]);
+	useLayoutEffect(() => {
+		if (!submissionIdentityKey) return;
+		return () => {
+			setReview(null);
+			setReviewAcknowledged(false);
+		};
+	}, [submissionIdentityKey]);
 	const assertAccountAbstraction = useAccountAbstractionPreExecutionGuard(accountAbstraction, address);
 	const fundsActionAvailability = useFundsActionAvailability({
 		accountDataReady,
@@ -282,6 +303,7 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 	});
 
 	const isPending = isSendAssetPending || isSpotSendPending;
+	const draftLocked = isPending || isCheckingDestination;
 	const accountModeReady = isSupportedAccountAbstraction(accountAbstraction);
 	const accountSummary = getAccountBalanceSummary({
 		accountAbstraction,
@@ -293,6 +315,8 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 	});
 	const usesTradingAccount = isQuoteBalanceSharedWithPerps(accountAbstraction);
 	const activeAccountType = usesTradingAccount ? "spot" : accountType;
+	const draftRef = useRef<SendDraft>({ destination, amount, token: selectedToken, accountType: activeAccountType });
+	draftRef.current = { destination, amount, token: selectedToken, accountType: activeAccountType };
 
 	const availableSpotTokens = useMemo((): BalanceRow[] => {
 		if (!accountModeReady || !accountDataReady || !spotBalances?.length) return [];
@@ -368,10 +392,11 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 		review.destination === destination &&
 		review.amount === amount &&
 		review.token === selectedToken &&
-		review.accountType === activeAccountType;
+		review.accountType === activeAccountType &&
+		review.identityKey === submissionIdentityKey;
 
 	function handleAccountTypeChange(value: string | null) {
-		if (!value || usesTradingAccount || !accountDataReady || isPending) return;
+		if (!value || usesTradingAccount || !accountDataReady || draftLocked) return;
 		const v = value as AccountType;
 		setAccountType(v);
 		if (v === "perp") {
@@ -383,18 +408,18 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 	}
 
 	function handleTokenChange(value: string | null) {
-		if (!value || !accountDataReady || isPending) return;
+		if (!value || !accountDataReady || draftLocked) return;
 		setSelectedToken(value);
 		setAmount("");
 	}
 
 	function handleAmountChange(value: string) {
-		if (!accountDataReady || isPending) return;
+		if (!accountDataReady || draftLocked) return;
 		setAmount(limitDecimalInput(value, decimals));
 	}
 
 	function handleMaxClick() {
-		if (!accountDataReady || isPending) return;
+		if (!accountDataReady || draftLocked) return;
 		setAmount(floorToString(availableBalance, decimals));
 	}
 
@@ -410,7 +435,9 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 
 	async function handleSendClick() {
 		if (!canSend || !address) return;
-		const checked = { destination, amount, token: selectedToken, accountType: activeAccountType };
+		const checked: SendDraft = { destination, amount, token: selectedToken, accountType: activeAccountType };
+		const checkedIdentity = submissionIdentityRef.current;
+		if (!checkedIdentity) return;
 		setIsCheckingDestination(true);
 		let verdict: ReturnType<typeof getSendDestinationVerdict>;
 		try {
@@ -420,6 +447,7 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 		} finally {
 			setIsCheckingDestination(false);
 		}
+		if (submissionIdentityRef.current !== checkedIdentity || !isSameSendDraft(draftRef.current, checked)) return;
 		if (verdict.kind === "sanctioned") {
 			toast.error(t`Unable to send funds to this address.`);
 			return;
@@ -432,6 +460,8 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 			setReviewAcknowledged(false);
 			setReview({
 				...checked,
+				identity: checkedIdentity,
+				identityKey: submissionIdentityKey,
 				fee: verdict.fee,
 				feeDue: verdict.feeDue,
 				destinationHasSentTx: verdict.destinationHasSentTx,
@@ -442,7 +472,7 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 	}
 
 	async function handleReviewConfirm() {
-		if (!reviewIsCurrent || !reviewAcknowledged) return;
+		if (!reviewIsCurrent || !reviewAcknowledged || review?.identity !== submissionIdentityRef.current) return;
 		await submitSend();
 	}
 
@@ -632,13 +662,15 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 							placeholder={t`Destination address`}
 							aria-label={t`Destination address`}
 							value={destination}
-							onChange={(e: ChangeEvent<HTMLInputElement>) => setDestination(e.target.value)}
+							onChange={(e: ChangeEvent<HTMLInputElement>) => {
+								if (!draftLocked) setDestination(e.target.value);
+							}}
 							dir="auto"
 							autoCapitalize="none"
 							autoComplete="off"
 							spellCheck={false}
 							error={destinationError}
-							disabled={isPending || !accountModeReady || !accountDataReady}
+							disabled={draftLocked || !accountModeReady || !accountDataReady}
 							mobileSafe
 							className="max-[1000px]:min-h-11"
 						/>
@@ -649,7 +681,7 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 								onValueChange={handleAccountTypeChange}
 								options={accountTypeOptions}
 								triggerAriaLabel={t`Account`}
-								disabled={!accountModeReady || !accountDataReady || usesTradingAccount || isPending}
+								disabled={!accountModeReady || !accountDataReady || usesTradingAccount || draftLocked}
 								className="flex-1"
 							/>
 
@@ -658,7 +690,7 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 								onValueChange={handleTokenChange}
 								options={tokenSelectOptions}
 								triggerAriaLabel={t`Asset`}
-								disabled={isPending || !accountModeReady || !accountDataReady}
+								disabled={draftLocked || !accountModeReady || !accountDataReady}
 								className="flex-1"
 							/>
 						</div>
@@ -679,7 +711,7 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 							placeholder="0.00"
 							value={amount}
 							onChange={(e: ChangeEvent<HTMLInputElement>) => handleAmountChange(e.target.value)}
-							disabled={isPending || !accountModeReady || !accountDataReady}
+							disabled={draftLocked || !accountModeReady || !accountDataReady}
 							mobileSafe
 							className={cn(
 								"w-full tabular-nums max-[1000px]:h-11",
