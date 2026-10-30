@@ -34,12 +34,20 @@ export interface BuildOpenOrderModifyFormPlanParams {
 	limitPrice?: string;
 }
 
+export interface OpenOrderModifyFormExpectation {
+	expectedSize?: string;
+	expectedTriggerPx?: string;
+	expectedLimitPx?: string;
+}
+
 export interface ReadyOpenOrderModifyFormPlan {
 	status: "ready";
 	params: ExchangeParams<"batchModify">;
 	normalizedSize: string;
 	normalizedTriggerPrice: string | null;
 	normalizedLimitPrice: string | null;
+	/** The values reconciliation waits for: only the fields this plan changes. */
+	expectation: OpenOrderModifyFormExpectation;
 }
 
 export type OpenOrderModifyFormPlan =
@@ -175,5 +183,10 @@ export function buildOpenOrderModifyFormPlan(params: BuildOpenOrderModifyFormPla
 			params.target.limitPrice === null
 				? null
 				: (readyLimitPlan?.normalizedValue ?? params.target.limitPrice.order.limitPx),
+		expectation: {
+			...(readySizePlan ? { expectedSize: readySizePlan.normalizedValue } : {}),
+			...(readyTriggerPlan ? { expectedTriggerPx: readyTriggerPlan.normalizedValue } : {}),
+			...(readyLimitPlan ? { expectedLimitPx: readyLimitPlan.normalizedValue } : {}),
+		},
 	};
 }

@@ -69,7 +69,12 @@ function build(
 	order: OpenOrder,
 	size: string,
 	triggerPrice?: string,
-	overrides: { owner?: string; status?: "active" | "subscribing"; market?: OpenOrderModifyMarketBinding } = {},
+	overrides: {
+		owner?: string;
+		status?: "active" | "subscribing";
+		market?: OpenOrderModifyMarketBinding;
+		limitPrice?: string;
+	} = {},
 ) {
 	return buildOpenOrderModifyFormPlan({
 		target,
@@ -83,6 +88,7 @@ function build(
 		market: overrides.market ?? market,
 		size,
 		triggerPrice,
+		limitPrice: overrides.limitPrice,
 	});
 }
 
@@ -96,6 +102,7 @@ describe("open order modification form", () => {
 			normalizedSize: "1.25",
 			normalizedTriggerPrice: null,
 			normalizedLimitPrice: "100",
+			expectation: { expectedSize: "1.25" },
 			params: {
 				modifies: [
 					{
@@ -104,6 +111,23 @@ describe("open order modification form", () => {
 					},
 				],
 			},
+		});
+	});
+
+	it("expects only the fields a plan changes", () => {
+		const order = makeLimitOrder();
+		const target = capture(order);
+		const priceOnly = build(target, order, "2", undefined, { limitPrice: "101" });
+		const both = build(target, order, "1.25", undefined, { limitPrice: "101" });
+
+		expect(priceOnly).toMatchObject({ status: "ready", normalizedSize: "2", normalizedLimitPrice: "101" });
+		expect(priceOnly.status === "ready" ? priceOnly.expectation : null).toEqual({ expectedLimitPx: "101" });
+		expect(both.status === "ready" ? both.expectation : null).toEqual({ expectedSize: "1.25", expectedLimitPx: "101" });
+		expect(both.status === "ready" ? both.params.modifies[0]?.order : null).toMatchObject({ p: "101", s: "1.25" });
+		expect(build(target, order, "2", undefined, { limitPrice: "100.0" })).toEqual({
+			status: "blocked",
+			reason: "no-change",
+			field: null,
 		});
 	});
 

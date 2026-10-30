@@ -747,9 +747,7 @@ export function MobileOrdersTab({ className, disclosureState, scrollMode = "cont
 			originalSize: target.size.order.sz,
 			originalTriggerPx: target.size.order.triggerPx,
 			originalLimitPx: target.size.order.limitPx,
-			expectedSize: plan.normalizedSize,
-			...(plan.normalizedTriggerPrice === null ? {} : { expectedTriggerPx: plan.normalizedTriggerPrice }),
-			...(plan.normalizedLimitPrice === null ? {} : { expectedLimitPx: plan.normalizedLimitPrice }),
+			...plan.expectation,
 		});
 		if (!pendingAction) {
 			setModifyValidationError({ kind: "code", code: "previous-modification-unconfirmed" });

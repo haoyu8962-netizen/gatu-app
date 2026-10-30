@@ -352,6 +352,69 @@ describe("mobile order modification", () => {
 		});
 	});
 
+	it("changes only the price, closes at once and waits for the new price alone", async () => {
+		let settle!: () => void;
+		mocks.modifyOrders.mockImplementation(async (params: unknown) => {
+			mocks.batchModifyGuard?.(params);
+			await new Promise<void>((resolve) => {
+				settle = resolve;
+			});
+			mocks.batchModifyGuard?.(params);
+			return { response: { data: { statuses: [{ resting: { oid: 42 } }] } } };
+		});
+		const { price } = openEditor();
+		await act(async () => {
+			if (!price) return;
+			changeInput(price, "171.5");
+			pressKey(price, "Enter");
+			await Promise.resolve();
+		});
+
+		expect(mocks.modifyOrders).toHaveBeenCalledOnce();
+		expect(mocks.modifyOrders).toHaveBeenCalledWith({
+			modifies: [
+				{ oid: 42, order: { a: 120_001, b: true, p: "171.5", s: "2", r: true, t: { limit: { tif: "Gtc" } } } },
+			],
+		});
+		expect(getPendingTradingActionSnapshot().modifications[0]).toMatchObject({
+			originalLimitPx: "170",
+			expectedLimitPx: "171.5",
+			expectedSize: null,
+			expectedTriggerPx: null,
+		});
+		expect(document.body.querySelector('input[aria-label="Price"]')).toBeNull();
+		expect(findButton("Modify Order", container)?.disabled).toBe(true);
+		await act(async () => {
+			settle();
+			await Promise.resolve();
+		});
+		expect(mocks.modifyOrders).toHaveBeenCalledOnce();
+	});
+
+	it("refuses at the SDK boundary a payload whose price differs from the confirmed price", async () => {
+		const broadcast = vi.fn();
+		mocks.modifyOrders.mockImplementation(
+			async (params: { modifies: { oid: number; order: Record<string, unknown> }[] }) => {
+				const repriced = {
+					modifies: params.modifies.map((modify) => ({ ...modify, order: { ...modify.order, p: "172" } })),
+				};
+				mocks.batchModifyGuard?.(repriced);
+				broadcast(repriced);
+				return { response: { data: { statuses: [{ resting: { oid: 42 } }] } } };
+			},
+		);
+		const { price } = openEditor();
+		await act(async () => {
+			if (!price) return;
+			changeInput(price, "171.5");
+			pressKey(price, "Enter");
+			await Promise.resolve();
+		});
+
+		expect(mocks.modifyOrders).toHaveBeenCalledOnce();
+		expect(broadcast).not.toHaveBeenCalled();
+	});
+
 	it("marks a price off the market tick as invalid without submitting", () => {
 		const { price } = openEditor();
 		act(() => {

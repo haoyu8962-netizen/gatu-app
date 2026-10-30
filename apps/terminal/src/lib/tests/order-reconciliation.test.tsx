@@ -865,6 +865,84 @@ describe("OrderReconciliation", () => {
 		expectActionFeedback(action.id, status, message);
 	});
 
+	function claimAwaitingModification(
+		oid: number,
+		expectation: { expectedSize?: string; expectedLimitPx?: string },
+		latest: { sz: string; limitPx: string },
+	) {
+		const now = Date.now();
+		const monotonicNow = performance.now();
+		const action = getPendingTradingActionActions().claimModification({
+			env: "Mainnet",
+			owner: USER,
+			oid,
+			originalSize: "2",
+			originalTriggerPx: "0",
+			originalLimitPx: "100",
+			...expectation,
+		});
+		if (!action) throw new Error("Expected modification claim");
+		getPendingTradingActionActions().markModificationRequestStarted(action.id, now - 2, monotonicNow - 2);
+		getPendingTradingActionActions().markModificationAwaiting(action.id, now - 1, monotonicNow - 1);
+		mocks.openOrdersData = { orders: [{ oid, triggerPx: "0", ...latest }] };
+		mocks.openOrdersLastMessageAt = now;
+		mocks.openOrdersMonotonicLastMessageAt = monotonicNow;
+		return action;
+	}
+
+	it("confirms a price modification after the replaced order partly filled", () => {
+		const action = claimAwaitingModification(51, { expectedLimitPx: "101" }, { sz: "1.5", limitPx: "101" });
+
+		act(() => root.render(createReconciliation()));
+
+		expect(getPendingTradingActionSnapshot().modifications).toHaveLength(0);
+		expectActionFeedback(action.id, "success", "Modified");
+	});
+
+	it("leaves a size and price replacement that then partly filled unconfirmed instead of failed", () => {
+		const action = claimAwaitingModification(
+			52,
+			{ expectedSize: "3", expectedLimitPx: "101" },
+			{ sz: "2.5", limitPx: "101" },
+		);
+
+		act(() => root.render(createReconciliation()));
+		expect(getPendingTradingActionSnapshot().modifications).toHaveLength(1);
+		expect(mocks.errorToast).not.toHaveBeenCalled();
+
+		const now = Date.now();
+		const monotonicNow = performance.now();
+		getPendingTradingActionActions().markModificationUnconfirmed(action.id, now, monotonicNow);
+		mocks.openOrdersData = { orders: [{ oid: 52, sz: "2.5", triggerPx: "0", limitPx: "101" }] };
+		mocks.openOrdersLastMessageAt = now + 1;
+		mocks.openOrdersMonotonicLastMessageAt = monotonicNow + 1;
+		act(() => root.render(createReconciliation()));
+
+		expect(getPendingTradingActionSnapshot().modifications).toHaveLength(0);
+		expectActionFeedback(
+			action.id,
+			"unconfirmed",
+			"The modification was not confirmed. Review the order before retrying.",
+		);
+	});
+
+	it("fails a size and price modification when only the price took effect", () => {
+		const action = claimAwaitingModification(
+			53,
+			{ expectedSize: "1.5", expectedLimitPx: "101" },
+			{ sz: "2", limitPx: "101" },
+		);
+
+		act(() => root.render(createReconciliation()));
+
+		expect(getPendingTradingActionSnapshot().modifications).toHaveLength(0);
+		expectActionFeedback(
+			action.id,
+			"failed",
+			"The order changed before the requested modification was confirmed. Review the latest order before retrying.",
+		);
+	});
+
 	it("releases an unconfirmed modification after a fresh snapshot shows the original order", () => {
 		const now = Date.now();
 		const monotonicNow = performance.now();

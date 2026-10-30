@@ -382,5 +382,10 @@ describe("fresh snapshot and execution binding", () => {
 			modifies: plan.params.modifies.map((modify) => ({ ...modify, order: { ...modify.order, s: "0.5" } })),
 		};
 		expect(openOrderModifyParamsEqual(plan.params, changed)).toBe(false);
+		const repriced: ExchangeParams<"batchModify"> = {
+			...plan.params,
+			modifies: plan.params.modifies.map((modify) => ({ ...modify, order: { ...modify.order, p: "101" } })),
+		};
+		expect(openOrderModifyParamsEqual(plan.params, repriced)).toBe(false);
 	});
 });
