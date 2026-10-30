@@ -432,6 +432,16 @@ describe("MobileTradeView order-size validation accessibility", () => {
 		await expectSubmissionBlocked(container);
 	});
 
+	it("blocks a TWAP price limit off the market tick on its own", async () => {
+		testState.orderType = "twap";
+		testState.twapStopPrice = "101.1234";
+		testState.twapAdvancedEnabled = true;
+		await renderView(root);
+
+		expect(getValidationError(container)?.textContent).toContain("E.g., 101.12");
+		await expectSubmissionBlocked(container);
+	});
+
 	it("blocks a TWAP trigger price off the market tick while the advanced settings are on", async () => {
 		testState.orderType = "twap";
 		testState.twapTriggerPrice = "100.1234";

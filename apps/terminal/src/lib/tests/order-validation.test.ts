@@ -1139,6 +1139,18 @@ describe("limit and trigger price tick validation", () => {
 		expect(tickMessage(buy.errors, "twap-stop-price-tick")).toContain("E.g., 101.12");
 		expect(tickMessage(sell.errors, "twap-stop-price-tick")).toContain("E.g., 99.122");
 		expect(tickMessage(spot.errors, "twap-trigger-price-tick")).toContain("E.g., 100.12");
+		const spotStop = validateSpotOrder(
+			spotContext({
+				...twap,
+				usesLimitPrice: false,
+				twapTriggerPriceInput: "",
+				twapTriggerPriceNum: null,
+				twapStopPriceInput: "101.129",
+				twapStopPriceNum: 101.129,
+			}),
+		);
+		expect(tickMessage(spotStop.errors, "twap-stop-price-tick")).toContain("E.g., 101.12");
+		expect(spotStop.errors.map((error) => error.id)).not.toContain("twap-trigger-price-tick");
 		expect(hidden.errors.map((error) => error.id)).not.toContain("twap-trigger-price-tick");
 		expect(hidden.errors.map((error) => error.id)).not.toContain("twap-stop-price-tick");
 	});

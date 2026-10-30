@@ -82,6 +82,8 @@ describe("scale order conversion price", () => {
 		expect(capSizeToQuoteAmount("3", "180", 1, (size) => (size === "3.0" ? 220 : undefined))).toBe("3");
 		expect(capSizeToQuoteAmount("3", "1", 0, () => 220)).toBe("3");
 		expect(capSizeToQuoteAmount("0", "180", 1, valueForSize)).toBe("0");
+		expect(capSizeToQuoteAmount("300", "100", 0, (size) => Number(size))).toBe("100");
+		expect(capSizeToQuoteAmount("301", "100", 0, (size) => Number(size))).toBe("301");
 	});
 
 	it("values a scale order at its lot-rounded levels, which can differ from size × average price", () => {

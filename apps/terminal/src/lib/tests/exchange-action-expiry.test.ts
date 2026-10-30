@@ -231,6 +231,29 @@ describe("exchange clients", () => {
 		expect(Math.abs(Number(protectedRequest?.payload.expiresAfter) - (http.serverTime + 15_000))).toBeLessThan(1_000);
 	});
 
+	it("lets the owner's own client follow the same switch, off and on again", async () => {
+		const { createExchangeClient, setTransactionDelayProtectionReader } = await import("@sairn/hl-react/clients");
+		const owner = privateKeyToAccount(`0x${"0".repeat(63)}8`);
+		const client = createExchangeClient(owner, false);
+		let enabled = false;
+		setTransactionDelayProtectionReader(() => enabled);
+		try {
+			await client.cancel({ cancels: [{ a: 0, o: 1 }] });
+			enabled = true;
+			await client.cancel({ cancels: [{ a: 0, o: 2 }] });
+			enabled = false;
+			await client.cancel({ cancels: [{ a: 0, o: 3 }] });
+		} finally {
+			setTransactionDelayProtectionReader(() => true);
+		}
+
+		const [first, second, third] = http.requests.filter((entry) => entry.endpoint === "exchange");
+		expect(http.requests[0]?.endpoint).toBe("exchange");
+		expect(first?.payload).not.toHaveProperty("expiresAfter");
+		expect(Math.abs(Number(second?.payload.expiresAfter) - (http.serverTime + 15_000))).toBeLessThan(1_000);
+		expect(third?.payload).not.toHaveProperty("expiresAfter");
+	});
+
 	it("leaves user-signed actions without an expiry", async () => {
 		const { createExchangeClient } = await import("@sairn/hl-react/clients");
 		const owner = privateKeyToAccount(`0x${"0".repeat(63)}4`);
