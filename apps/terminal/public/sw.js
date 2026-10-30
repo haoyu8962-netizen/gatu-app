@@ -118,8 +118,11 @@ async function navigationNetworkFirst(request, cacheName, cacheKey, event) {
 		if (isCacheableShell(response)) {
 			const copy = response.clone();
 			event.waitUntil(cache.then((value) => value?.put(cacheKey, copy)).catch(() => undefined));
+			return response;
 		}
-		return response;
+		if (response.status < 500) return response;
+		const cached = await cache.then((value) => value?.match(cacheKey)).catch(() => undefined);
+		return cached || response;
 	} catch (error) {
 		const cached = await cache.then((value) => value?.match(cacheKey)).catch(() => undefined);
 		if (cached) return cached;

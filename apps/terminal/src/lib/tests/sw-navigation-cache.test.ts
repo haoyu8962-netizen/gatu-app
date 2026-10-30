@@ -254,6 +254,19 @@ describe("service worker navigation for a language link", () => {
 		expect(await (await navigation.response)?.text()).toBe("cached");
 	});
 
+	it("serves the cached shell instead of a server error, like any other navigation, and keeps it", async () => {
+		const harness = createHarness();
+		const cache = await harness.open("shell-v10");
+		await cache.put(`${origin}/shell-v10`, html("cached"));
+		harness.fetch.mockResolvedValueOnce(
+			new Response("busy", { status: 503, headers: { "content-type": "text/html" } }),
+		);
+		const navigation = harness.navigate("/trade/BTC?lang=ja");
+		expect(await (await navigation.response)?.text()).toBe("cached");
+		await Promise.all(navigation.background);
+		expect(await harness.stores.get("shell-v10")?.get(`${origin}/shell-v10`)?.clone().text()).toBe("cached");
+	});
+
 	it("does not cache an error page and fails like the network when nothing is cached", async () => {
 		const harness = createHarness();
 		harness.fetch.mockResolvedValueOnce(

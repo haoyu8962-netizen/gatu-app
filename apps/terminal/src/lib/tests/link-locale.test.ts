@@ -198,6 +198,7 @@ describe("lib/i18n.ts", () => {
 
 describe("storeLocale", () => {
 	afterEach(() => {
+		vi.restoreAllMocks();
 		window.localStorage.clear();
 	});
 
@@ -213,7 +214,6 @@ describe("storeLocale", () => {
 			throw new DOMException("QuotaExceededError");
 		});
 		expect(storeLocale("ja")).toBe(false);
-		vi.restoreAllMocks();
 	});
 
 	it("applies a link language from the window through storage", () => {
