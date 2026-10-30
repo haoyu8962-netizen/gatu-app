@@ -6,7 +6,7 @@ import { createDatafeed } from "@/components/trade/chart/datafeed";
 import { CHART_HISTORY_REQUEST_TIMEOUT_MS } from "@/config/time";
 import { CANDLE_GATE_BACKOFF_MS, resetCandleGates } from "@/lib/chart/candle-gate";
 import { getChartMarketKeys, getChartMarketLookupKey, getChartSymbolInfo } from "@/lib/chart/market-symbol";
-import { resolutionToInterval } from "@/lib/chart/resolution";
+import { getDatafeedRequestResolution, resolutionToInterval } from "@/lib/chart/resolution";
 import { getCandleStore } from "@/lib/chart/store";
 import type { UnifiedMarketInfo } from "@/lib/hyperliquid";
 import type { Bar, LibrarySymbolInfo, ResolutionString } from "@/types/charting_library";
@@ -1873,6 +1873,11 @@ describe("TradingView datafeed", () => {
 					v: "1",
 				},
 			]);
+			let emitCandle: ((event: CandleWsEvent) => void) | undefined;
+			subscriptionClient.candle.mockImplementationOnce((_params: unknown, listener: (event: CandleWsEvent) => void) => {
+				emitCandle = listener;
+				return Promise.resolve({ unsubscribe: subscriptionClient.unsubscribe });
+			});
 			const target = { coin: "WEEKLY", resolution: chartResolution as ResolutionString };
 			const datafeed = createDatafeed({
 				getHistoryTarget: () => target,
@@ -1903,13 +1908,32 @@ describe("TradingView datafeed", () => {
 			expect(dailyResult).toHaveBeenCalledWith([expect.objectContaining({ time: dayStart })], { noData: false });
 			expect(hourlyResult).toHaveBeenCalledWith([], { noData: false });
 
-			datafeed.subscribeBars(symbol, "1D" as ResolutionString, vi.fn(), "weekly-listener", vi.fn());
+			const onTick = vi.fn();
+			const onReset = vi.fn();
+			datafeed.subscribeBars(symbol, "1D" as ResolutionString, onTick, "weekly-listener", onReset);
 			datafeed.subscribeBars(symbol, "60" as ResolutionString, vi.fn(), "hourly-listener", vi.fn());
 			await Promise.resolve();
 			await Promise.resolve();
 
 			expect(getCandleStore().getState().streams["WEEKLY:1d"]?.listeners.size).toBe(1);
 			expect(getCandleStore().getState().streams["WEEKLY:1h"]).toBeUndefined();
+			emitCandle?.({
+				T: dayStart + 86_399_999,
+				c: "22",
+				h: "23",
+				i: "1d",
+				l: "19",
+				n: 2,
+				o: "20",
+				s: "WEEKLY",
+				t: dayStart,
+				v: "3",
+			});
+			expect(onTick).toHaveBeenCalledWith(expect.objectContaining({ time: dayStart, close: 22 }));
+			expect(datafeed.resetRealtimeCache("WEEKLY:1h")).toBe(false);
+			expect(datafeed.resetRealtimeCache("WEEKLY:1d")).toBe(true);
+			expect(onReset).toHaveBeenCalledOnce();
+			getCandleStore().getState().clearLastBar("WEEKLY:1D");
 
 			datafeed.unsubscribeBars("weekly-listener");
 			datafeed.unsubscribeBars("hourly-listener");
@@ -1917,6 +1941,15 @@ describe("TradingView datafeed", () => {
 			datafeed.destroy();
 		},
 	);
+
+	it("asks for daily bars for every daily, weekly and monthly spelling and leaves intraday ones alone", () => {
+		for (const resolution of ["D", "1D", "W", "1W", "M", "1M"]) {
+			expect(getDatafeedRequestResolution(resolution)).toBe("1D");
+		}
+		for (const resolution of ["1", "60", "240", "720"]) {
+			expect(getDatafeedRequestResolution(resolution)).toBe(resolution);
+		}
+	});
 
 	it("destroy cancels an inline rate-limit wait without dispatching a history callback", async () => {
 		const nowMs = Date.UTC(2026, 5, 28);

@@ -192,6 +192,17 @@ describe("buildTradingViewOverlayLines", () => {
 			});
 
 			expect(lines.map((line) => line.label)).toEqual(["Short · 1.234,00000005", "强平价格"]);
+
+			const tiny = buildTradingViewOverlayLines({
+				coin: "BTC",
+				positionDex: "",
+				quoteSymbol: "USDC",
+				orders: [],
+				positions: [createPosition({ szi: "-0.00000001", unrealizedPnl: "invalid", returnOnEquity: "x" })],
+				labels,
+				numberFormat: getNumberFormatters(),
+			});
+			expect(tiny[0]?.label).toBe("Short · 0,00000001");
 		} finally {
 			formatSettings.numberFormatLocale = "en-US";
 			notifyNumberFormatChange();
