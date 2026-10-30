@@ -200,6 +200,8 @@ describe("useVaultActionController", () => {
 			["vaultDetails", query(RAW_DETAIL)],
 			["userVaultEquities", query(mocks.preflightData.equities)],
 			["clearinghouseState", query(mocks.preflightData.clearinghouse)],
+			["spotClearinghouseState", query({ balances: [] })],
+			["userAbstraction", query("disabled")],
 		]);
 		controller = null;
 		container = document.createElement("div");
@@ -233,14 +235,45 @@ describe("useVaultActionController", () => {
 		expect(current().action).toBeNull();
 	});
 
+	it("offers a Unified account its spot USDC for a Vault deposit and signs it after the same fresh check", async () => {
+		mocks.queries.set("clearinghouseState", query({ withdrawable: "0.0" }));
+		mocks.queries.set(
+			"spotClearinghouseState",
+			query({ balances: [{ coin: "USDC", token: 0, total: "10.1", hold: "0.0", entryNtl: "0.0" }] }),
+		);
+		mocks.queries.set("userAbstraction", query("unifiedAccount"));
+		act(() => root.render(<Probe />));
+
+		await act(async () => current().requestAction("deposit"));
+		expect(current().availableAmount).toBe("10.1");
+		expect(current().maxAmount).toBe("10.1");
+		act(() => current().setAmount("4"));
+		expect(current().canReview).toBe(false);
+		expect(current().belowMinimum).toBe(true);
+		act(() => current().setAmount("10.1"));
+		expect(current().canReview).toBe(true);
+		act(() => current().review());
+		await act(async () => current().confirm());
+
+		expect(mocks.exchangeMutate).toHaveBeenCalledWith({ vaultAddress: VAULT, isDeposit: true, usd: 10_100_000 });
+	});
+
+	it("lets the Vault leader deposit after deposits from others are disabled", () => {
+		act(() => root.render(<Probe detail={{ ...DETAIL, allowDeposits: false }} />));
+		expect(current().actionAvailability.deposit).toEqual({ available: false, reason: "deposits-disabled" });
+
+		act(() => root.render(<Probe detail={{ ...DETAIL, allowDeposits: false, leader: OWNER }} />));
+		expect(current().actionAvailability.deposit).toEqual({ available: true, reason: null });
+	});
+
 	it("persists a public marker before the Agent-signed SDK call and succeeds only after exact ledger reconciliation", async () => {
 		await openAndReview();
 		await act(async () => current().confirm());
 
-		expect(mocks.exchangeMutate).toHaveBeenCalledWith({ vaultAddress: VAULT, isDeposit: true, usd: 1_000_000 });
+		expect(mocks.exchangeMutate).toHaveBeenCalledWith({ vaultAddress: VAULT, isDeposit: true, usd: 5_000_000 });
 		expect(current().action).toMatchObject({
 			state: { stage: "done", result: "success" },
-			receipt: { hash: HASH, finalAmount: "1" },
+			receipt: { hash: HASH, finalAmount: "5" },
 		});
 		expect(current().action?.receipt?.operationReference).toContain("vaultTransfer");
 		const historyStartTimes = mocks.history.mock.calls.map(([params]) => params.startTime);
@@ -1045,7 +1078,7 @@ describe("useVaultActionController", () => {
 
 	async function openAndReview(action: "deposit" | "withdraw" = "deposit") {
 		await act(async () => current().requestAction(action));
-		act(() => current().setAmount("1"));
+		act(() => current().setAmount(action === "deposit" ? "5" : "1"));
 		expect(current().canReview).toBe(true);
 		act(() => current().review());
 		expect(current().action?.state.stage).toBe("review");

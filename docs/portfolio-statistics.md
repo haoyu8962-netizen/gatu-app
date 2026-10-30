@@ -23,7 +23,7 @@ Financial arithmetic stays in domain functions using Big.js and decimal strings.
 | Lending net balance | Sum `(supply.value - borrow.value) * oraclePx`, joined by token ID. This is net assets less liabilities, not earned interest. A nonzero supply or borrow requires a valid oracle, even if they offset. |
 | Total equity | Core + vault + lending net balance, only when every required value is valid and lending overlap has been ruled out by the conservative policy below. Never substitute portfolio history for current equity. |
 | PNL and historical volume | Select `day/week/month/allTime` or the corresponding `perp*` key. Use the latest valid PNL sample and the period's `vlm`. Live API samples reset PNL to zero at the beginning of each window; do not subtract an all-time baseline. |
-| 14 day volume | Preserve the existing sum of `userCross + userAdd` for the latest fourteen returned daily entries. Do not include the exchange's volume. This is a calendar-entry statistic, not a rolling 336-hour calculation. |
+| 14 day volume | Sum `userCross + userAdd` over the fourteen completed daily entries: sort by date and drop the last entry, which is the current, unfinished day, as the official terminal does (`dailyUserVlm.slice(0, -1)`; corrected 2026-10-30, the earlier rule summed the latest fourteen entries including today). Do not include the exchange's volume. This is a calendar-entry statistic, not a rolling 336-hour calculation. |
 
 ## Lending overlap policy
 

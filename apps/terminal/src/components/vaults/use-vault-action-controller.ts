@@ -42,9 +42,11 @@ import {
 	useLegalStatus,
 	useTradingStatus,
 } from "@/lib/hyperliquid";
+import { formatDecimalFloor } from "@/lib/trade/numbers";
 import {
 	deriveVaultActionsAvailability,
 	deriveVaultOwnerView,
+	getVaultMinimumDeposit,
 	getVaultRequestAvailability,
 	parseVaultDetailsSnapshot,
 	parseVaultEquitiesSnapshot,
@@ -55,6 +57,7 @@ import {
 import {
 	classifyVaultMutationFailure,
 	formatVaultOperationReference,
+	getVaultDepositAvailable,
 	parseClearinghouseWithdrawable,
 	type VaultActionPreflightFailure,
 	type VaultActionReceipt,
@@ -125,6 +128,9 @@ interface VaultRequestLease {
 export interface VaultActionController {
 	action: ActiveVaultAction | null;
 	availableAmount: string | null;
+	maxAmount: string | null;
+	minimumAmount: string | null;
+	belowMinimum: boolean;
 	actionAvailability: VaultActionsAvailability;
 	canReview: boolean;
 	canConfirm: boolean;
@@ -292,6 +298,16 @@ export function useVaultActionController({
 		{ user: queryOwner },
 		{ enabled: queryEnabled, requestTimeoutMs: REQUEST_TIMEOUT_MS, retry: false, staleTime: 0 },
 	);
+	const spotClearinghouseQuery = useInfo(
+		"spotClearinghouseState",
+		{ user: queryOwner },
+		{ enabled: queryEnabled, requestTimeoutMs: REQUEST_TIMEOUT_MS, retry: false, staleTime: 0 },
+	);
+	const accountAbstractionQuery = useInfo(
+		"userAbstraction",
+		{ user: queryOwner },
+		{ enabled: queryEnabled, requestTimeoutMs: REQUEST_TIMEOUT_MS, retry: false, staleTime: 0 },
+	);
 
 	const vaultTransfer = useExchange("vaultTransfer", {
 		executionGuard: (params) => {
@@ -327,7 +343,12 @@ export function useVaultActionController({
 		},
 	});
 
-	const currentDepositAvailable = parseClearinghouseWithdrawable(clearinghouseQuery.data);
+	const currentDepositAvailable = getVaultDepositAvailable({
+		accountAbstraction: accountAbstractionQuery.data,
+		clearinghouseSnapshot: clearinghouseQuery.data,
+		spotClearinghouseSnapshot: spotClearinghouseQuery.data,
+	});
+	const minimumDeposit = detail ? getVaultMinimumDeposit(detail) : null;
 	const availableAmount = visibleAction
 		? visibleAction.action === "deposit"
 			? currentDepositAvailable
@@ -336,10 +357,16 @@ export function useVaultActionController({
 				: null
 		: null;
 	const amount = visibleAction ? scaleFundsAmount(visibleAction.amount, USDC_ATOMIC_DECIMALS) : null;
+	const minimumAmount = visibleAction?.action === "deposit" ? minimumDeposit : null;
+	const meetsMinimum =
+		minimumAmount === null ||
+		(amount?.valid === true && compareFundsAmounts(amount.displayAmount, minimumAmount) !== -1);
 	const canReview = Boolean(
 		visibleAction?.state.stage === "input" &&
 			amount?.valid &&
 			availableAmount !== null &&
+			(visibleAction.action === "withdraw" || minimumAmount !== null) &&
+			meetsMinimum &&
 			compareFundsAmounts(amount.displayAmount, availableAmount) !== null &&
 			compareFundsAmounts(amount.displayAmount, availableAmount) !== 1 &&
 			!findPendingFundsAction(hyperliquid.env, visibleAction.ownerAddress),
@@ -348,6 +375,7 @@ export function useVaultActionController({
 	const actionAvailability = deriveVaultActionsAvailability({
 		detail,
 		owner,
+		ownerAddress: exactOwner,
 		request: getVaultRequestAvailability(geo),
 		sessionMode: hyperliquid.sessionMode,
 	});
@@ -493,19 +521,30 @@ export function useVaultActionController({
 			}
 			const startedAt = Date.now();
 
-			const [legal, geoResult, requirements, freshDetail, freshEquities, freshClearinghouse, freshHistory] =
-				await Promise.all([
-					legalStatus.refetch(),
-					geo.retry(),
-					tradingStatus.refetchSigner(),
-					detailQuery.refetch({ cancelRefetch: true }),
-					equitiesQuery.refetch({ cancelRefetch: true }),
-					clearinghouseQuery.refetch({ cancelRefetch: true }),
-					hyperliquid.info.userNonFundingLedgerUpdates({
-						user: ownerAddress,
-						startTime: getFundsActionHistoryStartTime(startedAt),
-					}),
-				]);
+			const [
+				legal,
+				geoResult,
+				requirements,
+				freshDetail,
+				freshEquities,
+				freshClearinghouse,
+				freshSpotClearinghouse,
+				freshAccountAbstraction,
+				freshHistory,
+			] = await Promise.all([
+				legalStatus.refetch(),
+				geo.retry(),
+				tradingStatus.refetchSigner(),
+				detailQuery.refetch({ cancelRefetch: true }),
+				equitiesQuery.refetch({ cancelRefetch: true }),
+				clearinghouseQuery.refetch({ cancelRefetch: true }),
+				spotClearinghouseQuery.refetch({ cancelRefetch: true }),
+				accountAbstractionQuery.refetch({ cancelRefetch: true }),
+				hyperliquid.info.userNonFundingLedgerUpdates({
+					user: ownerAddress,
+					startTime: getFundsActionHistoryStartTime(startedAt),
+				}),
+			]);
 			assertVaultActionCurrent(
 				current,
 				actionRef.current,
@@ -529,7 +568,13 @@ export function useVaultActionController({
 			if (!requirements.isSignerReady) {
 				throw new LocalizedActionError(SIGNER_UNVERIFIED);
 			}
-			if (freshDetail.error || freshEquities.error || freshClearinghouse.error) {
+			if (
+				freshDetail.error ||
+				freshEquities.error ||
+				freshClearinghouse.error ||
+				freshSpotClearinghouse.error ||
+				freshAccountAbstraction.error
+			) {
 				throw new LocalizedActionError(VAULT_DATA_UNVERIFIED);
 			}
 
@@ -541,6 +586,8 @@ export function useVaultActionController({
 				detailSnapshot: freshDetail.data,
 				equitiesSnapshot: freshEquities.data,
 				clearinghouseSnapshot: freshClearinghouse.data,
+				spotClearinghouseSnapshot: freshSpotClearinghouse.data,
+				accountAbstraction: freshAccountAbstraction.data,
 				now: Date.now(),
 			});
 			if (!preflight.valid) throw new VaultActionPreflightError(preflight.error);
@@ -784,6 +831,9 @@ export function useVaultActionController({
 	return {
 		action: visibleAction,
 		availableAmount,
+		maxAmount: availableAmount === null ? null : formatDecimalFloor(availableAmount, USDC_ATOMIC_DECIMALS),
+		minimumAmount,
+		belowMinimum: minimumAmount !== null && amount?.valid === true && !meetsMinimum,
 		actionAvailability,
 		canReview,
 		canConfirm,
@@ -1132,6 +1182,8 @@ function getVaultActionFailure(error: unknown): ActionFailure {
 		switch (error.reason) {
 			case "depositsClosed":
 				return msg`This Vault no longer accepts deposits.`;
+			case "belowMinimumDeposit":
+				return msg`The amount is below this Vault's minimum deposit.`;
 			case "withdrawalLocked":
 				return msg`Withdrawal is still locked by the fresh server timestamp.`;
 			case "amountExceedsAvailable":

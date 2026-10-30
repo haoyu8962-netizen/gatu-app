@@ -2,9 +2,12 @@ import Big from "big.js";
 import type { FundsActionMatch } from "@/components/funds-action/funds-action-reconciliation";
 import { USDC_ATOMIC_DECIMALS } from "@/components/funds-action/funds-amount";
 import { isWalletRejectionError } from "@/lib/errors/action-error";
+import { formatDecimalFloor } from "@/lib/trade/numbers";
 import {
 	deriveVaultOwnerView,
+	getVaultMinimumDeposit,
 	isUnsignedDecimal,
+	isVaultLeader,
 	normalizeVaultAddress,
 	parseVaultDetailsSnapshot,
 	parseVaultEquitiesSnapshot,
@@ -19,6 +22,7 @@ export type VaultActionPreflightFailure =
 	| "vaultMismatch"
 	| "ownerMismatch"
 	| "depositsClosed"
+	| "belowMinimumDeposit"
 	| "balanceUnavailable"
 	| "equityUnavailable"
 	| "withdrawalLocked"
@@ -43,6 +47,8 @@ export interface VerifyVaultActionPreflightInput {
 	detailSnapshot: unknown;
 	equitiesSnapshot: unknown;
 	clearinghouseSnapshot: unknown;
+	spotClearinghouseSnapshot: unknown;
+	accountAbstraction: unknown;
 	now: number;
 }
 
@@ -59,6 +65,8 @@ export function verifyVaultActionPreflight({
 	detailSnapshot,
 	equitiesSnapshot,
 	clearinghouseSnapshot,
+	spotClearinghouseSnapshot,
+	accountAbstraction,
 	now,
 }: VerifyVaultActionPreflightInput): VaultActionPreflightResult {
 	const parsedDetail = parseVaultDetailsSnapshot(detailSnapshot);
@@ -75,8 +83,18 @@ export function verifyVaultActionPreflight({
 	}
 
 	if (action === "deposit") {
-		if (detail.isClosed || !detail.allowDeposits) return { valid: false, error: "depositsClosed" };
-		const availableAmount = parseClearinghouseWithdrawable(clearinghouseSnapshot);
+		if (detail.isClosed || (!detail.allowDeposits && !isVaultLeader(detail, ownerAddress))) {
+			return { valid: false, error: "depositsClosed" };
+		}
+		const minimumAtomic = floorDecimalStringToAtomic(getVaultMinimumDeposit(detail), USDC_ATOMIC_DECIMALS);
+		if (minimumAtomic === null || !atomicAmountFits(minimumAtomic, amountAtomic)) {
+			return { valid: false, error: "belowMinimumDeposit" };
+		}
+		const availableAmount = getVaultDepositAvailable({
+			accountAbstraction,
+			clearinghouseSnapshot,
+			spotClearinghouseSnapshot,
+		});
 		if (availableAmount === null) return { valid: false, error: "balanceUnavailable" };
 		const availableAtomic = floorDecimalStringToAtomic(availableAmount, USDC_ATOMIC_DECIMALS);
 		if (availableAtomic === null) return { valid: false, error: "balanceUnavailable" };
@@ -112,6 +130,43 @@ export function verifyVaultActionPreflight({
 		availableAmount: owner.maxWithdrawable,
 		availableAtomic,
 	};
+}
+
+interface VaultDepositBalanceSnapshots {
+	accountAbstraction: unknown;
+	clearinghouseSnapshot: unknown;
+	spotClearinghouseSnapshot: unknown;
+}
+
+/**
+ * The balance a Vault deposit draws from, as on the official terminal: spot USDC that is not on
+ * hold when the account shares its quote balance with perps (Unified account, Portfolio Margin),
+ * otherwise the perp withdrawable. Any other or unknown account mode fails closed.
+ */
+export function getVaultDepositAvailable({
+	accountAbstraction,
+	clearinghouseSnapshot,
+	spotClearinghouseSnapshot,
+}: VaultDepositBalanceSnapshots): string | null {
+	if (accountAbstraction === "unifiedAccount" || accountAbstraction === "portfolioMargin") {
+		return parseSpotUsdcAvailable(spotClearinghouseSnapshot);
+	}
+	if (accountAbstraction === "disabled" || accountAbstraction === "dexAbstraction") {
+		return parseClearinghouseWithdrawable(clearinghouseSnapshot);
+	}
+	return null;
+}
+
+function parseSpotUsdcAvailable(value: unknown): string | null {
+	if (!isRecord(value) || !Array.isArray(value.balances)) return null;
+	const usdcBalances = value.balances.filter((balance) => isRecord(balance) && balance.coin === "USDC");
+	if (usdcBalances.length > 1) return null;
+	const usdc = usdcBalances[0];
+	if (!usdc) return "0";
+	const hold = usdc.spotHold ?? usdc.hold;
+	if (!isUnsignedDecimal(usdc.total) || !isUnsignedDecimal(hold)) return null;
+	const available = new Big(usdc.total).minus(hold);
+	return available.gt(0) ? formatDecimalFloor(available.toString(), USDC_ATOMIC_DECIMALS) : "0";
 }
 
 export function parseClearinghouseWithdrawable(value: unknown): string | null {

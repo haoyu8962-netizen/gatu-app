@@ -19,7 +19,7 @@ import { classifyActionErrorOr } from "@/lib/errors/action-error";
 import { isAmbiguousExchangeActionError } from "@/lib/errors/format";
 import { useNumberFormat } from "@/lib/format";
 import { useHyperliquid } from "@/lib/hyperliquid";
-import type { ReferralRewardRow } from "@/lib/trade/referral";
+import { isValidReferralCode, normalizeReferralCode, type ReferralRewardRow } from "@/lib/trade/referral";
 import { addOrderQueueItem, updateOrderQueueItem } from "@/stores/use-order-queue-store";
 
 type Step = "form" | "review";
@@ -42,13 +42,18 @@ export function ReferralActionModal({ action, unclaimedRewards, initialCode, onC
 	const [code, setCode] = useState(initialCode ?? "");
 	const [step, setStep] = useState<Step>(action === "claim" || initialCode !== undefined ? "review" : "form");
 	const submittedRef = useRef(false);
-	const submittedCode = lockedReferralCode ?? code;
-	const codeValid = submittedCode.length >= 1 && submittedCode.length <= 20;
+	const submittedCode = normalizeReferralCode(lockedReferralCode ?? code) ?? "";
+	const codeValid = isValidReferralCode(submittedCode);
 	const title =
 		action === "apply" ? t`Enter referral code` : action === "create" ? t`Create referral code` : t`Claim rewards`;
 
 	function close() {
 		if (!submittedRef.current) onClose();
+	}
+
+	function handleCodeChange(value: string) {
+		const next = normalizeReferralCode(value);
+		if (next !== null) setCode(next);
 	}
 
 	function getSuccessTitle() {
@@ -127,9 +132,9 @@ export function ReferralActionModal({ action, unclaimedRewards, initialCode, onC
 					<TextInput
 						label={t`Referral code`}
 						value={code}
-						onChange={(event) => setCode(event.target.value)}
+						onChange={(event) => handleCodeChange(event.target.value)}
 						maxLength={20}
-						autoCapitalize="off"
+						autoCapitalize="characters"
 						autoComplete="off"
 						spellCheck={false}
 						size="lg"

@@ -185,6 +185,9 @@ function VaultDetailLive({ vaultAddress, onRequestAction }: VaultDetailPageProps
 					ownerAddress={activeAction.ownerAddress}
 					amount={activeAction.amount}
 					availableAmount={vaultAction.availableAmount}
+					maxAmount={vaultAction.maxAmount}
+					minimumAmount={vaultAction.minimumAmount}
+					belowMinimum={vaultAction.belowMinimum}
 					errorMessage={
 						activeAction.error ? describeActionFailure(activeAction.error, (descriptor) => t(descriptor)) : undefined
 					}

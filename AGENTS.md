@@ -349,6 +349,7 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/referral-action-modal.test.tsx \
   src/lib/tests/api-wallet-action-modal.test.tsx \
   src/lib/tests/vault-action-modal.test.tsx \
+  src/lib/tests/vault-action-domain.test.ts \
   src/lib/tests/vault-detail-page-outcomes.test.tsx \
   src/lib/tests/earn-action-modal.test.tsx \
   src/lib/tests/earn-domain.test.ts \

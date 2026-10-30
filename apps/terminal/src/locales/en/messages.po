@@ -5037,6 +5037,7 @@ msgstr "Master wallet verified"
 #: src/components/trade/tradebox/bridge/amount-entry-screen.tsx
 #: src/components/trade/tradebox/deposit/amount-input.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
+#: src/components/vaults/vault-action-modal.tsx
 #: src/config/trade-panel-labels.ts
 msgid "Max"
 msgstr "Max"
@@ -5131,7 +5132,9 @@ msgstr "Minimum <0>{0}</0>; maximum <1>{1}</1>."
 
 #. placeholder {0}: ctx.minDeposit
 #. placeholder {0}: numberFormat.formatDecimalString(formatUnits(cctpDepositBelowMinimumRaw, 6))
+#. placeholder {0}: numberFormat.formatDecimalString(minimumAmount)
 #: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/vaults/vault-action-modal.tsx
 #: src/lib/errors/definitions/deposit.ts
 msgid "Minimum deposit is {0} USDC"
 msgstr "Minimum deposit is {0} USDC"
@@ -8902,6 +8905,10 @@ msgstr "The address is invalid or Hyperliquid returned no Vault details for it."
 #: src/components/vaults/use-vault-action-controller.ts
 msgid "The amount exceeds the freshly verified maximum."
 msgstr "The amount exceeds the freshly verified maximum."
+
+#: src/components/vaults/use-vault-action-controller.ts
+msgid "The amount is below this Vault's minimum deposit."
+msgstr "The amount is below this Vault's minimum deposit."
 
 #: src/components/api-wallet/use-api-wallet-controller.ts
 msgid "The API wallet request was rejected."

@@ -14,100 +14,83 @@ function hasUniqueTokenIds(entries: readonly (readonly [number, unknown])[]): bo
 	return new Set(entries.map(([tokenId]) => tokenId)).size === entries.length;
 }
 
-const referredBySchema = z
-	.object({
-		referrer: addressSchema,
-		code: z.string(),
-	})
-	.strict();
+/**
+ * The referral answer is display data and the exchange adds optional fields to it over time (the
+ * official terminal reads `referrerState.data.benefits`). Known fields keep their exact shapes;
+ * unknown ones are dropped instead of making the whole page unavailable.
+ */
+const referredBySchema = z.object({
+	referrer: addressSchema,
+	code: z.string(),
+});
 
-const referredTraderTokenStateSchema = z
-	.object({
-		cumVlm: unsignedDecimalSchema,
-		cumRewardedFeesSinceReferred: unsignedDecimalSchema,
-		cumFeesRewardedToReferrer: unsignedDecimalSchema,
-	})
-	.strict();
+const referredTraderTokenStateSchema = z.object({
+	cumVlm: unsignedDecimalSchema,
+	cumRewardedFeesSinceReferred: unsignedDecimalSchema,
+	cumFeesRewardedToReferrer: unsignedDecimalSchema,
+});
 
 const referredTraderTokenToStateSchema = z
 	.array(z.tuple([nonNegativeSafeIntegerSchema, referredTraderTokenStateSchema]))
 	.refine(hasUniqueTokenIds);
 
-const referredTraderSchema = z
-	.object({
-		cumVlm: unsignedDecimalSchema,
-		cumRewardedFeesSinceReferred: unsignedDecimalSchema,
-		cumFeesRewardedToReferrer: unsignedDecimalSchema,
-		timeJoined: nonNegativeSafeIntegerSchema,
-		user: addressSchema,
-		tokenToState: referredTraderTokenToStateSchema,
-	})
-	.strict();
+const referredTraderSchema = z.object({
+	cumVlm: unsignedDecimalSchema,
+	cumRewardedFeesSinceReferred: unsignedDecimalSchema,
+	cumFeesRewardedToReferrer: unsignedDecimalSchema,
+	timeJoined: nonNegativeSafeIntegerSchema,
+	user: addressSchema,
+	tokenToState: referredTraderTokenToStateSchema,
+});
 
 const referrerStateSchema = z.discriminatedUnion("stage", [
-	z
-		.object({
-			stage: z.literal("ready"),
-			data: z
-				.object({
-					code: z.string(),
-					nReferrals: nonNegativeSafeIntegerSchema,
-					referralStates: z.array(referredTraderSchema),
-				})
-				.strict(),
-		})
-		.strict(),
-	z
-		.object({
-			stage: z.literal("needToCreateCode"),
-		})
-		.strict(),
-	z
-		.object({
-			stage: z.literal("needToTrade"),
-			data: z
-				.object({
-					required: unsignedDecimalSchema,
-				})
-				.strict(),
-		})
-		.strict(),
+	z.object({
+		stage: z.literal("ready"),
+		data: z.object({
+			code: z.string(),
+			nReferrals: nonNegativeSafeIntegerSchema,
+			referralStates: z.array(referredTraderSchema),
+		}),
+	}),
+	z.object({
+		stage: z.literal("needToCreateCode"),
+	}),
+	z.object({
+		stage: z.literal("needToTrade"),
+		data: z.object({
+			required: unsignedDecimalSchema,
+		}),
+	}),
 ]);
 
-const rewardHistoryItemSchema = z
-	.object({
-		earned: unsignedDecimalSchema,
-		vlm: unsignedDecimalSchema,
-		referralVlm: unsignedDecimalSchema,
-		time: nonNegativeSafeIntegerSchema,
-	})
-	.strict();
+const rewardHistoryItemSchema = z.object({
+	earned: unsignedDecimalSchema,
+	vlm: unsignedDecimalSchema,
+	referralVlm: unsignedDecimalSchema,
+	time: nonNegativeSafeIntegerSchema,
+});
 
-const tokenRewardStateSchema = z
-	.object({
-		cumVlm: unsignedDecimalSchema,
-		unclaimedRewards: unsignedDecimalSchema,
-		claimedRewards: unsignedDecimalSchema,
-		builderRewards: unsignedDecimalSchema,
-	})
-	.strict();
+const tokenRewardStateSchema = z.object({
+	cumVlm: unsignedDecimalSchema,
+	unclaimedRewards: unsignedDecimalSchema,
+	claimedRewards: unsignedDecimalSchema,
+	builderRewards: unsignedDecimalSchema,
+});
 
 const tokenRewardEntriesSchema = z
 	.array(z.tuple([nonNegativeSafeIntegerSchema, tokenRewardStateSchema]))
 	.refine(hasUniqueTokenIds);
 
-const referralResponseSchema: z.ZodType<ReferralResponse> = z
-	.object({
-		referredBy: referredBySchema.nullable(),
-		cumVlm: unsignedDecimalSchema,
-		unclaimedRewards: unsignedDecimalSchema,
-		claimedRewards: unsignedDecimalSchema,
-		builderRewards: unsignedDecimalSchema,
-		referrerState: referrerStateSchema,
-		rewardHistory: z.array(rewardHistoryItemSchema),
-		tokenToState: tokenRewardEntriesSchema,
-	})
-	.strict();
+const referralResponseSchema: z.ZodType<ReferralResponse> = z.object({
+	referredBy: referredBySchema.nullable(),
+	cumVlm: unsignedDecimalSchema,
+	unclaimedRewards: unsignedDecimalSchema,
+	claimedRewards: unsignedDecimalSchema,
+	builderRewards: unsignedDecimalSchema,
+	referrerState: referrerStateSchema,
+	rewardHistory: z.array(rewardHistoryItemSchema),
+	tokenToState: tokenRewardEntriesSchema,
+});
 
 export type ReferralData = ReferralResponse;
 export type ReadyReferrerState = Extract<ReferralData["referrerState"], { stage: "ready" }>;
@@ -232,8 +215,19 @@ export function getBrandReferralUrl(code: string, env: "Mainnet" | "Testnet"): s
 	return `${origin}/join/${encodeURIComponent(code)}`;
 }
 
+const REFERRAL_CODE_INPUT_PATTERN = /^[A-Za-z0-9]{0,20}$/;
+const REFERRAL_CODE_PATTERN = /^[A-Z0-9]{1,20}$/;
+
+/**
+ * Referral codes are up to 20 letters or digits in upper case, as the official terminal enforces
+ * when they are typed or created; anything else returns null so the field keeps its last value.
+ */
+export function normalizeReferralCode(value: string): string | null {
+	return REFERRAL_CODE_INPUT_PATTERN.test(value) ? value.toUpperCase() : null;
+}
+
 export function isValidReferralCode(code: string): boolean {
-	return code.length >= 1 && code.length <= 20;
+	return REFERRAL_CODE_PATTERN.test(code);
 }
 
 export function canApplyReferralCode(data: ReferralData): boolean {

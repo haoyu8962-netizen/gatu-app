@@ -59,6 +59,18 @@ describe("portfolio data", () => {
 		expect(calculateFourteenDayVolume(undefined)).toBeNull();
 	});
 
+	it("leaves the current, unfinished day out of the fourteen-day volume", () => {
+		const dailyVolume = Array.from({ length: 16 }, (_, index) => ({
+			date: `2026-07-${String(16 - index).padStart(2, "0")}`,
+			userCross: String(16 - index),
+			userAdd: "0",
+			exchange: "1000",
+		}));
+
+		expect(calculateFourteenDayVolume(dailyVolume)).toBe("119");
+		expect(calculateFourteenDayVolume(dailyVolume.slice(0, 1))).toBe("0");
+	});
+
 	it("values net borrow/lend balances with reserve oracle prices", () => {
 		const userState = {
 			tokenToState: [

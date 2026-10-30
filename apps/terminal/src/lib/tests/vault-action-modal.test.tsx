@@ -27,10 +27,12 @@ vi.mock("@sairn/ui", () => ({
 	ModalFooter: ({ children }: { children: ReactNode }) => <footer>{children}</footer>,
 	ModalHeader: ({ children }: { children: ReactNode }) => <header>{children}</header>,
 	ModalTitle: ({ children }: { children: ReactNode }) => <h2>{children}</h2>,
-	TextInput: ({ hint }: { hint?: ReactNode }) => (
+	TextInput: ({ error, hint, iconRight }: { error?: ReactNode; hint?: ReactNode; iconRight?: ReactNode }) => (
 		<label>
 			<input />
+			{iconRight}
 			<span data-testid="text-input-hint">{hint}</span>
+			{error ? <span data-testid="text-input-error">{error}</span> : null}
 		</label>
 	),
 }));
@@ -98,6 +100,28 @@ describe("Vault action modal", () => {
 		expect(container.textContent).toContain("one-day lock for user Vaults");
 	});
 
+	it("fills Max from the verified amount and explains the minimum deposit", () => {
+		const onAmountChange = vi.fn();
+		act(() =>
+			root.render(
+				<VaultActionModal
+					{...props({ stage: "input", result: undefined, amount: "3", belowMinimum: true, onAmountChange })}
+				/>,
+			),
+		);
+
+		expect(container.textContent).toContain("Minimum deposit is 5 USDC");
+		const max = [...container.querySelectorAll("button")].find((button) => button.textContent === "Max");
+		act(() => max?.click());
+		expect(onAmountChange).toHaveBeenCalledWith("10");
+
+		act(() => root.render(<VaultActionModal {...props({ stage: "input", result: undefined, maxAmount: null })} />));
+		expect([...container.querySelectorAll("button")].find((button) => button.textContent === "Max")?.disabled).toBe(
+			true,
+		);
+		expect(container.textContent).not.toContain("Minimum deposit is");
+	});
+
 	it("writes the verified balance, leader commission and reviewed amount with the number-format separators", () => {
 		const hint = () => container.querySelector('[data-testid="text-input-hint"]')?.textContent;
 		act(() =>
@@ -135,6 +159,9 @@ function props(overrides: Partial<VaultActionModalProps> = {}): VaultActionModal
 		ownerAddress: OWNER,
 		amount: "1",
 		availableAmount: "10",
+		maxAmount: "10",
+		minimumAmount: "5",
+		belowMinimum: false,
 		canReview: false,
 		canConfirm: false,
 		onAmountChange: vi.fn(),

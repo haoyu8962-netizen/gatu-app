@@ -579,6 +579,16 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Fixed
 
+- Vault deposits work for Unified accounts and Portfolio Margin: the available amount is the spot
+  USDC that is not on hold, as on the official terminal, instead of the perp balance, which is zero
+  in those modes. A Vault leader can add to its own Vault after closing it to other depositors, the
+  official minimum deposit (5 USDC, or 10 USDC above $100M of TVL) is explained before review, and a
+  Max control fills the verified amount.
+- The Portfolio 14-day volume no longer counts the current, unfinished day and drops the oldest
+  completed one; it sums the fourteen completed days, as the official terminal does.
+- The Referrals page no longer becomes unavailable when the exchange adds a field to its referral
+  data. Referral codes are typed and applied in upper case and accept only letters and digits, as on
+  the official terminal, so a code from a link is confirmed after it is applied.
 - The Market order-type tab and menu entry in the order form use the order-type wording instead of
   the market-list wording: 市价 in Chinese, 成行 in Japanese, मार्केट in Hindi, Au marché in French
   and سعر السوق in Arabic (English and Spanish are unchanged). The compact account-mode placeholder
