@@ -534,26 +534,36 @@ describe("usePositionReverseSubmit", () => {
 		await vi.waitFor(() => expect(getOrderQueueItem(queueId)).toMatchObject({ status: "failed" }));
 	});
 
-	it("refuses at the SDK boundary when the region turns restricted after the last locked check", async () => {
-		mocks.betweenExecutionGuards = async () => {
-			await act(async () => {
-				mocks.geo = { actionsBlocked: true, tradeRestricted: true };
-				for (const listener of mocks.geoListeners) listener();
-			});
-		};
+	it.each([
+		["restricted", { actionsBlocked: true, tradeRestricted: true }, "Trading is not available in your region"],
+		[
+			"not yet verified",
+			{ actionsBlocked: true, tradeRestricted: false },
+			"Unable to verify regional availability. Trading is temporarily unavailable.",
+		],
+	])(
+		"refuses at the SDK boundary when the region turns %s after the last locked check",
+		async (_case, geo, message) => {
+			mocks.betweenExecutionGuards = async () => {
+				await act(async () => {
+					mocks.geo = geo;
+					for (const listener of mocks.geoListeners) listener();
+				});
+			};
 
-		let sdkCaught: unknown;
-		try {
-			await act(async () => {
-				await currentHook().submit();
-			});
-		} catch (cause) {
-			sdkCaught = cause;
-		}
-		expect((sdkCaught as Error).message).toContain("Trading is not available in your region");
-		expect(mocks.guardCalls).toBe(2);
-		expect(mocks.executeOrder).not.toHaveBeenCalled();
-	});
+			let sdkCaught: unknown;
+			try {
+				await act(async () => {
+					await currentHook().submit();
+				});
+			} catch (cause) {
+				sdkCaught = cause;
+			}
+			expect((sdkCaught as Error).message).toContain(message);
+			expect(mocks.guardCalls).toBe(2);
+			expect(mocks.executeOrder).not.toHaveBeenCalled();
+		},
+	);
 
 	it("blocks an active TWAP before the REST refresh", async () => {
 		mocks.activeTwapCoins = [COIN];

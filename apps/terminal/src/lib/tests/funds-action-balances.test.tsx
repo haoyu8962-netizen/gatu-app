@@ -1303,7 +1303,29 @@ describe("funds action balance wiring", () => {
 		expect(testState.exchangeMutations.spotSend).not.toHaveBeenCalled();
 	});
 
-	it("sends exactly the amount and token the review shows", async () => {
+	it("discards an acknowledged review when only the provider lifecycle is replaced", async () => {
+		testState.exchangeIdentity.info.preTransferCheck.mockResolvedValue({
+			fee: "1.0",
+			isSanctioned: false,
+			userExists: false,
+			userHasSentTx: false,
+		});
+		renderValidSend(root, container);
+		await clickAndFlush(getButton(container, "Send"));
+		act(() => container.querySelector<HTMLInputElement>('input[type="checkbox"]')?.click());
+		expect(getButton(container, "Send with Fee").disabled).toBe(false);
+
+		act(() => {
+			testState.exchangeIdentity.exchangeLifecycle = { active: true, id: Symbol("replacement") };
+			root.render(createElement(SendModal, { onOpenChange: vi.fn(), open: true }));
+		});
+
+		expect(container.textContent).not.toContain("one-time fee");
+		expect(container.querySelector('input[placeholder="Destination address"]')).not.toBeNull();
+		expect(testState.exchangeMutations.spotSend).not.toHaveBeenCalled();
+	});
+
+	async function openFeeReview(amount: string) {
 		testState.exchangeIdentity.info.preTransferCheck.mockResolvedValue({
 			fee: "1.0",
 			isSanctioned: false,
@@ -1314,21 +1336,52 @@ describe("funds action balance wiring", () => {
 		const destinationInput = container.querySelector<HTMLInputElement>('input[placeholder="Destination address"]');
 		act(() => {
 			if (destinationInput) setInputValue(destinationInput, "0x2222222222222222222222222222222222222222");
-			setInputValue(getAmountInput(container), "1.25");
+			setInputValue(getAmountInput(container), amount);
 		});
 		await clickAndFlush(getButton(container, "Send"));
-
 		const amountRow = [...container.querySelectorAll("div")].find(
 			(element) => element.children.length === 2 && element.children[0]?.textContent === "Amount",
 		);
-		const shownAmount = amountRow?.children[1]?.textContent ?? "";
 		act(() => container.querySelector<HTMLInputElement>('input[type="checkbox"]')?.click());
+		return amountRow?.children[1]?.textContent ?? "";
+	}
+
+	it("sends exactly once, through the execution guards, the amount and token the review shows", async () => {
+		testState.runGuardsOnMutation = true;
+		const shownAmount = await openFeeReview("1.25");
 		await clickAndFlush(getButton(container, "Send with Fee"));
 
+		await vi.waitFor(() => expect(testState.exchangeMutations.spotSend).toHaveBeenCalledOnce());
 		const sent = testState.exchangeMutations.spotSend.mock.calls[0]?.[0] as { amount: string; token: string };
 		expect(shownAmount).toBe(`${sent.amount} USDC`);
 		expect(sent.amount).toBe("1.25");
 		expect(sent.token).toContain("USDC");
+	});
+
+	it("sends nothing when the account changes while a reviewed send waits before the SDK", async () => {
+		let release!: () => void;
+		testState.beforeSdk.mockReturnValueOnce(
+			new Promise<void>((resolve) => {
+				release = resolve;
+			}),
+		);
+		testState.runGuardsOnMutation = true;
+		await openFeeReview("1.25");
+		act(() => getButton(container, "Send with Fee").click());
+		await vi.waitFor(() => expect(testState.beforeSdk).toHaveBeenCalledOnce());
+
+		act(() => {
+			testState.exchangeIdentity.clientKey = "0x3333333333333333333333333333333333333333";
+			testState.walletSession.address = "0x3333333333333333333333333333333333333333";
+			root.render(createElement(SendModal, { onOpenChange: vi.fn(), open: true }));
+		});
+		await act(async () => {
+			release();
+			for (let tick = 0; tick < 8; tick += 1) await Promise.resolve();
+		});
+
+		expect(testState.exchangeMutations.spotSend).not.toHaveBeenCalled();
+		expect(testState.exchangeMutations.sendAsset).not.toHaveBeenCalled();
 	});
 
 	it("returns from the review to the form without sending", async () => {

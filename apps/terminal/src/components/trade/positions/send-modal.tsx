@@ -186,15 +186,10 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 			if (submissionIdentityRef.current === identity) submissionIdentityRef.current = null;
 			if (submissionRef.current?.identity === identity) submissionRef.current = null;
 			submissionSequenceRef.current += 1;
-		};
-	}, [exchangeLifecycle, submissionIdentityKey]);
-	useLayoutEffect(() => {
-		if (!submissionIdentityKey) return;
-		return () => {
 			setReview(null);
 			setReviewAcknowledged(false);
 		};
-	}, [submissionIdentityKey]);
+	}, [exchangeLifecycle, submissionIdentityKey]);
 	const assertAccountAbstraction = useAccountAbstractionPreExecutionGuard(accountAbstraction, address);
 	const fundsActionAvailability = useFundsActionAvailability({
 		accountDataReady,
