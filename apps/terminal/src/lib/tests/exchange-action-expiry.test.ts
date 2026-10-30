@@ -24,7 +24,7 @@ async function fakeFetch(input: string | URL | Request, init?: RequestInit): Pro
 	return new Response(JSON.stringify(body), { status: 200, headers: { "Content-Type": "application/json" } });
 }
 
-/** How far a signed expiry is from the exchange's clock plus 15 seconds when the request was sent. */
+/** How far a signed expiry is from the exchange's clock plus 15 seconds; the client tests freeze both clocks, so it is exact. */
 function expiryDrift(request: (typeof http.requests)[number] | undefined): number {
 	if (!request) return Number.POSITIVE_INFINITY;
 	const offset = request.testnet ? http.testnetServerOffset : http.serverOffset;
@@ -156,6 +156,7 @@ describe("server clock for L1 action expiry", () => {
 
 describe("exchange clients", () => {
 	beforeEach(() => {
+		vi.useFakeTimers({ toFake: ["Date", "performance"], now: 1_800_000_000_000 });
 		vi.stubGlobal("navigator", {
 			...navigator,
 			locks: { request: async (_name: string, _options: unknown, callback: () => unknown) => callback() },
@@ -168,6 +169,7 @@ describe("exchange clients", () => {
 	});
 
 	afterEach(() => {
+		vi.useRealTimers();
 		vi.unstubAllGlobals();
 	});
 
@@ -189,7 +191,7 @@ describe("exchange clients", () => {
 		const exchangeRequests = http.requests.filter((request) => request.endpoint === "exchange");
 		expect(exchangeRequests).toHaveLength(2);
 		expect(EXCHANGE_ACTION_EXPIRY_MS).toBe(15_000);
-		for (const request of exchangeRequests) expect(expiryDrift(request)).toBeLessThan(1_000);
+		for (const request of exchangeRequests) expect(expiryDrift(request)).toBe(0);
 	});
 
 	it("signs the owner's own L1 actions with the same 15-second expiry", async () => {
@@ -200,7 +202,7 @@ describe("exchange clients", () => {
 		await client.cancel({ cancels: [{ a: 0, o: 1 }] });
 
 		const [request] = http.requests.filter((entry) => entry.endpoint === "exchange");
-		expect(expiryDrift(request)).toBeLessThan(1_000);
+		expect(expiryDrift(request)).toBe(0);
 	});
 
 	it("keeps the exchange clock of each network apart", async () => {
@@ -212,9 +214,9 @@ describe("exchange clients", () => {
 
 		const [testnetRequest, mainnetRequest] = http.requests.filter((entry) => entry.endpoint === "exchange");
 		expect(testnetRequest?.testnet).toBe(true);
-		expect(expiryDrift(testnetRequest)).toBeLessThan(1_000);
+		expect(expiryDrift(testnetRequest)).toBe(0);
 		expect(mainnetRequest?.testnet).toBe(false);
-		expect(expiryDrift(mainnetRequest)).toBeLessThan(1_000);
+		expect(expiryDrift(mainnetRequest)).toBe(0);
 	});
 
 	it("signs without an expiry and asks for no server time while Transaction Delay Protection is off", async () => {
@@ -234,7 +236,7 @@ describe("exchange clients", () => {
 		expect(http.requests[0]?.endpoint).toBe("exchange");
 		expect(http.requests[0]?.payload).not.toHaveProperty("expiresAfter");
 		const [, protectedRequest] = http.requests.filter((entry) => entry.endpoint === "exchange");
-		expect(expiryDrift(protectedRequest)).toBeLessThan(1_000);
+		expect(expiryDrift(protectedRequest)).toBe(0);
 	});
 
 	it("lets the owner's own client follow the same switch, off and on again", async () => {
@@ -256,7 +258,7 @@ describe("exchange clients", () => {
 		const [first, second, third] = http.requests.filter((entry) => entry.endpoint === "exchange");
 		expect(http.requests[0]?.endpoint).toBe("exchange");
 		expect(first?.payload).not.toHaveProperty("expiresAfter");
-		expect(expiryDrift(second)).toBeLessThan(1_000);
+		expect(expiryDrift(second)).toBe(0);
 		expect(third?.payload).not.toHaveProperty("expiresAfter");
 	});
 
