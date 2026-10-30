@@ -1,3 +1,4 @@
+import { getToolbarAbsoluteSize } from "@/domain/trade/trading-toolbar-metrics";
 import type { NumberFormatters } from "@/lib/format";
 import type { Position } from "@/lib/hyperliquid";
 import { toBig } from "@/lib/trade/numbers";
@@ -7,6 +8,7 @@ import type { EntityId, HorzlineLineToolOverrides, IChartWidgetApi } from "@/typ
 export interface TradingViewOverlayLabels {
 	limitBuy: string;
 	limitSell: string;
+	liquidation: string;
 	long: string;
 	pnl: string;
 	roe: string;
@@ -109,7 +111,6 @@ export function buildTradingViewOverlayLines({
 		label: buildPositionLabel(
 			side === "buy" ? labels.long : labels.short,
 			position,
-			size,
 			pnl,
 			quoteSymbol,
 			labels,
@@ -125,7 +126,7 @@ export function buildTradingViewOverlayLines({
 			key: `liquidation:${positionKey}`,
 			kind: "liquidation",
 			price: liquidationPrice,
-			label: "Liq.",
+			label: labels.liquidation,
 			side: "sell",
 		});
 	}
@@ -313,7 +314,6 @@ export class TradingViewOverlayController {
 function buildPositionLabel(
 	direction: string,
 	position: Position,
-	size: NonNullable<ReturnType<typeof toBig>>,
 	pnl: ReturnType<typeof toBig>,
 	quoteSymbol: string,
 	labels: TradingViewOverlayLabels,
@@ -332,7 +332,7 @@ function buildPositionLabel(
 		performance = `${labels.roe} ${numberFormat.formatPercent(roe.toString(), 1)}`;
 	}
 
-	const quantity = size.abs().toString();
+	const quantity = numberFormat.formatDecimalString(getToolbarAbsoluteSize(position.szi));
 	if (!performance) return `${direction} · ${quantity}`;
 	return `${direction} · ${performance} · ${quantity}`;
 }

@@ -1855,6 +1855,69 @@ describe("TradingView datafeed", () => {
 		datafeed.destroy();
 	});
 
+	it.each(["1W", "1M"])(
+		"serves the daily bars TradingView builds %s bars from, history and realtime",
+		async (chartResolution) => {
+			const dayStart = Date.UTC(2026, 0, 5);
+			infoClient.candleSnapshot.mockResolvedValueOnce([
+				{
+					T: dayStart + 86_399_999,
+					c: "20",
+					h: "21",
+					i: "1d",
+					l: "19",
+					n: 1,
+					o: "20",
+					s: "WEEKLY",
+					t: dayStart,
+					v: "1",
+				},
+			]);
+			const target = { coin: "WEEKLY", resolution: chartResolution as ResolutionString };
+			const datafeed = createDatafeed({
+				getHistoryTarget: () => target,
+				getSymbolInfo: (_symbolName, coin) =>
+					coin === "WEEKLY"
+						? { name: "WEEKLY-USDC", ticker: "WEEKLY", description: "WEEKLY-USDC", pricescale: 100 }
+						: undefined,
+			});
+			const symbol = await resolveDatafeedSymbol(datafeed, "WEEKLY");
+			vi.useFakeTimers();
+			const periodParams = {
+				countBack: 1,
+				firstDataRequest: true,
+				from: dayStart / 1_000,
+				to: dayStart / 1_000 + 86_400,
+			};
+			const dailyResult = vi.fn();
+			const hourlyResult = vi.fn();
+
+			datafeed.getBars(symbol, "1D" as ResolutionString, periodParams, dailyResult, vi.fn());
+			datafeed.getBars(symbol, "60" as ResolutionString, periodParams, hourlyResult, vi.fn());
+			await vi.advanceTimersByTimeAsync(1);
+
+			expect(infoClient.candleSnapshot).toHaveBeenCalledOnce();
+			expect(infoClient.candleSnapshot).toHaveBeenCalledWith(
+				expect.objectContaining({ coin: "WEEKLY", interval: "1d" }),
+			);
+			expect(dailyResult).toHaveBeenCalledWith([expect.objectContaining({ time: dayStart })], { noData: false });
+			expect(hourlyResult).toHaveBeenCalledWith([], { noData: false });
+
+			datafeed.subscribeBars(symbol, "1D" as ResolutionString, vi.fn(), "weekly-listener", vi.fn());
+			datafeed.subscribeBars(symbol, "60" as ResolutionString, vi.fn(), "hourly-listener", vi.fn());
+			await Promise.resolve();
+			await Promise.resolve();
+
+			expect(getCandleStore().getState().streams["WEEKLY:1d"]?.listeners.size).toBe(1);
+			expect(getCandleStore().getState().streams["WEEKLY:1h"]).toBeUndefined();
+
+			datafeed.unsubscribeBars("weekly-listener");
+			datafeed.unsubscribeBars("hourly-listener");
+			await vi.advanceTimersByTimeAsync(5_000);
+			datafeed.destroy();
+		},
+	);
+
 	it("destroy cancels an inline rate-limit wait without dispatching a history callback", async () => {
 		const nowMs = Date.UTC(2026, 5, 28);
 		const rateLimitError = Object.assign(new Error("429 Too Many Requests"), {

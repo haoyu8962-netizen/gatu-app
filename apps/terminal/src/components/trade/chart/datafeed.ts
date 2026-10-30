@@ -4,7 +4,12 @@ import { CHART_HISTORY_REQUEST_TIMEOUT_MS } from "@/config/time";
 import { candleSnapshotToBar, filterAndSortBars } from "@/lib/chart/candle";
 import { CandleRateLimitError, requestCandleSnapshot } from "@/lib/chart/candle-gate";
 import { type ChartPriceFormat, getChartPriceFormat } from "@/lib/chart/price-format";
-import { type CandleInterval, resolutionToBarMs, resolutionToInterval } from "@/lib/chart/resolution";
+import {
+	type CandleInterval,
+	getDatafeedRequestResolution,
+	resolutionToBarMs,
+	resolutionToInterval,
+} from "@/lib/chart/resolution";
 import { getCandleStore, streamKey } from "@/lib/chart/store";
 import {
 	coinFromSymbolName,
@@ -337,7 +342,7 @@ export function createDatafeed(options: DatafeedOptions = {}): ChartDatafeed {
 		if (!target) return true;
 		return (
 			normalizeChartSymbolKey(coin) === normalizeChartSymbolKey(target.coin) &&
-			String(resolution) === String(target.resolution)
+			String(resolution) === getDatafeedRequestResolution(String(target.resolution))
 		);
 	};
 	const isCurrentHistoryRequest = (identity: HistoryRequestIdentity) =>

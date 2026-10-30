@@ -579,6 +579,10 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Fixed
 
+- Weekly (1W) and monthly (1M) charts show bars and live updates. They used to stay empty, and the
+  daily chart opened after them stayed empty too.
+- The chart's liquidation line is labelled "Liq. Price" in the interface language, and the position
+  line writes its size in the number format you chose.
 - The Market order-type tab and menu entry in the order form use the order-type wording instead of
   the market-list wording: 市价 in Chinese, 成行 in Japanese, मार्केट in Hindi, Au marché in French
   and سعر السوق in Arabic (English and Spanish are unchanged). The compact account-mode placeholder
