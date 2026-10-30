@@ -15,13 +15,9 @@ export interface OrderEntryLimitPxInput {
 }
 
 /**
- * The price an entry order's quote size, value and fees are computed at: the limit price, or for a
- * scale order the size-weighted average of its levels. Undefined falls back to the mark price.
- */
-/**
  * For a scale order, what its levels cost for a total size once that size is split into lots, so the
- * order value, fees and balance checks match the orders that are sent. Undefined for other order
- * types and while the scale range is incomplete.
+ * order value, fees, margin and balance checks match the orders that are sent. Undefined for other
+ * order types and while the scale range is incomplete.
  */
 export function getOrderEntryValueForSize(input: OrderEntryLimitPxInput, size: string): number | undefined {
 	if (!isScaleOrderType(input.orderType) || input.assetId === null) return undefined;
@@ -37,6 +33,10 @@ export function getOrderEntryValueForSize(input: OrderEntryLimitPxInput, size: s
 	return notional === null ? undefined : notional.toNumber();
 }
 
+/**
+ * The price an entry order's quote size, value and fees are computed at: the limit price, or for a
+ * scale order the size-weighted average of its levels. Undefined falls back to the mark price.
+ */
 export function getOrderEntryLimitPx(input: OrderEntryLimitPxInput): number | undefined {
 	if (usesLimitPrice(input.orderType)) return toNumberOrZero(input.limitPriceInput);
 	if (!isScaleOrderType(input.orderType) || input.assetId === null) return undefined;

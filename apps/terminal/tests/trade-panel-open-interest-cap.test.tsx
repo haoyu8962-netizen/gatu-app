@@ -27,6 +27,8 @@ const testState = vi.hoisted(() => ({
 	scaleLevels: null as number | null,
 	scaleSkew: "",
 	orderEntryInput: undefined as unknown,
+	scaleSummaryProps: undefined as { orderValue?: number; marginRequired?: number | null } | undefined,
+	sizeForOrder: "1",
 	requestSubmit: vi.fn(),
 	submitOrder: vi.fn(),
 	executionGuard: undefined as ((params: OrderParameters) => void) | undefined,
@@ -71,7 +73,12 @@ vi.mock("wagmi", () => ({
 vi.mock("@/components/trade/tradebox/trade-form-fields", () => ({ TradeFormFields: () => null }));
 vi.mock("@/components/trade/tradebox/trade-header", () => ({ TradeHeader: () => null }));
 vi.mock("@/components/trade/tradebox/order-summary", () => ({ OrderSummary: () => null }));
-vi.mock("@/components/trade/tradebox/scale-order-summary", () => ({ ScaleOrderSummary: () => null }));
+vi.mock("@/components/trade/tradebox/scale-order-summary", () => ({
+	ScaleOrderSummary: (props: { orderValue?: number; marginRequired?: number | null }) => {
+		testState.scaleSummaryProps = props;
+		return null;
+	},
+}));
 vi.mock("@/components/trade/tradebox/twap-order-summary", () => ({ TwapOrderSummary: () => null }));
 vi.mock("@/components/trade/tradebox/order-confirmation-modal", () => ({ OrderConfirmationModal: () => null }));
 vi.mock("@/components/trade/tradebox/lazy-trade-settings-modals", () => ({
@@ -112,7 +119,7 @@ vi.mock("@/hooks/trade/use-order-confirmation", () => ({
 	}),
 }));
 vi.mock("@/hooks/trade/use-order-entry-data", () => ({
-	useOrderEntryData: (input: unknown) => {
+	useOrderEntryData: (input: { orderValueForSize?: (size: string) => number | undefined }) => {
 		testState.orderEntryInput = input;
 		return {
 			accountAbstraction: "disabled",
@@ -145,15 +152,15 @@ vi.mock("@/hooks/trade/use-order-entry-data", () => ({
 			marginMode: "cross",
 			maxLeverage: 50,
 			maxSize: 10,
-			orderValue: 100,
+			orderValue: input.orderValueForSize?.(testState.sizeForOrder) ?? 100,
 			pendingLeverage: null,
 			positionStateReady: true,
 			quoteToken: "USDC",
 			resetPendingLeverage: vi.fn(),
 			setPendingLeverage: vi.fn(),
 			sideLabels: { buy: "Buy", sell: "Sell", buyAria: "Buy", sellAria: "Sell" },
-			sizeForOrder: "1",
-			sizeValue: 1,
+			sizeForOrder: testState.sizeForOrder,
+			sizeValue: Number(testState.sizeForOrder),
 			spotBalance: { baseAvailable: 0, quoteAvailable: 0 },
 			szDecimals: 3,
 			toggleSizeDenomination: vi.fn(),
@@ -634,6 +641,8 @@ describe("desktop TradePanel price precision and scale sizing", () => {
 		testState.scaleLevels = null;
 		testState.scaleSkew = "";
 		testState.orderEntryInput = undefined;
+		testState.scaleSummaryProps = undefined;
+		testState.sizeForOrder = "1";
 		container = document.createElement("div");
 		document.body.appendChild(container);
 		root = createRoot(container);
@@ -662,6 +671,19 @@ describe("desktop TradePanel price precision and scale sizing", () => {
 
 		expect(getRestriction(container)?.textContent).toContain("E.g., 110");
 		await expectSubmissionBlocked(container);
+	});
+
+	it("estimates a scale order's margin from the value of its lot-rounded levels", async () => {
+		testState.orderType = "scale";
+		testState.scaleStart = "100000";
+		testState.scaleEnd = "20000";
+		testState.scaleLevels = 2;
+		testState.scaleSkew = "1";
+		testState.sizeForOrder = "0.003";
+		await renderPanel(root);
+
+		expect(testState.scaleSummaryProps?.orderValue).toBe(220);
+		expect(testState.scaleSummaryProps?.marginRequired).toBe(22);
 	});
 
 	it("sizes a scale order at the size-weighted average of its levels", async () => {

@@ -141,7 +141,7 @@ vi.mock("@/hooks/trade/use-order-confirmation", () => ({
 }));
 
 vi.mock("@/hooks/trade/use-order-entry-data", () => ({
-	useOrderEntryData: (input: unknown) => {
+	useOrderEntryData: (input: { orderValueForSize?: (size: string) => number | undefined }) => {
 		testState.orderEntryInput = input;
 		return {
 			accountAbstraction: "disabled",
@@ -181,13 +181,14 @@ vi.mock("@/hooks/trade/use-order-entry-data", () => ({
 			marginMode: "cross",
 			maxLeverage: 50,
 			maxSize: testState.maxSize,
-			orderValue: testState.orderValue,
+			orderValue: input.orderValueForSize?.(String(testState.sizeValue)) ?? testState.orderValue,
 			pendingLeverage: null,
 			positionStateReady: true,
 			quoteToken: "USDC",
 			resetPendingLeverage: vi.fn(),
 			setPendingLeverage: vi.fn(),
 			sideLabels: { buy: "Buy", sell: "Sell" },
+			sizeForOrder: String(testState.sizeValue),
 			sizeValue: testState.sizeValue,
 			spotBalance: {
 				baseAvailable: testState.baseAvailable,
@@ -437,6 +438,23 @@ describe("MobileTradeView order-size validation accessibility", () => {
 			"Price must be a multiple of the tick size, with at most 5 significant figures. E.g., 100.12",
 		);
 		await expectSubmissionBlocked(container);
+	});
+
+	it("estimates a scale order's margin from the value of its lot-rounded levels", async () => {
+		testState.orderType = "scale";
+		testState.scaleStart = "100000";
+		testState.scaleEnd = "20000";
+		testState.scaleLevels = 2;
+		testState.scaleSkew = "1";
+		testState.sizeValue = 0.003;
+		await renderView(root);
+
+		const summaryValue = (label: string) =>
+			[...container.querySelectorAll("div")].find(
+				(element) => element.children.length === 2 && element.children[0]?.textContent === label,
+			)?.children[1]?.textContent;
+		expect(summaryValue("Order Value")).toBe("$220.00");
+		expect(summaryValue("Margin Req.")).toBe("$22.00");
 	});
 
 	it("sizes a scale order at the size-weighted average of its levels instead of the mark price", async () => {

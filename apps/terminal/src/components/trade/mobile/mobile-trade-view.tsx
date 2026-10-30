@@ -460,6 +460,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 		price: conversionPrice,
 		leverage: capabilities.isLeveraged ? leverage : null,
 		reduceOnly,
+		scaleOrderValue: getOrderEntryValueForSize(entryPriceInput, sizeForOrder),
 	});
 	const isolatedExistingPosition = position
 		? {

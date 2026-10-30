@@ -426,7 +426,13 @@ export function TradePanel() {
 	const prospectiveExistingPosition =
 		marginMode === "cross" ? crossMarginSnapshot.existingPosition : isolatedExistingPosition;
 
-	const { marginRequired } = getOrderMetrics({ sizeValue, price, leverage, reduceOnly });
+	const { marginRequired } = getOrderMetrics({
+		sizeValue,
+		price,
+		leverage,
+		reduceOnly,
+		scaleOrderValue: getOrderEntryValueForSize(entryPriceInput, sizeForOrder),
+	});
 	const marginTiers = market?.kind === "perp" || market?.kind === "builderPerp" ? market.marginTiers : null;
 	const { liqPrice, liqWarning } = estimateProspectiveLiquidation({
 		price,

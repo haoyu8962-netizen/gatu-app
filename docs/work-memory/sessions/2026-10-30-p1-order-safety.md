@@ -54,6 +54,12 @@
 - 审查的变异表另指出手机触发价位数校验的接线没有测试：手机测试的触发价桩改为可配置，新增止损市价单触发价 `100.1234` 被拦截并给出 `100.12`。
 - 变异：主钱包客户端去掉过期值、期限改为 150 秒、时钟缓存键去掉网络、去掉首个同步的共享、推导忽略按档价值、桌面或手机不传按档价值、手机触发价传空串，各自让对应新测试失败，均已还原。
 - 修复后浏览器（沙箱外）：`trade-panel-all-orders.pw.ts` 与 `trade-panel-layout.pw.ts` 12 项通过；`mobile-trade-all-orders.playwright.config.ts` 47 项通过（含 `reduce-only.pw.ts` 的 Scale 保证金 $8.00，夹具的拆档与均价恰好一致）。
+- 第二轮只读窄审（范围 `cd2f434c → 7ba01e17`）：评分 8.0。上一轮的 P1、P2 与四个变异缺口已修，剩 1 项 P2 与 1 个变异缺口，都已处理：
+  - **P2：保证金仍按旧价格计算。** 桌面按区间中点、手机按加权均价乘数量，没有用实际拆档价值（`szDecimals` 0、100→20、两档、输入 $180、10 倍时订单价值 $220，保证金却是 $18），与本记录和 `order-entry-surface-parity.md` 的说法不符。`getOrderMetrics` 新增可选的 `scaleOrderValue`，双端传入 `getOrderEntryValueForSize` 的结果，Scale 保证金按实际拆档价值除以杠杆；其他订单类型各端原口径不变，只减仓仍不适用。新增领域用例，以及桌面与手机组件用例：100000→20000、两档、数量 0.003 拆成 0.002 与 0.001，订单价值 $220，保证金 $22。
+  - **两档偏斜没有覆盖。** 新增 100→20、偏斜 3、数量 4：拆成 1 与 3，订单价值 160。
+  - 顺带把 `getOrderEntryLimitPx` 的注释移回它自己上方（上一轮插入新函数时放错了位置）。
+- 第二轮变异：保证金忽略按档价值、桌面不传按档价值、手机不传按档价值、两档时忽略偏斜，各自让对应新测试失败，均已还原。
+- 第二轮修复后浏览器（沙箱外）：`trade-panel-all-orders.pw.ts` 与 `trade-panel-layout.pw.ts` 12 项通过；`mobile-trade-all-orders.playwright.config.ts` 跑了两轮，各 46 通过、1 失败，两轮失败的不是同一项（`desktop-order-entry-layout.pw.ts:391` 缩短网格的滚动容器、`:296` 1421px 表单适配），当时系统负载平均值约 19；`:391` 单独重跑 3 次通过，整份 `desktop-order-entry-layout.pw.ts` 单独运行 9 项通过。含 Scale 保证金 $8.00 的 `reduce-only.pw.ts` 两轮都通过。
 
 ## 后续与替代关系
 

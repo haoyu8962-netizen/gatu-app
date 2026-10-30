@@ -99,6 +99,11 @@ describe("scale order conversion price", () => {
 		]);
 		expect(getScaleOrderNotional({ ...coarse, sizeValue: "3" })?.toString()).toBe("220");
 		expect(getScaleOrderNotional({ ...coarse, scaleLevelsNum: 1, sizeValue: "3" })).toBeNull();
+		expect(
+			createScaleOrderLevelPlan({ ...coarse, scaleSkew: "3", sizeValue: "4" }).levels.map((level) => level.size),
+		).toEqual(["1", "3"]);
+		expect(getScaleOrderNotional({ ...coarse, scaleSkew: "3", sizeValue: "4" })?.toString()).toBe("160");
+		expect(getOrderEntryValueForSize({ ...input, scaleSkewInput: "3" }, "4")).toBe(160);
 		expect(getOrderEntryValueForSize(input, "3")).toBe(220);
 		expect(getOrderEntryValueForSize({ ...input, orderType: "limit" }, "3")).toBeUndefined();
 		expect(getOrderEntryValueForSize({ ...input, scaleEndPriceInput: "" }, "3")).toBeUndefined();
