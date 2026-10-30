@@ -586,7 +586,8 @@ changes, not evidence that a build has been deployed or accepted on real devices
   terminal, Settings › Trading › Transaction delay protection turns it off.
 - A limit or trigger price that is not a multiple of the market's tick (at most 5 significant figures
   and the market's decimal limit) is no longer rounded silently when the order is sent: the order
-  form explains the rule, suggests a valid price and keeps the order button disabled.
+  form explains the rule, suggests a valid price and keeps the order button disabled. The same applies
+  to a TWAP's trigger price and price limit under Advanced Settings.
 - Scale orders entered in USD are sized at the size-weighted average price of their levels instead of
   the mark price, so their value, fees and margin match the orders that are placed. Where whole lots
   would make the levels cost more than the amount typed, the size is lowered by lots until they do

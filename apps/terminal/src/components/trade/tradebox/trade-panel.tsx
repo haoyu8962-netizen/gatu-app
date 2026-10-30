@@ -491,6 +491,9 @@ export function TradePanel() {
 		twapMinutesNum,
 		twapTriggerPriceNum,
 		twapStopPriceNum,
+		twapPricesEnabled: twapAdvancedEnabled,
+		twapTriggerPriceInput,
+		twapStopPriceInput,
 	};
 
 	const validation = useOrderValidation(

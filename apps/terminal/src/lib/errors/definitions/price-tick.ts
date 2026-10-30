@@ -11,6 +11,10 @@ export interface PriceTickContext {
 	usesTriggerPrice: boolean;
 	limitPriceInput: string;
 	triggerPriceInput: string;
+	twapOrder: boolean;
+	twapPricesEnabled: boolean;
+	twapTriggerPriceInput: string;
+	twapStopPriceInput: string;
 	formatDecimalString: (value: string) => string;
 }
 
@@ -40,4 +44,26 @@ export const triggerPriceTickValidator: Validator<PriceTickContext> = createVali
 	priority: 106,
 	getMessage: (ctx) => getTickMessage(ctx, getExample(ctx, ctx.triggerPriceInput)),
 	validate: (ctx) => !ctx.usesTriggerPrice || getExample(ctx, ctx.triggerPriceInput) === null,
+});
+
+function usesTwapPrices(ctx: PriceTickContext): boolean {
+	return ctx.twapOrder && ctx.twapPricesEnabled;
+}
+
+export const twapTriggerPriceTickValidator: Validator<PriceTickContext> = createValidator({
+	id: "twap-trigger-price-tick",
+	code: "INP_008",
+	category: "input",
+	priority: 107,
+	getMessage: (ctx) => getTickMessage(ctx, getExample(ctx, ctx.twapTriggerPriceInput)),
+	validate: (ctx) => !usesTwapPrices(ctx) || getExample(ctx, ctx.twapTriggerPriceInput) === null,
+});
+
+export const twapStopPriceTickValidator: Validator<PriceTickContext> = createValidator({
+	id: "twap-stop-price-tick",
+	code: "INP_009",
+	category: "input",
+	priority: 108,
+	getMessage: (ctx) => getTickMessage(ctx, getExample(ctx, ctx.twapStopPriceInput, ctx.side)),
+	validate: (ctx) => !usesTwapPrices(ctx) || getExample(ctx, ctx.twapStopPriceInput, ctx.side) === null,
 });

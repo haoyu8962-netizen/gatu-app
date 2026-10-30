@@ -86,6 +86,9 @@ function spotContext(overrides: Partial<SpotOrderContext> = {}): SpotOrderContex
 		twapMinutesNum: null,
 		twapTriggerPriceNum: null,
 		twapStopPriceNum: null,
+		twapPricesEnabled: false,
+		twapTriggerPriceInput: "",
+		twapStopPriceInput: "",
 		...overrides,
 	};
 }
@@ -130,6 +133,9 @@ function perpContext(overrides: Partial<PerpOrderContext> = {}): PerpOrderContex
 		twapMinutesNum: null,
 		twapTriggerPriceNum: null,
 		twapStopPriceNum: null,
+		twapPricesEnabled: false,
+		twapTriggerPriceInput: "",
+		twapStopPriceInput: "",
 		tpSlEnabled: false,
 		canUseTpSl: false,
 		tpSlReturnInvalid: false,
@@ -1105,6 +1111,36 @@ describe("limit and trigger price tick validation", () => {
 		expect(tickMessage(perp.errors, "limit-price-tick")).toContain("E.g., 1.234");
 		expect(tickMessage(spot.errors, "limit-price-tick")).toContain("E.g., 0.12345");
 		expect(spotOnTick.errors.map((error) => error.id)).not.toContain("limit-price-tick");
+	});
+
+	it("blocks off-tick TWAP prices only while the advanced settings are on", () => {
+		const twap = {
+			orderType: "twap",
+			twapOrder: true,
+			usesLimitPrice: false,
+			twapMinutesNum: 30,
+			twapPricesEnabled: true,
+			twapTriggerPriceInput: "100.129",
+			twapTriggerPriceNum: 100.129,
+		};
+		const buy = validatePerpOrder(perpContext({ ...twap, twapStopPriceInput: "101.129", twapStopPriceNum: 101.129 }));
+		const sell = validatePerpOrder(
+			perpContext({ ...twap, side: "sell", twapStopPriceInput: "99.1219", twapStopPriceNum: 99.1219 }),
+		);
+		const spot = validateSpotOrder(
+			spotContext({ ...twap, usesLimitPrice: false, twapStopPriceInput: "", twapStopPriceNum: null }),
+		);
+		const hidden = validatePerpOrder(
+			perpContext({ ...twap, twapPricesEnabled: false, twapStopPriceInput: "101.129", twapStopPriceNum: 101.129 }),
+		);
+
+		expect(buy.canSubmit).toBe(false);
+		expect(tickMessage(buy.errors, "twap-trigger-price-tick")).toContain("E.g., 100.12");
+		expect(tickMessage(buy.errors, "twap-stop-price-tick")).toContain("E.g., 101.12");
+		expect(tickMessage(sell.errors, "twap-stop-price-tick")).toContain("E.g., 99.122");
+		expect(tickMessage(spot.errors, "twap-trigger-price-tick")).toContain("E.g., 100.12");
+		expect(hidden.errors.map((error) => error.id)).not.toContain("twap-trigger-price-tick");
+		expect(hidden.errors.map((error) => error.id)).not.toContain("twap-stop-price-tick");
 	});
 
 	it("blocks an off-tick trigger price and rounds its example down", () => {

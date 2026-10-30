@@ -203,6 +203,34 @@ describe("TradeFormFields order-entry data ownership", () => {
 		expect(invalidInputs()[0]).not.toBe(trigger());
 	});
 
+	it("marks the TWAP trigger and price limit fields whose price is off the market tick", () => {
+		act(() => root.render(<ParentHarness />));
+		act(() => {
+			actions.setOrderType("twap");
+			actions.setTwapAdvancedEnabled(true);
+		});
+		const tickError = (id: string): ValidationError => ({
+			id,
+			code: id === "twap-trigger-price-tick" ? "INP_008" : "INP_009",
+			severity: "error",
+			category: "input",
+			priority: 107,
+			message: "Price must be a multiple of the tick size",
+		});
+		const invalidLabels = () =>
+			[...container.querySelectorAll<HTMLInputElement>('input[aria-invalid="true"]')].map((input) =>
+				input.getAttribute("aria-label"),
+			);
+
+		expect(invalidLabels()).toEqual([]);
+
+		act(() => root.render(<ParentHarness visibleValidationErrors={[tickError("twap-trigger-price-tick")]} />));
+		expect(invalidLabels()).toEqual(["Trigger Price (USDC)"]);
+
+		act(() => root.render(<ParentHarness visibleValidationErrors={[tickError("twap-stop-price-tick")]} />));
+		expect(invalidLabels()).toEqual(["Max Price (USDC)"]);
+	});
+
 	it("writes the open position size with the number-format separators, truncated to the size decimals", () => {
 		act(() => root.render(<ParentHarness positionSize={1234.56789} />));
 		const position = () =>

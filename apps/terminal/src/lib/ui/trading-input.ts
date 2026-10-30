@@ -5,3 +5,6 @@ export const tradingInputFrameClass = cn(
 	"focus-within:border-trading-panel-focus focus-within:ring-2 focus-within:ring-trading-panel-focus/10",
 	"[&_[data-slot=input]]:border-0 [&_[data-slot=input]]:rounded-none [&_[data-slot=input]]:ring-0",
 );
+
+export const tradingInputFrameErrorClass =
+	"border-trading-panel-error focus-within:border-trading-panel-error focus-within:ring-trading-panel-error/10";

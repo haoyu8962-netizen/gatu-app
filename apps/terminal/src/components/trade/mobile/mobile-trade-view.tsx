@@ -525,6 +525,9 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 		twapMinutesNum,
 		twapTriggerPriceNum,
 		twapStopPriceNum,
+		twapPricesEnabled: twapAdvancedEnabled,
+		twapTriggerPriceInput,
+		twapStopPriceInput,
 	};
 
 	const validation = useOrderValidation(

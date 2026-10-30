@@ -6,7 +6,12 @@ import {
 	walletNotConnectedValidator,
 } from "../definitions/connection";
 import { liveMarkPriceValidator, marketNotReadyValidator, noMarketValidator } from "../definitions/market";
-import { limitPriceTickValidator, type PriceTickContext } from "../definitions/price-tick";
+import {
+	limitPriceTickValidator,
+	type PriceTickContext,
+	twapStopPriceTickValidator,
+	twapTriggerPriceTickValidator,
+} from "../definitions/price-tick";
 import {
 	enterPriceRangeValidator,
 	type ScaleContext,
@@ -75,6 +80,8 @@ const spotOrderValidators: Validator<SpotOrderContext>[] = [
 	liveMarkPriceValidator,
 	spotEnterLimitPriceValidator,
 	limitPriceTickValidator,
+	twapTriggerPriceTickValidator,
+	twapStopPriceTickValidator,
 	spotEnterSizeValidator,
 	spotMinOrderNotionalValidator,
 	enterPriceRangeValidator,

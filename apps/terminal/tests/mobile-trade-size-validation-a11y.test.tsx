@@ -9,6 +9,9 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const testState = vi.hoisted(() => ({
+	twapAdvancedEnabled: false,
+	twapTriggerPrice: "",
+	twapStopPrice: "",
 	hasWalletAccess: true,
 	isSignerLoading: false,
 	signerMode: "owner" as "owner" | "agent",
@@ -314,11 +317,11 @@ vi.mock("@/stores/use-order-entry-store", () => ({
 	useTpSlEnabled: () => false,
 	useTpSlReturnInvalid: () => false,
 	useTriggerPrice: () => testState.triggerPrice,
-	useTwapAdvancedEnabled: () => false,
+	useTwapAdvancedEnabled: () => testState.twapAdvancedEnabled,
 	useTwapMinutes: () => null,
 	useTwapRandomize: () => false,
-	useTwapStopPrice: () => "",
-	useTwapTriggerPrice: () => "",
+	useTwapStopPrice: () => testState.twapStopPrice,
+	useTwapTriggerPrice: () => testState.twapTriggerPrice,
 }));
 
 vi.mock("@/stores/use-orderbook-actions-store", () => ({
@@ -426,6 +429,16 @@ describe("MobileTradeView order-size validation accessibility", () => {
 		expect(getValidationError(container)?.textContent).toContain(
 			"Price must be a multiple of the tick size, with at most 5 significant figures. E.g., 100.12",
 		);
+		await expectSubmissionBlocked(container);
+	});
+
+	it("blocks a TWAP trigger price off the market tick while the advanced settings are on", async () => {
+		testState.orderType = "twap";
+		testState.twapTriggerPrice = "100.1234";
+		testState.twapAdvancedEnabled = true;
+		await renderView(root);
+
+		expect(getValidationError(container)?.textContent).toContain("E.g., 100.12");
 		await expectSubmissionBlocked(container);
 	});
 
@@ -1078,6 +1091,9 @@ function setValidPerpScenario() {
 	testState.scaleEnd = "";
 	testState.scaleLevels = null;
 	testState.scaleSkew = "";
+	testState.twapAdvancedEnabled = false;
+	testState.twapTriggerPrice = "";
+	testState.twapStopPrice = "";
 	testState.orderEntryInput = undefined;
 }
 

@@ -9,6 +9,9 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const testState = vi.hoisted(() => ({
+	twapAdvancedEnabled: false,
+	twapTriggerPrice: "",
+	twapStopPrice: "",
 	authorize: vi.fn(async () => {}),
 	availableBalance: 100,
 	accountModeBlocked: false,
@@ -267,11 +270,11 @@ vi.mock("@/stores/use-order-entry-store", () => ({
 	useTpSlEnabled: () => false,
 	useTpSlReturnInvalid: () => false,
 	useTriggerPrice: () => testState.triggerPrice,
-	useTwapAdvancedEnabled: () => false,
+	useTwapAdvancedEnabled: () => testState.twapAdvancedEnabled,
 	useTwapMinutes: () => 30,
 	useTwapRandomize: () => false,
-	useTwapStopPrice: () => "",
-	useTwapTriggerPrice: () => "",
+	useTwapStopPrice: () => testState.twapStopPrice,
+	useTwapTriggerPrice: () => testState.twapTriggerPrice,
 }));
 vi.mock("@/stores/use-orderbook-actions-store", () => ({
 	getOrderbookActionsStore: () => ({ actions: { clearSelectedPrice: vi.fn() } }),
@@ -640,6 +643,9 @@ describe("desktop TradePanel price precision and scale sizing", () => {
 		testState.scaleEnd = "";
 		testState.scaleLevels = null;
 		testState.scaleSkew = "";
+		testState.twapAdvancedEnabled = false;
+		testState.twapTriggerPrice = "";
+		testState.twapStopPrice = "";
 		testState.orderEntryInput = undefined;
 		testState.scaleSummaryProps = undefined;
 		testState.sizeForOrder = "1";
@@ -661,6 +667,16 @@ describe("desktop TradePanel price precision and scale sizing", () => {
 		expect(getRestriction(container)?.textContent).toBe(
 			"Price must be a multiple of the tick size, with at most 5 significant figures. E.g., 100.12",
 		);
+		await expectSubmissionBlocked(container);
+	});
+
+	it("blocks a TWAP trigger price off the market tick while the advanced settings are on", async () => {
+		testState.orderType = "twap";
+		testState.twapTriggerPrice = "100.1234";
+		testState.twapAdvancedEnabled = true;
+		await renderPanel(root);
+
+		expect(getRestriction(container)?.textContent).toContain("E.g., 100.12");
 		await expectSubmissionBlocked(container);
 	});
 
