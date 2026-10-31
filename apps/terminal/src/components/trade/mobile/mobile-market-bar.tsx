@@ -10,6 +10,7 @@ import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { useCopyToClipboard } from "@/hooks/ui/use-copy-to-clipboard";
 import { formatClockDuration, type NumberFormatters, shortenAddress, useNumberFormat } from "@/lib/format";
 import { getExplorerTokenUrl, type UnifiedMarketInfo } from "@/lib/hyperliquid";
+import { isTestnet } from "@/lib/network";
 import { toBig } from "@/lib/trade/numbers";
 import { getTradePriceDecimals } from "@/lib/trade/trades";
 import { TokenSelector } from "../chart/token-selector";
@@ -241,7 +242,7 @@ function createSpotTokenInfo(
 				{address ? (
 					<>
 						<a
-							href={getExplorerTokenUrl(address)}
+							href={getExplorerTokenUrl(address, isTestnet())}
 							target="_blank"
 							rel="noopener noreferrer"
 							aria-label={labels.open}

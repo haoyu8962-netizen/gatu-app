@@ -295,7 +295,8 @@ pnpm --dir apps/terminal exec vitest run \
 pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/trades.test.ts \
   src/lib/tests/trades-panel.test.tsx \
-  src/lib/tests/trade-row.test.tsx
+  src/lib/tests/trade-row.test.tsx \
+  src/lib/tests/explorer-urls.test.ts
 
 # Number and date formatting
 pnpm --dir apps/terminal exec vitest run \

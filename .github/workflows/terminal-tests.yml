@@ -297,6 +297,7 @@ jobs:
           src/lib/tests/responsive-panel-layout.test.ts
           src/lib/tests/trade-row.test.tsx
           src/lib/tests/trades-panel.test.tsx
+          src/lib/tests/explorer-urls.test.ts
 
       - name: Test number format and runtime locale contracts
         working-directory: apps/terminal
