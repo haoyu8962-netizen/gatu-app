@@ -52,7 +52,9 @@ export type PositionSubmitFeedbackCode =
 	| "reconciling-close-orders"
 	| "reconciling-order"
 	| "size-precision-nonnegative"
-	| "trading-data-changed";
+	| "trading-data-changed"
+	| "trading-region-restricted"
+	| "trading-region-unverified";
 
 /**
  * What to show for a failed position action. Exchange rejection texts and other classified failures
@@ -107,6 +109,8 @@ const messages: Record<PositionSubmitFeedbackCode, MessageDescriptor> = {
 	"reconciling-order": msg`Order submitted. Confirming exchange status; do not retry.`,
 	"size-precision-nonnegative": msg`Size precision must be a non-negative integer`,
 	"trading-data-changed": msg`Trading data changed while this dialog was open. Close and reopen it before submitting.`,
+	"trading-region-restricted": msg`Trading is not available in your region`,
+	"trading-region-unverified": msg`Unable to verify regional availability. Trading is temporarily unavailable.`,
 };
 
 const partialCloseAllMessage = msg`{acceptedCount} of {totalCount} close orders were fully filled. Review positions before retrying.`;
@@ -315,5 +319,9 @@ function getDefaultPositionSubmitFeedbackMessage(feedback: PositionSubmitFeedbac
 			return "Size precision must be a non-negative integer";
 		case "trading-data-changed":
 			return "Trading data changed while this dialog was open. Close and reopen it before submitting.";
+		case "trading-region-restricted":
+			return "Trading is not available in your region";
+		case "trading-region-unverified":
+			return "Unable to verify regional availability. Trading is temporarily unavailable.";
 	}
 }

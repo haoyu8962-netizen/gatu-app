@@ -31,6 +31,7 @@ import {
 	PreTransferCheckExecutionError,
 } from "@/domain/trade/pre-transfer-check";
 import { getUsdcRoutingQueryStatus, getWithdrawalRoute } from "@/domain/trade/usdc-routing";
+import { getWithdrawDestinationIssue } from "@/domain/trade/withdraw-destination";
 import {
 	AccountAbstractionExecutionError,
 	useAccountAbstractionPreExecutionGuard,
@@ -558,12 +559,13 @@ export function DepositModal({ onSurfaceChange }: Props) {
 		canUseFundsActions && depositMode === "wallet" && visibleTab === "deposit" && walletProviderStatus === "error";
 	const requiresWithdrawDestination = isEmbeddedDeposit;
 	const normalizedWithdrawDestination = withdrawDestination.trim();
+	const withdrawDestinationIssue = requiresWithdrawDestination
+		? getWithdrawDestinationIssue(normalizedWithdrawDestination, [walletAddress, embeddedWalletAddress])
+		: null;
 	const isWithdrawDestinationValid =
-		!requiresWithdrawDestination || (!!normalizedWithdrawDestination && isAddress(normalizedWithdrawDestination));
-	const withdrawDestinationError =
-		requiresWithdrawDestination && normalizedWithdrawDestination && !isAddress(normalizedWithdrawDestination)
-			? t`Invalid destination address`
-			: null;
+		!requiresWithdrawDestination ||
+		(!!normalizedWithdrawDestination && isAddress(normalizedWithdrawDestination) && !withdrawDestinationIssue);
+	const withdrawDestinationError = getWithdrawDestinationError();
 	const withdrawalPrerequisitesPending =
 		isWithdrawalPreflighting ||
 		withdrawalRoutingStatus === "loading" ||
@@ -920,10 +922,26 @@ export function DepositModal({ onSurfaceChange }: Props) {
 		setDepositAmount(value);
 	}
 
+	function getWithdrawDestinationError(): string | null {
+		if (!requiresWithdrawDestination || !normalizedWithdrawDestination) return null;
+		if (!isAddress(normalizedWithdrawDestination)) return t`Invalid destination address`;
+		if (withdrawDestinationIssue === "self") {
+			return t`Withdrawing to yourself is not allowed because it would automatically trigger a deposit. Enter a different address.`;
+		}
+		if (withdrawDestinationIssue === "usdc-contract") return t`Cannot withdraw to the USDC contract address.`;
+		return null;
+	}
+
 	async function handleWithdrawSubmit() {
 		if (!canSubmitWithdraw || !walletAddress || withdrawalRouteFee === null) return;
 		const destination = requiresWithdrawDestination ? normalizedWithdrawDestination : walletAddress;
 		if (!isAddress(destination)) return;
+		if (
+			requiresWithdrawDestination &&
+			getWithdrawDestinationIssue(destination, [walletAddress, embeddedWalletAddress]) !== null
+		) {
+			return;
+		}
 		withdrawalRetryEpochRef.current += 1;
 
 		const attempt = beginWithdrawalPreflight();

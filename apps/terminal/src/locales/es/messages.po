@@ -760,6 +760,7 @@ msgstr "ALO (Add Liquidity Only)"
 #: src/components/staking/staking-view.tsx
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 #: src/components/trade/positions/send-modal.tsx
+#: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #: src/components/vaults/vault-action-modal.tsx
@@ -1152,6 +1153,7 @@ msgstr "Promedio {price}"
 #: src/components/trade/components/mobile-agent-qr-scanner.tsx
 #: src/components/trade/components/wallet-modal.tsx
 #: src/components/trade/positions/cancel-all-orders-modal.tsx
+#: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/tradebox/bridge/amount-entry-screen.tsx
 #: src/components/trade/tradebox/bridge/bridge-error-screen.tsx
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
@@ -1480,6 +1482,10 @@ msgstr "No se puede cambiar al modo aislado con una posición abierta"
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Cannot switch to Isolated mode with an open position. Close your position first."
 msgstr "No se puede cambiar al modo aislado con una posición abierta. Cierra tu posición primero."
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Cannot withdraw to the USDC contract address."
+msgstr "No se puede retirar a la dirección del contrato de USDC."
 
 #: src/components/trade/tradebox/deposit/deposit-method-chooser.tsx
 msgid "Card or bank transfer through a third-party payment provider. USDC arrives in your wallet on Arbitrum."
@@ -2037,6 +2043,7 @@ msgstr "Confirmar el borrado del registro ilegible"
 
 #: src/components/trade/components/establish-connection-modal.tsx
 #: src/components/trade/components/legal-acceptance-modal.tsx
+#: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
@@ -2808,6 +2815,7 @@ msgstr "Diseño de escritorio"
 msgid "Destination"
 msgstr "Destino"
 
+#: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
@@ -4126,6 +4134,10 @@ msgstr "Hyperliquid verifica las recompensas sin reclamar indicadas y abona las 
 #: src/components/referrals/referral-code-card.tsx
 msgid "Hyperliquid will unlock code creation when the required volume is confirmed."
 msgstr "Hyperliquid habilitará la creación del código cuando se confirme el volumen requerido."
+
+#: src/components/trade/positions/send-modal.tsx
+msgid "I am sending assets on the Hyperliquid blockchain, not withdrawing to another chain. Assets sent to a platform that does not support Hyperliquid will be lost."
+msgstr "Estoy enviando activos en la blockchain de Hyperliquid, no retirando a otra cadena. Los activos enviados a una plataforma que no admite Hyperliquid se perderán."
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
 msgid "I have read and agree to the {BRAND_NAME} <0>Terms of Use</0>, <1>Privacy Policy</1>, and the <2>Hyperliquid Terms of Use</2>."
@@ -7855,6 +7867,7 @@ msgstr "Vender corto"
 #: src/components/portfolio/portfolio-page.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/send-modal.tsx
+#: src/components/trade/positions/send-modal.tsx
 #: src/config/account-ledger.ts
 msgid "Send"
 msgstr "Enviar"
@@ -7886,6 +7899,10 @@ msgstr "Enviar tokens"
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #~ msgid "Send USDC to your wallet address below."
 #~ msgstr "Envía USDC a la dirección de tu billetera que aparece abajo."
+
+#: src/components/trade/positions/send-modal.tsx
+msgid "Send with Fee"
+msgstr "Enviar con comisión"
 
 #: src/components/trade/positions/send-modal.tsx
 #~ msgid "Sending..."
@@ -8989,6 +9006,10 @@ msgstr ""
 msgid "The desktop-approved key expired or was replaced from desktop. Scan a new QR from Link mobile device."
 msgstr ""
 
+#: src/components/trade/positions/send-modal.tsx
+msgid "The destination address has never sent a transaction on Hyperliquid. Do not use Send to transfer to an exchange or another platform that does not support the Hyperliquid blockchain, or your funds will be lost. To move USDC to Arbitrum, use Withdraw instead."
+msgstr "La dirección de destino nunca ha enviado una transacción en Hyperliquid. No uses Enviar para transferir a un exchange u otra plataforma que no admita la blockchain de Hyperliquid, o perderás tus fondos. Para mover USDC a Arbitrum, usa Retirar."
+
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "The exact name and public address are now present in fresh extraAgents data."
 msgstr "El nombre exacto y la dirección pública ya aparecen en los datos actualizados de extraAgents."
@@ -9773,6 +9794,10 @@ msgstr "Esta plataforma aún no permite activar el margen de cartera en nuevas c
 #~ msgid "This trading key is not the currently approved Mobile Agent. Create a new desktop QR."
 #~ msgstr "Esta clave de trading no es el Mobile Agent aprobado actualmente. Crea un nuevo QR de escritorio."
 
+#: src/components/trade/positions/send-modal.tsx
+msgid "This transfer will incur a one-time fee of {reviewFee} in a USD stablecoin to activate the destination account."
+msgstr "Esta transferencia tendrá una comisión única de {reviewFee} en una stablecoin en USD para activar la cuenta de destino."
+
 #: src/components/vaults/vault-detail-view.tsx
 msgid "This Vault is closed and no longer accepts deposits."
 msgstr "Esta bóveda está cerrada y ya no acepta depósitos."
@@ -10127,6 +10152,7 @@ msgstr ""
 
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/config/trade-panel-labels.ts
+#: src/lib/trade/position-submit-feedback.ts
 msgid "Trading is not available in your region"
 msgstr "El trading no está disponible en tu región"
 
@@ -10422,6 +10448,10 @@ msgstr "Interés abierto bilateral: suma de las posiciones largas y cortas de es
 msgid "Type"
 msgstr "Tipo"
 
+#: src/components/trade/positions/send-modal.tsx
+msgid "Unable to check the destination address. Nothing was sent."
+msgstr "No se pudo comprobar la dirección de destino. No se envió nada."
+
 #: src/lib/trade/order-submission-feedback.ts
 msgid "Unable to identify this TWAP market. Refresh market data before retrying."
 msgstr "No se pudo identificar este mercado TWAP. Actualiza los datos del mercado antes de volver a intentarlo."
@@ -10435,6 +10465,10 @@ msgstr "No se pudo cargar el saldo de USDC en Arbitrum"
 #: src/lib/trade/funds-action-feedback.ts
 msgid "Unable to load the current CCTP withdrawal fee."
 msgstr "No se pudo cargar la tarifa actual de retiro mediante CCTP."
+
+#: src/components/trade/positions/send-modal.tsx
+msgid "Unable to send funds to this address."
+msgstr "No se pueden enviar fondos a esta dirección."
 
 #. placeholder {0}: config.chainName
 #: src/lib/hyperliquid/use-deposit.ts
@@ -10476,6 +10510,7 @@ msgid "Unable to verify regional availability. This referral request was not sub
 msgstr "No se pudo verificar la disponibilidad regional. Esta solicitud de referido no se envió."
 
 #: src/lib/errors/action-error.ts
+#: src/lib/trade/position-submit-feedback.ts
 msgid "Unable to verify regional availability. Trading is temporarily unavailable."
 msgstr "No se pudo verificar la disponibilidad regional. El trading no está disponible temporalmente."
 
@@ -11303,6 +11338,10 @@ msgstr "Retiro desbloqueado"
 #: src/lib/trade/funds-action-feedback.ts
 msgid "Withdrawals are unavailable for this address."
 msgstr "Los retiros no están disponibles para esta dirección."
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Withdrawing to yourself is not allowed because it would automatically trigger a deposit. Enter a different address."
+msgstr "No se permite retirar a tu propia dirección porque activaría automáticamente un depósito. Introduce otra dirección."
 
 #: src/components/earn/earn-action-modal.tsx
 msgid "Withdraws your entire {token} supply at the moment it executes, including accrued interest."

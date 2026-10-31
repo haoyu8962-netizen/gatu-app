@@ -39,6 +39,7 @@ interface Props {
 	onMarketClose: (data: PositionMarketCloseRef) => void;
 	onShare: (data: PositionPnlShareData) => void;
 	onReverse: (data: PositionReverseRef) => void;
+	reverseBlocked: boolean;
 	onLimitClose: (data: LimitClosePositionData) => void;
 	onOpenTpSl: (data: TpSlPositionRef) => void;
 	onAdjustMargin: (data: IsolatedMarginPositionRef) => void;
@@ -93,6 +94,7 @@ export function MobilePositionCard({
 	onMarketClose,
 	onShare,
 	onReverse,
+	reverseBlocked,
 	onLimitClose,
 	onOpenTpSl,
 	onAdjustMargin,
@@ -138,7 +140,11 @@ export function MobilePositionCard({
 
 	const canClose = (sizeValue?.abs().gt(0) ?? false) && typeof assetId === "number";
 	const canReverse =
-		(sizeValue?.abs().gt(0) ?? false) && typeof assetId === "number" && market !== undefined && market.kind !== "spot";
+		!reverseBlocked &&
+		(sizeValue?.abs().gt(0) ?? false) &&
+		typeof assetId === "number" &&
+		market !== undefined &&
+		market.kind !== "spot";
 	const canShare =
 		!isDataStale &&
 		hasFreshMark &&

@@ -8,12 +8,16 @@ export type SpotSwapExecutionErrorReason =
 	| "balance-changed"
 	| "balance-unavailable"
 	| "quote-changed"
+	| "region-restricted"
+	| "region-unverified"
 	| "swap-data-unavailable";
 
 const SPOT_SWAP_EXECUTION_ERROR_MESSAGES: Record<SpotSwapExecutionErrorReason, string> = {
 	"balance-changed": "Spot balance changed before submission",
 	"balance-unavailable": "Live swap balance is unavailable",
 	"quote-changed": "Swap quote changed before submission",
+	"region-restricted": "Trading is not available in this region",
+	"region-unverified": "Regional availability could not be verified",
 	"swap-data-unavailable": "Live swap data is unavailable",
 };
 
@@ -27,6 +31,9 @@ export class SpotSwapExecutionError extends Error {
 export interface SpotSwapExecutionState {
 	active: boolean;
 	accountDataReady: boolean;
+	/** The live regional check, read again at the SDK boundary because the click may wait for locks. */
+	tradeRestricted: boolean;
+	tradingActionsBlocked: boolean;
 	assetId: number | undefined;
 	marketName: string | undefined;
 	bookCoin: string | undefined;
@@ -46,6 +53,8 @@ export function assertSpotSwapExecutionAllowed(
 ): void {
 	const bookAge = state.bookReceivedAt === undefined ? Number.POSITIVE_INFINITY : now - state.bookReceivedAt;
 	const balanceAge = state.balanceReceivedAt === undefined ? Number.POSITIVE_INFINITY : now - state.balanceReceivedAt;
+	if (state.tradeRestricted) throw new SpotSwapExecutionError("region-restricted");
+	if (state.tradingActionsBlocked) throw new SpotSwapExecutionError("region-unverified");
 	if (
 		!state.active ||
 		!state.accountDataReady ||

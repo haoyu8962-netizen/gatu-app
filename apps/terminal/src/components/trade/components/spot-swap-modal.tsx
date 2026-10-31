@@ -6,6 +6,7 @@ import { labelTypographyClass } from "@/components/ui/field-label";
 import { NumberInput } from "@/components/ui/number-input";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import { ORDER_MIN_NOTIONAL_USD } from "@/config/trade";
+import { TRADE_PANEL_LABELS } from "@/config/trade-panel-labels";
 import { getSpotAvailable, getSpotAvailableValue, getSpotBalance } from "@/domain/trade/balances";
 import { getCloseOrderFeedbackChildren } from "@/domain/trade/close-order-feedback";
 import { formatPriceForOrder, formatSizeForOrder, throwIfAnyResponseError } from "@/domain/trade/orders";
@@ -27,6 +28,7 @@ import {
 import { isSupportedAccountAbstraction, useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
 import { useFeeRates } from "@/hooks/trade/use-fee-rates";
 import { useTrackedOrder } from "@/hooks/trade/use-tracked-order";
+import { useGeoRestriction } from "@/hooks/use-geo-restriction";
 import { cn } from "@/lib/cn";
 import { useNumberFormat } from "@/lib/format";
 import { type ExchangeParams, useHyperliquid, useSubscription } from "@/lib/hyperliquid";
@@ -79,6 +81,7 @@ interface Props {
 
 function SpotSwapModalContent({ initialFromToken, initialToToken, mode, onClose }: Props) {
 	const { t } = useLingui();
+	const { actionsBlocked: tradingActionsBlocked, tradeRestricted } = useGeoRestriction();
 	const { formatToken } = useNumberFormat();
 	const { spotMarkets } = useMarketsInfo();
 	const {
@@ -198,6 +201,8 @@ function SpotSwapModalContent({ initialFromToken, initialToToken, mode, onClose 
 	const executionStateRef = useRef<SpotSwapExecutionState>({
 		active: true,
 		accountDataReady,
+		tradeRestricted,
+		tradingActionsBlocked,
 		assetId: spotMarket?.assetId,
 		marketName: spotMarket?.name,
 		bookCoin: orderbook?.coin,
@@ -214,6 +219,8 @@ function SpotSwapModalContent({ initialFromToken, initialToToken, mode, onClose 
 	executionStateRef.current = {
 		active: true,
 		accountDataReady,
+		tradeRestricted,
+		tradingActionsBlocked,
 		assetId: spotMarket?.assetId,
 		marketName: spotMarket?.name,
 		bookCoin: orderbook?.coin,
@@ -286,7 +293,7 @@ function SpotSwapModalContent({ initialFromToken, initialToToken, mode, onClose 
 	}
 
 	async function handleSubmit() {
-		if (!isOpen || !accountDataReady || !spotMarket || !quote || !expectedOrder) return;
+		if (tradingActionsBlocked || !isOpen || !accountDataReady || !spotMarket || !quote || !expectedOrder) return;
 		if (isSubmitting || submittedRef.current) return;
 		const submissionSequence = ++submissionSequenceRef.current;
 		const submissionIdentity = executionSessionIdentityRef.current;
@@ -354,6 +361,7 @@ function SpotSwapModalContent({ initialFromToken, initialToToken, mode, onClose 
 	const belowMinimumNotional = Boolean(quote?.isBelowMinimumNotional);
 	const partialFill = Boolean(quote?.isPartial);
 	const canSubmit =
+		!tradingActionsBlocked &&
 		accountDataReady &&
 		hasPositiveAmount &&
 		!insufficientBalance &&
@@ -498,6 +506,13 @@ function SpotSwapModalContent({ initialFromToken, initialToToken, mode, onClose 
 								</span>
 								<span className="tabular-nums text-fg">{DEFAULT_SWAP_SLIPPAGE_PERCENT}%</span>
 							</div>
+						</div>
+					)}
+
+					{tradeRestricted && (
+						<div className="flex items-start gap-2 rounded-16 border border-stroke-warning-weak bg-warning-soft p-2.5">
+							<WarningIcon className="mt-0.5 size-3.5 shrink-0 text-icon-warning" />
+							<p className="text-xs text-warning">{t(TRADE_PANEL_LABELS.regionRestricted)}</p>
 						</div>
 					)}
 

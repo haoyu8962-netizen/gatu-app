@@ -35,6 +35,7 @@ vi.mock("@/hooks/wallet/use-wallet-session", () => ({
 	useWalletSession: () => ({ isConnected: state.connected, address: "0x1111111111111111111111111111111111111111" }),
 }));
 vi.mock("@/hooks/trade/use-market-navigation", () => ({ useMarketNavigation: () => vi.fn() }));
+vi.mock("@/hooks/use-geo-restriction", () => ({ useGeoRestriction: () => ({ actionsBlocked: false }) }));
 vi.mock("@/hooks/trade/use-position-market-close-action", () => ({
 	usePositionMarketCloseAction: () => ({ open: vi.fn() }),
 }));

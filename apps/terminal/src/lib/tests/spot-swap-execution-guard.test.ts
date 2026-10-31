@@ -19,6 +19,8 @@ function state(overrides: Partial<SpotSwapExecutionState> = {}): SpotSwapExecuti
 	return {
 		active: true,
 		accountDataReady: true,
+		tradeRestricted: false,
+		tradingActionsBlocked: false,
 		assetId: 10_001,
 		marketName: "PURR/USDC",
 		bookCoin: "PURR/USDC",

@@ -16,6 +16,7 @@ import {
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { usePositionCloseAllAction } from "@/hooks/trade/use-position-close-all-action";
 import { usePositionMarketCloseAction } from "@/hooks/trade/use-position-market-close-action";
+import { useGeoRestriction } from "@/hooks/use-geo-restriction";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import {
@@ -81,6 +82,7 @@ export function MobilePositionsTab({ scrollMode = "contained", disclosureState }
 		setActiveTab("trade");
 	}
 	const { openIsolatedMargin, openLimitClose, openReverse, openTpSl } = usePositionDialogActions();
+	const tradingActionsBlocked = useGeoRestriction().actionsBlocked;
 	const [selectedPnlShare, setSelectedPnlShare] = useState<OwnedPositionPnlShare | null>(null);
 	const [positionFilters, setPositionFilters] = useState<PositionFiltersState>({
 		ownerKey,
@@ -187,6 +189,7 @@ export function MobilePositionsTab({ scrollMode = "contained", disclosureState }
 	);
 
 	function handleReverse(data: PositionReverseRef) {
+		if (tradingActionsBlocked) return;
 		if (!address) return;
 		openReverse({ ...data, owner: address.toLowerCase(), env });
 	}
@@ -326,6 +329,7 @@ export function MobilePositionsTab({ scrollMode = "contained", disclosureState }
 								onMarketClose={handleOpenMarketClose}
 								onShare={handleOpenPnlShare}
 								onReverse={handleReverse}
+								reverseBlocked={tradingActionsBlocked}
 								onLimitClose={handleOpenLimitCloseModal}
 								onOpenTpSl={handleOpenTpSlModal}
 								onAdjustMargin={handleOpenIsolatedMarginModal}

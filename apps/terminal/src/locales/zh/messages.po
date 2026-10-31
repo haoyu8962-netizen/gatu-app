@@ -760,6 +760,7 @@ msgstr "ALO（仅添加流动性）"
 #: src/components/staking/staking-view.tsx
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 #: src/components/trade/positions/send-modal.tsx
+#: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #: src/components/vaults/vault-action-modal.tsx
@@ -1152,6 +1153,7 @@ msgstr "均价 {price}"
 #: src/components/trade/components/mobile-agent-qr-scanner.tsx
 #: src/components/trade/components/wallet-modal.tsx
 #: src/components/trade/positions/cancel-all-orders-modal.tsx
+#: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/tradebox/bridge/amount-entry-screen.tsx
 #: src/components/trade/tradebox/bridge/bridge-error-screen.tsx
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
@@ -1480,6 +1482,10 @@ msgstr "持有仓位时无法切换到逐仓模式"
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Cannot switch to Isolated mode with an open position. Close your position first."
 msgstr "持有仓位时无法切换到逐仓模式。请先平仓。"
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Cannot withdraw to the USDC contract address."
+msgstr "不能提款到 USDC 合约地址。"
 
 #: src/components/trade/tradebox/deposit/deposit-method-chooser.tsx
 msgid "Card or bank transfer through a third-party payment provider. USDC arrives in your wallet on Arbitrum."
@@ -2037,6 +2043,7 @@ msgstr "确认清除不可读记录"
 
 #: src/components/trade/components/establish-connection-modal.tsx
 #: src/components/trade/components/legal-acceptance-modal.tsx
+#: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
@@ -2808,6 +2815,7 @@ msgstr "桌面布局"
 msgid "Destination"
 msgstr "目标"
 
+#: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
@@ -4126,6 +4134,10 @@ msgstr "Hyperliquid 会核验列出的未领取奖励，并将符合条件的奖
 #: src/components/referrals/referral-code-card.tsx
 msgid "Hyperliquid will unlock code creation when the required volume is confirmed."
 msgstr "Hyperliquid 确认达到所需成交量后，将解锁推荐码创建功能。"
+
+#: src/components/trade/positions/send-modal.tsx
+msgid "I am sending assets on the Hyperliquid blockchain, not withdrawing to another chain. Assets sent to a platform that does not support Hyperliquid will be lost."
+msgstr "我是在 Hyperliquid 区块链上发送资产，而不是提款到其他链。发送到不支持 Hyperliquid 的平台的资产将会丢失。"
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
 msgid "I have read and agree to the {BRAND_NAME} <0>Terms of Use</0>, <1>Privacy Policy</1>, and the <2>Hyperliquid Terms of Use</2>."
@@ -7855,6 +7867,7 @@ msgstr "卖出做空"
 #: src/components/portfolio/portfolio-page.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/send-modal.tsx
+#: src/components/trade/positions/send-modal.tsx
 #: src/config/account-ledger.ts
 msgid "Send"
 msgstr "发送"
@@ -7886,6 +7899,10 @@ msgstr "发送代币"
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #~ msgid "Send USDC to your wallet address below."
 #~ msgstr "将 USDC 转入下方的钱包地址。"
+
+#: src/components/trade/positions/send-modal.tsx
+msgid "Send with Fee"
+msgstr "支付费用并发送"
 
 #: src/components/trade/positions/send-modal.tsx
 #~ msgid "Sending..."
@@ -8989,6 +9006,10 @@ msgstr "桌面尚未授权此密钥。请在桌面重新生成二维码。"
 msgid "The desktop-approved key expired or was replaced from desktop. Scan a new QR from Link mobile device."
 msgstr "桌面授权的密钥已过期或已在电脑端被替换。请在“关联移动设备”中扫描新的二维码。"
 
+#: src/components/trade/positions/send-modal.tsx
+msgid "The destination address has never sent a transaction on Hyperliquid. Do not use Send to transfer to an exchange or another platform that does not support the Hyperliquid blockchain, or your funds will be lost. To move USDC to Arbitrum, use Withdraw instead."
+msgstr "目标地址从未在 Hyperliquid 上发送过交易。不要用「发送」转到交易所或其他不支持 Hyperliquid 区块链的平台，否则资金将会丢失。要把 USDC 转到 Arbitrum，请改用「提款」。"
+
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "The exact name and public address are now present in fresh extraAgents data."
 msgstr "最新的 extraAgents 数据中已出现完全匹配的名称和公开地址。"
@@ -9773,6 +9794,10 @@ msgstr "本终端暂未开放投资组合保证金的新开通。已开通账户
 #~ msgid "This trading key is not the currently approved Mobile Agent. Create a new desktop QR."
 #~ msgstr "此交易密钥不是当前获批的移动交易密钥。请创建新的桌面二维码。"
 
+#: src/components/trade/positions/send-modal.tsx
+msgid "This transfer will incur a one-time fee of {reviewFee} in a USD stablecoin to activate the destination account."
+msgstr "本次转账将收取一次性的 {reviewFee} 美元稳定币费用，用于激活目标账户。"
+
 #: src/components/vaults/vault-detail-view.tsx
 msgid "This Vault is closed and no longer accepts deposits."
 msgstr "此金库已关闭，不再接受存款。"
@@ -10127,6 +10152,7 @@ msgstr "此账户尚未激活交易。请先在这台电脑上存款并下第一
 
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/config/trade-panel-labels.ts
+#: src/lib/trade/position-submit-feedback.ts
 msgid "Trading is not available in your region"
 msgstr "您所在的地区暂不支持交易"
 
@@ -10422,6 +10448,10 @@ msgstr "双边开放利益：该合约上的多头和空头头寸之和。"
 msgid "Type"
 msgstr "类型"
 
+#: src/components/trade/positions/send-modal.tsx
+msgid "Unable to check the destination address. Nothing was sent."
+msgstr "无法检查目标地址，未发送任何资产。"
+
 #: src/lib/trade/order-submission-feedback.ts
 msgid "Unable to identify this TWAP market. Refresh market data before retrying."
 msgstr "无法识别该 TWAP 市场。请刷新市场数据后重试。"
@@ -10435,6 +10465,10 @@ msgstr "无法加载 Arbitrum USDC 余额"
 #: src/lib/trade/funds-action-feedback.ts
 msgid "Unable to load the current CCTP withdrawal fee."
 msgstr "无法加载当前的 CCTP 提款手续费。"
+
+#: src/components/trade/positions/send-modal.tsx
+msgid "Unable to send funds to this address."
+msgstr "无法向此地址发送资金。"
 
 #. placeholder {0}: config.chainName
 #: src/lib/hyperliquid/use-deposit.ts
@@ -10476,6 +10510,7 @@ msgid "Unable to verify regional availability. This referral request was not sub
 msgstr "无法验证地区可用性。本次推荐请求未提交。"
 
 #: src/lib/errors/action-error.ts
+#: src/lib/trade/position-submit-feedback.ts
 msgid "Unable to verify regional availability. Trading is temporarily unavailable."
 msgstr "无法验证地区可用性，交易暂时不可用。"
 
@@ -11303,6 +11338,10 @@ msgstr "提款已解锁"
 #: src/lib/trade/funds-action-feedback.ts
 msgid "Withdrawals are unavailable for this address."
 msgstr "此地址不支持提款。"
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Withdrawing to yourself is not allowed because it would automatically trigger a deposit. Enter a different address."
+msgstr "不能提款到自己的地址，因为这会自动触发一次存款。请输入其他地址。"
 
 #: src/components/earn/earn-action-modal.tsx
 msgid "Withdraws your entire {token} supply at the moment it executes, including accrued interest."
