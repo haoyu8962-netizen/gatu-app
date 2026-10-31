@@ -391,6 +391,30 @@ describe("funds action balance wiring", () => {
 		},
 	);
 
+	it.each(["spot", "perp"] as const)(
+		"keeps Send Max and the over-balance check exact from the %s account",
+		(accountType) => {
+			testState.balances.withdrawable = "1000000000000000.999999";
+			testState.balances.spotBalances[0].total = "1000000000000001.000001";
+			testState.balances.spotBalances[0].hold = "0.000002";
+			act(() =>
+				root.render(createElement(SendModal, { initialAccountType: accountType, onOpenChange: vi.fn(), open: true })),
+			);
+
+			expect(container.querySelector('[data-testid="available-balance"] span')?.textContent).toBe(
+				"1,000,000,000,000,000.99 USDC",
+			);
+			const destinationInput = container.querySelector<HTMLInputElement>('input[placeholder="Destination address"]');
+			if (!destinationInput) throw new Error("Destination input not found");
+			act(() => setInputValue(destinationInput, "0x2222222222222222222222222222222222222222"));
+			clickAvailableBalance(container);
+			expect(getAmountInput(container).value).toBe("1000000000000000.99");
+			expect(getButton(container, "Send").disabled).toBe(false);
+			act(() => setInputValue(getAmountInput(container), "1000000000000001"));
+			expect(getButton(container, "Send").disabled).toBe(true);
+		},
+	);
+
 	it("writes available balances with the number-format separators while Max fills the protocol amount", () => {
 		act(() =>
 			root.render(createElement(TransferModal, { initialDirection: "toPerp", onOpenChange: vi.fn(), open: true })),

@@ -21,7 +21,6 @@ import { exceedsBalance, getTokenTransferDecimals, isAmountWithinBalance } from 
 import { getAccountModeAvailability } from "@/domain/trade/account-abstraction";
 import {
 	type BalanceRow,
-	getAccountBalanceSummary,
 	getSpotTransferable,
 	getSpotTransferableValue,
 	isQuoteBalanceSharedWithPerps,
@@ -146,10 +145,7 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 
 	const { getToken } = useSpotTokens();
 	const {
-		marginSummary,
-		perpSummary,
 		spotBalances,
-		spotAvailableAfterMaintenance,
 		accountAbstraction,
 		withdrawable,
 		spotStateStatus,
@@ -300,14 +296,6 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 	const isPending = isSendAssetPending || isSpotSendPending;
 	const draftLocked = isPending || isCheckingDestination;
 	const accountModeReady = isSupportedAccountAbstraction(accountAbstraction);
-	const accountSummary = getAccountBalanceSummary({
-		accountAbstraction,
-		marginSummary,
-		perpSummary,
-		withdrawable,
-		spotBalances,
-		spotAvailableAfterMaintenance,
-	});
 	const usesTradingAccount = isQuoteBalanceSharedWithPerps(accountAbstraction);
 	const activeAccountType = usesTradingAccount ? "spot" : accountType;
 	const draftRef = useRef<SendDraft>({ destination, amount, token: selectedToken, accountType: activeAccountType });
@@ -346,12 +334,6 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 	const decimals = getTokenTransferDecimals(tokenInfo);
 
 	const selectedSpotBalance = spotBalances?.find((balance) => balance.coin === selectedToken);
-	const availableBalance =
-		!accountModeReady || !accountDataReady
-			? 0
-			: activeAccountType === "perp"
-				? accountSummary.withdrawable
-				: getSpotTransferable(selectedSpotBalance);
 	const availableBalanceExact =
 		!accountModeReady || !accountDataReady
 			? "0"
@@ -367,7 +349,7 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 
 	const isValidDestination = isAddress(destination);
 	const destinationError = destination && !isValidDestination ? t`Enter a valid Ethereum address.` : undefined;
-	const isValidAmount = isAmountWithinBalance(amount, availableBalance);
+	const isValidAmount = isAmountWithinBalance(amount, availableBalanceExact);
 	const canSend =
 		sendAvailability.available &&
 		accountModeReady &&
@@ -415,7 +397,7 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 
 	function handleMaxClick() {
 		if (!accountDataReady || draftLocked) return;
-		setAmount(floorToString(availableBalance, decimals));
+		setAmount(floorToString(availableBalanceExact, decimals));
 	}
 
 	function getReviewConfirmLabel(): string {
@@ -697,7 +679,7 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 									{t`Available`}:{" "}
 									<span className="underline decoration-dashed underline-offset-2 decoration-fg-muted/50">
 										{accountModeReady && accountDataReady
-											? `${formatDecimalString(floorToString(availableBalance, decimals))} ${selectedToken}`
+											? `${formatDecimalString(floorToString(availableBalanceExact, decimals))} ${selectedToken}`
 											: "—"}
 									</span>
 								</>
@@ -711,7 +693,7 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 							className={cn(
 								"w-full tabular-nums max-[1000px]:h-11",
 								accountDataReady &&
-									exceedsBalance(amount, availableBalance) &&
+									exceedsBalance(amount, availableBalanceExact) &&
 									"border-stroke-error-strong focus:border-stroke-error-strong",
 							)}
 						/>
