@@ -257,7 +257,8 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/funds-action-availability.test.ts \
   src/lib/tests/user-positions-readiness.test.tsx \
   src/lib/tests/deposit-empty-balances-entry.test.tsx \
-  src/lib/tests/mobile-account-view.test.tsx
+  src/lib/tests/mobile-account-view.test.tsx \
+  src/lib/tests/portfolio-overview.test.tsx
 
 # Trading terminal visual contract
 pnpm --dir apps/terminal exec vitest run \

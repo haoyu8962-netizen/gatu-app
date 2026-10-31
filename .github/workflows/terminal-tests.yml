@@ -444,6 +444,7 @@ jobs:
           src/lib/tests/balances.test.ts
           src/lib/tests/spot-token-usd-price-state.test.tsx
           src/lib/tests/portfolio.test.ts
+          src/lib/tests/portfolio-overview.test.tsx
 
       # `pnpm test:brand` in the Website and Brand workflow also runs these, but that workflow
       # only starts when the website or a brand asset changes. Terminal changes are covered here.
