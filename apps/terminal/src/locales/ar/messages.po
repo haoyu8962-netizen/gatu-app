@@ -1434,6 +1434,10 @@ msgstr "إلغاء الأوامر المحددة"
 msgid "Canceled"
 msgstr "ملغي"
 
+#: src/lib/trade/order-notification-copy.ts
+msgid "Canceled {accepted}/{total} · Review orders"
+msgstr "تم إلغاء {accepted}/{total} · راجع الأوامر"
+
 #: src/lib/trade/order-status-reasons.ts
 msgid "Canceled because the asset was delisted"
 msgstr "أُلغي لأن الأصل أُزيل من الإدراج"

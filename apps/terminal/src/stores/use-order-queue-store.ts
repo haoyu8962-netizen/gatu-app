@@ -31,7 +31,7 @@ export interface OrderQueueMetadata {
 	tpPrice?: string;
 	slPrice?: string;
 	children?: OrderQueueChild[];
-	countMode?: "accepted" | "filled";
+	countMode?: "accepted" | "filled" | "canceled";
 }
 
 export interface OrderQueueItem extends OrderQueueMetadata {

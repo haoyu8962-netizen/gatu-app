@@ -639,6 +639,9 @@ changes, not evidence that a build has been deployed or accepted on real devices
   that is partly filled before the open-orders list confirms it is still reported as modified.
   Reduce-only Stop and Take Profit orders can change their size and trigger price, as on the official
   terminal; a trigger order that can open a position still has to be cancelled and placed again.
+- Canceling several orders when only some of them can be canceled now reports Canceled n/total with
+  the exchange's reason for each failure, as the official terminal does, instead of reporting the whole
+  batch as failed; the canceled orders leave the selection and the others can be retried at once.
 - Order history no longer turns blank, and its CSV export no longer fails, when it holds a Trailing
   Stop order placed on the official terminal: the type reads Trailing Stop, its trigger condition shows
   the activation or trigger price with the retracement as the official terminal does, any other new

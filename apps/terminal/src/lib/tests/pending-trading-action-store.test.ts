@@ -126,6 +126,20 @@ describe("pending trading action store", () => {
 		).not.toBeNull();
 	});
 
+	it("narrows a cancellation to its canceled orders and releases the rest", () => {
+		const actions = getPendingTradingActionActions();
+		const cancellation = actions.claimOrderCancellation({ env: "Mainnet", owner: OWNER, oids: [1, 2, 3] });
+		const other = actions.claimOrderCancellation({ env: "Mainnet", owner: OWNER, oids: [4] });
+		expect(cancellation && other).toBeTruthy();
+
+		actions.narrowOrderCancellation(cancellation?.id ?? "", [3, 1, 9]);
+		expect(getPendingTradingActionSnapshot().orderCancellations.map((action) => action.oids)).toEqual([[1, 3], [4]]);
+		expect(actions.claimOrderCancellation({ env: "Mainnet", owner: OWNER, oids: [2] })).not.toBeNull();
+
+		actions.narrowOrderCancellation(other?.id ?? "", []);
+		expect(getPendingTradingActionSnapshot().orderCancellations.map((action) => action.id)).not.toContain(other?.id);
+	});
+
 	it("expires only a currently awaiting action and reports whether the transition occurred", () => {
 		const actions = getPendingTradingActionActions();
 		const modification = actions.claimModification({

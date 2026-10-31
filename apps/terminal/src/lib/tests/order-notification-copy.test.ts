@@ -132,6 +132,11 @@ describe("compact order notification copy", () => {
 			}),
 		).toMatchObject({ summary: "Partially filled 0.5 / 1.25 HYPE", detail: "Avg. $101.125", count: undefined });
 	});
+	it("counts a partly accepted cancel batch as canceled orders", () => {
+		expect(copy({ status: "partial", acceptedCount: 1, totalCount: 2, countMode: "canceled" }).count).toBe(
+			"Canceled 1/2 · Review orders",
+		);
+	});
 	it("states the official TP/SL rule only for partial fills that carried TP/SL", () => {
 		const partial = { ...execution, filledSize: "0.5", completeness: "partial" as const };
 		const notice =

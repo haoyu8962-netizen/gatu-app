@@ -1434,6 +1434,10 @@ msgstr "Cancelar órdenes seleccionadas"
 msgid "Canceled"
 msgstr "Cancelada"
 
+#: src/lib/trade/order-notification-copy.ts
+msgid "Canceled {accepted}/{total} · Review orders"
+msgstr "Canceladas {accepted}/{total} · Revisa las órdenes"
+
 #: src/lib/trade/order-status-reasons.ts
 msgid "Canceled because the asset was delisted"
 msgstr "Cancelada porque el activo fue retirado de la lista"

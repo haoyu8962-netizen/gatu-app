@@ -15,7 +15,11 @@ import {
 	validateCancelAllConfirmationSnapshot,
 } from "@/domain/trade/cancel-all-orders-confirmation";
 import { isLiveMarkPriceReady } from "@/domain/trade/market-price";
-import { buildOpenOrderCancelActions, isConfirmedOpenOrderCancelResponse } from "@/domain/trade/open-order-cancel";
+import {
+	buildOpenOrderCancelActions,
+	getPartialOpenOrderCancel,
+	isConfirmedOpenOrderCancelResponse,
+} from "@/domain/trade/open-order-cancel";
 import {
 	getOpenOrderModifyCapabilities,
 	type OpenOrderModifyBlockReason,
@@ -55,6 +59,7 @@ import {
 import { isClosePositionOrder, isMarketTriggerOrder, type OpenOrder } from "@/lib/trade/open-orders";
 import {
 	ensurePendingTradingActionFeedback,
+	settlePartialOrderCancellation,
 	syncPendingTradingActionFeedback,
 	updatePendingTradingActionFeedback,
 } from "@/lib/trade/pending-trading-action-feedback";
@@ -924,7 +929,14 @@ export function MobileOrdersTab({ className, disclosureState, scrollMode = "cont
 			syncPendingTradingActionFeedback({ ...feedbackIdentity, phase: "awaiting" }, "cancel");
 			if (!mountedRef.current || !isCancelExecutionCurrent(execution)) return;
 		} catch (cause) {
-			if (execution.guardPasses >= 2 && isAmbiguousExchangeRequestError(cause)) {
+			const partialCancel = getPartialOpenOrderCancel(cause, execution.params.cancels.length);
+			if (partialCancel) {
+				settlePartialOrderCancellation(
+					feedbackIdentity,
+					execution.orders.map((order) => order.oid),
+					partialCancel,
+				);
+			} else if (execution.guardPasses >= 2 && isAmbiguousExchangeRequestError(cause)) {
 				getPendingTradingActionActions().markOrderCancellationUnconfirmed(execution.actionId);
 				syncPendingTradingActionFeedback({ ...feedbackIdentity, phase: "unconfirmed" }, "cancel");
 				if (mountedRef.current && isCancelExecutionCurrent(execution)) {

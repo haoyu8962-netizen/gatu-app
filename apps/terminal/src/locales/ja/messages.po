@@ -1299,6 +1299,10 @@ msgstr "選択した注文をキャンセル"
 msgid "Canceled"
 msgstr "キャンセル済み"
 
+#: src/lib/trade/order-notification-copy.ts
+msgid "Canceled {accepted}/{total} · Review orders"
+msgstr "キャンセル済み {accepted}/{total} · 注文を確認"
+
 #: src/lib/trade/order-status-reasons.ts
 msgid "Canceled because the asset was delisted"
 msgstr "資産の上場廃止によりキャンセルされました"

@@ -6,6 +6,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { OrderReconciliation } from "@/components/trade/order-reconciliation";
 import { ORDER_RECONCILIATION_CONFIRMATION_WINDOW_MS, type OrderProcessingStatus } from "@/domain/trade/order-tracking";
+import { settlePartialOrderCancellation } from "@/lib/trade/pending-trading-action-feedback";
 import {
 	getPositionMarketCloseActions,
 	getPositionMarketCloseModal,
@@ -1207,6 +1208,37 @@ describe("OrderReconciliation", () => {
 		expectActionFeedback(modification.id, "canceled", "The modified order was canceled.");
 		act(() => root.render(createReconciliation()));
 		expect(mocks.successToast).not.toHaveBeenCalled();
+	});
+
+	it("keeps a partly accepted cancel batch partial once live data confirms its canceled order", () => {
+		const now = Date.now();
+		const monotonicNow = performance.now();
+		const cancellation = getPendingTradingActionActions().claimOrderCancellation({
+			env: "Mainnet",
+			owner: USER,
+			oids: [70, 71],
+		});
+		if (!cancellation) throw new Error("Expected cancellation claim");
+		getPendingTradingActionActions().markOrderCancellationRequestStarted(cancellation.id, now - 2, monotonicNow - 2);
+		settlePartialOrderCancellation(cancellation, [70, 71], {
+			status: "partial",
+			totalCount: 2,
+			acceptedIndexes: [0],
+			errors: [{ index: 1, text: "Order was never placed, already canceled, or filled." }],
+		});
+		mocks.openOrdersData = { orders: [{ oid: 71, sz: "1", triggerPx: "0" }] };
+		mocks.openOrdersLastMessageAt = Date.now() + 1;
+		mocks.openOrdersMonotonicLastMessageAt = performance.now() + 1;
+
+		act(() => root.render(createReconciliation()));
+
+		expect(getPendingTradingActionSnapshot().orderCancellations).toEqual([]);
+		expect(getOrderQueueItem(`pending-trading-action:${cancellation.id}`)).toMatchObject({
+			status: "partial",
+			acceptedCount: 1,
+			totalCount: 2,
+			countMode: "canceled",
+		});
 	});
 
 	it("replaces a persistent cancellation timeout with one finite confirmed notification", () => {

@@ -27,7 +27,11 @@ import {
 	validateCancelAllConfirmationSnapshot,
 } from "@/domain/trade/cancel-all-orders-confirmation";
 import { isLiveMarkPriceReady } from "@/domain/trade/market-price";
-import { buildOpenOrderCancelActions, isConfirmedOpenOrderCancelResponse } from "@/domain/trade/open-order-cancel";
+import {
+	buildOpenOrderCancelActions,
+	getPartialOpenOrderCancel,
+	isConfirmedOpenOrderCancelResponse,
+} from "@/domain/trade/open-order-cancel";
 import {
 	buildOpenOrderModifyPlan,
 	createOpenOrderModifyTarget,
@@ -72,6 +76,7 @@ import {
 } from "@/lib/trade/open-orders";
 import {
 	ensurePendingTradingActionFeedback,
+	settlePartialOrderCancellation,
 	syncPendingTradingActionFeedback,
 	updatePendingTradingActionFeedback,
 } from "@/lib/trade/pending-trading-action-feedback";
@@ -788,7 +793,21 @@ export function OrdersTab({ toolbarTarget }: Props = {}) {
 				return next;
 			});
 		} catch (cause) {
-			if (execution.guardPasses >= 2 && isAmbiguousExchangeRequestError(cause)) {
+			const partialCancel = getPartialOpenOrderCancel(cause, execution.params.cancels.length);
+			if (partialCancel) {
+				const canceledOids = settlePartialOrderCancellation(
+					feedbackIdentity,
+					execution.orders.map((order) => order.oid),
+					partialCancel,
+				);
+				if (mountedRef.current && isCancelExecutionCurrent(execution)) {
+					setSelectedOrderIds((prev) => {
+						const next = new Set(prev);
+						for (const oid of canceledOids) next.delete(oid);
+						return next;
+					});
+				}
+			} else if (execution.guardPasses >= 2 && isAmbiguousExchangeRequestError(cause)) {
 				getPendingTradingActionActions().markOrderCancellationUnconfirmed(execution.actionId);
 				syncPendingTradingActionFeedback({ ...feedbackIdentity, phase: "unconfirmed" }, "cancel");
 				if (mountedRef.current && isCancelExecutionCurrent(execution)) {

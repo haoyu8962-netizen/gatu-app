@@ -1434,6 +1434,10 @@ msgstr "取消选中的订单"
 msgid "Canceled"
 msgstr "已取消"
 
+#: src/lib/trade/order-notification-copy.ts
+msgid "Canceled {accepted}/{total} · Review orders"
+msgstr "已取消 {accepted}/{total} · 请核对委托"
+
 #: src/lib/trade/order-status-reasons.ts
 msgid "Canceled because the asset was delisted"
 msgstr "因资产下架而取消"

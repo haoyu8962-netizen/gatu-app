@@ -1434,6 +1434,10 @@ msgstr "चयनित ऑर्डर रद्द करें"
 msgid "Canceled"
 msgstr "रद्द"
 
+#: src/lib/trade/order-notification-copy.ts
+msgid "Canceled {accepted}/{total} · Review orders"
+msgstr "रद्द {accepted}/{total} · ऑर्डर जाँचें"
+
 #: src/lib/trade/order-status-reasons.ts
 msgid "Canceled because the asset was delisted"
 msgstr "एसेट डीलिस्ट होने के कारण रद्द"

@@ -811,6 +811,43 @@ describe("MobileOrdersTab disclosure card", () => {
 		);
 	});
 
+	it("settles a partly accepted cancel all item by item, as the official terminal does", async () => {
+		mocks.orders = [order, outcomeOrder];
+		renderOrders();
+		const requestButton = [...container.querySelectorAll<HTMLButtonElement>("button")].find(
+			(button) => button.textContent?.trim() === "Cancel all",
+		);
+		act(() => requestButton?.click());
+		const confirmButton = [...document.body.querySelectorAll<HTMLButtonElement>("button")].find(
+			(button) => button !== requestButton && button.textContent?.trim() === "Cancel All",
+		);
+		act(() => confirmButton?.click());
+		const feedbackId = queueItems.at(-1)?.id;
+		const callbacks = mocks.cancelOrders.mock.calls[0]?.[1] as { onError: (cause: Error) => void } | undefined;
+		const rejection = "Order was never placed, already canceled, or filled.";
+
+		await act(async () => {
+			callbacks?.onError(
+				new ApiRequestError(
+					{ status: "ok", response: { type: "cancel", data: { statuses: [{ error: rejection }, "success"] } } },
+					`cancel 0: ${rejection}`,
+				),
+			);
+			await Promise.resolve();
+		});
+
+		expect(getOrderQueueItem(feedbackId)).toMatchObject({
+			status: "partial",
+			acceptedCount: 1,
+			totalCount: 2,
+			countMode: "canceled",
+			error: { kind: "exchange-error", entries: [{ index: 0, text: rejection }] },
+		});
+		expect(getPendingTradingActionSnapshot().orderCancellations).toEqual([
+			expect.objectContaining({ oids: [43], phase: "awaiting" }),
+		]);
+	});
+
 	it("rejects cancel all when the confirmed order set changes", () => {
 		renderOrders();
 		const requestButton = [...container.querySelectorAll<HTMLButtonElement>("button")].find(

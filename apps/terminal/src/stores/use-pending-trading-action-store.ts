@@ -93,6 +93,7 @@ interface PendingTradingActionStore {
 		markOrderCancellationUnconfirmed: (id: string, now?: number, monotonicNow?: number) => void;
 		expireOrderCancellationAwaiting: (id: string, now?: number, monotonicNow?: number) => boolean;
 		releaseOrderCancellation: (id: string) => void;
+		narrowOrderCancellation: (id: string, oids: readonly number[]) => void;
 		confirmOrderCancellation: (id: string) => void;
 		claimTwapCancellation: (input: ClaimTwapCancellationInput) => PendingTwapCancellation | null;
 		markTwapCancellationRequestStarted: (id: string, now?: number, monotonicNow?: number) => void;
@@ -343,6 +344,16 @@ const usePendingTradingActionStore = create<PendingTradingActionStore>()((set, g
 		},
 		releaseOrderCancellation: (id) => {
 			set((state) => ({ orderCancellations: state.orderCancellations.filter((action) => action.id !== id) }));
+		},
+		narrowOrderCancellation: (id, oids) => {
+			const kept = new Set(oids);
+			set((state) => ({
+				orderCancellations: state.orderCancellations.flatMap((action) => {
+					if (action.id !== id) return [action];
+					const narrowed = action.oids.filter((oid) => kept.has(oid));
+					return narrowed.length > 0 ? [{ ...action, oids: narrowed }] : [];
+				}),
+			}));
 		},
 		confirmOrderCancellation: (id) => {
 			set((state) => {
