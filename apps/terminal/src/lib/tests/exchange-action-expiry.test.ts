@@ -57,11 +57,11 @@ describe("server clock for L1 action expiry", () => {
 		const expiresAfter = clock.getExpiresAfter();
 		await vi.advanceTimersByTimeAsync(200);
 
-		expect(await expiresAfter).toBe(1_060_100 + EXCHANGE_ACTION_EXPIRY_MS);
+		expect(await expiresAfter).toBe(1_060_000 + EXCHANGE_ACTION_EXPIRY_MS);
 		expect(fetchServerTime).toHaveBeenCalledOnce();
 
 		await vi.advanceTimersByTimeAsync(5_000);
-		expect(await clock.getExpiresAfter()).toBe(1_065_100 + EXCHANGE_ACTION_EXPIRY_MS);
+		expect(await clock.getExpiresAfter()).toBe(1_065_000 + EXCHANGE_ACTION_EXPIRY_MS);
 		expect(fetchServerTime).toHaveBeenCalledOnce();
 	});
 
@@ -123,7 +123,7 @@ describe("server clock for L1 action expiry", () => {
 		expect(settled).toBe(false);
 		await vi.advanceTimersByTimeAsync(1);
 
-		expect(await expiresAfter).toBe(1_010_450 + EXCHANGE_ACTION_EXPIRY_MS);
+		expect(await expiresAfter).toBe(1_010_400 + EXCHANGE_ACTION_EXPIRY_MS);
 		expect(fetchServerTime).toHaveBeenCalledTimes(2);
 	});
 
@@ -132,7 +132,7 @@ describe("server clock for L1 action expiry", () => {
 			.fn()
 			.mockResolvedValueOnce(1_000_000)
 			.mockRejectedValueOnce(new Error("network down"))
-			.mockResolvedValueOnce(4_620_000);
+			.mockResolvedValueOnce(1_015_000);
 		const clock = createServerClock(fetchServerTime);
 		await clock.sync();
 
@@ -141,7 +141,27 @@ describe("server clock for L1 action expiry", () => {
 		expect(await clock.getExpiresAfter()).toBe(1_010_000 + EXCHANGE_ACTION_EXPIRY_MS);
 
 		await vi.advanceTimersByTimeAsync(5_000);
-		expect(await clock.getExpiresAfter()).toBe(4_620_000 + EXCHANGE_ACTION_EXPIRY_MS);
+		expect(await clock.getExpiresAfter()).toBe(1_015_000 + EXCHANGE_ACTION_EXPIRY_MS);
+		expect(fetchServerTime).toHaveBeenCalledTimes(3);
+	});
+
+	it("discards an answer whose request spanned a sleep and asks again before signing", async () => {
+		const background = deferred<number>();
+		const fetchServerTime = vi
+			.fn()
+			.mockResolvedValueOnce(1_000_000)
+			.mockReturnValueOnce(background.promise)
+			.mockResolvedValueOnce(4_661_000);
+		const clock = createServerClock(fetchServerTime);
+		await clock.sync();
+
+		await vi.advanceTimersByTimeAsync(61_000);
+		expect(await clock.getExpiresAfter()).toBe(1_061_000 + EXCHANGE_ACTION_EXPIRY_MS);
+		vi.setSystemTime(Date.now() + 60 * 60_000);
+		background.resolve(1_061_000);
+		await vi.advanceTimersByTimeAsync(0);
+
+		expect(await clock.getExpiresAfter()).toBe(4_661_000 + EXCHANGE_ACTION_EXPIRY_MS);
 		expect(fetchServerTime).toHaveBeenCalledTimes(3);
 	});
 
@@ -198,11 +218,24 @@ describe("server clock for L1 action expiry", () => {
 
 		const fast = onTime.getExpiresAfter();
 		await vi.advanceTimersByTimeAsync(1_900);
-		expect(await fast).toBe(5_000_950 + EXCHANGE_ACTION_EXPIRY_MS);
+		expect(await fast).toBe(5_000_000 + EXCHANGE_ACTION_EXPIRY_MS);
 
 		const late = ignoresAbort.getExpiresAfter();
 		await vi.advanceTimersByTimeAsync(2_500);
 		expect(await late).toBe(1_004_400 + EXCHANGE_ACTION_EXPIRY_MS);
+	});
+
+	it("does not use a late server time when the system clock was set back while it was on its way", async () => {
+		const clock = createServerClock(
+			() => new Promise<number>((resolve) => setTimeout(() => resolve(5_000_000), 2_500)),
+		);
+
+		const late = clock.getExpiresAfter();
+		await vi.advanceTimersByTimeAsync(1_000);
+		vi.setSystemTime(Date.now() - 3_000);
+		await vi.advanceTimersByTimeAsync(1_500);
+
+		expect(await late).toBe(999_500 + EXCHANGE_ACTION_EXPIRY_MS);
 	});
 
 	it("refreshes an old sample in the background without delaying the action", async () => {

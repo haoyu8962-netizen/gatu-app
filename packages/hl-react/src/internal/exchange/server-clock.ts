@@ -46,14 +46,15 @@ function clocksDisagree(receipt: Receipt): boolean {
 
 /**
  * Estimates the exchange's clock from `exchangeStatus` so that a device clock running behind does
- * not make every action arrive already expired. Elapsed time since the sample is its monotonic age
- * only: that clock never runs ahead of real time, so a system clock moved forward cannot stretch the
- * 15-second window. When the wall-clock and monotonic ages disagree (the system clock was changed,
- * or the monotonic clock stopped while the device slept), an action first waits for a new sample,
- * whatever the retry pause; if none arrives the monotonic estimate stays, so an action may arrive
- * already expired but never late. Staleness still uses the larger of both ages (ADR 0022). Without
- * a usable sample the device clock is used, as the official terminal does before its first account
- * snapshot.
+ * not make every action arrive already expired. A sample is the server's time as it arrives, with
+ * nothing added for the round trip, and a request whose round trip exceeds the limit on either clock
+ * (it spanned a sleep or a clock change) is not used. Elapsed time since the sample is its monotonic
+ * age only, so moving the system clock cannot stretch the 15-second window. When the wall-clock and
+ * monotonic ages disagree (the system clock was changed, or the monotonic clock stopped while the
+ * device slept), an action first waits for a new sample, whatever the retry pause; if none arrives
+ * the monotonic estimate stays, so an action may arrive already expired rather than late. Staleness
+ * still uses the larger of both ages (ADR 0022). Before the first usable sample the device clock is
+ * used, as the official terminal does before its first account snapshot.
  */
 export function createServerClock(fetchServerTime: (signal: AbortSignal) => Promise<number>): ServerClock {
 	let sample: ServerTimeSample | null = null;
@@ -64,16 +65,16 @@ export function createServerClock(fetchServerTime: (signal: AbortSignal) => Prom
 		if (pending) return pending;
 		const controller = new AbortController();
 		const timer = setTimeout(() => controller.abort(), SYNC_TIMEOUT_MS);
-		const sentAt = performance.now();
+		const sent = receiptNow();
 		pending = Promise.resolve()
 			.then(() => fetchServerTime(controller.signal))
 			.then((serverTime) => {
 				const received = receiptNow();
-				const roundTrip = received.monotonicAt - sentAt;
+				const roundTrip = Math.max(received.at - sent.at, received.monotonicAt - sent.monotonicAt);
 				if (!Number.isFinite(serverTime) || serverTime <= 0 || roundTrip > SYNC_TIMEOUT_MS) {
 					throw new Error("The exchange server time is unusable.");
 				}
-				sample = { ...received, serverTime: serverTime + roundTrip / 2 };
+				sample = { ...received, serverTime };
 				lastFailure = null;
 			})
 			.catch(() => {
