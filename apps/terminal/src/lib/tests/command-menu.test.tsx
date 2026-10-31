@@ -81,7 +81,7 @@ describe("command menu", () => {
 				dex: "xyz",
 				quoteToken: null,
 				szDecimals: 2,
-				markPx: "250.5",
+				markPx: "0.123456",
 			},
 		];
 		i18n.loadAndActivate({ locale: "zh", messages: readChineseMessages() });
@@ -115,6 +115,6 @@ describe("command menu", () => {
 	it("labels each market kind like the market selector and prices spot markets with spot decimals", () => {
 		const rows = [...container.querySelectorAll("[data-item]")].map((row) => row.textContent);
 
-		expect(rows).toEqual(["BTC$77,559.1永续", "@107$0.12345678现货", "xyz:AAPL$250.5xyz"]);
+		expect(rows).toEqual(["BTC$77,559.1永续", "@107$0.12345678现货", "xyz:AAPL$0.1235xyz"]);
 	});
 });

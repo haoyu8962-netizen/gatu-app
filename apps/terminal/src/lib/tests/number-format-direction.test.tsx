@@ -73,6 +73,44 @@ describe("number formatters and the interface direction", () => {
 		expect(formatters.markLeadingSign("-")).toBe("-");
 	});
 
+	it("marks a sign followed by a digit within four other characters, the Unicode minus included", () => {
+		act(() => i18n.loadAndActivate({ locale: "ar", messages: {} }));
+		const { markLeadingSign } = current();
+
+		expect(markLeadingSign("\u22122")).toBe(`${LRM}\u22122`);
+		expect(markLeadingSign("+abcd1")).toBe(`${LRM}+abcd1`);
+		expect(markLeadingSign("+abcde1")).toBe("+abcde1");
+		expect(markLeadingSign("N/A")).toBe("N/A");
+		expect(markLeadingSign("1-2")).toBe("1-2");
+	});
+
+	it("gives every component the same right-to-left formatters while the language and the format stay", () => {
+		act(() => i18n.loadAndActivate({ locale: "ar", messages: {} }));
+		const first = current();
+
+		act(() => root.render(<Probe />));
+		expect(renders.length).toBeGreaterThan(2);
+		expect(current()).toBe(first);
+
+		const other = createRoot(document.createElement("div"));
+		act(() => other.render(<Probe />));
+		expect(current()).toBe(first);
+		expect(current().formatNumber).toBe(first.formatNumber);
+		act(() => other.unmount());
+	});
+
+	it("stops listening to language changes when the component unmounts", () => {
+		const unsubscribe = vi.fn();
+		const on = vi.spyOn(i18n, "on").mockImplementation(() => unsubscribe);
+		const other = createRoot(document.createElement("div"));
+		act(() => other.render(<Probe />));
+
+		expect(on).toHaveBeenCalledWith("change", expect.any(Function));
+		act(() => other.unmount());
+		expect(unsubscribe).toHaveBeenCalled();
+		on.mockRestore();
+	});
+
 	it("gives the composed vault values the same mark", () => {
 		act(() => i18n.loadAndActivate({ locale: "ar", messages: {} }));
 		const arabic = current();

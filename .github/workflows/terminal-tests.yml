@@ -376,6 +376,7 @@ jobs:
           src/lib/tests/position-close-all-submit.test.tsx
           src/lib/tests/trade-form-fields-order-entry-data.test.tsx
           src/lib/tests/history-csv-twap.test.tsx
+          src/lib/tests/desktop-twap-tab.test.tsx
           src/lib/tests/bridge-success-screen-locale.test.tsx
           src/components/staking/__tests__/staking-action-modal.test.tsx
           src/lib/tests/react-source-harness.test.ts

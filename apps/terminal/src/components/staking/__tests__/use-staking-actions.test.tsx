@@ -704,6 +704,18 @@ describe("useStakingActions orchestration", () => {
 		expect(current().active?.failure).toBeNull();
 	});
 
+	it("clears the stored failure when the user goes back to change the request", async () => {
+		const text = "Insufficient staking balance";
+		mocks.methods.cDeposit.mockRejectedValueOnce(new ApiRequestError({ status: "err", response: text }, text));
+
+		await reviewAndSubmit();
+		expect(current().active?.failure).toEqual(exchangeActionFailure(text));
+
+		act(() => current().back());
+		expect(current().active?.errorMessage).toBeNull();
+		expect(current().active?.failure).toBeNull();
+	});
+
 	it("treats an exchange rejection that mentions a user rejection as the exchange's, not the wallet's", async () => {
 		const text = "User rejected the request because the validator is jailed";
 		mocks.methods.cDeposit.mockRejectedValueOnce(new ApiRequestError({ status: "err", response: text }, text));

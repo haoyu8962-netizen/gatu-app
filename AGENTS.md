@@ -258,7 +258,9 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/user-positions-readiness.test.tsx \
   src/lib/tests/deposit-empty-balances-entry.test.tsx \
   src/lib/tests/mobile-account-view.test.tsx \
-  src/lib/tests/portfolio-overview.test.tsx
+  src/lib/tests/portfolio-overview.test.tsx \
+  src/lib/tests/portfolio.test.ts \
+  src/lib/tests/balances.test.ts
 
 # Trading terminal visual contract
 pnpm --dir apps/terminal exec vitest run \
@@ -323,6 +325,13 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/historical-order-status.test.tsx \
   src/lib/tests/user-fills.test.ts \
   src/lib/tests/desktop-history-exports.test.tsx \
+  src/lib/tests/trade-history-page.test.tsx \
+  src/lib/tests/funding-history-page.test.tsx \
+  src/lib/tests/desktop-twap-tab.test.tsx \
+  src/lib/tests/history-csv-twap.test.tsx \
+  src/lib/tests/mobile-history-cards.test.tsx \
+  src/lib/tests/account-ledger-number-format.test.tsx \
+  src/lib/tests/mobile-market-bar.test.tsx \
   src/lib/tests/account-ledger.test.ts
 
 # Desktop trading layout and order entry
@@ -443,7 +452,8 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/lingui-helper-translator-contract.test.ts \
   src/lib/tests/catalog-completeness-contract.test.ts \
   src/lib/tests/command-menu.test.tsx \
-  src/components/staking/__tests__/use-staking-actions.test.tsx
+  src/components/staking/__tests__/use-staking-actions.test.tsx \
+  src/lib/tests/use-api-wallet-controller.test.tsx
 
 # Brand identity (brand/, names, logo, icons, status motion, domains, legal text; see docs/brand-assets.md and ADR 0027)
 pnpm test:brand
