@@ -1,8 +1,10 @@
 import type { MessageDescriptor } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
+import type { ActionFailure } from "@/lib/errors/action-error";
 import type { StakingActionKind } from "./staking";
 
 const PREFLIGHT_FAILED = msg`Fresh eligibility or account data could not be verified. Review and try again.`;
+export const STAKING_REQUEST_REJECTED = msg`No changes were made.`;
 
 const STAKING_ACTION_ERROR_MESSAGES: Record<string, MessageDescriptor> = {
 	rejected: msg`The master wallet rejected the authorization.`,
@@ -36,9 +38,10 @@ export function getStakingActionSuccessMessage(kind: StakingActionKind, amount: 
 export function getStakingActionFailureNotice(
 	result: "rejected" | "apiError",
 	code: string | null | undefined,
-): { title: MessageDescriptor; description: MessageDescriptor } {
+	failure: ActionFailure | null,
+): { title: MessageDescriptor; description: ActionFailure } {
 	if (result === "rejected")
 		return { title: msg`Authorization rejected`, description: msg`No operation was submitted.` };
 	if (code === "preflightFailed") return { title: msg`Request not submitted`, description: PREFLIGHT_FAILED };
-	return { title: msg`Request rejected`, description: msg`No changes were made.` };
+	return { title: msg`Request rejected`, description: failure ?? STAKING_REQUEST_REJECTED };
 }

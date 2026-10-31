@@ -4,6 +4,7 @@ import { i18n } from "@lingui/core";
 import { act } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { exchangeActionFailure } from "@/lib/errors/action-error";
 import { formatDateTime, shortenAddress } from "@/lib/format";
 import { notifyNumberFormatChange } from "@/lib/number-format-reactivity";
 import { createI18nRoot } from "@/lib/tests/harness/react";
@@ -168,6 +169,7 @@ describe("StakingView", () => {
 			identityKey: "mainnet:owner",
 			state: { stage: "done", result },
 			errorMessage: result === "success" || result === "unknown" ? null : result,
+			failure: null,
 			match: result === "success" ? { hash: HASH, time: 1 } : null,
 			reference: null,
 			recoveredFromMarker: false,
@@ -209,6 +211,20 @@ describe("StakingView", () => {
 			expect(onActionClose).not.toHaveBeenCalled();
 		},
 	);
+
+	it("shows the exchange's own rejection text in the failure notice", () => {
+		const text = `Staking request rejected: ${"insufficient balance for the requested amount ".repeat(4).trim()}`;
+		const actionSession = {
+			...settledSession("apiError"),
+			failure: exchangeActionFailure(text),
+		} as StakingViewProps["actionSession"];
+		act(() => root.render(<StakingView {...props({ actionSession })} />));
+
+		expect(toastMocks.error).toHaveBeenCalledExactlyOnceWith(
+			"Request rejected",
+			expect.objectContaining({ description: text }),
+		);
+	});
 
 	it("leaves an unconfirmed staking operation to the in-dialog verification path", () => {
 		const onActionClose = vi.fn();

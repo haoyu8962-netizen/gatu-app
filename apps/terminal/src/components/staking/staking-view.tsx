@@ -28,6 +28,7 @@ import { toast } from "sonner";
 import { FUNDS_OUTCOME_TOAST_DURATION_MS } from "@/config/time";
 import { useMasterWalletRequiredMessage } from "@/hooks/trade/use-master-wallet-action-reason";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { describeActionFailure } from "@/lib/errors/action-error";
 import { formatDateTime, shortenAddress, useNumberFormat } from "@/lib/format";
 import { getExplorerTxUrl } from "@/lib/hyperliquid";
 import {
@@ -103,9 +104,9 @@ export function StakingView(props: StakingViewProps) {
 			props.onActionClose?.();
 			return;
 		}
-		const failure = getStakingActionFailureNotice(settledResult, session.errorMessage);
+		const failure = getStakingActionFailureNotice(settledResult, session.errorMessage, session.failure);
 		toast.error(t(failure.title), {
-			description: t(failure.description),
+			description: describeActionFailure(failure.description, (descriptor) => t(descriptor)),
 			duration: FUNDS_OUTCOME_TOAST_DURATION_MS,
 		});
 		props.onActionRetry?.();

@@ -1,8 +1,10 @@
 // @vitest-environment jsdom
 
+import { ApiRequestError } from "@nktkas/hyperliquid";
 import { act } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { exchangeActionFailure } from "@/lib/errors/action-error";
 import {
 	type CreateFundsActionReferenceInput,
 	clearFundsActionMarkersForTests,
@@ -684,6 +686,32 @@ describe("useStakingActions orchestration", () => {
 		await reviewAndSubmit();
 		expect(mocks.methods.cDeposit).not.toHaveBeenCalled();
 		expect(current().active?.state).toEqual({ stage: "done", result: "apiError" });
+		expect(current().active?.failure).toBeNull();
+	});
+
+	it("keeps the exchange's rejection text, complete, for the failure notice", async () => {
+		const text = `Staking request rejected: ${"insufficient balance for the requested amount ".repeat(4).trim()}`;
+		mocks.methods.cDeposit.mockRejectedValueOnce(new ApiRequestError({ status: "err", response: text }, text));
+
+		await reviewAndSubmit();
+
+		expect(current().active?.state).toEqual({ stage: "done", result: "apiError" });
+		expect(current().active?.errorMessage).toBe("apiError");
+		expect(current().active?.failure).toEqual(exchangeActionFailure(text));
+		expect(findPendingFundsAction("Mainnet", OWNER)).toBeNull();
+
+		act(() => current().retry());
+		expect(current().active?.failure).toBeNull();
+	});
+
+	it("treats an exchange rejection that mentions a user rejection as the exchange's, not the wallet's", async () => {
+		const text = "User rejected the request because the validator is jailed";
+		mocks.methods.cDeposit.mockRejectedValueOnce(new ApiRequestError({ status: "err", response: text }, text));
+
+		await reviewAndSubmit();
+
+		expect(current().active?.state).toEqual({ stage: "done", result: "apiError" });
+		expect(current().active?.failure).toEqual(exchangeActionFailure(text));
 	});
 
 	it("never mutates when the fresh preflight balance fails", async () => {
