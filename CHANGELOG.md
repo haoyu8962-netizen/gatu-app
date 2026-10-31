@@ -64,6 +64,14 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Changed
 
+- A `dev` → `main` promotion no longer repeats the checks that `dev` already passed on the same tree
+  ([ADR 0016](docs/adr/0016-dev-first-pull-requests-and-ci-tiers.md) D8). `Terminal Tests`, the
+  browser regressions, `Production Builds` and `Website and Brand` each start with a
+  `Promotion coverage` job. When the last pull request merged into `dev` that ran the workflow
+  passed it on a merge that nothing touching the workflow's inputs has changed since, the workflow's
+  jobs are skipped and `Production Builds` builds only the pairing-on terminal; any doubt runs
+  everything as before, and `Static Checks` always runs. A covered promotion takes about 14 billed
+  minutes instead of about 70.
 - The HIP-3 deployer notice for EntropyIO markets (the `io` deployer, such as the OpenAI and
   Anthropic pre-IPO markets) now links to EntropyIO's documentation, as it already did for the
   other listed deployers.
