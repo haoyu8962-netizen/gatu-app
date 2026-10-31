@@ -55,7 +55,7 @@
 
 ## 验证与限制
 
-- B21：`position-tpsl-modal.test.tsx` 的「标记价订阅过期」用例加断言不出现「Loading...」；变异（把分支加回）同时被该用例与契约抓到。
+- B21：`position-tpsl-modal.test.tsx` 的「标记价订阅过期」用例加断言不出现「Loading...」；变异（把分支加回）同时被该用例与契约抓到。B21 提交时漏改了 `action-progress-label-contract.test.ts` 里对这句「Loading...」的登记（该契约要求登记表与源码一致），合并预览分支的全量运行发现后单独提交删除这条登记。
 - B17：`account-ledger-export-availability.test.tsx` 改为桌面与手机都不出现报错句、没有 `.text-error`，桌面 Retry 仍调用 `retry`；契约新用例扫描源码。`Failed to load deposits and withdrawals.` 已不再使用，`pnpm i18n:extract` 从各语言目录移除，缺失数不变。
 - 两个文件共 108 项（TP/SL 与契约）、18 项（存提款与契约）通过；typecheck 与 Biome 在提交前复核。
 
