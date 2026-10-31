@@ -79,6 +79,13 @@
 - 变异 6 个（`m-e9b.json`：刷新中的空缓存下结论、刷新中给 Retry、读屏节点放回忙碌区、hook 忽略刷新失败、桌面与手机页签无条件下空结论）均被抓到；三张页面 39 项、存提款 6 项、hook 15 项、契约 15 项通过；typecheck 与 Biome 通过。`refetch({ cancelRefetch: false })` 本身没有用例覆盖（页面测试替换了 hook）。
 - 合并预览分支（`claude/p2-preview`）的全量运行还发现 B21 漏改的进度文案契约登记，已单独提交 `6bc60969`。
 
+## 五个 P2 分支的合并预览验证
+
+- 本地预览分支 `claude/p2-preview`（只用于验证，不推送）把 `claude/p2-order-validation`、`claude/p2-tables`、`claude/p2-funds`、`claude/p2-market`、`claude/p2-passive-data` 依次 `--no-ff` 合并，最终为 `8fd11013`。冲突只有 CHANGELOG（取并集）、`docs/work-memory/INDEX.md`（重新生成）、`balances.test.ts` 末尾两个 describe 块（两边都保留）与 `historical-orders-page.tsx` 的导入行（两条都保留）。
+- 第一次全量（合并到被动数据分支 `7833ae79` 时）：695 个文件通过、3 个失败——`action-progress-label-contract` 为 B21 漏改的登记（已修 `6bc60969`），`mobile-agent-sync-modal` 为与 Codex 审查并行时的负载超时（单独 27 项通过），`vite-development-cache` 为沙箱禁止监听端口。
+- 第二次全量（`8fd11013`，`pnpm --filter @sairn/terminal test -- --maxWorkers=4`，没有与其他重负载并行）：697 个文件、9535 项通过，唯一失败 `vite-development-cache` 在沙箱外单独重跑通过。`pnpm typecheck`（hl-react、ui、terminal）、`pnpm memory:check`、`scripts/ci-workflows.test.mjs` 通过；各分支相对 `329f241d` 的 `git diff --check` 无问题。
+- 未做：合并结果上的浏览器套件；真实账户与真机验收。
+
 ## 后续与替代关系
 
 - E13（组合页回到标签页时误判过期）、E12（质押拒绝原文丢失）、F1（四种语言 31 条缺译）、F2（RTL 带符号数值）、M3（⌘K 打开英文旧列表）按顺序处理；E5、E15、F4 待运营方决定。
