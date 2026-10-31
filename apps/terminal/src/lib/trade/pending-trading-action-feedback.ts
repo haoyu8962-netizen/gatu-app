@@ -10,6 +10,7 @@ import {
 import {
 	getPendingTradingActionActions,
 	getPendingTradingActionToastId,
+	type PendingOrderCancellationPartialResult,
 	type PendingTradingActionPhase,
 } from "@/stores/use-pending-trading-action-store";
 
@@ -45,9 +46,16 @@ export function ensurePendingTradingActionFeedback(
 }
 
 export function syncPendingTradingActionFeedback(
-	action: TradingActionFeedbackIdentity & { phase: PendingTradingActionPhase },
+	action: TradingActionFeedbackIdentity & {
+		phase: PendingTradingActionPhase;
+		partialResult?: PendingOrderCancellationPartialResult;
+	},
 	kind: TradingActionKind,
 ): void {
+	if (kind === "cancel" && action.partialResult) {
+		syncPartialCancellationFeedback({ ...action, partialResult: action.partialResult });
+		return;
+	}
 	const id = ensurePendingTradingActionFeedback(action, kind);
 	const current = getOrderQueueItem(id);
 	if (current && ["success", "failed", "partial", "canceled"].includes(current.status)) return;
@@ -72,17 +80,50 @@ export function updatePendingTradingActionFeedback(
 	updateOrderQueueItem(ensurePendingTradingActionFeedback(action, kind), update);
 }
 
+/** The counts and rejections of a partly accepted cancel batch, as its notification shows them. */
+export function getPartialCancellationFeedback(
+	partialResult: PendingOrderCancellationPartialResult,
+): Pick<OrderQueueItem, "acceptedCount" | "countMode" | "error" | "totalCount"> {
+	return {
+		acceptedCount: partialResult.acceptedCount,
+		totalCount: partialResult.totalCount,
+		countMode: "canceled",
+		error: exchangeActionFailure(partialResult.errors),
+	};
+}
+
 /**
- * Reports a confirmed outcome unless the task already holds a partial result: a cancel batch that the
- * exchange answered item by item keeps its counts and rejections once live data confirms the rest.
+ * A partly accepted cancel batch keeps its counts and rejections in every phase: partial while the
+ * canceled orders await live confirmation, unconfirmed with the same facts once that confirmation
+ * times out. Nothing is reopened while the phase is unchanged.
  */
-export function confirmPendingTradingActionFeedback(
-	action: TradingActionFeedbackIdentity,
-	kind: TradingActionKind,
-	update: Partial<Omit<OrderQueueItem, "id" | "owner" | "env">>,
+function syncPartialCancellationFeedback(
+	action: TradingActionFeedbackIdentity & {
+		phase: PendingTradingActionPhase;
+		partialResult: PendingOrderCancellationPartialResult;
+	},
 ): void {
-	if (getOrderQueueItem(getPendingTradingActionToastId(action.id))?.status === "partial") return;
-	updatePendingTradingActionFeedback(action, kind, update);
+	if (action.phase !== "unconfirmed") return;
+	const id = ensurePendingTradingActionFeedback(action, "cancel");
+	if (getOrderQueueItem(id)?.status === "unconfirmed") return;
+	updateOrderQueueItem(id, {
+		status: "unconfirmed",
+		message: unconfirmedMessages.cancel,
+		...getPartialCancellationFeedback(action.partialResult),
+	});
+}
+
+/**
+ * Restores the partial result of a cancel batch once live data confirms its canceled orders. A
+ * partial notification the user already dismissed, or that already left the screen, is not reopened:
+ * the result was reported when the exchange answered, and confirmation adds nothing new to it.
+ */
+export function confirmPartialCancellationFeedback(
+	action: TradingActionFeedbackIdentity & { partialResult: PendingOrderCancellationPartialResult },
+): void {
+	const current = getOrderQueueItem(getPendingTradingActionToastId(action.id));
+	if (!current || current.status === "partial") return;
+	updateOrderQueueItem(current.id, { status: "partial", ...getPartialCancellationFeedback(action.partialResult) });
 }
 
 /**
@@ -100,16 +141,17 @@ export function settlePartialOrderCancellation(
 		const oid = cancelOids[index];
 		return oid === undefined ? [] : [oid];
 	});
+	const partialResult = {
+		acceptedCount: canceledOids.length,
+		totalCount: resolution.totalCount,
+		errors: resolution.errors,
+	};
 	const actions = getPendingTradingActionActions();
-	actions.narrowOrderCancellation(action.id, canceledOids);
+	actions.narrowOrderCancellation(action.id, canceledOids, partialResult);
 	actions.markOrderCancellationAwaiting(action.id);
 	updatePendingTradingActionFeedback(action, "cancel", {
 		status: "partial",
-		acceptedCount: canceledOids.length,
-		totalCount: resolution.totalCount,
-		countMode: "canceled",
-		error: exchangeActionFailure(resolution.errors),
-		message: undefined,
+		...getPartialCancellationFeedback(partialResult),
 	});
 	return canceledOids;
 }

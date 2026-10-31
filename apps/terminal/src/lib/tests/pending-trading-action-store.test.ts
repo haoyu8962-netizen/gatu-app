@@ -132,11 +132,14 @@ describe("pending trading action store", () => {
 		const other = actions.claimOrderCancellation({ env: "Mainnet", owner: OWNER, oids: [4] });
 		expect(cancellation && other).toBeTruthy();
 
-		actions.narrowOrderCancellation(cancellation?.id ?? "", [3, 1, 9]);
+		const partialResult = { acceptedCount: 2, totalCount: 3, errors: [{ index: 1, text: "Order was never placed." }] };
+		actions.narrowOrderCancellation(cancellation?.id ?? "", [3, 1, 9], partialResult);
 		expect(getPendingTradingActionSnapshot().orderCancellations.map((action) => action.oids)).toEqual([[1, 3], [4]]);
+		expect(getPendingTradingActionSnapshot().orderCancellations[0]?.partialResult).toEqual(partialResult);
+		expect(getPendingTradingActionSnapshot().orderCancellations[1]?.partialResult).toBeUndefined();
 		expect(actions.claimOrderCancellation({ env: "Mainnet", owner: OWNER, oids: [2] })).not.toBeNull();
 
-		actions.narrowOrderCancellation(other?.id ?? "", []);
+		actions.narrowOrderCancellation(other?.id ?? "", [], partialResult);
 		expect(getPendingTradingActionSnapshot().orderCancellations.map((action) => action.id)).not.toContain(other?.id);
 	});
 

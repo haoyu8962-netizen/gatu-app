@@ -1241,6 +1241,74 @@ describe("OrderReconciliation", () => {
 		});
 	});
 
+	it("does not report a dismissed partial cancel batch as fully canceled once live data confirms it", () => {
+		const now = Date.now();
+		const monotonicNow = performance.now();
+		const cancellation = getPendingTradingActionActions().claimOrderCancellation({
+			env: "Mainnet",
+			owner: USER,
+			oids: [72, 73],
+		});
+		if (!cancellation) throw new Error("Expected cancellation claim");
+		getPendingTradingActionActions().markOrderCancellationRequestStarted(cancellation.id, now - 2, monotonicNow - 2);
+		settlePartialOrderCancellation(cancellation, [72, 73], {
+			status: "partial",
+			totalCount: 2,
+			acceptedIndexes: [0],
+			errors: [{ index: 1, text: "Order was never placed, already canceled, or filled." }],
+		});
+		act(() => dismissOrderQueueItem(`pending-trading-action:${cancellation.id}`));
+		mocks.openOrdersData = { orders: [{ oid: 73, sz: "1", triggerPx: "0" }] };
+		mocks.openOrdersLastMessageAt = Date.now() + 1;
+		mocks.openOrdersMonotonicLastMessageAt = performance.now() + 1;
+
+		act(() => root.render(createReconciliation()));
+
+		expect(getPendingTradingActionSnapshot().orderCancellations).toEqual([]);
+		expect(getOrderQueueItem(`pending-trading-action:${cancellation.id}`)).toBeUndefined();
+		expect(mocks.successToast).not.toHaveBeenCalled();
+	});
+
+	it("turns a partial cancel batch unconfirmed on timeout with its counts and rejection, then restores it once confirmed", () => {
+		const now = Date.now();
+		const monotonicNow = performance.now();
+		const rejection = "Order was never placed, already canceled, or filled.";
+		const cancellation = getPendingTradingActionActions().claimOrderCancellation({
+			env: "Mainnet",
+			owner: USER,
+			oids: [74, 75],
+		});
+		if (!cancellation) throw new Error("Expected cancellation claim");
+		getPendingTradingActionActions().markOrderCancellationRequestStarted(cancellation.id, now - 1, monotonicNow - 1);
+		settlePartialOrderCancellation(cancellation, [74, 75], {
+			status: "partial",
+			totalCount: 2,
+			acceptedIndexes: [0],
+			errors: [{ index: 1, text: rejection }],
+		});
+		act(() => root.render(createReconciliation()));
+
+		act(() => vi.advanceTimersByTime(TRADING_ACTION_CONFIRMATION_TIMEOUT_MS));
+		expect(getOrderQueueItem(`pending-trading-action:${cancellation.id}`)).toMatchObject({
+			status: "unconfirmed",
+			acceptedCount: 1,
+			totalCount: 2,
+			countMode: "canceled",
+			error: { kind: "exchange-error", entries: [{ index: 1, text: rejection }] },
+		});
+		expect(getPendingTradingActionSnapshot().orderCancellations[0]?.phase).toBe("unconfirmed");
+
+		mocks.openOrdersData = { orders: [{ oid: 75, sz: "1", triggerPx: "0" }] };
+		mocks.openOrdersLastMessageAt = Date.now() + 1;
+		mocks.openOrdersMonotonicLastMessageAt = performance.now() + 1;
+		act(() => root.render(createReconciliation()));
+		expect(getOrderQueueItem(`pending-trading-action:${cancellation.id}`)).toMatchObject({
+			status: "partial",
+			acceptedCount: 1,
+			totalCount: 2,
+		});
+	});
+
 	it("replaces a persistent cancellation timeout with one finite confirmed notification", () => {
 		const now = Date.now();
 		const monotonicNow = performance.now();

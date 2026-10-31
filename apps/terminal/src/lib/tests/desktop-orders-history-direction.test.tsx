@@ -275,6 +275,10 @@ describe("desktop order history direction semantics", () => {
 			]),
 		);
 		expect(statuses).toHaveLength(3);
+		const badges = [...container.querySelectorAll("tbody tr")].map(
+			(row) => row.querySelectorAll("td")[5]?.firstElementChild,
+		);
+		expect(badges.filter((badge) => badge?.tagName === "BUTTON")).toHaveLength(2);
 	});
 
 	it("keeps full order export available when the recent snapshot is empty", () => {

@@ -11,10 +11,16 @@ export function HistoricalOrderStatusBadge({ status, className }: Props) {
 	if (!status.reason) return <span className={className}>{status.label}</span>;
 	return (
 		<Tooltip content={status.reason}>
-			<span className={cn(className, "underline decoration-dotted underline-offset-2")}>
+			<button
+				type="button"
+				className={cn(
+					className,
+					"cursor-help border-0 underline decoration-dotted underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-stroke-focus",
+				)}
+			>
 				{status.label}
 				<span className="sr-only">, {status.reason}</span>
-			</span>
+			</button>
 		</Tooltip>
 	);
 }

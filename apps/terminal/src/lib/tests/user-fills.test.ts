@@ -494,4 +494,12 @@ describe("getUserFillNetClosedPnl", () => {
 		expect(getUserFillNetClosedPnl(fill({ coin: "PURR/USDC", closedPnl: "3", fee: "1" }), undefined)).toBeNull();
 		expect(getUserFillNetClosedPnl(fill({ closedPnl: "x", fee: "1" }), perp)).toBeNull();
 	});
+
+	it("adds a rebate, converts a base-token rebate at the fill price and keeps every digit", () => {
+		expect(getUserFillNetClosedPnl(fill({ closedPnl: "0", fee: "-0.01" }), perp)).toBe("0.01");
+		expect(getUserFillNetClosedPnl(fill({ coin: "@107", fee: "-0.1", feeToken: "HYPE", px: "30" }), spot)).toBe("3");
+		expect(getUserFillNetClosedPnl(fill({ closedPnl: "123456789012.123456", fee: "0.000001" }), perp)).toBe(
+			"123456789012.123455",
+		);
+	});
 });

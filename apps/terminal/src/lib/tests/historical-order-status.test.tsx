@@ -95,6 +95,14 @@ describe("historical order status presentation", () => {
 			expect(presentation?.label, status).toBe("Rejected");
 			expect(presentation?.reason, status).toMatch(/^Rejected /);
 		}
+		for (const [status, reason] of [
+			["vaultWithdrawalCanceled", "Canceled due to a vault withdrawal"],
+			["siblingFilledCanceled", "Canceled because the linked order filled"],
+			["iocCancelRejected", "Rejected because the IOC order could not match"],
+			["tooManyOpenOrdersRejected", "Rejected due to too many open orders"],
+		] as const) {
+			expect(labels?.getHistoricalOrderStatusPresentation(historicalOrder(status))?.reason).toBe(reason);
+		}
 	});
 
 	it("names margin cancellations and partial fills, and gives plain statuses no reason", () => {
