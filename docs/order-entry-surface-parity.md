@@ -129,3 +129,20 @@ pnpm --dir apps/terminal exec playwright test \
 - **现货市价买单按发送价核对报价余额（A12）。** 市价买单以「参照价 ×（1 + 滑点上限）」发出，交易所按这个价格锁定报价币，入口守卫也按它核对。表单原先按「数量 × 标记价」核对，手输数量能过表单、却在守卫处被拒。现在表单用同一预算（`spotBuyQuoteCost`）：发送价由下单构建共用的 `getFrontendMarketOrderPrice` 算出（买单向下取整），预算就是发送价 × 数量；只因滑点不够时提示 `Insufficient {quoteToken} balance at max slippage`。官方不在表单里检查这一项，交给交易所拒绝；本终端已有守卫，表单与之对齐。
 
 回归：`order-entry.test.ts`（被动买单最大数量、保证金判定、现货市价买入预算）、`order-size.test.ts`（保证金价格、最大数量、Scale 逐手下调）、`scale-conversion-price.test.ts`（限价与 Scale 的保证金）、`order-validation.test.ts`（TWAP 参照价、触发单豁免、余额豁免、现货滑点提示）、`reduce-only.test.ts`（存款阶段、豁免条件、`hasAccountFunds`）、`entry-order-execution-guard.test.ts`（守卫的保证金口径、触发单豁免、TP/SL 参照价、TWAP 参照价）、`twap-details.test.ts` 与 `twap-order-summary.test.tsx`（约每笔数量）、`tests/trade-panel-open-interest-cap.test.tsx` 与 `tests/mobile-trade-size-validation-a11y.test.tsx`（双端保证金接线）。未做：真实下单、真机。
+
+## 点击订单簿价格（2026-11-01，审查 C7）
+
+依据[全功能审查](work-memory/sessions/2026-10-30-full-feature-audit.md) C7：此前点击订单簿任一档位，桌面与手机的下单表单都无条件切成限价单，Stop Market、Take Profit Limit、Scale、TWAP 的设置随之丢失。现在按官方终端（2026-10-31 生产包 `gf`／`dw`，并在官方页面只读实测）处理，桌面订单簿、手机紧凑簿与分栏簿三处点击走同一条路径（`getOrderTypeForBookPrice`，`lib/trade/order-types.ts`）：
+
+| 点击前 | 点击后 | 价格 |
+| --- | --- | --- |
+| Market | Limit | 限价设为点击价 |
+| Limit、Stop Limit、Take Profit Limit | 类型不变 | 限价设为点击价，触发价不动 |
+| Stop Market | Stop Limit | 限价设为点击价，触发价不动 |
+| Take Profit Market、Scale、TWAP | 类型不变 | 不改任何字段 |
+
+- 官方在 Take Profit Market、Scale、TWAP 下也把点击价写进共享的限价状态，之后切到限价类才显示出来。本终端不写：限价预填只填空值，写入会在用户看不见的表单里留下价格，`setLimitPriceFromUser` 还会清掉只减仓的数量来源（`sizeSource`）。点击当时的可见结果与官方相同。
+- 限价的预填身份用切换后的类型（`<市场>|stopLimit` 等），与表单自身的预填身份一致。
+- 官方「点击数量或累计格同时填数量」（默认开）与分栏簿行不可点击，本次未做，需另行决定。
+
+回归：`tests/trade-panel-open-interest-cap.test.tsx`（桌面）与 `tests/mobile-trade-size-validation-a11y.test.tsx`（手机）逐类核对切换后的类型、写入的价格与预填身份，Take Profit Market、Scale、TWAP 不调用任何写入；五个变异（一律切限价、Stop Market 切 Limit、给 TWAP/Scale 写价、桌面预填身份写死 `limit`、手机忽略映射）都会失败。

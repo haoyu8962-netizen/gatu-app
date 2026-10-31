@@ -30,6 +30,7 @@ const testState = vi.hoisted(() => ({
 	maxSize: 10,
 	openInterestCapped: false,
 	orderType: "market",
+	selectedPrice: null as { marketName: string; price: string } | null,
 	orderValue: 100,
 	quoteAvailable: 100,
 	spotBuyQuoteCost: undefined as number | undefined,
@@ -328,8 +329,9 @@ vi.mock("@/stores/use-order-entry-store", () => ({
 
 vi.mock("@/stores/use-orderbook-actions-store", () => ({
 	getOrderbookActionsStore: () => ({ actions: { clearSelectedPrice: vi.fn() } }),
-	getSelectedPriceForMarket: () => null,
-	useSelectedPrice: () => null,
+	getSelectedPriceForMarket: (selection: { marketName: string; price: string } | null, marketName?: string) =>
+		selection?.marketName === marketName ? selection.price : null,
+	useSelectedPrice: () => testState.selectedPrice,
 }));
 
 import { MobileTradeView } from "@/components/trade/mobile/mobile-trade-view";
@@ -904,6 +906,52 @@ describe("MobileTradeView order-size validation accessibility", () => {
 			expect(getValidationError(container)).toBeNull();
 			for (const control of getSizeControls(container)) expectDescriptionCleared(control);
 			expect(getOrderButton(container).disabled).toBe(false);
+		},
+	);
+});
+
+describe("MobileTradeView order book price clicks", () => {
+	let container: HTMLDivElement;
+	let root: Root;
+
+	beforeEach(() => {
+		setValidPerpScenario();
+		container = document.createElement("div");
+		document.body.appendChild(container);
+		root = createRoot(container);
+	});
+
+	afterEach(async () => {
+		await act(async () => root.unmount());
+		container.remove();
+		testState.selectedPrice = null;
+		vi.clearAllMocks();
+	});
+
+	it.each([
+		["market", "limit"],
+		["limit", "limit"],
+		["stopMarket", "stopLimit"],
+		["stopLimit", "stopLimit"],
+		["takeProfitLimit", "takeProfitLimit"],
+	] as const)("prices a %s order at a clicked book level as a %s order, like the official terminal", async (orderType, expected) => {
+		testState.orderType = orderType;
+		testState.selectedPrice = { marketName: "BTC", price: "98.5" };
+		await renderView(root);
+
+		expect(testState.actions.setOrderType.mock.calls).toEqual(expected === orderType ? [] : [[expected]]);
+		expect(testState.actions.setLimitPriceFromUser).toHaveBeenCalledWith(`BTC|${expected}`, "98.5");
+	});
+
+	it.each(["takeProfitMarket", "twap", "scale"] as const)(
+		"leaves a %s order unchanged when a book level is clicked",
+		async (orderType) => {
+			testState.orderType = orderType;
+			testState.selectedPrice = { marketName: "BTC", price: "98.5" };
+			await renderView(root);
+
+			expect(testState.actions.setOrderType).not.toHaveBeenCalled();
+			expect(testState.actions.setLimitPriceFromUser).not.toHaveBeenCalled();
 		},
 	);
 });

@@ -67,6 +67,7 @@ import type { MarginMode } from "@/lib/trade/margin-mode";
 import { isPositive, toNumber, toNumberOrZero } from "@/lib/trade/numbers";
 import {
 	canUseTpSl as canUseTpSlForOrder,
+	getOrderTypeForBookPrice,
 	isScaleOrderType,
 	isStopOrderType,
 	isTakeProfitOrderType,
@@ -441,9 +442,11 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 		getOrderbookActionsStore().actions.clearSelectedPrice();
 		if (price === null) return;
 
-		setOrderType("limit");
-		setLimitPriceFromUser(`${market?.name ?? ""}|limit`, price);
-	}, [market?.name, selectedPrice, setOrderType, setLimitPriceFromUser]);
+		const bookOrderType = getOrderTypeForBookPrice(orderType);
+		if (bookOrderType === null) return;
+		if (bookOrderType !== orderType) setOrderType(bookOrderType);
+		setLimitPriceFromUser(`${market?.name ?? ""}|${bookOrderType}`, price);
+	}, [market?.name, orderType, selectedPrice, setOrderType, setLimitPriceFromUser]);
 	const price = getOrderPrice(
 		orderType,
 		executionReferencePx,

@@ -351,7 +351,9 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/scale-conversion-price.test.ts \
   src/lib/tests/trade-form-twap-advanced.test.tsx \
   src/lib/tests/trade-form-compact-fields.test.tsx \
-  src/lib/tests/trade-form-tp-sl.test.tsx
+  src/lib/tests/trade-form-tp-sl.test.tsx \
+  src/lib/tests/limit-price-prefill-contract.test.ts \
+  tests/trade-panel-open-interest-cap.test.tsx
 
 # Confirmation surfaces (see docs/confirmation-surfaces.md)
 pnpm --dir apps/terminal exec vitest run \

@@ -579,6 +579,9 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Fixed
 
+- Clicking a price in the order book no longer turns every order into a limit order. As on the official
+  terminal, a market order becomes a limit order and a stop market a stop limit at that price, limit-priced
+  orders take the price, and take-profit market, Scale and TWAP orders stay untouched.
 - A spot balance without a market price is now worth $0 in the balances table, as on the official
   terminal, instead of showing what it cost as its value; with Hide small balances on, such a token is
   hidden like any other balance under $5, except HYPE, which always stays.

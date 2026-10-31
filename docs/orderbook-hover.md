@@ -49,7 +49,8 @@ without preventing scrolling. Mouse hover or keyboard focus taking over cancels
 the touch deadline so it cannot close the new selection.
 
 A completed long press suppresses its resulting click; a later ordinary tap
-still fills the clicked limit price without opening a tooltip. Pointer-generated
+still fills the clicked limit price without opening a tooltip (the order type it leaves the form in follows
+`docs/order-entry-surface-parity.md`, section 点击订单簿价格). Pointer-generated
 focus remains suppressed through `pointerup` and scope invalidation until the
 compatibility click, cancellation or a keyboard event; it must not be mistaken
 for keyboard selection. The price must remain valid when the long-press timer
