@@ -440,7 +440,8 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/action-error.test.ts \
   src/lib/tests/errors.test.ts \
   src/lib/tests/lingui-helper-translator-contract.test.ts \
-  src/lib/tests/catalog-completeness-contract.test.ts
+  src/lib/tests/catalog-completeness-contract.test.ts \
+  src/lib/tests/command-menu.test.tsx
 
 # Brand identity (brand/, names, logo, icons, status motion, domains, legal text; see docs/brand-assets.md and ADR 0027)
 pnpm test:brand

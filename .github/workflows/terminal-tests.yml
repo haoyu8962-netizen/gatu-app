@@ -344,6 +344,7 @@ jobs:
           src/lib/tests/errors.test.ts
           src/lib/tests/lingui-helper-translator-contract.test.ts
           src/lib/tests/catalog-completeness-contract.test.ts
+          src/lib/tests/command-menu.test.tsx
           src/lib/tests/footer-bar.test.tsx
           src/lib/tests/vaults-view.test.tsx
           src/lib/tests/portfolio-performance-chart.test.tsx

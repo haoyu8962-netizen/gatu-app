@@ -579,6 +579,8 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Fixed
 
+- The ⌘K market search now follows the interface language (title, field, empty result and market
+  type) and shows spot prices with the spot price precision instead of the perp one.
 - In Arabic, a plus or minus sign now stays in front of its number, as in the 24h change, PnL and
   funding rates, instead of appearing after the digits.
 - Spanish, French, Hindi and Arabic now translate the Link mobile device, phone import and API

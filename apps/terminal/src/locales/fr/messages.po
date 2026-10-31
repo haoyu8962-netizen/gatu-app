@@ -5578,6 +5578,7 @@ msgid "No market"
 msgstr "Pas de marché"
 
 #: src/components/trade/chart/token-selector-content.tsx
+#: src/components/trade/components/command-menu.tsx
 #: src/components/trade/positions/position-market-filter.tsx
 msgid "No markets found."
 msgstr "Aucun marché trouvé."
@@ -6326,6 +6327,7 @@ msgstr "Lien de staking permanent"
 #: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/chart/token-selector-trigger.tsx
+#: src/components/trade/components/command-menu.tsx
 #: src/components/trade/components/market-asset-info.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
@@ -7782,16 +7784,22 @@ msgstr "Rechercher par coffre, adresse ou gestionnaire"
 msgid "Search by wallet address or display name"
 msgstr "Rechercher par adresse de portefeuille ou nom d’affichage"
 
+#: src/components/trade/components/command-menu.tsx
+msgid "Search for a market to trade"
+msgstr "Recherchez un marché à trader"
+
 #: src/components/leaderboard/leaderboard-view.tsx
 msgid "Search leaderboard"
 msgstr "Rechercher dans le classement"
 
 #: src/components/funding-comparison/funding-comparison-view.tsx
+#: src/components/trade/components/command-menu.tsx
 #: src/components/trade/positions/position-market-filter.tsx
 msgid "Search markets"
 msgstr "Rechercher des marchés"
 
 #: src/components/trade/chart/token-selector-content.tsx
+#: src/components/trade/components/command-menu.tsx
 #: src/components/trade/positions/position-market-filter.tsx
 msgid "Search markets..."
 msgstr "Rechercher des marchés..."
@@ -8295,6 +8303,7 @@ msgstr "Source"
 #: src/components/trade/chart/token-selector-row.tsx
 #: src/components/trade/chart/token-selector-row.tsx
 #: src/components/trade/chart/token-selector-trigger.tsx
+#: src/components/trade/components/command-menu.tsx
 #: src/components/trade/components/market-asset-info.tsx
 #: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
