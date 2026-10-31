@@ -406,7 +406,7 @@ msgstr "एक्सेस अक्षम है"
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "Access is stored in this browser only. If you use {BRAND_NAME} from your Home Screen, scan the QR from that app instead: Connect, then Link Desktop Wallet."
-msgstr ""
+msgstr "एक्सेस केवल इसी ब्राउज़र में सहेजा जाता है। अगर आप होम स्क्रीन से {BRAND_NAME} इस्तेमाल करते हैं, तो उसी ऐप से QR स्कैन करें: कनेक्ट करें, फिर डेस्कटॉप वॉलेट लिंक करें।"
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
 msgid "Access restricted"
@@ -2394,11 +2394,11 @@ msgstr "संस्करण कॉपी करें"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Could not check on Hyperliquid whether trading is activated. Nothing was signed. Try again."
-msgstr ""
+msgstr "Hyperliquid पर यह जाँचा नहीं जा सका कि ट्रेडिंग सक्रिय है या नहीं। किसी चीज़ पर हस्ताक्षर नहीं हुआ। फिर से प्रयास करें।"
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "Could not check the approval on Hyperliquid. Nothing was imported. Try again."
-msgstr ""
+msgstr "Hyperliquid पर स्वीकृति जाँची नहीं जा सकी। कुछ भी इम्पोर्ट नहीं हुआ। फिर से प्रयास करें।"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Could not check the builder fee approval on Hyperliquid. Nothing was signed. Try again."
@@ -3378,7 +3378,7 @@ msgstr "समाप्त"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Expires {expiresAt}"
-msgstr ""
+msgstr "समाप्ति: {expiresAt}"
 
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "Expires {expiresAtLabel}."
@@ -4049,7 +4049,7 @@ msgstr "इतिहास"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Hold for {holdSeconds} seconds to reveal the QR code"
-msgstr ""
+msgstr "QR कोड दिखाने के लिए {holdSeconds} सेकंड तक दबाकर रखें"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Hold for 4 seconds to reveal phone access QR"
@@ -4061,7 +4061,7 @@ msgstr ""
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Hold to reveal"
-msgstr ""
+msgstr "दिखाने के लिए दबाकर रखें"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Hold to reveal QR"
@@ -4212,7 +4212,7 @@ msgstr "छवि सहेजी गई"
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "Import"
-msgstr ""
+msgstr "इम्पोर्ट करें"
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "Import phone access"
@@ -4377,7 +4377,7 @@ msgstr "शामिल होने का समय"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Keep holding for {remainingSeconds}s"
-msgstr ""
+msgstr "{remainingSeconds} सेकंड और दबाकर रखें"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Keep holding for 4 seconds. Release, leave, blur, or press Escape to cancel."
@@ -5360,7 +5360,7 @@ msgstr "इस रिकॉर्ड का समाधान होने त�
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "New mobile pairing is temporarily unavailable."
-msgstr ""
+msgstr "नया मोबाइल लिंक करना अस्थायी रूप से उपलब्ध नहीं है।"
 
 #: src/components/funding-history/funding-history-page.tsx
 #: src/components/historical-orders/historical-orders-page.tsx
@@ -5489,7 +5489,7 @@ msgstr "कोई पात्र लीडरबोर्ड खाता न�
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "No expiry"
-msgstr ""
+msgstr "कोई समाप्ति नहीं"
 
 #: src/components/api-wallet/api-wallet-list.tsx
 msgid "No expiry reported"
@@ -5820,13 +5820,13 @@ msgstr "iPhone या iPad पर शेयर मेनू खोलें, ह
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "On your phone, open {BRAND_NAME}, tap Connect, then Link Desktop Wallet and scan this code."
-msgstr ""
+msgstr "अपने फ़ोन पर {BRAND_NAME} खोलें, कनेक्ट करें पर टैप करें, फिर डेस्कटॉप वॉलेट लिंक करें पर टैप करके यह कोड स्कैन करें।"
 
 #. placeholder {0}: payload.env
 #. placeholder {1}: formatDateTime(payload.agentValidUntilMs, { locale })
 #: src/routes/mobile-agent-sync.tsx
 msgid "Once imported, this phone trades on {0} with the desktop-approved key until {1}. It cannot withdraw."
-msgstr ""
+msgstr "इम्पोर्ट होने के बाद यह फ़ोन डेस्कटॉप पर स्वीकृत कुंजी से {1} तक {0} पर ट्रेड करेगा। यह निकासी नहीं कर सकता।"
 
 #: src/components/staking/staking-action-modal.tsx
 msgid "One-day validator lock"
@@ -5871,7 +5871,7 @@ msgstr "खुला"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Open API Wallet"
-msgstr ""
+msgstr "API वॉलेट खोलें"
 
 #: src/config/footer-links.ts
 msgid "Open command menu"
@@ -6379,7 +6379,7 @@ msgstr "परपेचुअल PNL"
 
 #: src/components/trade/components/mobile-agent-ended-notifier.tsx
 msgid "Phone access ended for {account}"
-msgstr ""
+msgstr "{account} के लिए फ़ोन एक्सेस समाप्त हो गया"
 
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "Phone access is ready, but the temporary QR copy could not be cleared. Close this tab and clear this site's data."
@@ -7755,7 +7755,7 @@ msgstr "स्केल स्क्यू {SCALE_SKEW_MIN}-{SCALE_SKEW_MAX} ह
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "Scan the QR from Link mobile device on your desktop to load a trading key."
-msgstr ""
+msgstr "ट्रेडिंग कुंजी लोड करने के लिए अपने डेस्कटॉप पर मोबाइल डिवाइस लिंक करें वाला QR स्कैन करें।"
 
 #: src/components/trade/components/mobile-agent-qr-scanner.tsx
 msgid "Scan the QR from the QR icon in the top-right of {BRAND_NAME} on desktop (Link mobile device)."
@@ -8100,7 +8100,7 @@ msgstr "हस्ताक्षर के लिए तैयार"
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Signing with your email wallet"
-msgstr ""
+msgstr "आपके ईमेल वॉलेट से हस्ताक्षर हो रहा है"
 
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/config/ui-text.ts
@@ -8483,7 +8483,7 @@ msgstr "कनेक्टेड रहें"
 #. placeholder {0}: formatDateTime(agentValidUntilMs, { locale: i18n.locale })
 #: src/routes/mobile-agent-sync.tsx
 msgid "Stays on this phone until {0} unless you revoke it from the master wallet on desktop."
-msgstr ""
+msgstr "यह {0} तक इस फ़ोन पर रहेगी, जब तक आप डेस्कटॉप पर मास्टर वॉलेट से इसे रद्द न करें।"
 
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "Stays on this phone until {validUntilLabel} unless you disconnect it here or revoke it from the master wallet on desktop."
@@ -9077,11 +9077,11 @@ msgstr "कनेक्शन पूरा नहीं किया जा स�
 #: src/lib/tests/mobile-agent-sync-route.test.tsx
 #: src/routes/mobile-agent-sync.tsx
 msgid "The desktop has not approved this key. Create a new QR on desktop."
-msgstr ""
+msgstr "डेस्कटॉप ने इस कुंजी को स्वीकृत नहीं किया है। डेस्कटॉप पर नया QR बनाएँ।"
 
 #: src/components/trade/components/mobile-agent-ended-notifier.tsx
 msgid "The desktop-approved key expired or was replaced from desktop. Scan a new QR from Link mobile device."
-msgstr ""
+msgstr "डेस्कटॉप से स्वीकृत कुंजी की समय-सीमा समाप्त हो गई या उसे डेस्कटॉप से बदल दिया गया। मोबाइल डिवाइस लिंक करें से नया QR स्कैन करें।"
 
 #: src/components/trade/positions/send-modal.tsx
 msgid "The destination address has never sent a transaction on Hyperliquid. Do not use Send to transfer to an exchange or another platform that does not support the Hyperliquid blockchain, or your funds will be lost. To move USDC to Arbitrum, use Withdraw instead."
@@ -9296,7 +9296,7 @@ msgstr "सार्वजनिक वॉल्ट फ़ीड सत्या
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "The QR can trade but not withdraw. Approving replaces the mobile key of a phone that is already linked, including one linked in the Hyperliquid app. Do not share it, screenshot it or show it while sharing your screen."
-msgstr ""
+msgstr "यह QR ट्रेड कर सकता है, लेकिन निकासी नहीं कर सकता। स्वीकृति देने से पहले से लिंक किए गए फ़ोन की मोबाइल कुंजी बदल जाती है, Hyperliquid ऐप में लिंक किए गए फ़ोन की भी। इसे साझा न करें, इसका स्क्रीनशॉट न लें और स्क्रीन शेयर करते समय इसे न दिखाएँ।"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "The QR can trade but not withdraw. Do not share it, screenshot it or show it while sharing your screen."
@@ -9312,11 +9312,11 @@ msgstr ""
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "The QR could not be drawn. Hold to reveal to try again, or reload the page if it keeps failing."
-msgstr ""
+msgstr "QR बनाया नहीं जा सका। फिर से प्रयास करने के लिए दबाकर रखें, या बार-बार विफल होने पर पेज रीलोड करें।"
 
 #: src/components/trade/components/mobile-agent-qr-scanner.tsx
 msgid "The QR scanner could not load. Check your connection, reload the page and try again."
-msgstr ""
+msgstr "QR स्कैनर लोड नहीं हो सका। अपना कनेक्शन जाँचें, पेज रीलोड करें और फिर से प्रयास करें।"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "The QR stays hidden until you deliberately reveal it."
@@ -9530,7 +9530,7 @@ msgstr "दावा करने के लिए कोई दावा न �
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "This account already has {count} named API wallets and none of them is a mobile key. Hyperliquid allows {limit} (more with sub-accounts or higher trading volume), so this approval may be rejected. If it is, remove one you no longer use:"
-msgstr ""
+msgstr "इस खाते में पहले से {count} नामित API वॉलेट हैं और उनमें से कोई भी मोबाइल कुंजी नहीं है। Hyperliquid {limit} की अनुमति देता है (सब-अकाउंट या अधिक ट्रेडिंग वॉल्यूम के साथ ज़्यादा), इसलिए यह स्वीकृति अस्वीकार हो सकती है। ऐसा होने पर, जिसे आप अब इस्तेमाल नहीं करते उसे हटाएँ:"
 
 #: src/lib/errors/action-error.ts
 msgid "This account already has a referral code and cannot apply another one."
@@ -9538,7 +9538,7 @@ msgstr "इस खाते पर पहले से रेफ़रल को
 
 #: src/lib/errors/exchange-error-text.ts
 msgid "This account already has the {limit} named API wallets its trading volume allows. Remove one on the API Wallet page before approving another."
-msgstr ""
+msgstr "इस खाते में पहले से {limit} नामित API वॉलेट हैं, जो इसके ट्रेडिंग वॉल्यूम की सीमा है। दूसरा स्वीकृत करने से पहले API वॉलेट पेज पर एक हटाएँ।"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "This account already uses the {limit} named API wallets Hyperliquid allows, and none of them is a mobile key, so the approval will be rejected unless your trading volume allows more. Remove one you no longer use first:"
@@ -9744,7 +9744,7 @@ msgstr "यह पैनल लोड नहीं हो सका। फिर
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "This phone could not store the trading key. Clear this site's data and scan again."
-msgstr ""
+msgstr "यह फ़ोन ट्रेडिंग कुंजी सहेज नहीं सका। इस साइट का डेटा साफ़ करें और फिर से स्कैन करें।"
 
 #: src/lib/trade/owner-approval-message.ts
 #~ msgid "This phone uses a desktop-approved trading key. Approve trading with the master wallet on desktop first: open Link mobile device there."
@@ -9757,11 +9757,11 @@ msgstr "यह फ़ोन डेस्कटॉप से स्वीकृ�
 
 #: src/lib/trade/owner-approval-message.ts
 msgid "This phone uses a desktop-approved trading key. Finish trading authorization on desktop first by placing a first order there."
-msgstr ""
+msgstr "यह फ़ोन डेस्कटॉप से स्वीकृत ट्रेडिंग कुंजी का उपयोग करता है। पहले डेस्कटॉप पर पहला ऑर्डर देकर ट्रेडिंग प्राधिकरण पूरा करें।"
 
 #: src/hooks/trade/use-master-wallet-action-reason.ts
 msgid "This phone uses a desktop-approved trading key. This action needs the master wallet on desktop."
-msgstr ""
+msgstr "यह फ़ोन डेस्कटॉप से स्वीकृत ट्रेडिंग कुंजी का उपयोग करता है। इस कार्रवाई के लिए डेस्कटॉप पर मास्टर वॉलेट चाहिए।"
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-market-close-modal.tsx
@@ -9793,7 +9793,7 @@ msgstr "यह पोज़िशन अब आइसोलेटेड मा�
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "This QR belongs to a different network. Use the same network on both devices, then scan a new QR from desktop."
-msgstr ""
+msgstr "यह QR किसी दूसरे नेटवर्क का है। दोनों डिवाइस पर एक ही नेटवर्क इस्तेमाल करें, फिर डेस्कटॉप से नया QR स्कैन करें।"
 
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "This QR belongs to a different owner account."
@@ -9806,7 +9806,7 @@ msgstr ""
 #: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
 msgid "This QR expired. Create a new QR on desktop."
-msgstr ""
+msgstr "इस QR की समय-सीमा समाप्त हो गई। डेस्कटॉप पर नया QR बनाएँ।"
 
 #: src/components/trade/components/mobile-agent-qr-scanner.tsx
 #: src/routes/mobile-agent-sync.tsx
@@ -10229,7 +10229,7 @@ msgstr "इन बाज़ारों में ट्रेडिंग म�
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Trading is not activated on this account yet. Deposit and place a first order on this desktop to finish trading authorization, then link your phone."
-msgstr ""
+msgstr "इस खाते पर ट्रेडिंग अभी सक्रिय नहीं है। ट्रेडिंग प्राधिकरण पूरा करने के लिए इसी डेस्कटॉप पर जमा करें और पहला ऑर्डर दें, फिर अपना फ़ोन लिंक करें।"
 
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/config/trade-panel-labels.ts
@@ -11625,7 +11625,7 @@ msgstr "आपका ईमेल वॉलेट उपलब्ध नही�
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Your email wallet signs the reviewed request automatically. Nothing changes before Hyperliquid accepts it."
-msgstr ""
+msgstr "आपका ईमेल वॉलेट समीक्षा किए गए अनुरोध पर अपने-आप हस्ताक्षर करता है। Hyperliquid के स्वीकार करने से पहले कुछ नहीं बदलता।"
 
 #: src/components/vaults/vault-detail-view.tsx
 #: src/components/vaults/vaults-list.tsx

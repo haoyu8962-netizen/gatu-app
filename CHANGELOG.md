@@ -579,6 +579,8 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Fixed
 
+- Spanish, French, Hindi and Arabic now translate the Link mobile device, phone import and API
+  wallet email-signing messages (31 per language) that still showed in English.
 - Unified and portfolio-margin accounts holding an outcome token or a token without a market price now
   show their portfolio value, as the official terminal does: an outcome token is valued at its outcome
   market's price and a token without a price counts as zero instead of hiding the whole value.
