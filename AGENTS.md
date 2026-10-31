@@ -353,6 +353,7 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/trade-form-compact-fields.test.tsx \
   src/lib/tests/trade-form-tp-sl.test.tsx \
   src/lib/tests/limit-price-prefill-contract.test.ts \
+  src/lib/tests/book-price-selection.test.tsx \
   tests/trade-panel-open-interest-cap.test.tsx
 
 # Confirmation surfaces (see docs/confirmation-surfaces.md)

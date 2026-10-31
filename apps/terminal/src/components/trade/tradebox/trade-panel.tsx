@@ -37,6 +37,8 @@ import {
 	type SelectableAccountAbstraction,
 	useAccountAbstractionControl,
 } from "@/hooks/trade/use-account-abstraction-control";
+import { useBookPriceSelection } from "@/hooks/trade/use-book-price-selection";
+
 import { useBuilderFeeTenthsBps } from "@/hooks/trade/use-builder-fee-config";
 import { useDepositAvailability } from "@/hooks/trade/use-deposit-availability";
 import { useMarketFeeRates } from "@/hooks/trade/use-fee-rates";
@@ -63,7 +65,6 @@ import type { MarginMode } from "@/lib/trade/margin-mode";
 import { toNumber, toNumberOrZero } from "@/lib/trade/numbers";
 import {
 	canUseTpSl as canUseTpSlForOrder,
-	getOrderTypeForBookPrice,
 	isScaleOrderType,
 	isStopOrderType,
 	isTakeProfitOrderType,
@@ -108,11 +109,6 @@ import {
 	useTwapStopPrice,
 	useTwapTriggerPrice,
 } from "@/stores/use-order-entry-store";
-import {
-	getOrderbookActionsStore,
-	getSelectedPriceForMarket,
-	useSelectedPrice,
-} from "@/stores/use-orderbook-actions-store";
 import {
 	AccountModeModal,
 	LeverageModal,
@@ -319,7 +315,6 @@ export function TradePanel() {
 
 	const { takerRate, makerRate } = useMarketFeeRates(market);
 	const builderFeeTenthsBps = useBuilderFeeTenthsBps();
-	const selectedPrice = useSelectedPrice();
 	const triggerPriceInput = useTriggerPrice();
 	const twapMinutesNum = useTwapMinutes();
 	const twapRandomize = useTwapRandomize();
@@ -355,7 +350,7 @@ export function TradePanel() {
 	const usesLimitPrice = usesLimitPriceForOrder(orderType);
 	const canUseTpSl = canUseTpSlForOrder(orderType);
 
-	const { setSide, setOrderType, setLimitPriceFromUser } = useOrderEntryActions();
+	const { setSide, setOrderType } = useOrderEntryActions();
 
 	const [approvalError, setApprovalError] = useState<{ cause: unknown } | null>(null);
 	const [activeModal, setActiveModal] = useState<ActiveModal>(null);
@@ -377,18 +372,7 @@ export function TradePanel() {
 	const swapTargetToken =
 		isMarketCatalogLoading || marketCatalogError ? null : getBuilderPerpSwapTargetToken(market, spotMarkets);
 
-	useEffect(() => {
-		if (selectedPrice === null) return;
-
-		const price = getSelectedPriceForMarket(selectedPrice, market?.name);
-		getOrderbookActionsStore().actions.clearSelectedPrice();
-		if (price === null) return;
-
-		const bookOrderType = getOrderTypeForBookPrice(orderType);
-		if (bookOrderType === null) return;
-		if (bookOrderType !== orderType) setOrderType(bookOrderType);
-		setLimitPriceFromUser(`${market?.name ?? ""}|${bookOrderType}`, price);
-	}, [market?.name, orderType, selectedPrice, setOrderType, setLimitPriceFromUser]);
+	useBookPriceSelection(market?.name);
 
 	useEffect(() => {
 		if (isSpotMarket && triggerOrder) {

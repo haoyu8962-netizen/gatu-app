@@ -202,6 +202,7 @@ jobs:
           src/lib/tests/use-exchange-portfolio-margin-policy.test.tsx
           src/lib/tests/fast-asset-ctxs-subscription.test.tsx
           src/lib/tests/limit-price-prefill-contract.test.ts
+          src/lib/tests/book-price-selection.test.tsx
           src/lib/tests/mobile-order-safety-contract.test.ts
           src/lib/tests/order-confirmation-gate.test.tsx
           src/lib/tests/order-entry-store.test.tsx

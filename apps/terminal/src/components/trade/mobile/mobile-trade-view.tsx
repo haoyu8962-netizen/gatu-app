@@ -39,6 +39,8 @@ import {
 	type SelectableAccountAbstraction,
 	useAccountAbstractionControl,
 } from "@/hooks/trade/use-account-abstraction-control";
+import { useBookPriceSelection } from "@/hooks/trade/use-book-price-selection";
+
 import { useBuilderFeeTenthsBps } from "@/hooks/trade/use-builder-fee-config";
 import { useDepositAvailability } from "@/hooks/trade/use-deposit-availability";
 import { useMarketFeeRates } from "@/hooks/trade/use-fee-rates";
@@ -67,7 +69,6 @@ import type { MarginMode } from "@/lib/trade/margin-mode";
 import { isPositive, toNumber, toNumberOrZero } from "@/lib/trade/numbers";
 import {
 	canUseTpSl as canUseTpSlForOrder,
-	getOrderTypeForBookPrice,
 	isScaleOrderType,
 	isStopOrderType,
 	isTakeProfitOrderType,
@@ -112,11 +113,6 @@ import {
 	useTwapStopPrice,
 	useTwapTriggerPrice,
 } from "@/stores/use-order-entry-store";
-import {
-	getOrderbookActionsStore,
-	getSelectedPriceForMarket,
-	useSelectedPrice,
-} from "@/stores/use-orderbook-actions-store";
 import { TokenSelector } from "../chart/token-selector";
 import { OrderFeeSummaryValue } from "../components/order-fee-summary-value";
 import { MarginModeModal, warmTradeSettingsModals } from "../tradebox/lazy-trade-settings-modals";
@@ -174,8 +170,6 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 
 	const slippageBps = useMarketOrderSlippageBps();
 	const slippagePercent = useMarketOrderSlippagePercent();
-
-	const selectedPrice = useSelectedPrice();
 
 	const orderType = useOrderType();
 	const twapOrder = isTwapOrderType(orderType);
@@ -435,18 +429,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 		if (active && isSpotMarket && isTriggerOrder) setOrderType("market");
 	}, [active, isSpotMarket, isTriggerOrder, setOrderType]);
 
-	useEffect(() => {
-		if (selectedPrice === null) return;
-
-		const price = getSelectedPriceForMarket(selectedPrice, market?.name);
-		getOrderbookActionsStore().actions.clearSelectedPrice();
-		if (price === null) return;
-
-		const bookOrderType = getOrderTypeForBookPrice(orderType);
-		if (bookOrderType === null) return;
-		if (bookOrderType !== orderType) setOrderType(bookOrderType);
-		setLimitPriceFromUser(`${market?.name ?? ""}|${bookOrderType}`, price);
-	}, [market?.name, orderType, selectedPrice, setOrderType, setLimitPriceFromUser]);
+	useBookPriceSelection(market?.name);
 	const price = getOrderPrice(
 		orderType,
 		executionReferencePx,

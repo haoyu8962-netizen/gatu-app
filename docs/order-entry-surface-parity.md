@@ -132,7 +132,7 @@ pnpm --dir apps/terminal exec playwright test \
 
 ## 点击订单簿价格（2026-11-01，审查 C7）
 
-依据[全功能审查](work-memory/sessions/2026-10-30-full-feature-audit.md) C7：此前点击订单簿任一档位，桌面与手机的下单表单都无条件切成限价单，Stop Market、Take Profit Limit、Scale、TWAP 的设置随之丢失。现在按官方终端（2026-10-31 生产包 `gf`／`dw`，并在官方页面只读实测）处理，桌面订单簿、手机紧凑簿与分栏簿三处点击走同一条路径（`getOrderTypeForBookPrice`，`lib/trade/order-types.ts`）：
+依据[全功能审查](work-memory/sessions/2026-10-30-full-feature-audit.md) C7：此前点击订单簿任一档位，桌面与手机的下单表单都无条件切成限价单，Stop Market、Take Profit Limit、Scale、TWAP 的设置随之丢失。现在按官方终端（2026-10-31 生产包 `gf`／`dw`，并在官方页面只读实测）处理，桌面订单簿、手机紧凑簿与分栏簿三处点击走同一条路径：桌面与手机下单表单都调用 `useBookPriceSelection`（`hooks/trade/use-book-price-selection.ts`），类型映射是 `getOrderTypeForBookPrice`（`lib/trade/order-types.ts`）。一次点击只应用一次：读到选价就清除，无论订单类型是否因此改变，别的市场的点击直接丢弃，所以之后切换订单类型不会重放旧点击。
 
 | 点击前 | 点击后 | 价格 |
 | --- | --- | --- |
@@ -145,4 +145,4 @@ pnpm --dir apps/terminal exec playwright test \
 - 限价的预填身份用切换后的类型（`<市场>|stopLimit` 等），与表单自身的预填身份一致。
 - 官方「点击数量或累计格同时填数量」（默认开）与分栏簿行不可点击，本次未做，需另行决定。
 
-回归：`tests/trade-panel-open-interest-cap.test.tsx`（桌面）与 `tests/mobile-trade-size-validation-a11y.test.tsx`（手机）逐类核对切换后的类型、写入的价格与预填身份，Take Profit Market、Scale、TWAP 不调用任何写入；五个变异（一律切限价、Stop Market 切 Limit、给 TWAP/Scale 写价、桌面预填身份写死 `limit`、手机忽略映射）都会失败。
+回归：`src/lib/tests/book-price-selection.test.tsx` 用真实的下单与订单簿两个 store 核对八类订单的结果、点击只应用一次（之后切类型、改价或重新渲染都不重放）、被忽略的类型与别的市场的点击都会被清除；`tests/trade-panel-open-interest-cap.test.tsx`（桌面）与 `tests/mobile-trade-size-validation-a11y.test.tsx`（手机）核对两端都接上了这条路径与预填身份。变异（一律切限价、Stop Market 切 Limit、给 TWAP/Scale 写价、预填身份写死 `limit`、不清除点击、只在本市场或可处理的类型时才清除、任一端不调用）都会失败。
