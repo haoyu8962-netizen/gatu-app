@@ -132,6 +132,10 @@ export function addSpotMarketPriceAliases(
 	return result;
 }
 
+/**
+ * The USD value of a spot balance row at the current price. A token without a price is worth zero, as
+ * in the official balances table: its entry notional is what it cost, not what it is worth now.
+ */
 function getSpotUsdValue(balance: SpotBalance, tokenUsdPrices?: TokenUsdPrices): string {
 	if (balance.coin === DEFAULT_QUOTE_TOKEN) return balance.total ?? "0";
 
@@ -140,7 +144,7 @@ function getSpotUsdValue(balance: SpotBalance, tokenUsdPrices?: TokenUsdPrices):
 		return toSafeBig(balance.total).times(price).toString();
 	}
 
-	return balance.entryNtl ?? "0";
+	return "0";
 }
 
 function getTokenUsdPrice(token: string | null | undefined, tokenUsdPrices?: TokenUsdPrices): Big | null {

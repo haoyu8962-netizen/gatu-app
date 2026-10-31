@@ -579,6 +579,8 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Fixed
 
+- A spot balance without a market price is now worth $0 in the balances table and the toolbar's total
+  assets, as on the official terminal, instead of showing what it cost as its value.
 - Trade history dates now include the year, like the order history, on the desktop tab, the full page
   and in CSV exports, and the market order summary shows the maximum slippage in the accent colour instead
   of the error red. Funding history, TWAP history and fill history, and deposits and withdrawals show the
