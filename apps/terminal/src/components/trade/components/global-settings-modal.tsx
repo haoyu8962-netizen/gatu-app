@@ -13,7 +13,7 @@ import {
 	Toggle,
 } from "@sairn/ui";
 import type { ChangeEvent, ReactNode } from "react";
-import { useId, useReducer, useState } from "react";
+import { useId, useReducer, useRef, useState } from "react";
 import { toast } from "sonner";
 import { NumberInput } from "@/components/ui/number-input";
 import { APP_BUILD_COMMIT, APP_RELEASE_ID, APP_RELEASE_LABEL, APP_VERSION } from "@/config/app";
@@ -68,6 +68,7 @@ export function GlobalSettingsModal() {
 	} = useGlobalSettingsActions();
 	const network = useNetwork();
 	const isMobile = useIsMobile();
+	const popupRef = useRef<HTMLDivElement>(null);
 	const { clientKey, env } = useHyperliquid();
 	const [, refreshConfirmationPreference] = useReducer((revision: number) => revision + 1, 0);
 	const confirmationIdentity = { owner: clientKey, env };
@@ -125,7 +126,7 @@ export function GlobalSettingsModal() {
 
 	return (
 		<Modal open={open} onOpenChange={handleOpenChange}>
-			<ModalPopup size="sm" closeLabel={t`Close`}>
+			<ModalPopup ref={popupRef} initialFocus={isMobile ? popupRef : undefined} size="sm" closeLabel={t`Close`}>
 				<ModalHeader>
 					<ModalTitle>{t`Settings`}</ModalTitle>
 				</ModalHeader>
@@ -227,11 +228,13 @@ export function GlobalSettingsModal() {
 								/>
 							</SettingRow>
 						)}
-						<SettingRow label={t`Desktop layout`} hint={t`Page reloads when changed`}>
-							<Button variant="outline" intent="neutral" size="xs" onClick={handleDesktopLayoutReset}>
-								{t`Reset`}
-							</Button>
-						</SettingRow>
+						{!isMobile && (
+							<SettingRow label={t`Desktop layout`} hint={t`Page reloads when changed`}>
+								<Button variant="outline" intent="neutral" size="xs" onClick={handleDesktopLayoutReset}>
+									{t`Reset`}
+								</Button>
+							</SettingRow>
+						)}
 					</SettingsGroup>
 
 					{walletExport.visible && (

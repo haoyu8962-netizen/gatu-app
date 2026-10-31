@@ -66,9 +66,39 @@ describe("mobile passive data presentation contract", () => {
 				"t`Live position data is stale.",
 				"t`Failed to load positions.",
 				"<Trans>Loading account mode...</Trans>",
+				"guardMessage = t`Loading...`",
 			])
 				expect(source, file).not.toContain(message);
 		}
+	});
+
+	it("keeps the history pages free of passive read-failure banners and empty conclusions", () => {
+		for (const file of [
+			"../../trade-history/trade-history-page.tsx",
+			"../../historical-orders/historical-orders-page.tsx",
+			"../../funding-history/funding-history-page.tsx",
+		]) {
+			const source = readFileSync(resolve(mobile, file), "utf8");
+			for (const marker of [
+				"Refresh failed.",
+				"Previously loaded",
+				"bg-warning/",
+				"border-warning/",
+				'role="alert" className="border-b',
+			])
+				expect(source, `${file}: ${marker}`).not.toContain(marker);
+			expect(source, file).toContain("HistoryPageUnavailable");
+		}
+		const placeholder = readFileSync(resolve(mobile, "../../ui/history-page-unavailable.tsx"), "utf8");
+		for (const marker of ["Icon", "text-error", "text-warning", 'role="alert"'])
+			expect(placeholder, `history-page-unavailable.tsx: ${marker}`).not.toContain(marker);
+		expect(placeholder).toContain('className="sr-only"');
+	});
+
+	it("keeps the desktop deposits and withdrawals tab free of read-failure text", () => {
+		const source = readFileSync(resolve(mobile, "../positions/account-transfers-tab.tsx"), "utf8");
+		expect(source).not.toContain("Failed to load deposits and withdrawals");
+		expect(source).not.toContain('variant="error"');
 	});
 
 	it("does not couple transfer controls to the presence of a notice", () => {

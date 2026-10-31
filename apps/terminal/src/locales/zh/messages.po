@@ -3521,8 +3521,8 @@ msgstr "加载余额失败"
 #~ msgstr "加载余额失败。"
 
 #: src/components/trade/positions/account-transfers-tab.tsx
-msgid "Failed to load deposits and withdrawals."
-msgstr "存款和提款记录加载失败。"
+#~ msgid "Failed to load deposits and withdrawals."
+#~ msgstr "存款和提款记录加载失败。"
 
 #: src/components/trade/positions/funding-tab.tsx
 #~ msgid "Failed to load funding payments."
@@ -3863,8 +3863,8 @@ msgid "Funding Payments"
 msgstr "资金费用"
 
 #: src/components/funding-history/funding-history-page.tsx
-msgid "Funding payments are unavailable"
-msgstr "资金费支付记录不可用"
+#~ msgid "Funding payments are unavailable"
+#~ msgstr "资金费支付记录不可用"
 
 #: src/components/funding-history/funding-history-page.tsx
 #~ msgid "Funding payments for {0}"
@@ -3880,8 +3880,8 @@ msgid "Funding payments pagination"
 msgstr "资金费支付记录分页"
 
 #: src/components/funding-history/funding-history-page.tsx
-msgid "Funding payments will load automatically when the connection returns."
-msgstr "连接恢复后将自动加载资金费支付记录。"
+#~ msgid "Funding payments will load automatically when the connection returns."
+#~ msgstr "连接恢复后将自动加载资金费支付记录。"
 
 #: src/components/funding-comparison/funding-comparison-view.tsx
 msgid "Funding period"
@@ -4673,6 +4673,7 @@ msgstr "正在加载所有链上的余额…"
 #~ msgstr "正在加载存款和提款记录..."
 
 #: src/components/funding-history/funding-history-page.tsx
+#: src/components/funding-history/funding-history-page.tsx
 msgid "Loading funding payments"
 msgstr "正在加载资金费支付记录"
 
@@ -4696,6 +4697,7 @@ msgstr "加载市场中..."
 #~ msgid "Loading open orders..."
 #~ msgstr "加载未成交订单中..."
 
+#: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/historical-orders/historical-orders-page.tsx
 msgid "Loading order history"
 msgstr "正在加载委托历史"
@@ -4742,6 +4744,7 @@ msgid "Loading token metadata..."
 msgstr "正在加载代币元数据..."
 
 #: src/components/trade-history/trade-history-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
 msgid "Loading trade history"
 msgstr "正在加载成交历史"
 
@@ -4780,7 +4783,6 @@ msgstr "加载钱包中..."
 #: src/components/trade/chart/tradingview-chart.tsx
 #: src/components/trade/components/deposit-modal-loading-fallback.tsx
 #: src/components/trade/components/global-modals.tsx
-#: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/ui/lazy-dialog-boundary.tsx
 #: src/components/ui/lazy-dialog-boundary.tsx
 #: src/config/ui-text.ts
@@ -6052,8 +6054,8 @@ msgid "Order History"
 msgstr "委托历史"
 
 #: src/components/historical-orders/historical-orders-page.tsx
-msgid "Order history is unavailable"
-msgstr "委托历史不可用"
+#~ msgid "Order history is unavailable"
+#~ msgstr "委托历史不可用"
 
 #: src/components/historical-orders/historical-orders-page.tsx
 msgid "Order history pagination"
@@ -6064,8 +6066,8 @@ msgstr "委托历史分页"
 #~ msgstr "委托历史更新已暂停。"
 
 #: src/components/historical-orders/historical-orders-page.tsx
-msgid "Order history will load automatically when the connection returns."
-msgstr "连接恢复后将自动加载委托历史。"
+#~ msgid "Order history will load automatically when the connection returns."
+#~ msgstr "连接恢复后将自动加载委托历史。"
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/lib/trade/order-submission-feedback.ts
@@ -7108,16 +7110,16 @@ msgid "Refresh both devices to update phone access, then create a new QR."
 msgstr "请在两台设备上刷新页面以更新手机访问功能，然后生成新的二维码。"
 
 #: src/components/funding-history/funding-history-page.tsx
-msgid "Refresh failed. Previously loaded funding payments remain visible."
-msgstr "刷新失败。此前加载的资金费支付记录仍保持可见。"
+#~ msgid "Refresh failed. Previously loaded funding payments remain visible."
+#~ msgstr "刷新失败。此前加载的资金费支付记录仍保持可见。"
 
 #: src/components/historical-orders/historical-orders-page.tsx
-msgid "Refresh failed. Previously loaded order history remains visible."
-msgstr "刷新失败。此前加载的委托历史仍保持可见。"
+#~ msgid "Refresh failed. Previously loaded order history remains visible."
+#~ msgstr "刷新失败。此前加载的委托历史仍保持可见。"
 
 #: src/components/trade-history/trade-history-page.tsx
-msgid "Refresh failed. Previously loaded trade history remains visible."
-msgstr "刷新失败。此前加载的成交历史仍保持可见。"
+#~ msgid "Refresh failed. Previously loaded trade history remains visible."
+#~ msgstr "刷新失败。此前加载的成交历史仍保持可见。"
 
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 msgid "Refresh quote"
@@ -7381,15 +7383,12 @@ msgstr "继续跟踪"
 
 #: src/components/api-wallet/api-wallet-list.tsx
 #: src/components/funding-comparison/funding-comparison-view.tsx
-#: src/components/funding-history/funding-history-page.tsx
-#: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/portfolio/portfolio-overview.tsx
 #: src/components/portfolio/portfolio-performance-chart.tsx
 #: src/components/referrals/referral-activity.tsx
 #: src/components/referrals/referral-dashboard.tsx
 #: src/components/staking/staking-view.tsx
 #: src/components/staking/staking-view.tsx
-#: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/chart/funding-history-load-boundary.tsx
 #: src/components/trade/chart/funding-history-panel.tsx
 #: src/components/trade/chart/token-selector-content.tsx
@@ -7401,6 +7400,7 @@ msgstr "继续跟踪"
 #: src/components/trade/layout/terminal-boot-error.tsx
 #: src/components/trade/mobile/offline-banner.tsx
 #: src/components/trade/positions/account-transfers-tab.tsx
+#: src/components/trade/positions/account-transfers-tab.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
@@ -7411,6 +7411,7 @@ msgstr "继续跟踪"
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #: src/components/trade/twap-history-feedback.tsx
+#: src/components/ui/history-page-unavailable.tsx
 #: src/components/vaults/vaults-list.tsx
 #: src/components/vaults/vaults-page.tsx
 msgid "Retry"
@@ -9326,6 +9327,7 @@ msgid "The QR stays on this device and is never uploaded."
 msgstr "二维码仅保留在此设备上，绝不会上传。"
 
 #: src/components/trade-history/trade-history-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
 msgid "The recent trade snapshot could not be loaded or validated."
 msgstr "无法加载或验证近期成交快照。"
 
@@ -9362,9 +9364,11 @@ msgid "The request was submitted, but its final status is still updating. Check 
 msgstr "请求已提交，但最终状态仍在更新。重试前请检查推荐数据和领取历史。"
 
 #: src/components/funding-history/funding-history-page.tsx
+#: src/components/funding-history/funding-history-page.tsx
 msgid "The requested 30-day window could not be verified. No partial history is shown."
 msgstr "无法验证请求的 30 天时间窗口，因此不显示部分历史。"
 
+#: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/historical-orders/historical-orders-page.tsx
 msgid "The response could not be verified. No partial order history is shown."
 msgstr "无法验证响应，因此不显示部分委托历史。"
@@ -10133,8 +10137,8 @@ msgid "Trade history for <0>{0}</0>"
 msgstr "<0>{0}</0> 的成交历史"
 
 #: src/components/trade-history/trade-history-page.tsx
-msgid "Trade history is unavailable"
-msgstr "成交历史不可用"
+#~ msgid "Trade history is unavailable"
+#~ msgstr "成交历史不可用"
 
 #: src/components/trade-history/trade-history-page.tsx
 msgid "Trade history pagination"
@@ -10145,8 +10149,8 @@ msgstr "成交历史分页"
 #~ msgstr "成交历史更新已暂停。"
 
 #: src/components/trade-history/trade-history-page.tsx
-msgid "Trade history will load automatically when the connection returns."
-msgstr "连接恢复后将自动加载成交历史。"
+#~ msgid "Trade history will load automatically when the connection returns."
+#~ msgstr "连接恢复后将自动加载成交历史。"
 
 #: src/components/referrals/referral-code-card.tsx
 msgid "Trade on Hyperliquid"
@@ -11474,8 +11478,8 @@ msgstr "您已符合创建推荐码的条件。"
 #: src/components/funding-history/funding-history-page.tsx
 #: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/trade-history/trade-history-page.tsx
-msgid "You are offline"
-msgstr "您已离线"
+#~ msgid "You are offline"
+#~ msgstr "您已离线"
 
 #: src/components/trade/positions/funding-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
@@ -11484,25 +11488,28 @@ msgstr "您已离线"
 #~ msgstr "您已离线。"
 
 #: src/components/funding-history/funding-history-page.tsx
+#: src/components/funding-history/funding-history-page.tsx
 msgid "You are offline. Funding payments will load when the connection returns."
 msgstr "您已离线。连接恢复后将加载资金费支付记录。"
 
+#: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/historical-orders/historical-orders-page.tsx
 msgid "You are offline. Order history will load when the connection returns."
 msgstr "您已离线。连接恢复后将加载委托历史。"
 
 #: src/components/funding-history/funding-history-page.tsx
-msgid "You are offline. Previously loaded funding payments remain visible."
-msgstr "您已离线。此前加载的资金费支付记录仍保持可见。"
+#~ msgid "You are offline. Previously loaded funding payments remain visible."
+#~ msgstr "您已离线。此前加载的资金费支付记录仍保持可见。"
 
 #: src/components/historical-orders/historical-orders-page.tsx
-msgid "You are offline. Previously loaded order history remains visible."
-msgstr "您已离线。此前加载的委托历史仍保持可见。"
+#~ msgid "You are offline. Previously loaded order history remains visible."
+#~ msgstr "您已离线。此前加载的委托历史仍保持可见。"
 
 #: src/components/trade-history/trade-history-page.tsx
-msgid "You are offline. Previously loaded trade history remains visible."
-msgstr "您已离线。此前加载的成交历史仍保持可见。"
+#~ msgid "You are offline. Previously loaded trade history remains visible."
+#~ msgstr "您已离线。此前加载的成交历史仍保持可见。"
 
+#: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade-history/trade-history-page.tsx
 msgid "You are offline. Trade history will load when the connection returns."
 msgstr "您已离线。连接恢复后将加载成交历史。"

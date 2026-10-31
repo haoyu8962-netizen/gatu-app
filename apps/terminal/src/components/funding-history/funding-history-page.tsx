@@ -6,6 +6,7 @@ import { type ReactNode, Suspense, useMemo, useState } from "react";
 import { DashboardHeader, FooterBar, GlobalModals } from "@/components/dashboard/dashboard-chrome";
 import { DashboardFrameView } from "@/components/dashboard/dashboard-frame-view";
 import { AssetBadge } from "@/components/trade/components/asset-badge";
+import { HistoryPageUnavailable } from "@/components/ui/history-page-unavailable";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { DASHBOARD_FRAMES } from "@/config/dashboard-frames";
 import { getToolbarAbsoluteSize } from "@/domain/trade/trading-toolbar-metrics";
@@ -113,6 +114,12 @@ export function FundingHistoryPage({ address }: Props) {
 		setRequestedPage(1);
 	}
 
+	function getUnconfirmedEmptyDescription() {
+		if (history.isOffline) return t`You are offline. Funding payments will load when the connection returns.`;
+		if (history.isRefreshing) return t`Loading funding payments`;
+		return t`The requested 30-day window could not be verified. No partial history is shown.`;
+	}
+
 	let content: ReactNode;
 	if (history.status === "disabled") {
 		content = (
@@ -128,18 +135,12 @@ export function FundingHistoryPage({ address }: Props) {
 		);
 	} else if (history.status === "offline") {
 		content = (
-			<div className="flex min-h-80 flex-col items-center justify-center px-6 text-center">
-				<output aria-live="polite" className="sr-only">
-					<Trans>You are offline. Funding payments will load when the connection returns.</Trans>
-				</output>
-				<WarningCircleIcon className="size-9 text-warning" weight="fill" />
-				<h2 className="mt-3 text-lg font-bold text-fg">
-					<Trans>You are offline</Trans>
-				</h2>
-				<p className="mt-1 max-w-lg text-xs leading-5 text-fg-muted">
-					<Trans>Funding payments will load automatically when the connection returns.</Trans>
-				</p>
-			</div>
+			<HistoryPageUnavailable
+				offline
+				refreshing={false}
+				description={t`You are offline. Funding payments will load when the connection returns.`}
+				onRetry={history.refresh}
+			/>
 		);
 	} else if (history.status === "loading") {
 		content = (
@@ -157,18 +158,21 @@ export function FundingHistoryPage({ address }: Props) {
 		);
 	} else if (history.status === "error") {
 		content = (
-			<div role="alert" className="flex min-h-80 flex-col items-center justify-center px-6 text-center">
-				<WarningCircleIcon className="size-9 text-error" weight="fill" />
-				<h2 className="mt-3 text-lg font-bold text-fg">
-					<Trans>Funding payments are unavailable</Trans>
-				</h2>
-				<p className="mt-1 max-w-lg text-xs leading-5 text-fg-muted">
-					<Trans>The requested 30-day window could not be verified. No partial history is shown.</Trans>
-				</p>
-				<Button className="mt-4" onClick={history.refresh}>
-					<Trans>Retry</Trans>
-				</Button>
-			</div>
+			<HistoryPageUnavailable
+				offline={false}
+				refreshing={false}
+				description={t`The requested 30-day window could not be verified. No partial history is shown.`}
+				onRetry={history.refresh}
+			/>
+		);
+	} else if (history.fundings.length === 0 && (history.error || history.isOffline || history.isRefreshing)) {
+		content = (
+			<HistoryPageUnavailable
+				offline={history.isOffline}
+				refreshing={history.isRefreshing}
+				description={getUnconfirmedEmptyDescription()}
+				onRetry={history.refresh}
+			/>
 		);
 	} else if (history.fundings.length === 0) {
 		content = (
@@ -187,15 +191,6 @@ export function FundingHistoryPage({ address }: Props) {
 	} else {
 		content = (
 			<>
-				{history.error || history.isOffline ? (
-					<div role="alert" className="border-b border-warning/30 bg-warning/10 px-4 py-2 text-xs text-warning">
-						{history.isOffline ? (
-							<Trans>You are offline. Previously loaded funding payments remain visible.</Trans>
-						) : (
-							<Trans>Refresh failed. Previously loaded funding payments remain visible.</Trans>
-						)}
-					</div>
-				) : null}
 				<div className="flex flex-wrap gap-3 border-b border-stroke-weak px-4 py-3">
 					<Select
 						size="sm"

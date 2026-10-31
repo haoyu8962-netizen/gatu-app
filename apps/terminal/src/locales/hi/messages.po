@@ -3521,8 +3521,8 @@ msgstr "बैलेंस लोड करने में विफल"
 #~ msgstr "शेष लोड करने में विफल।"
 
 #: src/components/trade/positions/account-transfers-tab.tsx
-msgid "Failed to load deposits and withdrawals."
-msgstr "जमा और निकासी लोड नहीं हो सके।"
+#~ msgid "Failed to load deposits and withdrawals."
+#~ msgstr "जमा और निकासी लोड नहीं हो सके।"
 
 #: src/components/trade/positions/funding-tab.tsx
 #~ msgid "Failed to load funding payments."
@@ -3863,8 +3863,8 @@ msgid "Funding Payments"
 msgstr "फंडिंग भुगतान"
 
 #: src/components/funding-history/funding-history-page.tsx
-msgid "Funding payments are unavailable"
-msgstr "फंडिंग भुगतान उपलब्ध नहीं हैं"
+#~ msgid "Funding payments are unavailable"
+#~ msgstr "फंडिंग भुगतान उपलब्ध नहीं हैं"
 
 #: src/components/funding-history/funding-history-page.tsx
 #~ msgid "Funding payments for {0}"
@@ -3880,8 +3880,8 @@ msgid "Funding payments pagination"
 msgstr "फंडिंग भुगतान पेज नेविगेशन"
 
 #: src/components/funding-history/funding-history-page.tsx
-msgid "Funding payments will load automatically when the connection returns."
-msgstr "कनेक्शन वापस आने पर फंडिंग भुगतान अपने-आप लोड हो जाएँगे।"
+#~ msgid "Funding payments will load automatically when the connection returns."
+#~ msgstr "कनेक्शन वापस आने पर फंडिंग भुगतान अपने-आप लोड हो जाएँगे।"
 
 #: src/components/funding-comparison/funding-comparison-view.tsx
 msgid "Funding period"
@@ -4673,6 +4673,7 @@ msgstr "सभी चेन पर बैलेंस लोड हो रहे
 #~ msgstr "जमा और निकासी लोड हो रही है..."
 
 #: src/components/funding-history/funding-history-page.tsx
+#: src/components/funding-history/funding-history-page.tsx
 msgid "Loading funding payments"
 msgstr "फंडिंग भुगतान लोड हो रहे हैं"
 
@@ -4696,6 +4697,7 @@ msgstr "बाज़ार लोड हो रहे हैं..."
 #~ msgid "Loading open orders..."
 #~ msgstr "खुले ऑर्डर लोड हो रहे हैं..."
 
+#: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/historical-orders/historical-orders-page.tsx
 msgid "Loading order history"
 msgstr "ऑर्डर इतिहास लोड हो रहा है"
@@ -4742,6 +4744,7 @@ msgid "Loading token metadata..."
 msgstr "टोकन मेटाडेटा लोड हो रहा है..."
 
 #: src/components/trade-history/trade-history-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
 msgid "Loading trade history"
 msgstr "ट्रेड इतिहास लोड हो रहा है"
 
@@ -4780,7 +4783,6 @@ msgstr "वॉलेट लोड हो रहा है..."
 #: src/components/trade/chart/tradingview-chart.tsx
 #: src/components/trade/components/deposit-modal-loading-fallback.tsx
 #: src/components/trade/components/global-modals.tsx
-#: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/ui/lazy-dialog-boundary.tsx
 #: src/components/ui/lazy-dialog-boundary.tsx
 #: src/config/ui-text.ts
@@ -6052,8 +6054,8 @@ msgid "Order History"
 msgstr "ऑर्डर हिस्ट्री"
 
 #: src/components/historical-orders/historical-orders-page.tsx
-msgid "Order history is unavailable"
-msgstr "ऑर्डर इतिहास उपलब्ध नहीं है"
+#~ msgid "Order history is unavailable"
+#~ msgstr "ऑर्डर इतिहास उपलब्ध नहीं है"
 
 #: src/components/historical-orders/historical-orders-page.tsx
 msgid "Order history pagination"
@@ -6064,8 +6066,8 @@ msgstr "ऑर्डर इतिहास पेज नेविगेशन"
 #~ msgstr "ऑर्डर इतिहास अपडेट रुके हुए हैं।"
 
 #: src/components/historical-orders/historical-orders-page.tsx
-msgid "Order history will load automatically when the connection returns."
-msgstr "कनेक्शन वापस आने पर ऑर्डर इतिहास अपने-आप लोड हो जाएगा।"
+#~ msgid "Order history will load automatically when the connection returns."
+#~ msgstr "कनेक्शन वापस आने पर ऑर्डर इतिहास अपने-आप लोड हो जाएगा।"
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/lib/trade/order-submission-feedback.ts
@@ -7108,16 +7110,16 @@ msgid "Refresh both devices to update phone access, then create a new QR."
 msgstr "फ़ोन ऐक्सेस अपडेट करने के लिए दोनों डिवाइस पर पेज रीफ़्रेश करें, फिर नया QR कोड बनाएँ।"
 
 #: src/components/funding-history/funding-history-page.tsx
-msgid "Refresh failed. Previously loaded funding payments remain visible."
-msgstr "रीफ़्रेश विफल रहा। पहले लोड किए गए फंडिंग भुगतान दिखाई देते रहेंगे।"
+#~ msgid "Refresh failed. Previously loaded funding payments remain visible."
+#~ msgstr "रीफ़्रेश विफल रहा। पहले लोड किए गए फंडिंग भुगतान दिखाई देते रहेंगे।"
 
 #: src/components/historical-orders/historical-orders-page.tsx
-msgid "Refresh failed. Previously loaded order history remains visible."
-msgstr "रीफ़्रेश विफल रहा। पहले लोड किया गया ऑर्डर इतिहास दिखाई देता रहेगा।"
+#~ msgid "Refresh failed. Previously loaded order history remains visible."
+#~ msgstr "रीफ़्रेश विफल रहा। पहले लोड किया गया ऑर्डर इतिहास दिखाई देता रहेगा।"
 
 #: src/components/trade-history/trade-history-page.tsx
-msgid "Refresh failed. Previously loaded trade history remains visible."
-msgstr "रीफ़्रेश विफल रहा। पहले लोड किया गया ट्रेड इतिहास दिखाई देता रहेगा।"
+#~ msgid "Refresh failed. Previously loaded trade history remains visible."
+#~ msgstr "रीफ़्रेश विफल रहा। पहले लोड किया गया ट्रेड इतिहास दिखाई देता रहेगा।"
 
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 msgid "Refresh quote"
@@ -7381,15 +7383,12 @@ msgstr "ट्रैकिंग फिर से शुरू करें"
 
 #: src/components/api-wallet/api-wallet-list.tsx
 #: src/components/funding-comparison/funding-comparison-view.tsx
-#: src/components/funding-history/funding-history-page.tsx
-#: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/portfolio/portfolio-overview.tsx
 #: src/components/portfolio/portfolio-performance-chart.tsx
 #: src/components/referrals/referral-activity.tsx
 #: src/components/referrals/referral-dashboard.tsx
 #: src/components/staking/staking-view.tsx
 #: src/components/staking/staking-view.tsx
-#: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/chart/funding-history-load-boundary.tsx
 #: src/components/trade/chart/funding-history-panel.tsx
 #: src/components/trade/chart/token-selector-content.tsx
@@ -7401,6 +7400,7 @@ msgstr "ट्रैकिंग फिर से शुरू करें"
 #: src/components/trade/layout/terminal-boot-error.tsx
 #: src/components/trade/mobile/offline-banner.tsx
 #: src/components/trade/positions/account-transfers-tab.tsx
+#: src/components/trade/positions/account-transfers-tab.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
@@ -7411,6 +7411,7 @@ msgstr "ट्रैकिंग फिर से शुरू करें"
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #: src/components/trade/twap-history-feedback.tsx
+#: src/components/ui/history-page-unavailable.tsx
 #: src/components/vaults/vaults-list.tsx
 #: src/components/vaults/vaults-page.tsx
 msgid "Retry"
@@ -9326,6 +9327,7 @@ msgid "The QR stays on this device and is never uploaded."
 msgstr "QR इसी डिवाइस पर रहता है और कभी अपलोड नहीं किया जाता।"
 
 #: src/components/trade-history/trade-history-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
 msgid "The recent trade snapshot could not be loaded or validated."
 msgstr "हाल का ट्रेड स्नैपशॉट लोड या सत्यापित नहीं किया जा सका।"
 
@@ -9362,9 +9364,11 @@ msgid "The request was submitted, but its final status is still updating. Check 
 msgstr "अनुरोध सबमिट हो गया है, लेकिन इसकी अंतिम स्थिति अभी अपडेट हो रही है। दोबारा प्रयास करने से पहले रेफ़रल डेटा और प्राप्ति इतिहास जांचें।"
 
 #: src/components/funding-history/funding-history-page.tsx
+#: src/components/funding-history/funding-history-page.tsx
 msgid "The requested 30-day window could not be verified. No partial history is shown."
 msgstr "अनुरोधित 30-दिन की अवधि सत्यापित नहीं की जा सकी। कोई आंशिक इतिहास नहीं दिखाया जाता।"
 
+#: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/historical-orders/historical-orders-page.tsx
 msgid "The response could not be verified. No partial order history is shown."
 msgstr "प्रतिक्रिया सत्यापित नहीं की जा सकी। कोई आंशिक ऑर्डर इतिहास नहीं दिखाया जाता।"
@@ -10133,8 +10137,8 @@ msgid "Trade history for <0>{0}</0>"
 msgstr "<0>{0}</0> का ट्रेड इतिहास"
 
 #: src/components/trade-history/trade-history-page.tsx
-msgid "Trade history is unavailable"
-msgstr "ट्रेड इतिहास उपलब्ध नहीं है"
+#~ msgid "Trade history is unavailable"
+#~ msgstr "ट्रेड इतिहास उपलब्ध नहीं है"
 
 #: src/components/trade-history/trade-history-page.tsx
 msgid "Trade history pagination"
@@ -10145,8 +10149,8 @@ msgstr "ट्रेड इतिहास पेज नेविगेशन"
 #~ msgstr "ट्रेड इतिहास अपडेट रुके हुए हैं।"
 
 #: src/components/trade-history/trade-history-page.tsx
-msgid "Trade history will load automatically when the connection returns."
-msgstr "कनेक्शन वापस आने पर ट्रेड इतिहास अपने-आप लोड हो जाएगा।"
+#~ msgid "Trade history will load automatically when the connection returns."
+#~ msgstr "कनेक्शन वापस आने पर ट्रेड इतिहास अपने-आप लोड हो जाएगा।"
 
 #: src/components/referrals/referral-code-card.tsx
 msgid "Trade on Hyperliquid"
@@ -11474,8 +11478,8 @@ msgstr "आप रेफ़रल कोड बनाने के लिए प
 #: src/components/funding-history/funding-history-page.tsx
 #: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/trade-history/trade-history-page.tsx
-msgid "You are offline"
-msgstr "आप ऑफ़लाइन हैं"
+#~ msgid "You are offline"
+#~ msgstr "आप ऑफ़लाइन हैं"
 
 #: src/components/trade/positions/funding-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
@@ -11484,25 +11488,28 @@ msgstr "आप ऑफ़लाइन हैं"
 #~ msgstr "आप ऑफ़लाइन हैं।"
 
 #: src/components/funding-history/funding-history-page.tsx
+#: src/components/funding-history/funding-history-page.tsx
 msgid "You are offline. Funding payments will load when the connection returns."
 msgstr "आप ऑफ़लाइन हैं। कनेक्शन वापस आने पर फंडिंग भुगतान लोड हो जाएँगे।"
 
+#: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/historical-orders/historical-orders-page.tsx
 msgid "You are offline. Order history will load when the connection returns."
 msgstr "आप ऑफ़लाइन हैं। कनेक्शन वापस आने पर ऑर्डर इतिहास लोड हो जाएगा।"
 
 #: src/components/funding-history/funding-history-page.tsx
-msgid "You are offline. Previously loaded funding payments remain visible."
-msgstr "आप ऑफ़लाइन हैं। पहले लोड किए गए फंडिंग भुगतान दिखाई देते रहेंगे।"
+#~ msgid "You are offline. Previously loaded funding payments remain visible."
+#~ msgstr "आप ऑफ़लाइन हैं। पहले लोड किए गए फंडिंग भुगतान दिखाई देते रहेंगे।"
 
 #: src/components/historical-orders/historical-orders-page.tsx
-msgid "You are offline. Previously loaded order history remains visible."
-msgstr "आप ऑफ़लाइन हैं। पहले लोड किया गया ऑर्डर इतिहास दिखाई देता रहेगा।"
+#~ msgid "You are offline. Previously loaded order history remains visible."
+#~ msgstr "आप ऑफ़लाइन हैं। पहले लोड किया गया ऑर्डर इतिहास दिखाई देता रहेगा।"
 
 #: src/components/trade-history/trade-history-page.tsx
-msgid "You are offline. Previously loaded trade history remains visible."
-msgstr "आप ऑफ़लाइन हैं। पहले लोड किया गया ट्रेड इतिहास दिखाई देता रहेगा।"
+#~ msgid "You are offline. Previously loaded trade history remains visible."
+#~ msgstr "आप ऑफ़लाइन हैं। पहले लोड किया गया ट्रेड इतिहास दिखाई देता रहेगा।"
 
+#: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade-history/trade-history-page.tsx
 msgid "You are offline. Trade history will load when the connection returns."
 msgstr "आप ऑफ़लाइन हैं। कनेक्शन वापस आने पर ट्रेड इतिहास लोड हो जाएगा।"

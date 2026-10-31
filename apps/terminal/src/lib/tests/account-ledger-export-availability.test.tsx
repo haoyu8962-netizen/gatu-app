@@ -8,7 +8,9 @@ import { AccountTransfersTab } from "@/components/trade/positions/account-transf
 import { createI18nRoot } from "./harness/react";
 
 const mocks = vi.hoisted(() => ({
+	canConfirmEmpty: true,
 	exportCsv: vi.fn(async () => undefined),
+	isRefreshing: false,
 	retry: vi.fn(),
 	status: "ready" as "ready" | "unavailable",
 }));
@@ -24,8 +26,10 @@ vi.mock("@/components/ui/scroll-area", () => ({
 
 vi.mock("@/hooks/trade/use-account-ledger", () => ({
 	useAccountLedger: () => ({
+		canConfirmEmpty: mocks.canConfirmEmpty,
 		error: null,
 		isConnected: true,
+		isRefreshing: mocks.isRefreshing,
 		retry: mocks.retry,
 		rows: [],
 		status: mocks.status,
@@ -58,7 +62,35 @@ describe("account ledger export availability", () => {
 		mocks.exportCsv.mockClear();
 		mocks.retry.mockClear();
 		mocks.status = "ready";
+		mocks.canConfirmEmpty = true;
+		mocks.isRefreshing = false;
 	});
+
+	it.each([
+		["desktop", () => <AccountTransfersTab />],
+		["mobile", () => <MobileAccountTransfersTab scrollMode="page" />],
+	] as const)(
+		"does not conclude an empty history from an unconfirmed empty snapshot on %s",
+		(surface, renderSurface) => {
+			mocks.canConfirmEmpty = false;
+			act(() => root.render(renderSurface()));
+			expect(container.textContent).not.toContain("No deposits or withdrawals found.");
+			const retry = () =>
+				Array.from(container.querySelectorAll<HTMLButtonElement>("button")).find(
+					(candidate) => candidate.textContent === "Retry",
+				);
+			if (surface === "desktop") {
+				act(() => retry()?.click());
+				expect(mocks.retry).toHaveBeenCalledOnce();
+			} else expect(retry()).toBeUndefined();
+
+			mocks.isRefreshing = true;
+			act(() => root.render(renderSurface()));
+			expect(container.textContent).not.toContain("No deposits or withdrawals found.");
+			expect(retry()).toBeUndefined();
+			expect(container.querySelector('[aria-busy="true"]')).not.toBeNull();
+		},
+	);
 
 	afterEach(() => {
 		act(() => root.unmount());
@@ -94,10 +126,9 @@ describe("account ledger export availability", () => {
 		mocks.status = "unavailable";
 		act(() => root.render(renderSurface()));
 
-		if (surface === "mobile") {
-			expect(container.textContent).not.toContain("Failed to load deposits and withdrawals.");
-			expect(container.querySelector('[data-slot="data-pending"]')).not.toBeNull();
-		} else expect(container.textContent).toContain("Failed to load deposits and withdrawals.");
+		expect(container.textContent).not.toContain("Failed to load deposits and withdrawals.");
+		expect(container.querySelector(".text-error")).toBeNull();
+		if (surface === "mobile") expect(container.querySelector('[data-slot="data-pending"]')).not.toBeNull();
 		expect(container.textContent).not.toContain("No deposits or withdrawals found.");
 		const retry = Array.from(container.querySelectorAll<HTMLButtonElement>("button")).find(
 			(candidate) => candidate.textContent === "Retry",

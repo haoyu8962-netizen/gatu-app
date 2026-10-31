@@ -24,7 +24,7 @@ export function MobileAccountTransfersTab({ className, scrollMode = "contained" 
 	const { i18n, t } = useLingui();
 	const locale = i18n.locale;
 	const numberFormat = useNumberFormat();
-	const { isConnected, rows, status } = useAccountLedger();
+	const { canConfirmEmpty, isConnected, isRefreshing, rows, status } = useAccountLedger();
 	const { getActionLabel, getLocationLabel } = useAccountLedgerLabels();
 	const { exportCsv, isExporting } = useAccountLedgerCsv();
 	const isTestnet = useIsTestnet();
@@ -52,6 +52,15 @@ export function MobileAccountTransfersTab({ className, scrollMode = "contained" 
 		return (
 			<div className={cn("flex min-h-0 flex-1 flex-col", className)}>
 				<DataPendingState loading={status === "loading" || status === "idle"} />
+				{emptyStateExportFooter}
+			</div>
+		);
+	}
+
+	if (rows.length === 0 && !canConfirmEmpty) {
+		return (
+			<div className={cn("flex min-h-0 flex-1 flex-col", className)}>
+				<DataPendingState loading={isRefreshing} />
 				{emptyStateExportFooter}
 			</div>
 		);

@@ -315,7 +315,7 @@ describe("TradeHistoryPage", () => {
 		["disabled", "Invalid account address"],
 		["loading", "Loading trade history"],
 		["offline", "You are offline"],
-		["error", "Trade history is unavailable"],
+		["error", "The recent trade snapshot could not be loaded or validated."],
 	] as const)("keeps the %s state distinct", (status, expectedText) => {
 		mocks.history.status = status;
 		mocks.history.fills = [];
@@ -330,7 +330,8 @@ describe("TradeHistoryPage", () => {
 		renderPage();
 
 		expect(container.querySelectorAll("tbody tr")).toHaveLength(25);
-		expect(container.textContent).toContain("Refresh failed. Previously loaded trade history remains visible.");
+		expect(container.querySelector('[role="alert"]')).toBeNull();
+		expect(container.textContent).not.toContain("Refresh failed");
 	});
 
 	it("shows an empty result only after the snapshot is ready", () => {
@@ -341,15 +342,46 @@ describe("TradeHistoryPage", () => {
 		expect(container.textContent).not.toContain("Trade history is unavailable");
 	});
 
-	it("keeps degraded and snapshot-limit warnings visible for an empty cached result", () => {
+	it("keeps an empty cached result busy while it refreshes, then offers a working Retry if the refresh fails", () => {
+		mocks.history.fills = [];
+		mocks.history.isRefreshing = true;
+		renderPage();
+		expect(container.textContent).not.toContain("No fills found");
+		expect([...container.querySelectorAll("button")].some((button) => button.textContent === "Retry")).toBe(false);
+		const busy = container.querySelector('[data-slot="history-page-unavailable"] [aria-busy="true"]');
+		expect(busy).not.toBeNull();
+		expect(
+			container.querySelector('[data-slot="history-page-unavailable"] output')?.closest('[aria-busy="true"]'),
+		).toBeNull();
+
+		mocks.history.isRefreshing = false;
+		mocks.history.error = new Error("refresh failed");
+		renderPage();
+		const retry = [...container.querySelectorAll("button")].find((button) => button.textContent === "Retry");
+		act(() => retry?.click());
+		expect(mocks.history.refresh).toHaveBeenCalled();
+	});
+
+	it("offers Retry instead of an empty conclusion when an empty cached result failed to refresh", () => {
 		mocks.history.error = new Error("refresh failed");
 		mocks.history.fills = [];
 		mocks.history.reachedLimit = true;
 		renderPage();
 
-		expect(container.textContent).toContain("Refresh failed. Previously loaded trade history remains visible.");
 		expect(container.textContent).toContain("reached the 2000-fill snapshot limit");
-		expect(container.textContent).toContain("No fills found");
+		expect(container.textContent).not.toContain("No fills found");
+		expect(container.textContent).not.toContain("Refresh failed");
+		expect(container.querySelector('[role="alert"]')).toBeNull();
+		const retry = [...container.querySelectorAll("button")].find((button) => button.textContent === "Retry");
+		expect(retry).toBeDefined();
+		act(() => retry?.click());
+		expect(mocks.history.refresh).toHaveBeenCalled();
+
+		mocks.history.isOffline = true;
+		mocks.history.error = null;
+		renderPage();
+		expect(container.textContent).not.toContain("No fills found");
+		expect([...container.querySelectorAll("button")].some((button) => button.textContent === "Retry")).toBe(false);
 	});
 
 	it("warns when the public snapshot reaches 2000 fills", () => {

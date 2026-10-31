@@ -3521,8 +3521,8 @@ msgstr "Failed to load balances"
 #~ msgstr "Failed to load balances."
 
 #: src/components/trade/positions/account-transfers-tab.tsx
-msgid "Failed to load deposits and withdrawals."
-msgstr "Failed to load deposits and withdrawals."
+#~ msgid "Failed to load deposits and withdrawals."
+#~ msgstr "Failed to load deposits and withdrawals."
 
 #: src/components/trade/positions/funding-tab.tsx
 #~ msgid "Failed to load funding payments."
@@ -3863,8 +3863,8 @@ msgid "Funding Payments"
 msgstr "Funding Payments"
 
 #: src/components/funding-history/funding-history-page.tsx
-msgid "Funding payments are unavailable"
-msgstr "Funding payments are unavailable"
+#~ msgid "Funding payments are unavailable"
+#~ msgstr "Funding payments are unavailable"
 
 #: src/components/funding-history/funding-history-page.tsx
 #~ msgid "Funding payments for {0}"
@@ -3880,8 +3880,8 @@ msgid "Funding payments pagination"
 msgstr "Funding payments pagination"
 
 #: src/components/funding-history/funding-history-page.tsx
-msgid "Funding payments will load automatically when the connection returns."
-msgstr "Funding payments will load automatically when the connection returns."
+#~ msgid "Funding payments will load automatically when the connection returns."
+#~ msgstr "Funding payments will load automatically when the connection returns."
 
 #: src/components/funding-comparison/funding-comparison-view.tsx
 msgid "Funding period"
@@ -4673,6 +4673,7 @@ msgstr "Loading balances across all chains..."
 #~ msgstr "Loading deposits and withdrawals..."
 
 #: src/components/funding-history/funding-history-page.tsx
+#: src/components/funding-history/funding-history-page.tsx
 msgid "Loading funding payments"
 msgstr "Loading funding payments"
 
@@ -4696,6 +4697,7 @@ msgstr "Loading markets..."
 #~ msgid "Loading open orders..."
 #~ msgstr "Loading open orders..."
 
+#: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/historical-orders/historical-orders-page.tsx
 msgid "Loading order history"
 msgstr "Loading order history"
@@ -4742,6 +4744,7 @@ msgid "Loading token metadata..."
 msgstr "Loading token metadata..."
 
 #: src/components/trade-history/trade-history-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
 msgid "Loading trade history"
 msgstr "Loading trade history"
 
@@ -4780,7 +4783,6 @@ msgstr "Loading wallet..."
 #: src/components/trade/chart/tradingview-chart.tsx
 #: src/components/trade/components/deposit-modal-loading-fallback.tsx
 #: src/components/trade/components/global-modals.tsx
-#: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/ui/lazy-dialog-boundary.tsx
 #: src/components/ui/lazy-dialog-boundary.tsx
 #: src/config/ui-text.ts
@@ -6052,8 +6054,8 @@ msgid "Order History"
 msgstr "Order History"
 
 #: src/components/historical-orders/historical-orders-page.tsx
-msgid "Order history is unavailable"
-msgstr "Order history is unavailable"
+#~ msgid "Order history is unavailable"
+#~ msgstr "Order history is unavailable"
 
 #: src/components/historical-orders/historical-orders-page.tsx
 msgid "Order history pagination"
@@ -6064,8 +6066,8 @@ msgstr "Order history pagination"
 #~ msgstr "Order history updates paused."
 
 #: src/components/historical-orders/historical-orders-page.tsx
-msgid "Order history will load automatically when the connection returns."
-msgstr "Order history will load automatically when the connection returns."
+#~ msgid "Order history will load automatically when the connection returns."
+#~ msgstr "Order history will load automatically when the connection returns."
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/lib/trade/order-submission-feedback.ts
@@ -7108,16 +7110,16 @@ msgid "Refresh both devices to update phone access, then create a new QR."
 msgstr "Refresh both devices to update phone access, then create a new QR."
 
 #: src/components/funding-history/funding-history-page.tsx
-msgid "Refresh failed. Previously loaded funding payments remain visible."
-msgstr "Refresh failed. Previously loaded funding payments remain visible."
+#~ msgid "Refresh failed. Previously loaded funding payments remain visible."
+#~ msgstr "Refresh failed. Previously loaded funding payments remain visible."
 
 #: src/components/historical-orders/historical-orders-page.tsx
-msgid "Refresh failed. Previously loaded order history remains visible."
-msgstr "Refresh failed. Previously loaded order history remains visible."
+#~ msgid "Refresh failed. Previously loaded order history remains visible."
+#~ msgstr "Refresh failed. Previously loaded order history remains visible."
 
 #: src/components/trade-history/trade-history-page.tsx
-msgid "Refresh failed. Previously loaded trade history remains visible."
-msgstr "Refresh failed. Previously loaded trade history remains visible."
+#~ msgid "Refresh failed. Previously loaded trade history remains visible."
+#~ msgstr "Refresh failed. Previously loaded trade history remains visible."
 
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 msgid "Refresh quote"
@@ -7381,15 +7383,12 @@ msgstr "Resume tracking"
 
 #: src/components/api-wallet/api-wallet-list.tsx
 #: src/components/funding-comparison/funding-comparison-view.tsx
-#: src/components/funding-history/funding-history-page.tsx
-#: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/portfolio/portfolio-overview.tsx
 #: src/components/portfolio/portfolio-performance-chart.tsx
 #: src/components/referrals/referral-activity.tsx
 #: src/components/referrals/referral-dashboard.tsx
 #: src/components/staking/staking-view.tsx
 #: src/components/staking/staking-view.tsx
-#: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/chart/funding-history-load-boundary.tsx
 #: src/components/trade/chart/funding-history-panel.tsx
 #: src/components/trade/chart/token-selector-content.tsx
@@ -7401,6 +7400,7 @@ msgstr "Resume tracking"
 #: src/components/trade/layout/terminal-boot-error.tsx
 #: src/components/trade/mobile/offline-banner.tsx
 #: src/components/trade/positions/account-transfers-tab.tsx
+#: src/components/trade/positions/account-transfers-tab.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
@@ -7411,6 +7411,7 @@ msgstr "Resume tracking"
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #: src/components/trade/twap-history-feedback.tsx
+#: src/components/ui/history-page-unavailable.tsx
 #: src/components/vaults/vaults-list.tsx
 #: src/components/vaults/vaults-page.tsx
 msgid "Retry"
@@ -9326,6 +9327,7 @@ msgid "The QR stays on this device and is never uploaded."
 msgstr "The QR stays on this device and is never uploaded."
 
 #: src/components/trade-history/trade-history-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
 msgid "The recent trade snapshot could not be loaded or validated."
 msgstr "The recent trade snapshot could not be loaded or validated."
 
@@ -9362,9 +9364,11 @@ msgid "The request was submitted, but its final status is still updating. Check 
 msgstr "The request was submitted, but its final status is still updating. Check referral data and claim history before retrying."
 
 #: src/components/funding-history/funding-history-page.tsx
+#: src/components/funding-history/funding-history-page.tsx
 msgid "The requested 30-day window could not be verified. No partial history is shown."
 msgstr "The requested 30-day window could not be verified. No partial history is shown."
 
+#: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/historical-orders/historical-orders-page.tsx
 msgid "The response could not be verified. No partial order history is shown."
 msgstr "The response could not be verified. No partial order history is shown."
@@ -10133,8 +10137,8 @@ msgid "Trade history for <0>{0}</0>"
 msgstr "Trade history for <0>{0}</0>"
 
 #: src/components/trade-history/trade-history-page.tsx
-msgid "Trade history is unavailable"
-msgstr "Trade history is unavailable"
+#~ msgid "Trade history is unavailable"
+#~ msgstr "Trade history is unavailable"
 
 #: src/components/trade-history/trade-history-page.tsx
 msgid "Trade history pagination"
@@ -10145,8 +10149,8 @@ msgstr "Trade history pagination"
 #~ msgstr "Trade history updates paused."
 
 #: src/components/trade-history/trade-history-page.tsx
-msgid "Trade history will load automatically when the connection returns."
-msgstr "Trade history will load automatically when the connection returns."
+#~ msgid "Trade history will load automatically when the connection returns."
+#~ msgstr "Trade history will load automatically when the connection returns."
 
 #: src/components/referrals/referral-code-card.tsx
 msgid "Trade on Hyperliquid"
@@ -11474,8 +11478,8 @@ msgstr "You are eligible to create a referral code."
 #: src/components/funding-history/funding-history-page.tsx
 #: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/trade-history/trade-history-page.tsx
-msgid "You are offline"
-msgstr "You are offline"
+#~ msgid "You are offline"
+#~ msgstr "You are offline"
 
 #: src/components/trade/positions/funding-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
@@ -11484,25 +11488,28 @@ msgstr "You are offline"
 #~ msgstr "You are offline."
 
 #: src/components/funding-history/funding-history-page.tsx
+#: src/components/funding-history/funding-history-page.tsx
 msgid "You are offline. Funding payments will load when the connection returns."
 msgstr "You are offline. Funding payments will load when the connection returns."
 
+#: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/historical-orders/historical-orders-page.tsx
 msgid "You are offline. Order history will load when the connection returns."
 msgstr "You are offline. Order history will load when the connection returns."
 
 #: src/components/funding-history/funding-history-page.tsx
-msgid "You are offline. Previously loaded funding payments remain visible."
-msgstr "You are offline. Previously loaded funding payments remain visible."
+#~ msgid "You are offline. Previously loaded funding payments remain visible."
+#~ msgstr "You are offline. Previously loaded funding payments remain visible."
 
 #: src/components/historical-orders/historical-orders-page.tsx
-msgid "You are offline. Previously loaded order history remains visible."
-msgstr "You are offline. Previously loaded order history remains visible."
+#~ msgid "You are offline. Previously loaded order history remains visible."
+#~ msgstr "You are offline. Previously loaded order history remains visible."
 
 #: src/components/trade-history/trade-history-page.tsx
-msgid "You are offline. Previously loaded trade history remains visible."
-msgstr "You are offline. Previously loaded trade history remains visible."
+#~ msgid "You are offline. Previously loaded trade history remains visible."
+#~ msgstr "You are offline. Previously loaded trade history remains visible."
 
+#: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade-history/trade-history-page.tsx
 msgid "You are offline. Trade history will load when the connection returns."
 msgstr "You are offline. Trade history will load when the connection returns."

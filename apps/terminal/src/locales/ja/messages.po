@@ -3191,8 +3191,8 @@ msgid "Failed to load balances"
 msgstr "残高を読み込めませんでした"
 
 #: src/components/trade/positions/account-transfers-tab.tsx
-msgid "Failed to load deposits and withdrawals."
-msgstr "入出金を読み込めませんでした。"
+#~ msgid "Failed to load deposits and withdrawals."
+#~ msgstr "入出金を読み込めませんでした。"
 
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Failed to load market categories."
@@ -3468,8 +3468,8 @@ msgid "Funding Payments"
 msgstr "資金調達料"
 
 #: src/components/funding-history/funding-history-page.tsx
-msgid "Funding payments are unavailable"
-msgstr "資金調達料を利用できません"
+#~ msgid "Funding payments are unavailable"
+#~ msgstr "資金調達料を利用できません"
 
 #. placeholder {0}: shortenAddress(address, 8, 6)
 #: src/components/funding-history/funding-history-page.tsx
@@ -3481,8 +3481,8 @@ msgid "Funding payments pagination"
 msgstr "資金調達料のページ切り替え"
 
 #: src/components/funding-history/funding-history-page.tsx
-msgid "Funding payments will load automatically when the connection returns."
-msgstr "接続が復旧すると、資金調達料が自動的に読み込まれます。"
+#~ msgid "Funding payments will load automatically when the connection returns."
+#~ msgstr "接続が復旧すると、資金調達料が自動的に読み込まれます。"
 
 #: src/components/funding-comparison/funding-comparison-view.tsx
 msgid "Funding period"
@@ -4187,6 +4187,7 @@ msgid "Loading balances across all chains..."
 msgstr "全チェーンの残高を読み込み中..."
 
 #: src/components/funding-history/funding-history-page.tsx
+#: src/components/funding-history/funding-history-page.tsx
 msgid "Loading funding payments"
 msgstr "資金調達料を読み込み中"
 
@@ -4206,6 +4207,7 @@ msgstr "リーダーボードを読み込み中"
 msgid "Loading markets..."
 msgstr "市場を読み込み中..."
 
+#: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/historical-orders/historical-orders-page.tsx
 msgid "Loading order history"
 msgstr "注文履歴を読み込み中"
@@ -4235,6 +4237,7 @@ msgid "Loading token metadata..."
 msgstr "トークンのメタデータを読み込み中..."
 
 #: src/components/trade-history/trade-history-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
 msgid "Loading trade history"
 msgstr "約定履歴を読み込み中"
 
@@ -4257,7 +4260,6 @@ msgstr "ウォレットを読み込み中..."
 #: src/components/trade/chart/tradingview-chart.tsx
 #: src/components/trade/components/deposit-modal-loading-fallback.tsx
 #: src/components/trade/components/global-modals.tsx
-#: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/ui/lazy-dialog-boundary.tsx
 #: src/components/ui/lazy-dialog-boundary.tsx
 #: src/config/ui-text.ts
@@ -5436,16 +5438,16 @@ msgid "Order History"
 msgstr "注文履歴"
 
 #: src/components/historical-orders/historical-orders-page.tsx
-msgid "Order history is unavailable"
-msgstr "注文履歴を利用できません"
+#~ msgid "Order history is unavailable"
+#~ msgstr "注文履歴を利用できません"
 
 #: src/components/historical-orders/historical-orders-page.tsx
 msgid "Order history pagination"
 msgstr "注文履歴のページ切り替え"
 
 #: src/components/historical-orders/historical-orders-page.tsx
-msgid "Order history will load automatically when the connection returns."
-msgstr "接続が復旧すると、注文履歴が自動的に読み込まれます。"
+#~ msgid "Order history will load automatically when the connection returns."
+#~ msgstr "接続が復旧すると、注文履歴が自動的に読み込まれます。"
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/lib/trade/order-submission-feedback.ts
@@ -6391,16 +6393,16 @@ msgid "Refresh both devices to update phone access, then create a new QR."
 msgstr "両方の端末を再読み込みしてスマートフォンアクセスを更新し、新しい QR コードを作成してください。"
 
 #: src/components/funding-history/funding-history-page.tsx
-msgid "Refresh failed. Previously loaded funding payments remain visible."
-msgstr "更新に失敗しました。読み込み済みの資金調達料を引き続き表示します。"
+#~ msgid "Refresh failed. Previously loaded funding payments remain visible."
+#~ msgstr "更新に失敗しました。読み込み済みの資金調達料を引き続き表示します。"
 
 #: src/components/historical-orders/historical-orders-page.tsx
-msgid "Refresh failed. Previously loaded order history remains visible."
-msgstr "更新に失敗しました。読み込み済みの注文履歴を引き続き表示します。"
+#~ msgid "Refresh failed. Previously loaded order history remains visible."
+#~ msgstr "更新に失敗しました。読み込み済みの注文履歴を引き続き表示します。"
 
 #: src/components/trade-history/trade-history-page.tsx
-msgid "Refresh failed. Previously loaded trade history remains visible."
-msgstr "更新に失敗しました。読み込み済みの約定履歴を引き続き表示します。"
+#~ msgid "Refresh failed. Previously loaded trade history remains visible."
+#~ msgstr "更新に失敗しました。読み込み済みの約定履歴を引き続き表示します。"
 
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 msgid "Refresh quote"
@@ -6640,15 +6642,12 @@ msgstr "追跡を再開"
 
 #: src/components/api-wallet/api-wallet-list.tsx
 #: src/components/funding-comparison/funding-comparison-view.tsx
-#: src/components/funding-history/funding-history-page.tsx
-#: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/portfolio/portfolio-overview.tsx
 #: src/components/portfolio/portfolio-performance-chart.tsx
 #: src/components/referrals/referral-activity.tsx
 #: src/components/referrals/referral-dashboard.tsx
 #: src/components/staking/staking-view.tsx
 #: src/components/staking/staking-view.tsx
-#: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/chart/funding-history-load-boundary.tsx
 #: src/components/trade/chart/funding-history-panel.tsx
 #: src/components/trade/chart/token-selector-content.tsx
@@ -6660,6 +6659,7 @@ msgstr "追跡を再開"
 #: src/components/trade/layout/terminal-boot-error.tsx
 #: src/components/trade/mobile/offline-banner.tsx
 #: src/components/trade/positions/account-transfers-tab.tsx
+#: src/components/trade/positions/account-transfers-tab.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
@@ -6670,6 +6670,7 @@ msgstr "追跡を再開"
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #: src/components/trade/twap-history-feedback.tsx
+#: src/components/ui/history-page-unavailable.tsx
 #: src/components/vaults/vaults-list.tsx
 #: src/components/vaults/vaults-page.tsx
 msgid "Retry"
@@ -8341,6 +8342,7 @@ msgid "The QR stays on this device and is never uploaded."
 msgstr "QR コードはこの端末内に留まり、アップロードされることはありません。"
 
 #: src/components/trade-history/trade-history-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
 msgid "The recent trade snapshot could not be loaded or validated."
 msgstr "最近の約定スナップショットを読み込みまたは検証できませんでした。"
 
@@ -8373,9 +8375,11 @@ msgid "The request was submitted, but its final status is still updating. Check 
 msgstr "リクエストは送信されましたが、最終状態は更新中です。再試行する前に紹介データと請求履歴を確認してください。"
 
 #: src/components/funding-history/funding-history-page.tsx
+#: src/components/funding-history/funding-history-page.tsx
 msgid "The requested 30-day window could not be verified. No partial history is shown."
 msgstr "リクエストした30日間を確認できませんでした。不完全な履歴は表示しません。"
 
+#: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/historical-orders/historical-orders-page.tsx
 msgid "The response could not be verified. No partial order history is shown."
 msgstr "応答を確認できませんでした。不完全な注文履歴は表示しません。"
@@ -9004,16 +9008,16 @@ msgid "Trade history for <0>{0}</0>"
 msgstr "<0>{0}</0> の約定履歴"
 
 #: src/components/trade-history/trade-history-page.tsx
-msgid "Trade history is unavailable"
-msgstr "約定履歴を利用できません"
+#~ msgid "Trade history is unavailable"
+#~ msgstr "約定履歴を利用できません"
 
 #: src/components/trade-history/trade-history-page.tsx
 msgid "Trade history pagination"
 msgstr "約定履歴のページ切り替え"
 
 #: src/components/trade-history/trade-history-page.tsx
-msgid "Trade history will load automatically when the connection returns."
-msgstr "接続が復旧すると、約定履歴が自動的に読み込まれます。"
+#~ msgid "Trade history will load automatically when the connection returns."
+#~ msgstr "接続が復旧すると、約定履歴が自動的に読み込まれます。"
 
 #: src/components/referrals/referral-code-card.tsx
 msgid "Trade on Hyperliquid"
@@ -10218,29 +10222,32 @@ msgstr "紹介コードを作成する資格があります。"
 #: src/components/funding-history/funding-history-page.tsx
 #: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/trade-history/trade-history-page.tsx
-msgid "You are offline"
-msgstr "オフラインです"
+#~ msgid "You are offline"
+#~ msgstr "オフラインです"
 
+#: src/components/funding-history/funding-history-page.tsx
 #: src/components/funding-history/funding-history-page.tsx
 msgid "You are offline. Funding payments will load when the connection returns."
 msgstr "オフラインです。接続が復旧すると資金調達料を読み込みます。"
 
 #: src/components/historical-orders/historical-orders-page.tsx
+#: src/components/historical-orders/historical-orders-page.tsx
 msgid "You are offline. Order history will load when the connection returns."
 msgstr "オフラインです。接続が復旧すると注文履歴を読み込みます。"
 
 #: src/components/funding-history/funding-history-page.tsx
-msgid "You are offline. Previously loaded funding payments remain visible."
-msgstr "オフラインです。読み込み済みの資金調達料を引き続き表示します。"
+#~ msgid "You are offline. Previously loaded funding payments remain visible."
+#~ msgstr "オフラインです。読み込み済みの資金調達料を引き続き表示します。"
 
 #: src/components/historical-orders/historical-orders-page.tsx
-msgid "You are offline. Previously loaded order history remains visible."
-msgstr "オフラインです。読み込み済みの注文履歴を引き続き表示します。"
+#~ msgid "You are offline. Previously loaded order history remains visible."
+#~ msgstr "オフラインです。読み込み済みの注文履歴を引き続き表示します。"
 
 #: src/components/trade-history/trade-history-page.tsx
-msgid "You are offline. Previously loaded trade history remains visible."
-msgstr "オフラインです。読み込み済みの約定履歴を引き続き表示します。"
+#~ msgid "You are offline. Previously loaded trade history remains visible."
+#~ msgstr "オフラインです。読み込み済みの約定履歴を引き続き表示します。"
 
+#: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade-history/trade-history-page.tsx
 msgid "You are offline. Trade history will load when the connection returns."
 msgstr "オフラインです。接続が復旧すると約定履歴を読み込みます。"

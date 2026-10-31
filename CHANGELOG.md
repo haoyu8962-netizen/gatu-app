@@ -590,6 +590,17 @@ changes, not evidence that a build has been deployed or accepted on real devices
 - Explorer links on testnet now open the testnet explorer at `app.hyperliquid-testnet.xyz` (the old host
   did not resolve), and the token links in the market header and the phone's market bar follow the
   active network instead of always opening mainnet.
+- On a phone, Settings no longer opens with the slippage field focused (which raised the keyboard), and
+  it no longer offers the desktop layout reset, which the phone does not use; the official terminal
+  shows layout options only on desktop.
+- The trade, order and funding history pages no longer show warning banners or large warning icons
+  when a refresh fails or the connection drops: loaded rows stay, a neutral Retry replaces the error
+  page, and an empty cached result that failed to refresh, or is still refreshing, no longer claims
+  there are no records. The deposits and withdrawals tabs follow the same rule.
+- The position TP/SL dialog no longer shows a Loading... warning while the mark price is not live;
+  Confirm stays disabled until it is, as before.
+- The desktop Deposits and Withdrawals tab no longer shows a red load error: it keeps a neutral Retry
+  (or the display-limit note), as the phone and the passive data rules already do.
 - Orders, cancels and other trading actions now expire if the exchange has not accepted them within
   15 seconds, as with the official terminal's default Transaction Delay Protection, so a delayed
   request is rejected instead of executing late. The 15 seconds follow the exchange's clock, not the
