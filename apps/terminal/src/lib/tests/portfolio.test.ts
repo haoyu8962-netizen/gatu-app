@@ -238,6 +238,7 @@ describe("portfolio query freshness", () => {
 		isPending: false,
 		isPlaceholderData: false,
 		isFetchedAfterMount: true,
+		receivedSinceMount: true,
 	};
 	it("keeps fresh data during a normal refresh and rejects expired or failed cached data", () => {
 		expect(getPortfolioQueryStatus(query, true, now)).toBe("ready");
@@ -263,7 +264,10 @@ describe("portfolio query freshness", () => {
 		const failed = { ...fetching, isError: true };
 		expect(getPortfolioQueryStatus({ ...fetching, dataUpdatedAt: now + 60_000 }, true, now)).toBe("stale");
 		expect(getPortfolioQueryStatus({ ...failed, dataUpdatedAt: now + 60_000 }, true, now)).toBe("error");
-		expect(getPortfolioQueryStatus({ ...failed, isFetchedAfterMount: false }, true, now)).toBe("error");
+		expect(getPortfolioQueryStatus({ ...failed, receivedSinceMount: false }, true, now)).toBe("error");
+		expect(getPortfolioQueryStatus({ ...fetching, receivedSinceMount: false }, true, now + PORTFOLIO_MAX_AGE_MS)).toBe(
+			"stale",
+		);
 		expect(getPortfolioQueryStatus({ ...fetching, isFetchedAfterMount: false }, true, now + PORTFOLIO_MAX_AGE_MS)).toBe(
 			"loading",
 		);

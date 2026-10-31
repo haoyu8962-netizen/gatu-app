@@ -259,6 +259,7 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/deposit-empty-balances-entry.test.tsx \
   src/lib/tests/mobile-account-view.test.tsx \
   src/lib/tests/portfolio-overview.test.tsx \
+  src/lib/tests/portfolio-refresh-since-mount.test.tsx \
   src/lib/tests/portfolio.test.ts \
   src/lib/tests/balances.test.ts
 
