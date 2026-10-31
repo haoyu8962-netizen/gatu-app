@@ -330,7 +330,7 @@ vi.mock("@/stores/use-order-entry-store", () => ({
 vi.mock("@/stores/use-orderbook-actions-store", () => ({
 	getOrderbookActionsStore: () => ({ actions: { clearSelectedPrice: vi.fn() } }),
 	getSelectedPriceForMarket: (selection: { marketName: string; price: string } | null, marketName?: string) =>
-		selection?.marketName === marketName ? selection.price : null,
+		selection && selection.marketName === marketName ? selection.price : null,
 	useSelectedPrice: () => testState.selectedPrice,
 }));
 
