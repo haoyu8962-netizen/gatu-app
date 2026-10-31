@@ -72,7 +72,7 @@ High-frequency trading operations that use a "phantom agent" construction. **No 
 | Network | None required (Hyperliquid API only) |
 | Expiry | `expiresAfter` = estimated exchange time + 15 s on every L1 action ([ADR 0045](adr/0045-l1-action-expiry.md)) |
 
-Every `ExchangeClient` from `createExchangeClient` or `getTradingClient` sets the SDK's `defaultExpiresAfter`, so an L1 action that the exchange has not accepted within 15 seconds is rejected with `Action already expired` instead of executing late, as with the official terminal's default Transaction Delay Protection. The exchange time comes from an `exchangeStatus` sample per network (elapsed time is the larger of the wall-clock and monotonic ages); without a usable sample the device clock is used. User-signed actions do not support the field and are unchanged. There is no setting to turn the protection off.
+Every `ExchangeClient` from `createExchangeClient` or `getTradingClient` sets the SDK's `defaultExpiresAfter`, so an L1 action that the exchange has not accepted within 15 seconds is rejected with `Action already expired` instead of executing late, as with the official terminal's default Transaction Delay Protection. The exchange time comes from an `exchangeStatus` sample per network plus the monotonic time elapsed since, so changing the system clock cannot stretch the 15 seconds; when the wall-clock and monotonic ages disagree by more than a second, the next action first waits for a new sample. Without a usable sample the device clock is used. User-signed actions do not support the field and are unchanged. As on the official terminal, Settings › Trading › Transaction delay protection turns the protection off (ADR 0045 decision 6).
 
 ### Methods Using L1 Signing
 

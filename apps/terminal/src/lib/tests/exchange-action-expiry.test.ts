@@ -81,13 +81,80 @@ describe("server clock for L1 action expiry", () => {
 	});
 
 	it("keeps counting from the sample when the system clock is set back", async () => {
-		const clock = createServerClock(async () => 1_000_000);
+		const fetchServerTime = vi.fn().mockResolvedValueOnce(1_000_000).mockRejectedValue(new Error("network down"));
+		const clock = createServerClock(fetchServerTime);
 		await clock.sync();
 
 		await vi.advanceTimersByTimeAsync(10_000);
 		vi.setSystemTime(Date.now() - 60 * 60_000);
 
 		expect(await clock.getExpiresAfter()).toBe(1_010_000 + EXCHANGE_ACTION_EXPIRY_MS);
+		expect(fetchServerTime).toHaveBeenCalledTimes(2);
+	});
+
+	it("never stretches the expiry when the system clock jumps forward after the sample", async () => {
+		const fetchServerTime = vi.fn().mockResolvedValueOnce(1_000_000).mockRejectedValue(new Error("network down"));
+		const clock = createServerClock(fetchServerTime);
+		await clock.sync();
+
+		await vi.advanceTimersByTimeAsync(10_000);
+		vi.setSystemTime(Date.now() + 60 * 60_000);
+
+		expect(await clock.getExpiresAfter()).toBe(1_010_000 + EXCHANGE_ACTION_EXPIRY_MS);
+		expect(fetchServerTime).toHaveBeenCalledTimes(2);
+	});
+
+	it("waits for a new exchange time before signing once the system clock was changed", async () => {
+		const fetchServerTime = vi
+			.fn()
+			.mockResolvedValueOnce(1_000_000)
+			.mockImplementationOnce(() => new Promise<number>((resolve) => setTimeout(() => resolve(1_010_400), 100)));
+		const clock = createServerClock(fetchServerTime);
+		await clock.sync();
+
+		await vi.advanceTimersByTimeAsync(10_000);
+		vi.setSystemTime(Date.now() + 60 * 60_000);
+
+		let settled = false;
+		const expiresAfter = clock.getExpiresAfter().finally(() => {
+			settled = true;
+		});
+		await vi.advanceTimersByTimeAsync(99);
+		expect(settled).toBe(false);
+		await vi.advanceTimersByTimeAsync(1);
+
+		expect(await expiresAfter).toBe(1_010_450 + EXCHANGE_ACTION_EXPIRY_MS);
+		expect(fetchServerTime).toHaveBeenCalledTimes(2);
+	});
+
+	it("asks again at once while the clocks still disagree, despite a failure moments ago", async () => {
+		const fetchServerTime = vi
+			.fn()
+			.mockResolvedValueOnce(1_000_000)
+			.mockRejectedValueOnce(new Error("network down"))
+			.mockResolvedValueOnce(4_620_000);
+		const clock = createServerClock(fetchServerTime);
+		await clock.sync();
+
+		await vi.advanceTimersByTimeAsync(10_000);
+		vi.setSystemTime(Date.now() + 60 * 60_000);
+		expect(await clock.getExpiresAfter()).toBe(1_010_000 + EXCHANGE_ACTION_EXPIRY_MS);
+
+		await vi.advanceTimersByTimeAsync(5_000);
+		expect(await clock.getExpiresAfter()).toBe(4_620_000 + EXCHANGE_ACTION_EXPIRY_MS);
+		expect(fetchServerTime).toHaveBeenCalledTimes(3);
+	});
+
+	it("ignores a small wall-clock drift and counts only monotonic time", async () => {
+		const fetchServerTime = vi.fn(async () => 1_000_000);
+		const clock = createServerClock(fetchServerTime);
+		await clock.sync();
+
+		await vi.advanceTimersByTimeAsync(10_000);
+		vi.setSystemTime(Date.now() + 900);
+
+		expect(await clock.getExpiresAfter()).toBe(1_010_000 + EXCHANGE_ACTION_EXPIRY_MS);
+		expect(fetchServerTime).toHaveBeenCalledOnce();
 	});
 
 	it("falls back to the device clock and waits 30 seconds before asking again when the server time is unavailable", async () => {

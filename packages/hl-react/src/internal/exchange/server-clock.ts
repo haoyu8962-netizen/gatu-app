@@ -11,6 +11,8 @@ export const EXCHANGE_ACTION_EXPIRY_MS = 15_000;
 const SYNC_TIMEOUT_MS = 2_000;
 const RESYNC_AFTER_MS = 60_000;
 const RETRY_AFTER_FAILURE_MS = 30_000;
+/** Wall-clock and monotonic ages further apart than this mean the system clock was changed or the device slept. */
+const CLOCK_DIVERGENCE_MS = 1_000;
 
 interface Receipt {
 	at: number;
@@ -34,12 +36,24 @@ function ageOf(receipt: Receipt): number {
 	return getReceiptAgeMs(receipt.at, receipt.monotonicAt);
 }
 
+function monotonicAgeOf(receipt: Receipt): number {
+	return Math.max(0, performance.now() - receipt.monotonicAt);
+}
+
+function clocksDisagree(receipt: Receipt): boolean {
+	return Math.abs(Date.now() - receipt.at - (performance.now() - receipt.monotonicAt)) > CLOCK_DIVERGENCE_MS;
+}
+
 /**
  * Estimates the exchange's clock from `exchangeStatus` so that a device clock running behind does
- * not make every action arrive already expired. Elapsed time since the sample is the larger of the
- * wall-clock and monotonic ages (ADR 0022): setting the system clock back cannot shorten it, and a
- * device sleep is still counted. Without a usable sample the device clock is used, as the official
- * terminal does before its first account snapshot.
+ * not make every action arrive already expired. Elapsed time since the sample is its monotonic age
+ * only: that clock never runs ahead of real time, so a system clock moved forward cannot stretch the
+ * 15-second window. When the wall-clock and monotonic ages disagree (the system clock was changed,
+ * or the monotonic clock stopped while the device slept), an action first waits for a new sample,
+ * whatever the retry pause; if none arrives the monotonic estimate stays, so an action may arrive
+ * already expired but never late. Staleness still uses the larger of both ages (ADR 0022). Without
+ * a usable sample the device clock is used, as the official terminal does before its first account
+ * snapshot.
  */
 export function createServerClock(fetchServerTime: (signal: AbortSignal) => Promise<number>): ServerClock {
 	let sample: ServerTimeSample | null = null;
@@ -77,12 +91,14 @@ export function createServerClock(fetchServerTime: (signal: AbortSignal) => Prom
 	}
 
 	function estimateServerNow(): number {
-		return sample ? sample.serverTime + ageOf(sample) : Date.now();
+		return sample ? sample.serverTime + monotonicAgeOf(sample) : Date.now();
 	}
 
 	async function getExpiresAfter(): Promise<number> {
 		if (!sample) {
 			if (canRetry()) await sync();
+		} else if (clocksDisagree(sample)) {
+			await sync();
 		} else if (ageOf(sample) > RESYNC_AFTER_MS && canRetry()) {
 			void sync();
 		}

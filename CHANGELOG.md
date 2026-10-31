@@ -604,7 +604,8 @@ changes, not evidence that a build has been deployed or accepted on real devices
 - Orders, cancels and other trading actions now expire if the exchange has not accepted them within
   15 seconds, as with the official terminal's default Transaction Delay Protection, so a delayed
   request is rejected instead of executing late. The 15 seconds follow the exchange's clock, not the
-  device's, and transfers, withdrawals and approvals are unaffected (ADR 0045). As on the official
+  device's, and changing the device's clock cannot stretch them; transfers, withdrawals and approvals
+  are unaffected (ADR 0045). As on the official
   terminal, Settings › Trading › Transaction delay protection turns it off.
 - A limit or trigger price that is not a multiple of the market's tick (at most 5 significant figures
   and the market's decimal limit) is no longer rounded silently when the order is sent: the order
