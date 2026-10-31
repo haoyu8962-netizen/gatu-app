@@ -24,7 +24,7 @@
 - **D8 晋升 PR 只重跑 `dev` 没测过的部分（2026-10-31 新增，运营方在两种方案中选定）。** 晋升 PR 会对同一棵树重跑进 `dev` 时已经通过的检查。2026-10 的 11 次晋升，每次按作业取整为 66–75 计费分钟；85 次重跑里只有 4 次失败，都是 `Build terminal (pairing true)`。现在 `Terminal Tests`、浏览器回归、`Production Builds` 与 `Website and Brand` 各有一个 `Promotion coverage` 作业，只在 `pull_request`、目标为 `main`、来源为 `dev` 时运行 `scripts/promotion-coverage.mjs <本工作流文件>`，并按工作流分别判断。同时满足以下三条时，才输出 `covered=true`：
   1. 晋升 PR 的合并提交与 `dev` 头是同一棵树，即 `main` 没有 `dev` 缺的内容；
   2. 在上次晋升点（`dev` 主线上最新一个已被 `main` 包含的提交）之后，最后一个改过本工作流输入的 PR，其最新一次运行成功（重跑沿用原来的合并，看最后一次尝试的结论）。一次合入「改过输入」，指它在 `dev` 主线上的差异匹配本工作流自己的 `paths` 过滤，或者本工作流为这个 PR 运行过。没有运行记录不算没改：改过输入却没有运行记录，就全跑；
-  3. 这次运行的检出日志在独立一行写着它测的合并 `<时间> HEAD is now at … Merge <PR 头> into <dev 提交>`，整份日志只出现这一个合并，这个 `dev` 提交在 `dev` 主线上；此后 `dev` 的每次变动都是 GitHub 的 PR 合并，且除这个 PR 外，没有一个改过本工作流的输入。
+  3. 这次运行的检出日志里，格式为 `<时间> HEAD is now at … Merge <PR 头> into <dev 提交>` 的独立行，按（PR 头，基点）去重后恰好只有一种合并（同样的行重复出现也算一种；其他格式的文本不在检查范围内），这个 `dev` 提交在 `dev` 主线上；此后 `dev` 的每次变动都是 GitHub 的 PR 合并，且除这个 PR 外，没有一个改过本工作流的输入。
 
   判定作业用无 blob 克隆读取全部提交与树，差异由脚本从 git 算出。`covered=true` 时，三个工作流的作业被跳过，`Production Builds` 只构建发布实际使用的 `pairing true`。任何一条不满足，或查询失败、出错，都输出 `covered=false` 并照常全跑。`Static Checks` 没有判定作业，晋升时照常运行。判定作业的令牌只有 `actions: read` 与 `contents: read`。进 `dev` 的 PR、紧急修复 PR（从 `main` 开分支直接进 `main`）、发布标签与手动运行，判定作业都会跳过，下游照旧运行。本条修改 D2′ 中进 `main` 的 PR 构建两组的晋升部分，D2′ 原文保留。
 
