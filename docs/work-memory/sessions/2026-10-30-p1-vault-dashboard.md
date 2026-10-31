@@ -27,7 +27,7 @@
 
 ## 背景与范围
 
-同步记录，未取得任务标识。[全功能审查](2026-10-30-full-feature-audit.md)第一批的第三组：E1、E16、E6、E14，并入 E2（只做 Max）、E3、E4。分支 `claude/p1-vault-dashboard`，基于 `dev` `d99c2bc9`，与其他组互不依赖。
+同步记录，未取得任务标识。全功能审查（`2026-10-30-full-feature-audit`，在 `claude/p1-order-safety` 分支上）第一批的第三组：E1、E16、E6、E14，并入 E2（只做 Max）、E3、E4。分支 `claude/p1-vault-dashboard`，基于 `dev` `d99c2bc9`，与其他组互不依赖。
 
 ## 结论与依据
 
