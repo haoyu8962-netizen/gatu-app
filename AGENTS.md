@@ -267,6 +267,7 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/tradingview-chart.test.tsx \
   src/lib/tests/chart-price-format.test.ts \
   src/lib/tests/chart-datafeed.test.ts \
+  src/lib/tests/tradingview-overlays.test.ts \
   src/lib/tests/modal-surface-contract.test.ts \
   src/lib/tests/earn-page-surface-contract.test.ts \
   src/lib/tests/dashboard-surface-radius-contract.test.ts \

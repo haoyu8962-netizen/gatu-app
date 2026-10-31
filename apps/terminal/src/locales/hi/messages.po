@@ -4574,6 +4574,7 @@ msgstr "मोबाइल डिवाइस लिंक करें"
 msgid "Linked staking account: <0>{0}</0>."
 msgstr "लिंक किया गया स्टेकिंग खाता: <0>{0}</0>।"
 
+#: src/components/trade/chart/use-tradingview-overlay-lines.ts
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/config/trade-panel-labels.ts
 #: src/config/ui-text.ts

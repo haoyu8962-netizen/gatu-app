@@ -4574,6 +4574,7 @@ msgstr "关联移动设备"
 msgid "Linked staking account: <0>{0}</0>."
 msgstr "已关联质押账户：<0>{0}</0>。"
 
+#: src/components/trade/chart/use-tradingview-overlay-lines.ts
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/config/trade-panel-labels.ts
 #: src/config/ui-text.ts

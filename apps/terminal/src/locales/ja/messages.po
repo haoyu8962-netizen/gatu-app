@@ -4102,6 +4102,7 @@ msgstr "モバイル端末をリンク"
 msgid "Linked staking account: <0>{0}</0>."
 msgstr "リンク済みステーキングアカウント：<0>{0}</0>。"
 
+#: src/components/trade/chart/use-tradingview-overlay-lines.ts
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/config/trade-panel-labels.ts
 #: src/config/ui-text.ts

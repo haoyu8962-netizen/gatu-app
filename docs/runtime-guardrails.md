@@ -523,6 +523,19 @@ mobile regressions.
   `docs/market-funding-history.md` owns the view.
 - Chart datafeed callbacks must not capture stale symbols. Use stable refs or
   request-scoped guards for async responses.
+- The datafeed declares `has_weekly_and_monthly: false`, as the official
+  terminal does, so the library requests daily bars for 1W and 1M charts and
+  builds those bars itself. The history-target guard compares a request with
+  the resolution the library asks for (`getDatafeedRequestResolution`: `1D` for
+  daily, weekly and monthly charts), never with the chart's own resolution;
+  comparing with `1W` or `1M` drops every request and leaves those charts, and
+  the daily chart opened after them, without bars (2026-10-30 audit, C1).
+  `chart-datafeed.test.ts` covers history and realtime;
+  `node apps/terminal/tests/browser/chart-resolution-probe.mjs <origin>` checks
+  the real library against a running server.
+- Overlay line text comes from translated labels and the number formatters
+  (`use-tradingview-overlay-lines.ts`); the position size goes through
+  `formatDecimalString`, never `Big#toString`.
 - The widget iframe must remain interactive on mobile. Do not apply
   `pointer-events: none` to the loaded TradingView iframe.
 - CSP changes must keep the main document strict while allowing the
