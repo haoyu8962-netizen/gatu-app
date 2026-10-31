@@ -391,14 +391,14 @@ describe("FundingHistoryPage", () => {
 		expect(mocks.exportAddress).toBeUndefined();
 	});
 
-	it("dates desktop rows and exported payments with the year and keeps the compact date on phone cards", () => {
+	it("dates desktop rows, phone cards and exported payments with the year like the trade history page", () => {
 		const funding = createFunding(0);
 		mocks.history.fundings = [funding];
 		renderPage();
 
 		const withYear = formatDateTime(funding.time, { locale: "en", dateStyle: "short", timeStyle: "short" });
 		expect(container.querySelector("tbody")?.textContent).toContain(withYear);
-		expect(container.querySelector("time")?.textContent).toBe(formatDateTimeShort(funding.time, { locale: "en" }));
+		expect(container.querySelector("time")?.textContent).toBe(withYear);
 		expect(mocks.buildRows?.([funding])[1]?.[0]).toBe(withYear);
 	});
 

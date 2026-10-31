@@ -253,7 +253,7 @@ export function FundingHistoryPage({ address }: Props) {
 												fit
 											/>
 											<time className="shrink-0 text-xs tabular-nums text-fg-muted">
-												{formatDateTimeShort(funding.time, { locale })}
+												{formatDateTime(funding.time, { locale, dateStyle: "short", timeStyle: "short" })}
 											</time>
 										</div>
 										<dl className="mt-3 grid grid-cols-3 gap-3">
