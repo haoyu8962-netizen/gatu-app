@@ -23,6 +23,7 @@ const testState = vi.hoisted(() => ({
 	}),
 	modalProps: null as Record<string, unknown> | null,
 	isMobile: false,
+	popupProps: {} as Record<string, unknown>,
 	marketOrderSlippagePercent: 0.5,
 	formatLocale: "en-US",
 	setMarketOrderSlippagePercent: vi.fn((value: number) => {
@@ -62,7 +63,10 @@ vi.mock("@sairn/ui", () => ({
 	},
 	ModalContent: ({ children }: { children: ReactNode }) => createElement("div", null, children),
 	ModalHeader: ({ children }: { children: ReactNode }) => createElement("div", null, children),
-	ModalPopup: ({ children }: { children: ReactNode }) => createElement("div", null, children),
+	ModalPopup: ({ children, ...props }: { children: ReactNode } & Record<string, unknown>) => {
+		testState.popupProps = props;
+		return createElement("div", null, children);
+	},
 	ModalTitle: ({ children }: { children: ReactNode }) => createElement("h2", null, children),
 	SegmentedControlItem: ({ children }: { children: ReactNode }) => createElement("div", null, children),
 	SegmentedControls: ({ children }: { children: ReactNode }) => createElement("div", null, children),
@@ -379,6 +383,19 @@ describe("GlobalSettingsModal", () => {
 			button?.click();
 		});
 		expect(writeText).toHaveBeenCalledWith(`${APP_VERSION} ${APP_RELEASE_ID} ${APP_BUILD_COMMIT}`);
+	});
+
+	it("opens on the phone with focus on the dialog, not the slippage input, and without the desktop layout reset", () => {
+		testState.isMobile = true;
+		renderModal();
+		const popupRef = testState.popupProps.ref as { current: unknown } | undefined;
+		expect(testState.popupProps.initialFocus).toBe(popupRef);
+		expect(container.textContent).not.toContain("Desktop layout");
+
+		testState.isMobile = false;
+		renderModal();
+		expect(testState.popupProps.initialFocus).toBeUndefined();
+		expect(container.textContent).toContain("Desktop layout");
 	});
 
 	it("hides the order book unit setting on the desktop layout", () => {

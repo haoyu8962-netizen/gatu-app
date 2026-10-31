@@ -3,11 +3,11 @@
   "schemaVersion": 1,
   "id": "2026-10-31-p2-passive-data",
   "date": "2026-10-31",
-  "title": "第二批 P2 被动数据：TP/SL 加载提示、桌面存提款页签与三张历史页的告警",
+  "title": "第二批 P2 被动数据：TP/SL 加载提示、桌面存提款页签、三张历史页的告警与手机设置弹窗",
   "kind": "task",
   "status": "recorded",
   "topics": ["market-recovery", "order-entry"],
-  "summary": "运营方要求继续修复 P2，修复方案先核对官方开发文档并与官方终端对比。本组为全功能审查的被动数据与全局项，先做两项明确违反现行契约、不需要决策的：B21 持仓 TP/SL 弹窗在标记价未就绪时用警告框显示「Loading...」（守卫本来就不靠它），B17 桌面「存款与提款」页签读取失败时红字「Failed to load deposits and withdrawals.」（手机已静默，规范要求保留主动重试与已确认的上限说明）。依据官方前端包（TP/SL 弹窗无加载文字、确认只按校验禁用；存提款为空数组渲染、无错误文字）与 docs/mobile-data-presentation.md。分支 claude/p2-passive-data，基于本地集成分支 claude/p1-integration 的 329f241d。E9：交易、委托、资金费三张历史页删掉 role=alert 告警横条与大号警告图标，首次失败与离线改为共享的中性占位（HistoryPageUnavailable：读屏描述 + 中性 Retry，离线时只留忙碌占位），空缓存加刷新失败不再得出没有记录；上限说明改用 stroke-warning-weak 与 warning-soft。变异均被测试抓到；未推送。",
+  "summary": "运营方要求继续修复 P2，修复方案先核对官方开发文档并与官方终端对比。本组为全功能审查的被动数据与全局项，先做两项明确违反现行契约、不需要决策的：B21 持仓 TP/SL 弹窗在标记价未就绪时用警告框显示「Loading...」（守卫本来就不靠它），B17 桌面「存款与提款」页签读取失败时红字「Failed to load deposits and withdrawals.」（手机已静默，规范要求保留主动重试与已确认的上限说明）。依据官方前端包（TP/SL 弹窗无加载文字、确认只按校验禁用；存提款为空数组渲染、无错误文字）与 docs/mobile-data-presentation.md。分支 claude/p2-passive-data，基于本地集成分支 claude/p1-integration 的 329f241d。E9：交易、委托、资金费三张历史页删掉 role=alert 告警横条与大号警告图标，首次失败与离线改为共享的中性占位（HistoryPageUnavailable：读屏描述 + 中性 Retry，离线时只留忙碌占位），空缓存加刷新失败不再得出没有记录；上限说明改用 stroke-warning-weak 与 warning-soft。F3：手机上设置弹窗打开时焦点放在弹层本身（不聚焦滑点输入、不弹键盘），并隐藏「Desktop layout · Reset」。变异均被测试抓到；未推送。",
   "thread": null,
   "baseCommit": "329f241d",
   "commits": [],
@@ -46,6 +46,13 @@
 
 规范早已写明（`docs/mobile-data-presentation.md`「数据与操作边界」与「受约束的入口」：静态历史刷新失败不新增横条、失效空快照不得得出没有记录），本次是让代码符合规范；`mobile-data-presentation-contract` 新增一条扫描三张页面的横条、透明度修饰与组件使用。
 
+### F3 手机设置弹窗
+
+| 方面 | 官方做法（证据） | 本终端修改前 | 修改 |
+| --- | --- | --- | --- |
+| 初始焦点 | 官方设置是页头齿轮下拉，只有开关和链接，没有文字输入 | 设置弹窗由 store 打开、不经过 `Dialog.Trigger`，Base UI 的「触摸打开时聚焦弹层本身」不生效，落到第一个可聚焦元素即滑点 `NumberInput`，手机上会弹数字键盘 | 手机上给 `ModalPopup` 传 `initialFocus` 指向弹层本身（`popupRef`），桌面保持原行为 |
+| 布局项 | 布局行 `actionRow:i?void 0:oe`，`i` 为 `isMobileOrTablet`（≤1000px），手机和平板不显示 | 「Desktop layout · Reset」不分端都显示（同组件的订单簿单位开关已按 `isMobile` 门控） | 包 `!isMobile` |
+
 ## 验证与限制
 
 - B21：`position-tpsl-modal.test.tsx` 的「标记价订阅过期」用例加断言不出现「Loading...」；变异（把分支加回）同时被该用例与契约抓到。
@@ -57,6 +64,10 @@
 - 原测试把横条当需求（`trade-history-page.test.tsx`、`historical-orders-page.test.tsx` 还断言「刷新失败 + 空缓存」时显示「No … found」），已改为：刷新失败保留行、没有 `[role=alert]` 与「Refresh failed」；空缓存加失败不出现空结论、有 Retry 且可调用刷新；离线时不出现 Retry。`funding-history-page.test.tsx` 补同样用例；三页的错误态断言改为读屏描述。
 - 变异 4 个（`m-e9.json`：三页各把「空缓存 + 失败」分支去掉、Retry 一律隐藏）均被抓到；三页 36 项、契约 15 项通过；`pnpm i18n:extract` 移除不再使用的横条、标题与离线说明文案，缺失数不变。
 
+### F3
+
+- `global-settings-modal.test.tsx` 的 `ModalPopup` 替身改为记录属性，新增用例：手机上 `initialFocus` 就是弹层的 ref、没有「Desktop layout」；桌面 `initialFocus` 未设置、仍有布局项。该文件 30 项通过。真实焦点与键盘行为没有在浏览器或真机上验证（替身不渲染 Base UI 的焦点管理）。
+
 ## 后续与替代关系
 
-- E13（组合页回到标签页时误判过期）、E12（质押拒绝原文丢失）、F1（四种语言 31 条缺译）、F2（RTL 带符号数值）、M3（⌘K 打开英文旧列表）、F3（设置弹窗初始焦点与手机布局项）按顺序处理；E5、E15、F4 待运营方决定。
+- E13（组合页回到标签页时误判过期）、E12（质押拒绝原文丢失）、F1（四种语言 31 条缺译）、F2（RTL 带符号数值）、M3（⌘K 打开英文旧列表）按顺序处理；E5、E15、F4 待运营方决定。

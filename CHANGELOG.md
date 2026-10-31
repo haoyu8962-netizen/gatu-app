@@ -579,6 +579,9 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Fixed
 
+- On a phone, Settings no longer opens with the slippage field focused (which raised the keyboard), and
+  it no longer offers the desktop layout reset, which the phone does not use; the official terminal
+  shows layout options only on desktop.
 - The trade, order and funding history pages no longer show warning banners or large warning icons
   when a refresh fails or the connection drops: loaded rows stay, a neutral Retry replaces the error
   page, and an empty cached result that failed to refresh no longer claims there are no records.
