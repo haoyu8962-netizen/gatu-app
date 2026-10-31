@@ -14,6 +14,7 @@ const mocks = vi.hoisted(() => ({
 	portfolioError: true,
 	frozenNow: Date.UTC(2026, 8, 7),
 	queryAge: 0,
+	fetchStatus: "idle" as "fetching" | "paused" | "idle",
 	auxiliaryError: false,
 	priceStatus: "success",
 	borrowLendData: { tokenToState: [], health: "healthy", healthFactor: null } as InfoResponse<"borrowLendUserState">,
@@ -89,6 +90,7 @@ vi.mock("@/hooks/portfolio/use-portfolio-info", () => ({
 				data: mocks.portfolioData,
 				isError: mocks.portfolioError,
 				dataUpdatedAt: mocks.frozenNow - mocks.queryAge,
+				fetchStatus: mocks.fetchStatus,
 				isPlaceholderData: false,
 				isFetchedAfterMount: true,
 				isFetching: false,
@@ -102,6 +104,7 @@ vi.mock("@/hooks/portfolio/use-portfolio-info", () => ({
 				data: mocks.feesData,
 				isError: mocks.auxiliaryError,
 				dataUpdatedAt: mocks.frozenNow - mocks.queryAge,
+				fetchStatus: mocks.fetchStatus,
 				isPlaceholderData: false,
 				isFetchedAfterMount: true,
 				isFetching: false,
@@ -121,6 +124,7 @@ vi.mock("@/hooks/portfolio/use-portfolio-info", () => ({
 			data: mocks.auxiliaryDataAvailable ? auxiliaryData : undefined,
 			isError: mocks.auxiliaryError,
 			dataUpdatedAt: mocks.frozenNow - mocks.queryAge,
+			fetchStatus: mocks.fetchStatus,
 			isPlaceholderData: false,
 			isFetchedAfterMount: true,
 			isFetching: false,
@@ -141,6 +145,7 @@ describe("PortfolioOverview", () => {
 		vi.setSystemTime(mocks.frozenNow);
 		mocks.isConnected = true;
 		mocks.queryAge = 0;
+		mocks.fetchStatus = "idle";
 		mocks.auxiliaryError = false;
 		mocks.priceStatus = "success";
 		mocks.borrowLendData = { tokenToState: [], health: "healthy", healthFactor: null };
@@ -354,6 +359,31 @@ describe("PortfolioOverview", () => {
 		expect(summaryValue(container, "Total Equity")).toBe("$0.00");
 		expect(summaryValue(container, "Lending Net Balance")).toBe("$0.00");
 		expect(summaryValue(container, "Spot Account Equity")).toBe("$42.00");
+	});
+
+	it("keeps the last portfolio on screen while the request after a return to the tab is on its way", () => {
+		mocks.queryAge = 130_000;
+		mocks.portfolioError = false;
+		mocks.portfolioData = createPortfolio("5");
+		mocks.fetchStatus = "fetching";
+		renderOverview(root);
+
+		expect(summaryValue(container, "PNL")).not.toBe("$0.00");
+		expect(summaryValue(container, "Total Equity")).toBe("$42.00");
+		expect(container.querySelector('[role="alert"]')).toBeNull();
+		expect(container.textContent).not.toContain("Something went wrong");
+		expect(container.textContent).not.toContain("Some balances cannot be valued");
+	});
+
+	it("waits instead of reporting a failure when expired data has no request on its way", () => {
+		mocks.queryAge = 130_000;
+		mocks.portfolioError = false;
+		mocks.portfolioData = createPortfolio("5");
+		renderOverview(root);
+
+		expect(summaryValue(container, "PNL")).toBe("$0.00");
+		expect(container.querySelector('[role="alert"]')).toBeNull();
+		expect(container.textContent).not.toContain("Something went wrong");
 	});
 
 	it("expires successful cached responses", () => {

@@ -579,6 +579,8 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Fixed
 
+- Returning to the Portfolio tab after a while no longer flashes "Something went wrong" and $0 values:
+  the last figures stay until the refresh answers, as on the official terminal.
 - When Hyperliquid rejects a staking action, the notification now shows the exchange's reason (translated
   when it is a known one) instead of only "No changes were made."
 - The ⌘K market search now follows the interface language (title, field, empty result and market
