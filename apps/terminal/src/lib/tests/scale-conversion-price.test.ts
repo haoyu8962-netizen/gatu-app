@@ -1,8 +1,18 @@
 import Big from "big.js";
 import { describe, expect, it } from "vitest";
 import { deriveOrderEntry } from "@/domain/trade/order/derive";
-import { getOrderEntryLimitPx, getOrderEntryValueForSize } from "@/domain/trade/order/entry-limit-price";
-import { capSizeToQuoteAmount, getOrderValue, getSizeStringFromInput } from "@/domain/trade/order/size";
+import {
+	getOrderEntryLimitPx,
+	getOrderEntryMarginNotionalForSize,
+	getOrderEntryValueForSize,
+} from "@/domain/trade/order/entry-limit-price";
+import {
+	capSizeToQuoteAmount,
+	exceedsPerpEntryMaxSize,
+	getOrderValue,
+	getPerpEntryMaxSize,
+	getSizeStringFromInput,
+} from "@/domain/trade/order/size";
 import { createScaleOrderLevelPlan, getScaleAveragePrice, getScaleOrderNotional } from "@/domain/trade/orders";
 
 const scale = {
@@ -159,5 +169,62 @@ describe("scale order conversion price", () => {
 			derivedFor({ sizeMode: "base", sizeInput: "3", orderValueForSize: (size) => Number(size) * 1.4 }).sizeForOrder,
 		).toBe("3");
 		expect(derivedFor({ selectedBaseSize: "3" })).toMatchObject({ sizeForOrder: "3", orderValue: 220 });
+	});
+});
+
+describe("perp entry margin for the maximum size (official terminal parity)", () => {
+	const scale = {
+		orderType: "scale" as const,
+		assetId: 0,
+		szDecimals: 2,
+		limitPriceInput: "",
+		scaleStartPriceInput: "90",
+		scaleEndPriceInput: "110",
+		scaleLevelsNum: 2,
+		scaleSkewInput: "1",
+	};
+
+	it("prices a buy limit's margin at its limit below mark and at mark above it", () => {
+		const limit = { ...scale, orderType: "limit" as const, limitPriceInput: "80" };
+		expect(getOrderEntryMarginNotionalForSize(limit, "2", "buy", 100)).toBe(160);
+		expect(getOrderEntryMarginNotionalForSize({ ...limit, limitPriceInput: "120" }, "2", "buy", 100)).toBe(200);
+		expect(getOrderEntryMarginNotionalForSize({ ...limit, limitPriceInput: "125" }, "2", "sell", 100)).toBe(250);
+		expect(
+			getOrderEntryMarginNotionalForSize({ ...limit, orderType: "market" as const }, "2", "buy", 100),
+		).toBeUndefined();
+	});
+
+	it("never offers a scale maximum whose lot split exceeds the margin budget", () => {
+		const wide = { ...scale, szDecimals: 0, scaleStartPriceInput: "1", scaleEndPriceInput: "100" };
+		const marginForSize = (size: string) => getOrderEntryMarginNotionalForSize(wide, size, "buy", 10_000);
+		const input = { maxTradeSize: 3, markPx: 10_000, szDecimals: 0, marginNotionalForSize: marginForSize };
+		const max = getPerpEntryMaxSize(input);
+		expect(max).toBe(595);
+		expect(marginForSize(String(max))).toBe(29_998);
+		expect(exceedsPerpEntryMaxSize({ ...input, size: String(max) })).toBe(false);
+		expect(exceedsPerpEntryMaxSize({ ...input, size: String(max + 1) })).toBe(true);
+
+		const unsplittable = { ...scale, szDecimals: 0, scaleStartPriceInput: "10", scaleEndPriceInput: "100" };
+		const smallMargin = (size: string) => getOrderEntryMarginNotionalForSize(unsplittable, size, "buy", 10_000);
+		expect(smallMargin("1")).toBeUndefined();
+		expect(
+			getPerpEntryMaxSize({ maxTradeSize: 0.5, markPx: 10_000, szDecimals: 0, marginNotionalForSize: smallMargin }),
+		).toBe(91);
+		expect(smallMargin("91")).toBe(4_960);
+		expect(
+			getPerpEntryMaxSize({ maxTradeSize: 0.005, markPx: 10_000, szDecimals: 0, marginNotionalForSize: smallMargin }),
+		).toBe(0);
+
+		const descending = { ...scale, szDecimals: 0, scaleStartPriceInput: "100", scaleEndPriceInput: "1" };
+		const descendingMargin = (size: string) => getOrderEntryMarginNotionalForSize(descending, size, "buy", 100);
+		expect(
+			getPerpEntryMaxSize({ maxTradeSize: 3.5, markPx: 100, szDecimals: 0, marginNotionalForSize: descendingMargin }),
+		).toBe(6);
+	});
+
+	it("prices a scale order's margin level by level", () => {
+		expect(getOrderEntryMarginNotionalForSize(scale, "2", "buy", 100)).toBe(190);
+		expect(getOrderEntryMarginNotionalForSize(scale, "2", "sell", 100)).toBe(210);
+		expect(getOrderEntryMarginNotionalForSize({ ...scale, scaleEndPriceInput: "" }, "2", "buy", 100)).toBeUndefined();
 	});
 });

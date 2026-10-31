@@ -2,6 +2,7 @@ import type { SpotMarket, UnifiedMarket } from "@sairn/hl-react";
 import Big from "big.js";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import { isSupportedAccountAbstraction } from "@/domain/trade/account-abstraction";
+import type { AssetAvailabilityStatus } from "@/domain/trade/order/availability";
 import type {
 	AccountAbstraction,
 	MarginSummary,
@@ -166,6 +167,24 @@ export function getSpotAccountValueUsdValue(
 		totalUsd = totalUsd.plus(total.times(price));
 	}
 	return totalUsd.toString();
+}
+
+interface AccountFundsSnapshot {
+	perpStateStatus: AssetAvailabilityStatus;
+	spotStateStatus: AssetAvailabilityStatus;
+	clearinghouseStates: readonly (readonly [string, { marginSummary: Pick<MarginSummary, "accountValue"> }])[];
+	spotBalances: SpotBalance[] | null | undefined;
+}
+
+/**
+ * Whether current, successful all-DEX and spot snapshots show perp equity on any DEX or any spot
+ * balance: a funded account, even when none of it is free to trade. The official terminal asks for a
+ * deposit only when an account holds nothing; a missing, stale or failed snapshot is never "funded".
+ */
+export function hasAccountFunds(snapshot: AccountFundsSnapshot): boolean {
+	if (snapshot.perpStateStatus !== "success" || snapshot.spotStateStatus !== "success") return false;
+	if (snapshot.clearinghouseStates.some(([, state]) => toSafeBig(state.marginSummary.accountValue).gt(0))) return true;
+	return (snapshot.spotBalances ?? []).some((balance) => toSafeBig(balance.total).gt(0));
 }
 
 export function isQuoteBalanceSharedWithPerps(accountAbstraction: AccountAbstraction | null | undefined): boolean {

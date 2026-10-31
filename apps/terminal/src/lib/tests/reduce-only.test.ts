@@ -1,9 +1,10 @@
 import { describe, expect, it } from "vitest";
+import { hasAccountFunds } from "@/domain/trade/balances";
 import { deriveOrderEntry } from "@/domain/trade/order/derive";
 import { getOrderMetrics } from "@/domain/trade/order/metrics";
 import { type EntryPositionSnapshot, getReduceOnlyCapacity } from "@/domain/trade/order/reduce-only";
 import { getReduceOnlySizeSelection, getSelectedSizeDisplay, getSizeStringFromInput } from "@/domain/trade/order/size";
-import { getOrderActionStage } from "@/domain/trade/order-action-stage";
+import { entryOrderRequiresAvailableBalance, getOrderActionStage } from "@/domain/trade/order-action-stage";
 
 const snapshot: EntryPositionSnapshot = { ready: true, receivedAt: 1000, signedSize: "7.159" };
 describe("Reduce Only capacity", () => {
@@ -80,5 +81,65 @@ describe("Reduce Only capacity", () => {
 		expect(getOrderActionStage({ ...input, isBalanceLoading: true })).toBe("balanceLoading");
 		expect(getOrderActionStage({ ...input, hasBalanceError: true })).toBe("balanceError");
 		expect(getOrderActionStage({ ...input, needsApproval: true })).toBe("builder");
+	});
+});
+
+describe("trigger orders on a funded account (official terminal parity)", () => {
+	it("needs free balance for every entry except a perp stop or take-profit order on a funded account", () => {
+		expect(
+			entryOrderRequiresAvailableBalance({ orderType: "stopMarket", isSpotMarket: false, hasAccountFunds: true }),
+		).toBe(false);
+		expect(
+			entryOrderRequiresAvailableBalance({ orderType: "takeProfitLimit", isSpotMarket: false, hasAccountFunds: true }),
+		).toBe(false);
+		expect(
+			entryOrderRequiresAvailableBalance({ orderType: "stopMarket", isSpotMarket: false, hasAccountFunds: false }),
+		).toBe(true);
+		expect(
+			entryOrderRequiresAvailableBalance({ orderType: "stopMarket", isSpotMarket: true, hasAccountFunds: true }),
+		).toBe(true);
+		expect(entryOrderRequiresAvailableBalance({ orderType: "limit", isSpotMarket: false, hasAccountFunds: true })).toBe(
+			true,
+		);
+		expect(entryOrderRequiresAvailableBalance({ orderType: "twap", isSpotMarket: false, hasAccountFunds: true })).toBe(
+			true,
+		);
+	});
+
+	it("keeps an exempt trigger order in the trade flow with no free balance and asks an empty account to deposit", () => {
+		const input = {
+			isConnected: true,
+			needsApproval: false,
+			isSignerReady: true,
+			hasBalanceError: false,
+			isBalanceLoading: false,
+			availableBalance: 0,
+		};
+		expect(getOrderActionStage({ ...input, requiresAvailableBalance: false })).toBe("submit");
+		expect(getOrderActionStage({ ...input, requiresAvailableBalance: true })).toBe("deposit");
+		expect(getOrderActionStage(input)).toBe("deposit");
+	});
+
+	it("treats equity on any DEX or any spot balance of a current snapshot as funds, even when none of it is free", () => {
+		const empty = {
+			perpStateStatus: "success" as const,
+			spotStateStatus: "success" as const,
+			clearinghouseStates: [["", { marginSummary: { accountValue: "0" } }]] as [
+				string,
+				{ marginSummary: { accountValue: string } },
+			][],
+			spotBalances: [],
+		};
+		expect(hasAccountFunds(empty)).toBe(false);
+		expect(
+			hasAccountFunds({ ...empty, clearinghouseStates: [["xyz", { marginSummary: { accountValue: "12.5" } }]] }),
+		).toBe(true);
+		expect(
+			hasAccountFunds({ ...empty, spotBalances: [{ coin: "USDC", token: 0, total: "1", hold: "1", entryNtl: "0" }] }),
+		).toBe(true);
+		const funded = { ...empty, clearinghouseStates: [["", { marginSummary: { accountValue: "5" } }]] } as typeof empty;
+		expect(hasAccountFunds({ ...funded, perpStateStatus: "stale" })).toBe(false);
+		expect(hasAccountFunds({ ...funded, spotStateStatus: "loading" })).toBe(false);
+		expect(hasAccountFunds({ ...funded, perpStateStatus: "error" })).toBe(false);
 	});
 });

@@ -135,6 +135,7 @@ This file contains durable project instructions for coding agents. Read `agent.m
 - TWAP trigger and side-aware Max/Min Price fields stay behind the default-off Advanced Settings checkbox. Retain hidden price drafts but exclude them from validation, summaries, confirmation and submission while advanced settings are off; the toggle is transient draft state under the existing revision/reset guards.
 - Default desktop geometry fits all eight ordinary order-entry types without internal scrolling; keep the order-type header outside the overflow region and validate real forms, not only synthetic tall content.
 - A limit or trigger price that is not on the market's tick is rejected in the form with a valid example, never rounded silently; at submission a limit price may only round toward the user's bound (down for a buy, up for a sell). A scale order is sized, valued and charged at the size-weighted average of its levels (`docs/order-entry-surface-parity.md`).
+- A perp entry's maximum size follows the margin its resting price reserves, in the form and in the execution guard alike; stop and take-profit orders on a funded account need neither free balance nor size headroom, as on the official terminal (`docs/order-entry-surface-parity.md`, 2026-10-31).
 - Order-entry content must not resize the desktop grid: Market/Limit, advanced-order fields and feedback adapt within the trading panel while chart, order-book and account boundaries, internal scrolling and user-selected grid geometry stay intact. The embedded mobile form must not own its own vertical scroll viewport, and market data must never drive measured height state.
 
 ## Confirmation surface contract
@@ -320,6 +321,11 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/order-entry-store.test.tsx \
   src/lib/tests/order-validation.test.ts \
   src/lib/tests/order-intent.test.ts \
+  src/lib/tests/order-size.test.ts \
+  src/lib/tests/order-entry-trigger-funds.test.tsx \
+  src/lib/tests/entry-order-execution-guard.test.ts \
+  src/lib/tests/reduce-only.test.ts \
+  src/lib/tests/twap-details.test.ts \
   src/lib/tests/scale-conversion-price.test.ts \
   src/lib/tests/trade-form-twap-advanced.test.tsx \
   src/lib/tests/trade-form-compact-fields.test.tsx \

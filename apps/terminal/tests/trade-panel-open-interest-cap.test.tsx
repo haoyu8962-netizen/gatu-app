@@ -32,6 +32,9 @@ const testState = vi.hoisted(() => ({
 	orderEntryInput: undefined as unknown,
 	scaleSummaryProps: undefined as { orderValue?: number; marginRequired?: number | null } | undefined,
 	sizeForOrder: "1",
+	kind: "perp" as "perp" | "spot",
+	quoteAvailable: 0,
+	spotBuyQuoteCost: undefined as number | undefined,
 	requestSubmit: vi.fn(),
 	submitOrder: vi.fn(),
 	executionGuard: undefined as ((params: OrderParameters) => void) | undefined,
@@ -148,7 +151,7 @@ vi.mock("@/hooks/trade/use-order-entry-data", () => ({
 			isAvailabilityStale: false,
 			isLeverageUpdating: false,
 			isOpenInterestCapped: testState.openInterestCapped,
-			isSpotMarket: false,
+			isSpotMarket: testState.kind === "spot",
 			isSwitchingMode: false,
 			leverage: 10,
 			leverageInteractionIdentity: "Mainnet:BTC",
@@ -164,7 +167,8 @@ vi.mock("@/hooks/trade/use-order-entry-data", () => ({
 			sideLabels: { buy: "Buy", sell: "Sell", buyAria: "Buy", sellAria: "Sell" },
 			sizeForOrder: testState.sizeForOrder,
 			sizeValue: Number(testState.sizeForOrder),
-			spotBalance: { baseAvailable: 0, quoteAvailable: 0 },
+			spotBalance: { baseAvailable: 0, quoteAvailable: testState.quoteAvailable },
+			spotBuyQuoteCost: testState.spotBuyQuoteCost ?? input.orderValueForSize?.(testState.sizeForOrder) ?? 100,
 			szDecimals: 3,
 			toggleSizeDenomination: vi.fn(),
 		};
@@ -635,6 +639,9 @@ describe("desktop TradePanel price precision and scale sizing", () => {
 	beforeEach(() => {
 		activateLocale("en");
 		testState.availableBalance = 100;
+		testState.kind = "perp";
+		testState.quoteAvailable = 0;
+		testState.spotBuyQuoteCost = undefined;
 		testState.limitPrice = "100";
 		testState.openInterestCapped = false;
 		testState.orderType = "limit";
@@ -710,6 +717,35 @@ describe("desktop TradePanel price precision and scale sizing", () => {
 
 		expect(testState.scaleSummaryProps?.orderValue).toBe(220);
 		expect(testState.scaleSummaryProps?.marginRequired).toBe(22);
+	});
+
+	it("checks a spot market buy against what it locks at the slippage limit before it is sent", async () => {
+		testState.kind = "spot";
+		testState.orderType = "market";
+		testState.quoteAvailable = 100;
+		testState.spotBuyQuoteCost = 102.5;
+		await renderPanel(root);
+		await expectSubmissionBlocked(container);
+
+		testState.spotBuyQuoteCost = 100;
+		await renderPanel(root);
+		expect(getOrderButton(container).disabled).toBe(false);
+	});
+
+	it("hands order entry the margin a resting limit order reserves at the official terminal's price", async () => {
+		testState.orderType = "limit";
+		testState.limitPrice = "80";
+		await renderPanel(root);
+
+		const marginForSize = (testState.orderEntryInput as { marginNotionalForSize?: (size: string) => number | undefined })
+			.marginNotionalForSize;
+		expect(marginForSize?.("2")).toBe(160);
+
+		testState.limitPrice = "120";
+		await renderPanel(root);
+		const aggressive = (testState.orderEntryInput as { marginNotionalForSize?: (size: string) => number | undefined })
+			.marginNotionalForSize;
+		expect(aggressive?.("2")).toBe(200);
 	});
 
 	it("sizes a scale order at the size-weighted average of its levels", async () => {

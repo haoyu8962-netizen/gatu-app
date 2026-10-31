@@ -46,12 +46,15 @@ export interface SpotOrderFields {
 	quoteAvailable: number;
 	baseToken: string;
 	quoteToken: string;
+	quoteCost?: number;
 }
 
 export interface PerpOrderFields {
 	orderType: string;
 	markPx: number;
 	maxSize: number;
+	exceedsMaxSize?: boolean;
+	requiresAvailableBalance?: boolean;
 	stopOrder: boolean;
 	takeProfitOrder: boolean;
 	positionSize: number | string | null;

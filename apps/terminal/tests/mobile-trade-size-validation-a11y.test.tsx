@@ -32,6 +32,7 @@ const testState = vi.hoisted(() => ({
 	orderType: "market",
 	orderValue: 100,
 	quoteAvailable: 100,
+	spotBuyQuoteCost: undefined as number | undefined,
 	reduceOnly: false,
 	side: "buy" as "buy" | "sell",
 	sizeValue: 1,
@@ -197,6 +198,7 @@ vi.mock("@/hooks/trade/use-order-entry-data", () => ({
 				baseAvailable: testState.baseAvailable,
 				quoteAvailable: testState.quoteAvailable,
 			},
+			spotBuyQuoteCost: testState.spotBuyQuoteCost ?? testState.orderValue,
 			switchModeError: null,
 			szDecimals: 3,
 		};
@@ -478,6 +480,29 @@ describe("MobileTradeView order-size validation accessibility", () => {
 			)?.children[1]?.textContent;
 		expect(summaryValue("Order Value")).toBe("$220.00");
 		expect(summaryValue("Margin Req.")).toBe("$22.00");
+	});
+
+	it("checks a spot market buy against what it locks at the slippage limit before it is sent", async () => {
+		testState.kind = "spot";
+		testState.orderType = "market";
+		testState.orderValue = 100;
+		testState.quoteAvailable = 100;
+		testState.spotBuyQuoteCost = 102.5;
+		await renderView(root);
+
+		expect(getValidationError(container)?.textContent).toContain("Insufficient USDC balance at max slippage");
+		await expectSubmissionBlocked(container);
+	});
+
+	it("hands order entry the margin a resting limit order reserves at the official terminal's price", async () => {
+		testState.orderType = "limit";
+		testState.limitPrice = "125";
+		testState.side = "sell";
+		await renderView(root);
+
+		const marginForSize = (testState.orderEntryInput as { marginNotionalForSize?: (size: string) => number | undefined })
+			.marginNotionalForSize;
+		expect(marginForSize?.("2")).toBe(250);
 	});
 
 	it("sizes a scale order at the size-weighted average of its levels instead of the mark price", async () => {
@@ -1094,6 +1119,7 @@ function setValidPerpScenario() {
 	testState.orderType = "market";
 	testState.orderValue = 100;
 	testState.quoteAvailable = 100;
+	testState.spotBuyQuoteCost = undefined;
 	testState.reduceOnly = false;
 	testState.side = "buy";
 	testState.sizeValue = 1;

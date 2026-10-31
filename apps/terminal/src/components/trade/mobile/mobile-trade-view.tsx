@@ -16,7 +16,11 @@ import {
 	assertEntryTwapExecutionAllowed,
 	type EntryOrderExecutionState,
 } from "@/domain/trade/order/entry-execution-guard";
-import { getOrderEntryLimitPx, getOrderEntryValueForSize } from "@/domain/trade/order/entry-limit-price";
+import {
+	getOrderEntryLimitPx,
+	getOrderEntryMarginNotionalForSize,
+	getOrderEntryValueForSize,
+} from "@/domain/trade/order/entry-limit-price";
 import {
 	canEstimateProspectiveLiquidationDraft,
 	estimateProspectiveLiquidation,
@@ -303,10 +307,13 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 		isAvailabilityStale,
 		hasAvailabilityError,
 		isAwaitingFirstDeposit,
+		requiresAvailableBalance,
 		isOpenInterestCapped,
 		availableBalanceToken,
 		spotBalance,
 		maxSize,
+		exceedsMaxSize,
+		spotBuyQuoteCost,
 		sizeValue,
 		sizeForOrder,
 		orderValue,
@@ -338,6 +345,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 		sizeInput,
 		limitPx: getOrderEntryLimitPx(entryPriceInput),
 		orderValueForSize: (size: string) => getOrderEntryValueForSize(entryPriceInput, size),
+		marginNotionalForSize: (size: string) => getOrderEntryMarginNotionalForSize(entryPriceInput, size, side, markPx),
 		reduceOnly,
 		positionSnapshot: {
 			ready: positionSnapshotReady,
@@ -538,11 +546,14 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 					quoteAvailable: spotBalance.quoteAvailable,
 					baseToken,
 					quoteToken,
+					quoteCost: spotBuyQuoteCost,
 				})
 			: perpInput(baseInput, {
 					orderType,
 					markPx,
 					maxSize,
+					exceedsMaxSize,
+					requiresAvailableBalance,
 					stopOrder: isStopOrderType(orderType),
 					takeProfitOrder: isTakeProfitOrderType(orderType),
 					positionSize: validatedPositionSize,
@@ -561,7 +572,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 		accountReady:
 			isConnected &&
 			!isWalletLoading &&
-			(reduceOnly || availableBalance > 0) &&
+			(reduceOnly || requiresAvailableBalance === false || availableBalance > 0) &&
 			!validation.needsApproval &&
 			!isAvailabilityBlocked &&
 			!tradeActionsBlocked,
@@ -804,6 +815,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 		isConnected,
 		availableBalance,
 		reduceOnly,
+		requiresAvailableBalance,
 		isBalanceLoading: isAvailabilityLoading || isAvailabilityStale || isAvailabilityBlocked,
 		hasBalanceError: hasAvailabilityError,
 		isAwaitingFirstDeposit,
@@ -837,7 +849,10 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 		buttonContent.action();
 	}
 
-	const isFormDisabled = !isConnected || isAvailabilityBlocked || (!reduceOnly && availableBalance <= 0);
+	const isFormDisabled =
+		!isConnected ||
+		isAvailabilityBlocked ||
+		(!reduceOnly && requiresAvailableBalance !== false && availableBalance <= 0);
 	const maxSizeLabel = reduceOnly ? t`Use max reducible size` : t`Use max available balance`;
 	const sizeModeLabel = sizeMode === "base" ? baseToken || "—" : quoteToken || "—";
 	const priceUnitLabel = quoteToken || "USDC";
@@ -1071,6 +1086,9 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 							feeQuote={feeQuote}
 							szDecimals={market?.szDecimals}
 							marketKind={market?.kind}
+							totalSize={sizeForOrder}
+							referencePx={executionReferencePx}
+							baseToken={baseToken}
 						/>
 					) : scaleOrder ? (
 						<ScaleOrderSummary
@@ -1214,6 +1232,7 @@ interface MobileButtonContentInput {
 	isConnected: boolean;
 	availableBalance: number;
 	reduceOnly?: boolean;
+	requiresAvailableBalance?: boolean;
 	isBalanceLoading: boolean;
 	hasBalanceError: boolean;
 	isAwaitingFirstDeposit?: boolean;
@@ -1253,6 +1272,7 @@ export function getMobileOrderButtonContent(input: MobileButtonContentInput): Bu
 		isBalanceLoading: input.isBalanceLoading,
 		availableBalance: input.availableBalance,
 		reduceOnly: input.reduceOnly,
+		requiresAvailableBalance: input.requiresAvailableBalance,
 		isAwaitingFirstDeposit: input.isAwaitingFirstDeposit === true,
 	});
 

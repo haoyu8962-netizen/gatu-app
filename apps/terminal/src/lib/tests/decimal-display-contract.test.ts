@@ -103,8 +103,8 @@ const REGISTERED_FIXED_POINT_CALLS: Readonly<Record<string, Registration>> = {
 		use: "maximum reducible size for the order guard",
 	},
 	"domain/trade/order/size.ts": {
-		count: 12,
-		use: "order size protocol strings, size input values and quote-capped scale sizes",
+		count: 13,
+		use: "order size protocol strings, size input values, quote-capped scale sizes and the lot sizes searched for a resting perp order's maximum",
 	},
 	"domain/trade/orders.ts": {
 		count: 2,

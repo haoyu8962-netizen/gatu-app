@@ -201,6 +201,16 @@ jobs:
           src/lib/tests/mobile-order-safety-contract.test.ts
           src/lib/tests/order-confirmation-gate.test.tsx
           src/lib/tests/order-entry-store.test.tsx
+          src/lib/tests/order-entry.test.ts
+          src/lib/tests/order-entry-trigger-funds.test.tsx
+          src/lib/tests/order-intent.test.ts
+          src/lib/tests/order-metrics.test.ts
+          src/lib/tests/order-size.test.ts
+          src/lib/tests/entry-order-execution-guard.test.ts
+          src/lib/tests/reduce-only.test.ts
+          src/lib/tests/scale-conversion-price.test.ts
+          src/lib/tests/spot-market-max-order.test.ts
+          src/lib/tests/twap-i18n.test.tsx
           src/lib/tests/order-slider-sdk-contract.test.tsx
           src/lib/tests/order-submission-wiring.test.ts
           src/lib/tests/order-submit-surface-reset.test.tsx

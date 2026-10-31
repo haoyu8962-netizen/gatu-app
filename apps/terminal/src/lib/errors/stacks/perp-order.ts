@@ -82,6 +82,11 @@ export interface PerpOrderContext
 	isReadyToTrade: boolean;
 	needsAgentApproval: boolean;
 	availableBalance: number;
+	/**
+	 * False for a stop or take-profit order on a funded account: like the official terminal, a trigger
+	 * order needs no free balance or size headroom when it is placed.
+	 */
+	requiresAvailableBalance?: boolean;
 	hasMarket: boolean;
 	hasAssetIndex: boolean;
 	markPriceStatus: MarkPriceStatus;
@@ -99,7 +104,10 @@ export interface PerpOrderValidationResult {
 const perpOrderValidators: Validator<PerpOrderContext>[] = [
 	walletNotConnectedValidator,
 	walletLoadingValidator,
-	{ ...noBalanceValidator, validate: (ctx) => ctx.reduceOnly || noBalanceValidator.validate(ctx) },
+	{
+		...noBalanceValidator,
+		validate: (ctx) => ctx.reduceOnly || ctx.requiresAvailableBalance === false || noBalanceValidator.validate(ctx),
+	},
 	noMarketValidator,
 	marketNotReadyValidator,
 	signerNotReadyValidator,
@@ -114,7 +122,10 @@ const perpOrderValidators: Validator<PerpOrderContext>[] = [
 	twapStopPriceTickValidator,
 	enterSizeValidator,
 	minOrderNotionalValidator,
-	{ ...exceedsMaxSizeValidator, validate: (ctx) => ctx.reduceOnly || exceedsMaxSizeValidator.validate(ctx) },
+	{
+		...exceedsMaxSizeValidator,
+		validate: (ctx) => ctx.reduceOnly || ctx.usesTriggerPrice || exceedsMaxSizeValidator.validate(ctx),
+	},
 	tpSlReturnValidator,
 	enterTpSlPriceValidator,
 	tpPriceValidator,

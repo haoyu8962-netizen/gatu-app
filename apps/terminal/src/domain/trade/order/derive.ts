@@ -6,14 +6,14 @@ import {
 	type SpotAvailableAfterMaintenance,
 	type SpotBalanceData,
 } from "@/domain/trade/balances";
-import { getExecutedPrice } from "@/domain/trade/order/price";
 import {
 	capSizeToQuoteAmount,
+	exceedsPerpEntryMaxSize,
 	getMaxSizeForOrderEntry,
 	getOrderValue,
 	getSizeStringFromInput,
 } from "@/domain/trade/order/size";
-import { formatPriceForOrder } from "@/domain/trade/orders";
+import { getFrontendMarketOrderPrice } from "@/domain/trade/orders";
 import type { SpotBalance } from "@/hooks/trade/use-account-balances";
 import { getMarketCapabilities, type MarketCapabilities } from "@/lib/hyperliquid";
 import type { UnifiedMarketInfo } from "@/lib/hyperliquid/hooks/useMarketsInfo";
@@ -33,8 +33,11 @@ export interface OrderEntryInputs {
 	market: UnifiedMarketInfo | undefined;
 	side: Side;
 	conversionPrice: number;
+	markPx?: number;
 	/** The order value of a total size when it is not size × conversion price (a scale order's levels). */
 	orderValueForSize?: (size: string) => number | undefined;
+	/** What a perp order of a total size reserves margin on when it rests below or above mark. */
+	marginNotionalForSize?: (size: string) => number | undefined;
 	sizeMode: SizeMode;
 	sizeInput: string;
 	spotBalances: SpotBalance[] | null | undefined;
@@ -59,6 +62,10 @@ export interface OrderEntryDerived {
 	displayAvailableBalanceToken: string;
 	spotBalance: SpotBalanceData;
 	maxSize: number;
+	/** Whether the entered size reserves more margin than the exchange's maximum allows (perp only). */
+	exceedsMaxSize: boolean;
+	/** What a spot buy locks in the quote token at the price it is sent at (market buys at the slippage limit). */
+	spotBuyQuoteCost: number;
 	sizeValue: number;
 	sizeForOrder: string;
 	orderValue: number;
@@ -87,14 +94,13 @@ function getMaxSizePrice(
 	if (!isSpotMarket || !isBuy || !inputs.marketOrderSizing) return inputs.conversionPrice;
 	if (typeof inputs.market?.assetId !== "number") return 0;
 
-	const executionPrice = getExecutedPrice(
-		"market",
-		"buy",
-		inputs.marketOrderSizing.referencePx,
-		inputs.marketOrderSizing.slippageBps,
-		inputs.conversionPrice,
-	);
-	return formatPriceForOrder(executionPrice, { assetId: inputs.market.assetId, szDecimals });
+	return getFrontendMarketOrderPrice({
+		assetId: inputs.market.assetId,
+		side: "buy",
+		szDecimals,
+		markPx: inputs.marketOrderSizing.referencePx,
+		slippageBps: inputs.marketOrderSizing.slippageBps,
+	});
 }
 
 export function deriveOrderEntry(inputs: OrderEntryInputs): OrderEntryDerived {
@@ -132,6 +138,8 @@ export function deriveOrderEntry(inputs: OrderEntryInputs): OrderEntryDerived {
 					spotBalance,
 					szDecimals,
 					maxTradeSzs: inputs.maxTradeSzs,
+					markPx: inputs.markPx,
+					marginNotionalForSize: inputs.marginNotionalForSize,
 				});
 
 	const convertedSize =
@@ -148,9 +156,23 @@ export function deriveOrderEntry(inputs: OrderEntryInputs): OrderEntryDerived {
 			: convertedSize;
 
 	const sizeValue = Number(sizeForOrder);
+	const exceedsMaxSize =
+		!isSpotMarket &&
+		reduceOnlyCapacity.status === "ordinary" &&
+		inputs.isConnected &&
+		exceedsPerpEntryMaxSize({
+			maxTradeSize: inputs.maxTradeSzs?.[isBuy ? 0 : 1] ?? 0,
+			markPx: inputs.markPx ?? 0,
+			szDecimals,
+			marginNotionalForSize: inputs.marginNotionalForSize,
+			size: sizeForOrder,
+		});
 	const orderValue =
 		(sizeValue > 0 ? inputs.orderValueForSize?.(sizeForOrder) : undefined) ??
 		getOrderValue(sizeValue, inputs.conversionPrice);
+	const marketBuyQuoteCost =
+		isSpotMarket && isBuy && inputs.marketOrderSizing ? getOrderValue(sizeValue, Number(maxSizePrice)) : 0;
+	const spotBuyQuoteCost = marketBuyQuoteCost > 0 ? marketBuyQuoteCost : orderValue;
 	const sizeModeLabel = getSizeModeLabel(inputs.sizeMode, baseToken, quoteToken);
 
 	return {
@@ -166,6 +188,8 @@ export function deriveOrderEntry(inputs: OrderEntryInputs): OrderEntryDerived {
 		displayAvailableBalanceToken: availableBalanceToken,
 		spotBalance,
 		maxSize,
+		exceedsMaxSize,
+		spotBuyQuoteCost,
 		sizeValue,
 		sizeForOrder,
 		orderValue,

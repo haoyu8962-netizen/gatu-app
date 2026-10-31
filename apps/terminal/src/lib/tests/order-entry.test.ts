@@ -352,3 +352,139 @@ describe("order entry conversion price", () => {
 		expect(getConversionPrice(0, undefined)).toBe(0);
 	});
 });
+
+describe("perp order entry maximum at the official terminal's margin price", () => {
+	const passiveBuyMargin = (size: string) => Number(size) * 80;
+
+	it("raises a passive buy's maximum by mark over limit and checks the size by the margin it reserves", () => {
+		const input = {
+			isConnected: true,
+			market: perpMarket,
+			side: "buy" as const,
+			conversionPrice: 80,
+			markPx: 100,
+			marginNotionalForSize: passiveBuyMargin,
+			sizeMode: "base" as const,
+			spotBalances: [usdcBalance],
+			maxTradeSzs: [10, 10] as [number, number],
+			availableToTrade: [100, 100] as [number, number],
+			marketOrderSizing: null,
+		};
+		const within = deriveOrderEntry({ ...input, sizeInput: "12.5" });
+		expect(within.maxSize).toBe(12.5);
+		expect(within.exceedsMaxSize).toBe(false);
+
+		const beyond = deriveOrderEntry({ ...input, sizeInput: "12.5001" });
+		expect(beyond.exceedsMaxSize).toBe(true);
+
+		const market = deriveOrderEntry({
+			...input,
+			conversionPrice: 100,
+			marginNotionalForSize: undefined,
+			sizeInput: "10.0001",
+		});
+		expect(market.maxSize).toBe(10);
+		expect(market.exceedsMaxSize).toBe(true);
+	});
+
+	it("leaves the exchange maximum in place for reduce-only and disconnected entry", () => {
+		const reduceOnly = deriveOrderEntry({
+			isConnected: true,
+			reduceOnly: true,
+			positionSnapshot: { ready: true, receivedAt: Date.now(), signedSize: "-50" },
+			market: perpMarket,
+			side: "buy",
+			conversionPrice: 80,
+			markPx: 100,
+			marginNotionalForSize: passiveBuyMargin,
+			sizeMode: "base",
+			sizeInput: "40",
+			spotBalances: [usdcBalance],
+			maxTradeSzs: [10, 10],
+			availableToTrade: [100, 100],
+			marketOrderSizing: null,
+		});
+		expect(reduceOnly.exceedsMaxSize).toBe(false);
+	});
+
+	it("fails a perp entry closed when its side has no capacity", () => {
+		const derived = deriveOrderEntry({
+			isConnected: true,
+			market: perpMarket,
+			side: "buy",
+			conversionPrice: 100,
+			markPx: 100,
+			sizeMode: "base",
+			sizeInput: "1",
+			spotBalances: [usdcBalance],
+			maxTradeSzs: [0, 10],
+			availableToTrade: [100, 100],
+			marketOrderSizing: null,
+		});
+		expect(derived.exceedsMaxSize).toBe(true);
+	});
+
+	it("rounds a spot market buy's budget the way the order price is rounded", () => {
+		const spotMarket = {
+			kind: "spot",
+			name: "@1",
+			pairName: "HYPE/USDC",
+			assetId: 10_001,
+			szDecimals: 2,
+			tokensInfo: [{ name: "HYPE" }, { name: "USDC" }],
+		} as never;
+		const derived = deriveOrderEntry({
+			isConnected: true,
+			market: spotMarket,
+			side: "buy",
+			conversionPrice: 10,
+			sizeMode: "base",
+			sizeInput: "10",
+			spotBalances: [usdcBalance],
+			maxTradeSzs: null,
+			availableToTrade: null,
+			marketOrderSizing: { referencePx: 10.0065, slippageBps: 250 },
+		});
+		expect(derived.spotBuyQuoteCost).toBe(102.56);
+
+		const markAboveSendPrice = deriveOrderEntry({
+			isConnected: true,
+			market: spotMarket,
+			side: "buy",
+			conversionPrice: 110,
+			sizeMode: "base",
+			sizeInput: "10",
+			spotBalances: [usdcBalance],
+			maxTradeSzs: null,
+			availableToTrade: null,
+			marketOrderSizing: { referencePx: 100, slippageBps: 250 },
+		});
+		expect(markAboveSendPrice.orderValue).toBe(1100);
+		expect(markAboveSendPrice.spotBuyQuoteCost).toBe(1025);
+	});
+
+	it("costs a spot market buy at its slippage limit, the price the order is sent at", () => {
+		const spotMarket = {
+			kind: "spot",
+			name: "@1",
+			pairName: "HYPE/USDC",
+			assetId: 10_001,
+			szDecimals: 2,
+			tokensInfo: [{ name: "HYPE" }, { name: "USDC" }],
+		} as never;
+		const derived = deriveOrderEntry({
+			isConnected: true,
+			market: spotMarket,
+			side: "buy",
+			conversionPrice: 20,
+			sizeMode: "base",
+			sizeInput: "10",
+			spotBalances: [usdcBalance],
+			maxTradeSzs: null,
+			availableToTrade: null,
+			marketOrderSizing: { referencePx: 20, slippageBps: 250 },
+		});
+		expect(derived.orderValue).toBe(200);
+		expect(derived.spotBuyQuoteCost).toBe(205);
+	});
+});

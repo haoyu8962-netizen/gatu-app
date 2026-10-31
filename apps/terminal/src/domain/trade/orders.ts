@@ -67,7 +67,13 @@ export function isValidSizeDecimalsForAsset(assetId: number, szDecimals: number)
 	return szDecimals <= maxDecimals;
 }
 
-export function buildFrontendMarketOrder(params: FrontendMarketOrderParams): ExchangeOrder {
+/**
+ * The price a FrontendMarket order is sent at: the reference price moved by the slippage limit,
+ * rounded back toward the reference so the limit the user confirmed is never exceeded.
+ */
+export function getFrontendMarketOrderPrice(
+	params: Pick<FrontendMarketOrderParams, "assetId" | "side" | "szDecimals" | "markPx" | "slippageBps">,
+): string {
 	const markPx = toBig(params.markPx);
 	const slippageBps = toBig(params.slippageBps);
 	let orderPrice = Big(0);
@@ -78,11 +84,14 @@ export function buildFrontendMarketOrder(params: FrontendMarketOrderParams): Exc
 		orderPrice = markPx.times(multiplier);
 	}
 	const roundingMode = params.side === "buy" ? Big.roundDown : Big.roundUp;
+	return formatPriceForOrderWithRounding(orderPrice, params, roundingMode);
+}
 
+export function buildFrontendMarketOrder(params: FrontendMarketOrderParams): ExchangeOrder {
 	return {
 		a: params.assetId,
 		b: params.side === "buy",
-		p: formatPriceForOrderWithRounding(orderPrice, params, roundingMode),
+		p: getFrontendMarketOrderPrice(params),
 		s: formatSizeForOrder(params.size, params.szDecimals),
 		r: params.reduceOnly,
 		t: { limit: { tif: "FrontendMarket" } },
@@ -335,6 +344,19 @@ export function getScaleOrderNotional(params: ScaleOrderPlanParams): Big | null 
 	const plan = createScaleOrderLevelPlan(params);
 	if (plan.levels.length === 0) return null;
 	return plan.levels.reduce((sum, level) => sum.plus(level.notional), Big(0));
+}
+
+/**
+ * The margin a perp scale order reserves once its total size is split into lots: each level's size
+ * at the price that level rests at (`marginPriceForLevel`). Null while the plan has no levels.
+ */
+export function getScaleOrderMarginNotional(
+	params: ScaleOrderPlanParams,
+	marginPriceForLevel: (price: Big) => Big,
+): Big | null {
+	const plan = createScaleOrderLevelPlan(params);
+	if (plan.levels.length === 0) return null;
+	return plan.levels.reduce((sum, level) => sum.plus(marginPriceForLevel(Big(level.price)).times(level.size)), Big(0));
 }
 
 /**

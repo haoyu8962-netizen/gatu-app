@@ -3306,7 +3306,6 @@ msgid "Ethereum is a programmable blockchain for smart contracts and decentraliz
 msgstr "Ethereum is a programmable blockchain for smart contracts and decentralized applications."
 
 #: src/components/trade/positions/twap-tab.tsx
-#: src/components/trade/tradebox/twap-order-summary.tsx
 msgid "Every {TWAP_SUBORDER_INTERVAL_SECONDS} seconds"
 msgstr "Every {TWAP_SUBORDER_INTERVAL_SECONDS} seconds"
 
@@ -3772,8 +3771,8 @@ msgid "Forwarding deposit"
 msgstr "Forwarding deposit"
 
 #: src/components/trade/tradebox/twap-order-summary.tsx
-msgid "Frequency"
-msgstr "Frequency"
+#~ msgid "Frequency"
+#~ msgstr "Frequency"
 
 #: src/components/api-wallet/use-api-wallet-controller.ts
 #: src/components/api-wallet/use-api-wallet-controller.ts
@@ -4246,6 +4245,10 @@ msgstr "Install this web app for a full-screen, app-like trading experience."
 #: src/lib/errors/definitions/spot-balance.ts
 msgid "Insufficient {0} balance"
 msgstr "Insufficient {0} balance"
+
+#: src/lib/errors/definitions/spot-balance.ts
+msgid "Insufficient {quoteToken} balance at max slippage"
+msgstr "Insufficient {quoteToken} balance at max slippage"
 
 #: src/components/trade/components/spot-swap-modal.tsx
 msgid "Insufficient <0/> balance"
@@ -8142,6 +8145,10 @@ msgstr "Size (%)"
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Size cannot exceed the order's remaining size."
 msgstr "Size cannot exceed the order's remaining size."
+
+#: src/components/trade/tradebox/twap-order-summary.tsx
+msgid "Size per Suborder"
+msgstr "Size per Suborder"
 
 #: src/lib/trade/position-market-close-errors.ts
 #: src/lib/trade/position-submit-feedback.ts

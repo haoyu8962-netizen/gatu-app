@@ -12,6 +12,7 @@ import { isValidSizeDecimalsForAsset } from "@/domain/trade/orders";
 import type { AssetAvailabilityStatus } from "./availability";
 
 import { getReduceOnlyCapacity } from "./reduce-only";
+import { getRestingMarginPrice } from "./size";
 
 export { ENTRY_POSITION_MAX_AGE_MS } from "./reduce-only";
 
@@ -197,7 +198,7 @@ function assertAttachedTriggerDirections(params: OrderParameters, state: EntryOr
 	}
 	const parent = params.orders[0];
 	if (!("limit" in parent.t)) failEntryExecution("order-request-invalid", "Attached TP/SL parent order is invalid");
-	const referencePx = isFrontendMarketOrder(parent) ? state.markPx : String(parent.p);
+	const referencePx = isFrontendMarketOrder(parent) ? state.executionReferencePx : String(parent.p);
 	const seenTypes = new Set<"tp" | "sl">();
 	for (const order of params.orders.slice(1)) {
 		if (
@@ -220,9 +221,27 @@ function getPrimaryOrders(params: OrderParameters): OrderParameters["orders"] {
 	return params.grouping === "normalTpsl" ? params.orders.slice(0, 1) : params.orders;
 }
 
-function assertOrderSizesWithinCurrentAvailability(params: OrderParameters, state: EntryOrderExecutionState): void {
+/**
+ * The live mark a resting perp order's margin is valued at. Without one, sizes are compared with the
+ * exchange's maximum at mark, as before: stricter for a buy below mark, and for a sell above mark no
+ * stricter than the exchange's own margin check, which still rejects an order that does not fit.
+ * Limit orders deliberately need no live mark.
+ */
+function readLiveMark(state: EntryOrderExecutionState, now: number): Big | null {
+	if (!isLiveMarkPriceReady(state.markPriceStatus, state.markPx, state.markPriceReceivedAt, now)) return null;
+	const mark = readEntryBig(state.markPx, "mark-price-unavailable");
+	return mark.gt(0) ? mark : null;
+}
+
+function assertOrderSizesWithinCurrentAvailability(
+	params: OrderParameters,
+	state: EntryOrderExecutionState,
+	now: number,
+): void {
 	const totals = { buy: Big(0), sell: Big(0) };
 	const quoteTotals = { buy: Big(0), sell: Big(0) };
+	const marginTotals = { buy: Big(0), sell: Big(0) };
+	const mark = state.availability.kind === "perp" ? readLiveMark(state, now) : null;
 	for (const order of getPrimaryOrders(params)) {
 		const size = readEntryBig(order.s, "order-request-invalid");
 		const price = readEntryBig(order.p, "order-request-invalid");
@@ -231,6 +250,10 @@ function assertOrderSizesWithinCurrentAvailability(params: OrderParameters, stat
 		const side = order.b ? "buy" : "sell";
 		totals[side] = totals[side].plus(size);
 		quoteTotals[side] = quoteTotals[side].plus(size.times(price));
+		if (mark) {
+			const marginPx = isFrontendMarketOrder(order) ? mark : getRestingMarginPrice(side, mark, price);
+			marginTotals[side] = marginTotals[side].plus(size.times(marginPx));
+		}
 	}
 	if (state.availability.kind === "spot") {
 		if (
@@ -241,12 +264,14 @@ function assertOrderSizesWithinCurrentAvailability(params: OrderParameters, stat
 		}
 		return;
 	}
+	if (isEntryTriggerOrder(params)) return;
 	for (const side of ["buy", "sell"] as const) {
 		if (totals[side].eq(0)) continue;
 		const available = state.availability.maxBaseBySide[side];
-		if (available === undefined || readEntryBig(available, "trading-availability-unavailable").lt(totals[side])) {
-			failEntryExecution("trading-availability-changed");
-		}
+		if (available === undefined) failEntryExecution("trading-availability-changed");
+		const maxSize = readEntryBig(available, "trading-availability-unavailable");
+		const exceeds = mark ? maxSize.times(mark).lt(marginTotals[side]) : maxSize.lt(totals[side]);
+		if (exceeds) failEntryExecution("trading-availability-changed");
 	}
 }
 
@@ -279,7 +304,7 @@ export function assertEntryOrderExecutionAllowed(
 		failEntryExecution("trading-availability-unavailable");
 	}
 	assertReduceOnlyPosition(getPrimaryOrders(params), state, now);
-	assertOrderSizesWithinCurrentAvailability(params, state);
+	assertOrderSizesWithinCurrentAvailability(params, state, now);
 
 	const marketOrders = params.orders.filter(isFrontendMarketOrder);
 	const entryTrigger = isEntryTriggerOrder(params);
@@ -304,15 +329,17 @@ function assertTwapDetailsStillValid(params: TwapOrderParameters, state: EntryOr
 		failEntryExecution("mark-price-unavailable");
 	}
 	const mark = readEntryBig(state.markPx, "mark-price-unavailable");
+	let stopReference = mark;
 	if (details.t !== null) {
 		const trigger = readEntryBig(details.t.p, "order-request-invalid");
 		if (!trigger.gt(0) || trigger.eq(mark) || trigger.gt(mark) !== details.t.a) {
 			failEntryExecution("trigger-price-invalidated");
 		}
+		stopReference = trigger;
 	}
 	if (details.s !== null) {
 		const stop = readEntryBig(details.s, "order-request-invalid");
-		const stopValid = params.twap.b ? stop.gt(mark) : stop.lt(mark);
+		const stopValid = params.twap.b ? stop.gt(stopReference) : stop.lt(stopReference);
 		if (!stopValid) failEntryExecution("stop-price-invalidated");
 	}
 }

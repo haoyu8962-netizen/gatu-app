@@ -59,6 +59,7 @@ type TradeFormOrderEntryData = Pick<
 	| "quoteToken"
 	| "capabilities"
 	| "availableBalance"
+	| "requiresAvailableBalance"
 	| "displayAvailableBalance"
 	| "displayAvailableBalanceToken"
 	| "leverage"
@@ -125,6 +126,7 @@ export function TradeFormFields({
 		quoteToken,
 		capabilities,
 		availableBalance,
+		requiresAvailableBalance,
 		displayAvailableBalance,
 		displayAvailableBalanceToken,
 		leverage,
@@ -139,7 +141,9 @@ export function TradeFormFields({
 		useOrderEntryActions();
 
 	const isFormDisabled =
-		!isConnected || isAvailabilityBlocked || (!(capabilities.hasReduceOnly && reduceOnly) && availableBalance <= 0);
+		!isConnected ||
+		isAvailabilityBlocked ||
+		(!(capabilities.hasReduceOnly && reduceOnly) && requiresAvailableBalance !== false && availableBalance <= 0);
 	const isSizeSliderPaused = isConnected && isAvailabilityBlocked;
 	const isSizeSliderDisabled = !isSizeSliderPaused && (isFormDisabled || maxSize <= 0);
 	const maxSizeLabel =

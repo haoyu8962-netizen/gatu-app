@@ -639,6 +639,24 @@ changes, not evidence that a build has been deployed or accepted on real devices
   that is partly filled before the open-orders list confirms it is still reported as modified.
   Reduce-only Stop and Take Profit orders can change their size and trigger price, as on the official
   terminal; a trigger order that can open a position still has to be cancelled and placed again.
+- A limit order resting below mark (a buy) or above mark (a sell) has a maximum size based on the
+  margin its own price reserves, as on the official terminal: a passive buy may be larger than the
+  maximum of a market order, and a passive sell is held to the margin its higher price needs. Scale
+  orders count each level at the price it rests at, and the order is checked the same way when it is
+  sent.
+- Stop and Take Profit orders are no longer limited by the free balance or the maximum size when they
+  are placed, as on the official terminal; the exchange checks their margin when they trigger, and an
+  account that holds nothing is still asked to deposit.
+- A TWAP's Max or Min Price is checked against its trigger price when one is set, instead of the mark
+  price, as on the official terminal.
+- The TWAP summary shows the approximate size of each suborder (one every 30 seconds of the runtime,
+  each at least the $10 minimum) instead of a fixed "Every 30 seconds", which a small order does not
+  follow.
+- A market order's TP/SL is checked against the same reference price when it is sent as when it was
+  built, so a TP/SL between the mid and the mark price is no longer rejected at submission.
+- A spot market buy is checked in the form against what it locks at the slippage limit, the price it is
+  sent at, instead of failing only at submission; "Insufficient USDC balance at max slippage" says
+  when only the slippage does not fit.
 - The Market order-type tab and menu entry in the order form use the order-type wording instead of
   the market-list wording: 市价 in Chinese, 成行 in Japanese, मार्केट in Hindi, Au marché in French
   and سعر السوق in Arabic (English and Spanish are unchanged). The compact account-mode placeholder

@@ -19,6 +19,16 @@ interface OrderEntryMaxSizeInput {
 	spotBalance: SpotBalanceData;
 	szDecimals: number;
 	maxTradeSzs: [number, number] | null;
+	markPx?: number;
+	marginNotionalForSize?: (size: string) => number | undefined;
+}
+
+interface PerpEntryMarginInput {
+	maxTradeSize: Numeric;
+	markPx: Numeric;
+	szDecimals: number;
+	/** What a perp order of this total size reserves margin on; undefined when it executes at mark. */
+	marginNotionalForSize?: (size: string) => number | undefined;
 }
 
 interface SizeValueInput {
@@ -83,7 +93,83 @@ export function getMaxSizeForOrderEntry(input: OrderEntryMaxSizeInput): number {
 
 	const maxTradeSize = input.maxTradeSzs?.[isBuy ? 0 : 1];
 	if (maxTradeSize == null || !Number.isFinite(maxTradeSize) || maxTradeSize <= 0) return 0;
-	return maxTradeSize;
+	return getPerpEntryMaxSize({
+		maxTradeSize,
+		markPx: input.markPx ?? 0,
+		szDecimals: input.szDecimals,
+		marginNotionalForSize: input.marginNotionalForSize,
+	});
+}
+
+/**
+ * The price a resting perp order reserves margin at, as the official terminal sizes it: a buy below
+ * mark or a sell above mark at its own price, an order that crosses mark at mark.
+ */
+export function getRestingMarginPrice(side: Side, markPx: Big, orderPx: Big): Big {
+	if (side === "buy") return orderPx.lt(markPx) ? orderPx : markPx;
+	return orderPx.gt(markPx) ? orderPx : markPx;
+}
+
+function getPerpMarginBudget(input: PerpEntryMarginInput): Big | null {
+	const maxTradeSize = toBig(input.maxTradeSize);
+	const mark = toBig(input.markPx);
+	if (!maxTradeSize?.gt(0) || !mark?.gt(0)) return null;
+	return maxTradeSize.times(mark);
+}
+
+const MAX_SIZE_SEARCH_DOUBLINGS = 80;
+
+function fitsPerpMarginBudget(input: PerpEntryMarginInput, budget: Big, maxTradeSize: Big, size: string): boolean {
+	const marginNotional = toBig(input.marginNotionalForSize?.(size));
+	return marginNotional ? marginNotional.lte(budget) : Big(size).lte(maxTradeSize);
+}
+
+/**
+ * The exchange's `maxTradeSzs` is a size at mark. A resting order reserves margin at its own price
+ * (`getRestingMarginPrice`), so this is the largest whole-lot size whose margin fits that budget:
+ * found by doubling and then bisecting lot counts, with every candidate checked against the budget,
+ * because a scale order's lot split is not a straight line through its average price. A size too
+ * small to split into levels has no margin yet and keeps the search going upward, but is never the
+ * answer: when even the smallest size that splits exceeds the budget, the maximum is zero.
+ */
+export function getPerpEntryMaxSize(input: PerpEntryMarginInput): number {
+	const maxTradeSize = toBig(input.maxTradeSize);
+	if (!maxTradeSize?.gt(0)) return 0;
+	const budget = getPerpMarginBudget(input);
+	if (!budget || !input.marginNotionalForSize) return maxTradeSize.toNumber();
+	const lot = Big(1).div(Big(10).pow(input.szDecimals));
+	const marginForLots = (lots: Big) => toBig(input.marginNotionalForSize?.(lots.times(lot).toFixed(input.szDecimals)));
+	const fits = (lots: Big) => {
+		const marginNotional = marginForLots(lots);
+		return !marginNotional || marginNotional.lte(budget);
+	};
+	let fitting = Big(0);
+	let exceeding = Big(1);
+	for (let step = 0; step < MAX_SIZE_SEARCH_DOUBLINGS && fits(exceeding); step += 1) {
+		fitting = exceeding;
+		exceeding = exceeding.times(2);
+	}
+	if (fits(exceeding)) return maxTradeSize.toNumber();
+	while (exceeding.minus(fitting).gt(1)) {
+		const middle = fitting.plus(exceeding).div(2).round(0, Big.roundDown);
+		if (fits(middle)) fitting = middle;
+		else exceeding = middle;
+	}
+	return marginForLots(fitting) ? fitting.times(lot).toNumber() : 0;
+}
+
+/**
+ * Whether a perp entry size reserves more margin than the exchange's maximum at mark allows. A side
+ * with no capacity fails closed for any size, as the official terminal's `size > maxTradeSz` does.
+ */
+export function exceedsPerpEntryMaxSize(input: PerpEntryMarginInput & { size: string }): boolean {
+	const size = toBig(input.size);
+	if (!size?.gt(0)) return false;
+	const maxTradeSize = toBig(input.maxTradeSize);
+	if (!maxTradeSize?.gt(0)) return true;
+	const budget = getPerpMarginBudget(input);
+	if (!budget) return size.gt(maxTradeSize);
+	return !fitsPerpMarginBudget(input, budget, maxTradeSize, input.size);
 }
 
 export function getMaxSize(input: MaxSizeInput): number {

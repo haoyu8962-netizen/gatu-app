@@ -1,7 +1,9 @@
 import type { OrderType } from "@/config/trade";
-import { getScaleAveragePrice, getScaleOrderNotional } from "@/domain/trade/orders";
-import { toNumberOrZero } from "@/lib/trade/numbers";
+import { getRestingMarginPrice } from "@/domain/trade/order/size";
+import { getScaleAveragePrice, getScaleOrderMarginNotional, getScaleOrderNotional } from "@/domain/trade/orders";
+import { toBig, toNumberOrZero } from "@/lib/trade/numbers";
 import { isScaleOrderType, usesLimitPrice } from "@/lib/trade/order-types";
+import type { Side } from "@/lib/trade/types";
 
 export interface OrderEntryLimitPxInput {
 	orderType: OrderType;
@@ -30,6 +32,41 @@ export function getOrderEntryValueForSize(input: OrderEntryLimitPxInput, size: s
 		scaleLevelsNum: input.scaleLevelsNum,
 		scaleSkew: input.scaleSkewInput,
 	});
+	return notional === null ? undefined : notional.toNumber();
+}
+
+/**
+ * What a perp entry order of a total size reserves margin on, as the official terminal sizes its
+ * maximum: a limit-priced order at `getRestingMarginPrice` of its limit, a scale order level by level.
+ * Undefined for orders that execute at mark and while the price or scale range is incomplete.
+ */
+export function getOrderEntryMarginNotionalForSize(
+	input: OrderEntryLimitPxInput,
+	size: string,
+	side: Side,
+	markPx: number,
+): number | undefined {
+	const mark = toBig(markPx);
+	const sizeValue = toBig(size);
+	if (!mark?.gt(0) || !sizeValue?.gt(0)) return undefined;
+	if (usesLimitPrice(input.orderType)) {
+		const limit = toBig(input.limitPriceInput);
+		if (!limit?.gt(0)) return undefined;
+		return getRestingMarginPrice(side, mark, limit).times(sizeValue).toNumber();
+	}
+	if (!isScaleOrderType(input.orderType) || input.assetId === null) return undefined;
+	const notional = getScaleOrderMarginNotional(
+		{
+			assetId: input.assetId,
+			szDecimals: input.szDecimals,
+			sizeValue: size,
+			scaleStartPriceInput: input.scaleStartPriceInput,
+			scaleEndPriceInput: input.scaleEndPriceInput,
+			scaleLevelsNum: input.scaleLevelsNum,
+			scaleSkew: input.scaleSkewInput,
+		},
+		(price) => getRestingMarginPrice(side, mark, price),
+	);
 	return notional === null ? undefined : notional.toNumber();
 }
 

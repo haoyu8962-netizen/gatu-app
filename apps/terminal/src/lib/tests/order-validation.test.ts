@@ -1198,3 +1198,112 @@ describe("limit and trigger price tick validation", () => {
 		expect(result.errors.map((error) => error.id)).not.toContain("limit-price-tick");
 	});
 });
+
+describe("order checks aligned with the official terminal (P2 order validation)", () => {
+	it("checks a TWAP's max or min price against its trigger price instead of mark when a trigger is set", () => {
+		const buy = validatePerpOrder(
+			perpContext({
+				orderType: "twap",
+				usesLimitPrice: false,
+				twapOrder: true,
+				twapMinutesNum: 30,
+				orderValue: 1_000,
+				sizeValue: 10,
+				twapTriggerPriceNum: 95,
+				twapStopPriceNum: 97,
+			}),
+		);
+		expect(buy.errors.filter((error) => error.category === "twap")).toEqual([]);
+
+		const sell = validatePerpOrder(
+			perpContext({
+				orderType: "twap",
+				usesLimitPrice: false,
+				twapOrder: true,
+				twapMinutesNum: 30,
+				orderValue: 1_000,
+				sizeValue: 10,
+				side: "sell",
+				twapTriggerPriceNum: 105,
+				twapStopPriceNum: 103,
+			}),
+		);
+		expect(sell.errors.filter((error) => error.category === "twap")).toEqual([]);
+
+		const noTrigger = validatePerpOrder(
+			perpContext({
+				orderType: "twap",
+				usesLimitPrice: false,
+				twapOrder: true,
+				twapMinutesNum: 30,
+				orderValue: 1_000,
+				sizeValue: 10,
+				side: "sell",
+				twapStopPriceNum: 103,
+			}),
+		);
+		expect(noTrigger.errors.map((error) => error.id)).toContain("twap-stop-direction");
+	});
+
+	it("exempts stop and take-profit orders from the size headroom, as the official terminal does", () => {
+		const trigger = validatePerpOrder(
+			perpContext({
+				orderType: "stopMarket",
+				usesLimitPrice: false,
+				usesTriggerPrice: true,
+				triggerPriceNum: 110,
+				stopOrder: true,
+				sizeValue: 50,
+				maxSize: 10,
+				exceedsMaxSize: true,
+			}),
+		);
+		expect(trigger.errors.map((error) => error.id)).not.toContain("exceeds-max-size");
+
+		const limit = validatePerpOrder(perpContext({ sizeValue: 50, maxSize: 10, exceedsMaxSize: true }));
+		expect(limit.errors.map((error) => error.id)).toContain("exceeds-max-size");
+	});
+
+	it("uses the margin check of the form instead of comparing the size with the displayed maximum", () => {
+		const passiveBuy = validatePerpOrder(perpContext({ sizeValue: 12, maxSize: 10, exceedsMaxSize: false }));
+		expect(passiveBuy.errors.map((error) => error.id)).not.toContain("exceeds-max-size");
+	});
+
+	it("lets a trigger order on a funded account through with no free balance", () => {
+		const funded = validatePerpOrder(
+			perpContext({
+				orderType: "stopMarket",
+				usesLimitPrice: false,
+				usesTriggerPrice: true,
+				triggerPriceNum: 110,
+				stopOrder: true,
+				availableBalance: 0,
+				requiresAvailableBalance: false,
+			}),
+		);
+		expect(funded.errors.map((error) => error.id)).not.toContain("no-balance");
+
+		const limit = validatePerpOrder(perpContext({ availableBalance: 0 }));
+		expect(limit.errors.map((error) => error.id)).toContain("no-balance");
+	});
+
+	it("checks a spot market buy against what it locks at the slippage limit", () => {
+		const withinMark = validateSpotOrder(
+			spotContext({ quoteAvailable: 200, sizeValue: 10, orderValue: 200, quoteCost: 205 }),
+		);
+		const quoteError = withinMark.errors.find((error) => error.id === "spot-insufficient-quote");
+		expect(quoteError?.message).toBe("Insufficient USDC balance at max slippage");
+
+		const short = validateSpotOrder(
+			spotContext({ quoteAvailable: 150, sizeValue: 10, orderValue: 200, quoteCost: 205 }),
+		);
+		expect(short.errors.find((error) => error.id === "spot-insufficient-quote")?.message).toBe(
+			"Insufficient USDC balance",
+		);
+
+		const enough = validateSpotOrder(
+			spotContext({ quoteAvailable: 205, sizeValue: 10, orderValue: 200, quoteCost: 205 }),
+		);
+		expect(enough.errors.map((error) => error.id)).not.toContain("spot-insufficient-quote");
+	});
+});

@@ -16,7 +16,11 @@ import {
 	assertEntryTwapExecutionAllowed,
 	type EntryOrderExecutionState,
 } from "@/domain/trade/order/entry-execution-guard";
-import { getOrderEntryLimitPx, getOrderEntryValueForSize } from "@/domain/trade/order/entry-limit-price";
+import {
+	getOrderEntryLimitPx,
+	getOrderEntryMarginNotionalForSize,
+	getOrderEntryValueForSize,
+} from "@/domain/trade/order/entry-limit-price";
 import {
 	canEstimateProspectiveLiquidationDraft,
 	estimateProspectiveLiquidation,
@@ -189,6 +193,7 @@ export function TradePanel() {
 		sizeInput,
 		limitPx: getOrderEntryLimitPx(entryPriceInput),
 		orderValueForSize: (size: string) => getOrderEntryValueForSize(entryPriceInput, size),
+		marginNotionalForSize: (size: string) => getOrderEntryMarginNotionalForSize(entryPriceInput, size, side, markPx),
 		reduceOnly,
 		positionSnapshot: {
 			ready: positionSnapshotReady,
@@ -213,8 +218,11 @@ export function TradePanel() {
 		isAvailabilityStale,
 		hasAvailabilityError,
 		isAwaitingFirstDeposit,
+		requiresAvailableBalance,
 		isOpenInterestCapped,
 		maxSize,
+		exceedsMaxSize,
+		spotBuyQuoteCost,
 		sizeValue,
 		sizeForOrder,
 		orderValue,
@@ -504,11 +512,14 @@ export function TradePanel() {
 					quoteAvailable: spotBalance.quoteAvailable,
 					baseToken,
 					quoteToken,
+					quoteCost: spotBuyQuoteCost,
 				})
 			: perpInput(baseInput, {
 					orderType,
 					markPx,
 					maxSize,
+					exceedsMaxSize,
+					requiresAvailableBalance,
 					stopOrder,
 					takeProfitOrder,
 					positionSize: validatedPositionSize,
@@ -701,7 +712,7 @@ export function TradePanel() {
 		accountReady:
 			isConnected &&
 			!isWalletLoading &&
-			(reduceOnly || availableBalance > 0) &&
+			(reduceOnly || requiresAvailableBalance === false || availableBalance > 0) &&
 			!validation.needsApproval &&
 			!isAvailabilityBlocked &&
 			!tradeActionsBlocked,
@@ -738,6 +749,7 @@ export function TradePanel() {
 		isConnected,
 		availableBalance,
 		reduceOnly,
+		requiresAvailableBalance,
 		isBalanceLoading: isAvailabilityLoading || isAvailabilityStale || isAvailabilityBlocked,
 		hasBalanceError: hasAvailabilityError,
 		isAwaitingFirstDeposit,
@@ -776,6 +788,9 @@ export function TradePanel() {
 					feeQuote={feeQuote}
 					szDecimals={market?.szDecimals}
 					marketKind={market?.kind}
+					totalSize={sizeForOrder}
+					referencePx={executionReferencePx}
+					baseToken={baseToken}
 				/>
 			);
 		}
