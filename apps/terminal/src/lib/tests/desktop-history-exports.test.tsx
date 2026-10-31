@@ -279,6 +279,17 @@ describe("desktop history exports", () => {
 		);
 	});
 
+	it("shows closed PNL net of the fee while the export keeps the exchange's values", () => {
+		act(() => root.render(<HistoryTab />));
+
+		const headers = Array.from(container.querySelectorAll("th"), (cell) => cell.textContent);
+		const cells = Array.from(container.querySelectorAll("tbody tr:first-child td"), (cell) => cell.textContent);
+		expect(cells[headers.indexOf("PNL")]).toBe("+$12.38");
+		clickExport();
+		const rows = mocks.downloadCsv.mock.calls.at(-1)?.[1] as string[][] | undefined;
+		expect(rows?.[1]?.[(rows?.[0] ?? []).indexOf("PNL")]).toBe("12.5");
+	});
+
 	it("exports fill numbers as the exchange sent them, never compacted, rounded or localized", () => {
 		act(() => root.render(<HistoryTab />));
 		const rows = mocks.fillsBuildRows?.([mocks.fills[0]]) ?? [];

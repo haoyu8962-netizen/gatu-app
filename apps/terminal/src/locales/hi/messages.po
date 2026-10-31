@@ -557,6 +557,10 @@ msgstr "मार्क ≤ {triggerPrice} होने पर सक्रि�
 msgid "Activates when mark ≥ {triggerPrice}"
 msgstr "मार्क ≥ {triggerPrice} होने पर सक्रिय होता है"
 
+#: src/lib/trade/trailing-stop-condition.ts
+msgid "Activation: {price} / Retracement: {retracement}"
+msgstr "एक्टिवेशन: {price} / रिट्रेसमेंट: {retracement}"
+
 #: src/components/api-wallet/api-wallet-list.tsx
 #: src/components/staking/staking-view.tsx
 #: src/components/staking/staking-view.tsx
@@ -1429,6 +1433,10 @@ msgstr "चयनित ऑर्डर रद्द करें"
 #: src/lib/trade/order-status-reasons.ts
 msgid "Canceled"
 msgstr "रद्द"
+
+#: src/lib/trade/order-notification-copy.ts
+msgid "Canceled {accepted}/{total} · Review orders"
+msgstr "रद्द {accepted}/{total} · ऑर्डर जाँचें"
 
 #: src/lib/trade/order-status-reasons.ts
 msgid "Canceled because the asset was delisted"
@@ -4883,6 +4891,10 @@ msgstr "मार्जिन राशि"
 msgid "Margin and account risk at a glance"
 msgstr "मार्जिन और खाता जोखिम एक नज़र में"
 
+#: src/hooks/trade/use-order-display-labels.ts
+msgid "Margin Canceled"
+msgstr "मार्जिन कम होने से रद्द"
+
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
@@ -6228,6 +6240,7 @@ msgid "Partially completed"
 msgstr "आंशिक रूप से पूरा हुआ"
 
 #: src/components/trade/tradebox/order-toast.tsx
+#: src/hooks/trade/use-order-display-labels.ts
 #: src/lib/trade/order-notification-copy.ts
 msgid "Partially filled"
 msgstr "आंशिक रूप से निष्पादित"
@@ -10061,6 +10074,7 @@ msgstr "TP एंट्री से नीचे होना चाहिए"
 msgid "TP Price"
 msgstr "TP मूल्य"
 
+#: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/positions-tab.tsx
 #: src/config/trade-panel-labels.ts
@@ -10240,6 +10254,10 @@ msgstr "ट्रेडिंग वॉल्यूम प्रगति"
 msgid "Traditional Finance"
 msgstr "पारंपरिक वित्त"
 
+#: src/hooks/trade/use-order-display-labels.ts
+msgid "Trailing Stop"
+msgstr "ट्रेलिंग स्टॉप"
+
 #: src/components/staking/staking-view.tsx
 #: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
@@ -10354,6 +10372,10 @@ msgstr "ट्रिगर मूल्य"
 #: src/lib/errors/definitions/twap.ts
 msgid "Trigger price must differ from mark"
 msgstr "ट्रिगर मूल्य मार्क से अलग होना चाहिए"
+
+#: src/lib/trade/trailing-stop-condition.ts
+msgid "Trigger: {price} / Retracement: {retracement}"
+msgstr "ट्रिगर: {price} / रिट्रेसमेंट: {retracement}"
 
 #: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
@@ -11260,6 +11282,10 @@ msgstr "रेफ़रल अनुरोध की पुष्टि से �
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Wallet returned a transaction hash, but it is not visible on Arbitrum yet. Check your wallet activity or Arbiscan before retrying to avoid sending the deposit twice."
 msgstr "वॉलेट ने लेनदेन हैश लौटाया है, लेकिन वह अभी Arbitrum पर दिखाई नहीं दे रहा है। जमा दो बार भेजने से बचने के लिए दोबारा प्रयास करने से पहले वॉलेट गतिविधि या Arbiscan जांचें."
+
+#: src/lib/trade/trailing-stop-condition.ts
+msgid "Watermark: {watermark}"
+msgstr "अब तक का सर्वश्रेष्ठ मूल्य: {watermark}"
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
 msgid "We could not finish setting up your wallet. Check your connection and try again, or disconnect and log in again."

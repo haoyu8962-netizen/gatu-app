@@ -4,20 +4,6 @@ import Big from "big.js";
 
 const UNSIGNED_DECIMAL_PATTERN = /^\d+(?:\.\d+)?$/;
 
-type HistoricalOrderType = HistoricalOrdersResponse[number]["order"]["orderType"];
-
-const HISTORICAL_ORDER_TYPES = [
-	"Market",
-	"Limit",
-	"Stop Market",
-	"Stop Limit",
-	"Take Profit Market",
-	"Take Profit Limit",
-	"Twap Slice",
-	"Vault Close",
-	"Spot Dust Conversion",
-] as const satisfies readonly HistoricalOrderType[];
-
 type HistoricalOrderPriceFields = Pick<
 	HistoricalOrdersResponse[number]["order"],
 	"isTrigger" | "limitPx" | "orderType" | "triggerPx"
@@ -66,7 +52,8 @@ export function isValidHistoricalOrderHistoryItem(item: unknown): item is Histor
 		typeof order.isTrigger === "boolean" &&
 		typeof order.limitPx === "string" &&
 		UNSIGNED_DECIMAL_PATTERN.test(order.limitPx) &&
-		isHistoricalOrderType(order.orderType) &&
+		typeof order.orderType === "string" &&
+		order.orderType.length > 0 &&
 		typeof order.origSz === "string" &&
 		UNSIGNED_DECIMAL_PATTERN.test(order.origSz) &&
 		typeof order.reduceOnly === "boolean" &&
@@ -74,10 +61,6 @@ export function isValidHistoricalOrderHistoryItem(item: unknown): item is Histor
 		typeof order.triggerPx === "string" &&
 		UNSIGNED_DECIMAL_PATTERN.test(order.triggerPx)
 	);
-}
-
-function isHistoricalOrderType(value: unknown): value is HistoricalOrderType {
-	return typeof value === "string" && HISTORICAL_ORDER_TYPES.some((orderType) => orderType === value);
 }
 
 function isTriggerOrderType(orderType: HistoricalOrderPriceFields["orderType"]): boolean {

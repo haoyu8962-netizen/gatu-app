@@ -557,6 +557,10 @@ msgstr "Se activa cuando el precio de marca ≤ {triggerPrice}"
 msgid "Activates when mark ≥ {triggerPrice}"
 msgstr "Se activa cuando el precio de marca ≥ {triggerPrice}"
 
+#: src/lib/trade/trailing-stop-condition.ts
+msgid "Activation: {price} / Retracement: {retracement}"
+msgstr "Activación: {price} / Retroceso: {retracement}"
+
 #: src/components/api-wallet/api-wallet-list.tsx
 #: src/components/staking/staking-view.tsx
 #: src/components/staking/staking-view.tsx
@@ -1429,6 +1433,10 @@ msgstr "Cancelar órdenes seleccionadas"
 #: src/lib/trade/order-status-reasons.ts
 msgid "Canceled"
 msgstr "Cancelada"
+
+#: src/lib/trade/order-notification-copy.ts
+msgid "Canceled {accepted}/{total} · Review orders"
+msgstr "Canceladas {accepted}/{total} · Revisa las órdenes"
 
 #: src/lib/trade/order-status-reasons.ts
 msgid "Canceled because the asset was delisted"
@@ -4883,6 +4891,10 @@ msgstr "Importe del margen"
 msgid "Margin and account risk at a glance"
 msgstr "Margen y riesgo de la cuenta de un vistazo"
 
+#: src/hooks/trade/use-order-display-labels.ts
+msgid "Margin Canceled"
+msgstr "Cancelada por margen"
+
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
@@ -6228,6 +6240,7 @@ msgid "Partially completed"
 msgstr "Completado parcialmente"
 
 #: src/components/trade/tradebox/order-toast.tsx
+#: src/hooks/trade/use-order-display-labels.ts
 #: src/lib/trade/order-notification-copy.ts
 msgid "Partially filled"
 msgstr "Ejecutado parcialmente"
@@ -10061,6 +10074,7 @@ msgstr "El TP debe estar por debajo de la entrada"
 msgid "TP Price"
 msgstr "Precio TP"
 
+#: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/positions-tab.tsx
 #: src/config/trade-panel-labels.ts
@@ -10240,6 +10254,10 @@ msgstr "Progreso del volumen de trading"
 msgid "Traditional Finance"
 msgstr "Finanzas tradicionales"
 
+#: src/hooks/trade/use-order-display-labels.ts
+msgid "Trailing Stop"
+msgstr "Stop dinámico"
+
 #: src/components/staking/staking-view.tsx
 #: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
@@ -10354,6 +10372,10 @@ msgstr "Precio de disparo"
 #: src/lib/errors/definitions/twap.ts
 msgid "Trigger price must differ from mark"
 msgstr "El precio de activación debe ser distinto del precio de marca"
+
+#: src/lib/trade/trailing-stop-condition.ts
+msgid "Trigger: {price} / Retracement: {retracement}"
+msgstr "Disparador: {price} / Retroceso: {retracement}"
 
 #: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
@@ -11260,6 +11282,10 @@ msgstr "El monedero o la red cambió antes de que pudiera confirmarse la solicit
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Wallet returned a transaction hash, but it is not visible on Arbitrum yet. Check your wallet activity or Arbiscan before retrying to avoid sending the deposit twice."
 msgstr "La billetera devolvió un hash de transacción, pero aún no es visible en Arbitrum. Revisa la actividad de tu billetera o Arbiscan antes de reintentar para evitar enviar el depósito dos veces."
+
+#: src/lib/trade/trailing-stop-condition.ts
+msgid "Watermark: {watermark}"
+msgstr "Mejor precio alcanzado: {watermark}"
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
 msgid "We could not finish setting up your wallet. Check your connection and try again, or disconnect and log in again."

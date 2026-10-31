@@ -494,6 +494,34 @@ describe("desktop cancel all orders confirmation", () => {
 		expect(cells[6]).toBe("298.00 USDT0");
 	});
 
+	it("shows a trailing stop's activation, then its trigger and retracement, as the official terminal does", () => {
+		mocks.orders = [
+			{
+				...triggerOrder,
+				orderType: "Trailing Stop Market",
+				side: "A",
+				triggerCondition: "retracement 1%, activation above 160, best waiting",
+				triggerPx: "0.0",
+			} as unknown as OpenOrder,
+		];
+		act(() => root.render(<ReviewedOrders />));
+		let cells = [...container.querySelectorAll("tbody tr td")].map((cell) => cell.textContent?.trim() ?? "");
+		expect(cells[9]).toBe("Activation: $160 / Retracement: 1%");
+
+		mocks.orders = [
+			{
+				...triggerOrder,
+				orderType: "Trailing Stop Market",
+				side: "A",
+				triggerCondition: "retracement 1%, activation above 160, best 170",
+				triggerPx: "168.3",
+			} as unknown as OpenOrder,
+		];
+		act(() => root.render(<ReviewedOrders />));
+		cells = [...container.querySelectorAll("tbody tr td")].map((cell) => cell.textContent?.trim() ?? "");
+		expect(cells[9]).toMatch(/^Trigger: \$168\.30* \/ Retracement: 1%$/);
+	});
+
 	it("hides destructive bulk actions when the open-orders snapshot is empty", () => {
 		mocks.orders = [];
 		act(() => root.render(<ReviewedOrders />));
@@ -1024,6 +1052,48 @@ describe("desktop cancel all orders confirmation", () => {
 			},
 			expect.objectContaining({ onSettled: expect.any(Function) }),
 		);
+	});
+
+	it("settles a partly accepted cancel batch item by item, as the official terminal does", async () => {
+		mocks.orders = [order, outcomeOrder];
+		act(() => root.render(<ReviewedOrders />));
+		act(() => {
+			container.querySelector<HTMLButtonElement>('tbody [aria-label="Select order xyz:ORCL"]')?.click();
+			container.querySelector<HTMLButtonElement>('tbody [aria-label="Select order #10"]')?.click();
+		});
+		act(() => container.querySelector<HTMLButtonElement>('button[aria-label="Cancel selected orders"]')?.click());
+		const feedbackId = queueItems.at(-1)?.id;
+		const callbacks = mocks.cancelOrders.mock.calls[0]?.[1] as { onError: (cause: Error) => void } | undefined;
+		const rejection = "Order was never placed, already canceled, or filled.";
+
+		await act(async () => {
+			callbacks?.onError(
+				new ApiRequestError(
+					{ status: "ok", response: { type: "cancel", data: { statuses: ["success", { error: rejection }] } } },
+					`cancel 1: ${rejection}`,
+				),
+			);
+			await Promise.resolve();
+		});
+
+		expect(getOrderQueueItem(feedbackId)).toMatchObject({
+			status: "partial",
+			acceptedCount: 1,
+			totalCount: 2,
+			countMode: "canceled",
+			error: { kind: "exchange-error", entries: [{ index: 1, text: rejection }] },
+		});
+		expect(getPendingTradingActionSnapshot().orderCancellations).toEqual([
+			expect.objectContaining({ oids: [42], phase: "awaiting" }),
+		]);
+		expect(
+			container
+				.querySelector<HTMLButtonElement>('tbody [aria-label="Select order xyz:ORCL"]')
+				?.getAttribute("aria-checked"),
+		).toBe("false");
+		expect(
+			container.querySelector<HTMLButtonElement>('tbody [aria-label="Select order #10"]')?.getAttribute("aria-checked"),
+		).toBe("true");
 	});
 
 	it("cancels all standard and outcome orders in one confirmed batch", () => {

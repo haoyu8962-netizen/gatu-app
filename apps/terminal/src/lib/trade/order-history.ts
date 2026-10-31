@@ -192,6 +192,16 @@ export function getOrderHistoryStatusCategory(entry: OrderHistoryEntry): OrderHi
 	return "other";
 }
 
+/** A `filled` order with size still open, which the official terminal labels Partially Filled. */
+export function isPartiallyFilledHistoricalOrder(order: HistoricalOrder): boolean {
+	if (order.status !== "filled") return false;
+	try {
+		return new Big(order.order.sz).gt(0);
+	} catch {
+		return false;
+	}
+}
+
 export function getOrderHistoryTriggerPrice(entry: OrderHistoryEntry): string | null {
 	if (entry.kind === "twap") return entry.twap.state.trigger?.px ?? null;
 	const { order } = entry.order;

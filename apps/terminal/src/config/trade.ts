@@ -6,7 +6,8 @@ export const QUICK_PERCENT_OPTIONS = [25, 50, 100, 200, 400] as const;
 export const TP_QUICK_PERCENT_OPTIONS = [25, 50, 100, 200] as const;
 export const SL_QUICK_PERCENT_OPTIONS = [5, 10, 25, 50] as const;
 
-export const SMALL_BALANCE_THRESHOLD_USD = 1;
+/** The official terminal hides balances under $5 when Hide Small Balances is on, HYPE excepted. */
+export const SMALL_BALANCE_THRESHOLD_USD = 5;
 export const MAX_HISTORY_ROWS = 200;
 export const RECENT_ACCOUNT_HISTORY_ROWS = 30;
 export const RECENT_FUNDING_ROWS = 30;

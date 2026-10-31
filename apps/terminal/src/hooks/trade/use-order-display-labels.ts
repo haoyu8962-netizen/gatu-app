@@ -2,11 +2,22 @@ import { useLingui } from "@lingui/react/macro";
 import type { HistoricalOrdersResponse } from "@nktkas/hyperliquid";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { type AdvancedOrderType, ORDER_TYPE_MESSAGES, type OrderType } from "@/config/trade";
-import type { OpenOrder, OrderSide, OrderTypeConfig } from "@/lib/trade/open-orders";
+import {
+	type OpenOrder,
+	type OrderSide,
+	type OrderTypeConfig,
+	TRAILING_STOP_ORDER_TYPE,
+} from "@/lib/trade/open-orders";
 import { getOrderDirection } from "@/lib/trade/order-direction";
-import type { TwapHistoryStatus } from "@/lib/trade/order-history";
+import { isPartiallyFilledHistoricalOrder, type TwapHistoryStatus } from "@/lib/trade/order-history";
+import { describeOrderStatusReason } from "@/lib/trade/order-status-reasons";
 
 type HistoricalOrderStatus = HistoricalOrdersResponse[number]["status"];
+
+export interface HistoricalOrderStatusPresentation {
+	label: string;
+	reason: string | null;
+}
 
 const CANCELED_ORDER_STATUSES: ReadonlySet<HistoricalOrderStatus> = new Set([
 	"canceled",
@@ -48,7 +59,7 @@ const TRIGGER_CONDITION_PATTERN = /^Price (above|below) (.+)$/;
 export function useOrderDisplayLabels() {
 	const { t } = useLingui();
 
-	function getOrderTypeLabel(orderType: OpenOrder["orderType"]): string {
+	function getOrderTypeLabel(orderType: OpenOrder["orderType"] | string): string {
 		switch (orderType) {
 			case "Market":
 				return t({ message: "Market", context: "Order type" });
@@ -68,8 +79,10 @@ export function useOrderDisplayLabels() {
 				return t`Vault Close`;
 			case "Spot Dust Conversion":
 				return t`Spot Dust Conversion`;
+			case TRAILING_STOP_ORDER_TYPE:
+				return t`Trailing Stop`;
 			default:
-				return FALLBACK_VALUE_PLACEHOLDER;
+				return orderType || FALLBACK_VALUE_PLACEHOLDER;
 		}
 	}
 
@@ -143,6 +156,17 @@ export function useOrderDisplayLabels() {
 		}
 	}
 
+	function getHistoricalOrderStatusPresentation(
+		order: HistoricalOrdersResponse[number],
+	): HistoricalOrderStatusPresentation {
+		if (isPartiallyFilledHistoricalOrder(order)) return { label: t`Partially filled`, reason: null };
+		const reasonDescriptor =
+			order.status === "canceled" || order.status === "rejected" ? null : describeOrderStatusReason(order.status);
+		const reason = reasonDescriptor ? t(reasonDescriptor) : null;
+		if (order.status === "marginCanceled") return { label: t`Margin Canceled`, reason };
+		return { label: getHistoricalOrderStatusLabel(order.status), reason };
+	}
+
 	function getTwapHistoryStatusLabel(status: TwapHistoryStatus): string {
 		switch (status) {
 			case "activated":
@@ -165,6 +189,7 @@ export function useOrderDisplayLabels() {
 		getExecutionKindLabel,
 		getFullOrderTypeLabel,
 		getHistoricalOrderStatusLabel,
+		getHistoricalOrderStatusPresentation,
 		getOrderSideLabel,
 		getOrderTypeLabel,
 		getTriggerConditionLabel,

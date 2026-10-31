@@ -9,7 +9,6 @@ import { DashboardFrameView } from "@/components/dashboard/dashboard-frame-view"
 import { AssetBadge } from "@/components/trade/components/asset-badge";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { DASHBOARD_FRAMES } from "@/config/dashboard-frames";
-import { getToolbarNonZeroPnl } from "@/domain/trade/trading-toolbar-metrics";
 import { useUserFillsCsvExport } from "@/hooks/trade/use-history-csv-export";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { useTradeHistory } from "@/hooks/trade/use-trade-history";
@@ -40,7 +39,7 @@ import {
 	type TradeHistoryRoleFilter,
 	type TradeHistoryTypeFilter,
 } from "@/lib/trade/trade-history";
-import { getUserFillKey, hasUserFillExplorerTransaction } from "@/lib/trade/user-fills";
+import { getUserFillKey, getUserFillNetClosedPnl, hasUserFillExplorerTransaction } from "@/lib/trade/user-fills";
 import { getMarketCloseValueColorClass } from "@/lib/ui/value-color";
 import { useIsTestnet } from "@/stores/use-global-settings-store";
 
@@ -315,7 +314,7 @@ export function TradeHistoryPage({ address }: Props) {
 					<>
 						<div className="divide-y divide-stroke-weak min-[1001px]:hidden">
 							{pagination.rows.map((fill) => {
-								const closedPnl = getToolbarNonZeroPnl(fill.closedPnl);
+								const closedPnl = getUserFillNetClosedPnl(fill, markets.getMarket(fill.coin));
 								return (
 									<article key={getUserFillKey(fill)} className="px-4 py-3">
 										<div className="flex min-w-0 items-center justify-between gap-3">
@@ -430,7 +429,7 @@ export function TradeHistoryPage({ address }: Props) {
 								</TableHeader>
 								<TableBody>
 									{pagination.rows.map((fill) => {
-										const closedPnl = getToolbarNonZeroPnl(fill.closedPnl);
+										const closedPnl = getUserFillNetClosedPnl(fill, markets.getMarket(fill.coin));
 										const hasExplorerTransaction = hasUserFillExplorerTransaction(fill);
 										return (
 											<TableRow key={getUserFillKey(fill)} className="h-12 border-stroke-weak hover:bg-fill-hover">

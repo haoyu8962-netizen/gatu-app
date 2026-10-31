@@ -267,6 +267,13 @@ describe("TradeHistoryPage", () => {
 		expect(container.textContent).toContain("No fills match the selected filters");
 	});
 
+	it("shows an opening fill's fee as its closed PNL, as the official terminal does", () => {
+		mocks.history.fills = [createFill(0)];
+		renderPage();
+
+		expect(container.querySelector("tbody")?.textContent).toContain("-$0.01");
+	});
+
 	it("renders the account's own buy-side liquidation with danger styling", () => {
 		mocks.history.fills = [createFill(0)];
 		mocks.history.fills[0] = {

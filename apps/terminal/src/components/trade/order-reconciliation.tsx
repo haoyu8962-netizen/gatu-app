@@ -14,6 +14,8 @@ import { toBig } from "@/lib/trade/numbers";
 import { releaseOrderAssetReservations } from "@/lib/trade/order-asset-lock";
 import { orderReconciliationError } from "@/lib/trade/order-reconciliation-feedback";
 import {
+	confirmPartialCancellationFeedback,
+	getPartialCancellationFeedback,
 	syncPendingTradingActionFeedback,
 	updatePendingTradingActionFeedback,
 } from "@/lib/trade/pending-trading-action-feedback";
@@ -115,6 +117,7 @@ export function OrderReconciliation() {
 				updatePendingTradingActionFeedback(cancellation, "cancel", {
 					status: "unconfirmed",
 					message: msg`The cancellation was not confirmed. Review open orders before retrying.`,
+					...(cancellation.partialResult ? getPartialCancellationFeedback(cancellation.partialResult) : {}),
 				});
 				continue;
 			}
@@ -132,10 +135,14 @@ export function OrderReconciliation() {
 					});
 				}
 			}
-			updatePendingTradingActionFeedback(cancellation, "cancel", {
-				status: "success",
-				message: msg`Canceled`,
-			});
+			if (cancellation.partialResult) {
+				confirmPartialCancellationFeedback({ ...cancellation, partialResult: cancellation.partialResult });
+			} else {
+				updatePendingTradingActionFeedback(cancellation, "cancel", {
+					status: "success",
+					message: msg`Canceled`,
+				});
+			}
 		}
 
 		for (const modification of modifications) {

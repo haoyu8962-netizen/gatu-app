@@ -311,6 +311,14 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/fill-direction.test.ts \
   src/lib/tests/collateral-amount.test.ts \
   src/lib/tests/historical-order-price.test.tsx \
+  src/lib/tests/historical-orders.test.ts \
+  src/lib/tests/use-historical-orders.test.tsx \
+  src/lib/tests/open-orders-tpsl.test.ts \
+  src/lib/tests/order-type-labels.test.tsx \
+  src/lib/tests/trailing-stop-condition.test.ts \
+  src/lib/tests/historical-order-status.test.tsx \
+  src/lib/tests/user-fills.test.ts \
+  src/lib/tests/desktop-history-exports.test.tsx \
   src/lib/tests/account-ledger.test.ts
 
 # Desktop trading layout and order entry
@@ -362,6 +370,8 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/open-order-modification.test.ts \
   src/lib/tests/open-order-modification-form.test.ts \
   src/lib/tests/order-reconciliation.test.tsx \
+  src/lib/tests/open-order-cancel.test.ts \
+  src/lib/tests/pending-trading-action-store.test.ts \
   src/lib/tests/spot-swap-modal.test.tsx \
   src/lib/tests/account-mode-modal.test.tsx \
   src/lib/tests/use-asset-leverage.test.tsx \

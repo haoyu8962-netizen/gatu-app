@@ -657,6 +657,22 @@ changes, not evidence that a build has been deployed or accepted on real devices
 - A spot market buy is checked in the form against what it locks at the slippage limit, the price it is
   sent at, instead of failing only at submission; "Insufficient USDC balance at max slippage" says
   when only the slippage does not fit.
+- The phone's open order card now shows the attached TP/SL trigger prices, as the desktop table does.
+- Hide small balances now hides balances under $5 instead of $1 and always keeps HYPE, as the official
+  terminal does.
+- Trade history now shows each fill's closed PNL net of its fee, as the official terminal does, so an
+  opening fill shows its fee and a closing fill matches the official figure; the CSV export still
+  carries the exchange's PNL and fee as sent.
+- Order history now explains why an order was canceled or rejected, as the official terminal does: a
+  tooltip on desktop and a line on the phone card. A margin cancellation reads Margin Canceled and a
+  filled order with size still open reads Partially filled.
+- Canceling several orders when only some of them can be canceled now reports Canceled n/total with
+  the exchange's reason for each failure, as the official terminal does, instead of reporting the whole
+  batch as failed; the canceled orders leave the selection and the others can be retried at once.
+- Order history no longer turns blank, and its CSV export no longer fails, when it holds a Trailing
+  Stop order placed on the official terminal: the type reads Trailing Stop, its trigger condition shows
+  the activation or trigger price with the retracement as the official terminal does, any other new
+  order type is shown as the exchange sends it, and a trailing stop no longer counts as a position TP/SL.
 - The Market order-type tab and menu entry in the order form use the order-type wording instead of
   the market-list wording: 市价 in Chinese, 成行 in Japanese, मार्केट in Hindi, Au marché in French
   and سعر السوق in Arabic (English and Spanish are unchanged). The compact account-mode placeholder

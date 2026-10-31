@@ -19,7 +19,6 @@ import { OrderSummary } from "@/components/trade/tradebox/order-summary";
 import { TradeFormTif } from "@/components/trade/tradebox/trade-form-tif";
 import { TradeHeader } from "@/components/trade/tradebox/trade-header";
 import { TradeOptionCheckboxes } from "@/components/trade/tradebox/trade-option-checkboxes";
-import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { TRADE_PANEL_LABELS } from "@/config/trade-panel-labels";
 import type { OrderConfirmationDraft } from "@/domain/trade/order-confirmation";
 import { buildOrderFeeQuote } from "@/domain/trade/order-fee-quote";
@@ -69,6 +68,7 @@ const zhTranslations: Record<string, string> = {
 	Trade: "交易",
 	Account: "账户",
 	"Stop Market": "止损市价",
+	"Trailing Stop": "移动止损",
 	"Price above {price}": "价格高于 {price}",
 	Canceled: "已取消",
 	Rejected: "已拒绝",
@@ -363,6 +363,7 @@ function OrderLabelsProbe() {
 			<span data-label="unknown-type">
 				{getOrderTypeLabel("Unexpected Type" as Parameters<typeof getOrderTypeLabel>[0])}
 			</span>
+			<span data-label="trailing-stop">{getOrderTypeLabel("Trailing Stop Market")}</span>
 			<span data-label="advanced">{getAdvancedOrderTypeLabel("stopMarket")}</span>
 			<span data-label="condition">{getTriggerConditionLabel("Price above 70")}</span>
 			<span data-label="status">{getHistoricalOrderStatusLabel("internalCancel")}</span>
@@ -632,7 +633,8 @@ describe("language hot switching", () => {
 		expect(orderLabels?.querySelector('[data-label="twap-slice"]')?.textContent).toBe("TWAP 分片");
 		expect(orderLabels?.querySelector('[data-label="vault-close"]')?.textContent).toBe("金库平仓");
 		expect(orderLabels?.querySelector('[data-label="spot-dust-conversion"]')?.textContent).toBe("现货零头转换");
-		expect(orderLabels?.querySelector('[data-label="unknown-type"]')?.textContent).toBe(FALLBACK_VALUE_PLACEHOLDER);
+		expect(orderLabels?.querySelector('[data-label="unknown-type"]')?.textContent).toBe("Unexpected Type");
+		expect(orderLabels?.querySelector('[data-label="trailing-stop"]')?.textContent).toBe("移动止损");
 		expect(orderLabels?.querySelector('[data-label="advanced"]')?.textContent).toBe("止损市价");
 		expect(orderLabels?.querySelector('[data-label="condition"]')?.textContent).toBe("价格高于 70");
 		expect(orderLabels?.querySelector('[data-label="status"]')?.textContent).toBe("已取消");

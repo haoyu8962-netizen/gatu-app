@@ -97,6 +97,7 @@ vi.mock("@sairn/ui", () => ({
 		<table aria-label={scrollableRegionLabel} {...props} />
 	),
 	TableBody: (props: ComponentProps<"tbody">) => <tbody {...props} />,
+	Tooltip: ({ children }: { children?: ReactNode }) => <>{children}</>,
 	TableCell: (props: ComponentProps<"td">) => <td {...props} />,
 	TableHead: (props: ComponentProps<"th">) => <th {...props} />,
 	TableHeader: (props: ComponentProps<"thead">) => <thead {...props} />,
@@ -132,6 +133,10 @@ vi.mock("@/hooks/trade/use-market-navigation", () => ({ useMarketNavigation: () 
 vi.mock("@/hooks/trade/use-order-display-labels", () => ({
 	useOrderDisplayLabels: () => ({
 		getHistoricalOrderStatusLabel: (status: string) => status,
+		getHistoricalOrderStatusPresentation: (order: { status: string }) => ({
+			label: order.status,
+			reason: order.status === "marginCanceled" ? "Canceled due to insufficient margin" : null,
+		}),
 		getOrderSideLabel: (side: string) => (side === "B" ? "Buy" : "Sell"),
 		getOrderTypeLabel: (type: string) => type,
 	}),
@@ -243,6 +248,17 @@ describe("HistoricalOrdersPage", () => {
 		act(() => i18n.loadAndActivate({ locale: "zh", messages: ZH_PAGINATION_MESSAGES }));
 
 		expect(paginationLabels(container)).toEqual(["上一页", "下一页", "第 1 页"]);
+	});
+
+	it("names a margin cancellation and gives its reason in the table", () => {
+		mocks.history.entries = buildOrderHistoryEntries([{ ...createOrder(0), status: "marginCanceled" }], []).filter(
+			(entry): entry is OrdinaryOrderHistoryEntry => entry.kind === "order",
+		);
+		renderPage();
+
+		expect(container.querySelector("tbody")?.textContent).toContain(
+			"marginCanceled, Canceled due to insufficient margin",
+		);
 	});
 
 	it("paginates at 25 rows and resets to page one when a local filter changes", () => {

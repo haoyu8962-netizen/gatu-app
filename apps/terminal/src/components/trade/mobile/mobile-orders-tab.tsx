@@ -15,7 +15,11 @@ import {
 	validateCancelAllConfirmationSnapshot,
 } from "@/domain/trade/cancel-all-orders-confirmation";
 import { isLiveMarkPriceReady } from "@/domain/trade/market-price";
-import { buildOpenOrderCancelActions, isConfirmedOpenOrderCancelResponse } from "@/domain/trade/open-order-cancel";
+import {
+	buildOpenOrderCancelActions,
+	getPartialOpenOrderCancel,
+	isConfirmedOpenOrderCancelResponse,
+} from "@/domain/trade/open-order-cancel";
 import {
 	getOpenOrderModifyCapabilities,
 	type OpenOrderModifyBlockReason,
@@ -52,13 +56,21 @@ import {
 	useMarketsInfo,
 	useSubscription,
 } from "@/lib/hyperliquid";
-import { isClosePositionOrder, isMarketTriggerOrder, type OpenOrder } from "@/lib/trade/open-orders";
+import {
+	isClosePositionOrder,
+	isMarketTriggerOrder,
+	isStopOrder,
+	isTakeProfitOrder,
+	type OpenOrder,
+} from "@/lib/trade/open-orders";
 import {
 	ensurePendingTradingActionFeedback,
+	settlePartialOrderCancellation,
 	syncPendingTradingActionFeedback,
 	updatePendingTradingActionFeedback,
 } from "@/lib/trade/pending-trading-action-feedback";
 import { classifyTradingActionError } from "@/lib/trade/trading-action-failure";
+import { getTrailingStopConditionLabels } from "@/lib/trade/trailing-stop-condition";
 import type { Side } from "@/lib/trade/types";
 import { useOrderEntryActions } from "@/stores/use-order-entry-store";
 import type { OrderQueueItem } from "@/stores/use-order-queue-store";
@@ -923,7 +935,14 @@ export function MobileOrdersTab({ className, disclosureState, scrollMode = "cont
 			syncPendingTradingActionFeedback({ ...feedbackIdentity, phase: "awaiting" }, "cancel");
 			if (!mountedRef.current || !isCancelExecutionCurrent(execution)) return;
 		} catch (cause) {
-			if (execution.guardPasses >= 2 && isAmbiguousExchangeRequestError(cause)) {
+			const partialCancel = getPartialOpenOrderCancel(cause, execution.params.cancels.length);
+			if (partialCancel) {
+				settlePartialOrderCancellation(
+					feedbackIdentity,
+					execution.orders.map((order) => order.oid),
+					partialCancel,
+				);
+			} else if (execution.guardPasses >= 2 && isAmbiguousExchangeRequestError(cause)) {
 				getPendingTradingActionActions().markOrderCancellationUnconfirmed(execution.actionId);
 				syncPendingTradingActionFeedback({ ...feedbackIdentity, phase: "unconfirmed" }, "cancel");
 				if (mountedRef.current && isCancelExecutionCurrent(execution)) {
@@ -1297,7 +1316,7 @@ function MobileOrderCard({
 	onSelectMarket,
 	onExpandedChange,
 }: MobileOrderCardProps) {
-	const { formatNumber, formatPercent, formatPrice, formatToken } = useNumberFormat();
+	const { formatDecimalString, formatNumber, formatPercent, formatPrice, formatToken } = useNumberFormat();
 	const { i18n, t } = useLingui();
 	const locale = i18n.locale;
 	const detailsId = useId();
@@ -1311,14 +1330,25 @@ function MobileOrderCard({
 		? t`Close Position`
 		: formatToken(order.origSz, { decimals: szDecimals });
 	const priceLabel = isMarketTriggerOrder(order) ? t`Market` : formatPrice(order.limitPx, { szDecimals, marketType });
+	const takeProfitPx = order.children.find(isTakeProfitOrder)?.triggerPx;
+	const stopLossPx = order.children.find(isStopOrder)?.triggerPx;
+	const tpSlLabel = `${formatPrice(takeProfitPx, { szDecimals, marketType })} / ${formatPrice(stopLossPx, { szDecimals, marketType })}`;
 	const triggerOperator = getToolbarTriggerConditionOperator(order.triggerCondition);
-	const triggerConditionLabel = order.isTrigger
+	const standardTriggerConditionLabel = order.isTrigger
 		? triggerOperator
 			? `${triggerOperator} ${formatNumber(order.triggerPx)}`
 			: order.triggerCondition
 				? getTriggerConditionLabel(order.triggerCondition)
 				: FALLBACK_VALUE_PLACEHOLDER
 		: FALLBACK_VALUE_PLACEHOLDER;
+	const trailingStopCondition = getTrailingStopConditionLabels(order, {
+		translate: (descriptor) => t(descriptor),
+		formatPrice: (price) => formatPrice(price, { szDecimals, marketType }),
+		formatDecimalString,
+	});
+	const triggerConditionLabel = trailingStopCondition
+		? [trailingStopCondition.label, trailingStopCondition.watermarkLabel].filter(Boolean).join(" · ")
+		: standardTriggerConditionLabel;
 	const metrics = getToolbarOrderMetrics({
 		isTrigger: order.isTrigger,
 		limitPx: order.limitPx,
@@ -1380,6 +1410,7 @@ function MobileOrderCard({
 						/>
 						<OrderMetric label={t`Original Size`} value={originalSizeLabel} />
 						<OrderMetric label={t`Reduce Only`} value={order.reduceOnly ? t`Yes` : t`No`} />
+						<OrderMetric label={t`TP/SL`} value={tpSlLabel} />
 					</div>
 
 					<div className="flex items-center border-t border-market-close-stroke-card/60 pt-2.5">

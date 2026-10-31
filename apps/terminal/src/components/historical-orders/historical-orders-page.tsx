@@ -7,6 +7,7 @@ import { DashboardHeader, FooterBar, GlobalModals } from "@/components/dashboard
 import { DashboardFrameView } from "@/components/dashboard/dashboard-frame-view";
 import { AssetBadge } from "@/components/trade/components/asset-badge";
 import { HistoricalOrderPrice } from "@/components/trade/components/historical-order-price";
+import { HistoricalOrderStatusBadge } from "@/components/trade/positions/historical-order-status-badge";
 import { DASHBOARD_FRAMES } from "@/config/dashboard-frames";
 import { useHistoricalOrdersCsvExport } from "@/hooks/trade/use-history-csv-export";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
@@ -62,7 +63,7 @@ export function HistoricalOrdersPage({ address }: Props) {
 	const isTestnet = useIsTestnet();
 	const markets = useMarkets();
 	const navigateToMarket = useMarketNavigation();
-	const { getHistoricalOrderStatusLabel, getOrderSideLabel, getOrderTypeLabel } = useOrderDisplayLabels();
+	const { getHistoricalOrderStatusPresentation, getOrderSideLabel, getOrderTypeLabel } = useOrderDisplayLabels();
 	const history = useOrderHistory(address);
 	const exportAddress = isOrderHistoryAddress(address) ? address : undefined;
 	const [requestedPage, setRequestedPage] = useState(1);
@@ -136,7 +137,7 @@ export function HistoricalOrdersPage({ address }: Props) {
 					header: t`Size`,
 					getValue: (entry) => entry.size,
 				},
-				{ header: t`Status`, getValue: (entry) => getHistoricalOrderStatusLabel(entry.order.status) },
+				{ header: t`Status`, getValue: (entry) => getHistoricalOrderStatusPresentation(entry.order).label },
 				{
 					header: t`Updated`,
 					getValue: (entry) =>
@@ -327,6 +328,7 @@ export function HistoricalOrdersPage({ address }: Props) {
 							{pagination.rows.map((entry) => {
 								const market = markets.getMarket(entry.coin);
 								const status = getOrderHistoryStatusCategory(entry);
+								const statusPresentation = getHistoricalOrderStatusPresentation(entry.order);
 								return (
 									<article key={entry.key} className="px-4 py-3">
 										<div className="flex min-w-0 items-center justify-between gap-3">
@@ -383,8 +385,11 @@ export function HistoricalOrdersPage({ address }: Props) {
 														getOrderHistoryStatusBadgeClass(status),
 													)}
 												>
-													{getHistoricalOrderStatusLabel(entry.order.status)}
+													{statusPresentation.label}
 												</dd>
+												{statusPresentation.reason ? (
+													<dd className="mt-0.5 text-2xs text-fg-muted">{statusPresentation.reason}</dd>
+												) : null}
 											</div>
 											<div className="text-right">
 												<dt className="text-2xs text-fg-muted">
@@ -477,14 +482,13 @@ export function HistoricalOrdersPage({ address }: Props) {
 													<bdi dir="ltr">{formatToken(entry.size, market?.szDecimals)}</bdi>
 												</TableCell>
 												<TableCell className="px-3 py-0">
-													<span
+													<HistoricalOrderStatusBadge
+														status={getHistoricalOrderStatusPresentation(entry.order)}
 														className={cn(
 															"inline-flex rounded-4 px-2 py-0.5 text-2xs font-semibold",
 															getOrderHistoryStatusBadgeClass(status),
 														)}
-													>
-														{getHistoricalOrderStatusLabel(entry.order.status)}
-													</span>
+													/>
 												</TableCell>
 												<TableCell className="px-5 py-0 text-right text-xs text-fg-muted">
 													{formatDateTime(entry.updatedAt, { locale, dateStyle: "short", timeStyle: "short" })}

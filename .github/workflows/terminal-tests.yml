@@ -252,6 +252,9 @@ jobs:
           src/lib/tests/desktop-orders-cancel-all.test.tsx
           src/lib/tests/mobile-orders-card.test.tsx
           src/lib/tests/mobile-order-modification.test.tsx
+          src/lib/tests/open-order-cancel.test.ts
+          src/lib/tests/pending-trading-action-store.test.ts
+          src/lib/tests/order-reconciliation.test.tsx
           src/lib/tests/spot-swap-modal.test.tsx
           src/lib/tests/account-mode-modal.test.tsx
           src/lib/tests/use-asset-leverage.test.tsx
@@ -340,6 +343,15 @@ jobs:
           src/lib/tests/use-tradingview-overlay-lines.test.tsx
           src/lib/tests/funds-action-recovery-host.test.tsx
           src/lib/tests/historical-orders-page.test.tsx
+          src/lib/tests/historical-orders.test.ts
+          src/lib/tests/use-historical-orders.test.tsx
+          src/lib/tests/open-orders-tpsl.test.ts
+          src/lib/tests/order-type-labels.test.tsx
+          src/lib/tests/trailing-stop-condition.test.ts
+          src/lib/tests/historical-order-status.test.tsx
+          src/lib/tests/desktop-orders-history-direction.test.tsx
+          src/lib/tests/mobile-history-cards.test.tsx
+          src/lib/tests/user-fills.test.ts
           src/lib/tests/trade-history-page.test.tsx
           src/lib/tests/position-close-all-submit.test.tsx
           src/lib/tests/trade-form-fields-order-entry-data.test.tsx

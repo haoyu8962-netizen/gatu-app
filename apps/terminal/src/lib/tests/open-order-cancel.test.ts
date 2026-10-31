@@ -1,8 +1,11 @@
+import { ApiRequestError } from "@nktkas/hyperliquid";
 import { describe, expect, it, vi } from "vitest";
 import {
 	buildOpenOrderCancelActions,
+	getPartialOpenOrderCancel,
 	isConfirmedOpenOrderCancelResponse,
 	resolveOpenOrderCancelAssetId,
+	resolveOpenOrderCancelResponse,
 } from "@/domain/trade/open-order-cancel";
 
 describe("open order cancellation asset binding", () => {
@@ -62,5 +65,82 @@ describe("open order cancel responses", () => {
 		{ status: "ok", response: { type: "cancel", data: { statuses: [{}] } } },
 	])("rejects malformed, mismatched, and non-success responses", (response) => {
 		expect(isConfirmedOpenOrderCancelResponse(response, 1)).toBe(false);
+	});
+});
+
+describe("open order cancel response resolution", () => {
+	const rejection = "Order was never placed, already canceled, or filled.";
+	function cancelResponse(statuses: unknown[]) {
+		return { status: "ok", response: { type: "cancel", data: { statuses } } };
+	}
+
+	it("counts each status as the official terminal does: all success, a mix, or none", () => {
+		expect(resolveOpenOrderCancelResponse(cancelResponse(["success", "success"]), 2)).toEqual({
+			status: "accepted",
+			totalCount: 2,
+			acceptedIndexes: [0, 1],
+			errors: [],
+		});
+		expect(resolveOpenOrderCancelResponse(cancelResponse(["success", { error: rejection }, "success"]), 3)).toEqual({
+			status: "partial",
+			totalCount: 3,
+			acceptedIndexes: [0, 2],
+			errors: [{ index: 1, text: rejection }],
+		});
+		expect(resolveOpenOrderCancelResponse(cancelResponse([{ error: "a" }, { error: "b" }]), 2)).toEqual({
+			status: "rejected",
+			totalCount: 2,
+			acceptedIndexes: [],
+			errors: [
+				{ index: 0, text: "a" },
+				{ index: 1, text: "b" },
+			],
+		});
+	});
+
+	it("rejects the whole batch on a top-level error or one error for several cancels", () => {
+		expect(
+			resolveOpenOrderCancelResponse({ status: "err", response: "User or API Wallet does not exist." }, 2),
+		).toEqual({
+			status: "rejected",
+			totalCount: 2,
+			acceptedIndexes: [],
+			errors: [{ text: "User or API Wallet does not exist." }],
+		});
+		expect(resolveOpenOrderCancelResponse(cancelResponse([{ error: rejection }]), 2)).toEqual({
+			status: "rejected",
+			totalCount: 2,
+			acceptedIndexes: [],
+			errors: [{ text: rejection }],
+		});
+	});
+
+	it("leaves statuses it cannot match to the submitted cancels unresolved", () => {
+		for (const response of [
+			cancelResponse(["success"]),
+			cancelResponse(["success", "success", "success"]),
+			cancelResponse(["success", "waiting"]),
+			cancelResponse(["success", { error: "" }]),
+			{ status: "ok", response: { type: "order", data: { statuses: ["success", "success"] } } },
+			{ status: "err", response: { message: "not text" } },
+			null,
+		]) {
+			expect(resolveOpenOrderCancelResponse(response, 2)).toBeNull();
+		}
+		expect(resolveOpenOrderCancelResponse(cancelResponse([]), 0)).toBeNull();
+	});
+
+	it("reads a partial batch only from the SDK's response error", () => {
+		const partial = cancelResponse(["success", { error: rejection }]);
+		expect(getPartialOpenOrderCancel(new ApiRequestError(partial as never, "cancel 1"), 2)?.acceptedIndexes).toEqual([
+			0,
+		]);
+		expect(
+			getPartialOpenOrderCancel(new ApiRequestError(cancelResponse([{ error: "a" }, { error: "b" }]) as never, "x"), 2),
+		).toBeNull();
+		expect(
+			getPartialOpenOrderCancel(new ApiRequestError(cancelResponse(["success", "success"]) as never, "x"), 2),
+		).toBeNull();
+		expect(getPartialOpenOrderCancel(new Error("network"), 2)).toBeNull();
 	});
 });

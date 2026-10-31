@@ -101,7 +101,7 @@ function MobileOrdersHistoryTabContent({
 	const { formatToken } = useNumberFormat();
 	const { i18n, t } = useLingui();
 	const locale = i18n.locale;
-	const { getHistoricalOrderStatusLabel, getOrderSideLabel, getOrderTypeLabel } = useOrderDisplayLabels();
+	const { getHistoricalOrderStatusPresentation, getOrderSideLabel, getOrderTypeLabel } = useOrderDisplayLabels();
 	const { entries, error, isConnected, isOffline, isStale, status } = useHistoricalOrders();
 	const navigateToMarket = useMarketNavigation();
 	const { setActiveTab } = useMobileTerminalTab();
@@ -165,7 +165,7 @@ function MobileOrdersHistoryTabContent({
 	}
 
 	function getEntryStatusLabel(entry: OrdinaryOrderHistoryEntry) {
-		return getHistoricalOrderStatusLabel(entry.order.status);
+		return getHistoricalOrderStatusPresentation(entry.order).label;
 	}
 
 	const { exportCsv, isExporting } = useHistoricalOrdersCsvExport({
@@ -336,6 +336,7 @@ function MobileOrdersHistoryTabContent({
 								const orderTypeLabel = getEntryTypeLabel(entry);
 								const sideLabel = getOrderSideLabel(entry.side, entry.reduceOnly);
 								const statusCategory = getOrderHistoryStatusCategory(entry);
+								const statusPresentation = getHistoricalOrderStatusPresentation(entry.order);
 								function handleToggle() {
 									setExpanded(cardKey, !isExpanded);
 								}
@@ -420,8 +421,13 @@ function MobileOrdersHistoryTabContent({
 																		: "bg-market-close-hover text-market-close-muted",
 															)}
 														>
-															{getEntryStatusLabel(entry)}
+															{statusPresentation.label}
 														</div>
+														{statusPresentation.reason ? (
+															<div className="mt-0.5 text-3xs leading-[14px] text-market-close-subtle">
+																{statusPresentation.reason}
+															</div>
+														) : null}
 													</div>
 													<div className="col-span-2 min-w-0">
 														<div className="truncate text-3xs leading-[14px] text-market-close-subtle">{t`Updated`}</div>
