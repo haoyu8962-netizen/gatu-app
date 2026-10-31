@@ -217,6 +217,66 @@ describe("desktop order history direction semantics", () => {
 		expect(btcRow[header.indexOf("Size")]).toBe("1.2345");
 	});
 
+	it("shows the official status names with each cancellation or rejection reason", () => {
+		mocks.orders = [
+			{
+				status: "marginCanceled",
+				statusTimestamp: 6,
+				order: {
+					coin: "BTC",
+					oid: 3,
+					orderType: "Limit",
+					origSz: "1",
+					sz: "1",
+					reduceOnly: false,
+					side: "B",
+					timestamp: 5,
+				},
+			},
+			{
+				status: "filled",
+				statusTimestamp: 8,
+				order: {
+					coin: "ETH",
+					oid: 4,
+					orderType: "Limit",
+					origSz: "2",
+					sz: "0.5",
+					reduceOnly: false,
+					side: "A",
+					timestamp: 7,
+				},
+			},
+			{
+				status: "iocCancelRejected",
+				statusTimestamp: 10,
+				order: {
+					coin: "SOL",
+					oid: 5,
+					orderType: "Limit",
+					origSz: "3",
+					sz: "3",
+					reduceOnly: false,
+					side: "B",
+					timestamp: 9,
+				},
+			},
+		];
+		act(() => root.render(<OrdersHistoryTab />));
+
+		const statuses = [...container.querySelectorAll("tbody tr")].map(
+			(row) => row.querySelectorAll("td")[5]?.textContent?.trim() ?? "",
+		);
+		expect(statuses).toEqual(
+			expect.arrayContaining([
+				"Margin Canceled, Canceled due to insufficient margin",
+				"Partially filled",
+				"Rejected, Rejected because the IOC order could not match",
+			]),
+		);
+		expect(statuses).toHaveLength(3);
+	});
+
 	it("keeps full order export available when the recent snapshot is empty", () => {
 		mocks.orders = [];
 		act(() => root.render(<OrdersHistoryTab />));

@@ -4890,7 +4890,7 @@ msgstr "Margen y riesgo de la cuenta de un vistazo"
 
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Margin Canceled"
-msgstr ""
+msgstr "Cancelada por margen"
 
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx

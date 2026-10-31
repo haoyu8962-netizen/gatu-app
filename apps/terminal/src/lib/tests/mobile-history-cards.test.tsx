@@ -218,6 +218,10 @@ vi.mock("@/hooks/trade/use-market-navigation", () => ({
 vi.mock("@/hooks/trade/use-order-display-labels", () => ({
 	useOrderDisplayLabels: () => ({
 		getHistoricalOrderStatusLabel: (status: string) => (status === "filled" ? "Filled" : "Canceled"),
+		getHistoricalOrderStatusPresentation: (order: { status: string }) => ({
+			label: order.status === "filled" ? "Filled" : "Canceled",
+			reason: order.status === "marginCanceled" ? "Canceled due to insufficient margin" : null,
+		}),
 		getOrderSideLabel: (side: "A" | "B", reduceOnly: boolean) =>
 			reduceOnly ? (side === "B" ? "Close Short" : "Close Long") : side === "B" ? "Buy" : "Sell",
 		getOrderTypeLabel: (type: string) => type,
@@ -746,6 +750,16 @@ describe("mobile history disclosure cards", () => {
 				["0", "3400", "0.2"],
 			]),
 		);
+	});
+
+	it("writes a canceled order's reason under its status", () => {
+		mocks.orders = createOrders().map((entry, index) => (index === 1 ? { ...entry, status: "marginCanceled" } : entry));
+		render(<MobileOrdersHistoryTab scrollMode="page" />);
+		expect(container.textContent).not.toContain("Canceled due to insufficient margin");
+		clickButton("Expand all");
+
+		expect(container.textContent).toContain("Canceled due to insufficient margin");
+		expect(container.textContent?.match(/Canceled due to insufficient margin/g)).toHaveLength(1);
 	});
 
 	it("keeps full order export available when the recent mobile snapshot is empty", () => {

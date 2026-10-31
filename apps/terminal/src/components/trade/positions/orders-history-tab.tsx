@@ -2,6 +2,7 @@ import { Plural, useLingui } from "@lingui/react/macro";
 import { Button, Select, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@sairn/ui";
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
+import { HistoricalOrderStatusBadge } from "@/components/trade/positions/historical-order-status-badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { RECENT_ACCOUNT_HISTORY_ROWS } from "@/config/trade";
@@ -92,7 +93,7 @@ function OrdersHistoryTabContent({ address, toolbarTarget }: OrdersHistoryTabCon
 	const { formatToken } = useNumberFormat();
 	const { i18n, t } = useLingui();
 	const locale = i18n.locale;
-	const { getHistoricalOrderStatusLabel, getOrderSideLabel, getOrderTypeLabel } = useOrderDisplayLabels();
+	const { getHistoricalOrderStatusPresentation, getOrderSideLabel, getOrderTypeLabel } = useOrderDisplayLabels();
 	const { entries, error, isConnected, isOffline, isStale, status } = useHistoricalOrders();
 	const navigateToMarket = useMarketNavigation();
 	const markets = useMarkets();
@@ -140,7 +141,7 @@ function OrdersHistoryTabContent({ address, toolbarTarget }: OrdersHistoryTabCon
 	}
 
 	function getEntryStatusLabel(entry: OrdinaryOrderHistoryEntry) {
-		return getHistoricalOrderStatusLabel(entry.order.status);
+		return getHistoricalOrderStatusPresentation(entry.order).label;
 	}
 
 	const { exportCsv, isExporting } = useHistoricalOrdersCsvExport({
@@ -346,14 +347,13 @@ function OrdersHistoryTabContent({ address, toolbarTarget }: OrdersHistoryTabCon
 												{formatToken(entry.size, market?.szDecimals)}
 											</TableCell>
 											<TableCell size="dense" className={cn(positionsPanelTableCellClass, orderHistoryTableCellClass)}>
-												<span
+												<HistoricalOrderStatusBadge
+													status={getHistoricalOrderStatusPresentation(entry.order)}
 													className={cn(
 														"inline-flex w-fit whitespace-nowrap rounded-[4px] px-2 py-0.5 text-2xs leading-[14px] font-semibold capitalize",
 														getOrderHistoryStatusBadgeClass(statusCategory),
 													)}
-												>
-													{getEntryStatusLabel(entry)}
-												</span>
+												/>
 											</TableCell>
 											<TableCell
 												size="dense"

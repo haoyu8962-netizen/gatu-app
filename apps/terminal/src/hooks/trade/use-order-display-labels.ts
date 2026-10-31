@@ -9,9 +9,15 @@ import {
 	TRAILING_STOP_ORDER_TYPE,
 } from "@/lib/trade/open-orders";
 import { getOrderDirection } from "@/lib/trade/order-direction";
-import type { TwapHistoryStatus } from "@/lib/trade/order-history";
+import { isPartiallyFilledHistoricalOrder, type TwapHistoryStatus } from "@/lib/trade/order-history";
+import { describeOrderStatusReason } from "@/lib/trade/order-status-reasons";
 
 type HistoricalOrderStatus = HistoricalOrdersResponse[number]["status"];
+
+export interface HistoricalOrderStatusPresentation {
+	label: string;
+	reason: string | null;
+}
 
 const CANCELED_ORDER_STATUSES: ReadonlySet<HistoricalOrderStatus> = new Set([
 	"canceled",
@@ -150,6 +156,17 @@ export function useOrderDisplayLabels() {
 		}
 	}
 
+	function getHistoricalOrderStatusPresentation(
+		order: HistoricalOrdersResponse[number],
+	): HistoricalOrderStatusPresentation {
+		if (isPartiallyFilledHistoricalOrder(order)) return { label: t`Partially filled`, reason: null };
+		const reasonDescriptor =
+			order.status === "canceled" || order.status === "rejected" ? null : describeOrderStatusReason(order.status);
+		const reason = reasonDescriptor ? t(reasonDescriptor) : null;
+		if (order.status === "marginCanceled") return { label: t`Margin Canceled`, reason };
+		return { label: getHistoricalOrderStatusLabel(order.status), reason };
+	}
+
 	function getTwapHistoryStatusLabel(status: TwapHistoryStatus): string {
 		switch (status) {
 			case "activated":
@@ -172,6 +189,7 @@ export function useOrderDisplayLabels() {
 		getExecutionKindLabel,
 		getFullOrderTypeLabel,
 		getHistoricalOrderStatusLabel,
+		getHistoricalOrderStatusPresentation,
 		getOrderSideLabel,
 		getOrderTypeLabel,
 		getTriggerConditionLabel,

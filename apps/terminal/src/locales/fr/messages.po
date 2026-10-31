@@ -4890,7 +4890,7 @@ msgstr "Marge et risque du compte en un coup d'œil"
 
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Margin Canceled"
-msgstr ""
+msgstr "Annulé faute de marge"
 
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx

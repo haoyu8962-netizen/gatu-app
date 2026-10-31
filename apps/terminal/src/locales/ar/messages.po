@@ -4890,7 +4890,7 @@ msgstr "نظرة سريعة على الهامش ومخاطر الحساب"
 
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Margin Canceled"
-msgstr ""
+msgstr "ملغي لنقص الهامش"
 
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx

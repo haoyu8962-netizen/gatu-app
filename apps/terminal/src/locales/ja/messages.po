@@ -4367,7 +4367,7 @@ msgstr "証拠金とアカウントリスクの概要"
 
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Margin Canceled"
-msgstr ""
+msgstr "証拠金不足キャンセル"
 
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx

@@ -639,6 +639,9 @@ changes, not evidence that a build has been deployed or accepted on real devices
   that is partly filled before the open-orders list confirms it is still reported as modified.
   Reduce-only Stop and Take Profit orders can change their size and trigger price, as on the official
   terminal; a trigger order that can open a position still has to be cancelled and placed again.
+- Order history now explains why an order was canceled or rejected, as the official terminal does: a
+  tooltip on desktop and a line on the phone card. A margin cancellation reads Margin Canceled and a
+  filled order with size still open reads Partially filled.
 - Canceling several orders when only some of them can be canceled now reports Canceled n/total with
   the exchange's reason for each failure, as the official terminal does, instead of reporting the whole
   batch as failed; the canceled orders leave the selection and the others can be retried at once.
