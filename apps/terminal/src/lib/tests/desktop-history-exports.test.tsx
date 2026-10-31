@@ -333,10 +333,11 @@ describe("desktop history exports", () => {
 	it("dates each fill with its year like the order history", () => {
 		act(() => root.render(<HistoryTab />));
 
+		const filledAt = new Date(1_754_350_400_000);
 		expect(container.textContent).toContain(
-			formatDateTime(1_754_350_400_000, { locale: "en", dateStyle: "short", timeStyle: "short" }),
+			formatDateTime(filledAt.getTime(), { locale: "en", dateStyle: "short", timeStyle: "short" }),
 		);
-		expect(container.textContent).toMatch(/8\/5\/25/);
+		expect(container.textContent).toContain(`${filledAt.getMonth() + 1}/${filledAt.getDate()}/25`);
 	});
 
 	it("labels ordinary fills as trades", () => {
