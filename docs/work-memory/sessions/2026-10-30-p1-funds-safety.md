@@ -69,6 +69,10 @@
 - **发送 Max 不预留激活费。** 官方的 Max 是可提余额向下取整到 2 位（现货按代币精度），不预留费用；有费用或对方从未发过交易时弹出确认，与 D1 的确认步骤一致。
 - **本终端自己的地区检查不拦退出动作。** 核对代码后确认现状：`useGeoRestriction` 只拦新开仓、兑换、反手与资金动作，平仓、TP/SL、撤单、逐仓保证金调整照常；交易所 `legalCheck` 返回 `restrictions: "a"` 时 `canPerformActions` 为假，所有签名动作都会被拦。官方在自己的 IP 检查受限或仍在检查时隐藏平仓列、撤单列和下单表单。没有照搬：自己的检查若误判或查询失败，仓位就无法平掉；交易所自己的限制仍然拦住一切；交易所退出某地区时通常保留只能平仓的模式（这一条是一般行业做法，本次没有逐家核对）。
 
+## PR #124 的 CI 浏览器回归（2026-10-31）
+
+推送后 #124 的两个浏览器回归分片都失败，23 项全在 `position-close-all.pw.ts`：按钮 `element(s) not found`，「全部平仓」区块没有渲染出来。原因：本分支让 `PositionsTab` 与 `MobilePositionsTab` 调用 `useGeoRestriction()`（反手的地区闸门），真实钩子内部用 `useQuery`，而这个浏览器夹具既没有 QueryClient，也没有替身，组件渲染即报错。推送前只跑了 `account-actions` 浏览器套件，`position-close-all` 没跑。修复 `21ca05c5`：与 `account-actions`、`mobile-trade-all-orders`、`top-nav-connected` 夹具一样，在 `position-close-all.vite.config.ts` 把 `@/hooks/use-geo-restriction` 指向夹具模块，替身返回已判定、不受限的地区。本地（沙箱外）`position-close-all.playwright.config.ts` 46 项通过。
+
 ## 后续与替代关系
 
 - 受限地区的只减仓动作、发送 Max 是否预留激活费：已按官方实践决定（见下文「按官方实践处理的待定事项」）。
