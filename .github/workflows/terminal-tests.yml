@@ -109,6 +109,10 @@ jobs:
           src/lib/tests/mobile-trade-layout-market-reset.test.tsx
           src/lib/tests/market-overview.test.tsx
           src/lib/tests/market-asset-info.test.tsx
+          src/lib/tests/mobile-data-presentation-contract.test.ts
+          src/lib/tests/mobile-input-zoom-contract.test.ts
+          src/lib/tests/positions-table-visual-contract.test.ts
+          src/lib/tests/desktop-positions-readiness.test.tsx
 
       - name: Test Privy theme and wallet identity
         working-directory: apps/terminal
@@ -226,6 +230,11 @@ jobs:
           tests/mobile-trade-size-validation-a11y.test.tsx
           tests/trade-panel-open-interest-cap.test.tsx
           tests/trade-size-error-a11y.test.tsx
+          src/lib/tests/exchange-action-expiry.test.ts
+          src/lib/tests/open-order-modification.test.ts
+          src/lib/tests/open-order-modification-form.test.ts
+          src/lib/tests/spot-swap-execution-guard.test.ts
+          src/lib/tests/position-reverse-submit.test.tsx
 
       - name: Test confirmation surface contracts
         working-directory: apps/terminal
@@ -276,6 +285,11 @@ jobs:
           src/lib/tests/action-progress-label-contract.test.ts
           tests/slider-effective-leverage-regression.test.tsx
           src/lib/tests/dialog-dismiss-control-contract.test.ts
+          src/lib/tests/position-market-close-entry.test.tsx
+          src/lib/tests/mobile-position-isolated-margin-entry.test.tsx
+          src/lib/tests/vault-action-domain.test.ts
+          src/lib/tests/funds-destination-rules.test.ts
+          src/lib/tests/account-ledger-export-availability.test.tsx
 
       - name: Test slider gesture lifecycles
         working-directory: apps/terminal
@@ -377,6 +391,12 @@ jobs:
           src/lib/tests/trade-form-twap.test.tsx
           src/lib/tests/rtl-financial-ui-contract.test.ts
           src/lib/tests/desktop-history-exports.test.tsx
+          src/lib/tests/account-ledger.test.ts
+          src/lib/tests/account-ledger-csv-sub-accounts.test.tsx
+          src/lib/tests/fill-direction.test.ts
+          src/lib/tests/collateral-amount.test.ts
+          src/lib/tests/historical-order-price.test.tsx
+          src/lib/tests/public-stats-data.test.ts
 
       - name: Test Deposit, CCTP, routing, and geo guards
         working-directory: apps/terminal
@@ -417,6 +437,9 @@ jobs:
           src/lib/tests/referral-dashboard-agent-only.test.tsx
           src/lib/tests/referral-ui-contract.test.ts
           src/lib/tests/balances-table-visual-contract.test.ts
+          src/lib/tests/balances.test.ts
+          src/lib/tests/spot-token-usd-price-state.test.tsx
+          src/lib/tests/portfolio.test.ts
 
       # `pnpm test:brand` in the Website and Brand workflow also runs these, but that workflow
       # only starts when the website or a brand asset changes. Terminal changes are covered here.
