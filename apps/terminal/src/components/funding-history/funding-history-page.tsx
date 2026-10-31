@@ -16,7 +16,7 @@ import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/cn";
 import { buildCsvRows } from "@/lib/csv";
-import { formatDateTimeShort, shortenAddress, useNumberFormat } from "@/lib/format";
+import { formatDateTime, formatDateTimeShort, shortenAddress, useNumberFormat } from "@/lib/format";
 import { useMarkets } from "@/lib/hyperliquid";
 import { getFundingCollateralSymbol } from "@/lib/trade/collateral-amount";
 import {
@@ -77,7 +77,11 @@ export function FundingHistoryPage({ address }: Props) {
 		filename: "funding_history.csv",
 		buildRows: (fundings) =>
 			buildCsvRows(fundings, [
-				{ header: t`Time`, getValue: (funding) => formatDateTimeShort(funding.time, { locale: i18n.locale }) },
+				{
+					header: t`Time`,
+					getValue: (funding) =>
+						formatDateTime(funding.time, { locale: i18n.locale, dateStyle: "short", timeStyle: "short" }),
+				},
 				{ header: t`Asset`, getValue: (funding) => funding.coin },
 				{
 					header: t`Side`,
@@ -396,7 +400,7 @@ export function FundingHistoryPage({ address }: Props) {
 													</bdi>
 												</TableCell>
 												<TableCell className="px-5 py-0 text-right text-xs text-fg-muted">
-													{formatDateTimeShort(funding.time, { locale })}
+													{formatDateTime(funding.time, { locale, dateStyle: "short", timeStyle: "short" })}
 												</TableCell>
 											</TableRow>
 										);

@@ -8,7 +8,7 @@ import { useTwapFillHistoryCsv } from "@/hooks/trade/use-twap-fill-history-csv";
 import { useTwapSliceFills } from "@/hooks/trade/use-twap-slice-fills";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
-import { formatDateTimeShort, useNumberFormat } from "@/lib/format";
+import { formatDateTime, useNumberFormat } from "@/lib/format";
 import { useMarkets } from "@/lib/hyperliquid";
 import { getUserFillNotional } from "@/lib/trade/user-fills";
 import { getMarketCloseValueColorClass } from "@/lib/ui/value-color";
@@ -91,7 +91,7 @@ export function TwapFillHistoryTable() {
 											)}
 										>
 											<td className="p-0 whitespace-nowrap text-market-close-muted tabular-nums">
-												{formatDateTimeShort(fill.time, { locale })}
+												{formatDateTime(fill.time, { locale, dateStyle: "short", timeStyle: "short" })}
 											</td>
 											<td className="p-0">
 												<button

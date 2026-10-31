@@ -12,7 +12,7 @@ import { useUserFunding } from "@/hooks/trade/use-user-funding";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { buildCsvRows } from "@/lib/csv";
-import { formatDateTimeShort, useNumberFormat } from "@/lib/format";
+import { formatDateTime, formatDateTimeShort, useNumberFormat } from "@/lib/format";
 import { useHyperliquid, useMarkets } from "@/lib/hyperliquid";
 import { getFundingCollateralSymbol } from "@/lib/trade/collateral-amount";
 import {
@@ -102,7 +102,11 @@ function MobileFundingTabContent({
 		filename: "funding_history.csv",
 		buildRows: (fundings) =>
 			buildCsvRows(fundings, [
-				{ header: t`Time`, getValue: (update) => formatDateTimeShort(update.time, { locale: i18n.locale }) },
+				{
+					header: t`Time`,
+					getValue: (update) =>
+						formatDateTime(update.time, { locale: i18n.locale, dateStyle: "short", timeStyle: "short" }),
+				},
 				{ header: t`Asset`, getValue: (update) => update.coin },
 				{
 					header: t`Side`,

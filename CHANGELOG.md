@@ -581,7 +581,8 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 - Trade history dates now include the year, like the order history, on the desktop tab, the full page
   and in CSV exports, and the market order summary shows the maximum slippage in the accent colour instead
-  of the error red.
+  of the error red. Funding history, TWAP history and fill history, and deposits and withdrawals show the
+  year on desktop and in their exports too; phone cards keep the short date.
 - Returning to a Portfolio browser tab after a while no longer flashes "Something went wrong" and $0
   while its statistics and history reload: the last figures stay until the refresh answers, as on the
   official terminal.

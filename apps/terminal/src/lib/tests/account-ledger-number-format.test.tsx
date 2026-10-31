@@ -5,6 +5,7 @@ import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MobileAccountTransfersTab } from "@/components/trade/mobile/mobile-account-transfers-tab";
 import { AccountTransfersTab } from "@/components/trade/positions/account-transfers-tab";
+import { formatDateTime, formatDateTimeShort } from "@/lib/format";
 import { notifyNumberFormatChange } from "@/lib/number-format-reactivity";
 import type { AccountLedgerRow } from "@/lib/trade/account-ledger";
 import { createI18nRoot } from "./harness/react";
@@ -89,5 +90,15 @@ describe("account ledger number format", () => {
 		expect(container.textContent).toContain("-1.234,5 USDC");
 		expect(container.textContent).toContain("1,25 USDC");
 		expect(container.textContent).not.toContain("1,234.5");
+	});
+
+	it("dates desktop transfers with the year and keeps the compact date on phone cards", () => {
+		const time = Date.UTC(2026, 9, 2, 8, 30);
+		act(() => root.render(<AccountTransfersTab />));
+		expect(container.textContent).toContain(formatDateTime(time, { dateStyle: "short", timeStyle: "short" }));
+
+		act(() => root.render(<MobileAccountTransfersTab scrollMode="page" />));
+		expect(container.textContent).toContain(formatDateTimeShort(time));
+		expect(container.textContent).not.toContain(formatDateTime(time, { dateStyle: "short", timeStyle: "short" }));
 	});
 });

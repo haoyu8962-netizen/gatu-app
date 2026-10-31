@@ -6,7 +6,7 @@ import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { useOrderDisplayLabels } from "@/hooks/trade/use-order-display-labels";
 import { useTwapHistory } from "@/hooks/trade/use-twap-history";
 import { cn } from "@/lib/cn";
-import { formatClockDuration, formatDateTimeShort, useNumberFormat } from "@/lib/format";
+import { formatClockDuration, formatDateTime, useNumberFormat } from "@/lib/format";
 import { useMarkets } from "@/lib/hyperliquid";
 import { getTwapAverageFillPrice, getTwapHistoryDurationMs, getTwapHistoryTimeMs } from "@/lib/trade/order-history";
 import { PassiveDataPlaceholder } from "./passive-data-placeholder";
@@ -84,7 +84,7 @@ export function TwapHistoryTable() {
 										)}
 									>
 										<td className="p-0 whitespace-nowrap text-market-close-muted tabular-nums">
-											{formatDateTimeShort(getTwapHistoryTimeMs(entry), { locale })}
+											{formatDateTime(getTwapHistoryTimeMs(entry), { locale, dateStyle: "short", timeStyle: "short" })}
 										</td>
 										<td className="p-0">
 											<button

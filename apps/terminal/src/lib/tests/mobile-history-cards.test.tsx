@@ -274,6 +274,7 @@ import { MobileFundingTab } from "@/components/trade/mobile/mobile-funding-tab";
 import { MobileHistoryTab } from "@/components/trade/mobile/mobile-history-tab";
 import { MobileOrdersHistoryTab } from "@/components/trade/mobile/mobile-orders-history-tab";
 import { MOBILE_PROGRESSIVE_LIST_BATCH_SIZE } from "@/components/trade/mobile/mobile-progressive-list";
+import { formatDateTime } from "@/lib/format";
 
 describe("mobile history disclosure cards", () => {
 	let container: HTMLDivElement;
@@ -660,7 +661,15 @@ describe("mobile history disclosure cards", () => {
 			"funding_history.csv",
 			expect.arrayContaining([
 				["Time", "Asset", "Side", "Size", "Rate", "Payment", "Payment Token"],
-				[expect.any(String), "ETH", "Short", "0.2", "-0.0002", "-0.75", "USDC"],
+				[
+					formatDateTime(1_754_350_500_000, { dateStyle: "short", timeStyle: "short" }),
+					"ETH",
+					"Short",
+					"0.2",
+					"-0.0002",
+					"-0.75",
+					"USDC",
+				],
 			]),
 		);
 	});

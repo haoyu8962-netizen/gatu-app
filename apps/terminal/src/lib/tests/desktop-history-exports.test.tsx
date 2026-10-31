@@ -406,6 +406,20 @@ describe("desktop history exports", () => {
 		);
 	});
 
+	it("dates each funding payment with its year in the table and the export", () => {
+		act(() => root.render(<FundingTab />));
+
+		const paidAt = new Date(1_754_350_400_000);
+		const withYear = formatDateTime(paidAt.getTime(), { locale: "en", dateStyle: "short", timeStyle: "short" });
+		expect(container.querySelector("tbody")?.textContent).toContain(withYear);
+		expect(container.textContent).toContain(`${paidAt.getMonth() + 1}/${paidAt.getDate()}/25`);
+		clickExport();
+		expect(mocks.downloadCsv).toHaveBeenCalledWith(
+			"funding_history.csv",
+			expect.arrayContaining([[withYear, "BTC", "Long", "0.01", "0.0001", "1.25", "USDC"]]),
+		);
+	});
+
 	it.each(["idle", "loading", "error", "offline"] as const)(
 		"keeps %s histories quiet until confirmed empty",
 		(status) => {

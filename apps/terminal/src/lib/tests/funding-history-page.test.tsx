@@ -8,12 +8,13 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { FundingHistoryPage } from "@/components/funding-history/funding-history-page";
-import { formatDateTimeShort } from "@/lib/format";
+import { formatDateTime, formatDateTimeShort } from "@/lib/format";
 import type { UserFunding } from "@/lib/trade/user-funding";
 
 const ADDRESS = "0x1111111111111111111111111111111111111111";
 
 const mocks = vi.hoisted(() => ({
+	buildRows: undefined as ((fundings: UserFunding[]) => string[][]) | undefined,
 	exportAddress: undefined as `0x${string}` | undefined,
 	exportCsv: vi.fn(),
 	history: {
@@ -120,8 +121,15 @@ vi.mock("@/components/trade/mobile/mobile-header", () => ({ MobileHeader: () => 
 vi.mock("@/components/trade/testnet-banner", () => ({ TestnetBanner: () => null }));
 vi.mock("@/hooks/trade/use-funding-history", () => ({ useFundingHistory: () => mocks.history }));
 vi.mock("@/hooks/trade/use-history-csv-export", () => ({
-	useFundingHistoryCsvExport: ({ address }: { address?: `0x${string}` }) => {
+	useFundingHistoryCsvExport: ({
+		address,
+		buildRows,
+	}: {
+		address?: `0x${string}`;
+		buildRows: (fundings: UserFunding[]) => string[][];
+	}) => {
 		mocks.exportAddress = address;
+		mocks.buildRows = buildRows;
 		return { exportCsv: mocks.exportCsv, isExporting: false };
 	},
 }));
@@ -381,6 +389,17 @@ describe("FundingHistoryPage", () => {
 		expect(refreshButton?.disabled).toBe(true);
 		expect(mocks.history.refresh).not.toHaveBeenCalled();
 		expect(mocks.exportAddress).toBeUndefined();
+	});
+
+	it("dates desktop rows and exported payments with the year and keeps the compact date on phone cards", () => {
+		const funding = createFunding(0);
+		mocks.history.fundings = [funding];
+		renderPage();
+
+		const withYear = formatDateTime(funding.time, { locale: "en", dateStyle: "short", timeStyle: "short" });
+		expect(container.querySelector("tbody")?.textContent).toContain(withYear);
+		expect(container.querySelector("time")?.textContent).toBe(formatDateTimeShort(funding.time, { locale: "en" }));
+		expect(mocks.buildRows?.([funding])[1]?.[0]).toBe(withYear);
 	});
 
 	it("exports the address shown by the public history page", () => {
