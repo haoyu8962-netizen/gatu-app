@@ -187,6 +187,34 @@ describe("server clock for L1 action expiry", () => {
 		expect(fetchServerTime).toHaveBeenCalledTimes(3);
 	});
 
+	it("waits at most two timeouts after the device slept while a request was on its way", async () => {
+		const neverAnswers = (signal: AbortSignal) =>
+			new Promise<number>((_resolve, reject) => {
+				signal.addEventListener("abort", () => reject(new Error("aborted")));
+			});
+		const fetchServerTime = vi
+			.fn()
+			.mockResolvedValueOnce(1_000_000)
+			.mockImplementationOnce(neverAnswers)
+			.mockImplementationOnce(neverAnswers);
+		const clock = createServerClock(fetchServerTime);
+		await clock.sync();
+
+		await vi.advanceTimersByTimeAsync(61_000);
+		await clock.getExpiresAfter();
+		vi.setSystemTime(Date.now() + 60 * 60_000);
+		let settled = false;
+		const expiresAfter = clock.getExpiresAfter().finally(() => {
+			settled = true;
+		});
+		await vi.advanceTimersByTimeAsync(3_999);
+		expect(settled).toBe(false);
+		await vi.advanceTimersByTimeAsync(1);
+
+		expect(await expiresAfter).toBe(1_065_000 + EXCHANGE_ACTION_EXPIRY_MS);
+		expect(fetchServerTime).toHaveBeenCalledTimes(3);
+	});
+
 	it("does not ask twice when the request an action joins was sent after the clock change", async () => {
 		const fresh = deferred<number>();
 		const fetchServerTime = vi.fn().mockResolvedValueOnce(1_000_000).mockReturnValueOnce(fresh.promise);
