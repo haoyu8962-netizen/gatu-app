@@ -35,10 +35,13 @@ export function accountLedgerQueryKey(env: "Mainnet" | "Testnet", user: string) 
 }
 
 interface AccountLedgerResult {
+	/** True only when the last REST snapshot succeeded and no refresh is running, so an empty list is a fact. */
+	canConfirmEmpty: boolean;
 	earnRows: AccountLedgerRow[];
 	error: unknown;
 	isConnected: boolean;
 	rewardClaimRows: AccountLedgerRow[];
+	isRefreshing: boolean;
 	retry: () => void;
 	rows: AccountLedgerRow[];
 	status: AccountLedgerStatus;
@@ -135,13 +138,17 @@ export function useAccountLedger({ enabled: requestedEnabled = true }: AccountLe
 		status = "loading";
 	}
 
+	const isRefreshing = ledgerQuery.fetchStatus === "fetching";
+
 	return {
+		canConfirmEmpty: status === "ready" && !ledgerQuery.isError && !isRefreshing,
 		earnRows,
 		error:
 			status === "error"
 				? (ledgerQuery.error ?? (hasMalformedRealtime ? new MalformedHistoryPageError() : undefined))
 				: undefined,
 		isConnected,
+		isRefreshing,
 		rewardClaimRows,
 		retry: () => {
 			if (enabled) void ledgerQuery.refetch();

@@ -4662,6 +4662,7 @@ msgstr "正在加载所有链上的余额…"
 #~ msgstr "正在加载存款和提款记录..."
 
 #: src/components/funding-history/funding-history-page.tsx
+#: src/components/funding-history/funding-history-page.tsx
 msgid "Loading funding payments"
 msgstr "正在加载资金费支付记录"
 
@@ -4685,6 +4686,7 @@ msgstr "加载市场中..."
 #~ msgid "Loading open orders..."
 #~ msgstr "加载未成交订单中..."
 
+#: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/historical-orders/historical-orders-page.tsx
 msgid "Loading order history"
 msgstr "正在加载委托历史"
@@ -4730,6 +4732,7 @@ msgstr "正在加载质押表格"
 msgid "Loading token metadata..."
 msgstr "正在加载代币元数据..."
 
+#: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade-history/trade-history-page.tsx
 msgid "Loading trade history"
 msgstr "正在加载成交历史"
@@ -7380,6 +7383,7 @@ msgstr "继续跟踪"
 #: src/components/trade/components/market-asset-info.tsx
 #: src/components/trade/layout/terminal-boot-error.tsx
 #: src/components/trade/mobile/offline-banner.tsx
+#: src/components/trade/positions/account-transfers-tab.tsx
 #: src/components/trade/positions/account-transfers-tab.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx

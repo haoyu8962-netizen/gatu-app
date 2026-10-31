@@ -4662,6 +4662,7 @@ msgstr "Chargement des soldes sur toutes les chaînes..."
 #~ msgstr "Chargement des dépôts et retraits..."
 
 #: src/components/funding-history/funding-history-page.tsx
+#: src/components/funding-history/funding-history-page.tsx
 msgid "Loading funding payments"
 msgstr "Chargement des paiements de financement"
 
@@ -4685,6 +4686,7 @@ msgstr "Chargement des marchés..."
 #~ msgid "Loading open orders..."
 #~ msgstr "Chargement des ordres ouverts..."
 
+#: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/historical-orders/historical-orders-page.tsx
 msgid "Loading order history"
 msgstr "Chargement de l’historique des ordres"
@@ -4730,6 +4732,7 @@ msgstr "Chargement du tableau de staking"
 msgid "Loading token metadata..."
 msgstr "Chargement des métadonnées du jeton..."
 
+#: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade-history/trade-history-page.tsx
 msgid "Loading trade history"
 msgstr "Chargement de l’historique des transactions"
@@ -7380,6 +7383,7 @@ msgstr "Reprendre le suivi"
 #: src/components/trade/components/market-asset-info.tsx
 #: src/components/trade/layout/terminal-boot-error.tsx
 #: src/components/trade/mobile/offline-banner.tsx
+#: src/components/trade/positions/account-transfers-tab.tsx
 #: src/components/trade/positions/account-transfers-tab.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx

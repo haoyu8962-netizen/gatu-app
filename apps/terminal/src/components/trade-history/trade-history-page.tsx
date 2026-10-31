@@ -173,6 +173,12 @@ export function TradeHistoryPage({ address }: Props) {
 		setRequestedPage(1);
 	}
 
+	function getUnconfirmedEmptyDescription() {
+		if (history.isOffline) return t`You are offline. Trade history will load when the connection returns.`;
+		if (history.isRefreshing) return t`Loading trade history`;
+		return t`The recent trade snapshot could not be loaded or validated.`;
+	}
+
 	let content: ReactNode;
 	if (history.status === "disabled") {
 		content = (
@@ -190,6 +196,7 @@ export function TradeHistoryPage({ address }: Props) {
 		content = (
 			<HistoryPageUnavailable
 				offline
+				refreshing={false}
 				description={t`You are offline. Trade history will load when the connection returns.`}
 				onRetry={history.refresh}
 			/>
@@ -212,19 +219,17 @@ export function TradeHistoryPage({ address }: Props) {
 		content = (
 			<HistoryPageUnavailable
 				offline={false}
+				refreshing={false}
 				description={t`The recent trade snapshot could not be loaded or validated.`}
 				onRetry={history.refresh}
 			/>
 		);
-	} else if (history.fills.length === 0 && (history.error || history.isOffline)) {
+	} else if (history.fills.length === 0 && (history.error || history.isOffline || history.isRefreshing)) {
 		content = (
 			<HistoryPageUnavailable
 				offline={history.isOffline}
-				description={
-					history.isOffline
-						? t`You are offline. Trade history will load when the connection returns.`
-						: t`The recent trade snapshot could not be loaded or validated.`
-				}
+				refreshing={history.isRefreshing}
+				description={getUnconfirmedEmptyDescription()}
 				onRetry={history.refresh}
 			/>
 		);

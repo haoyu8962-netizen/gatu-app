@@ -7,7 +7,7 @@
   "kind": "task",
   "status": "recorded",
   "topics": ["market-recovery", "order-entry"],
-  "summary": "运营方要求继续修复 P2，修复方案先核对官方开发文档并与官方终端对比。本组为全功能审查的被动数据与全局项，先做两项明确违反现行契约、不需要决策的：B21 持仓 TP/SL 弹窗在标记价未就绪时用警告框显示「Loading...」（守卫本来就不靠它），B17 桌面「存款与提款」页签读取失败时红字「Failed to load deposits and withdrawals.」（手机已静默，规范要求保留主动重试与已确认的上限说明）。依据官方前端包（TP/SL 弹窗无加载文字、确认只按校验禁用；存提款为空数组渲染、无错误文字）与 docs/mobile-data-presentation.md。分支 claude/p2-passive-data，基于本地集成分支 claude/p1-integration 的 329f241d。E9：交易、委托、资金费三张历史页删掉 role=alert 告警横条与大号警告图标，首次失败与离线改为共享的中性占位（HistoryPageUnavailable：读屏描述 + 中性 Retry，离线时只留忙碌占位），空缓存加刷新失败不再得出没有记录；上限说明改用 stroke-warning-weak 与 warning-soft。F3：手机上设置弹窗打开时焦点放在弹层本身（不聚焦滑点输入、不弹键盘），并隐藏「Desktop layout · Reset」。变异均被测试抓到；未推送。",
+  "summary": "运营方要求继续修复 P2，修复方案先核对官方开发文档并与官方终端对比。本组为全功能审查的被动数据与全局项，先做两项明确违反现行契约、不需要决策的：B21 持仓 TP/SL 弹窗在标记价未就绪时用警告框显示「Loading...」（守卫本来就不靠它），B17 桌面「存款与提款」页签读取失败时红字「Failed to load deposits and withdrawals.」（手机已静默，规范要求保留主动重试与已确认的上限说明）。依据官方前端包（TP/SL 弹窗无加载文字、确认只按校验禁用；存提款为空数组渲染、无错误文字）与 docs/mobile-data-presentation.md。分支 claude/p2-passive-data，基于本地集成分支 claude/p1-integration 的 329f241d。E9：交易、委托、资金费三张历史页删掉 role=alert 告警横条与大号警告图标，首次失败与离线改为共享的中性占位（HistoryPageUnavailable：读屏描述 + 中性 Retry，离线时只留忙碌占位），空缓存加刷新失败不再得出没有记录；上限说明改用 stroke-warning-weak 与 warning-soft。F3：手机上设置弹窗打开时焦点放在弹层本身（不聚焦滑点输入、不弹键盘），并隐藏「Desktop layout · Reset」。Codex 审查 7.5/10 的 3 项 P2 与 1 项 P3 已修（刷新中的空缓存不下结论、刷新中不给 Retry、读屏节点移出忙碌区、存提款空快照刷新失败不下结论）。变异均被测试抓到；未推送。",
   "thread": null,
   "baseCommit": "329f241d",
   "commits": [],
@@ -67,6 +67,17 @@
 ### F3
 
 - `global-settings-modal.test.tsx` 的 `ModalPopup` 替身改为记录属性，新增用例：手机上 `initialFocus` 就是弹层的 ref、没有「Desktop layout」；桌面 `initialFocus` 未设置、仍有布局项。该文件 30 项通过。真实焦点与键盘行为没有在浏览器或真机上验证（替身不渲染 Base UI 的焦点管理）。
+
+## Codex 推送前审查与修复
+
+- 范围 `329f241d..7833ae79`（B21、B17、E9；F3 之后提交，未在这轮范围内），`gpt-6-astra` 只读 low：7.5/10，2 项 P2、1 项 P3、1 项既有 P2，均成立，已修：
+  - **P2 空缓存在刷新进行中仍会给出「没有记录」。** 例如恢复联网后、带过期空缓存重进页面时，`status` 已是 `ready`、`isRefreshing` 为真。三张页面的「空缓存」分支加上 `history.isRefreshing`，刷新中显示忙碌占位、读屏描述用各页已有的加载文案（`getUnconfirmedEmptyDescription`）。
+  - **P2 Retry 在刷新中仍可点击，会取消并重启请求。** 三个历史 hook 的 `refresh` 改为 `query.refetch({ cancelRefetch: false })`；`HistoryPageUnavailable` 新增 `refreshing`，刷新或离线时不给 Retry。
+  - **P3 离线说明放在 `aria-busy` 容器里可能不播报。** 读屏 `output` 移到忙碌区域之外，`aria-busy` 只标在占位区域上。
+  - **P2（既有）存提款：空 REST 快照刷新失败时 hook 仍报 `ready` 且不暴露错误，页签给出「No deposits or withdrawals found.」。** `useAccountLedger` 新增 `canConfirmEmpty`（最近一次 REST 成功且没有刷新进行或失败）与 `isRefreshing`；桌面页签只在能确认时下空结论，刷新中为忙碌占位，否则给中性 Retry；手机页签不能确认时为 `DataPendingState`。
+- 新增与改写的用例：三张页面各一条「刷新中的空缓存保持忙碌、无 Retry、读屏节点不在忙碌区内；刷新失败后 Retry 调用 refresh」；`account-ledger-export-availability.test.tsx` 桌面与手机「未确认的空快照不下结论」；`use-account-ledger.test.tsx`「成功的空快照可确认，刷新失败后不可确认」；契约扫描共享占位组件（不得有图标、`text-error`/`text-warning`、`role="alert"`，必须有 `sr-only` 描述）。
+- 变异 6 个（`m-e9b.json`：刷新中的空缓存下结论、刷新中给 Retry、读屏节点放回忙碌区、hook 忽略刷新失败、桌面与手机页签无条件下空结论）均被抓到；三张页面 39 项、存提款 6 项、hook 15 项、契约 15 项通过；typecheck 与 Biome 通过。`refetch({ cancelRefetch: false })` 本身没有用例覆盖（页面测试替换了 hook）。
+- 合并预览分支（`claude/p2-preview`）的全量运行还发现 B21 漏改的进度文案契约登记，已单独提交 `6bc60969`。
 
 ## 后续与替代关系
 

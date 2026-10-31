@@ -4662,6 +4662,7 @@ msgstr "جارٍ تحميل الأرصدة عبر جميع الشبكات..."
 #~ msgstr "جارٍ تحميل الإيداعات والسحوبات..."
 
 #: src/components/funding-history/funding-history-page.tsx
+#: src/components/funding-history/funding-history-page.tsx
 msgid "Loading funding payments"
 msgstr "جارٍ تحميل مدفوعات التمويل"
 
@@ -4685,6 +4686,7 @@ msgstr "جارٍ تحميل الأسواق..."
 #~ msgid "Loading open orders..."
 #~ msgstr "جارٍ تحميل الأوامر المفتوحة..."
 
+#: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/historical-orders/historical-orders-page.tsx
 msgid "Loading order history"
 msgstr "جارٍ تحميل سجل الأوامر"
@@ -4730,6 +4732,7 @@ msgstr "جارٍ تحميل جدول التخزين"
 msgid "Loading token metadata..."
 msgstr "جارٍ تحميل البيانات الوصفية للرمز..."
 
+#: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade-history/trade-history-page.tsx
 msgid "Loading trade history"
 msgstr "جارٍ تحميل سجل الصفقات"
@@ -7380,6 +7383,7 @@ msgstr "استئناف التتبع"
 #: src/components/trade/components/market-asset-info.tsx
 #: src/components/trade/layout/terminal-boot-error.tsx
 #: src/components/trade/mobile/offline-banner.tsx
+#: src/components/trade/positions/account-transfers-tab.tsx
 #: src/components/trade/positions/account-transfers-tab.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx

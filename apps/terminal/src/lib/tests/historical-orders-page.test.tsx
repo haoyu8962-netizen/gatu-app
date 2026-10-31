@@ -306,6 +306,27 @@ describe("HistoricalOrdersPage", () => {
 		expect(container.textContent).toContain(expectedText);
 	});
 
+	it("keeps an empty cached result busy while it refreshes, then offers a working Retry if the refresh fails", () => {
+		mocks.history.entries = [];
+		mocks.history.orders = [];
+		mocks.history.isRefreshing = true;
+		renderPage();
+		expect(container.textContent).not.toContain("No order history found");
+		expect([...container.querySelectorAll("button")].some((button) => button.textContent === "Retry")).toBe(false);
+		const busy = container.querySelector('[data-slot="history-page-unavailable"] [aria-busy="true"]');
+		expect(busy).not.toBeNull();
+		expect(
+			container.querySelector('[data-slot="history-page-unavailable"] output')?.closest('[aria-busy="true"]'),
+		).toBeNull();
+
+		mocks.history.isRefreshing = false;
+		mocks.history.error = new Error("refresh failed");
+		renderPage();
+		const retry = [...container.querySelectorAll("button")].find((button) => button.textContent === "Retry");
+		act(() => retry?.click());
+		expect(mocks.history.refresh).toHaveBeenCalled();
+	});
+
 	it("offers Retry instead of an empty conclusion when an empty cached result failed to refresh", () => {
 		mocks.history.entries = [];
 		mocks.history.error = new Error("refresh failed");

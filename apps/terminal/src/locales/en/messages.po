@@ -4662,6 +4662,7 @@ msgstr "Loading balances across all chains..."
 #~ msgstr "Loading deposits and withdrawals..."
 
 #: src/components/funding-history/funding-history-page.tsx
+#: src/components/funding-history/funding-history-page.tsx
 msgid "Loading funding payments"
 msgstr "Loading funding payments"
 
@@ -4685,6 +4686,7 @@ msgstr "Loading markets..."
 #~ msgid "Loading open orders..."
 #~ msgstr "Loading open orders..."
 
+#: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/historical-orders/historical-orders-page.tsx
 msgid "Loading order history"
 msgstr "Loading order history"
@@ -4730,6 +4732,7 @@ msgstr "Loading staking table"
 msgid "Loading token metadata..."
 msgstr "Loading token metadata..."
 
+#: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade-history/trade-history-page.tsx
 msgid "Loading trade history"
 msgstr "Loading trade history"
@@ -7380,6 +7383,7 @@ msgstr "Resume tracking"
 #: src/components/trade/components/market-asset-info.tsx
 #: src/components/trade/layout/terminal-boot-error.tsx
 #: src/components/trade/mobile/offline-banner.tsx
+#: src/components/trade/positions/account-transfers-tab.tsx
 #: src/components/trade/positions/account-transfers-tab.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx

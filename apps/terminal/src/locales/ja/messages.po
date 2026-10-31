@@ -4176,6 +4176,7 @@ msgid "Loading balances across all chains..."
 msgstr "全チェーンの残高を読み込み中..."
 
 #: src/components/funding-history/funding-history-page.tsx
+#: src/components/funding-history/funding-history-page.tsx
 msgid "Loading funding payments"
 msgstr "資金調達料を読み込み中"
 
@@ -4195,6 +4196,7 @@ msgstr "リーダーボードを読み込み中"
 msgid "Loading markets..."
 msgstr "市場を読み込み中..."
 
+#: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/historical-orders/historical-orders-page.tsx
 msgid "Loading order history"
 msgstr "注文履歴を読み込み中"
@@ -4223,6 +4225,7 @@ msgstr "ステーキング一覧を読み込み中"
 msgid "Loading token metadata..."
 msgstr "トークンのメタデータを読み込み中..."
 
+#: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade-history/trade-history-page.tsx
 msgid "Loading trade history"
 msgstr "約定履歴を読み込み中"
@@ -6639,6 +6642,7 @@ msgstr "追跡を再開"
 #: src/components/trade/components/market-asset-info.tsx
 #: src/components/trade/layout/terminal-boot-error.tsx
 #: src/components/trade/mobile/offline-banner.tsx
+#: src/components/trade/positions/account-transfers-tab.tsx
 #: src/components/trade/positions/account-transfers-tab.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx

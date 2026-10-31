@@ -4662,6 +4662,7 @@ msgstr "सभी चेन पर बैलेंस लोड हो रहे
 #~ msgstr "जमा और निकासी लोड हो रही है..."
 
 #: src/components/funding-history/funding-history-page.tsx
+#: src/components/funding-history/funding-history-page.tsx
 msgid "Loading funding payments"
 msgstr "फंडिंग भुगतान लोड हो रहे हैं"
 
@@ -4685,6 +4686,7 @@ msgstr "बाज़ार लोड हो रहे हैं..."
 #~ msgid "Loading open orders..."
 #~ msgstr "खुले ऑर्डर लोड हो रहे हैं..."
 
+#: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/historical-orders/historical-orders-page.tsx
 msgid "Loading order history"
 msgstr "ऑर्डर इतिहास लोड हो रहा है"
@@ -4730,6 +4732,7 @@ msgstr "स्टेकिंग तालिका लोड हो रही �
 msgid "Loading token metadata..."
 msgstr "टोकन मेटाडेटा लोड हो रहा है..."
 
+#: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade-history/trade-history-page.tsx
 msgid "Loading trade history"
 msgstr "ट्रेड इतिहास लोड हो रहा है"
@@ -7380,6 +7383,7 @@ msgstr "ट्रैकिंग फिर से शुरू करें"
 #: src/components/trade/components/market-asset-info.tsx
 #: src/components/trade/layout/terminal-boot-error.tsx
 #: src/components/trade/mobile/offline-banner.tsx
+#: src/components/trade/positions/account-transfers-tab.tsx
 #: src/components/trade/positions/account-transfers-tab.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx

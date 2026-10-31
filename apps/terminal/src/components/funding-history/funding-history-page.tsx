@@ -114,6 +114,12 @@ export function FundingHistoryPage({ address }: Props) {
 		setRequestedPage(1);
 	}
 
+	function getUnconfirmedEmptyDescription() {
+		if (history.isOffline) return t`You are offline. Funding payments will load when the connection returns.`;
+		if (history.isRefreshing) return t`Loading funding payments`;
+		return t`The requested 30-day window could not be verified. No partial history is shown.`;
+	}
+
 	let content: ReactNode;
 	if (history.status === "disabled") {
 		content = (
@@ -131,6 +137,7 @@ export function FundingHistoryPage({ address }: Props) {
 		content = (
 			<HistoryPageUnavailable
 				offline
+				refreshing={false}
 				description={t`You are offline. Funding payments will load when the connection returns.`}
 				onRetry={history.refresh}
 			/>
@@ -153,19 +160,17 @@ export function FundingHistoryPage({ address }: Props) {
 		content = (
 			<HistoryPageUnavailable
 				offline={false}
+				refreshing={false}
 				description={t`The requested 30-day window could not be verified. No partial history is shown.`}
 				onRetry={history.refresh}
 			/>
 		);
-	} else if (history.fundings.length === 0 && (history.error || history.isOffline)) {
+	} else if (history.fundings.length === 0 && (history.error || history.isOffline || history.isRefreshing)) {
 		content = (
 			<HistoryPageUnavailable
 				offline={history.isOffline}
-				description={
-					history.isOffline
-						? t`You are offline. Funding payments will load when the connection returns.`
-						: t`The requested 30-day window could not be verified. No partial history is shown.`
-				}
+				refreshing={history.isRefreshing}
+				description={getUnconfirmedEmptyDescription()}
 				onRetry={history.refresh}
 			/>
 		);

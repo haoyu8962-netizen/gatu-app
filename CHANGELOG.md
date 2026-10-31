@@ -584,7 +584,8 @@ changes, not evidence that a build has been deployed or accepted on real devices
   shows layout options only on desktop.
 - The trade, order and funding history pages no longer show warning banners or large warning icons
   when a refresh fails or the connection drops: loaded rows stay, a neutral Retry replaces the error
-  page, and an empty cached result that failed to refresh no longer claims there are no records.
+  page, and an empty cached result that failed to refresh, or is still refreshing, no longer claims
+  there are no records. The deposits and withdrawals tabs follow the same rule.
 - The position TP/SL dialog no longer shows a Loading... warning while the mark price is not live;
   Confirm stays disabled until it is, as before.
 - The desktop Deposits and Withdrawals tab no longer shows a red load error: it keeps a neutral Retry

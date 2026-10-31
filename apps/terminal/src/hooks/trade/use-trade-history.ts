@@ -79,7 +79,7 @@ export function useTradeHistory(address: string): TradeHistoryResult {
 		isOffline: !isOnline || query.fetchStatus === "paused",
 		isRefreshing: query.isFetching && query.data !== undefined,
 		reachedLimit: query.data?.reachedLimit ?? false,
-		refresh: () => void query.refetch(),
+		refresh: () => void query.refetch({ cancelRefetch: false }),
 		status,
 	};
 }

@@ -89,6 +89,10 @@ describe("mobile passive data presentation contract", () => {
 				expect(source, `${file}: ${marker}`).not.toContain(marker);
 			expect(source, file).toContain("HistoryPageUnavailable");
 		}
+		const placeholder = readFileSync(resolve(mobile, "../../ui/history-page-unavailable.tsx"), "utf8");
+		for (const marker of ["Icon", "text-error", "text-warning", 'role="alert"'])
+			expect(placeholder, `history-page-unavailable.tsx: ${marker}`).not.toContain(marker);
+		expect(placeholder).toContain('className="sr-only"');
 	});
 
 	it("keeps the desktop deposits and withdrawals tab free of read-failure text", () => {

@@ -32,7 +32,7 @@ export function AccountTransfersTab() {
 	const { i18n, t } = useLingui();
 	const locale = i18n.locale;
 	const numberFormat = useNumberFormat();
-	const { error, isConnected, retry, rows, status } = useAccountLedger();
+	const { canConfirmEmpty, error, isConnected, isRefreshing, retry, rows, status } = useAccountLedger();
 	const { getActionLabel, getLocationLabel } = useAccountLedgerLabels();
 	const { exportCsv, isExporting } = useAccountLedgerCsv();
 	const isTestnet = useIsTestnet();
@@ -56,8 +56,16 @@ export function AccountTransfersTab() {
 				</Placeholder>
 			);
 		}
-		if (rows.length === 0) return <Placeholder>{t`No deposits or withdrawals found.`}</Placeholder>;
-		return null;
+		if (rows.length > 0) return null;
+		if (canConfirmEmpty) return <Placeholder>{t`No deposits or withdrawals found.`}</Placeholder>;
+		if (isRefreshing) return <PassiveDataPlaceholder busy />;
+		return (
+			<Placeholder>
+				<Button variant="outline" intent="neutral" size="xxs" onClick={retry}>
+					{t`Retry`}
+				</Button>
+			</Placeholder>
+		);
 	}
 
 	const placeholder = renderPlaceholder();

@@ -345,6 +345,22 @@ describe("useAccountLedger", () => {
 		});
 	});
 
+	it("confirms an empty history only from a successful snapshot with no refresh running or failed", async () => {
+		renderHook();
+		const ready = await waitUntilReady();
+		expect(ready.rows).toEqual([]);
+		expect(ready.canConfirmEmpty).toBe(true);
+
+		mocks.userNonFundingLedgerUpdates.mockRejectedValue(new Error("Info unavailable"));
+		await act(async () => {
+			hookValue?.retry();
+			await vi.waitFor(() => expect(hookValue?.isRefreshing).toBe(false));
+			await vi.waitFor(() => expect(queryClient.getQueryCache().getAll()[0]?.state.status).toBe("error"));
+		});
+		expect(hookValue?.status).toBe("ready");
+		expect(hookValue?.canConfirmEmpty).toBe(false);
+	});
+
 	it("disables both data paths while disconnected", () => {
 		mocks.address = undefined;
 		mocks.isConnected = false;

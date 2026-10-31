@@ -285,6 +285,26 @@ describe("FundingHistoryPage", () => {
 		expect(container.textContent).toContain(expectedText);
 	});
 
+	it("keeps an empty cached result busy while it refreshes, then offers a working Retry if the refresh fails", () => {
+		mocks.history.fundings = [];
+		mocks.history.isRefreshing = true;
+		renderPage();
+		expect(container.textContent).not.toContain("No funding payments found");
+		expect([...container.querySelectorAll("button")].some((button) => button.textContent === "Retry")).toBe(false);
+		const busy = container.querySelector('[data-slot="history-page-unavailable"] [aria-busy="true"]');
+		expect(busy).not.toBeNull();
+		expect(
+			container.querySelector('[data-slot="history-page-unavailable"] output')?.closest('[aria-busy="true"]'),
+		).toBeNull();
+
+		mocks.history.isRefreshing = false;
+		mocks.history.error = new Error("refresh failed");
+		renderPage();
+		const retry = [...container.querySelectorAll("button")].find((button) => button.textContent === "Retry");
+		act(() => retry?.click());
+		expect(mocks.history.refresh).toHaveBeenCalled();
+	});
+
 	it("keeps loaded payments without a banner and offers Retry instead of an empty conclusion when a refresh fails", () => {
 		mocks.history.fundings = [
 			{ coin: "BTC", fundingRate: "0.0001", nSamples: null, szi: "1", time: 1_799_999_999_999, usdc: "0.1" },
