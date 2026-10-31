@@ -72,6 +72,25 @@ describe("mobile passive data presentation contract", () => {
 		}
 	});
 
+	it("keeps the history pages free of passive read-failure banners and empty conclusions", () => {
+		for (const file of [
+			"../../trade-history/trade-history-page.tsx",
+			"../../historical-orders/historical-orders-page.tsx",
+			"../../funding-history/funding-history-page.tsx",
+		]) {
+			const source = readFileSync(resolve(mobile, file), "utf8");
+			for (const marker of [
+				"Refresh failed.",
+				"Previously loaded",
+				"bg-warning/",
+				"border-warning/",
+				'role="alert" className="border-b',
+			])
+				expect(source, `${file}: ${marker}`).not.toContain(marker);
+			expect(source, file).toContain("HistoryPageUnavailable");
+		}
+	});
+
 	it("keeps the desktop deposits and withdrawals tab free of read-failure text", () => {
 		const source = readFileSync(resolve(mobile, "../positions/account-transfers-tab.tsx"), "utf8");
 		expect(source).not.toContain("Failed to load deposits and withdrawals");

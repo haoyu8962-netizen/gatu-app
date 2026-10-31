@@ -7,6 +7,7 @@ import { DashboardHeader, FooterBar, GlobalModals } from "@/components/dashboard
 import { DashboardFrameView } from "@/components/dashboard/dashboard-frame-view";
 import { AssetBadge } from "@/components/trade/components/asset-badge";
 import { HistoricalOrderPrice } from "@/components/trade/components/historical-order-price";
+import { HistoryPageUnavailable } from "@/components/ui/history-page-unavailable";
 import { DASHBOARD_FRAMES } from "@/config/dashboard-frames";
 import { useHistoricalOrdersCsvExport } from "@/hooks/trade/use-history-csv-export";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
@@ -196,18 +197,11 @@ export function HistoricalOrdersPage({ address }: Props) {
 		);
 	} else if (history.status === "offline") {
 		content = (
-			<div className="flex min-h-80 flex-col items-center justify-center px-6 text-center">
-				<output aria-live="polite" className="sr-only">
-					<Trans>You are offline. Order history will load when the connection returns.</Trans>
-				</output>
-				<WarningCircleIcon className="size-9 text-warning" weight="fill" />
-				<h2 className="mt-3 text-lg font-bold text-fg">
-					<Trans>You are offline</Trans>
-				</h2>
-				<p className="mt-1 max-w-lg text-xs leading-5 text-fg-muted">
-					<Trans>Order history will load automatically when the connection returns.</Trans>
-				</p>
-			</div>
+			<HistoryPageUnavailable
+				offline
+				description={t`You are offline. Order history will load when the connection returns.`}
+				onRetry={history.refresh}
+			/>
 		);
 	} else if (history.status === "loading") {
 		content = (
@@ -225,18 +219,23 @@ export function HistoricalOrdersPage({ address }: Props) {
 		);
 	} else if (history.status === "error") {
 		content = (
-			<div role="alert" className="flex min-h-80 flex-col items-center justify-center px-6 text-center">
-				<WarningCircleIcon className="size-9 text-error" weight="fill" />
-				<h2 className="mt-3 text-lg font-bold text-fg">
-					<Trans>Order history is unavailable</Trans>
-				</h2>
-				<p className="mt-1 max-w-lg text-xs leading-5 text-fg-muted">
-					<Trans>The response could not be verified. No partial order history is shown.</Trans>
-				</p>
-				<Button className="mt-4" onClick={history.refresh}>
-					<Trans>Retry</Trans>
-				</Button>
-			</div>
+			<HistoryPageUnavailable
+				offline={false}
+				description={t`The response could not be verified. No partial order history is shown.`}
+				onRetry={history.refresh}
+			/>
+		);
+	} else if (history.entries.length === 0 && (history.error || history.isOffline)) {
+		content = (
+			<HistoryPageUnavailable
+				offline={history.isOffline}
+				description={
+					history.isOffline
+						? t`You are offline. Order history will load when the connection returns.`
+						: t`The response could not be verified. No partial order history is shown.`
+				}
+				onRetry={history.refresh}
+			/>
 		);
 	} else if (history.entries.length === 0) {
 		content = (
@@ -607,17 +606,8 @@ export function HistoricalOrdersPage({ address }: Props) {
 							data-state={history.status}
 							className="overflow-hidden rounded-24 bg-surface shadow-raised"
 						>
-							{history.status === "ready" && (history.error || history.isOffline) ? (
-								<div role="alert" className="border-b border-warning/30 bg-warning/10 px-4 py-2 text-xs text-warning">
-									{history.isOffline ? (
-										<Trans>You are offline. Previously loaded order history remains visible.</Trans>
-									) : (
-										<Trans>Refresh failed. Previously loaded order history remains visible.</Trans>
-									)}
-								</div>
-							) : null}
 							{history.status === "ready" && history.reachedLimit ? (
-								<output className="block border-b border-warning/30 bg-warning/10 px-4 py-2 text-xs text-warning">
+								<output className="block border-b border-stroke-warning-weak bg-warning-soft px-4 py-2 text-xs text-warning">
 									<Trans>
 										This account reached the {ORDER_HISTORY_API_LIMIT}-order API limit. Older orders are not available
 										from this endpoint.

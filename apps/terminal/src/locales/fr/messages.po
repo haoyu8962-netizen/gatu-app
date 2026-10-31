@@ -3856,8 +3856,8 @@ msgid "Funding Payments"
 msgstr "Paiements de financement"
 
 #: src/components/funding-history/funding-history-page.tsx
-msgid "Funding payments are unavailable"
-msgstr "Les paiements de financement sont indisponibles"
+#~ msgid "Funding payments are unavailable"
+#~ msgstr "Les paiements de financement sont indisponibles"
 
 #: src/components/funding-history/funding-history-page.tsx
 #~ msgid "Funding payments for {0}"
@@ -3873,8 +3873,8 @@ msgid "Funding payments pagination"
 msgstr "Pagination des paiements de financement"
 
 #: src/components/funding-history/funding-history-page.tsx
-msgid "Funding payments will load automatically when the connection returns."
-msgstr "Les paiements de financement se chargeront automatiquement au rétablissement de la connexion."
+#~ msgid "Funding payments will load automatically when the connection returns."
+#~ msgstr "Les paiements de financement se chargeront automatiquement au rétablissement de la connexion."
 
 #: src/components/funding-comparison/funding-comparison-view.tsx
 msgid "Funding period"
@@ -6036,8 +6036,8 @@ msgid "Order History"
 msgstr "Historique des ordres"
 
 #: src/components/historical-orders/historical-orders-page.tsx
-msgid "Order history is unavailable"
-msgstr "L’historique des ordres est indisponible"
+#~ msgid "Order history is unavailable"
+#~ msgstr "L’historique des ordres est indisponible"
 
 #: src/components/historical-orders/historical-orders-page.tsx
 msgid "Order history pagination"
@@ -6048,8 +6048,8 @@ msgstr "Pagination de l’historique des ordres"
 #~ msgstr "Mises à jour de l’historique des ordres suspendues."
 
 #: src/components/historical-orders/historical-orders-page.tsx
-msgid "Order history will load automatically when the connection returns."
-msgstr "L’historique des ordres se chargera automatiquement au rétablissement de la connexion."
+#~ msgid "Order history will load automatically when the connection returns."
+#~ msgstr "L’historique des ordres se chargera automatiquement au rétablissement de la connexion."
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/lib/trade/order-submission-feedback.ts
@@ -7091,16 +7091,16 @@ msgid "Refresh both devices to update phone access, then create a new QR."
 msgstr "Actualisez la page sur les deux appareils pour mettre à jour l’accès mobile, puis créez un nouveau code QR."
 
 #: src/components/funding-history/funding-history-page.tsx
-msgid "Refresh failed. Previously loaded funding payments remain visible."
-msgstr "Échec de l’actualisation. Les paiements de financement chargés précédemment restent visibles."
+#~ msgid "Refresh failed. Previously loaded funding payments remain visible."
+#~ msgstr "Échec de l’actualisation. Les paiements de financement chargés précédemment restent visibles."
 
 #: src/components/historical-orders/historical-orders-page.tsx
-msgid "Refresh failed. Previously loaded order history remains visible."
-msgstr "Échec de l’actualisation. L’historique des ordres chargé précédemment reste visible."
+#~ msgid "Refresh failed. Previously loaded order history remains visible."
+#~ msgstr "Échec de l’actualisation. L’historique des ordres chargé précédemment reste visible."
 
 #: src/components/trade-history/trade-history-page.tsx
-msgid "Refresh failed. Previously loaded trade history remains visible."
-msgstr "Échec de l’actualisation. L’historique des transactions chargé précédemment reste visible."
+#~ msgid "Refresh failed. Previously loaded trade history remains visible."
+#~ msgstr "Échec de l’actualisation. L’historique des transactions chargé précédemment reste visible."
 
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 msgid "Refresh quote"
@@ -7364,15 +7364,12 @@ msgstr "Reprendre le suivi"
 
 #: src/components/api-wallet/api-wallet-list.tsx
 #: src/components/funding-comparison/funding-comparison-view.tsx
-#: src/components/funding-history/funding-history-page.tsx
-#: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/portfolio/portfolio-overview.tsx
 #: src/components/portfolio/portfolio-performance-chart.tsx
 #: src/components/referrals/referral-activity.tsx
 #: src/components/referrals/referral-dashboard.tsx
 #: src/components/staking/staking-view.tsx
 #: src/components/staking/staking-view.tsx
-#: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/chart/funding-history-load-boundary.tsx
 #: src/components/trade/chart/funding-history-panel.tsx
 #: src/components/trade/chart/token-selector-content.tsx
@@ -7394,6 +7391,7 @@ msgstr "Reprendre le suivi"
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #: src/components/trade/twap-history-feedback.tsx
+#: src/components/ui/history-page-unavailable.tsx
 #: src/components/vaults/vaults-list.tsx
 #: src/components/vaults/vaults-page.tsx
 msgid "Retry"
@@ -9305,6 +9303,7 @@ msgid "The QR stays on this device and is never uploaded."
 msgstr "Le QR reste sur cet appareil et n'est jamais téléversé."
 
 #: src/components/trade-history/trade-history-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
 msgid "The recent trade snapshot could not be loaded or validated."
 msgstr "L’instantané des transactions récentes n’a pas pu être chargé ou validé."
 
@@ -9341,9 +9340,11 @@ msgid "The request was submitted, but its final status is still updating. Check 
 msgstr "La demande a été envoyée, mais son statut final est toujours en cours de mise à jour. Vérifiez les données de parrainage et l’historique des réclamations avant de réessayer."
 
 #: src/components/funding-history/funding-history-page.tsx
+#: src/components/funding-history/funding-history-page.tsx
 msgid "The requested 30-day window could not be verified. No partial history is shown."
 msgstr "La fenêtre demandée de 30 jours n’a pas pu être vérifiée. Aucun historique partiel n’est affiché."
 
+#: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/historical-orders/historical-orders-page.tsx
 msgid "The response could not be verified. No partial order history is shown."
 msgstr "La réponse n’a pas pu être vérifiée. Aucun historique partiel des ordres n’est affiché."
@@ -10111,8 +10112,8 @@ msgid "Trade history for <0>{0}</0>"
 msgstr "Historique des transactions pour <0>{0}</0>"
 
 #: src/components/trade-history/trade-history-page.tsx
-msgid "Trade history is unavailable"
-msgstr "L’historique des transactions est indisponible"
+#~ msgid "Trade history is unavailable"
+#~ msgstr "L’historique des transactions est indisponible"
 
 #: src/components/trade-history/trade-history-page.tsx
 msgid "Trade history pagination"
@@ -10123,8 +10124,8 @@ msgstr "Pagination de l’historique des transactions"
 #~ msgstr "Mises à jour de l’historique des transactions suspendues."
 
 #: src/components/trade-history/trade-history-page.tsx
-msgid "Trade history will load automatically when the connection returns."
-msgstr "L’historique des transactions se chargera automatiquement au rétablissement de la connexion."
+#~ msgid "Trade history will load automatically when the connection returns."
+#~ msgstr "L’historique des transactions se chargera automatiquement au rétablissement de la connexion."
 
 #: src/components/referrals/referral-code-card.tsx
 msgid "Trade on Hyperliquid"
@@ -11440,8 +11441,8 @@ msgstr "Vous êtes éligible à la création d’un code de parrainage."
 #: src/components/funding-history/funding-history-page.tsx
 #: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/trade-history/trade-history-page.tsx
-msgid "You are offline"
-msgstr "Vous êtes hors ligne"
+#~ msgid "You are offline"
+#~ msgstr "Vous êtes hors ligne"
 
 #: src/components/trade/positions/funding-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
@@ -11450,25 +11451,28 @@ msgstr "Vous êtes hors ligne"
 #~ msgstr "Vous êtes hors ligne."
 
 #: src/components/funding-history/funding-history-page.tsx
+#: src/components/funding-history/funding-history-page.tsx
 msgid "You are offline. Funding payments will load when the connection returns."
 msgstr "Vous êtes hors ligne. Les paiements de financement se chargeront au rétablissement de la connexion."
 
+#: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/historical-orders/historical-orders-page.tsx
 msgid "You are offline. Order history will load when the connection returns."
 msgstr "Vous êtes hors ligne. L’historique des ordres se chargera au rétablissement de la connexion."
 
 #: src/components/funding-history/funding-history-page.tsx
-msgid "You are offline. Previously loaded funding payments remain visible."
-msgstr "Vous êtes hors ligne. Les paiements de financement chargés précédemment restent visibles."
+#~ msgid "You are offline. Previously loaded funding payments remain visible."
+#~ msgstr "Vous êtes hors ligne. Les paiements de financement chargés précédemment restent visibles."
 
 #: src/components/historical-orders/historical-orders-page.tsx
-msgid "You are offline. Previously loaded order history remains visible."
-msgstr "Vous êtes hors ligne. L’historique des ordres chargé précédemment reste visible."
+#~ msgid "You are offline. Previously loaded order history remains visible."
+#~ msgstr "Vous êtes hors ligne. L’historique des ordres chargé précédemment reste visible."
 
 #: src/components/trade-history/trade-history-page.tsx
-msgid "You are offline. Previously loaded trade history remains visible."
-msgstr "Vous êtes hors ligne. L’historique des transactions chargé précédemment reste visible."
+#~ msgid "You are offline. Previously loaded trade history remains visible."
+#~ msgstr "Vous êtes hors ligne. L’historique des transactions chargé précédemment reste visible."
 
+#: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade-history/trade-history-page.tsx
 msgid "You are offline. Trade history will load when the connection returns."
 msgstr "Vous êtes hors ligne. L’historique des transactions se chargera au rétablissement de la connexion."

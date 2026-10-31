@@ -3856,8 +3856,8 @@ msgid "Funding Payments"
 msgstr "مدفوعات التمويل"
 
 #: src/components/funding-history/funding-history-page.tsx
-msgid "Funding payments are unavailable"
-msgstr "مدفوعات التمويل غير متاحة"
+#~ msgid "Funding payments are unavailable"
+#~ msgstr "مدفوعات التمويل غير متاحة"
 
 #: src/components/funding-history/funding-history-page.tsx
 #~ msgid "Funding payments for {0}"
@@ -3873,8 +3873,8 @@ msgid "Funding payments pagination"
 msgstr "ترقيم صفحات مدفوعات التمويل"
 
 #: src/components/funding-history/funding-history-page.tsx
-msgid "Funding payments will load automatically when the connection returns."
-msgstr "ستُحمّل مدفوعات التمويل تلقائيًا عند عودة الاتصال."
+#~ msgid "Funding payments will load automatically when the connection returns."
+#~ msgstr "ستُحمّل مدفوعات التمويل تلقائيًا عند عودة الاتصال."
 
 #: src/components/funding-comparison/funding-comparison-view.tsx
 msgid "Funding period"
@@ -6036,8 +6036,8 @@ msgid "Order History"
 msgstr "سجل الأوامر"
 
 #: src/components/historical-orders/historical-orders-page.tsx
-msgid "Order history is unavailable"
-msgstr "سجل الأوامر غير متاح"
+#~ msgid "Order history is unavailable"
+#~ msgstr "سجل الأوامر غير متاح"
 
 #: src/components/historical-orders/historical-orders-page.tsx
 msgid "Order history pagination"
@@ -6048,8 +6048,8 @@ msgstr "ترقيم صفحات سجل الأوامر"
 #~ msgstr "تحديثات سجل الأوامر متوقفة مؤقتًا."
 
 #: src/components/historical-orders/historical-orders-page.tsx
-msgid "Order history will load automatically when the connection returns."
-msgstr "سيُحمّل سجل الأوامر تلقائيًا عند عودة الاتصال."
+#~ msgid "Order history will load automatically when the connection returns."
+#~ msgstr "سيُحمّل سجل الأوامر تلقائيًا عند عودة الاتصال."
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/lib/trade/order-submission-feedback.ts
@@ -7091,16 +7091,16 @@ msgid "Refresh both devices to update phone access, then create a new QR."
 msgstr "حدّث الصفحة على كلا الجهازين لتحديث وصول الهاتف، ثم أنشئ رمز QR جديدًا."
 
 #: src/components/funding-history/funding-history-page.tsx
-msgid "Refresh failed. Previously loaded funding payments remain visible."
-msgstr "فشل التحديث. تظل مدفوعات التمويل المحمّلة سابقًا ظاهرة."
+#~ msgid "Refresh failed. Previously loaded funding payments remain visible."
+#~ msgstr "فشل التحديث. تظل مدفوعات التمويل المحمّلة سابقًا ظاهرة."
 
 #: src/components/historical-orders/historical-orders-page.tsx
-msgid "Refresh failed. Previously loaded order history remains visible."
-msgstr "فشل التحديث. يظل سجل الأوامر المحمّل سابقًا ظاهرًا."
+#~ msgid "Refresh failed. Previously loaded order history remains visible."
+#~ msgstr "فشل التحديث. يظل سجل الأوامر المحمّل سابقًا ظاهرًا."
 
 #: src/components/trade-history/trade-history-page.tsx
-msgid "Refresh failed. Previously loaded trade history remains visible."
-msgstr "فشل التحديث. يظل سجل الصفقات المحمّل سابقًا ظاهرًا."
+#~ msgid "Refresh failed. Previously loaded trade history remains visible."
+#~ msgstr "فشل التحديث. يظل سجل الصفقات المحمّل سابقًا ظاهرًا."
 
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 msgid "Refresh quote"
@@ -7364,15 +7364,12 @@ msgstr "استئناف التتبع"
 
 #: src/components/api-wallet/api-wallet-list.tsx
 #: src/components/funding-comparison/funding-comparison-view.tsx
-#: src/components/funding-history/funding-history-page.tsx
-#: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/portfolio/portfolio-overview.tsx
 #: src/components/portfolio/portfolio-performance-chart.tsx
 #: src/components/referrals/referral-activity.tsx
 #: src/components/referrals/referral-dashboard.tsx
 #: src/components/staking/staking-view.tsx
 #: src/components/staking/staking-view.tsx
-#: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/chart/funding-history-load-boundary.tsx
 #: src/components/trade/chart/funding-history-panel.tsx
 #: src/components/trade/chart/token-selector-content.tsx
@@ -7394,6 +7391,7 @@ msgstr "استئناف التتبع"
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #: src/components/trade/twap-history-feedback.tsx
+#: src/components/ui/history-page-unavailable.tsx
 #: src/components/vaults/vaults-list.tsx
 #: src/components/vaults/vaults-page.tsx
 msgid "Retry"
@@ -9305,6 +9303,7 @@ msgid "The QR stays on this device and is never uploaded."
 msgstr "يبقى رمز QR على هذا الجهاز ولا يُرفع أبدًا."
 
 #: src/components/trade-history/trade-history-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
 msgid "The recent trade snapshot could not be loaded or validated."
 msgstr "تعذر تحميل لقطة الصفقات الأخيرة أو التحقق من صحتها."
 
@@ -9341,9 +9340,11 @@ msgid "The request was submitted, but its final status is still updating. Check 
 msgstr "تم إرسال الطلب، لكن حالته النهائية لا تزال قيد التحديث. تحقق من بيانات الإحالة وسجل المطالبات قبل إعادة المحاولة."
 
 #: src/components/funding-history/funding-history-page.tsx
+#: src/components/funding-history/funding-history-page.tsx
 msgid "The requested 30-day window could not be verified. No partial history is shown."
 msgstr "تعذر التحقق من نافذة الثلاثين يومًا المطلوبة. لا يُعرض سجل جزئي."
 
+#: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/historical-orders/historical-orders-page.tsx
 msgid "The response could not be verified. No partial order history is shown."
 msgstr "تعذر التحقق من الاستجابة. لا يُعرض سجل أوامر جزئي."
@@ -10111,8 +10112,8 @@ msgid "Trade history for <0>{0}</0>"
 msgstr "سجل الصفقات لـ <0>{0}</0>"
 
 #: src/components/trade-history/trade-history-page.tsx
-msgid "Trade history is unavailable"
-msgstr "سجل الصفقات غير متاح"
+#~ msgid "Trade history is unavailable"
+#~ msgstr "سجل الصفقات غير متاح"
 
 #: src/components/trade-history/trade-history-page.tsx
 msgid "Trade history pagination"
@@ -10123,8 +10124,8 @@ msgstr "ترقيم صفحات سجل الصفقات"
 #~ msgstr "تحديثات سجل الصفقات متوقفة مؤقتًا."
 
 #: src/components/trade-history/trade-history-page.tsx
-msgid "Trade history will load automatically when the connection returns."
-msgstr "سيُحمّل سجل الصفقات تلقائيًا عند عودة الاتصال."
+#~ msgid "Trade history will load automatically when the connection returns."
+#~ msgstr "سيُحمّل سجل الصفقات تلقائيًا عند عودة الاتصال."
 
 #: src/components/referrals/referral-code-card.tsx
 msgid "Trade on Hyperliquid"
@@ -11440,8 +11441,8 @@ msgstr "أنت مؤهل لإنشاء رمز إحالة."
 #: src/components/funding-history/funding-history-page.tsx
 #: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/trade-history/trade-history-page.tsx
-msgid "You are offline"
-msgstr "أنت غير متصل"
+#~ msgid "You are offline"
+#~ msgstr "أنت غير متصل"
 
 #: src/components/trade/positions/funding-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
@@ -11450,25 +11451,28 @@ msgstr "أنت غير متصل"
 #~ msgstr "أنت غير متصل."
 
 #: src/components/funding-history/funding-history-page.tsx
+#: src/components/funding-history/funding-history-page.tsx
 msgid "You are offline. Funding payments will load when the connection returns."
 msgstr "أنت غير متصل. ستُحمّل مدفوعات التمويل عند عودة الاتصال."
 
+#: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/historical-orders/historical-orders-page.tsx
 msgid "You are offline. Order history will load when the connection returns."
 msgstr "أنت غير متصل. سيُحمّل سجل الأوامر عند عودة الاتصال."
 
 #: src/components/funding-history/funding-history-page.tsx
-msgid "You are offline. Previously loaded funding payments remain visible."
-msgstr "أنت غير متصل. تظل مدفوعات التمويل المحمّلة سابقًا ظاهرة."
+#~ msgid "You are offline. Previously loaded funding payments remain visible."
+#~ msgstr "أنت غير متصل. تظل مدفوعات التمويل المحمّلة سابقًا ظاهرة."
 
 #: src/components/historical-orders/historical-orders-page.tsx
-msgid "You are offline. Previously loaded order history remains visible."
-msgstr "أنت غير متصل. يظل سجل الأوامر المحمّل سابقًا ظاهرًا."
+#~ msgid "You are offline. Previously loaded order history remains visible."
+#~ msgstr "أنت غير متصل. يظل سجل الأوامر المحمّل سابقًا ظاهرًا."
 
 #: src/components/trade-history/trade-history-page.tsx
-msgid "You are offline. Previously loaded trade history remains visible."
-msgstr "أنت غير متصل. يظل سجل الصفقات المحمّل سابقًا ظاهرًا."
+#~ msgid "You are offline. Previously loaded trade history remains visible."
+#~ msgstr "أنت غير متصل. يظل سجل الصفقات المحمّل سابقًا ظاهرًا."
 
+#: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade-history/trade-history-page.tsx
 msgid "You are offline. Trade history will load when the connection returns."
 msgstr "أنت غير متصل. سيُحمّل سجل الصفقات عند عودة الاتصال."

@@ -296,7 +296,7 @@ describe("HistoricalOrdersPage", () => {
 	it.each([
 		["disabled", "Invalid account address"],
 		["loading", "Loading order history"],
-		["error", "Order history is unavailable"],
+		["error", "The response could not be verified. No partial order history is shown."],
 	] as const)("keeps the %s state distinct", (status, expectedText) => {
 		mocks.history.status = status;
 		mocks.history.entries = [];
@@ -306,16 +306,18 @@ describe("HistoricalOrdersPage", () => {
 		expect(container.textContent).toContain(expectedText);
 	});
 
-	it("keeps degraded and API-limit warnings visible for an empty cached result", () => {
+	it("offers Retry instead of an empty conclusion when an empty cached result failed to refresh", () => {
 		mocks.history.entries = [];
 		mocks.history.error = new Error("refresh failed");
 		mocks.history.orders = [];
 		mocks.history.reachedLimit = true;
 		renderPage();
 
-		expect(container.textContent).toContain("Refresh failed. Previously loaded order history remains visible.");
 		expect(container.textContent).toContain("reached the 2000-order API limit");
-		expect(container.textContent).toContain("No order history found");
+		expect(container.textContent).not.toContain("No order history found");
+		expect(container.textContent).not.toContain("Refresh failed");
+		expect(container.querySelector('[role="alert"]')).toBeNull();
+		expect([...container.querySelectorAll("button")].some((button) => button.textContent === "Retry")).toBe(true);
 	});
 
 	it("discloses the API boundary and keeps TWAP history separate", () => {
