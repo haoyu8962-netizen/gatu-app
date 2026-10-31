@@ -298,6 +298,7 @@ jobs:
           src/lib/tests/trade-row.test.tsx
           src/lib/tests/trades-panel.test.tsx
           src/lib/tests/explorer-urls.test.ts
+          src/lib/tests/last-mark-cache.test.ts
 
       - name: Test number format and runtime locale contracts
         working-directory: apps/terminal
