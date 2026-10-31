@@ -78,11 +78,16 @@
 
 ### 第二轮（窄范围，2026-11-01）
 
-同样设置，只审 `e4dd4eb2..ff56abe4` 与下一批的 `a9e0732f`：整批 8.3 分，1 项 P2、2 项 P3。
+同样设置，只审 `e4dd4eb2..ff56abe4` 与下一批的 `a9e0732f`（下一批分支此后多次变基，本记录里它的提交号都是审查当时的；按标题对应见 `2026-11-01-audit-group2.md`）：整批 8.3 分，1 项 P2、2 项 P3。
 
 | 发现 | 核实 | 处理 | 提交 |
 | --- | --- | --- | --- |
 | P2：`isFetchedAfterMount` 在请求失败后也为 true（TanStack Query 5.90.16 `queryObserver` 比较 `dataUpdateCount` 与 `errorUpdateCount`），「旧缓存挂载 → 挂载请求失败 → Retry 在途」仍显示挂载前的缓存；第一轮写的「例外不覆盖挂载前数据」过强 | 成立 | 新增 `useDataReceivedSinceMount`：按查询键记下首次读取时的 `dataUpdatedAt`，只有之后送达的数据才算挂载后收到，换账户、网络或账户模式时重新起算；`refreshing` 改用它。新增 `portfolio-refresh-since-mount.test.tsx`，用真实 `QueryClient` 复现这一序列与正例，并钉住 `usePortfolioInfo` 的接线；五个变异全部被抓到（「接线退回 `isFetchedAfterMount`」起初只被组合页组件测试放过，补了接线用例后被抓到） | `4a280f04` |
 | P3：Dates 规则说所有 CSV 都用 `formatDateTime`，存提款导出实际是 ISO 时间 | 成立（有年份，不是缺陷） | 规则写明存提款导出保留 ISO 8601 UTC 时间 | 本节所在提交 |
-| P3：下一批 `a9e0732f` 的 CHANGELOG 漏写 HYPE 例外 | 成立 | 在下一批分支补「except HYPE」 | 下一批分支 `95f9cf38` |
+| P3：下一批 `a9e0732f` 的 CHANGELOG 漏写 HYPE 例外 | 成立 | 在下一批分支补「except HYPE」 | 下一批分支「docs(balances): keep HYPE visible in the unpriced balance note」 |
 
+### 第三、四轮（窄范围，2026-11-01）
+
+- 第三轮审 `4a280f04`、`c29cb2c0` 与下一批分支的 HYPE 说明和 C7 两个提交，整批 8.5 分。`4a280f04` 由审查方用真实 `QueryClient` 在内存里复核：状态依次为 `loading`、`error`、Retry 在途时仍为 `error`、成功后 `ready`，失败后 `isFetchedAfterMount` 为 true 而 `receivedSinceMount` 为 false；Dates 的 ISO 说明与 HYPE 例外也成立。唯一一项 P2 在下一批分支：C7 的测试用替身，钉不住「一次点击只应用一次」。处理见 `2026-11-01-audit-group2.md`。
+- 第四轮只审下一批分支对这项 P2 的修复：没有发现，整批（`90658436` 起到下一批分支头）9.2 分。审查方的保留是浏览器与真实账户验收、双端完整生命周期没有运行证据。
+- 本 PR 的 CI：远端头 `667af2d2` 上七项检查全部通过（含两片浏览器回归）。之后的审查修复提交尚未推送，没有 CI 结果。
