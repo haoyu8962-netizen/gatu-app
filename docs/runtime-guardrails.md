@@ -281,7 +281,11 @@ implementation.
   for: an account change discards it and its acknowledgement, and confirming
   re-checks that identity. Max does not reserve the activation fee, as on the
   official terminal (its Max is the withdrawable balance floored to 2 decimals,
-  or to the token's decimals for spot).
+  or to the token's decimals for spot). Max, the available label and the
+  over-balance check read the exact balance string, the same one the execution
+  guard compares with Big.js; a JavaScript number rounds a large balance (such
+  as `999999999.99999999`) up, so a Max taken from it could exceed the balance
+  and be refused on every retry (2026-10-31, P2 D8).
 - Email-wallet withdrawals name their Arbitrum destination. Refuse the wallet's
   own address (the automatic email-wallet deposit would put it straight back)
   and the native USDC token contracts of both networks, in the form and again at

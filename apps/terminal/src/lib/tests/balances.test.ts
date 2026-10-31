@@ -447,11 +447,12 @@ describe("trade balances", () => {
 		});
 	});
 
-	it("fails closed instead of treating entry notional as a current account valuation", () => {
+	it("counts an unpriced token as zero, never at entry notional, and fails closed without a price snapshot", () => {
 		const hypeBalance: SpotBalance = { coin: "HYPE", token: 150, total: "10", hold: "0", entryNtl: "200" };
 
 		expect(getSpotAccountValueUsdValue([settledSpotUsdcBalance, hypeBalance], { HYPE: "30" })).toBe("867.680532");
 		expect(getSpotAccountValueUsdValue([settledSpotUsdcBalance, hypeBalance])).toBeNull();
+		expect(getSpotAccountValueUsdValue([settledSpotUsdcBalance, hypeBalance], {})).toBe("567.680532");
 		expect(getTokenAmountUsdValue("10", "HYPE", { HYPE: "30" })).toBe("300");
 		expect(getTokenAmountUsdValue("10", "HYPE", {})).toBeNull();
 		expect(
@@ -696,5 +697,22 @@ describe("hide small balances", () => {
 			"HYPE",
 			"USDC",
 		]);
+	});
+});
+
+describe("outcome token prices", () => {
+	it("prices an outcome balance +N at the mid of its outcome market #N, as the official terminal does", () => {
+		const prices = addSpotMarketPriceAliases({ "#1230": "0.6", "@107": "30" }, []);
+
+		expect(prices?.["+1230"]).toBe("0.6");
+		expect(
+			getSpotAccountValueUsdValue(
+				[
+					{ coin: "USDC", token: 0, total: "100", hold: "0", entryNtl: "0" },
+					{ coin: "+1230", token: 100_001_230, total: "10", hold: "0", entryNtl: "9" },
+				],
+				prices,
+			),
+		).toBe("106");
 	});
 });

@@ -579,6 +579,11 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Fixed
 
+- Unified and portfolio-margin accounts holding an outcome token or a token without a market price now
+  show their portfolio value, as the official terminal does: an outcome token is valued at its outcome
+  market's price and a token without a price counts as zero instead of hiding the whole value.
+- Send's Max and balance check now use the exact balance, so Max on a large balance no longer fills an
+  amount above it that the final check refuses on every retry.
 - Orders, cancels and other trading actions now expire if the exchange has not accepted them within
   15 seconds, as with the official terminal's default Transaction Delay Protection, so a delayed
   request is rejected instead of executing late. The 15 seconds follow the exchange's clock, not the

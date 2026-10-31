@@ -70,6 +70,10 @@ export function getSpotBalance(balances: SpotBalance[] | null | undefined, coin:
 /** Mid prices keyed by coin, as delivered by the allMids subscription. */
 export type TokenUsdPrices = Record<string, string> | null | undefined;
 
+/** An outcome's balance is the token `+N`; its price is the mid of the outcome market `#N`, as the official terminal reads it. */
+const OUTCOME_MARKET_PREFIX = "#";
+const OUTCOME_TOKEN_PREFIX = "+";
+
 export function addSpotMarketPriceAliases(
 	tokenUsdPrices: TokenUsdPrices,
 	spotMarkets: readonly SpotMarket[],
@@ -119,6 +123,12 @@ export function addSpotMarketPriceAliases(
 		if (!changed) break;
 	}
 
+	for (const [coin, mid] of Object.entries(tokenUsdPrices)) {
+		if (!coin.startsWith(OUTCOME_MARKET_PREFIX)) continue;
+		const outcomeToken = `${OUTCOME_TOKEN_PREFIX}${coin.slice(OUTCOME_MARKET_PREFIX.length)}`;
+		if (!(outcomeToken in result)) result[outcomeToken] = mid;
+	}
+
 	return result;
 }
 
@@ -152,7 +162,13 @@ export function getTokenAmountUsdValue(
 	return price ? amount.times(price).toString() : null;
 }
 
-/** Returns the current USD value only when every non-zero spot balance has a current price. */
+/**
+ * The USD value of the spot balances, as the official terminal's portfolio value (`Ig`) sums it: a
+ * token that has no price in a complete price snapshot (no market route to USDC) counts as 0 rather
+ * than making the whole value unavailable, and never at its entry notional. Without a price snapshot,
+ * or for an invalid balance, the value is unavailable; callers pass prices only once the snapshot is
+ * current, so a loading or failed price stream still leaves it unavailable.
+ */
 export function getSpotAccountValueUsdValue(
 	spotBalances: SpotBalance[] | null | undefined,
 	tokenUsdPrices?: TokenUsdPrices,
@@ -162,9 +178,9 @@ export function getSpotAccountValueUsdValue(
 		const total = toBig(balance.total);
 		if (!total) return null;
 		if (total.eq(0)) continue;
+		if (balance.coin !== DEFAULT_QUOTE_TOKEN && !tokenUsdPrices) return null;
 		const price = getTokenUsdPrice(balance.coin, tokenUsdPrices);
-		if (!price) return null;
-		totalUsd = totalUsd.plus(total.times(price));
+		if (price) totalUsd = totalUsd.plus(total.times(price));
 	}
 	return totalUsd.toString();
 }
