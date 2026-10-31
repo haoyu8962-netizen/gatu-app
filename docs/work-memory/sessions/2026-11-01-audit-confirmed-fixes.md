@@ -73,5 +73,16 @@
 | B P3 | `cd49cb62`、`4e452818`、`c3e605b4` 的标题超过 72 字符 | 成立 | 不改写已推送的历史 | — |
 
 - 未采纳：C 路建议在完整目录契约里比较译文与原文的占位符集合，本轮未做（V 路求值六种语言简单占位符不一致为 0）。
-- 验证：每项修复都先在旧代码上失败，再做变异：E13 五个、拒绝分类两个、日期九处、测试缺口九个（含全页资金费的手机卡片），全部被抓到。相关测试文件、`node --test scripts/ci-workflows.test.mjs`（17 项）通过。修复提交本身的复审、全量单测与 CI 结果不在本节，见后续记录。
+- 验证：每项修复都先在旧代码上失败，再做变异：E13 五个、拒绝分类两个、日期九处、测试缺口九个（含全页资金费的手机卡片），全部被抓到。相关测试文件、`node --test scripts/ci-workflows.test.mjs`（17 项）通过。
+- 环境说明：在复制出的检出（`node_modules` 为指向开发工作树的符号链接）里跑的全量单测有 9 个文件失败，堆栈显示 `@sairn/hl-react` 同时从两份源码加载（React 上下文分裂），与改动无关，不作为证据；全量单测改在依赖完整的工作树里跑。
+
+### 第二轮（窄范围，2026-11-01）
+
+同样设置，只审 `e4dd4eb2..ff56abe4` 与下一批的 `a9e0732f`：整批 8.3 分，1 项 P2、2 项 P3。
+
+| 发现 | 核实 | 处理 | 提交 |
+| --- | --- | --- | --- |
+| P2：`isFetchedAfterMount` 在请求失败后也为 true（TanStack Query 5.90.16 `queryObserver` 比较 `dataUpdateCount` 与 `errorUpdateCount`），「旧缓存挂载 → 挂载请求失败 → Retry 在途」仍显示挂载前的缓存；第一轮写的「例外不覆盖挂载前数据」过强 | 成立 | 新增 `useDataReceivedSinceMount`：按查询键记下首次读取时的 `dataUpdatedAt`，只有之后送达的数据才算挂载后收到，换账户、网络或账户模式时重新起算；`refreshing` 改用它。新增 `portfolio-refresh-since-mount.test.tsx`，用真实 `QueryClient` 复现这一序列与正例，并钉住 `usePortfolioInfo` 的接线；五个变异全部被抓到（「接线退回 `isFetchedAfterMount`」起初只被组合页组件测试放过，补了接线用例后被抓到） | `4a280f04` |
+| P3：Dates 规则说所有 CSV 都用 `formatDateTime`，存提款导出实际是 ISO 时间 | 成立（有年份，不是缺陷） | 规则写明存提款导出保留 ISO 8601 UTC 时间 | 本节所在提交 |
+| P3：下一批 `a9e0732f` 的 CHANGELOG 漏写 HYPE 例外 | 成立 | 在下一批分支补「except HYPE」 | 下一批分支 `95f9cf38` |
 
