@@ -377,6 +377,10 @@ describe("trade balances", () => {
 
 		const unpricedRows = getSpotBalanceRows([hypeBalance], undefined, "disabled");
 		expect(unpricedRows[0]).toMatchObject({ asset: "HYPE", usdValue: "0", entryNtl: "200" });
+		for (const price of ["0", "-1", "not a price"]) {
+			const rows = getSpotBalanceRows([hypeBalance], undefined, "disabled", { HYPE: price });
+			expect(rows[0]).toMatchObject({ asset: "HYPE", usdValue: "0", entryNtl: "200" });
+		}
 
 		const summary = getAccountBalanceSummary({
 			accountAbstraction: "unifiedAccount",
