@@ -207,14 +207,29 @@ export function getVaultRequestAvailability({
 	return { available: true, reason: null };
 }
 
+/** The leader may add to its own Vault even after it stops accepting deposits from others. */
+export function isVaultLeader(detail: Pick<VaultDetail, "leader">, ownerAddress: string | null | undefined): boolean {
+	return !!ownerAddress && normalizeVaultAddress(detail.leader) === normalizeVaultAddress(ownerAddress);
+}
+
+const LARGE_VAULT_TVL_USD = 100_000_000;
+
+/** Smallest deposit the official terminal accepts: 10 USDC above $100M of TVL, otherwise 5 USDC. */
+export function getVaultMinimumDeposit(detail: Pick<VaultDetail, "portfolio">): string {
+	const tvl = toBig(getLatestVaultHistoryValue(detail.portfolio.day, "accountValue"), false);
+	return tvl?.gt(LARGE_VAULT_TVL_USD) ? "10" : "5";
+}
+
 export function deriveVaultActionsAvailability({
 	detail,
 	owner,
+	ownerAddress,
 	request,
 	sessionMode,
 }: {
 	detail: VaultDetail | null;
 	owner: VaultOwnerViewState;
+	ownerAddress?: string | null;
 	request: VaultRequestAvailability;
 	sessionMode?: "wallet" | "agent-only" | "disconnected";
 }): VaultActionsAvailability {
@@ -233,7 +248,7 @@ export function deriveVaultActionsAvailability({
 
 	const deposit: VaultActionAvailability = detail.isClosed
 		? { available: false, reason: "vault-closed" }
-		: detail.allowDeposits
+		: detail.allowDeposits || isVaultLeader(detail, ownerAddress)
 			? { available: true, reason: null }
 			: { available: false, reason: "deposits-disabled" };
 	let withdraw: VaultActionAvailability;

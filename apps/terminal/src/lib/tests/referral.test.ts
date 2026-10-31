@@ -15,6 +15,7 @@ import {
 	isReferralMutationReconciled,
 	isValidReferralCode,
 	normalizeActiveReferralDiscount,
+	normalizeReferralCode,
 	normalizeReferralResponse,
 	normalizeReferralTokenMetadata,
 	type ReadyReferrerState,
@@ -181,14 +182,28 @@ describe("normalizeReferralResponse", () => {
 		for (const response of invalidResponses) expect(normalizeReferralResponse(response)).toBeNull();
 	});
 
-	it("rejects missing, unknown, and structurally incomplete responses", () => {
-		const withUnknownField = { ...createReadyReferralResponse(), futureField: true };
+	it("rejects missing and structurally incomplete responses", () => {
 		const { rewardHistory: _rewardHistory, ...missingHistory } = createReadyReferralResponse();
 
 		expect(normalizeReferralResponse(null)).toBeNull();
 		expect(normalizeReferralResponse([])).toBeNull();
-		expect(normalizeReferralResponse(withUnknownField)).toBeNull();
 		expect(normalizeReferralResponse(missingHistory)).toBeNull();
+	});
+
+	it("keeps a response with fields added by the exchange, such as the referrer benefits", () => {
+		const ready = createReadyReferralResponse();
+		const response = {
+			...ready,
+			futureField: true,
+			referrerState: {
+				stage: "ready",
+				data: { ...ready.referrerState.data, benefits: { referrerKeep: 0.1, referralDiscount: 0.04 } },
+			},
+		};
+
+		const normalized = normalizeReferralResponse(response);
+		expect(normalized).toEqual(ready);
+		expect(normalized).not.toHaveProperty("futureField");
 	});
 
 	it("accepts response codes as the unrestricted strings declared by the SDK", () => {
@@ -327,11 +342,20 @@ describe("referral display derivations", () => {
 		expect(getBrandReferralUrl("SAIRN code", "Testnet")).toBe("https://testnet.sairn.ai/join/SAIRN%20code");
 	});
 
-	it("validates only the SDK code length contract", () => {
+	it("accepts referral codes of up to 20 upper-case letters or digits, as the official terminal does", () => {
 		expect(isValidReferralCode("A")).toBe(true);
-		expect(isValidReferralCode("code with spaces")).toBe(true);
+		expect(isValidReferralCode("SAIRN2026")).toBe(true);
+		expect(isValidReferralCode("code with spaces")).toBe(false);
+		expect(isValidReferralCode("sairn")).toBe(false);
 		expect(isValidReferralCode("")).toBe(false);
-		expect(isValidReferralCode("x".repeat(21))).toBe(false);
+		expect(isValidReferralCode("X".repeat(21))).toBe(false);
+	});
+
+	it("upper-cases typed and linked codes and ignores characters a code cannot contain", () => {
+		expect(normalizeReferralCode("sairn2026")).toBe("SAIRN2026");
+		expect(normalizeReferralCode("")).toBe("");
+		expect(normalizeReferralCode("bad-code")).toBeNull();
+		expect(normalizeReferralCode("x".repeat(21))).toBeNull();
 	});
 
 	it("matches the official terminal referral-code volume gate", () => {

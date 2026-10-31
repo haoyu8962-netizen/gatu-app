@@ -5049,6 +5049,7 @@ msgstr "मास्टर वॉलेट सत्यापित है"
 #: src/components/trade/tradebox/bridge/amount-entry-screen.tsx
 #: src/components/trade/tradebox/deposit/amount-input.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
+#: src/components/vaults/vault-action-modal.tsx
 #: src/config/trade-panel-labels.ts
 msgid "Max"
 msgstr "अधिकतम"
@@ -5143,7 +5144,9 @@ msgstr "न्यूनतम <0>{0}</0>; अधिकतम <1>{1}</1>।"
 
 #. placeholder {0}: ctx.minDeposit
 #. placeholder {0}: numberFormat.formatDecimalString(formatUnits(cctpDepositBelowMinimumRaw, 6))
+#. placeholder {0}: numberFormat.formatDecimalString(minimumAmount)
 #: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/vaults/vault-action-modal.tsx
 #: src/lib/errors/definitions/deposit.ts
 msgid "Minimum deposit is {0} USDC"
 msgstr "न्यूनतम जमा {0} USDC है"
@@ -8927,6 +8930,10 @@ msgstr "पता अमान्य है या Hyperliquid ने इसक�
 #: src/components/vaults/use-vault-action-controller.ts
 msgid "The amount exceeds the freshly verified maximum."
 msgstr "राशि हाल ही में सत्यापित अधिकतम सीमा से अधिक है।"
+
+#: src/components/vaults/use-vault-action-controller.ts
+msgid "The amount is below this Vault's minimum deposit."
+msgstr "राशि इस वॉल्ट की न्यूनतम जमा राशि से कम है।"
 
 #: src/components/api-wallet/use-api-wallet-controller.ts
 msgid "The API wallet request was rejected."

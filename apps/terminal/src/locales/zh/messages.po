@@ -5049,6 +5049,7 @@ msgstr "主钱包已验证"
 #: src/components/trade/tradebox/bridge/amount-entry-screen.tsx
 #: src/components/trade/tradebox/deposit/amount-input.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
+#: src/components/vaults/vault-action-modal.tsx
 #: src/config/trade-panel-labels.ts
 msgid "Max"
 msgstr "最大"
@@ -5143,7 +5144,9 @@ msgstr "最低值 <0>{0}</0>；最高值 <1>{1}</1>。"
 
 #. placeholder {0}: ctx.minDeposit
 #. placeholder {0}: numberFormat.formatDecimalString(formatUnits(cctpDepositBelowMinimumRaw, 6))
+#. placeholder {0}: numberFormat.formatDecimalString(minimumAmount)
 #: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/vaults/vault-action-modal.tsx
 #: src/lib/errors/definitions/deposit.ts
 msgid "Minimum deposit is {0} USDC"
 msgstr "最低存款为 {0} USDC"
@@ -8927,6 +8930,10 @@ msgstr "该地址无效，或 Hyperliquid 未返回其金库详情。"
 #: src/components/vaults/use-vault-action-controller.ts
 msgid "The amount exceeds the freshly verified maximum."
 msgstr "数量超过最新核实的上限。"
+
+#: src/components/vaults/use-vault-action-controller.ts
+msgid "The amount is below this Vault's minimum deposit."
+msgstr "金额低于该金库的最低存款额。"
 
 #: src/components/api-wallet/use-api-wallet-controller.ts
 msgid "The API wallet request was rejected."
