@@ -26,6 +26,7 @@ Financial values remain decimal strings until they reach the locale formatter. D
 | Price-change return | `unrealizedPnl / (abs(szi) * entryPx)` | Derived with `Big.js`; return unavailable for a zero denominator | Toolbar domain view model |
 | Estimated partial-close PnL | Pro-rate whole-position `unrealizedPnl`; fallback `(markPx - entryPx) * closeSize * direction` | Long direction is `+1`; short direction is `-1` | `apps/terminal/src/domain/trade/position-market-close.ts` |
 | Cumulative funding | `cumFunding.sinceOpen` | Preserve the existing UI sign convention and derive `-sinceOpen` with `Big.js` | `apps/terminal/src/domain/trade/position-toolbar.ts` |
+| Hide small balances | Official `a3`: shown when the toggle is off, the token is HYPE, or the USDC value is at least $5 | Balances tab rows under `SMALL_BALANCE_THRESHOLD_USD` ($5) are hidden while the toggle is on, except HYPE (2026-10-31, P2 B9; the threshold was $1 without a recorded reason). The official PNL (ROE %) and Contract columns are not shown: the balances table's visual contract (2026-08-05) excludes PNL, and changing it waits for an operator decision | `apps/terminal/src/config/trade.ts`, `apps/terminal/src/domain/trade/balances.ts` |
 
 Official schemas: [Perpetuals info endpoint](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint/perpetuals) and [account abstraction modes](https://hyperliquid.gitbook.io/hyperliquid-docs/trading/account-abstraction-modes).
 

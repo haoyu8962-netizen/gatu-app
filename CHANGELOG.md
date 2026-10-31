@@ -639,6 +639,8 @@ changes, not evidence that a build has been deployed or accepted on real devices
   that is partly filled before the open-orders list confirms it is still reported as modified.
   Reduce-only Stop and Take Profit orders can change their size and trigger price, as on the official
   terminal; a trigger order that can open a position still has to be cancelled and placed again.
+- Hide small balances now hides balances under $5 instead of $1 and always keeps HYPE, as the official
+  terminal does.
 - Trade history now shows each fill's closed PNL net of its fee, as the official terminal does, so an
   opening fill shows its fee and a closing fill matches the official figure; the CSV export still
   carries the exchange's PNL and fee as sent.

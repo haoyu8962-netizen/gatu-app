@@ -752,6 +752,9 @@ export function getTotalUsdValue(rows: BalanceRow[]): number {
 	return rows.reduce((sum, row) => Big(sum).plus(toSafeBig(row.usdValue)).toNumber(), 0);
 }
 
+const ALWAYS_SHOWN_BALANCE_ASSET = "HYPE";
+
+/** Keeps rows worth at least `minUsd`, and the HYPE row whatever its value, as the official terminal does. */
 export function filterBalanceRowsByUsdValue(rows: BalanceRow[], minUsd: number): BalanceRow[] {
-	return rows.filter((row) => toSafeBig(row.usdValue).gte(minUsd));
+	return rows.filter((row) => row.asset === ALWAYS_SHOWN_BALANCE_ASSET || toSafeBig(row.usdValue).gte(minUsd));
 }

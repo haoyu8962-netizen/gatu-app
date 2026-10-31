@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
+import { SMALL_BALANCE_THRESHOLD_USD } from "@/config/trade";
 import {
 	accountOverviewNeedsTokenUsdPrices,
 	addSpotMarketPriceAliases,
+	type BalanceRow,
+	filterBalanceRowsByUsdValue,
 	getAccountBalanceSummary,
 	getAccountEquityValue,
 	getAvailableFromTotals,
@@ -667,5 +670,31 @@ describe("trade balances", () => {
 		);
 
 		expect(data.quoteAvailable).toBeCloseTo(4947.18019669);
+	});
+});
+
+describe("hide small balances", () => {
+	function row(asset: string, usdValue: string): BalanceRow {
+		return {
+			asset,
+			type: "spot",
+			available: "1",
+			transferable: "1",
+			inOrder: "0",
+			total: "1",
+			usdValue,
+			entryNtl: "0",
+		};
+	}
+
+	it("hides rows under $5 except HYPE, as the official terminal does", () => {
+		const rows = [row("PURR", "4.99"), row("UBTC", "5"), row("HYPE", "0.5"), row("USDC", "12")];
+
+		expect(SMALL_BALANCE_THRESHOLD_USD).toBe(5);
+		expect(filterBalanceRowsByUsdValue(rows, SMALL_BALANCE_THRESHOLD_USD).map((item) => item.asset)).toEqual([
+			"UBTC",
+			"HYPE",
+			"USDC",
+		]);
 	});
 });
