@@ -51,8 +51,9 @@ function clocksDisagree(receipt: Receipt): boolean {
  * (it spanned a sleep or a clock change) is not used. Elapsed time since the sample is its monotonic
  * age only, so moving the system clock cannot stretch the 15-second window. When the wall-clock and
  * monotonic ages disagree (the system clock was changed, or the monotonic clock stopped while the
- * device slept), an action first waits for a new sample, whatever the retry pause; if none arrives
- * the monotonic estimate stays, so an action may arrive already expired rather than late. Staleness
+ * device slept), an action first waits for a new sample, whatever the retry pause, and asks once more
+ * when the request it joined had been sent before the clocks changed and gave no usable answer; if
+ * none arrives the monotonic estimate stays, so an action may arrive already expired rather than late. Staleness
  * still uses the larger of both ages (ADR 0022). Before the first usable sample the device clock is
  * used, as the official terminal does before its first account snapshot.
  */
@@ -60,12 +61,14 @@ export function createServerClock(fetchServerTime: (signal: AbortSignal) => Prom
 	let sample: ServerTimeSample | null = null;
 	let lastFailure: Receipt | null = null;
 	let pending: Promise<void> | null = null;
+	let pendingSent: Receipt | null = null;
 
 	function sync(): Promise<void> {
 		if (pending) return pending;
 		const controller = new AbortController();
 		const timer = setTimeout(() => controller.abort(), SYNC_TIMEOUT_MS);
 		const sent = receiptNow();
+		pendingSent = sent;
 		pending = Promise.resolve()
 			.then(() => fetchServerTime(controller.signal))
 			.then((serverTime) => {
@@ -83,6 +86,7 @@ export function createServerClock(fetchServerTime: (signal: AbortSignal) => Prom
 			.finally(() => {
 				clearTimeout(timer);
 				pending = null;
+				pendingSent = null;
 			});
 		return pending;
 	}
@@ -99,7 +103,9 @@ export function createServerClock(fetchServerTime: (signal: AbortSignal) => Prom
 		if (!sample) {
 			if (canRetry()) await sync();
 		} else if (clocksDisagree(sample)) {
+			const joinsEarlierRequest = pendingSent !== null && clocksDisagree(pendingSent);
 			await sync();
+			if (joinsEarlierRequest && clocksDisagree(sample)) await sync();
 		} else if (ageOf(sample) > RESYNC_AFTER_MS && canRetry()) {
 			void sync();
 		}

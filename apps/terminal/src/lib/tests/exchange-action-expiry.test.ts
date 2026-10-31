@@ -165,6 +165,45 @@ describe("server clock for L1 action expiry", () => {
 		expect(fetchServerTime).toHaveBeenCalledTimes(3);
 	});
 
+	it("asks again for actions that joined a request sent before the device slept", async () => {
+		const background = deferred<number>();
+		const fetchServerTime = vi
+			.fn()
+			.mockResolvedValueOnce(1_000_000)
+			.mockReturnValueOnce(background.promise)
+			.mockResolvedValueOnce(4_661_000);
+		const clock = createServerClock(fetchServerTime);
+		await clock.sync();
+
+		await vi.advanceTimersByTimeAsync(61_000);
+		await clock.getExpiresAfter();
+		vi.setSystemTime(Date.now() + 60 * 60_000);
+		const first = clock.getExpiresAfter();
+		const second = clock.getExpiresAfter();
+		background.resolve(1_061_000);
+
+		expect(await first).toBe(4_661_000 + EXCHANGE_ACTION_EXPIRY_MS);
+		expect(await second).toBe(4_661_000 + EXCHANGE_ACTION_EXPIRY_MS);
+		expect(fetchServerTime).toHaveBeenCalledTimes(3);
+	});
+
+	it("does not ask twice when the request an action joins was sent after the clock change", async () => {
+		const fresh = deferred<number>();
+		const fetchServerTime = vi.fn().mockResolvedValueOnce(1_000_000).mockReturnValueOnce(fresh.promise);
+		const clock = createServerClock(fetchServerTime);
+		await clock.sync();
+
+		await vi.advanceTimersByTimeAsync(10_000);
+		vi.setSystemTime(Date.now() + 60 * 60_000);
+		const first = clock.getExpiresAfter();
+		const second = clock.getExpiresAfter();
+		fresh.reject(new Error("network down"));
+
+		expect(await first).toBe(1_010_000 + EXCHANGE_ACTION_EXPIRY_MS);
+		expect(await second).toBe(1_010_000 + EXCHANGE_ACTION_EXPIRY_MS);
+		expect(fetchServerTime).toHaveBeenCalledTimes(2);
+	});
+
 	it("ignores a small wall-clock drift and counts only monotonic time", async () => {
 		const fetchServerTime = vi.fn(async () => 1_000_000);
 		const clock = createServerClock(fetchServerTime);
