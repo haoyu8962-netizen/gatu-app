@@ -134,7 +134,7 @@ export function HistoricalOrdersPage({ address }: Props) {
 				},
 				{
 					header: t`Size`,
-					getValue: (entry) => formatToken(entry.size, markets.getMarket(entry.coin)?.szDecimals),
+					getValue: (entry) => entry.size,
 				},
 				{ header: t`Status`, getValue: (entry) => getHistoricalOrderStatusLabel(entry.order.status) },
 				{
@@ -362,7 +362,7 @@ export function HistoricalOrdersPage({ address }: Props) {
 													<Trans>Price</Trans>
 												</dt>
 												<dd className="mt-0.5 text-xs font-semibold tabular-nums text-fg">
-													<HistoricalOrderPrice align="start" order={entry.order.order} />
+													<HistoricalOrderPrice align="start" market={market} order={entry.order.order} />
 												</dd>
 											</div>
 											<div className="text-right">
@@ -471,7 +471,7 @@ export function HistoricalOrdersPage({ address }: Props) {
 												</TableCell>
 												<TableCell className="px-3 py-0 text-fg">{getOrderTypeLabel(entry.type)}</TableCell>
 												<TableCell className="px-3 py-0 text-right text-fg">
-													<HistoricalOrderPrice order={entry.order.order} />
+													<HistoricalOrderPrice market={market} order={entry.order.order} />
 												</TableCell>
 												<TableCell className="px-3 py-0 text-right text-fg">
 													<bdi dir="ltr">{formatToken(entry.size, market?.szDecimals)}</bdi>

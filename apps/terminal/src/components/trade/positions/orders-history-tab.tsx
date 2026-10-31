@@ -89,7 +89,7 @@ interface OrdersHistoryTabContentProps extends Props {
 }
 
 function OrdersHistoryTabContent({ address, toolbarTarget }: OrdersHistoryTabContentProps) {
-	const { formatToken, formatUSD } = useNumberFormat();
+	const { formatToken } = useNumberFormat();
 	const { i18n, t } = useLingui();
 	const locale = i18n.locale;
 	const { getHistoricalOrderStatusLabel, getOrderSideLabel, getOrderTypeLabel } = useOrderDisplayLabels();
@@ -166,18 +166,15 @@ function OrdersHistoryTabContent({ address, toolbarTarget }: OrdersHistoryTabCon
 					{ header: t`Type`, getValue: getEntryTypeLabel },
 					{
 						header: t`Price`,
-						getValue: (entry) => formatUSD(entry.order.order.limitPx, { compact: false }),
+						getValue: (entry) => entry.order.order.limitPx,
 					},
 					{
 						header: t`Trigger Price`,
-						getValue: (entry) => {
-							const triggerPrice = getOrderHistoryTriggerPrice(entry);
-							return triggerPrice ? formatUSD(triggerPrice, { compact: false }) : FALLBACK_VALUE_PLACEHOLDER;
-						},
+						getValue: (entry) => getOrderHistoryTriggerPrice(entry) ?? FALLBACK_VALUE_PLACEHOLDER,
 					},
 					{
 						header: t`Size`,
-						getValue: (entry) => formatToken(entry.size, markets.getMarket(entry.coin)?.szDecimals),
+						getValue: (entry) => entry.size,
 					},
 					{ header: t`Status`, getValue: getEntryStatusLabel },
 					{
@@ -336,7 +333,7 @@ function OrdersHistoryTabContent({ address, toolbarTarget }: OrdersHistoryTabCon
 													"text-right text-market-close-fg",
 												)}
 											>
-												<HistoricalOrderPrice order={entry.order.order} />
+												<HistoricalOrderPrice market={market} order={entry.order.order} />
 											</TableCell>
 											<TableCell
 												size="dense"

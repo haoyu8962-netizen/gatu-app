@@ -95,6 +95,10 @@ msgstr "{days} 天"
 msgid "{days} days left"
 msgstr "剩余 {days} 天"
 
+#: src/lib/trade/fill-direction.ts
+msgid "{direction} (Price Improved)"
+msgstr "{direction}（价格改善）"
+
 #: src/components/funding-history/funding-history-page.tsx
 msgid "{FUNDING_HISTORY_WINDOW_DAYS}-day API window"
 msgstr "{FUNDING_HISTORY_WINDOW_DAYS} 天 API 时间窗口"
@@ -1070,6 +1074,10 @@ msgstr "已授权的 API 钱包"
 msgid "Authorizing request"
 msgstr "正在授权请求"
 
+#: src/lib/trade/fill-direction.ts
+msgid "Auto-Deleveraging"
+msgstr "自动减仓"
+
 #: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
 msgid "Automatic USDC deposit failed"
 msgstr "USDC 自动存款失败"
@@ -1174,6 +1182,10 @@ msgstr "返回交易"
 #: src/components/vaults/vaults-page.tsx
 msgid "Back to Vaults"
 msgstr "返回金库列表"
+
+#: src/lib/trade/fill-direction.ts
+msgid "Backstop Liquidation: {direction}"
+msgstr "后备强平：{direction}"
 
 #: src/config/ui-text.ts
 msgid "Balance"
@@ -1318,6 +1330,7 @@ msgstr "Builder 奖励是累计的来源明细，并非额外的奖励余额。"
 #: src/config/trade-panel-labels.ts
 #: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-order-display-labels.ts
+#: src/lib/trade/fill-direction.ts
 msgid "Buy"
 msgstr "买入"
 
@@ -1814,13 +1827,10 @@ msgstr "关闭 API 钱包操作"
 msgid "Close close-all confirmation"
 msgstr "关闭一键全平确认"
 
-#: src/components/trade-history/trade-history-page.tsx
-#: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
-#: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/twap-fill-history-table.tsx
 #: src/hooks/trade/use-order-display-labels.ts
-#: src/hooks/trade/use-twap-fill-history-csv.ts
+#: src/lib/trade/fill-direction.ts
 msgid "Close Long"
 msgstr "平多"
 
@@ -1881,13 +1891,10 @@ msgstr "平仓"
 msgid "Close reverse confirmation"
 msgstr "关闭反向仓位确认"
 
-#: src/components/trade-history/trade-history-page.tsx
-#: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
-#: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/twap-fill-history-table.tsx
 #: src/hooks/trade/use-order-display-labels.ts
-#: src/hooks/trade/use-twap-fill-history-csv.ts
+#: src/lib/trade/fill-direction.ts
 msgid "Close Short"
 msgstr "平空"
 
@@ -3777,6 +3784,10 @@ msgstr "从"
 msgid "From {startTime} to {endTime}. Latest funding rate {latestRate}; cumulative funding rate {cumulativeRate}. Highest {maxRate}; lowest {minRate}."
 msgstr "从 {startTime} 到 {endTime}。最新资金费率 {latestRate}；累计资金费率 {cumulativeRate}。最高 {maxRate}；最低 {minRate}。"
 
+#: src/lib/trade/fill-direction.ts
+msgid "Full Borrow Liquidation"
+msgstr "借款全部强平"
+
 #: src/components/trade/tradebox/order-toast.tsx
 msgid "Fully filled"
 msgstr "全部成交"
@@ -4569,15 +4580,8 @@ msgstr "已关联质押账户：<0>{0}</0>。"
 msgid "Liq. Price"
 msgstr "清算价"
 
-#: src/components/trade-history/trade-history-page.tsx
-#: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
-#: src/components/trade/mobile/mobile-history-tab.tsx
-#: src/components/trade/mobile/mobile-history-tab.tsx
-#: src/components/trade/positions/history-tab.tsx
-#: src/components/trade/positions/history-tab.tsx
 #: src/config/account-ledger.ts
-#: src/hooks/trade/use-twap-fill-history-csv.ts
 msgid "Liquidated"
 msgstr "已强平"
 
@@ -4790,8 +4794,13 @@ msgstr "使用邮箱登录"
 #: src/components/trade/positions/position-row.tsx
 #: src/config/trade-panel-labels.ts
 #: src/domain/trade/order-confirmation.ts
+#: src/lib/trade/funding-position.ts
 msgid "Long"
 msgstr "多"
+
+#: src/lib/trade/fill-direction.ts
+msgid "Long > Short"
+msgstr "多转空"
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Long position"
@@ -5007,6 +5016,10 @@ msgstr "市场元数据已变化。请刷新后重试。"
 #: src/lib/errors/definitions/market.ts
 msgid "Market not ready"
 msgstr "市场未就绪"
+
+#: src/lib/trade/fill-direction.ts
+msgid "Market Order Liquidation: {direction}"
+msgstr "市价强平：{direction}"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -5851,12 +5864,13 @@ msgstr "未平仓量"
 msgid "Open interest cap"
 msgstr "未平仓量上限"
 
-#: src/components/trade-history/trade-history-page.tsx
-#: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/config/account-ledger.ts
+msgid "Open Interest Reward"
+msgstr "未平仓量奖励"
+
 #: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
-#: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/twap-fill-history-table.tsx
-#: src/hooks/trade/use-twap-fill-history-csv.ts
+#: src/lib/trade/fill-direction.ts
 msgid "Open Long"
 msgstr "开多"
 
@@ -5889,12 +5903,9 @@ msgstr "当前委托已发生变化。请重新打开确认弹窗后再试。"
 msgid "Open related page"
 msgstr "打开相关页面"
 
-#: src/components/trade-history/trade-history-page.tsx
-#: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
-#: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/twap-fill-history-table.tsx
-#: src/hooks/trade/use-twap-fill-history-csv.ts
+#: src/lib/trade/fill-direction.ts
 msgid "Open Short"
 msgstr "开空"
 
@@ -6184,6 +6195,10 @@ msgstr "更改后页面将重新加载"
 msgid "Partial amount"
 msgstr "部分数量"
 
+#: src/lib/trade/fill-direction.ts
+msgid "Partial Borrow Liquidation"
+msgstr "借款部分强平"
+
 #: src/components/trade/positions/position-close-all-modal.tsx
 #~ msgid "Partial result — reopen to retry"
 #~ msgstr "部分成功 — 重新打开后可重试"
@@ -6220,6 +6235,12 @@ msgstr "暂停不可用：Hyperliquid 不支持暂停正在执行的 TWAP 委托
 #: src/components/trade/positions/funding-tab.tsx
 msgid "Payment"
 msgstr "支付"
+
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/positions/funding-tab.tsx
+msgid "Payment Token"
+msgstr "支付币种"
 
 #: src/components/trade/tradebox/order-toast.tsx
 #~ msgid "pending"
@@ -6463,10 +6484,7 @@ msgstr "投资组合价值"
 
 #: src/components/funding-history/funding-history-page.tsx
 #: src/components/funding-history/funding-history-page.tsx
-#: src/components/funding-history/funding-history-page.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
-#: src/components/trade/mobile/mobile-funding-tab.tsx
-#: src/components/trade/positions/funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
 #: src/config/trade-panel-labels.ts
 msgid "Position"
@@ -7853,6 +7871,7 @@ msgstr "所选周期 PNL"
 #: src/config/trade-panel-labels.ts
 #: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-order-display-labels.ts
+#: src/lib/trade/fill-direction.ts
 msgid "Sell"
 msgstr "卖出"
 
@@ -7972,8 +7991,13 @@ msgstr "分享 {displayName} 的盈亏"
 #: src/components/trade/positions/position-row.tsx
 #: src/config/trade-panel-labels.ts
 #: src/domain/trade/order-confirmation.ts
+#: src/lib/trade/funding-position.ts
 msgid "Short"
 msgstr "空"
+
+#: src/lib/trade/fill-direction.ts
+msgid "Short > Long"
+msgstr "空转多"
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Short position"
@@ -8004,6 +8028,9 @@ msgid "Shows reward claims reported in the last 30 days. Claims can include refe
 msgstr "显示最近 30 天返回的奖励领取记录，其中可能包含推荐奖励和 Builder 奖励。"
 
 #: src/components/funding-history/funding-history-page.tsx
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/positions/funding-tab.tsx
 msgid "Side"
 msgstr "方向"
 
@@ -8044,6 +8071,7 @@ msgstr "正在用邮箱钱包签名"
 msgid "Signing..."
 msgstr "签名中..."
 
+#: src/components/funding-history/funding-history-page.tsx
 #: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/historical-orders/historical-orders-page.tsx
@@ -8052,6 +8080,7 @@ msgstr "签名中..."
 #: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
+#: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
@@ -8067,6 +8096,7 @@ msgstr "签名中..."
 #: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
 #: src/components/trade/orderbook/orderbook-row.tsx
 #: src/components/trade/orderbook/trades-panel.tsx
+#: src/components/trade/positions/funding-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx

@@ -104,13 +104,24 @@ Mobile filters are backed by real SDK fields and reset with owner-keyed componen
 | --- | --- | --- |
 | Open orders | Type | `FrontendOpenOrder.isTrigger`: trigger vs ordinary limit |
 | Open orders | Direction | `FrontendOpenOrder.side`: `B` = buy, `A` = sell; display labels still combine `side` with `reduceOnly` |
-| Trade history | Type | `UserFillsResponse[].liquidation` first, then numeric `twapId`, otherwise ordinary trade |
+| Trade history | Type | The account's own or a protocol liquidation first (see History values: a fill against another account's liquidation is an ordinary trade), then numeric `twapId`, otherwise ordinary trade |
 | Trade history | Direction | `UserFillsResponse[].side`: `B` = buy, `A` = sell |
 | Trade history | Role | `UserFillsResponse[].crossed`: `true` = taker, `false` = maker |
 | Funding history | Position direction | Sign of `userFundings.fundings[].szi`, parsed with `Big.js`: positive = long, negative = short; zero/invalid values do not match either direction |
 | Order history | Type | Exact `HistoricalOrdersResponse[].order.orderType`, displayed through the existing order-type label helper |
 | Order history | Direction | `HistoricalOrdersResponse[].order.side`: `B` = buy, `A` = sell |
 | Order history | Status | Exact `status` grouped into open, filled, triggered, canceled (via the production canceled-status helper), rejected, or other |
+
+### History values
+
+The desktop panel, the mobile cards and the full history pages follow the official terminal here (audit of 2026-10-30, items B1, B2, B5, B10, B16, B19 and D3).
+
+- **Fill direction** (`lib/trade/fill-direction.ts`). A fill is the account's own liquidation only when `liquidation.liquidatedUser` is absent or equals the owner, compared without case; it reads "Market Order Liquidation: {direction}" in the danger colour. A fill against another account's liquidation keeps its side's colour and reads "{direction} (Price Improved)". Protocol directions keep their names: `Liquidated …` reads "Backstop Liquidation: …", `Backstop Borrow Liquidation` reads "Full Borrow Liquidation", and `Partial Borrow Liquidation` and `Auto-Deleveraging` stay as sent. `Buy`, `Sell`, `Long > Short` and `Short > Long` are translated; an unknown direction is shown as sent.
+- **Prices** (`lib/trade/market-price-format.ts`). Fill, order, trigger and protection prices use `formatPrice` with the market's `szDecimals` and type (Hyperliquid's 6 or 8 minus `szDecimals` decimals), never the compact or two-decimal dollar format. A market missing from the catalog keeps up to six decimals.
+- **Funding** (`lib/trade/funding-position.ts`). The position shows its side (Long or Short, from the sign of `szi`) beside the absolute size, and the payment is in the market's collateral: the HIP-3 DEX quote token for `builderPerp` markets, otherwise USDC. A HIP-3 payment whose market is no longer listed, or whose quote token has not loaded, shows the amount without a token (`-` in the CSV) instead of guessing USDC.
+- **Positions** (`lib/trade/collateral-amount.ts`). Unrealized PnL, margin and funding of a HIP-3 DEX position are amounts of its collateral token, like its position value; USDC markets keep the dollar format.
+- **CSV exports** carry the exchange's values unformatted, as the trade-history export already did. Funding exports Side, Size (the absolute `szi`), Rate (`fundingRate`), Payment (`usdc`) and Payment Token; order history exports the raw `limitPx`, trigger price and size. Headers and labels are translated; numbers are never localized, rounded or compacted.
+- **Deposits and withdrawals** (`lib/trade/account-ledger.ts`). A `send` to USDC's spot system address (`0x2000…0000`) on the spot DEX is a CCTP withdrawal, and a `send` to the owner from the network's CoreDepositWallet (USDC's linked HyperEVM contract, `config/cctp.ts`) is a CCTP deposit. Any other `send` or `spotTransfer` through a HyperCore system address (`0x2222…` for HYPE, `0x2000…` plus the token index otherwise), and a `send` between the owner's own balances, is a Transfer. A system address on the spot DEX shows as HyperEVM. The official terminal reads the chain beyond HyperEVM from Across's `hyperliquid-transfers` API; this terminal does not call it, so a CCTP row shows HyperEVM where the official shows Arbitrum or another chain, as the official itself does when that API has no record for the transfer. Transfers with the owner's own sub-accounts (`subAccountTransfer`, and an `internalTransfer`, `spotTransfer` or `send` whose other side is one of them) read Sub-account Transfer; the sub-accounts come from `info.subAccounts`, and while that list is missing these rows keep their ordinary label. An `internalTransfer` sent by one of the two accounts that pay open interest rewards (`0x995e…82ba`, `0x4e8b…9d0f`, as the official terminal lists them) reads Open Interest Reward.
 
 ### PnL sharing
 

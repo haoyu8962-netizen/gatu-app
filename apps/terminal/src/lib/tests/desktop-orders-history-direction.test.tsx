@@ -19,9 +19,10 @@ function createOrders() {
 			statusTimestamp: 2,
 			order: {
 				coin: "BTC",
+				limitPx: "0.18342",
 				oid: 1,
 				orderType: "Limit",
-				origSz: "1",
+				origSz: "1.2345",
 				reduceOnly: false,
 				side: "B",
 				timestamp: 1,
@@ -209,6 +210,11 @@ describe("desktop order history direction semantics", () => {
 			"order_history.csv",
 			expect.arrayContaining([expect.arrayContaining(["Time", "Asset", "Direction", "Type", "Status"])]),
 		);
+		const exportRows = mocks.downloadCsv.mock.calls.at(-1)?.[1] as string[][] | undefined;
+		const header = exportRows?.[0] ?? [];
+		const btcRow = exportRows?.find((row) => row.includes("BTC")) ?? [];
+		expect(btcRow[header.indexOf("Price")]).toBe("0.18342");
+		expect(btcRow[header.indexOf("Size")]).toBe("1.2345");
 	});
 
 	it("keeps full order export available when the recent snapshot is empty", () => {

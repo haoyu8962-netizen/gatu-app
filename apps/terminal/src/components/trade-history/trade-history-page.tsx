@@ -26,6 +26,8 @@ import {
 	isAccountHistoryAddress,
 	isAccountHistoryPageSize,
 } from "@/lib/trade/account-history";
+import { getFillDirectionPresentation, getFillDirectionTone } from "@/lib/trade/fill-direction";
+import { getMarketPriceFormatOptions } from "@/lib/trade/market-price-format";
 import {
 	filterTradeHistory,
 	getTradeHistoryMarkets,
@@ -51,14 +53,14 @@ interface Props {
 
 type UserFill = UserFillsResponse[number];
 
-function getDirectionColorClass(fill: UserFill) {
-	if (fill.liquidation) return "text-error";
+function getDirectionColorClass(fill: UserFill, owner: string) {
+	if (getFillDirectionTone(fill, owner) === "liquidation") return "text-error";
 	if (fill.side === "B") return "text-success";
 	return "text-error";
 }
 
 export function TradeHistoryPage({ address }: Props) {
-	const { formatNumber, formatToken, formatUSD } = useNumberFormat();
+	const { formatNumber, formatPrice, formatToken, formatUSD } = useNumberFormat();
 	const { i18n, t } = useLingui();
 	const locale = i18n.locale;
 	const isMobile = useIsMobile();
@@ -92,12 +94,8 @@ export function TradeHistoryPage({ address }: Props) {
 	);
 	const pagination = getAccountHistoryPage(filteredFills, requestedPage, rowsPerPage);
 
-	function getDirectionLabel(direction: string) {
-		if (direction === "Open Long") return t`Open Long`;
-		if (direction === "Close Long") return t`Close Long`;
-		if (direction === "Open Short") return t`Open Short`;
-		if (direction === "Close Short") return t`Close Short`;
-		return direction;
+	function getDirection(fill: UserFill) {
+		return getFillDirectionPresentation(fill, address, (descriptor) => t(descriptor));
 	}
 
 	function getTypeLabel(fill: UserFill) {
@@ -127,7 +125,7 @@ export function TradeHistoryPage({ address }: Props) {
 				[
 					{ header: t`Time`, getValue: (fill) => formatDateTimeShort(fill.time, { locale: i18n.locale }) },
 					{ header: t`Asset`, getValue: (fill) => fill.coin },
-					{ header: t`Direction`, getValue: (fill) => getDirectionLabel(fill.dir) },
+					{ header: t`Direction`, getValue: (fill) => getDirection(fill).label },
 					{ header: t`Type`, getValue: getTypeLabel },
 					{ header: t`Role`, getValue: getRoleLabel },
 					{ header: t`Price`, getValue: (fill) => fill.px },
@@ -334,9 +332,7 @@ export function TradeHistoryPage({ address }: Props) {
 											</time>
 										</div>
 										<div className="mt-2 flex items-center gap-2 text-2xs font-semibold">
-											<span className={getDirectionColorClass(fill)}>
-												{fill.liquidation ? t`Liquidated` : getDirectionLabel(fill.dir)}
-											</span>
+											<span className={getDirectionColorClass(fill, address)}>{getDirection(fill).label}</span>
 											<span className="text-fg-muted">{getRoleLabel(fill)}</span>
 										</div>
 										<dl className="mt-3 grid grid-cols-3 gap-3">
@@ -345,7 +341,9 @@ export function TradeHistoryPage({ address }: Props) {
 													<Trans>Price</Trans>
 												</dt>
 												<dd className="mt-0.5 truncate text-xs font-semibold tabular-nums text-fg">
-													<bdi dir="ltr">{formatUSD(fill.px)}</bdi>
+													<bdi dir="ltr">
+														{formatPrice(fill.px, getMarketPriceFormatOptions(markets.getMarket(fill.coin)))}
+													</bdi>
 												</dd>
 											</div>
 											<div className="min-w-0">
@@ -446,13 +444,15 @@ export function TradeHistoryPage({ address }: Props) {
 														fit
 													/>
 												</TableCell>
-												<TableCell className={cn("px-3 py-0 font-semibold", getDirectionColorClass(fill))}>
-													{fill.liquidation ? t`Liquidated` : getDirectionLabel(fill.dir)}
+												<TableCell className={cn("px-3 py-0 font-semibold", getDirectionColorClass(fill, address))}>
+													{getDirection(fill).label}
 												</TableCell>
 												<TableCell className="px-3 py-0 text-fg-muted">{getTypeLabel(fill)}</TableCell>
 												<TableCell className="px-3 py-0 text-fg-muted">{getRoleLabel(fill)}</TableCell>
 												<TableCell className="px-3 py-0 text-right text-fg">
-													<bdi dir="ltr">{formatUSD(fill.px)}</bdi>
+													<bdi dir="ltr">
+														{formatPrice(fill.px, getMarketPriceFormatOptions(markets.getMarket(fill.coin)))}
+													</bdi>
 												</TableCell>
 												<TableCell className="px-3 py-0 text-right text-fg">
 													<bdi dir="ltr">{formatNumber(fill.sz, markets.getSzDecimals(fill.coin))}</bdi>

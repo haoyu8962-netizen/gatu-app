@@ -7,7 +7,9 @@ import {
 	type AccountLedgerRow,
 	type AccountLedgerUpdate,
 	buildAccountLedgerRows,
+	getAccountLedgerSubAccounts,
 	getAccountLedgerUpdateKey,
+	getAccountLedgerUsdcBridge,
 	isAccountLedgerEarnUpdate,
 	isAccountLedgerRewardsClaimUpdate,
 	isValidAccountLedgerUpdate,
@@ -24,6 +26,7 @@ import {
 const EMPTY_ADDRESS = "0x0000000000000000000000000000000000000000";
 const ACCOUNT_LEDGER_STALE_TIME_MS = 30_000;
 const ACCOUNT_LEDGER_LIST_LOOKBACK_MS = 30 * 24 * 60 * 60 * 1000;
+const SUB_ACCOUNTS_STALE_TIME_MS = 5 * 60_000;
 
 export type AccountLedgerStatus = "error" | "idle" | "loading" | "ready" | "unavailable";
 
@@ -86,6 +89,14 @@ export function useAccountLedger({ enabled: requestedEnabled = true }: AccountLe
 		staleTime: ACCOUNT_LEDGER_STALE_TIME_MS,
 	});
 	const ledgerSubscription = useSubscription("userNonFundingLedgerUpdates", { user }, { enabled });
+	const subAccountsQuery = useQuery({
+		enabled,
+		queryFn: ({ signal }) => info.subAccounts({ user }, signal),
+		queryKey: ["hl", "subAccounts", env, user.toLowerCase()],
+		refetchOnWindowFocus: false,
+		retry: false,
+		staleTime: SUB_ACCOUNTS_STALE_TIME_MS,
+	});
 
 	const restUpdates = ledgerQuery.data;
 	const realtimeEvent = ledgerSubscription.data as UserNonFundingLedgerUpdatesWsEvent | undefined;
@@ -99,7 +110,12 @@ export function useAccountLedger({ enabled: requestedEnabled = true }: AccountLe
 		restUpdates,
 		hasMalformedRealtime || !Array.isArray(realtimeUpdates) ? undefined : realtimeUpdates,
 	);
-	const allRows = buildAccountLedgerRows(updates, user);
+	const allRows = buildAccountLedgerRows(
+		updates,
+		user,
+		getAccountLedgerUsdcBridge(env === "Testnet"),
+		getAccountLedgerSubAccounts(subAccountsQuery.data),
+	);
 	const rows = allRows.slice(0, MAX_HISTORY_ROWS);
 	const rewardClaimRows = allRows.filter((row) => row.action === "rewardsClaim").slice(0, MAX_HISTORY_ROWS);
 	const earnRows = allRows

@@ -26,6 +26,10 @@ the network and directs users wanting Arbitrum USDC to Withdraw. It does not bri
 to Arbitrum; `signatureChainId` identifies the signing domain, not the destination
 network. Withdraw keeps its route-selected Arbitrum behavior described below.
 
+In Deposits and Withdrawals a CCTP withdrawal, which HyperCore records as a `send` to
+USDC's spot system address, is listed as Withdrawal with HyperEVM as its destination;
+the rules are in [History values](trading-toolbar-redesign.md#history-values).
+
 ## Account funding entries and amount units
 
 Desktop account actions open the existing shared surfaces; opening Deposit,

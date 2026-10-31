@@ -98,7 +98,7 @@ function MobileOrdersHistoryTabContent({
 	disclosureState,
 	scrollMode = "contained",
 }: MobileOrdersHistoryTabContentProps) {
-	const { formatToken, formatUSD } = useNumberFormat();
+	const { formatToken } = useNumberFormat();
 	const { i18n, t } = useLingui();
 	const locale = i18n.locale;
 	const { getHistoricalOrderStatusLabel, getOrderSideLabel, getOrderTypeLabel } = useOrderDisplayLabels();
@@ -192,18 +192,15 @@ function MobileOrdersHistoryTabContent({
 					{ header: t`Type`, getValue: getEntryTypeLabel },
 					{
 						header: t`Price`,
-						getValue: (entry) => formatUSD(entry.order.order.limitPx, { compact: false }),
+						getValue: (entry) => entry.order.order.limitPx,
 					},
 					{
 						header: t`Trigger Price`,
-						getValue: (entry) => {
-							const triggerPrice = getOrderHistoryTriggerPrice(entry);
-							return triggerPrice ? formatUSD(triggerPrice, { compact: false }) : FALLBACK_VALUE_PLACEHOLDER;
-						},
+						getValue: (entry) => getOrderHistoryTriggerPrice(entry) ?? FALLBACK_VALUE_PLACEHOLDER,
 					},
 					{
 						header: t`Size`,
-						getValue: (entry) => formatToken(entry.size, markets.getMarket(entry.coin)?.szDecimals),
+						getValue: (entry) => entry.size,
 					},
 					{ header: t`Status`, getValue: getEntryStatusLabel },
 					{
@@ -402,7 +399,7 @@ function MobileOrdersHistoryTabContent({
 													<div className="min-w-0">
 														<div className="truncate text-3xs leading-[14px] text-market-close-subtle">{t`Price`}</div>
 														<div className="truncate whitespace-nowrap text-xs font-semibold leading-[17px] text-market-close-fg tabular-nums">
-															<HistoricalOrderPrice align="start" order={entry.order.order} />
+															<HistoricalOrderPrice align="start" market={market} order={entry.order.order} />
 														</div>
 													</div>
 													<div className="min-w-0">

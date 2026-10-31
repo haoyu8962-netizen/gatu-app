@@ -38,6 +38,7 @@ const POSITION_MARKET_CLOSE_MODAL_SOURCE = readPositionSource("position-market-c
 const POSITION_LIMIT_CLOSE_MODAL_SOURCE = readPositionSource("position-limit-close-modal.tsx");
 const POSITION_CLOSE_ALL_MODAL_SOURCE = readPositionSource("position-close-all-modal.tsx");
 const MOBILE_POSITION_CARD_SOURCE = readMobilePositionSource("mobile-position-card.tsx");
+const COLLATERAL_AMOUNT_SOURCE = readFileSync(resolve(TEST_DIR, "../trade/collateral-amount.ts"), "utf8");
 
 describe("positions table visual contract", () => {
 	it("uses the compact official-style hierarchy with a sticky table header", () => {
@@ -132,7 +133,10 @@ describe("positions table visual contract", () => {
 		expect(POSITIONS_TAB_SOURCE).toContain('context: "Cumulative position funding"');
 		expect(POSITION_ROW_SOURCE).toContain("formatQuoteAmount(p.positionValue, quoteSymbol");
 		expect(POSITION_ROW_SOURCE).toContain('style: "decimal"');
-		expect(POSITION_ROW_SOURCE).toContain('currencyDisplay: "narrowSymbol"');
+		expect(POSITION_ROW_SOURCE).toContain("formatCollateralAmount(p.unrealizedPnl, quoteSymbol");
+		expect(MOBILE_POSITION_CARD_SOURCE).toContain("formatCollateralAmount(p.unrealizedPnl, quoteSymbol");
+		expect(COLLATERAL_AMOUNT_SOURCE).toContain('currencyDisplay: "narrowSymbol"');
+		expect(COLLATERAL_AMOUNT_SOURCE.match(/compact: false/g)).toHaveLength(2);
 		expect(POSITION_ROW_SOURCE).not.toContain(".toNumber()");
 		expect(POSITION_ROW_SOURCE).not.toContain("Math.abs(");
 		expect(MOBILE_POSITION_CARD_SOURCE).not.toContain(".toNumber()");

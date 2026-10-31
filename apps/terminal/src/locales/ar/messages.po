@@ -95,6 +95,10 @@ msgstr "{days} يومًا"
 msgid "{days} days left"
 msgstr "متبقٍ {days} يومًا"
 
+#: src/lib/trade/fill-direction.ts
+msgid "{direction} (Price Improved)"
+msgstr "{direction} (سعر محسَّن)"
+
 #: src/components/funding-history/funding-history-page.tsx
 msgid "{FUNDING_HISTORY_WINDOW_DAYS}-day API window"
 msgstr "نافذة API لمدة {FUNDING_HISTORY_WINDOW_DAYS} يومًا"
@@ -1070,6 +1074,10 @@ msgstr "محافظ API المعتمدة"
 msgid "Authorizing request"
 msgstr "جارٍ تفويض الطلب"
 
+#: src/lib/trade/fill-direction.ts
+msgid "Auto-Deleveraging"
+msgstr "تقليص الرافعة التلقائي"
+
 #: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
 msgid "Automatic USDC deposit failed"
 msgstr "فشل الإيداع التلقائي لـ USDC"
@@ -1174,6 +1182,10 @@ msgstr "العودة إلى التداول"
 #: src/components/vaults/vaults-page.tsx
 msgid "Back to Vaults"
 msgstr "العودة إلى الخزائن"
+
+#: src/lib/trade/fill-direction.ts
+msgid "Backstop Liquidation: {direction}"
+msgstr "تصفية احتياطية: {direction}"
 
 #: src/config/ui-text.ts
 msgid "Balance"
@@ -1318,6 +1330,7 @@ msgstr "مكافآت المنشئ هي تفصيل تراكمي حسب المصد
 #: src/config/trade-panel-labels.ts
 #: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-order-display-labels.ts
+#: src/lib/trade/fill-direction.ts
 msgid "Buy"
 msgstr "شراء"
 
@@ -1814,13 +1827,10 @@ msgstr "إغلاق إجراء محفظة API"
 msgid "Close close-all confirmation"
 msgstr "إغلاق تأكيد إغلاق الكل"
 
-#: src/components/trade-history/trade-history-page.tsx
-#: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
-#: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/twap-fill-history-table.tsx
 #: src/hooks/trade/use-order-display-labels.ts
-#: src/hooks/trade/use-twap-fill-history-csv.ts
+#: src/lib/trade/fill-direction.ts
 msgid "Close Long"
 msgstr "إغلاق طويل"
 
@@ -1881,13 +1891,10 @@ msgstr "إغلاق المركز"
 msgid "Close reverse confirmation"
 msgstr "إغلاق تأكيد عكس المركز"
 
-#: src/components/trade-history/trade-history-page.tsx
-#: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
-#: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/twap-fill-history-table.tsx
 #: src/hooks/trade/use-order-display-labels.ts
-#: src/hooks/trade/use-twap-fill-history-csv.ts
+#: src/lib/trade/fill-direction.ts
 msgid "Close Short"
 msgstr "إغلاق قصير"
 
@@ -3777,6 +3784,10 @@ msgstr "من"
 msgid "From {startTime} to {endTime}. Latest funding rate {latestRate}; cumulative funding rate {cumulativeRate}. Highest {maxRate}; lowest {minRate}."
 msgstr "من {startTime} إلى {endTime}. أحدث معدل تمويل {latestRate}؛ معدل التمويل التراكمي {cumulativeRate}. الأعلى {maxRate}؛ الأدنى {minRate}."
 
+#: src/lib/trade/fill-direction.ts
+msgid "Full Borrow Liquidation"
+msgstr "تصفية كاملة للاقتراض"
+
 #: src/components/trade/tradebox/order-toast.tsx
 msgid "Fully filled"
 msgstr "تم التنفيذ بالكامل"
@@ -4569,15 +4580,8 @@ msgstr "حساب التخزين المرتبط: <0>{0}</0>."
 msgid "Liq. Price"
 msgstr "سعر التصفية"
 
-#: src/components/trade-history/trade-history-page.tsx
-#: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
-#: src/components/trade/mobile/mobile-history-tab.tsx
-#: src/components/trade/mobile/mobile-history-tab.tsx
-#: src/components/trade/positions/history-tab.tsx
-#: src/components/trade/positions/history-tab.tsx
 #: src/config/account-ledger.ts
-#: src/hooks/trade/use-twap-fill-history-csv.ts
 msgid "Liquidated"
 msgstr "تمت التصفية"
 
@@ -4790,8 +4794,13 @@ msgstr "تسجيل الدخول بالبريد الإلكتروني"
 #: src/components/trade/positions/position-row.tsx
 #: src/config/trade-panel-labels.ts
 #: src/domain/trade/order-confirmation.ts
+#: src/lib/trade/funding-position.ts
 msgid "Long"
 msgstr "شراء"
+
+#: src/lib/trade/fill-direction.ts
+msgid "Long > Short"
+msgstr "شراء > بيع"
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Long position"
@@ -5007,6 +5016,10 @@ msgstr "تغيّرت البيانات الوصفية للسوق. حدّث الص
 #: src/lib/errors/definitions/market.ts
 msgid "Market not ready"
 msgstr "السوق غير جاهز"
+
+#: src/lib/trade/fill-direction.ts
+msgid "Market Order Liquidation: {direction}"
+msgstr "تصفية بأمر سوق: {direction}"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -5851,12 +5864,13 @@ msgstr "العقود المفتوحة"
 msgid "Open interest cap"
 msgstr "حد العقود المفتوحة"
 
-#: src/components/trade-history/trade-history-page.tsx
-#: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/config/account-ledger.ts
+msgid "Open Interest Reward"
+msgstr "مكافأة العقود المفتوحة"
+
 #: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
-#: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/twap-fill-history-table.tsx
-#: src/hooks/trade/use-twap-fill-history-csv.ts
+#: src/lib/trade/fill-direction.ts
 msgid "Open Long"
 msgstr "فتح شراء"
 
@@ -5889,12 +5903,9 @@ msgstr "تغيّرت الأوامر المفتوحة. أعد فتح نافذة �
 msgid "Open related page"
 msgstr "فتح الصفحة ذات الصلة"
 
-#: src/components/trade-history/trade-history-page.tsx
-#: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
-#: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/twap-fill-history-table.tsx
-#: src/hooks/trade/use-twap-fill-history-csv.ts
+#: src/lib/trade/fill-direction.ts
 msgid "Open Short"
 msgstr "فتح بيع"
 
@@ -6184,6 +6195,10 @@ msgstr "تُعاد تحميل الصفحة عند التغيير"
 msgid "Partial amount"
 msgstr "مبلغ جزئي"
 
+#: src/lib/trade/fill-direction.ts
+msgid "Partial Borrow Liquidation"
+msgstr "تصفية جزئية للاقتراض"
+
 #: src/components/trade/positions/position-close-all-modal.tsx
 #~ msgid "Partial result — reopen to retry"
 #~ msgstr "نتيجة جزئية — أعد الفتح لإعادة المحاولة"
@@ -6220,6 +6235,12 @@ msgstr "الإيقاف المؤقت غير متاح: لا يدعم Hyperliquid �
 #: src/components/trade/positions/funding-tab.tsx
 msgid "Payment"
 msgstr "الدفعة"
+
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/positions/funding-tab.tsx
+msgid "Payment Token"
+msgstr "رمز الدفعة"
 
 #: src/components/trade/tradebox/order-toast.tsx
 #~ msgid "pending"
@@ -6463,10 +6484,7 @@ msgstr "قيمة المحفظة"
 
 #: src/components/funding-history/funding-history-page.tsx
 #: src/components/funding-history/funding-history-page.tsx
-#: src/components/funding-history/funding-history-page.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
-#: src/components/trade/mobile/mobile-funding-tab.tsx
-#: src/components/trade/positions/funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
 #: src/config/trade-panel-labels.ts
 msgid "Position"
@@ -7853,6 +7871,7 @@ msgstr "الأرباح والخسائر للفترة المحددة"
 #: src/config/trade-panel-labels.ts
 #: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-order-display-labels.ts
+#: src/lib/trade/fill-direction.ts
 msgid "Sell"
 msgstr "بيع"
 
@@ -7972,8 +7991,13 @@ msgstr "مشاركة الأرباح والخسائر لـ {displayName}"
 #: src/components/trade/positions/position-row.tsx
 #: src/config/trade-panel-labels.ts
 #: src/domain/trade/order-confirmation.ts
+#: src/lib/trade/funding-position.ts
 msgid "Short"
 msgstr "بيع"
+
+#: src/lib/trade/fill-direction.ts
+msgid "Short > Long"
+msgstr "بيع > شراء"
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Short position"
@@ -8004,6 +8028,9 @@ msgid "Shows reward claims reported in the last 30 days. Claims can include refe
 msgstr "يعرض مطالبات المكافآت المسجّلة خلال آخر 30 يومًا. قد تشمل المطالبات مكافآت الإحالة والمنشئ."
 
 #: src/components/funding-history/funding-history-page.tsx
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/positions/funding-tab.tsx
 msgid "Side"
 msgstr "الجانب"
 
@@ -8044,6 +8071,7 @@ msgstr ""
 msgid "Signing..."
 msgstr "جاري التوقيع..."
 
+#: src/components/funding-history/funding-history-page.tsx
 #: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/historical-orders/historical-orders-page.tsx
@@ -8052,6 +8080,7 @@ msgstr "جاري التوقيع..."
 #: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
+#: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
@@ -8067,6 +8096,7 @@ msgstr "جاري التوقيع..."
 #: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
 #: src/components/trade/orderbook/orderbook-row.tsx
 #: src/components/trade/orderbook/trades-panel.tsx
+#: src/components/trade/positions/funding-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx

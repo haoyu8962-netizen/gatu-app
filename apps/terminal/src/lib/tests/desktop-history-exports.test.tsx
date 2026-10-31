@@ -323,6 +323,22 @@ describe("desktop history exports", () => {
 		expect(container.textContent).not.toContain("TWAP");
 	});
 
+	it("keeps a fill against another account's liquidation an ordinary fill and labels the owner's own", () => {
+		const [fill] = mocks.fills;
+		mocks.fills = [
+			{
+				...fill,
+				liquidation: { liquidatedUser: "0x9999999999999999999999999999999999999999", markPx: "1", method: "market" },
+			},
+			{ ...fill, hash: "0xbbb", liquidation: { markPx: "1", method: "market" }, tid: 2 },
+		];
+		act(() => root.render(<HistoryTab />));
+
+		expect(container.textContent).toContain("Close Long (Price Improved)");
+		expect(container.textContent).toContain("Market Order Liquidation: Close Long");
+		expect(container.textContent).not.toContain("Liquidated");
+	});
+
 	it("keeps full trade export available when the recent display window is empty", () => {
 		mocks.fills = [];
 		act(() => root.render(<HistoryTab />));
@@ -359,7 +375,10 @@ describe("desktop history exports", () => {
 		clickExport();
 		expect(mocks.downloadCsv).toHaveBeenCalledWith(
 			"funding_history.csv",
-			expect.arrayContaining([expect.arrayContaining(["Time", "Asset", "Position", "Rate", "Payment"])]),
+			expect.arrayContaining([
+				["Time", "Asset", "Side", "Size", "Rate", "Payment", "Payment Token"],
+				[expect.any(String), "BTC", "Long", "0.01", "0.0001", "1.25", "USDC"],
+			]),
 		);
 	});
 

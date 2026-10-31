@@ -6,6 +6,7 @@ import { type ReactNode, Suspense, useMemo, useState } from "react";
 import { DashboardHeader, FooterBar, GlobalModals } from "@/components/dashboard/dashboard-chrome";
 import { DashboardFrameView } from "@/components/dashboard/dashboard-frame-view";
 import { AssetBadge } from "@/components/trade/components/asset-badge";
+import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { DASHBOARD_FRAMES } from "@/config/dashboard-frames";
 import { getToolbarAbsoluteSize } from "@/domain/trade/trading-toolbar-metrics";
 import { useFundingHistory } from "@/hooks/trade/use-funding-history";
@@ -16,6 +17,7 @@ import { cn } from "@/lib/cn";
 import { buildCsvRows } from "@/lib/csv";
 import { formatDateTimeShort, shortenAddress, useNumberFormat } from "@/lib/format";
 import { useMarkets } from "@/lib/hyperliquid";
+import { getFundingCollateralSymbol } from "@/lib/trade/collateral-amount";
 import {
 	DEFAULT_FUNDING_HISTORY_PAGE_SIZE,
 	FUNDING_HISTORY_PAGE_SIZES,
@@ -29,6 +31,7 @@ import {
 	isFundingHistoryPageSize,
 	isFundingHistorySideFilter,
 } from "@/lib/trade/funding-history";
+import { getFundingPositionPresentation, getFundingSideLabel } from "@/lib/trade/funding-position";
 import { getUserFundingKey } from "@/lib/trade/user-funding";
 import { getMarketCloseValueColorClass } from "@/lib/ui/value-color";
 import { useIsTestnet } from "@/stores/use-global-settings-store";
@@ -76,21 +79,18 @@ export function FundingHistoryPage({ address }: Props) {
 				{ header: t`Time`, getValue: (funding) => formatDateTimeShort(funding.time, { locale: i18n.locale }) },
 				{ header: t`Asset`, getValue: (funding) => funding.coin },
 				{
-					header: t`Position`,
-					getValue: (funding) => {
-						const market = markets.getMarket(funding.coin);
-						return formatToken(getToolbarAbsoluteSize(funding.szi), {
-							decimals: market?.szDecimals,
-							symbol: market?.shortName,
-						});
-					},
-				},
-				{
-					header: t`Rate`,
+					header: t`Side`,
 					getValue: (funding) =>
-						formatPercent(funding.fundingRate, { maximumFractionDigits: 4, minimumFractionDigits: 4 }),
+						getFundingSideLabel(funding.szi, (descriptor) => t(descriptor)) ?? FALLBACK_VALUE_PLACEHOLDER,
 				},
-				{ header: t`Payment`, getValue: (funding) => formatToken(funding.usdc, { symbol: "USDC" }) },
+				{ header: t`Size`, getValue: (funding) => getToolbarAbsoluteSize(funding.szi) ?? funding.szi },
+				{ header: t`Rate`, getValue: (funding) => funding.fundingRate },
+				{ header: t`Payment`, getValue: (funding) => funding.usdc },
+				{
+					header: t`Payment Token`,
+					getValue: (funding) =>
+						getFundingCollateralSymbol(funding.coin, markets.getMarket(funding.coin)) ?? FALLBACK_VALUE_PLACEHOLDER,
+				},
 			]),
 	});
 
@@ -240,6 +240,9 @@ export function FundingHistoryPage({ address }: Props) {
 						<div className="divide-y divide-stroke-weak min-[1001px]:hidden">
 							{pagination.rows.map((funding) => {
 								const market = markets.getMarket(funding.coin);
+								const position = getFundingPositionPresentation(funding.szi, market, formatToken, (descriptor) =>
+									t(descriptor),
+								);
 								return (
 									<article key={getUserFundingKey(funding)} className="px-4 py-3">
 										<div className="flex min-w-0 items-center justify-between gap-3">
@@ -260,12 +263,17 @@ export function FundingHistoryPage({ address }: Props) {
 													<Trans>Position</Trans>
 												</dt>
 												<dd className="mt-0.5 truncate text-xs font-semibold tabular-nums text-fg">
-													<bdi dir="ltr">
-														{formatToken(getToolbarAbsoluteSize(funding.szi), {
-															decimals: market?.szDecimals,
-															symbol: market?.shortName,
-														})}
-													</bdi>
+													{position.sideLabel ? (
+														<span
+															className={cn(
+																"me-1",
+																position.side === "long" ? "text-market-close-success" : "text-market-close-danger",
+															)}
+														>
+															{position.sideLabel}
+														</span>
+													) : null}
+													<bdi dir="ltr">{position.size}</bdi>
 												</dd>
 											</div>
 											<div className="min-w-0">
@@ -291,7 +299,11 @@ export function FundingHistoryPage({ address }: Props) {
 														getMarketCloseValueColorClass(funding.usdc),
 													)}
 												>
-													<bdi dir="ltr">{formatToken(funding.usdc, { symbol: "USDC" })}</bdi>
+													<bdi dir="ltr">
+														{formatToken(funding.usdc, {
+															symbol: getFundingCollateralSymbol(funding.coin, market) ?? undefined,
+														})}
+													</bdi>
 												</dd>
 											</div>
 										</dl>
@@ -338,6 +350,9 @@ export function FundingHistoryPage({ address }: Props) {
 								<TableBody>
 									{pagination.rows.map((funding) => {
 										const market = markets.getMarket(funding.coin);
+										const position = getFundingPositionPresentation(funding.szi, market, formatToken, (descriptor) =>
+											t(descriptor),
+										);
 										return (
 											<TableRow
 												key={getUserFundingKey(funding)}
@@ -353,12 +368,17 @@ export function FundingHistoryPage({ address }: Props) {
 													/>
 												</TableCell>
 												<TableCell className="px-3 py-0 text-right text-fg">
-													<bdi dir="ltr">
-														{formatToken(getToolbarAbsoluteSize(funding.szi), {
-															decimals: market?.szDecimals,
-															symbol: market?.shortName,
-														})}
-													</bdi>
+													{position.sideLabel ? (
+														<span
+															className={cn(
+																"me-1",
+																position.side === "long" ? "text-market-close-success" : "text-market-close-danger",
+															)}
+														>
+															{position.sideLabel}
+														</span>
+													) : null}
+													<bdi dir="ltr">{position.size}</bdi>
 												</TableCell>
 												<TableCell className="px-3 py-0 text-right text-fg-muted">
 													<bdi dir="ltr">
@@ -374,7 +394,11 @@ export function FundingHistoryPage({ address }: Props) {
 														getMarketCloseValueColorClass(funding.usdc),
 													)}
 												>
-													<bdi dir="ltr">{formatToken(funding.usdc, { symbol: "USDC" })}</bdi>
+													<bdi dir="ltr">
+														{formatToken(funding.usdc, {
+															symbol: getFundingCollateralSymbol(funding.coin, market) ?? undefined,
+														})}
+													</bdi>
 												</TableCell>
 												<TableCell className="px-5 py-0 text-right text-xs text-fg-muted">
 													{formatDateTimeShort(funding.time, { locale })}

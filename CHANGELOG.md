@@ -611,6 +611,24 @@ changes, not evidence that a build has been deployed or accepted on real devices
 - The Referrals page no longer becomes unavailable when the exchange adds a field to its referral
   data. Referral codes are typed and applied in upper case and accept only letters and digits, as on
   the official terminal, so a code from a link is confirmed after it is applied.
+- Trade history no longer marks a fill as liquidated because someone else was liquidated against
+  your order: like the official terminal, only your own liquidation reads "Market Order
+  Liquidation", a fill against another account's liquidation reads "(Price Improved)" in its normal
+  colour, and backstop, borrow and auto-deleveraging fills keep their own names. Spot Buy/Sell and
+  position flips are now translated.
+- History prices keep the digits the market allows: trade history no longer compacts `29780.5` to
+  `$29.78K`, and order history no longer cuts `0.18342` to `$0.18`.
+- Funding history shows whether each payment was on a long or a short position and states payments
+  of HIP-3 markets in that market's collateral. HIP-3 positions show their PNL, margin and funding in
+  the collateral token, like their position value.
+- Funding and order history CSV exports write the exchange's values unformatted (funding now has
+  Side, Size and Payment Token columns), like the trade-history export.
+- Deposits and withdrawals list USDC moved over CCTP as Deposit or Withdrawal instead of Send, and
+  transfers between HyperCore and HyperEVM as Transfer, with HyperEVM as their source or destination.
+  The chain beyond HyperEVM is not shown yet: the official terminal reads it from Across's transfer
+  records, which this terminal does not use.
+- As on the official terminal, Deposits and withdrawals labels transfers with your sub-accounts as
+  Sub-account Transfer and open interest reward payments as Open Interest Reward instead of Send.
 - The Market order-type tab and menu entry in the order form use the order-type wording instead of
   the market-list wording: 市价 in Chinese, 成行 in Japanese, मार्केट in Hindi, Au marché in French
   and سعر السوق in Arabic (English and Spanish are unchanged). The compact account-mode placeholder

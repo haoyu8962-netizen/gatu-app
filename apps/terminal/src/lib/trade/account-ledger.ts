@@ -1,8 +1,10 @@
 import type { UserNonFundingLedgerUpdatesResponse } from "@nktkas/hyperliquid";
 import Big from "big.js";
+import { CCTP_NETWORKS } from "@/config/cctp";
 import { fetchTimeRangeHistory } from "@/lib/trade/history-pagination";
 
 type SdkAccountLedgerDelta = UserNonFundingLedgerUpdatesResponse[number]["delta"];
+type SdkSendDelta = Extract<SdkAccountLedgerDelta, { type: "send" }>;
 
 /** The SDK validates requests, but the Info transport returns production response data unchecked. */
 export interface AccountLedgerUpdate {
@@ -22,6 +24,7 @@ export type AccountLedgerAction =
 	| "hip3LiquidatorDeposit"
 	| "hip3LiquidatorWithdrawal"
 	| "liquidation"
+	| "openInterestReward"
 	| "other"
 	| "repay"
 	| "rewardsClaim"
@@ -40,7 +43,7 @@ export type AccountLedgerAction =
 	| "withdrawal";
 
 export interface AccountLedgerLocation {
-	kind: "arbitrum" | "earn" | "perpDex" | "perps" | "spot" | "staking";
+	kind: "arbitrum" | "earn" | "hyperevm" | "perpDex" | "perps" | "spot" | "staking";
 	dex?: string;
 }
 
@@ -63,8 +66,25 @@ export interface AccountLedgerRow {
 	token: string;
 }
 
+/**
+ * Where native USDC crosses between HyperCore and HyperEVM. A CCTP withdrawal sends USDC to its spot
+ * system address and a CCTP deposit arrives from its linked HyperEVM contract, Circle's
+ * CoreDepositWallet. Without the bridge's own records the chain beyond HyperEVM is unknown, so these
+ * addresses only decide how a ledger row is labelled.
+ */
+export interface AccountLedgerUsdcBridge {
+	evmContract: string;
+	systemAddress: string;
+}
+
+/** USDC is spot token 0 on both networks, so its system address is the base `0x2000…0000`. */
+const USDC_SPOT_SYSTEM_ADDRESS = "0x2000000000000000000000000000000000000000";
+const HYPE_SYSTEM_ADDRESS = "0x2222222222222222222222222222222222222222";
+const SPOT_SYSTEM_ADDRESS_PREFIX = "0x200000000000000000000000";
+
 const ARBITRUM_LOCATION: AccountLedgerLocation = { kind: "arbitrum" };
 const EARN_LOCATION: AccountLedgerLocation = { kind: "earn" };
+const HYPEREVM_LOCATION: AccountLedgerLocation = { kind: "hyperevm" };
 const PERPS_LOCATION: AccountLedgerLocation = { kind: "perps" };
 const SPOT_LOCATION: AccountLedgerLocation = { kind: "spot" };
 const STAKING_LOCATION: AccountLedgerLocation = { kind: "staking" };
@@ -93,6 +113,79 @@ function getDexLocation(dex: string): AccountLedgerLocation {
 	if (dex === "spot") return SPOT_LOCATION;
 	if (dex === "") return PERPS_LOCATION;
 	return { kind: "perpDex", dex };
+}
+
+export function getAccountLedgerUsdcBridge(isTestnet: boolean): AccountLedgerUsdcBridge {
+	return {
+		evmContract: CCTP_NETWORKS[isTestnet ? "testnet" : "mainnet"].coreDepositWallet,
+		systemAddress: USDC_SPOT_SYSTEM_ADDRESS,
+	};
+}
+
+/** HyperCore moves tokens to HyperEVM through system addresses: `0x2222…` for HYPE, `0x2000…` plus the token index otherwise. */
+function isSystemAddress(address: string): boolean {
+	const normalized = address.toLowerCase();
+	return normalized === HYPE_SYSTEM_ADDRESS || normalized.startsWith(SPOT_SYSTEM_ADDRESS_PREFIX);
+}
+
+function getSendLocation(dex: string, address: string): AccountLedgerLocation {
+	return dex === "spot" && isSystemAddress(address) ? HYPEREVM_LOCATION : getDexLocation(dex);
+}
+
+/** The official terminal's classification of a `send` when it has no CCTP record for the transfer. */
+/** The accounts that pay Hyperliquid's open interest rewards, as the official terminal recognizes them. */
+const OPEN_INTEREST_REWARD_SENDERS: ReadonlySet<string> = new Set([
+	"0x995e92d4bb508276f839f1f191df0fbddb8582ba",
+	"0x4e8b59f6f39fde9e908dff6554c31f232f8a9d0f",
+]);
+const NO_SUB_ACCOUNTS: ReadonlySet<string> = new Set();
+
+/** Lower-cased addresses of the owner's sub-accounts from an `info.subAccounts` answer; none when it is missing. */
+export function getAccountLedgerSubAccounts(response: unknown): ReadonlySet<string> {
+	if (!Array.isArray(response)) return NO_SUB_ACCOUNTS;
+	return new Set(
+		response.flatMap((entry) =>
+			isRecord(entry) && typeof entry.subAccountUser === "string" ? [entry.subAccountUser.toLowerCase()] : [],
+		),
+	);
+}
+
+function involvesSubAccount(from: string, to: string, subAccounts: ReadonlySet<string>): boolean {
+	return subAccounts.has(from.toLowerCase()) || subAccounts.has(to.toLowerCase());
+}
+
+function getInternalTransferAction(
+	delta: { user: string; destination: string },
+	subAccounts: ReadonlySet<string>,
+): AccountLedgerAction {
+	if (OPEN_INTEREST_REWARD_SENDERS.has(delta.user.toLowerCase())) return "openInterestReward";
+	if (involvesSubAccount(delta.user, delta.destination, subAccounts)) return "subAccountTransfer";
+	return "send";
+}
+
+function getSpotTransferAction(
+	delta: { user: string; destination: string },
+	throughHyperEvm: boolean,
+	subAccounts: ReadonlySet<string>,
+): AccountLedgerAction {
+	if (involvesSubAccount(delta.user, delta.destination, subAccounts)) return "subAccountTransfer";
+	return throughHyperEvm ? "transfer" : "send";
+}
+
+function getSendAction(
+	delta: SdkSendDelta,
+	user: string,
+	usdcBridge: AccountLedgerUsdcBridge,
+	subAccounts: ReadonlySet<string>,
+): AccountLedgerAction {
+	if (involvesSubAccount(delta.user, delta.destination, subAccounts)) return "subAccountTransfer";
+	if (delta.destinationDex === "spot" && hasSameAddress(delta.destination, usdcBridge.systemAddress)) {
+		return "withdrawal";
+	}
+	const betweenOwnBalances = hasSameAddress(delta.user, user) && hasSameAddress(delta.destination, user);
+	if (betweenOwnBalances || isSystemAddress(delta.user) || isSystemAddress(delta.destination)) return "transfer";
+	if (hasSameAddress(delta.destination, user) && hasSameAddress(delta.user, usdcBridge.evmContract)) return "deposit";
+	return "send";
 }
 
 export function getAccountLedgerUpdateKey(update: AccountLedgerUpdate): string {
@@ -157,16 +250,26 @@ export async function fetchAccountLedgerHistory(
 	return { truncated: result.truncated, updates: mergeAccountLedgerUpdates(result.items) };
 }
 
-export function buildAccountLedgerRows(updates: readonly AccountLedgerUpdate[], user: string): AccountLedgerRow[] {
+export function buildAccountLedgerRows(
+	updates: readonly AccountLedgerUpdate[],
+	user: string,
+	usdcBridge: AccountLedgerUsdcBridge,
+	subAccounts: ReadonlySet<string> = NO_SUB_ACCOUNTS,
+): AccountLedgerRow[] {
 	return updates.flatMap((update) => {
-		const row = buildAccountLedgerRow(update, user);
+		const row = buildAccountLedgerRow(update, user, usdcBridge, subAccounts);
 		return row ? [row] : [];
 	});
 }
 
-export function buildAccountLedgerRow(update: AccountLedgerUpdate, user: string): AccountLedgerRow | null {
+export function buildAccountLedgerRow(
+	update: AccountLedgerUpdate,
+	user: string,
+	usdcBridge: AccountLedgerUsdcBridge,
+	subAccounts: ReadonlySet<string> = NO_SUB_ACCOUNTS,
+): AccountLedgerRow | null {
 	try {
-		const row = buildAccountLedgerRowUnchecked(update, user);
+		const row = buildAccountLedgerRowUnchecked(update, user, usdcBridge, subAccounts);
 		if (row === null || isValidAccountLedgerRow(row)) return row;
 	} catch {
 		// Production may add fields or variants before the pinned SDK updates its union.
@@ -176,7 +279,12 @@ export function buildAccountLedgerRow(update: AccountLedgerUpdate, user: string)
 	return buildUnknownAccountLedgerRow(update.delta, getAccountLedgerRowBase(update));
 }
 
-function buildAccountLedgerRowUnchecked(update: AccountLedgerUpdate, user: string): AccountLedgerRow | null {
+function buildAccountLedgerRowUnchecked(
+	update: AccountLedgerUpdate,
+	user: string,
+	usdcBridge: AccountLedgerUsdcBridge,
+	subAccounts: ReadonlySet<string>,
+): AccountLedgerRow | null {
 	if (!isRecord(update.delta) || typeof update.delta.type !== "string") return null;
 	const rawDelta = update.delta;
 	const base = getAccountLedgerRowBase(update);
@@ -261,7 +369,7 @@ function buildAccountLedgerRowUnchecked(update: AccountLedgerUpdate, user: strin
 			const incoming = hasSameAddress(delta.destination, user);
 			return {
 				...base,
-				action: "send",
+				action: getInternalTransferAction(delta, subAccounts),
 				amount: incoming ? subtract(delta.usdc, delta.fee) : negate(delta.usdc),
 				destination: PERPS_LOCATION,
 				explorer: "hyperliquid",
@@ -298,14 +406,15 @@ function buildAccountLedgerRowUnchecked(update: AccountLedgerUpdate, user: strin
 		case "send": {
 			const incoming = hasSameAddress(delta.destination, user);
 			const nativeFee = createFee(delta.nativeTokenFee, "HYPE");
+			const action = getSendAction(delta, user, usdcBridge, subAccounts);
 			return {
 				...base,
-				action: "send",
+				action,
 				amount: incoming ? delta.amount : negate(delta.amount),
-				destination: getDexLocation(delta.destinationDex),
+				destination: getSendLocation(delta.destinationDex, delta.destination),
 				explorer: "hyperliquid",
 				fee: nativeFee ?? createFee(delta.fee, delta.feeToken || delta.token),
-				source: getDexLocation(delta.sourceDex),
+				source: action === "deposit" ? HYPEREVM_LOCATION : getSendLocation(delta.sourceDex, delta.user),
 				token: delta.token,
 			};
 		}
@@ -323,14 +432,15 @@ function buildAccountLedgerRowUnchecked(update: AccountLedgerUpdate, user: strin
 		case "spotTransfer": {
 			const incoming = hasSameAddress(delta.destination, user);
 			const nativeFee = createFee(delta.nativeTokenFee, "HYPE");
+			const throughHyperEvm = isSystemAddress(delta.user) || isSystemAddress(delta.destination);
 			return {
 				...base,
-				action: "send",
+				action: getSpotTransferAction(delta, throughHyperEvm, subAccounts),
 				amount: incoming ? delta.amount : negate(delta.amount),
-				destination: SPOT_LOCATION,
+				destination: throughHyperEvm && !incoming ? HYPEREVM_LOCATION : SPOT_LOCATION,
 				explorer: "hyperliquid",
 				fee: nativeFee ?? createFee(delta.fee, delta.feeToken || delta.token),
-				source: SPOT_LOCATION,
+				source: throughHyperEvm && incoming ? HYPEREVM_LOCATION : SPOT_LOCATION,
 				token: delta.token,
 			};
 		}

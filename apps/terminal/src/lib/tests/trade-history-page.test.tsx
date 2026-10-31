@@ -267,22 +267,41 @@ describe("TradeHistoryPage", () => {
 		expect(container.textContent).toContain("No fills match the selected filters");
 	});
 
-	it("renders buy-side liquidations with danger styling", () => {
+	it("renders the account's own buy-side liquidation with danger styling", () => {
 		mocks.history.fills = [createFill(0)];
 		mocks.history.fills[0] = {
 			...mocks.history.fills[0],
-			liquidation: { markPx: "90", method: "market" },
+			liquidation: { liquidatedUser: ADDRESS, markPx: "90", method: "market" },
 		};
 		renderPage();
 
 		const labels = [...container.querySelectorAll("span, td")].filter(
-			(element) => element.textContent === "Liquidated",
+			(element) => element.textContent === "Market Order Liquidation: Open Long",
 		);
 		expect(labels).toHaveLength(2);
 		for (const label of labels) {
 			expect(label.className).toContain("text-error");
 			expect(label.className).not.toContain("text-success");
 		}
+	});
+
+	it("renders a fill against another account's liquidation as an ordinary price-improved fill", () => {
+		mocks.history.fills = [createFill(0)];
+		mocks.history.fills[0] = {
+			...mocks.history.fills[0],
+			liquidation: { liquidatedUser: "0x9999999999999999999999999999999999999999", markPx: "90", method: "market" },
+		};
+		renderPage();
+
+		const labels = [...container.querySelectorAll("span, td")].filter(
+			(element) => element.textContent === "Open Long (Price Improved)",
+		);
+		expect(labels).toHaveLength(2);
+		for (const label of labels) {
+			expect(label.className).toContain("text-success");
+			expect(label.className).not.toContain("text-error");
+		}
+		expect(container.textContent).not.toContain("Liquidation");
 	});
 
 	it.each([
