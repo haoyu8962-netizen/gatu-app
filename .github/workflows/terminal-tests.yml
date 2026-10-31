@@ -341,6 +341,7 @@ jobs:
           src/lib/tests/historical-order-status.test.tsx
           src/lib/tests/desktop-orders-history-direction.test.tsx
           src/lib/tests/mobile-history-cards.test.tsx
+          src/lib/tests/user-fills.test.ts
           src/lib/tests/trade-history-page.test.tsx
           src/lib/tests/position-close-all-submit.test.tsx
           src/lib/tests/trade-form-fields-order-entry-data.test.tsx

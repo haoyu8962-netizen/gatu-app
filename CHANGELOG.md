@@ -639,6 +639,9 @@ changes, not evidence that a build has been deployed or accepted on real devices
   that is partly filled before the open-orders list confirms it is still reported as modified.
   Reduce-only Stop and Take Profit orders can change their size and trigger price, as on the official
   terminal; a trigger order that can open a position still has to be cancelled and placed again.
+- Trade history now shows each fill's closed PNL net of its fee, as the official terminal does, so an
+  opening fill shows its fee and a closing fill matches the official figure; the CSV export still
+  carries the exchange's PNL and fee as sent.
 - Order history now explains why an order was canceled or rejected, as the official terminal does: a
   tooltip on desktop and a line on the phone card. A margin cancellation reads Margin Canceled and a
   filled order with size still open reads Partially filled.

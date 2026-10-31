@@ -525,6 +525,14 @@ describe("mobile history disclosure cards", () => {
 		);
 	});
 
+	it("shows each fill's closed PNL net of its fee, opening fills included", () => {
+		render(<MobileHistoryTab scrollMode="page" />);
+		clickButton("Expand all");
+
+		expect(container.textContent).toContain("+$12.38");
+		expect(container.textContent).toContain("-$0.08");
+	});
+
 	it("separates the owner's liquidation from a fill against another account's liquidation", () => {
 		const [ownFill, counterpartyFill] = createFills();
 		mocks.fills = [

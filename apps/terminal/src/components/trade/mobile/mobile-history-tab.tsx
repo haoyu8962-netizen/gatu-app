@@ -18,8 +18,7 @@ import { formatDateTimeShort, useNumberFormat } from "@/lib/format";
 import { getExplorerTxUrl, useMarkets } from "@/lib/hyperliquid";
 import { getFillDirectionPresentation, getFillDirectionTone } from "@/lib/trade/fill-direction";
 import { getMarketPriceFormatOptions } from "@/lib/trade/market-price-format";
-import { toNumber } from "@/lib/trade/numbers";
-import { getUserFillKey, hasUserFillExplorerTransaction } from "@/lib/trade/user-fills";
+import { getUserFillKey, getUserFillNetClosedPnl, hasUserFillExplorerTransaction } from "@/lib/trade/user-fills";
 import { getMarketCloseValueColorClass } from "@/lib/ui/value-color";
 import { useIsTestnet } from "@/stores/use-global-settings-store";
 import { MobileBulkDisclosureActions } from "./mobile-bulk-disclosure-actions";
@@ -290,8 +289,8 @@ function MobileHistoryTabContent({
 								const cardKey = getUserFillKey(fill);
 								const detailsId = `mobile-trade-history-${fill.hash}-${fill.tid}`;
 								const isExpanded = expandedKeys.has(cardKey);
-								const closedPnl = toNumber(fill.closedPnl);
-								const showPnl = closedPnl !== null && closedPnl !== 0;
+								const closedPnl = getUserFillNetClosedPnl(fill, markets.getMarket(fill.coin));
+								const showPnl = closedPnl !== null;
 								const direction = getDirection(fill);
 								const isBuy = fill.side === "B";
 								const explorerUrl = hasUserFillExplorerTransaction(fill)

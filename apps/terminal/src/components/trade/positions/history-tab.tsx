@@ -5,7 +5,6 @@ import { Link } from "@tanstack/react-router";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { RECENT_ACCOUNT_HISTORY_ROWS } from "@/config/trade";
-import { getToolbarNonZeroPnl } from "@/domain/trade/trading-toolbar-metrics";
 import { useUserFillsCsvExport } from "@/hooks/trade/use-history-csv-export";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { useUserFills } from "@/hooks/trade/use-user-fills";
@@ -16,7 +15,7 @@ import { formatDateTimeShort, useNumberFormat } from "@/lib/format";
 import { getExplorerTxUrl, useMarkets } from "@/lib/hyperliquid";
 import { getFillDirectionPresentation } from "@/lib/trade/fill-direction";
 import { getMarketPriceFormatOptions } from "@/lib/trade/market-price-format";
-import { getUserFillKey, hasUserFillExplorerTransaction } from "@/lib/trade/user-fills";
+import { getUserFillKey, getUserFillNetClosedPnl, hasUserFillExplorerTransaction } from "@/lib/trade/user-fills";
 import { getMarketCloseValueColorClass } from "@/lib/ui/value-color";
 import { useIsTestnet } from "@/stores/use-global-settings-store";
 import { AssetBadge } from "../components/asset-badge";
@@ -133,7 +132,7 @@ export function HistoryTab() {
 							</TableHeader>
 							<TableBody className={cn(positionsPanelTableBodyClass, "[&_tr]:border-market-close-stroke-card/60")}>
 								{visibleFills.map((fill) => {
-									const closedPnl = getToolbarNonZeroPnl(fill.closedPnl);
+									const closedPnl = getUserFillNetClosedPnl(fill, markets.getMarket(fill.coin));
 									const direction = getDirection(fill);
 									const hasExplorerTransaction = hasUserFillExplorerTransaction(fill);
 

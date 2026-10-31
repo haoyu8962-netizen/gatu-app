@@ -316,6 +316,8 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/order-type-labels.test.tsx \
   src/lib/tests/trailing-stop-condition.test.ts \
   src/lib/tests/historical-order-status.test.tsx \
+  src/lib/tests/user-fills.test.ts \
+  src/lib/tests/desktop-history-exports.test.tsx \
   src/lib/tests/account-ledger.test.ts
 
 # Desktop trading layout and order entry
