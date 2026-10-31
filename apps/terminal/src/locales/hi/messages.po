@@ -10067,6 +10067,7 @@ msgstr "TP एंट्री से नीचे होना चाहिए"
 msgid "TP Price"
 msgstr "TP मूल्य"
 
+#: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/positions-tab.tsx
 #: src/config/trade-panel-labels.ts

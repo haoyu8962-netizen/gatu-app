@@ -56,7 +56,13 @@ import {
 	useMarketsInfo,
 	useSubscription,
 } from "@/lib/hyperliquid";
-import { isClosePositionOrder, isMarketTriggerOrder, type OpenOrder } from "@/lib/trade/open-orders";
+import {
+	isClosePositionOrder,
+	isMarketTriggerOrder,
+	isStopOrder,
+	isTakeProfitOrder,
+	type OpenOrder,
+} from "@/lib/trade/open-orders";
 import {
 	ensurePendingTradingActionFeedback,
 	settlePartialOrderCancellation,
@@ -1324,6 +1330,9 @@ function MobileOrderCard({
 		? t`Close Position`
 		: formatToken(order.origSz, { decimals: szDecimals });
 	const priceLabel = isMarketTriggerOrder(order) ? t`Market` : formatPrice(order.limitPx, { szDecimals, marketType });
+	const takeProfitPx = order.children.find(isTakeProfitOrder)?.triggerPx;
+	const stopLossPx = order.children.find(isStopOrder)?.triggerPx;
+	const tpSlLabel = `${formatPrice(takeProfitPx, { szDecimals, marketType })} / ${formatPrice(stopLossPx, { szDecimals, marketType })}`;
 	const triggerOperator = getToolbarTriggerConditionOperator(order.triggerCondition);
 	const standardTriggerConditionLabel = order.isTrigger
 		? triggerOperator
@@ -1401,6 +1410,7 @@ function MobileOrderCard({
 						/>
 						<OrderMetric label={t`Original Size`} value={originalSizeLabel} />
 						<OrderMetric label={t`Reduce Only`} value={order.reduceOnly ? t`Yes` : t`No`} />
+						<OrderMetric label={t`TP/SL`} value={tpSlLabel} />
 					</div>
 
 					<div className="flex items-center border-t border-market-close-stroke-card/60 pt-2.5">

@@ -351,6 +351,26 @@ describe("MobileOrdersTab disclosure card", () => {
 		expect(container.textContent).not.toContain("retracement 2, best 170");
 	});
 
+	it("shows the attached TP/SL trigger prices, as the desktop table and the official card do", () => {
+		mocks.orders = [
+			{
+				...order,
+				orderType: "Limit",
+				isTrigger: false,
+				children: [
+					{ ...order, oid: 50, orderType: "Take Profit Market", triggerPx: "160" },
+					{ ...order, oid: 51, orderType: "Stop Market", triggerPx: "140" },
+				],
+			} as unknown as OpenOrder,
+		];
+		renderOrders();
+
+		const label = [...container.querySelectorAll<HTMLElement>("div")].find(
+			(element) => element.textContent?.trim() === "TP/SL",
+		);
+		expect(label?.nextElementSibling?.textContent).toBe("$160 / $140");
+	});
+
 	it("shows the SDK-derived mark distance and warns below ten percent", () => {
 		renderOrders();
 

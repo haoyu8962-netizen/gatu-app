@@ -10067,6 +10067,7 @@ msgstr "يجب أن يكون TP أدنى من سعر الدخول"
 msgid "TP Price"
 msgstr "سعر TP"
 
+#: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/positions-tab.tsx
 #: src/config/trade-panel-labels.ts

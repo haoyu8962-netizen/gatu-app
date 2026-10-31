@@ -47,7 +47,7 @@ The summary fails closed while account-abstraction metadata, collateral-token me
 | Display type | `orderType` | Display metadata only; it cannot be passed back as an exchange order type |
 | Time in force | `tif` | Rebuild `Gtc`, `Ioc`, or `Alo` limit parameters when modifying |
 | Position TP/SL | `isPositionTpsl` | Position-level TP/SL orders commonly use size `0` |
-| Child orders | `children` | Attached TP/SL orders |
+| Child orders | `children` | Attached TP/SL orders: the desktop TP/SL column and, since 2026-10-31 (P2 B20/D9), the TP/SL row of the expanded phone card show the take-profit and stop-loss trigger prices, as the official card's TP/SL field does |
 | Client order id | `cloid` | Nullable 128-bit hex identifier |
 | Remaining order value | Non-trigger: `limitPx * sz`; trigger: `triggerPx * sz` | Derived with `Big.js`; the toolbar intentionally shows the remaining, not original, notional. Default perps use the existing USD formatter, while spot and HIP-3 markets use their verified quote token instead of labelling every value USDC |
 | Distance to mark | `abs(orderPrice - markPx) / markPx` | Derived with `Big.js`; unavailable for a zero mark |
