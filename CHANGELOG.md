@@ -581,7 +581,7 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 - A spot balance without a market price is now worth $0 in the balances table, as on the official
   terminal, instead of showing what it cost as its value; with Hide small balances on, such a token is
-  hidden like any other balance under $5.
+  hidden like any other balance under $5, except HYPE, which always stays.
 - Trade history dates now include the year, like the order history, on the desktop tab, the full page
   and in CSV exports, and the market order summary shows the maximum slippage in the accent colour instead
   of the error red. Funding history, TWAP history and fill history, and deposits and withdrawals show the
