@@ -29,7 +29,7 @@
 
 ## 背景与范围
 
-同步记录，未取得任务标识。[全功能审查](2026-10-30-full-feature-audit.md)第一批的第二组：D1、D2、B4/D4。分支 `claude/p1-funds-safety`，基于 `dev` `d99c2bc9`；与第一组（`claude/p1-order-safety`）互不依赖。
+同步记录，未取得任务标识。全功能审查（`2026-10-30-full-feature-audit`，在 `claude/p1-order-safety` 分支上）第一批的第二组：D1、D2、B4/D4。分支 `claude/p1-funds-safety`，基于 `dev` `d99c2bc9`；与第一组（`claude/p1-order-safety`）互不依赖。
 
 ## 结论与依据
 
