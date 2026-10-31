@@ -905,8 +905,9 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 						</div>
 						{typeof change24h === "number" && (
 							<div className={cn("truncate whitespace-nowrap text-xs tabular-nums", getValueColorClass(change24h))}>
-								{change24h >= 0 ? "+" : ""}
-								{numberFormat.formatDecimalString(change24h.toFixed(2))}%
+								{numberFormat.markLeadingSign(
+									`${change24h >= 0 ? "+" : ""}${numberFormat.formatDecimalString(change24h.toFixed(2))}%`,
+								)}
 							</div>
 						)}
 					</div>

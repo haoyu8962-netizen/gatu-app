@@ -579,6 +579,8 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Fixed
 
+- In Arabic, a plus or minus sign now stays in front of its number, as in the 24h change, PnL and
+  funding rates, instead of appearing after the digits.
 - Spanish, French, Hindi and Arabic now translate the Link mobile device, phone import and API
   wallet email-signing messages (31 per language) that still showed in English.
 - Unified and portfolio-margin accounts holding an outcome token or a token without a market price now

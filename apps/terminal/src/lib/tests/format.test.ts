@@ -64,6 +64,7 @@ const SAMPLE_CALLS: { [Name in keyof NumberFormatters]: Parameters<NumberFormatt
 	formatSlippageBps: [37],
 	formatToken: ["1234.56", 2],
 	formatUSD: [1234.56],
+	markLeadingSign: ["+1.5"],
 };
 
 function callFormatter(formatters: NumberFormatters, name: keyof NumberFormatters) {
@@ -76,7 +77,7 @@ describe("number formatters from useNumberFormat()", () => {
 	});
 
 	it("lists every formatter the snapshot carries", () => {
-		expect(Object.keys(getNumberFormatters()).sort()).toEqual([...NUMBER_FORMATTER_NAMES].sort());
+		expect(Object.keys(getNumberFormatters()).sort()).toEqual([...NUMBER_FORMATTER_NAMES, "markLeadingSign"].sort());
 	});
 
 	it.each(NUMBER_FORMATTER_NAMES)("gives %s a new identity on each change and keeps it until the next", (name) => {

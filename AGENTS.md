@@ -306,6 +306,7 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/number-format-settings.test.ts \
   src/lib/tests/number-format-reactivity-contract.test.ts \
   src/lib/tests/date-locale-reactivity-contract.test.ts \
+  src/lib/tests/number-format-direction.test.tsx \
   src/lib/tests/locale-format-contract.test.ts \
   src/lib/tests/decimal-display-contract.test.ts \
   src/lib/tests/decimal-input-normalization.test.tsx \

@@ -338,6 +338,7 @@ jobs:
           src/lib/tests/global-settings-store.test.ts
           src/lib/tests/i18n-reactivity-contract.test.ts
           src/lib/tests/date-locale-reactivity-contract.test.ts
+          src/lib/tests/number-format-direction.test.tsx
           src/lib/tests/i18n-hot-switch.test.tsx
           src/lib/tests/action-error.test.ts
           src/lib/tests/errors.test.ts
