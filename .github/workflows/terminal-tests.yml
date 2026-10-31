@@ -50,13 +50,15 @@ jobs:
     outputs:
       covered: ${{ steps.check.outputs.covered }}
     steps:
-      # The script reads commits only, so a treeless clone of the whole history is enough, and it
-      # needs nothing but git and the runner's own Node.
+      # The script reads commits, trees and this workflow file but no other file contents, so a blobless
+      # clone of the whole history is enough, and it needs nothing but git and the runner's own Node.
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
           fetch-depth: 0
-          filter: tree:0
-          sparse-checkout: scripts
+          filter: blob:none
+          sparse-checkout: |
+            scripts
+            .github/workflows
 
       - id: check
         run: node scripts/promotion-coverage.mjs terminal-tests.yml

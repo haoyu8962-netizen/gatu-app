@@ -12,7 +12,10 @@ import {
 	githubClient,
 	isPullRequestMerge,
 	parseHistory,
+	parsePathFilter,
 	parseTestedMerge,
+	pathFilterMatcher,
+	readChangedFiles,
 	readHistory,
 	readPromoted,
 	report,
@@ -38,13 +41,14 @@ function devHistory(...entries) {
 		const [, number, name] = /^(?:#(\d+) )?(.+)$/.exec(entry);
 		const commit = number
 			? {
+					name,
 					sha: sha(name),
 					parents: [parent, headOf(name)],
 					tree: sha(`${name} tree`),
 					committerEmail: "noreply@github.com",
 					subject: `Merge pull request #${number} from zora4523-bot/${name}`,
 				}
-			: { sha: sha(name), parents: [parent], tree: sha(`${name} tree`), committerEmail: "dev@example.com", subject: name };
+			: { name, sha: sha(name), parents: [parent], tree: sha(`${name} tree`), committerEmail: "dev@example.com", subject: name };
 		parent = commit.sha;
 		return commit;
 	});
@@ -55,8 +59,15 @@ function run(id, overrides = {}) {
 	return { id, status: "completed", conclusion: "success", created_at: "2026-10-31T09:37:20Z", ...overrides };
 }
 
-/** A promotion of `history` past the commit named `promoted`, with fake runs keyed by the merged pull request's name. */
-function promotion(history, { runs = {}, tested = {}, mergeTree = history[0].tree, promoted = "promoted" } = {}) {
+/**
+ * A promotion of `history` past the commit named `promoted`, with fake runs and changed files keyed by the merged
+ * pull request's name. Unless `files` says otherwise, a merge whose pull request ran the workflow changed one of its
+ * inputs (`apps/**` by default) and any other merge changed documentation only.
+ */
+function promotion(
+	history,
+	{ runs = {}, tested = {}, files = {}, pathFilter = ["apps/**"], mergeTree = history[0].tree, promoted = "promoted" } = {},
+) {
 	const asked = [];
 	return {
 		asked,
@@ -65,6 +76,10 @@ function promotion(history, { runs = {}, tested = {}, mergeTree = history[0].tre
 			mergeTree,
 			promoted: sha(promoted),
 			history,
+			pathFilter,
+			changedFiles(merge) {
+				return files[merge.name] ?? (runs[merge.name] ? ["apps/terminal/src/feature.ts"] : ["docs/notes.md"]);
+			},
 			async runsFor(head) {
 				const name = Object.keys(runs).find((candidate) => headOf(candidate) === head);
 				asked.push(name);
@@ -92,7 +107,7 @@ test("covers a workflow whose last run tested the merge exactly as it landed", a
 	assert.deepEqual(asked, [undefined, "feature"], "the newer documentation merge is checked for runs first");
 });
 
-test("covers a run whose base later gained only merges that never ran the workflow", async () => {
+test("covers a run whose base later gained only merges that left the workflow's inputs alone", async () => {
 	const history = devHistory("#1 promoted", "#2 notes", "#3 feature");
 	const { input } = promotion(history, { runs: { feature: [run(10)] }, tested: { 10: merged("feature", "promoted") } });
 
@@ -101,7 +116,7 @@ test("covers a run whose base later gained only merges that never ran the workfl
 	assert.equal(verdict.covered, true, verdict.reason);
 });
 
-test("runs in full when another merge that ran the workflow landed after the run started", async () => {
+test("runs in full when another merge that changed the inputs landed after the run started", async () => {
 	const history = devHistory("#1 promoted", "#2 first", "#3 second");
 	const { input } = promotion(history, {
 		runs: { first: [run(20)], second: [run(30)] },
@@ -111,7 +126,54 @@ test("runs in full when another merge that ran the workflow landed after the run
 	const verdict = await decideCoverage(input);
 
 	assert.equal(verdict.covered, false);
-	assert.match(verdict.reason, /^#2 also ran this workflow and landed after #3's run 30 started$/);
+	assert.match(verdict.reason, /^#2 also changed this workflow's inputs and landed after #3's run 30 started$/);
+});
+
+test("runs in full when a merge changed the inputs but the workflow never ran for it", async () => {
+	// A disabled workflow, deleted runs or a diff past GitHub's path filter limit all leave a change without a run.
+	const tested = { 10: merged("feature", "promoted") };
+	const touchedLast = devHistory("#1 promoted", "#2 feature", "#3 unrun");
+	const touchedBetween = devHistory("#1 promoted", "#2 unrun", "#3 feature");
+	const files = { unrun: ["docs/notes.md", "apps/terminal/src/hooks/use-orders.ts"] };
+
+	const last = await decideCoverage(promotion(touchedLast, { runs: { feature: [run(10)] }, tested, files }).input);
+	const between = await decideCoverage(promotion(touchedBetween, { runs: { feature: [run(10)] }, tested, files }).input);
+
+	assert.equal(last.covered, false);
+	assert.equal(last.reason, "#3 changed this workflow's inputs and never ran it");
+	assert.equal(between.covered, false);
+	assert.equal(between.reason, "#2 also changed this workflow's inputs and landed after #3's run 10 started");
+});
+
+test("counts a merge that ran the workflow as a change even when the paths filter misses it", async () => {
+	const history = devHistory("#1 promoted", "#2 other", "#3 feature");
+	const { input } = promotion(history, {
+		runs: { feature: [run(10)], other: [run(7)] },
+		tested: { 10: merged("feature", "promoted") },
+		files: { other: ["docs/notes.md"] },
+	});
+
+	const verdict = await decideCoverage(input);
+
+	assert.equal(verdict.covered, false);
+	assert.match(verdict.reason, /^#2 also changed this workflow's inputs/);
+});
+
+test("reads the inputs through the workflow's own filter, exclusions included", async () => {
+	const pathFilter = ["apps/terminal/src/**", "!apps/terminal/src/**/*.test.ts"];
+	const history = devHistory("#1 promoted", "#2 between", "#3 feature");
+	const decide = (files) =>
+		decideCoverage(
+			promotion(history, {
+				runs: { feature: [run(10)] },
+				tested: { 10: merged("feature", "promoted") },
+				files: { feature: ["apps/terminal/src/app.tsx"], between: files },
+				pathFilter,
+			}).input,
+		);
+
+	assert.equal((await decide(["apps/terminal/src/lib/tests/format.test.ts"])).covered, true);
+	assert.equal((await decide(["apps/terminal/src/lib/tests/harness/react.tsx"])).covered, false);
 });
 
 test("looks past the last promotion for merges that landed after the run started", async () => {
@@ -124,7 +186,7 @@ test("looks past the last promotion for merges that landed after the run started
 	const touched = promotion(history, { runs: { feature: [run(10)], promoted: [run(5)] }, tested });
 	const verdict = await decideCoverage(touched.input);
 	assert.equal(verdict.covered, false);
-	assert.match(verdict.reason, /^#2 also ran this workflow/);
+	assert.match(verdict.reason, /^#2 also changed this workflow's inputs/);
 });
 
 test("runs in full when main has changes that dev lacks", async () => {
@@ -209,7 +271,7 @@ test("runs in full when the run tested a merge onto a commit that is not on dev"
 	assert.match(verdict.reason, /which is not an earlier commit of dev$/);
 });
 
-test("runs in full when no pull request since the last promotion ran the workflow", async () => {
+test("runs in full when no pull request since the last promotion changed the workflow's inputs", async () => {
 	const history = devHistory("#1 old", "#2 promoted", "#3 notes");
 
 	const verdict = await decideCoverage(
@@ -217,7 +279,7 @@ test("runs in full when no pull request since the last promotion ran the workflo
 	);
 
 	assert.equal(verdict.covered, false);
-	assert.equal(verdict.reason, "no pull request merged into dev since the last promotion ran this workflow");
+	assert.equal(verdict.reason, "no pull request merged into dev since the last promotion changed this workflow's inputs");
 });
 
 test("runs in full when the last promoted commit is not on dev's first-parent history", async () => {
@@ -300,7 +362,7 @@ test("lists one workflow's pull request runs for a head and refuses a list longe
 test("reads a run's tested merge from the log the API redirects to, without sending the token there", async () => {
 	const jobs = "https://api.test/repos/o/r/actions/runs/7/jobs?filter=latest&per_page=100";
 	const logs = "https://api.test/repos/o/r/actions/jobs/2/logs";
-	const line = `HEAD is now at 868a6c1 Merge ${headOf("feature")} into ${sha("promoted")}`;
+	const line = `2026-10-31T09:37:29.0939805Z HEAD is now at 868a6c1 Merge ${headOf("feature")} into ${sha("promoted")}`;
 	const redirect = () => new Response(null, { status: 302, headers: { location: "https://storage.test/log" } });
 	const { client, requests } = fakeGithub({
 		[jobs]: Response.json({ jobs: [{ id: 1, conclusion: "skipped" }, { id: 2, conclusion: "success" }] }),
@@ -362,9 +424,9 @@ test("hands the workflow covered=true for a covered verdict only, and warns when
 	assert.equal(readFileSync(env.GITHUB_OUTPUT, "utf8"), "covered=true\ncovered=false\ncovered=false\n");
 	assert.match(readFileSync(env.GITHUB_STEP_SUMMARY, "utf8"), /\[The run that covers it\]\(https:\/\/github\.com\/r\/1\)/);
 	assert.deepEqual(logged, [
-		"terminal-tests.yml covered: its jobs are skipped (#2's run 10 passed)",
-		"terminal-tests.yml not covered: its jobs run in full (no pull request ran it)",
-		"::warning title=Promotion coverage::terminal-tests.yml not covered: its jobs run in full (the check failed: 502)",
+		"terminal-tests.yml covered: the jobs that dev already ran are skipped (#2's run 10 passed)",
+		"terminal-tests.yml not covered: it runs in full (no pull request ran it)",
+		"::warning title=Promotion coverage::terminal-tests.yml not covered: it runs in full (the check failed: 502)",
 	]);
 });
 
@@ -379,6 +441,90 @@ test("reads the merge a job checked out from its log", () => {
 	});
 	assert.equal(parseTestedMerge("HEAD is now at 868a6c1 docs: a commit that is not a merge"), null);
 	assert.equal(parseTestedMerge(""), null);
+	assert.deepEqual(parseTestedMerge(`${line}\n${line}`), parseTestedMerge(line), "a repeated line names one merge");
+	const other = line.replace("into d99c2bc9", "into eaf9c202");
+	assert.equal(parseTestedMerge(`${line}\n${other}`), null, "two different merges leave the tested one unknown");
+	assert.equal(parseTestedMerge(`echo "${line.slice(29)}"`), null, "the text inside another line is not a checkout");
+});
+
+test("reads the paths filter of each workflow a promotion may skip, and refuses any other trigger layout", () => {
+	const filterOf = (name) =>
+		parsePathFilter(readFileSync(new URL(`../.github/workflows/${name}`, import.meta.url), "utf8"));
+	for (const name of ["terminal-tests.yml", "slider-browser.yml", "production-build.yml", "website-build.yml"]) {
+		const patterns = filterOf(name);
+		assert.equal(patterns.length > 5, true, `${name} has a paths filter`);
+		assert.equal(patterns.includes("pnpm-lock.yaml"), true, `${name}: the filter was read to its end`);
+	}
+	assert.equal(filterOf("production-build.yml").includes("v[0-9]*"), false, "release tag patterns are not paths");
+	assert.equal(filterOf("slider-browser.yml").includes("!apps/terminal/src/**/*.test.ts"), true);
+
+	const trigger = (lines) => `on:\n  pull_request:\n${lines}\n  workflow_dispatch:\n`;
+	assert.equal(parsePathFilter(trigger("")), null, "no paths filter: every change starts the workflow");
+	assert.deepEqual(parsePathFilter(trigger('    paths:\n      # a note\n      - "apps/**"')), ["apps/**"]);
+	for (const unsupported of [
+		'    paths-ignore:\n      - "docs/**"',
+		"    branches: [dev]",
+		"    paths:\n      - apps/**",
+		'    paths: ["apps/**"]',
+	]) {
+		assert.throws(() => parsePathFilter(trigger(unsupported)), /unsupported pull_request trigger line/);
+	}
+	assert.throws(() => parsePathFilter("on:\n  push:\n"), /no pull_request trigger/);
+});
+
+test("matches changed files the way GitHub's path filters do", () => {
+	const matches = (patterns, ...files) => pathFilterMatcher(patterns)(files);
+
+	assert.equal(matches(["scripts/brand*.mjs"], "scripts/brand-export.mjs"), true);
+	assert.equal(matches(["scripts/brand*.mjs"], "scripts/brand/export.mjs"), false, "* stops at a slash");
+	assert.equal(matches(["apps/terminal/**/*.ts"], "apps/terminal/vite.config.ts"), true, "**/ matches no directory");
+	assert.equal(matches(["apps/terminal/**/*.ts"], "apps/terminal/src/a/b.tsx"), false);
+	assert.equal(matches(["**/package.json"], "package.json"), true);
+	assert.equal(matches(["**/package.json"], "apps/terminal/package.json"), true);
+	assert.equal(matches(["apps/**"], "docs/apps/readme.md"), false, "patterns are anchored");
+	assert.equal(matches(["apps/**", "!apps/**/*.md", "apps/README.md"], "apps/README.md"), true, "the last match decides");
+	assert.equal(matches(null, "anything.txt"), true);
+	assert.equal(matches(null), false);
+	for (const unsupported of ["src/*.jsx?", "v[0-9].ts", "a+.ts"]) {
+		assert.throws(() => pathFilterMatcher([unsupported]), /unsupported path pattern/);
+	}
+
+	const browser = pathFilterMatcher(
+		parsePathFilter(readFileSync(new URL("../.github/workflows/slider-browser.yml", import.meta.url), "utf8")),
+	);
+	for (const [file, expected] of [
+		["apps/terminal/src/lib/tests/format.test.ts", false],
+		["apps/terminal/src/components/staking/__tests__/staking-view.test.tsx", false],
+		["apps/terminal/src/lib/tests/harness/react.tsx", true],
+		["apps/terminal/src/locales/zh/messages.po", true],
+		["apps/terminal/tests/browser/account-actions.pw.ts", true],
+		["packages/ui/src/modal.tsx", true],
+		["docs/agent-handbook.md", false],
+	]) {
+		assert.equal(browser([file]), expected, `${file} ${expected ? "is" : "is not"} a browser regression input`);
+	}
+});
+
+test("lists the files a merge changed on dev, with both paths of a rename", (t) => {
+	const directory = mkdtempSync(join(tmpdir(), "promotion-coverage-diff-"));
+	t.after(() => rmSync(directory, { recursive: true, force: true }));
+	const env = { ...process.env, GIT_AUTHOR_NAME: "T", GIT_AUTHOR_EMAIL: "t@example.com", GIT_CONFIG_GLOBAL: "/dev/null" };
+	Object.assign(env, { GIT_COMMITTER_NAME: "T", GIT_COMMITTER_EMAIL: "t@example.com" });
+	const git = (...args) =>
+		execFileSync("git", ["-c", "commit.gpgsign=false", ...args], { cwd: directory, env, encoding: "utf8" }).trim();
+
+	git("init", "-q", "-b", "dev");
+	execFileSync("sh", ["-c", "mkdir -p apps docs && echo a > apps/old.ts && echo n > docs/notes.md"], { cwd: directory });
+	git("add", ".");
+	git("commit", "-q", "-m", "start");
+	git("switch", "-q", "-c", "feature");
+	git("mv", "apps/old.ts", "apps/new name.ts");
+	git("commit", "-q", "-m", "rename");
+	git("switch", "-q", "dev");
+	git("merge", "-q", "--no-ff", "-m", "Merge pull request #1 from zora4523-bot/feature", "feature");
+	const [merge] = readHistory("HEAD", directory);
+
+	assert.deepEqual(readChangedFiles(merge, directory).sort(), ["apps/new name.ts", "apps/old.ts"]);
 });
 
 test("accepts only GitHub's pull request merges as changes to dev", () => {

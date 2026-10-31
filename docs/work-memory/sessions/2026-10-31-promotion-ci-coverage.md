@@ -7,10 +7,10 @@
   "kind": "task",
   "status": "verified",
   "topics": ["pr-review", "docs-governance"],
-  "summary": "dev→main 的晋升 PR 每次 66–75 计费分钟，对同一棵树重跑 dev 已通过的检查。运营方在两种方案中选了乙：Terminal Tests、浏览器回归、Production Builds 与 Website and Brand 各加一个只在晋升 PR 上运行的 Promotion coverage 作业，scripts/promotion-coverage.mjs 逐个工作流核对三点：合并树等于 dev 的树；上次晋升以来最后一个跑过该工作流的 PR，其最后一次运行成功；该运行的检出日志写明的合并基点在 dev 主线上，且之后没有别的跑过该工作流的合入。三点都满足才跳过（Production Builds 只构建 pairing true），否则全跑；Static Checks 照常运行。用同一脚本回放 10 月 11 次晋升，10 次全部覆盖。62 项单测通过，38 处变异全部失败。未推送，未在 GitHub 上运行。",
+  "summary": "dev→main 的晋升 PR 每次 66–75 计费分钟，对同一棵树重跑 dev 已通过的检查。运营方在两种方案中选了乙：Terminal Tests、浏览器回归、Production Builds 与 Website and Brand 各加一个只在晋升 PR 上运行的 Promotion coverage 作业，scripts/promotion-coverage.mjs 逐个工作流核对三点：合并树等于 dev 的树；上次晋升以来最后一个改过该工作流输入的 PR，其最后一次运行成功（改过输入指差异匹配该工作流的 paths 过滤，或该工作流为它运行过）；该运行的检出日志写明的合并基点在 dev 主线上，且之后没有别的合入改过这些输入。三点都满足才跳过（Production Builds 只构建 pairing true），否则全跑；Static Checks 照常运行。推送前的 Codex 审查指出初版把没有运行记录当作没改输入（P0），已改为按 paths 过滤核对差异。回放 10 月 11 次晋升，10 次全部覆盖。68 项单测通过，50 处变异全部失败。未推送，未在 GitHub 上运行。",
   "thread": null,
   "baseCommit": "90658436",
-  "commits": [],
+  "commits": ["18cee104"],
   "sources": [
     { "path": ".github/workflows/terminal-tests.yml" },
     { "path": ".github/workflows/slider-browser.yml" },
@@ -56,16 +56,30 @@
 
 ### 采用的方案（乙）
 
-- `Terminal Tests`、浏览器回归、`Production Builds` 与 `Website and Brand` 各加一个 `coverage` 作业（名为 `Promotion coverage`）。它只在 `pull_request`、目标 `main`、来源 `dev` 时运行，令牌只有 `actions: read` 与 `contents: read`。检出用无树克隆加全部历史（`fetch-depth: 0`、`filter: tree:0`），并只稀疏检出 `scripts`；然后运行 `node scripts/promotion-coverage.mjs <本工作流文件>`。重作业 `needs: coverage`，条件为 `${{ !cancelled() && needs.coverage.outputs.covered != 'true' }}`。`Production Builds` 的作业照常运行，矩阵在 `covered == 'true'` 时只有 `pairing true`。`Static Checks` 不改，晋升时照常运行。
+- `Terminal Tests`、浏览器回归、`Production Builds` 与 `Website and Brand` 各加一个 `coverage` 作业（名为 `Promotion coverage`）。它只在 `pull_request`、目标 `main`、来源 `dev` 时运行，令牌只有 `actions: read` 与 `contents: read`。检出用无 blob 克隆加全部历史（`fetch-depth: 0`、`filter: blob:none`），只稀疏检出 `scripts` 与 `.github/workflows`；然后运行 `node scripts/promotion-coverage.mjs <本工作流文件>`。重作业 `needs: coverage`，条件为 `${{ !cancelled() && needs.coverage.outputs.covered != 'true' }}`。`Production Builds` 的作业照常运行，矩阵在 `covered == 'true'` 时只有 `pairing true`。`Static Checks` 不改，晋升时照常运行。
 - 判定按工作流分别做，三条全满足才输出 `covered=true`：
   1. 合并提交的树等于 `dev` 头的树；
-  2. 在 `dev` 主线上最新一个被 `main` 包含的提交之后，最后一个跑过本工作流的 PR 合并，其最后一次运行成功；
-  3. 该运行任一成功作业的检出日志写着 `Merge <PR 头> into <基点>`，PR 头与合并提交的第二父提交一致，基点在 `dev` 主线上；基点之后 `dev` 的每次变动都是 GitHub 的 PR 合并，且除这个 PR 外，没有一个跑过本工作流。
+  2. 在 `dev` 主线上最新一个被 `main` 包含的提交之后，最后一个改过本工作流输入的 PR 合并，其最新一次运行成功。「改过输入」指这次合入在 `dev` 主线上的差异（`git diff --name-only --no-renames <第一父> <合并>`）匹配本工作流自己的 `paths` 过滤，或者本工作流为这个 PR 运行过；改过输入却没有运行记录，判为全跑；
+  3. 该运行任一成功作业的检出日志里，有且只有一行 `<时间> HEAD is now at … Merge <PR 头> into <基点>`，PR 头与合并提交的第二父提交一致，基点在 `dev` 主线上；基点之后 `dev` 的每次变动都是 GitHub 的 PR 合并，且除这个 PR 外，没有一个改过本工作流的输入。
+
+  `paths` 过滤由脚本自己读取并匹配：只认现有写法（`pull_request` 下唯一的 `paths:` 与带引号的列表项，允许注释），按 GitHub 的规则处理 `*`、`**`、可以匹配零层目录的 `**/` 和开头的 `!`，并且由最后一个匹配的模式决定。遇到 `?`、`+`、`[]` 或其他写法就报错，判为全跑。
 
   任何一条不满足、查询失败或出错，都输出 `covered=false`，带警告注解，以 0 退出，下游照常全跑。
 - 上次晋升点不用 `git merge-base`：#81、#115 的分支从 `main` 开出，把 `main` 的晋升合并提交 `6da4c15a`、`9ccb88c0` 带进了 `dev`，`merge-base` 于是落在这两个提交上，不在 `dev` 主线。第一遍回放因此把 #82、#116 误判为全跑。改用 `git rev-list --first-parent --count <dev> ^<main>` 数出未晋升的主线提交，取下一个。临时仓库测试复现了这种情形。
 - 本机经代理读取时出过两次偶发问题。第二遍回放的 44 次判定中，有一次日志里没取到那一行，事后连读 4 次都正常；第三遍中有一次请求直接失败（`fetch failed`），脚本照设计给出警告并判为全跑。所以日志里没找到那一行时再读一次，连接中断时再试一次；两次都不行，才判为看不出或全跑。
-- 未采用的做法与原因写在 ADR 0016「未采用的方案」：方案甲、`branches-ignore: [main]`、只比时间、`merge-base`、整次晋升统一判断。`.claude/rules/git.md` 写明不要用分支过滤来跳过晋升检查。
+- 未采用的做法与原因写在 ADR 0016「未采用的方案」：方案甲、`branches-ignore: [main]`、把没有运行记录当作没改输入、只比时间、`merge-base`、整次晋升统一判断。`.claude/rules/git.md` 写明不要用分支过滤来跳过晋升检查。
+- 信任边界：判定把每个工作流的 `paths` 过滤当作它的完整输入清单，与进 `dev` 的 PR 相同。过滤没列出、却影响检查结果的文件（例如某个根目录配置）在覆盖运行开始之后合入时，晋升不再补测；改动前，只要晋升触发了该工作流，就会连同它一起重测。ADR 0016 补记写明了这一点。
+
+### 推送前审查（Codex CLI gpt-6-astra，只读，low）
+
+审查对象是第一个提交 `18cee104`：评分 4/10，1 项 P0、2 项 P2、1 项 P3，逐条核实后全部成立，修复进第二个提交。
+
+- P0：初版把「这个 PR 没有该工作流的运行记录」当作「没改它的输入」。工作流被停用、运行记录被删，或差异超过 GitHub 路径过滤的文件数上限时，改了输入的合入也没有记录，晋升就会误跳过；改动前，这些情形会由晋升时的重跑补上。Codex 用内存构造的历史调用 `decideCoverage`，得到 `covered: true`。修复：改为用工作流自己的 `paths` 过滤核对每次合入的完整差异，与「运行过」取并集；改过输入却没有运行记录，判为全跑。判定作业的检出因此从无树克隆改为无 blob 克隆（本机实测约 4 MB，禁止按需拉取时 `git diff --name-only` 照常可用），稀疏检出加上 `.github/workflows`。
+- P2：`ci-workflows.test.mjs` 的 `jobRuns` 把字符串里的 `cancelled()` 当成调用。改成写 `${{ needs.coverage.outputs.covered != 'true' && 'cancelled()' != '' }}`，19 项结构测试照样全部通过；实际上在 GitHub 上，这会让进 `dev` 的 PR 跟着跳过下游作业。修复：先去掉字符串字面量再找状态函数，并把「运行被取消」作为求值输入，事件里加上两种被取消的运行。
+- P2：文档不准确。ADR 证据段沿用旧句「测试工作流不含矩阵」，补了更正；约 14 计费分钟改写为「预计」，因为判定作业的计费未实测；路径过滤上限在补记里写成 300，按 2026-10-31 查阅的官方文档改为 3,000（文档还写明生成差异超时则总会触发）。
+- P3：成功摘要对 `Production Builds` 写的是「its jobs are skipped」，实际仍构建 pairing true。改为「the jobs that dev already ran are skipped」。
+- 未修的建议：检出日志的匹配原本不限定所在行。现在要求独立成行，且整份日志只有一个合并，出现两个不同的合并就判为看不出。`newestRun` 按创建时间挑选：重跑沿用同一个运行和同一个合并，所以只改了注释与 ADR 的措辞。
+- 审查自己的验证：43 项中 41 项通过，2 项因只读沙盒拒绝 `mkdtemp` 而失败，与代码无关。
 
 ### 同步改动的文档
 
@@ -75,8 +89,10 @@ ADR 0016 新增 D8，同时补了状态行、未采用方案、2026-10-31 补记
 
 本机，工作树基于 `90658436` 加本任务的改动，2026-10-31：
 
-- `node --test scripts/promotion-coverage.test.mjs scripts/ci-workflows.test.mjs scripts/check-client-bundle-budget.test.mjs`：62 项全部通过（Node 24.15.0）。
-- 变异：对工作流、判定逻辑与 GitHub 接口代码共做 38 处变异，每次只改一处，38 处都让对应测试失败。改完的文件随即恢复，前后 `git diff` 的哈希一致。工作流变异包括：去掉 `needs`；忽略判定结果；去掉 `!cancelled()`（测试按 GitHub 的规则，对不含状态函数的 `if` 隐式加 `success()`）；判定作业扩大到任意进 `main` 的 PR；矩阵在覆盖时仍建两组；加 `branches-ignore`；给判定作业写权限；判定别的工作流；单测不进 CI；输出接线断开；检出变浅；`Static Checks` 加依赖；用 `always()`；多一个不受判定约束的作业。
+- `node --test scripts/promotion-coverage.test.mjs scripts/ci-workflows.test.mjs scripts/check-client-bundle-budget.test.mjs`：68 项全部通过（Node 24.15.0）。
+- 变异：对工作流、判定逻辑与 GitHub 接口代码共做 50 处变异，每次只改一处，50 处都让对应测试失败。改完的文件随即恢复，前后 `git diff` 的哈希一致。
+  - 工作流变异：去掉 `needs`；忽略判定结果；去掉 `!cancelled()`（测试按 GitHub 的规则，对不调用状态函数的 `if` 隐式加 `success()`）；只在字符串里写 `cancelled()`；取消的运行里仍构建；判定作业扩大到任意进 `main` 的 PR；矩阵在覆盖时仍建两组；加 `branches-ignore`；给判定作业写权限；判定别的工作流；单测不进 CI；输出接线断开；检出变浅；`Static Checks` 加依赖；用 `always()`；多一个不受判定约束的作业。
+  - 判定逻辑变异：改过输入却没有运行时跳过不判；只按运行记录或只按路径过滤认定改过输入；`**/` 必须有一层目录；`*` 跨过 `/`；忽略排除模式；容忍未知的触发器写法；接受两个不同的检出合并；日志匹配不限定行；只按新路径列出重命名。
 - 用 `node_modules/.pnpm` 里的 `yaml@2.9.1` 严格解析全部 8 个工作流：0 个错误或警告，作业依赖、条件与折叠后的矩阵表达式都符合预期。`actionlint` 本机没有安装，未运行。
 - 真实接口（只读令牌，本机经代理）：
   - `origin/main` ← `origin/dev`（`90658436`）：四个工作流都判为由 #129 覆盖，例如 run 41189444108 测的是合并到 `d99c2bc9`，之后 `dev` 没有变动。
@@ -84,15 +100,18 @@ ADR 0016 新增 D8，同时补了状态行、未采用方案、2026-10-31 补记
     - 10 次所有工作流都判为已覆盖。例如 #82 的浏览器回归由 #81 覆盖，网站构建由 #77 覆盖，之后的合入都没跑过这两个工作流；#96 的网站构建由 #92 覆盖。
     - #87 的单测与构建由 #79 覆盖；浏览器回归与网站构建判为全跑：#73 的运行测的是合并到前一天的 `dev`，之后合入的 #80 也跑过这两个工作流。
     - 这与取证时按时间做的人工分析一致。
-  - 回放共做了四遍：
+  - 回放共做了五遍：
     - 第一遍用 `merge-base` 取上次晋升点，暴露了 #82 与 #116 的误判，随后改正。
     - 第二、三遍各有一次本机网络偶发（见上文），都落在全跑一侧，不会误跳过。
-    - 第四遍用最终代码：47 次判定（11 次晋升共 43 次，加上下次晋升的 4 次）中 45 次判为已覆盖，只有 #87 的两项判为全跑，没有警告。
-- 模拟 CI 环境：在本机做无树克隆（`filter tree:0`，2254 个提交、0 个树），用 `commit-tree` 造出与 GitHub 相同形态的合并提交，稀疏检出后以 CI 模式运行，并设 `GIT_NO_LAZY_FETCH=1` 禁止按需拉取：判定正常，`GITHUB_OUTPUT` 得到 `covered=true`。事件里的 PR 头对不上时，输出警告并判为全跑，以 0 退出。
+    - 第四遍用审查前的代码：47 次判定（11 次晋升共 43 次，加上下次晋升的 4 次）中 45 次判为已覆盖，只有 #87 的两项判为全跑，没有警告。
+    - 第五遍用审查后的最终代码（按 `paths` 过滤认定改过输入）：结论与第四遍逐条一致，45 次覆盖、2 次全跑、0 个警告。
+- 模拟 CI 环境，两种克隆各做一次，都用 `commit-tree` 造出与 GitHub 相同形态的合并提交、稀疏检出后以 CI 模式运行，并设 `GIT_NO_LAZY_FETCH=1` 禁止按需拉取：
+  - 第一版：无树克隆（`filter tree:0`，2254 个提交、0 个树）。判定正常，`GITHUB_OUTPUT` 得到 `covered=true`；事件里的 PR 头对不上时，输出警告并判为全跑，以 0 退出。
+  - 修复后：无 blob 克隆（26969 个对象、3.96 MiB），稀疏检出 `scripts` 与 `.github/workflows`。`terminal-tests.yml` 与 `website-build.yml` 都由 #129 覆盖，判定正常。
 - `pnpm install --frozen-lockfile --prefer-offline` 装上了依赖，但其中 `prepare` 的 `lefthook install` 在沙盒里没能改写共享的 `.git/hooks`；钩子原本已装好，本工作树有 `lefthook` 可执行文件。
 - 未做：
   - 推送与开 PR。
-  - 在 GitHub 上运行：判定作业的权限、无树克隆与稀疏检出、日志重定向、`needs` 与 skipped 的实际表现、矩阵取值、每个判定作业的计费分钟，都要等本改动进 `dev` 之后的第一次晋升才能观察。
+  - 在 GitHub 上运行：判定作业的权限、无 blob 克隆与稀疏检出、日志重定向、`needs` 与 skipped 的实际表现、矩阵取值、每个判定作业的计费分钟，都要等本改动进 `dev` 之后的第一次晋升才能观察。
   - 运行器自带的 Node 版本没有核对，脚本只用内置模块。
   - 全量终端单测与浏览器回归（本次没有改终端代码）。
 

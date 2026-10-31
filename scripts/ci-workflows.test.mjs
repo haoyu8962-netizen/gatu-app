@@ -53,6 +53,12 @@ const EVENTS = [
 		github: { event_name: "workflow_dispatch", base_ref: "", head_ref: "" },
 		pairings: ["false", "true"],
 	},
+	{
+		name: "a cancelled run of a pull request into dev",
+		github: { event_name: "pull_request", base_ref: "dev", head_ref: "claude/feature" },
+		cancelled: true,
+	},
+	{ name: "a cancelled promotion", github: PROMOTION, covered: "false", cancelled: true },
 ];
 const EXPRESSION_TOKEN = /\s+|==|!=|&&|\|\||!|\(|\)|'[^']*'|fromJSON\(|cancelled\(\)|(?:github|needs)(?:\.[\w-]+)+/y;
 
@@ -85,7 +91,7 @@ function jobValue(job, key) {
  * lowercase string, so JavaScript's operators of the same names give GitHub's results; any other syntax
  * (another function, a number, an object filter) fails the test instead of being guessed at.
  */
-function evaluate(expression, { github, covered = "" }) {
+function evaluate(expression, { github, covered = "", cancelled = false }) {
 	const source = expression.trim().replace(/^\$\{\{([\s\S]*)\}\}$/, "$1");
 	EXPRESSION_TOKEN.lastIndex = 0;
 	while (EXPRESSION_TOKEN.lastIndex < source.length) {
@@ -96,29 +102,30 @@ function evaluate(expression, { github, covered = "" }) {
 	return new Function("github", "needs", "cancelled", `return (${source.replaceAll("fromJSON(", "JSON.parse(")});`)(
 		github,
 		needs,
-		() => false,
+		() => cancelled,
 	);
 }
 
 /** What `needs.coverage.outputs.covered` holds for an event: empty unless the coverage job ran. */
 function coverageOutput(name, event) {
 	const { coverage } = workflowJobs(readWorkflow(name));
-	return evaluate(jobValue(coverage, "if"), event) ? (event.covered ?? "") : "";
+	return !event.cancelled && evaluate(jobValue(coverage, "if"), event) ? (event.covered ?? "") : "";
 }
 
 /**
- * Whether GitHub starts a job that needs the coverage job. An `if` that names no status function runs only after
- * every job it needs succeeded, so a skipped coverage job (any event but a promotion) would skip it too.
+ * Whether GitHub starts a job that needs the coverage job. An `if` that calls no status function also requires
+ * `success()`: the run was not cancelled and every job it needs succeeded, so a skipped coverage job (any event but
+ * a promotion) would skip it too. A status function's name inside a string literal is not a call.
  */
 function jobRuns(name, job, event) {
 	const { coverage } = workflowJobs(readWorkflow(name));
-	const coverageSucceeded = evaluate(jobValue(coverage, "if"), event) && !event.coverageFails;
+	const coverageSucceeded = !event.cancelled && evaluate(jobValue(coverage, "if"), event) && !event.coverageFails;
+	const succeeded = !event.cancelled && (jobValue(job, "needs") === undefined || coverageSucceeded);
 	const condition = jobValue(job, "if");
-	const neededSucceeded = jobValue(job, "needs") === undefined || coverageSucceeded;
-	if (condition === undefined) return neededSucceeded;
-	const context = { github: event.github, covered: coverageOutput(name, event) };
-	if (/\b(?:success|failure|always|cancelled)\(\)/.test(condition)) return evaluate(condition, context);
-	return neededSucceeded && evaluate(condition, context);
+	if (condition === undefined) return succeeded;
+	const callsStatusFunction = /\b(?:success|failure|always|cancelled)\(\)/.test(condition.replace(/'[^']*'/g, "''"));
+	const context = { github: event.github, covered: coverageOutput(name, event), cancelled: Boolean(event.cancelled) };
+	return (callsStatusFunction || succeeded) && evaluate(condition, context);
 }
 
 function countOccurrences(source, needle) {
@@ -222,8 +229,10 @@ test("builds the default on pull requests into dev, the pairing-on state alone o
 	assert.ok(pairing, "the build matrix is no longer one folded pairing expression");
 
 	for (const event of EVENTS) {
+		const builds = jobRuns("production-build.yml", terminal, event);
+		assert.equal(builds, !event.cancelled, `${event.name} ${builds ? "builds" : "builds nothing"}`);
+		if (!builds) continue;
 		const context = { github: event.github, covered: coverageOutput("production-build.yml", event) };
-		assert.equal(jobRuns("production-build.yml", terminal, event), true, `nothing builds for ${event.name}`);
 		const built = evaluate(pairing.replace(/\n */g, " "), context).map((entry) => entry.enabled);
 		assert.deepEqual(built, event.pairings, `${event.name} builds pairing ${built.join(" and ")}`);
 	}
@@ -276,7 +285,7 @@ test("skips the tests, browser regressions and website build only on a promotion
 		if (name === "production-build.yml") continue;
 		for (const event of EVENTS) {
 			const runs = jobRuns(name, jobs[job], event);
-			assert.equal(runs, !event.skips, `${name} ${runs ? "runs" : "skips"} ${job} for ${event.name}`);
+			assert.equal(runs, !event.skips && !event.cancelled, `${name} ${runs ? "runs" : "skips"} ${job} for ${event.name}`);
 		}
 	}
 
