@@ -587,6 +587,9 @@ changes, not evidence that a build has been deployed or accepted on real devices
   official terminal.
 - When Hyperliquid rejects a staking action, the notification now shows the exchange's reason (translated
   when it is a known one) instead of only "No changes were made."
+- A Vault transfer or API wallet change that Hyperliquid rejects is no longer reported as declined in
+  the wallet when the exchange's reason happens to mention a user rejection; the notification shows that
+  reason.
 - The ⌘K market search now follows the interface language (title, field, empty result and market
   type) and shows spot prices with the spot price precision instead of the perp one.
 - In Arabic, a plus or minus sign now stays in front of its number, as in the 24h change, PnL and

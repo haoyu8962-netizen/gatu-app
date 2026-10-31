@@ -205,8 +205,8 @@ export class VaultLocalPreDispatchError extends Error {
 	}
 }
 
+/** Exchange and local errors are classified by their source before the wallet keywords (ADR 0024 decision 1). */
 export function classifyVaultMutationFailure(error: unknown): VaultMutationFailureKind {
-	if (isWalletRejectionError(error)) return "rejected";
 	if (
 		error instanceof Error &&
 		(error.name === "ApiRequestError" ||
@@ -220,6 +220,7 @@ export function classifyVaultMutationFailure(error: unknown): VaultMutationFailu
 	) {
 		return "deterministic";
 	}
+	if (isWalletRejectionError(error)) return "rejected";
 	return "ambiguous";
 }
 

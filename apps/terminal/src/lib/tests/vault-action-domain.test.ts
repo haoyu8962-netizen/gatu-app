@@ -240,6 +240,12 @@ describe("Vault mutation result safety", () => {
 		expect(classifyVaultMutationFailure(new Error("transport disconnected"))).toBe("ambiguous");
 	});
 
+	it("classifies an exchange rejection by its source even when its text mentions a user rejection", () => {
+		const apiError = new Error("User rejected the request because the vault is closed");
+		apiError.name = "ApiRequestError";
+		expect(classifyVaultMutationFailure(apiError)).toBe("deterministic");
+	});
+
 	it("formats only the public operation tuple", () => {
 		const reference = formatVaultOperationReference({
 			env: "Mainnet",

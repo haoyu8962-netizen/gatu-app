@@ -35,6 +35,7 @@
 - 对 API 规则之外的资金与其他操作错误没有官方原文清单，只映射已观测到的几条。
 - 金库的确定失败也走共享分类器：交易所拒绝保留原文，网络失败显示通用的失败文案，不再被宽泛的关键词误报为「钱包或网络已变化」；金库自己的预检原因仍用专门文案。
 - 2026-11-01 补记：质押（存入、转回现货、委托、取消委托）的交易所拒绝此前只存一个代码，通知固定显示「No changes were made.」，交易所原文丢失（2026-10-30 审查 E12）。现在会话保存 `classifyActionErrorOr` 的分类结果，通知正文经 `describeActionFailure` 显示：已知原文翻译，未知原文逐字完整显示，与官方质押弹层直接显示交易所 `response` 相同；判定顺序也改为交易所拒绝先于钱包拒签的关键词。测试见 `components/staking/__tests__/use-staking-actions.test.tsx` 与 `staking-view.test.tsx`。
+- 2026-11-01 补记：金库划转与 API 钱包的本地结果分类此前先判钱包拒签关键词，再判 `ApiRequestError`，与决策 1 的顺序相反：交易所原文里只要出现「User rejected」「User denied」之类字样，结果就成了钱包拒签，通知显示「No operation was submitted.」或拒签说明，原文丢失（2026-11-01 Codex 对抗审查 C 路）。现在两处都先按来源判定交易所与本地错误，再看钱包关键词；`vault-action-domain.test.ts`、金库控制器测试与 `use-api-wallet-controller.test.tsx` 各用一条带这类字样的交易所原文钉住。
 - 图表数据源的错误原因在出错时按当前语言生成。英语与印地语共用 TradingView 的 `en` 语言包，两者互切不重建图表，已显示的错误原因要到下一次请求才换语言。这是 2026-09-29 对抗审查提出的疑似问题，未修改。
 
 ## 证据
