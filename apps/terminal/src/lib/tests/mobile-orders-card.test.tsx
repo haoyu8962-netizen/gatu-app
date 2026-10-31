@@ -335,6 +335,22 @@ describe("MobileOrdersTab disclosure card", () => {
 		expect(container.textContent).not.toContain("Original Size");
 	});
 
+	it("shows a trailing stop's trigger, retracement and watermark, as the official terminal does", () => {
+		mocks.orders = [
+			{
+				...order,
+				orderType: "Trailing Stop Market",
+				side: "A",
+				triggerCondition: "retracement 2, best 170",
+				triggerPx: "168",
+			} as unknown as OpenOrder,
+		];
+		renderOrders();
+
+		expect(container.textContent).toContain("Trigger: $168 / Retracement: 2 · Watermark: $170");
+		expect(container.textContent).not.toContain("retracement 2, best 170");
+	});
+
 	it("shows the SDK-derived mark distance and warns below ten percent", () => {
 		renderOrders();
 

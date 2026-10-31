@@ -639,6 +639,10 @@ changes, not evidence that a build has been deployed or accepted on real devices
   that is partly filled before the open-orders list confirms it is still reported as modified.
   Reduce-only Stop and Take Profit orders can change their size and trigger price, as on the official
   terminal; a trigger order that can open a position still has to be cancelled and placed again.
+- Order history no longer turns blank, and its CSV export no longer fails, when it holds a Trailing
+  Stop order placed on the official terminal: the type reads Trailing Stop, its trigger condition shows
+  the activation or trigger price with the retracement as the official terminal does, any other new
+  order type is shown as the exchange sends it, and a trailing stop no longer counts as a position TP/SL.
 - The Market order-type tab and menu entry in the order form use the order-type wording instead of
   the market-list wording: 市价 in Chinese, 成行 in Japanese, मार्केट in Hindi, Au marché in French
   and سعر السوق in Arabic (English and Spanish are unchanged). The compact account-mode placeholder

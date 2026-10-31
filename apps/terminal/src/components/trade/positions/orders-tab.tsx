@@ -76,6 +76,7 @@ import {
 	updatePendingTradingActionFeedback,
 } from "@/lib/trade/pending-trading-action-feedback";
 import { classifyTradingActionError } from "@/lib/trade/trading-action-failure";
+import { getTrailingStopConditionLabels } from "@/lib/trade/trailing-stop-condition";
 import type { Side } from "@/lib/trade/types";
 import { useOrderEntryActions } from "@/stores/use-order-entry-store";
 import type { OrderQueueItem } from "@/stores/use-order-queue-store";
@@ -1439,11 +1440,20 @@ function OrderRow({
 		? formatPercent(metrics.markDistanceRatio, { decimals: 1, signDisplay: "exceptZero" })
 		: null;
 	const isNearMark = isToolbarOrderNearMark(metrics.markDistanceRatio);
+	const trailingStopCondition = getTrailingStopConditionLabels(order, {
+		translate: (descriptor) => t(descriptor),
+		formatPrice: (price) => formatPrice(price, { szDecimals, marketType }),
+		formatDecimalString: numberFormat.formatDecimalString,
+	});
 	const triggerConditionLabel =
-		order.isTrigger && order.triggerCondition
+		trailingStopCondition?.label ??
+		(order.isTrigger && order.triggerCondition
 			? (getCurrentOrderTriggerConditionLabel(order.triggerCondition, order.triggerPx, numberFormat) ??
 				getTriggerConditionLabel(order.triggerCondition))
-			: FALLBACK_VALUE_PLACEHOLDER;
+			: FALLBACK_VALUE_PLACEHOLDER);
+	const triggerConditionTooltip = trailingStopCondition?.watermarkLabel
+		? `${triggerConditionLabel} · ${trailingStopCondition.watermarkLabel}`
+		: triggerConditionLabel;
 	const takeProfitPx = order.children.find(isTakeProfitOrder)?.triggerPx;
 	const stopLossPx = order.children.find(isStopOrder)?.triggerPx;
 	const tpSlLabel = `${formatPrice(takeProfitPx, { szDecimals, marketType })} / ${formatPrice(stopLossPx, { szDecimals, marketType })}`;
@@ -1648,7 +1658,7 @@ function OrderRow({
 				) : (
 					<div className="flex min-w-0 flex-col gap-px">
 						<div className="flex min-w-0 items-center gap-1">
-							<Tooltip content={triggerConditionLabel}>
+							<Tooltip content={triggerConditionTooltip}>
 								<span className="truncate whitespace-nowrap tabular-nums text-market-close-fg">
 									{triggerConditionLabel}
 								</span>

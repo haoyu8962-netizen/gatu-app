@@ -557,6 +557,10 @@ msgstr "标记价 ≤ {triggerPrice} 时激活"
 msgid "Activates when mark ≥ {triggerPrice}"
 msgstr "标记价 ≥ {triggerPrice} 时激活"
 
+#: src/lib/trade/trailing-stop-condition.ts
+msgid "Activation: {price} / Retracement: {retracement}"
+msgstr "激活：{price} / 回撤：{retracement}"
+
 #: src/components/api-wallet/api-wallet-list.tsx
 #: src/components/staking/staking-view.tsx
 #: src/components/staking/staking-view.tsx
@@ -10233,6 +10237,10 @@ msgstr "成交量进度"
 msgid "Traditional Finance"
 msgstr "传统金融"
 
+#: src/hooks/trade/use-order-display-labels.ts
+msgid "Trailing Stop"
+msgstr "移动止损"
+
 #: src/components/staking/staking-view.tsx
 #: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
@@ -10347,6 +10355,10 @@ msgstr "触发价"
 #: src/lib/errors/definitions/twap.ts
 msgid "Trigger price must differ from mark"
 msgstr "触发价不能等于标记价"
+
+#: src/lib/trade/trailing-stop-condition.ts
+msgid "Trigger: {price} / Retracement: {retracement}"
+msgstr "触发：{price} / 回撤：{retracement}"
 
 #: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
@@ -11253,6 +11265,10 @@ msgstr "推荐请求确认前，钱包或网络已发生变化。请重新打开
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Wallet returned a transaction hash, but it is not visible on Arbitrum yet. Check your wallet activity or Arbiscan before retrying to avoid sending the deposit twice."
 msgstr "钱包已返回交易哈希，但该交易暂时还无法在 Arbitrum 上查到。请先检查钱包活动或 Arbiscan，避免重复发送同一笔存款。"
+
+#: src/lib/trade/trailing-stop-condition.ts
+msgid "Watermark: {watermark}"
+msgstr "最佳记录价格：{watermark}"
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
 msgid "We could not finish setting up your wallet. Check your connection and try again, or disconnect and log in again."

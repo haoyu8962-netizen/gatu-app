@@ -59,6 +59,7 @@ import {
 	updatePendingTradingActionFeedback,
 } from "@/lib/trade/pending-trading-action-feedback";
 import { classifyTradingActionError } from "@/lib/trade/trading-action-failure";
+import { getTrailingStopConditionLabels } from "@/lib/trade/trailing-stop-condition";
 import type { Side } from "@/lib/trade/types";
 import { useOrderEntryActions } from "@/stores/use-order-entry-store";
 import type { OrderQueueItem } from "@/stores/use-order-queue-store";
@@ -1297,7 +1298,7 @@ function MobileOrderCard({
 	onSelectMarket,
 	onExpandedChange,
 }: MobileOrderCardProps) {
-	const { formatNumber, formatPercent, formatPrice, formatToken } = useNumberFormat();
+	const { formatDecimalString, formatNumber, formatPercent, formatPrice, formatToken } = useNumberFormat();
 	const { i18n, t } = useLingui();
 	const locale = i18n.locale;
 	const detailsId = useId();
@@ -1312,13 +1313,21 @@ function MobileOrderCard({
 		: formatToken(order.origSz, { decimals: szDecimals });
 	const priceLabel = isMarketTriggerOrder(order) ? t`Market` : formatPrice(order.limitPx, { szDecimals, marketType });
 	const triggerOperator = getToolbarTriggerConditionOperator(order.triggerCondition);
-	const triggerConditionLabel = order.isTrigger
+	const standardTriggerConditionLabel = order.isTrigger
 		? triggerOperator
 			? `${triggerOperator} ${formatNumber(order.triggerPx)}`
 			: order.triggerCondition
 				? getTriggerConditionLabel(order.triggerCondition)
 				: FALLBACK_VALUE_PLACEHOLDER
 		: FALLBACK_VALUE_PLACEHOLDER;
+	const trailingStopCondition = getTrailingStopConditionLabels(order, {
+		translate: (descriptor) => t(descriptor),
+		formatPrice: (price) => formatPrice(price, { szDecimals, marketType }),
+		formatDecimalString,
+	});
+	const triggerConditionLabel = trailingStopCondition
+		? [trailingStopCondition.label, trailingStopCondition.watermarkLabel].filter(Boolean).join(" · ")
+		: standardTriggerConditionLabel;
 	const metrics = getToolbarOrderMetrics({
 		isTrigger: order.isTrigger,
 		limitPx: order.limitPx,

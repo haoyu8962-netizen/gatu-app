@@ -2,7 +2,12 @@ import { useLingui } from "@lingui/react/macro";
 import type { HistoricalOrdersResponse } from "@nktkas/hyperliquid";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { type AdvancedOrderType, ORDER_TYPE_MESSAGES, type OrderType } from "@/config/trade";
-import type { OpenOrder, OrderSide, OrderTypeConfig } from "@/lib/trade/open-orders";
+import {
+	type OpenOrder,
+	type OrderSide,
+	type OrderTypeConfig,
+	TRAILING_STOP_ORDER_TYPE,
+} from "@/lib/trade/open-orders";
 import { getOrderDirection } from "@/lib/trade/order-direction";
 import type { TwapHistoryStatus } from "@/lib/trade/order-history";
 
@@ -48,7 +53,7 @@ const TRIGGER_CONDITION_PATTERN = /^Price (above|below) (.+)$/;
 export function useOrderDisplayLabels() {
 	const { t } = useLingui();
 
-	function getOrderTypeLabel(orderType: OpenOrder["orderType"]): string {
+	function getOrderTypeLabel(orderType: OpenOrder["orderType"] | string): string {
 		switch (orderType) {
 			case "Market":
 				return t({ message: "Market", context: "Order type" });
@@ -68,8 +73,10 @@ export function useOrderDisplayLabels() {
 				return t`Vault Close`;
 			case "Spot Dust Conversion":
 				return t`Spot Dust Conversion`;
+			case TRAILING_STOP_ORDER_TYPE:
+				return t`Trailing Stop`;
 			default:
-				return FALLBACK_VALUE_PLACEHOLDER;
+				return orderType || FALLBACK_VALUE_PLACEHOLDER;
 		}
 	}
 

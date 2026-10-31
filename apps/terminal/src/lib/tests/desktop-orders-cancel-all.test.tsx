@@ -494,6 +494,34 @@ describe("desktop cancel all orders confirmation", () => {
 		expect(cells[6]).toBe("298.00 USDT0");
 	});
 
+	it("shows a trailing stop's activation, then its trigger and retracement, as the official terminal does", () => {
+		mocks.orders = [
+			{
+				...triggerOrder,
+				orderType: "Trailing Stop Market",
+				side: "A",
+				triggerCondition: "retracement 1%, activation above 160, best waiting",
+				triggerPx: "0.0",
+			} as unknown as OpenOrder,
+		];
+		act(() => root.render(<ReviewedOrders />));
+		let cells = [...container.querySelectorAll("tbody tr td")].map((cell) => cell.textContent?.trim() ?? "");
+		expect(cells[9]).toBe("Activation: $160 / Retracement: 1%");
+
+		mocks.orders = [
+			{
+				...triggerOrder,
+				orderType: "Trailing Stop Market",
+				side: "A",
+				triggerCondition: "retracement 1%, activation above 160, best 170",
+				triggerPx: "168.3",
+			} as unknown as OpenOrder,
+		];
+		act(() => root.render(<ReviewedOrders />));
+		cells = [...container.querySelectorAll("tbody tr td")].map((cell) => cell.textContent?.trim() ?? "");
+		expect(cells[9]).toMatch(/^Trigger: \$168\.30* \/ Retracement: 1%$/);
+	});
+
 	it("hides destructive bulk actions when the open-orders snapshot is empty", () => {
 		mocks.orders = [];
 		act(() => root.render(<ReviewedOrders />));
