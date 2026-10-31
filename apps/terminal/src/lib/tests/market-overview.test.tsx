@@ -35,6 +35,7 @@ function getRenderedStatIds(container: HTMLElement): MarketStatId[] {
 }
 
 const mocks = vi.hoisted(() => ({
+	isTestnet: false,
 	allMidsEvent: undefined as { mids: Record<string, string> } | undefined,
 	allMidsIsStale: false,
 	allMidsStatus: "idle" as "idle" | "subscribing" | "active" | "error",
@@ -122,8 +123,14 @@ vi.mock("@/hooks/trade/use-orderbook-mid-price", () => ({
 	useOrderbookMidPrice: () => ({ midPx: mocks.midPx, snapshot: mocks.midSnapshot, status: "idle" }),
 }));
 
+vi.mock("@/lib/network", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/lib/network")>()),
+	isTestnet: () => mocks.isTestnet,
+}));
+
 vi.mock("@/lib/hyperliquid", () => ({
-	getExplorerTokenUrl: (address: string) => `/explorer/token/${address}`,
+	getExplorerTokenUrl: (address: string, isTestnet: boolean) =>
+		`/${isTestnet ? "testnet" : "mainnet"}/explorer/token/${address}`,
 	getMarketApiCoin: (market: { name?: string } | undefined) => market?.name ?? "",
 	getSpotMarketApiCoin: (market: { kind?: string; name?: string } | undefined) =>
 		market?.kind === "spot" ? (market.name ?? "") : "",
@@ -172,6 +179,7 @@ describe("MarketOverview", () => {
 		mocks.allMidsIsStale = false;
 		mocks.allMidsStatus = "idle";
 		mocks.env = "Mainnet";
+		mocks.isTestnet = false;
 		mocks.midPx = undefined;
 		mocks.midSnapshot = undefined;
 		mocks.receivedAt = FRESH_RECEIVED_AT;
@@ -970,7 +978,12 @@ describe("MarketOverview", () => {
 		expect(container.querySelector('[aria-label="Copied"]')).toBeNull();
 		expect(container.querySelector('[aria-label="Copy token address"]')).not.toBeNull();
 		expect(container.querySelector<HTMLAnchorElement>('[aria-label="Open token in explorer"]')?.href).toContain(
-			`/explorer/token/${secondAddress}`,
+			`/mainnet/explorer/token/${secondAddress}`,
+		);
+		mocks.isTestnet = true;
+		renderOverview();
+		expect(container.querySelector<HTMLAnchorElement>('[aria-label="Open token in explorer"]')?.href).toContain(
+			`/testnet/explorer/token/${secondAddress}`,
 		);
 
 		await act(async () => {

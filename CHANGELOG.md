@@ -584,6 +584,12 @@ changes, not evidence that a build has been deployed or accepted on real devices
   market's price and a token without a price counts as zero instead of hiding the whole value.
 - Send's Max and balance check now use the exact balance, so Max on a large balance no longer fills an
   amount above it that the final check refuses on every retry.
+- Switching between mainnet and testnet no longer briefly shows the other network's last mark price
+  (for a spot pair, possibly another token's) before the live price arrives: the cached marks are kept
+  per network.
+- Explorer links on testnet now open the testnet explorer at `app.hyperliquid-testnet.xyz` (the old host
+  did not resolve), and the token links in the market header and the phone's market bar follow the
+  active network instead of always opening mainnet.
 - Orders, cancels and other trading actions now expire if the exchange has not accepted them within
   15 seconds, as with the official terminal's default Transaction Delay Protection, so a delayed
   request is rejected instead of executing late. The 15 seconds follow the exchange's clock, not the

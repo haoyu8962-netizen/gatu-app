@@ -33,6 +33,7 @@ import {
 	useSelectedMarketInfo,
 	useSubscription,
 } from "@/lib/hyperliquid";
+import { isTestnet } from "@/lib/network";
 import { type Numeric, toBig } from "@/lib/trade/numbers";
 import { getTradePriceDecimals } from "@/lib/trade/trades";
 import { MarketOverviewView } from "./market-overview-view";
@@ -386,7 +387,7 @@ function createSpotTokenContractValue(
 	return (
 		<span className="flex items-center gap-1 whitespace-nowrap">
 			<a
-				href={getExplorerTokenUrl(address)}
+				href={getExplorerTokenUrl(address, isTestnet())}
 				target="_blank"
 				rel="noopener noreferrer"
 				className="inline-flex items-center gap-1 text-[13px] font-semibold tabular-nums text-trading-panel-fg transition-colors duration-150 hover:text-trading-panel-muted"

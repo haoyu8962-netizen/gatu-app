@@ -1,6 +1,13 @@
 import { STORAGE_KEYS } from "@/config/app";
 import { LAST_MARK_TTL_MS } from "@/config/time";
 
+/**
+ * Mainnet and testnet share this origin but not their markets (`@N` is a different pair on each),
+ * so every entry is keyed by network and coin. The unkeyed v1 store cannot tell its network and is
+ * removed rather than migrated; its entries expire within an hour anyway.
+ */
+type LastMarkNetwork = "Mainnet" | "Testnet";
+
 export interface LastMarkEntry {
 	markPx: string;
 	oraclePx?: string;
@@ -73,6 +80,10 @@ function loadStore(): StoreSnapshot | null {
 	if (cachedStore) return { storage, store: cachedStore };
 
 	try {
+		storage.removeItem(STORAGE_KEYS.LEGACY_LAST_MARK);
+	} catch {}
+
+	try {
 		const parsed = JSON.parse(storage.getItem(STORAGE_KEYS.LAST_MARK) ?? "{}") as unknown;
 		if (!isStore(parsed)) return null;
 		cachedStore = parsed;
@@ -82,19 +93,24 @@ function loadStore(): StoreSnapshot | null {
 	}
 }
 
-export function loadLastMark(coin: string): LastMarkEntry | null {
-	const entry = loadStore()?.store[coin];
+function getEntryKey(network: LastMarkNetwork, coin: string): string {
+	return `${network}:${coin}`;
+}
+
+export function loadLastMark(network: LastMarkNetwork, coin: string): LastMarkEntry | null {
+	const entry = loadStore()?.store[getEntryKey(network, coin)];
 	if (!entry) return null;
 	if (Date.now() - entry.savedAt > LAST_MARK_TTL_MS) return null;
 	return entry;
 }
 
-export function saveLastMark(coin: string, markPx: string, oraclePx?: string) {
+export function saveLastMark(network: LastMarkNetwork, coin: string, markPx: string, oraclePx?: string) {
 	const snapshot = loadStore();
 	if (!snapshot) return;
 
 	try {
-		const current = snapshot.store[coin];
+		const key = getEntryKey(network, coin);
+		const current = snapshot.store[key];
 		const now = Date.now();
 		if (current?.markPx === markPx && current.oraclePx === oraclePx && now - current.savedAt <= LAST_MARK_TTL_MS) {
 			return;
@@ -102,7 +118,7 @@ export function saveLastMark(coin: string, markPx: string, oraclePx?: string) {
 
 		const nextStore = {
 			...snapshot.store,
-			[coin]: { markPx, oraclePx, savedAt: now },
+			[key]: { markPx, oraclePx, savedAt: now },
 		};
 		snapshot.storage.setItem(STORAGE_KEYS.LAST_MARK, JSON.stringify(nextStore));
 		cachedStore = nextStore;
