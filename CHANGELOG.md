@@ -579,6 +579,9 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Fixed
 
+- Switching between mainnet and testnet no longer briefly shows the other network's last mark price
+  (for a spot pair, possibly another token's) before the live price arrives: the cached marks are kept
+  per network.
 - Explorer links on testnet now open the testnet explorer at `app.hyperliquid-testnet.xyz` (the old host
   did not resolve), and the token links in the market header and the phone's market bar follow the
   active network instead of always opening mainnet.
