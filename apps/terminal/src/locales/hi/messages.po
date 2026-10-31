@@ -4888,6 +4888,10 @@ msgstr "मार्जिन राशि"
 msgid "Margin and account risk at a glance"
 msgstr "मार्जिन और खाता जोखिम एक नज़र में"
 
+#: src/hooks/trade/use-order-display-labels.ts
+msgid "Margin Canceled"
+msgstr ""
+
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
@@ -6233,6 +6237,7 @@ msgid "Partially completed"
 msgstr "आंशिक रूप से पूरा हुआ"
 
 #: src/components/trade/tradebox/order-toast.tsx
+#: src/hooks/trade/use-order-display-labels.ts
 #: src/lib/trade/order-notification-copy.ts
 msgid "Partially filled"
 msgstr "आंशिक रूप से निष्पादित"

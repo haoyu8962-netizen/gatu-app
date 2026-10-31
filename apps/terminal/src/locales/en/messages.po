@@ -4888,6 +4888,10 @@ msgstr "Margin amount"
 msgid "Margin and account risk at a glance"
 msgstr "Margin and account risk at a glance"
 
+#: src/hooks/trade/use-order-display-labels.ts
+msgid "Margin Canceled"
+msgstr "Margin Canceled"
+
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
@@ -6233,6 +6237,7 @@ msgid "Partially completed"
 msgstr "Partially completed"
 
 #: src/components/trade/tradebox/order-toast.tsx
+#: src/hooks/trade/use-order-display-labels.ts
 #: src/lib/trade/order-notification-copy.ts
 msgid "Partially filled"
 msgstr "Partially filled"
