@@ -37,6 +37,7 @@ function cancelRejection(text: string) {
 }
 
 const mocks = vi.hoisted(() => ({
+	markPriceLive: false,
 	address: "0x1111111111111111111111111111111111111111",
 	assetId: 120_001 as number | undefined,
 	batchModifyGuard: undefined as ((params: unknown) => void) | undefined,
@@ -190,7 +191,13 @@ vi.mock("@/lib/hyperliquid", () => ({
 		getSzDecimals: () => 3,
 		isLoading: false,
 	}),
-	useMarketsInfo: () => ({ getMarketInfo: () => ({ markPx: mocks.markPx }) }),
+	useMarketsInfo: () => ({
+		getMarketInfo: () => ({
+			markPx: mocks.markPx,
+			markPriceStatus: mocks.markPriceLive ? "success" : undefined,
+			markPriceReceivedAt: mocks.markPriceLive ? Date.now() : undefined,
+		}),
+	}),
 	useSubscription: () => ({
 		data: mocks.hasSnapshot ? { orders: mocks.orders } : undefined,
 		error: null,
@@ -278,6 +285,7 @@ describe("desktop cancel all orders confirmation", () => {
 		mocks.clientKey = "0x1111111111111111111111111111111111111111";
 		mocks.env = "Mainnet";
 		mocks.markPx = "160";
+		mocks.markPriceLive = false;
 		mocks.modifyError = null;
 		mocks.orders = [order];
 		mocks.quoteSymbol = "USDC";
@@ -394,6 +402,88 @@ describe("desktop cancel all orders confirmation", () => {
 
 		expect(container.querySelector('button[aria-label="Edit xyz:ORCL order size"]')).toBeNull();
 		expect(container.querySelector('button[aria-label="Edit xyz:ORCL trigger price"]')).toBeNull();
+	});
+
+	it("lets this terminal's own orders change price and sends the new price without a client order id", async () => {
+		mocks.orders = [{ ...order, cloid: "0x0000000000000000000000000000abcd" } as OpenOrder];
+		act(() => root.render(<ReviewedOrders />));
+		expect(container.querySelector('button[aria-label="Edit xyz:ORCL order size"]')).not.toBeNull();
+		const edit = container.querySelector<HTMLButtonElement>('button[aria-label="Edit xyz:ORCL order price"]');
+		act(() => edit?.click());
+		const input = container.querySelector<HTMLInputElement>('input[aria-label="Edit xyz:ORCL order price"]');
+		expect(input?.value).toBe("149.00");
+
+		await act(async () => {
+			if (!input) return;
+			changeInput(input, "150.5");
+			pressKey(input, "Enter");
+			await Promise.resolve();
+		});
+
+		expect(mocks.modifyOrders).toHaveBeenCalledOnce();
+		const params = mocks.modifyOrders.mock.calls[0]?.[0] as {
+			modifies: { oid: number; order: { a: number; p: string; s: string; c?: string } }[];
+		};
+		expect(params.modifies).toEqual([{ oid: 42, order: expect.objectContaining({ a: 120_001, p: "150.5", s: "2" }) }]);
+		expect(params.modifies[0]?.order).not.toHaveProperty("c");
+		expect(getPendingTradingActionSnapshot().modifications[0]).toMatchObject({
+			originalLimitPx: "149.00",
+			expectedLimitPx: "150.5",
+			expectedSize: null,
+		});
+	});
+
+	it("changes the trigger price of a reduce-only stop with the always-place flag", async () => {
+		mocks.markPriceLive = true;
+		mocks.orders = [triggerOrder];
+		act(() => root.render(<ReviewedOrders />));
+		const edit = container.querySelector<HTMLButtonElement>('button[aria-label="Edit xyz:ORCL trigger price"]');
+		act(() => edit?.click());
+		const input = container.querySelector<HTMLInputElement>('input[aria-label="Edit xyz:ORCL trigger price"]');
+
+		await act(async () => {
+			if (!input) return;
+			changeInput(input, "165");
+			pressKey(input, "Enter");
+			await Promise.resolve();
+		});
+
+		expect(mocks.modifyOrders).toHaveBeenCalledOnce();
+		const params = mocks.modifyOrders.mock.calls[0]?.[0] as {
+			a?: boolean;
+			modifies: { oid: number; order: { r: boolean; t: unknown } }[];
+		};
+		expect(params.a).toBe(true);
+		expect(params.modifies[0]?.order).toMatchObject({ r: true, t: { trigger: { triggerPx: "165", tpsl: "sl" } } });
+		expect(getPendingTradingActionSnapshot().modifications[0]).toMatchObject({
+			expectedTriggerPx: "165",
+			expectedSize: null,
+		});
+	});
+
+	it("refuses a trigger edit at the SDK boundary once the mark price is no longer live", async () => {
+		mocks.markPriceLive = true;
+		mocks.orders = [triggerOrder];
+		const broadcast = vi.fn();
+		mocks.modifyOrders.mockImplementation(async (params: unknown) => {
+			mocks.markPriceLive = false;
+			mocks.batchModifyGuard?.(params);
+			broadcast(params);
+			return { response: { data: { statuses: [{ resting: { oid: 42 } }] } } };
+		});
+		act(() => root.render(<ReviewedOrders />));
+		act(() => container.querySelector<HTMLButtonElement>('button[aria-label="Edit xyz:ORCL trigger price"]')?.click());
+		const input = container.querySelector<HTMLInputElement>('input[aria-label="Edit xyz:ORCL trigger price"]');
+
+		await act(async () => {
+			if (!input) return;
+			changeInput(input, "165");
+			pressKey(input, "Enter");
+			await Promise.resolve();
+		});
+
+		expect(mocks.modifyOrders).toHaveBeenCalledOnce();
+		expect(broadcast).not.toHaveBeenCalled();
 	});
 
 	it("formats HIP-3 order notional in its verified non-USDC quote token", () => {

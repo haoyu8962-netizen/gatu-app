@@ -633,6 +633,12 @@ changes, not evidence that a build has been deployed or accepted on real devices
   daily chart opened after them stayed empty too.
 - The chart's liquidation line is labelled "Liq. Price" in the interface language, and the position
   line writes its size in the number format you chose.
+- Orders placed in this terminal can be modified again: their size, and for limit orders their
+  price, can be changed from the open-orders table on desktop and from Modify Order on mobile. They
+  used to be refused because this terminal tags its orders with a client order id. A price change
+  that is partly filled before the open-orders list confirms it is still reported as modified.
+  Reduce-only Stop and Take Profit orders can change their size and trigger price, as on the official
+  terminal; a trigger order that can open a position still has to be cancelled and placed again.
 - The Market order-type tab and menu entry in the order form use the order-type wording instead of
   the market-list wording: 市价 in Chinese, 成行 in Japanese, मार्केट in Hindi, Au marché in French
   and سعر السوق in Arabic (English and Spanish are unchanged). The compact account-mode placeholder

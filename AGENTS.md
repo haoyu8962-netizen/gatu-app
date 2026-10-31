@@ -353,6 +353,9 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/desktop-orders-cancel-all.test.tsx \
   src/lib/tests/mobile-orders-card.test.tsx \
   src/lib/tests/mobile-order-modification.test.tsx \
+  src/lib/tests/open-order-modification.test.ts \
+  src/lib/tests/open-order-modification-form.test.ts \
+  src/lib/tests/order-reconciliation.test.tsx \
   src/lib/tests/spot-swap-modal.test.tsx \
   src/lib/tests/account-mode-modal.test.tsx \
   src/lib/tests/use-asset-leverage.test.tsx \

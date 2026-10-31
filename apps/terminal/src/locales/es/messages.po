@@ -2031,6 +2031,7 @@ msgstr "Cantidad de TP/SL configurada"
 #: src/components/trade/components/hip3-deployer-disclaimer.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/tradebox/account-mode-modal.tsx
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
@@ -2060,6 +2061,10 @@ msgstr "Confirmar en el monedero"
 #: src/components/trade/tradebox/order-confirmation-modal.tsx
 msgid "Confirm Order"
 msgstr "Confirmar orden"
+
+#: src/components/trade/positions/orders-tab.tsx
+msgid "Confirm order price change"
+msgstr "Confirmar el cambio de precio de la orden"
 
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Confirm order size change"
@@ -3046,6 +3051,12 @@ msgstr "Ganado"
 #. placeholder {0}: order.coin
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
+msgid "Edit {0} order price"
+msgstr "Editar el precio de la orden de {0}"
+
+#. placeholder {0}: order.coin
+#: src/components/trade/positions/orders-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
 msgid "Edit {0} order size"
 msgstr "Editar el tamaño de la orden de {0}"
 
@@ -3134,6 +3145,11 @@ msgstr "Introduce un precio máximo válido"
 msgid "Enter a valid min price"
 msgstr "Introduce un precio mínimo válido"
 
+#: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
+msgid "Enter a valid price using the market's price precision."
+msgstr "Introduce un precio válido usando la precisión de precio del mercado."
+
 #: src/lib/errors/format.ts
 #: src/lib/trade/order-submission-feedback.ts
 msgid "Enter a valid scale skew"
@@ -3156,8 +3172,8 @@ msgstr "Introduce un precio de activación válido"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
-msgid "Enter a valid trigger price using the market's price precision."
-msgstr "Introduce un precio de activación válido usando la precisión de precio del mercado."
+#~ msgid "Enter a valid trigger price using the market's price precision."
+#~ msgstr "Introduce un precio de activación válido usando la precisión de precio del mercado."
 
 #: src/components/staking/staking-action-modal.tsx
 msgid "Enter an amount."
@@ -6121,8 +6137,8 @@ msgstr "Órdenes"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
-msgid "Orders with a client order ID cannot be modified here. Cancel and replace the order instead."
-msgstr "Las órdenes con un ID de orden de cliente no se pueden modificar aquí. Cancela y reemplaza la orden en su lugar."
+#~ msgid "Orders with a client order ID cannot be modified here. Cancel and replace the order instead."
+#~ msgstr "Las órdenes con un ID de orden de cliente no se pueden modificar aquí. Cancela y reemplaza la orden en su lugar."
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -6649,6 +6665,8 @@ msgstr "Página anterior de bóvedas"
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-order-modification-modal.tsx
+#: src/components/trade/mobile/mobile-order-modification-modal.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx

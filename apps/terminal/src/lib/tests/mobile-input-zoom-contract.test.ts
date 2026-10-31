@@ -126,12 +126,12 @@ describe("mobile input zoom contract", () => {
 	});
 
 	it("uses iOS-safe text for the native mobile order modification inputs", () => {
-		expect(MOBILE_ORDER_MODIFICATION_MODAL.match(/<input/g)).toHaveLength(2);
+		expect(MOBILE_ORDER_MODIFICATION_MODAL.match(/<input/g)).toHaveLength(3);
 		expect(
 			MOBILE_ORDER_MODIFICATION_MODAL.match(
 				/className="min-w-0 flex-1 border-0 bg-transparent py-2\.5 text-right text-base/g,
 			),
-		).toHaveLength(2);
+		).toHaveLength(3);
 		expect(MOBILE_ORDER_MODIFICATION_MODAL).not.toMatch(/<input[\s\S]{0,500}text-sm/);
 	});
 });
