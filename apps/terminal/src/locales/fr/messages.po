@@ -3514,8 +3514,8 @@ msgstr "Échec du chargement des soldes"
 #~ msgstr "Échec du chargement des soldes."
 
 #: src/components/trade/positions/account-transfers-tab.tsx
-msgid "Failed to load deposits and withdrawals."
-msgstr "Échec du chargement des dépôts et retraits."
+#~ msgid "Failed to load deposits and withdrawals."
+#~ msgstr "Échec du chargement des dépôts et retraits."
 
 #: src/components/trade/positions/funding-tab.tsx
 #~ msgid "Failed to load funding payments."
@@ -4769,7 +4769,6 @@ msgstr "Chargement du portefeuille..."
 #: src/components/trade/chart/tradingview-chart.tsx
 #: src/components/trade/components/deposit-modal-loading-fallback.tsx
 #: src/components/trade/components/global-modals.tsx
-#: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/ui/lazy-dialog-boundary.tsx
 #: src/components/ui/lazy-dialog-boundary.tsx
 #: src/config/ui-text.ts

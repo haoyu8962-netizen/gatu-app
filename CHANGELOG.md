@@ -579,6 +579,10 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Fixed
 
+- The position TP/SL dialog no longer shows a Loading... warning while the mark price is not live;
+  Confirm stays disabled until it is, as before.
+- The desktop Deposits and Withdrawals tab no longer shows a red load error: it keeps a neutral Retry
+  (or the display-limit note), as the phone and the passive data rules already do.
 - Orders, cancels and other trading actions now expire if the exchange has not accepted them within
   15 seconds, as with the official terminal's default Transaction Delay Protection, so a delayed
   request is rejected instead of executing late. The 15 seconds follow the exchange's clock, not the

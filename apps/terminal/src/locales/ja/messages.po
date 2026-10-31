@@ -3184,8 +3184,8 @@ msgid "Failed to load balances"
 msgstr "残高を読み込めませんでした"
 
 #: src/components/trade/positions/account-transfers-tab.tsx
-msgid "Failed to load deposits and withdrawals."
-msgstr "入出金を読み込めませんでした。"
+#~ msgid "Failed to load deposits and withdrawals."
+#~ msgstr "入出金を読み込めませんでした。"
 
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Failed to load market categories."
@@ -4246,7 +4246,6 @@ msgstr "ウォレットを読み込み中..."
 #: src/components/trade/chart/tradingview-chart.tsx
 #: src/components/trade/components/deposit-modal-loading-fallback.tsx
 #: src/components/trade/components/global-modals.tsx
-#: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/ui/lazy-dialog-boundary.tsx
 #: src/components/ui/lazy-dialog-boundary.tsx
 #: src/config/ui-text.ts

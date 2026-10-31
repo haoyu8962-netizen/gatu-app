@@ -45,14 +45,11 @@ export function AccountTransfersTab() {
 		}
 		if (status === "error" || status === "unavailable") {
 			return (
-				<Placeholder variant="error">
-					<span>{t`Failed to load deposits and withdrawals.`}</span>
+				<Placeholder>
 					{historyLimitReached ? (
-						<span className="mt-1 text-xs text-fg-muted">
-							{t`Recent history exceeds the safe display limit. Export CSV to retrieve a larger range.`}
-						</span>
+						<span>{t`Recent history exceeds the safe display limit. Export CSV to retrieve a larger range.`}</span>
 					) : (
-						<Button variant="outline" intent="neutral" size="xxs" className="mt-2" onClick={retry}>
+						<Button variant="outline" intent="neutral" size="xxs" onClick={retry}>
 							{t`Retry`}
 						</Button>
 					)}

@@ -3514,8 +3514,8 @@ msgstr "बैलेंस लोड करने में विफल"
 #~ msgstr "शेष लोड करने में विफल।"
 
 #: src/components/trade/positions/account-transfers-tab.tsx
-msgid "Failed to load deposits and withdrawals."
-msgstr "जमा और निकासी लोड नहीं हो सके।"
+#~ msgid "Failed to load deposits and withdrawals."
+#~ msgstr "जमा और निकासी लोड नहीं हो सके।"
 
 #: src/components/trade/positions/funding-tab.tsx
 #~ msgid "Failed to load funding payments."
@@ -4769,7 +4769,6 @@ msgstr "वॉलेट लोड हो रहा है..."
 #: src/components/trade/chart/tradingview-chart.tsx
 #: src/components/trade/components/deposit-modal-loading-fallback.tsx
 #: src/components/trade/components/global-modals.tsx
-#: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/ui/lazy-dialog-boundary.tsx
 #: src/components/ui/lazy-dialog-boundary.tsx
 #: src/config/ui-text.ts

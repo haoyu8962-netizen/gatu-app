@@ -94,10 +94,9 @@ describe("account ledger export availability", () => {
 		mocks.status = "unavailable";
 		act(() => root.render(renderSurface()));
 
-		if (surface === "mobile") {
-			expect(container.textContent).not.toContain("Failed to load deposits and withdrawals.");
-			expect(container.querySelector('[data-slot="data-pending"]')).not.toBeNull();
-		} else expect(container.textContent).toContain("Failed to load deposits and withdrawals.");
+		expect(container.textContent).not.toContain("Failed to load deposits and withdrawals.");
+		expect(container.querySelector(".text-error")).toBeNull();
+		if (surface === "mobile") expect(container.querySelector('[data-slot="data-pending"]')).not.toBeNull();
 		expect(container.textContent).not.toContain("No deposits or withdrawals found.");
 		const retry = Array.from(container.querySelectorAll<HTMLButtonElement>("button")).find(
 			(candidate) => candidate.textContent === "Retry",

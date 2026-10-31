@@ -66,9 +66,16 @@ describe("mobile passive data presentation contract", () => {
 				"t`Live position data is stale.",
 				"t`Failed to load positions.",
 				"<Trans>Loading account mode...</Trans>",
+				"guardMessage = t`Loading...`",
 			])
 				expect(source, file).not.toContain(message);
 		}
+	});
+
+	it("keeps the desktop deposits and withdrawals tab free of read-failure text", () => {
+		const source = readFileSync(resolve(mobile, "../positions/account-transfers-tab.tsx"), "utf8");
+		expect(source).not.toContain("Failed to load deposits and withdrawals");
+		expect(source).not.toContain('variant="error"');
 	});
 
 	it("does not couple transfer controls to the presence of a notice", () => {
