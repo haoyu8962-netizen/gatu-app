@@ -7,7 +7,12 @@ import {
 	type SpotBalanceData,
 } from "@/domain/trade/balances";
 import { getExecutedPrice } from "@/domain/trade/order/price";
-import { getMaxSizeForOrderEntry, getOrderValue, getSizeStringFromInput } from "@/domain/trade/order/size";
+import {
+	capSizeToQuoteAmount,
+	getMaxSizeForOrderEntry,
+	getOrderValue,
+	getSizeStringFromInput,
+} from "@/domain/trade/order/size";
 import { formatPriceForOrder } from "@/domain/trade/orders";
 import type { SpotBalance } from "@/hooks/trade/use-account-balances";
 import { getMarketCapabilities, type MarketCapabilities } from "@/lib/hyperliquid";
@@ -28,6 +33,8 @@ export interface OrderEntryInputs {
 	market: UnifiedMarketInfo | undefined;
 	side: Side;
 	conversionPrice: number;
+	/** The order value of a total size when it is not size × conversion price (a scale order's levels). */
+	orderValueForSize?: (size: string) => number | undefined;
 	sizeMode: SizeMode;
 	sizeInput: string;
 	spotBalances: SpotBalance[] | null | undefined;
@@ -127,7 +134,7 @@ export function deriveOrderEntry(inputs: OrderEntryInputs): OrderEntryDerived {
 					maxTradeSzs: inputs.maxTradeSzs,
 				});
 
-	const sizeForOrder =
+	const convertedSize =
 		inputs.selectedBaseSize ??
 		getSizeStringFromInput({
 			sizeInput: inputs.sizeInput,
@@ -135,9 +142,15 @@ export function deriveOrderEntry(inputs: OrderEntryInputs): OrderEntryDerived {
 			price: inputs.conversionPrice,
 			szDecimals,
 		});
+	const sizeForOrder =
+		inputs.selectedBaseSize === undefined && inputs.sizeMode === "quote" && inputs.orderValueForSize
+			? capSizeToQuoteAmount(convertedSize, inputs.sizeInput, szDecimals, inputs.orderValueForSize)
+			: convertedSize;
 
 	const sizeValue = Number(sizeForOrder);
-	const orderValue = getOrderValue(sizeValue, inputs.conversionPrice);
+	const orderValue =
+		(sizeValue > 0 ? inputs.orderValueForSize?.(sizeForOrder) : undefined) ??
+		getOrderValue(sizeValue, inputs.conversionPrice);
 	const sizeModeLabel = getSizeModeLabel(inputs.sizeMode, baseToken, quoteToken);
 
 	return {

@@ -6102,6 +6102,10 @@ msgstr "لا يمكن هنا تعديل الأوامر التي تحمل معر�
 msgid "Orders with linked TP/SL orders cannot be modified here."
 msgstr "لا يمكن هنا تعديل الأوامر المرتبطة بأوامر TP/SL."
 
+#: src/components/trade/components/global-settings-modal.tsx
+msgid "Orders, cancels and other trading actions expire if the exchange has not accepted them within 15 seconds."
+msgstr "تنتهي صلاحية الأوامر والإلغاءات وغيرها من إجراءات التداول إذا لم تقبلها المنصة خلال 15 ثانية."
+
 #: src/components/historical-orders/historical-orders-page.tsx
 #~ msgid "Ordinary order history for {0}"
 #~ msgstr ""
@@ -6652,6 +6656,10 @@ msgstr "السعر أدنى من {price}"
 #: src/config/orderbook-labels.ts
 msgid "Price grouping"
 msgstr "تجميع الأسعار"
+
+#: src/lib/errors/definitions/price-tick.ts
+msgid "Price must be a multiple of the tick size, with at most 5 significant figures. E.g., {validPrice}"
+msgstr "يجب أن يكون السعر من مضاعفات حجم التكة، وألا يتجاوز 5 أرقام معنوية. مثال: {validPrice}"
 
 #: src/lib/errors/exchange-error-text.ts
 msgid "Price must be a multiple of the tick size."
@@ -10154,6 +10162,11 @@ msgstr "المعاملة"
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 msgid "Transaction breakdown"
 msgstr "تفاصيل المعاملة"
+
+#: src/components/trade/components/global-settings-modal.tsx
+#: src/components/trade/components/global-settings-modal.tsx
+msgid "Transaction delay protection"
+msgstr "الحماية من تأخر المعاملات"
 
 #: src/lib/errors/action-error.ts
 msgid "Transaction reverted on Arbitrum"

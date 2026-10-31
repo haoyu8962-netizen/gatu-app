@@ -82,6 +82,8 @@ interface UseOrderEntryDataOptions {
 	sizeInput: string;
 	/** Limit price for limit-priced order types; when > 0 it drives size/value conversion instead of mark. */
 	limitPx?: number;
+	/** A scale order's value for a total size, from its actual levels; see `getOrderEntryValueForSize`. */
+	orderValueForSize?: (size: string) => number | undefined;
 	marketOrderSizing: MarketOrderSizingInput | null;
 }
 
@@ -102,6 +104,7 @@ export function useOrderEntryData({
 	sizeMode,
 	sizeInput,
 	limitPx,
+	orderValueForSize,
 	marketOrderSizing,
 	reduceOnly = false,
 	positionSnapshot,
@@ -212,6 +215,7 @@ export function useOrderEntryData({
 		market,
 		side,
 		conversionPrice,
+		orderValueForSize,
 		sizeMode,
 		sizeInput,
 		spotBalances,

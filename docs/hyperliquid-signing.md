@@ -70,6 +70,9 @@ High-frequency trading operations that use a "phantom agent" construction. **No 
 | Serialization | Msgpack binary → keccak256 hash |
 | Signed By | Agent wallet (viem or ethers local account) |
 | Network | None required (Hyperliquid API only) |
+| Expiry | `expiresAfter` = estimated exchange time + 15 s on every L1 action ([ADR 0045](adr/0045-l1-action-expiry.md)) |
+
+Every `ExchangeClient` from `createExchangeClient` or `getTradingClient` sets the SDK's `defaultExpiresAfter`, so an L1 action that the exchange has not accepted within 15 seconds is rejected with `Action already expired` instead of executing late, as with the official terminal's default Transaction Delay Protection. The exchange time comes from an `exchangeStatus` sample per network (elapsed time is the larger of the wall-clock and monotonic ages); without a usable sample the device clock is used. User-signed actions do not support the field and are unchanged. There is no setting to turn the protection off.
 
 ### Methods Using L1 Signing
 

@@ -105,6 +105,35 @@ export function getSizeStringFromInput(input: SizeValueInput): string {
 	if (!px || px.lte(0)) return "0";
 	return inputVal.div(px).round(input.szDecimals, Big.roundDown).toFixed();
 }
+const MAX_QUOTE_CAP_STEPS = 200;
+
+/**
+ * Lowers a size converted from a quote amount by whole lots until what it actually costs (a scale
+ * order's lot-rounded levels) is no more than the amount typed, as size × price already is for other
+ * orders. The size stays unchanged when its cost cannot be computed or no smaller size fits within
+ * the step limit.
+ */
+export function capSizeToQuoteAmount(
+	size: string,
+	quoteAmount: string,
+	szDecimals: number,
+	valueForSize: (size: string) => number | undefined,
+): string {
+	const limit = toBig(quoteAmount);
+	const start = toBig(size);
+	if (!limit?.gt(0) || !start?.gt(0)) return size;
+	const lot = Big(1).div(Big(10).pow(szDecimals));
+	let candidate = start;
+	for (let step = 0; step <= MAX_QUOTE_CAP_STEPS && candidate.gt(0); step += 1) {
+		const candidateSize = candidate.toFixed(szDecimals);
+		const value = valueForSize(candidateSize);
+		if (value === undefined) return size;
+		if (Big(value).lte(limit)) return step === 0 ? size : candidateSize;
+		candidate = candidate.minus(lot);
+	}
+	return size;
+}
+
 export function getSizeValueFromInput(input: SizeValueInput): number {
 	const value = Number(getSizeStringFromInput(input));
 	return Number.isFinite(value) ? value : 0;

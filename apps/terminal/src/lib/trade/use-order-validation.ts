@@ -22,7 +22,10 @@ export interface BaseOrderInput {
 	side: Side;
 	usesLimitPrice: boolean;
 	usesTriggerPrice: boolean;
+	limitPriceInput: string;
+	triggerPriceInput: string;
 	triggerPriceNum: number | null;
+	formatDecimalString: (value: string) => string;
 	scaleOrder: boolean;
 	twapOrder: boolean;
 	scaleStartPriceNum: number | null;
@@ -32,6 +35,9 @@ export interface BaseOrderInput {
 	twapMinutesNum: number | null;
 	twapTriggerPriceNum: number | null;
 	twapStopPriceNum: number | null;
+	twapPricesEnabled: boolean;
+	twapTriggerPriceInput: string;
+	twapStopPriceInput: string;
 }
 
 export interface SpotOrderFields {

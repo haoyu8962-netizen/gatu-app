@@ -33,6 +33,7 @@ const globalSettingsSchema = z.object({
 		animateOrderbook: z.boolean().optional(),
 		showChartScanlines: z.boolean().optional(),
 		skipOrderConfirmation: z.boolean().optional(),
+		transactionDelayProtection: z.boolean().optional(),
 		numberFormatLocale: z.string().optional(),
 		marketOrderSlippagePercent: z.number().optional(),
 		marginMode: z.enum(["cross", "isolated"]).optional(),
@@ -51,6 +52,7 @@ const DEFAULT_GLOBAL_SETTINGS = {
 	animateOrderbook: true,
 	showChartScanlines: false,
 	skipOrderConfirmation: false,
+	transactionDelayProtection: true,
 	numberFormatLocale: defaultNumberFormatLocale,
 	marketOrderSlippagePercent: DEFAULT_MARKET_ORDER_SLIPPAGE_PERCENT,
 	marginMode: "cross" as MarginMode,
@@ -66,6 +68,7 @@ interface GlobalSettingsStore {
 	animateOrderbook: boolean;
 	showChartScanlines: boolean;
 	skipOrderConfirmation: boolean;
+	transactionDelayProtection: boolean;
 	numberFormatLocale: NumberFormatLocale;
 	marketOrderSlippagePercent: number;
 	marginMode: MarginMode;
@@ -79,6 +82,7 @@ interface GlobalSettingsStore {
 		setAnimateOrderbook: (next: boolean) => void;
 		setShowChartScanlines: (next: boolean) => void;
 		setSkipOrderConfirmation: (next: boolean) => void;
+		setTransactionDelayProtection: (next: boolean) => void;
 		setNumberFormatLocale: (next: NumberFormatLocale) => void;
 		setMarketOrderSlippagePercent: (percent: number) => number;
 		setMarginMode: (mode: MarginMode) => void;
@@ -99,6 +103,7 @@ const useGlobalSettingsStore = create<GlobalSettingsStore>()(
 				setAnimateOrderbook: (next) => set({ animateOrderbook: next }),
 				setShowChartScanlines: (next) => set({ showChartScanlines: next }),
 				setSkipOrderConfirmation: (next) => set({ skipOrderConfirmation: next }),
+				setTransactionDelayProtection: (next) => set({ transactionDelayProtection: next }),
 				setNumberFormatLocale: (next) => set({ numberFormatLocale: next }),
 				setMarketOrderSlippagePercent: (percent) => {
 					const current = get().marketOrderSlippagePercent;
@@ -133,6 +138,7 @@ const useGlobalSettingsStore = create<GlobalSettingsStore>()(
 				animateOrderbook: state.animateOrderbook,
 				showChartScanlines: state.showChartScanlines,
 				skipOrderConfirmation: state.skipOrderConfirmation,
+				transactionDelayProtection: state.transactionDelayProtection,
 				...(state.numberFormatLocale === defaultNumberFormatLocale
 					? {}
 					: { numberFormatLocale: state.numberFormatLocale }),
@@ -175,6 +181,10 @@ const useGlobalSettingsStore = create<GlobalSettingsStore>()(
 					animateOrderbook:
 						typeof p.animateOrderbook === "boolean" ? p.animateOrderbook : DEFAULT_GLOBAL_SETTINGS.animateOrderbook,
 					skipOrderConfirmation,
+					transactionDelayProtection:
+						typeof p.transactionDelayProtection === "boolean"
+							? p.transactionDelayProtection
+							: DEFAULT_GLOBAL_SETTINGS.transactionDelayProtection,
 					marketOrderSlippagePercent: slippagePercent,
 					marginMode: p.marginMode === "isolated" ? "isolated" : "cross",
 					theme: p.theme === "light" ? "light" : "dark",
@@ -300,6 +310,14 @@ export function useSkipOrderConfirmation() {
 
 export function getSkipOrderConfirmation(): boolean {
 	return useGlobalSettingsStore.getState().skipOrderConfirmation;
+}
+
+export function useTransactionDelayProtection() {
+	return useGlobalSettingsStore((state) => state.transactionDelayProtection);
+}
+
+export function getTransactionDelayProtection(): boolean {
+	return useGlobalSettingsStore.getState().transactionDelayProtection;
 }
 
 export function useMarginMode() {

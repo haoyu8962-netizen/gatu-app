@@ -5465,6 +5465,10 @@ msgstr "クライアント注文 ID がある注文は、ここでは変更で�
 msgid "Orders with linked TP/SL orders cannot be modified here."
 msgstr "TP/SL 注文が連動する注文は、ここでは変更できません。"
 
+#: src/components/trade/components/global-settings-modal.tsx
+msgid "Orders, cancels and other trading actions expire if the exchange has not accepted them within 15 seconds."
+msgstr "注文やキャンセルなどの取引操作は、15 秒以内に取引所に受理されなければ失効します。"
+
 #. placeholder {0}: shortenAddress(address, 8, 6)
 #: src/components/historical-orders/historical-orders-page.tsx
 msgid "Ordinary order history for <0>{0}</0>"
@@ -5959,6 +5963,10 @@ msgstr "{price} より低い価格"
 #: src/config/orderbook-labels.ts
 msgid "Price grouping"
 msgstr "価格の集約単位"
+
+#: src/lib/errors/definitions/price-tick.ts
+msgid "Price must be a multiple of the tick size, with at most 5 significant figures. E.g., {validPrice}"
+msgstr "価格は呼値単位の倍数で、有効数字は最大 5 桁にしてください。例：{validPrice}"
 
 #: src/lib/errors/exchange-error-text.ts
 msgid "Price must be a multiple of the tick size."
@@ -9013,6 +9021,11 @@ msgstr "トランザクション"
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 msgid "Transaction breakdown"
 msgstr "トランザクションの内訳"
+
+#: src/components/trade/components/global-settings-modal.tsx
+#: src/components/trade/components/global-settings-modal.tsx
+msgid "Transaction delay protection"
+msgstr "取引遅延保護"
 
 #: src/lib/errors/action-error.ts
 msgid "Transaction reverted on Arbitrum"

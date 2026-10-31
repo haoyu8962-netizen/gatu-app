@@ -8,7 +8,7 @@ import { cn } from "@/lib/cn";
 import { useNumberFormat } from "@/lib/format";
 import { getTwapStopPriceLabel } from "@/lib/trade/twap-labels";
 import type { Side } from "@/lib/trade/types";
-import { tradingInputFrameClass } from "@/lib/ui/trading-input";
+import { tradingInputFrameClass, tradingInputFrameErrorClass } from "@/lib/ui/trading-input";
 import {
 	useOrderEntryActions,
 	useTwapAdvancedEnabled,
@@ -20,6 +20,8 @@ import {
 
 interface Props {
 	disabled: boolean;
+	triggerPriceInvalid?: boolean;
+	stopPriceInvalid?: boolean;
 	side: Side;
 	quoteToken: string;
 	markPx: number;
@@ -54,6 +56,8 @@ function clamp(n: number, min: number, max: number): number {
 
 export function TradeFormTwap({
 	disabled,
+	triggerPriceInvalid = false,
+	stopPriceInvalid = false,
 	side,
 	quoteToken,
 	markPx,
@@ -197,7 +201,13 @@ export function TradeFormTwap({
 				className={cn("min-w-0 flex-col", compact ? "gap-1.5" : "gap-2", advancedEnabled ? "flex" : "hidden")}
 			>
 				<div className="flex flex-col gap-1.5">
-					<div className={cn(priceFieldClass, disabled && "opacity-50")}>
+					<div
+						className={cn(
+							priceFieldClass,
+							triggerPriceInvalid && tradingInputFrameErrorClass,
+							disabled && "opacity-50",
+						)}
+					>
 						<label htmlFor={triggerFieldId} className={priceTextClass}>
 							{t`Trigger Price`}
 							<span className={quoteUnitClass}> ({quoteToken})</span>
@@ -207,6 +217,7 @@ export function TradeFormTwap({
 							aria-label={`${t`Trigger Price`} (${quoteToken})`}
 							placeholder="0.00"
 							value={twapTriggerPrice}
+							aria-invalid={triggerPriceInvalid || undefined}
 							onChange={(e) => setTwapTriggerPrice(e.target.value)}
 							className={fieldInputClass}
 							disabled={disabled || !advancedEnabled}
@@ -236,7 +247,7 @@ export function TradeFormTwap({
 						</p>
 					)}
 				</div>
-				<div className={cn(priceFieldClass, disabled && "opacity-50")}>
+				<div className={cn(priceFieldClass, stopPriceInvalid && tradingInputFrameErrorClass, disabled && "opacity-50")}>
 					<label htmlFor={stopFieldId} className={priceTextClass}>
 						{stopPriceLabel}
 						<span className={quoteUnitClass}> ({quoteToken})</span>
@@ -246,6 +257,7 @@ export function TradeFormTwap({
 						aria-label={`${stopPriceLabel} (${quoteToken})`}
 						placeholder="0.00"
 						value={twapStopPrice}
+						aria-invalid={stopPriceInvalid || undefined}
 						onChange={(e) => setTwapStopPrice(e.target.value)}
 						className={fieldInputClass}
 						disabled={disabled || !advancedEnabled}

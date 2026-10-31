@@ -37,6 +37,7 @@ import {
 	useMarketOrderSlippagePercent,
 	useNetwork,
 	useSkipOrderConfirmation,
+	useTransactionDelayProtection,
 } from "@/stores/use-global-settings-store";
 
 const MARKET_CLOSE_CONFIRMATION_HINTS: Record<PositionMarketCloseConfirmationPreferenceStatus, MessageDescriptor> = {
@@ -56,12 +57,14 @@ export function GlobalSettingsModal() {
 	const { showOrderbookInQuote } = useGlobalSettings();
 	const animateOrderbook = useAnimateOrderbook();
 	const skipOrderConfirmation = useSkipOrderConfirmation();
+	const transactionDelayProtection = useTransactionDelayProtection();
 	const {
 		setShowOrderbookInQuote,
 		setAnimateOrderbook,
 		setMarketOrderSlippagePercent,
 		setNetwork,
 		setSkipOrderConfirmation,
+		setTransactionDelayProtection,
 	} = useGlobalSettingsActions();
 	const network = useNetwork();
 	const isMobile = useIsMobile();
@@ -102,6 +105,10 @@ export function GlobalSettingsModal() {
 
 	function handleOrderConfirmationToggle(nextEnabled: boolean) {
 		setSkipOrderConfirmation(!nextEnabled);
+	}
+
+	function handleTransactionDelayProtectionToggle(nextEnabled: boolean) {
+		setTransactionDelayProtection(nextEnabled);
 	}
 
 	function handleDesktopLayoutReset() {
@@ -172,6 +179,17 @@ export function GlobalSettingsModal() {
 								aria-label={t`Order confirmation`}
 								checked={!skipOrderConfirmation}
 								onCheckedChange={handleOrderConfirmationToggle}
+							/>
+						</SettingRow>
+						<SettingRow
+							label={t`Transaction delay protection`}
+							hint={t`Orders, cancels and other trading actions expire if the exchange has not accepted them within 15 seconds.`}
+						>
+							<Toggle
+								size="xs"
+								aria-label={t`Transaction delay protection`}
+								checked={transactionDelayProtection}
+								onCheckedChange={handleTransactionDelayProtectionToggle}
 							/>
 						</SettingRow>
 						<SettingRow

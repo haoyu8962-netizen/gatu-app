@@ -16,6 +16,7 @@ import {
 	assertEntryTwapExecutionAllowed,
 	type EntryOrderExecutionState,
 } from "@/domain/trade/order/entry-execution-guard";
+import { getOrderEntryLimitPx, getOrderEntryValueForSize } from "@/domain/trade/order/entry-limit-price";
 import {
 	canEstimateProspectiveLiquidationDraft,
 	estimateProspectiveLiquidation,
@@ -274,6 +275,16 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 	const position = market?.name ? userPositions.getPosition(market.name, getPositionDex(market)) : null;
 	const positionSnapshotReady = !userPositions.isLoading && !userPositions.hasError && !userPositions.isStale;
 	const validatedPositionSize = positionSnapshotReady ? (position?.szi ?? "0") : null;
+	const entryPriceInput = {
+		orderType,
+		assetId: typeof market?.assetId === "number" ? market.assetId : null,
+		szDecimals: market?.szDecimals ?? 0,
+		limitPriceInput,
+		scaleStartPriceInput,
+		scaleEndPriceInput,
+		scaleLevelsNum,
+		scaleSkewInput,
+	};
 	const {
 		accountAbstraction,
 		availabilityStatus,
@@ -325,7 +336,8 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 		markPx,
 		sizeMode,
 		sizeInput,
-		limitPx: usesLimitPrice ? toNumberOrZero(limitPriceInput) : undefined,
+		limitPx: getOrderEntryLimitPx(entryPriceInput),
+		orderValueForSize: (size: string) => getOrderEntryValueForSize(entryPriceInput, size),
 		reduceOnly,
 		positionSnapshot: {
 			ready: positionSnapshotReady,
@@ -448,6 +460,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 		price: conversionPrice,
 		leverage: capabilities.isLeveraged ? leverage : null,
 		reduceOnly,
+		scaleOrderValue: getOrderEntryValueForSize(entryPriceInput, sizeForOrder),
 	});
 	const isolatedExistingPosition = position
 		? {
@@ -499,6 +512,9 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 		side,
 		usesLimitPrice,
 		usesTriggerPrice,
+		limitPriceInput,
+		triggerPriceInput: triggerPrice,
+		formatDecimalString: numberFormat.formatDecimalString,
 		triggerPriceNum: toNumber(triggerPrice),
 		scaleOrder,
 		twapOrder,
@@ -509,6 +525,9 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 		twapMinutesNum,
 		twapTriggerPriceNum,
 		twapStopPriceNum,
+		twapPricesEnabled: twapAdvancedEnabled,
+		twapTriggerPriceInput,
+		twapStopPriceInput,
 	};
 
 	const validation = useOrderValidation(
