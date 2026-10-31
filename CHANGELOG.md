@@ -579,6 +579,9 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Fixed
 
+- Trade history dates now include the year, like the order history, on the desktop tab, the full page
+  and in CSV exports, and the market order summary shows the maximum slippage in the accent colour instead
+  of the error red.
 - Returning to the Portfolio tab after a while no longer flashes "Something went wrong" and $0 values:
   the last figures stay until the refresh answers, as on the official terminal.
 - When Hyperliquid rejects a staking action, the notification now shows the exchange's reason (translated
