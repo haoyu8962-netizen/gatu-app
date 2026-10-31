@@ -105,7 +105,7 @@ Mobile filters are backed by real SDK fields and reset with owner-keyed componen
 | --- | --- | --- |
 | Open orders | Type | `FrontendOpenOrder.isTrigger`: trigger vs ordinary limit |
 | Open orders | Direction | `FrontendOpenOrder.side`: `B` = buy, `A` = sell; display labels still combine `side` with `reduceOnly` |
-| Trade history | Type | The account's own or a protocol liquidation first (see History values: a fill against another account's liquidation is an ordinary trade), then numeric `twapId`, otherwise ordinary trade |
+| Trade history | Type | The account's own or a protocol liquidation first (see History values: a fill against another account's liquidation is an ordinary trade), otherwise ordinary trade. TWAP slice fills are not part of this list: `userFills` does not return them (measured 2026-11-01, see `hyperliquid-sdk-reference.md`); they appear under the TWAP tab's Fill History, as on the official terminal. The earlier wording that labeled a numeric `twapId` was left over from a removed 2026-08-05 filter option |
 | Trade history | Direction | `UserFillsResponse[].side`: `B` = buy, `A` = sell |
 | Trade history | Role | `UserFillsResponse[].crossed`: `true` = taker, `false` = maker |
 | Funding history | Position direction | Sign of `userFundings.fundings[].szi`, parsed with `Big.js`: positive = long, negative = short; zero/invalid values do not match either direction |
