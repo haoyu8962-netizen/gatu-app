@@ -42,6 +42,7 @@ const mocks = vi.hoisted(() => ({
 		| undefined,
 	refetchPortfolio: vi.fn(),
 	refetchFees: vi.fn(),
+	refetchAuxiliary: vi.fn(),
 }));
 
 vi.mock("@sairn/ui", () => ({
@@ -129,7 +130,7 @@ vi.mock("@/hooks/portfolio/use-portfolio-info", () => ({
 			isFetchedAfterMount: true,
 			isFetching: false,
 			isPending: false,
-			refetch: vi.fn(),
+			refetch: mocks.refetchAuxiliary,
 		};
 	},
 }));
@@ -173,6 +174,7 @@ describe("PortfolioOverview", () => {
 		};
 		mocks.refetchPortfolio.mockReset();
 		mocks.refetchFees.mockReset();
+		mocks.refetchAuxiliary.mockReset();
 		i18n.loadAndActivate({ locale: "en", messages: {} });
 		container = document.createElement("div");
 		document.body.appendChild(container);
@@ -197,6 +199,10 @@ describe("PortfolioOverview", () => {
 		act(() => retry?.click());
 		expect(mocks.refetchPortfolio).toHaveBeenCalledOnce();
 		expect(mocks.refetchFees).toHaveBeenCalledOnce();
+		expect(mocks.refetchAuxiliary).toHaveBeenCalledTimes(3);
+		for (const refetch of [mocks.refetchPortfolio, mocks.refetchFees, mocks.refetchAuxiliary]) {
+			for (const call of refetch.mock.calls) expect(call).toEqual([{ cancelRefetch: false }]);
+		}
 	});
 
 	it("shows formatted zero placeholders for unavailable fee rates", () => {

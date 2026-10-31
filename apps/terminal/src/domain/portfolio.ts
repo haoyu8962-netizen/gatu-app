@@ -190,6 +190,8 @@ export const PORTFOLIO_MAX_AGE_MS = 120_000;
  * `refreshing`: the data is past the age limit or its last request failed, and a new request is on its
  * way. Like the official terminal, which keeps its previous portfolio until the next answer arrives,
  * the last successful data stays on screen until that request settles; a failure then reports `error`.
+ * It never covers data received before this mount or stamped in the future by a clock that was set back:
+ * those stay withheld as before.
  */
 export type PortfolioSourceStatus = "loading" | "error" | "stale" | "unavailable" | "refreshing" | "ready";
 
@@ -208,7 +210,12 @@ export function getPortfolioQueryStatus(
 ): PortfolioSourceStatus {
 	if (!enabled) return "unavailable";
 	const hasSuccessfulData = query.data !== undefined && Number.isFinite(query.dataUpdatedAt) && query.dataUpdatedAt > 0;
-	const refreshing = query.fetchStatus === "fetching" && hasSuccessfulData && !query.isPlaceholderData;
+	const refreshing =
+		query.fetchStatus === "fetching" &&
+		hasSuccessfulData &&
+		!query.isPlaceholderData &&
+		query.isFetchedAfterMount &&
+		query.dataUpdatedAt <= now;
 	if (query.isError) return refreshing ? "refreshing" : "error";
 	if (query.isPending || query.isPlaceholderData || !query.isFetchedAfterMount) return "loading";
 	if (!hasSuccessfulData) return "unavailable";

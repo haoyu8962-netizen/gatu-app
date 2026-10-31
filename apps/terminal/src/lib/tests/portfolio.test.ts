@@ -258,6 +258,20 @@ describe("portfolio query freshness", () => {
 		expect(isPortfolioSourceShown("refreshing")).toBe(true);
 		expect(isPortfolioSourceShown("stale")).toBe(false);
 	});
+	it("withholds data stamped in the future, received before this mount or never received while refreshing", () => {
+		const fetching = { ...query, fetchStatus: "fetching" as const };
+		const failed = { ...fetching, isError: true };
+		expect(getPortfolioQueryStatus({ ...fetching, dataUpdatedAt: now + 60_000 }, true, now)).toBe("stale");
+		expect(getPortfolioQueryStatus({ ...failed, dataUpdatedAt: now + 60_000 }, true, now)).toBe("error");
+		expect(getPortfolioQueryStatus({ ...failed, isFetchedAfterMount: false }, true, now)).toBe("error");
+		expect(getPortfolioQueryStatus({ ...fetching, isFetchedAfterMount: false }, true, now + PORTFOLIO_MAX_AGE_MS)).toBe(
+			"loading",
+		);
+		expect(getPortfolioQueryStatus({ ...failed, isPlaceholderData: true }, true, now)).toBe("error");
+		for (const dataUpdatedAt of [0, -1, Number.NaN, Number.POSITIVE_INFINITY]) {
+			expect(getPortfolioQueryStatus({ ...failed, dataUpdatedAt }, true, now)).toBe("error");
+		}
+	});
 	it("does not reuse disabled, placeholder, missing, or pending data", () => {
 		expect(getPortfolioQueryStatus(query, false, now)).toBe("unavailable");
 		expect(getPortfolioQueryStatus({ ...query, isPlaceholderData: true }, true, now)).toBe("loading");
