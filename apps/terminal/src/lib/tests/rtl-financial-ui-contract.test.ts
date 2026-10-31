@@ -58,16 +58,21 @@ describe("RTL financial UI contract", () => {
 		expect(
 			pageSource.match(/<bdi dir="ltr">\{formatToken\(entry\.size, market\?\.szDecimals\)\}<\/bdi>/gu),
 		).toHaveLength(2);
-		expect(priceSource).toContain('<bdi dir="ltr">{formatUSD(display.price, { compact: false })}</bdi>');
-		expect(priceSource).toContain('<bdi dir="ltr">{formatUSD(display.triggerPrice, { compact: false })}</bdi>');
-		expect(priceSource).toContain('<bdi dir="ltr">{formatUSD(display.protectionPrice, { compact: false })}</bdi>');
+		expect(priceSource).toContain('<bdi dir="ltr">{formatPrice(display.price, priceFormat)}</bdi>');
+		expect(priceSource).toContain('<bdi dir="ltr">{formatPrice(display.triggerPrice, priceFormat)}</bdi>');
+		expect(priceSource).toContain('<bdi dir="ltr">{formatPrice(display.protectionPrice, priceFormat)}</bdi>');
+		expect(priceSource).toContain('<bdi dir="ltr">{formatPrice(display.execution.protectionPrice, priceFormat)}</bdi>');
 		expect(priceSource).toContain('display.execution.kind === "market" ? execution : <bdi dir="ltr">{execution}</bdi>');
 	});
 
 	it("isolates Trade History price, size, fee, and PNL values independently", () => {
 		const source = readSource("components/trade-history/trade-history-page.tsx");
 
-		expect(source.match(/<bdi dir="ltr">\{formatUSD\(fill\.px\)\}<\/bdi>/gu)).toHaveLength(2);
+		expect(
+			source.match(
+				/<bdi dir="ltr">\s*\{formatPrice\(fill\.px, getMarketPriceFormatOptions\(markets\.getMarket\(fill\.coin\)\)\)\}\s*<\/bdi>/gu,
+			),
+		).toHaveLength(2);
 		expect(
 			source.match(/<bdi dir="ltr">\{formatNumber\(fill\.sz, markets\.getSzDecimals\(fill\.coin\)\)\}<\/bdi>/gu),
 		).toHaveLength(2);
@@ -78,10 +83,9 @@ describe("RTL financial UI contract", () => {
 	it("isolates both Funding position renderings without changing physical numeric alignment", () => {
 		const source = readSource("components/funding-history/funding-history-page.tsx");
 
+		expect(source.match(/<bdi dir="ltr">\{position\.size\}<\/bdi>/gu)).toHaveLength(2);
 		expect(
-			source.match(
-				/<bdi dir="ltr">\s*\{formatToken\(getToolbarAbsoluteSize\(funding\.szi\), \{[\s\S]*?symbol: market\?\.shortName,[\s\S]*?\}\)\}\s*<\/bdi>/gu,
-			),
+			source.match(/const position = getFundingPositionPresentation\(funding\.szi, market, formatToken,/gu),
 		).toHaveLength(2);
 		expect(source.match(/className="[^"]*text-right[^"]*"/gu)?.length).toBeGreaterThan(0);
 	});

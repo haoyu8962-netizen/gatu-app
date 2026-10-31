@@ -13,7 +13,7 @@ import {
 	Toggle,
 } from "@sairn/ui";
 import type { ChangeEvent, ReactNode } from "react";
-import { useId, useReducer, useState } from "react";
+import { useId, useReducer, useRef, useState } from "react";
 import { toast } from "sonner";
 import { NumberInput } from "@/components/ui/number-input";
 import { APP_BUILD_COMMIT, APP_RELEASE_ID, APP_RELEASE_LABEL, APP_VERSION } from "@/config/app";
@@ -37,6 +37,7 @@ import {
 	useMarketOrderSlippagePercent,
 	useNetwork,
 	useSkipOrderConfirmation,
+	useTransactionDelayProtection,
 } from "@/stores/use-global-settings-store";
 
 const MARKET_CLOSE_CONFIRMATION_HINTS: Record<PositionMarketCloseConfirmationPreferenceStatus, MessageDescriptor> = {
@@ -56,15 +57,18 @@ export function GlobalSettingsModal() {
 	const { showOrderbookInQuote } = useGlobalSettings();
 	const animateOrderbook = useAnimateOrderbook();
 	const skipOrderConfirmation = useSkipOrderConfirmation();
+	const transactionDelayProtection = useTransactionDelayProtection();
 	const {
 		setShowOrderbookInQuote,
 		setAnimateOrderbook,
 		setMarketOrderSlippagePercent,
 		setNetwork,
 		setSkipOrderConfirmation,
+		setTransactionDelayProtection,
 	} = useGlobalSettingsActions();
 	const network = useNetwork();
 	const isMobile = useIsMobile();
+	const popupRef = useRef<HTMLDivElement>(null);
 	const { clientKey, env } = useHyperliquid();
 	const [, refreshConfirmationPreference] = useReducer((revision: number) => revision + 1, 0);
 	const confirmationIdentity = { owner: clientKey, env };
@@ -104,6 +108,10 @@ export function GlobalSettingsModal() {
 		setSkipOrderConfirmation(!nextEnabled);
 	}
 
+	function handleTransactionDelayProtectionToggle(nextEnabled: boolean) {
+		setTransactionDelayProtection(nextEnabled);
+	}
+
 	function handleDesktopLayoutReset() {
 		resetDesktopGridLayouts();
 		window.location.reload();
@@ -118,7 +126,7 @@ export function GlobalSettingsModal() {
 
 	return (
 		<Modal open={open} onOpenChange={handleOpenChange}>
-			<ModalPopup size="sm" closeLabel={t`Close`}>
+			<ModalPopup ref={popupRef} initialFocus={isMobile ? popupRef : undefined} size="sm" closeLabel={t`Close`}>
 				<ModalHeader>
 					<ModalTitle>{t`Settings`}</ModalTitle>
 				</ModalHeader>
@@ -175,6 +183,17 @@ export function GlobalSettingsModal() {
 							/>
 						</SettingRow>
 						<SettingRow
+							label={t`Transaction delay protection`}
+							hint={t`Orders, cancels and other trading actions expire if the exchange has not accepted them within 15 seconds.`}
+						>
+							<Toggle
+								size="xs"
+								aria-label={t`Transaction delay protection`}
+								checked={transactionDelayProtection}
+								onCheckedChange={handleTransactionDelayProtectionToggle}
+							/>
+						</SettingRow>
+						<SettingRow
 							label={t`Market close confirmation`}
 							hint={t(MARKET_CLOSE_CONFIRMATION_HINTS[confirmationPreference])}
 						>
@@ -209,11 +228,13 @@ export function GlobalSettingsModal() {
 								/>
 							</SettingRow>
 						)}
-						<SettingRow label={t`Desktop layout`} hint={t`Page reloads when changed`}>
-							<Button variant="outline" intent="neutral" size="xs" onClick={handleDesktopLayoutReset}>
-								{t`Reset`}
-							</Button>
-						</SettingRow>
+						{!isMobile && (
+							<SettingRow label={t`Desktop layout`} hint={t`Page reloads when changed`}>
+								<Button variant="outline" intent="neutral" size="xs" onClick={handleDesktopLayoutReset}>
+									{t`Reset`}
+								</Button>
+							</SettingRow>
+						)}
 					</SettingsGroup>
 
 					{walletExport.visible && (

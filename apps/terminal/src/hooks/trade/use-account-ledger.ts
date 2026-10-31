@@ -7,7 +7,9 @@ import {
 	type AccountLedgerRow,
 	type AccountLedgerUpdate,
 	buildAccountLedgerRows,
+	getAccountLedgerSubAccounts,
 	getAccountLedgerUpdateKey,
+	getAccountLedgerUsdcBridge,
 	isAccountLedgerEarnUpdate,
 	isAccountLedgerRewardsClaimUpdate,
 	isValidAccountLedgerUpdate,
@@ -24,6 +26,7 @@ import {
 const EMPTY_ADDRESS = "0x0000000000000000000000000000000000000000";
 const ACCOUNT_LEDGER_STALE_TIME_MS = 30_000;
 const ACCOUNT_LEDGER_LIST_LOOKBACK_MS = 30 * 24 * 60 * 60 * 1000;
+const SUB_ACCOUNTS_STALE_TIME_MS = 5 * 60_000;
 
 export type AccountLedgerStatus = "error" | "idle" | "loading" | "ready" | "unavailable";
 
@@ -32,10 +35,13 @@ export function accountLedgerQueryKey(env: "Mainnet" | "Testnet", user: string) 
 }
 
 interface AccountLedgerResult {
+	/** True only when the last REST snapshot succeeded and no refresh is running, so an empty list is a fact. */
+	canConfirmEmpty: boolean;
 	earnRows: AccountLedgerRow[];
 	error: unknown;
 	isConnected: boolean;
 	rewardClaimRows: AccountLedgerRow[];
+	isRefreshing: boolean;
 	retry: () => void;
 	rows: AccountLedgerRow[];
 	status: AccountLedgerStatus;
@@ -86,6 +92,14 @@ export function useAccountLedger({ enabled: requestedEnabled = true }: AccountLe
 		staleTime: ACCOUNT_LEDGER_STALE_TIME_MS,
 	});
 	const ledgerSubscription = useSubscription("userNonFundingLedgerUpdates", { user }, { enabled });
+	const subAccountsQuery = useQuery({
+		enabled,
+		queryFn: ({ signal }) => info.subAccounts({ user }, signal),
+		queryKey: ["hl", "subAccounts", env, user.toLowerCase()],
+		refetchOnWindowFocus: false,
+		retry: false,
+		staleTime: SUB_ACCOUNTS_STALE_TIME_MS,
+	});
 
 	const restUpdates = ledgerQuery.data;
 	const realtimeEvent = ledgerSubscription.data as UserNonFundingLedgerUpdatesWsEvent | undefined;
@@ -99,7 +113,12 @@ export function useAccountLedger({ enabled: requestedEnabled = true }: AccountLe
 		restUpdates,
 		hasMalformedRealtime || !Array.isArray(realtimeUpdates) ? undefined : realtimeUpdates,
 	);
-	const allRows = buildAccountLedgerRows(updates, user);
+	const allRows = buildAccountLedgerRows(
+		updates,
+		user,
+		getAccountLedgerUsdcBridge(env === "Testnet"),
+		getAccountLedgerSubAccounts(subAccountsQuery.data),
+	);
 	const rows = allRows.slice(0, MAX_HISTORY_ROWS);
 	const rewardClaimRows = allRows.filter((row) => row.action === "rewardsClaim").slice(0, MAX_HISTORY_ROWS);
 	const earnRows = allRows
@@ -119,13 +138,17 @@ export function useAccountLedger({ enabled: requestedEnabled = true }: AccountLe
 		status = "loading";
 	}
 
+	const isRefreshing = ledgerQuery.fetchStatus === "fetching";
+
 	return {
+		canConfirmEmpty: status === "ready" && !ledgerQuery.isError && !isRefreshing,
 		earnRows,
 		error:
 			status === "error"
 				? (ledgerQuery.error ?? (hasMalformedRealtime ? new MalformedHistoryPageError() : undefined))
 				: undefined,
 		isConnected,
+		isRefreshing,
 		rewardClaimRows,
 		retry: () => {
 			if (enabled) void ledgerQuery.refetch();

@@ -279,6 +279,17 @@ describe("desktop history exports", () => {
 		);
 	});
 
+	it("shows closed PNL net of the fee while the export keeps the exchange's values", () => {
+		act(() => root.render(<HistoryTab />));
+
+		const headers = Array.from(container.querySelectorAll("th"), (cell) => cell.textContent);
+		const cells = Array.from(container.querySelectorAll("tbody tr:first-child td"), (cell) => cell.textContent);
+		expect(cells[headers.indexOf("PNL")]).toBe("+$12.38");
+		clickExport();
+		const rows = mocks.downloadCsv.mock.calls.at(-1)?.[1] as string[][] | undefined;
+		expect(rows?.[1]?.[(rows?.[0] ?? []).indexOf("PNL")]).toBe("12.5");
+	});
+
 	it("exports fill numbers as the exchange sent them, never compacted, rounded or localized", () => {
 		act(() => root.render(<HistoryTab />));
 		const rows = mocks.fillsBuildRows?.([mocks.fills[0]]) ?? [];
@@ -323,6 +334,22 @@ describe("desktop history exports", () => {
 		expect(container.textContent).not.toContain("TWAP");
 	});
 
+	it("keeps a fill against another account's liquidation an ordinary fill and labels the owner's own", () => {
+		const [fill] = mocks.fills;
+		mocks.fills = [
+			{
+				...fill,
+				liquidation: { liquidatedUser: "0x9999999999999999999999999999999999999999", markPx: "1", method: "market" },
+			},
+			{ ...fill, hash: "0xbbb", liquidation: { markPx: "1", method: "market" }, tid: 2 },
+		];
+		act(() => root.render(<HistoryTab />));
+
+		expect(container.textContent).toContain("Close Long (Price Improved)");
+		expect(container.textContent).toContain("Market Order Liquidation: Close Long");
+		expect(container.textContent).not.toContain("Liquidated");
+	});
+
 	it("keeps full trade export available when the recent display window is empty", () => {
 		mocks.fills = [];
 		act(() => root.render(<HistoryTab />));
@@ -359,7 +386,10 @@ describe("desktop history exports", () => {
 		clickExport();
 		expect(mocks.downloadCsv).toHaveBeenCalledWith(
 			"funding_history.csv",
-			expect.arrayContaining([expect.arrayContaining(["Time", "Asset", "Position", "Rate", "Payment"])]),
+			expect.arrayContaining([
+				["Time", "Asset", "Side", "Size", "Rate", "Payment", "Payment Token"],
+				[expect.any(String), "BTC", "Long", "0.01", "0.0001", "1.25", "USDC"],
+			]),
 		);
 	});
 

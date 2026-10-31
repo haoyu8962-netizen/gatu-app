@@ -1,8 +1,7 @@
 import { useLingui } from "@lingui/react/macro";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
-import { TWAP_SUBORDER_INTERVAL_SECONDS } from "@/config/trade";
 import type { OrderFeeQuote } from "@/domain/trade/order-fee-quote";
-import { getTwapRuntimeMinutes } from "@/domain/trade/twap-details";
+import { getTwapRuntimeMinutes, getTwapSuborderSize } from "@/domain/trade/twap-details";
 import { cn } from "@/lib/cn";
 import { formatDuration, useNumberFormat } from "@/lib/format";
 import type { MarketKind } from "@/lib/hyperliquid";
@@ -21,6 +20,9 @@ interface Props {
 	feeQuote: OrderFeeQuote;
 	szDecimals: number | undefined;
 	marketKind?: MarketKind;
+	totalSize: string;
+	referencePx: number;
+	baseToken: string;
 }
 
 export function TwapOrderSummary({
@@ -32,22 +34,28 @@ export function TwapOrderSummary({
 	szDecimals,
 	compact,
 	marketKind,
+	totalSize,
+	referencePx,
+	baseToken,
 }: Props) {
-	const { formatPrice } = useNumberFormat();
+	const { formatPrice, formatToken } = useNumberFormat();
 	const { t } = useLingui();
 	const minutes = getTwapRuntimeMinutes(twapMinutesNum);
 	const stopPriceLabel = getTwapStopPriceLabel(side, { buy: t`Max Price`, sell: t`Min Price` });
+	const suborderSize = getTwapSuborderSize(totalSize, twapMinutesNum, referencePx);
 
 	return (
 		<div className="flex min-w-0 flex-col">
-			<SummaryRow compact={compact} label={t`Frequency`}>
-				<span className="inline-block max-w-40 whitespace-normal text-right leading-tight">
-					{t`Every ${TWAP_SUBORDER_INTERVAL_SECONDS} seconds`}
-				</span>
-			</SummaryRow>
 			<SummaryRow compact={compact} label={t`Runtime`}>
 				<span className={cn("whitespace-nowrap", minutes > 0 ? "" : "font-normal text-trading-panel-muted")}>
 					{minutes > 0 ? formatDuration(minutes) : FALLBACK_VALUE_PLACEHOLDER}
+				</span>
+			</SummaryRow>
+			<SummaryRow compact={compact} label={t`Size per Suborder`}>
+				<span className={cn("whitespace-nowrap", suborderSize ? "" : "font-normal text-trading-panel-muted")}>
+					{suborderSize
+						? `~${formatToken(suborderSize.toString(), { decimals: szDecimals ?? 0, symbol: baseToken })}`
+						: FALLBACK_VALUE_PLACEHOLDER}
 				</span>
 			</SummaryRow>
 			{isPositive(twapTriggerPriceNum) && (

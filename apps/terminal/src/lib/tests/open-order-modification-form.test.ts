@@ -69,7 +69,12 @@ function build(
 	order: OpenOrder,
 	size: string,
 	triggerPrice?: string,
-	overrides: { owner?: string; status?: "active" | "subscribing"; market?: OpenOrderModifyMarketBinding } = {},
+	overrides: {
+		owner?: string;
+		status?: "active" | "subscribing";
+		market?: OpenOrderModifyMarketBinding;
+		limitPrice?: string;
+	} = {},
 ) {
 	return buildOpenOrderModifyFormPlan({
 		target,
@@ -83,6 +88,7 @@ function build(
 		market: overrides.market ?? market,
 		size,
 		triggerPrice,
+		limitPrice: overrides.limitPrice,
 	});
 }
 
@@ -95,6 +101,8 @@ describe("open order modification form", () => {
 			status: "ready",
 			normalizedSize: "1.25",
 			normalizedTriggerPrice: null,
+			normalizedLimitPrice: "100",
+			expectation: { expectedSize: "1.25" },
 			params: {
 				modifies: [
 					{
@@ -106,16 +114,48 @@ describe("open order modification form", () => {
 		});
 	});
 
+	it("expects only the fields a plan changes", () => {
+		const order = makeLimitOrder();
+		const target = capture(order);
+		const priceOnly = build(target, order, "2", undefined, { limitPrice: "101" });
+		const both = build(target, order, "1.25", undefined, { limitPrice: "101" });
+
+		expect(priceOnly).toMatchObject({ status: "ready", normalizedSize: "2", normalizedLimitPrice: "101" });
+		expect(priceOnly.status === "ready" ? priceOnly.expectation : null).toEqual({ expectedLimitPx: "101" });
+		expect(both.status === "ready" ? both.expectation : null).toEqual({ expectedSize: "1.25", expectedLimitPx: "101" });
+		expect(both.status === "ready" ? both.params.modifies[0]?.order : null).toMatchObject({ p: "101", s: "1.25" });
+		expect(build(target, order, "2", undefined, { limitPrice: "100.0" })).toEqual({
+			status: "blocked",
+			reason: "no-change",
+			field: null,
+		});
+	});
+
 	it.each(["Stop Market", "Stop Limit", "Take Profit Market", "Take Profit Limit"] as const)(
-		"does not expose unsafe direct editing for %s orders",
+		"edits the trigger price of a reduce-only %s order with the always-place flag",
 		(orderType) => {
 			const order = makeTriggerOrder(orderType);
-			expect(createOpenOrderModifyFormTarget({ owner: OWNER, env: "Mainnet", market, order })).toEqual({
-				status: "blocked",
-				reason: "unsupported-order-type",
-			});
+			const target = capture(order);
+			const plan = build(target, order, "2", "112");
+
+			expect(target.triggerPrice).not.toBeNull();
+			expect(target.limitPrice).toBeNull();
+			expect(plan).toMatchObject({ status: "ready", normalizedTriggerPrice: "112" });
+			expect(plan.status === "ready" ? plan.expectation : null).toEqual({ expectedTriggerPx: "112" });
+			expect(plan.status === "ready" ? plan.params.a : null).toBe(true);
 		},
 	);
+
+	it("keeps trigger orders that can open a position on cancel and replace", () => {
+		expect(
+			createOpenOrderModifyFormTarget({
+				owner: OWNER,
+				env: "Mainnet",
+				market,
+				order: makeTriggerOrder("Stop Market", { reduceOnly: false }),
+			}),
+		).toEqual({ status: "blocked", reason: "unsupported-order-type" });
+	});
 
 	it("preserves raw unchanged fields while validating the changed field exactly", () => {
 		const order = makeLimitOrder();

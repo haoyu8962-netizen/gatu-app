@@ -379,6 +379,7 @@ export function useMarketsInfo(): UseMarketsInfoReturn {
 }
 
 export function useSelectedMarketInfo() {
+	const { env } = useHyperliquidTransport();
 	const { routeMarketName } = useExchangeScope();
 	const selectedMarketName = useSelectedMarket();
 	const { getMarketInfo, isLoading, error } = useMarketsInfo();
@@ -437,16 +438,16 @@ export function useSelectedMarketInfo() {
 	useEffect(() => {
 		if (!cacheMarketName || marketName !== cacheMarketName) return;
 		if (!liveMark) return;
-		saveLastMark(cacheMarketName, liveMark, oraclePrice);
-	}, [cacheMarketName, liveMark, marketName, oraclePrice]);
+		saveLastMark(env, cacheMarketName, liveMark, oraclePrice);
+	}, [env, cacheMarketName, liveMark, marketName, oraclePrice]);
 
 	const data = useMemo(() => {
 		if (!market) return undefined;
 		if (market.markPx) return market;
-		const cached = cacheMarketName ? loadLastMark(cacheMarketName) : null;
+		const cached = cacheMarketName ? loadLastMark(env, cacheMarketName) : null;
 		if (!cached) return market;
 		return { ...market, markPx: cached.markPx, oraclePx: market.oraclePx ?? cached.oraclePx };
-	}, [market, cacheMarketName]);
+	}, [env, market, cacheMarketName]);
 
 	return {
 		data,

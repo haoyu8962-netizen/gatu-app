@@ -349,9 +349,8 @@ test("hot-switches every mounted TWAP label and hint without replacing inputs or
 						randomize: "Randomize timing",
 						trigger: "Trigger Price",
 						stop: "Max Price",
-						frequency: "Frequency",
+						sizePerSuborder: "Size per Suborder",
 						runtime: "Runtime",
-						interval: "Every 30 seconds",
 						fees: "Fees",
 						hint: "Activates when mark ≥ 110",
 						inputNames: ["Hour(s)", "Minute(s)", "Trigger Price (USDC)", "Max Price (USDC)"],
@@ -363,9 +362,8 @@ test("hot-switches every mounted TWAP label and hint without replacing inputs or
 						randomize: "随机化时间",
 						trigger: "触发价",
 						stop: "最高价",
-						frequency: "频率",
+						sizePerSuborder: "每笔子订单数量",
 						runtime: "运行时长",
-						interval: "每 30 秒",
 						fees: "费用",
 						hint: "标记价 ≥ 110 时激活",
 						inputNames: ["小时", "分钟", "触发价 (USDC)", "最高价 (USDC)"],
@@ -374,7 +372,7 @@ test("hot-switches every mounted TWAP label and hint without replacing inputs or
 			await expect(fields.getByText(label, { exact: true })).toBeVisible();
 		}
 		await expect(fields.getByRole("checkbox", { name: labels.randomize, exact: true })).toBeChecked();
-		for (const label of [labels.trigger, labels.stop, labels.frequency, labels.runtime, labels.interval, labels.fees]) {
+		for (const label of [labels.trigger, labels.stop, labels.sizePerSuborder, labels.runtime, labels.fees]) {
 			await expect(summary.getByText(label, { exact: true })).toBeVisible();
 		}
 		for (const [index, input] of inputs.entries()) {

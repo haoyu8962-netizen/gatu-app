@@ -34,6 +34,9 @@ export interface VaultActionModalProps {
 	ownerAddress: string;
 	amount: string;
 	availableAmount: string | null;
+	maxAmount: string | null;
+	minimumAmount: string | null;
+	belowMinimum: boolean;
 	errorMessage?: string;
 	operationReference?: string;
 	canReview: boolean;
@@ -55,6 +58,9 @@ export function VaultActionModal({
 	ownerAddress,
 	amount,
 	availableAmount,
+	maxAmount,
+	minimumAmount,
+	belowMinimum,
 	errorMessage,
 	operationReference,
 	canReview,
@@ -103,6 +109,21 @@ export function VaultActionModal({
 							placeholder="0.00"
 							mobileSafe
 							className="max-[1000px]:min-h-11"
+							error={
+								belowMinimum && minimumAmount !== null
+									? t`Minimum deposit is ${numberFormat.formatDecimalString(minimumAmount)} USDC`
+									: undefined
+							}
+							iconRight={
+								<button
+									type="button"
+									className="text-xs font-semibold text-fg-muted transition-colors hover:text-fg disabled:cursor-not-allowed disabled:text-fg-disabled"
+									disabled={maxAmount === null}
+									onClick={() => maxAmount !== null && onAmountChange(maxAmount)}
+								>
+									{t`Max`}
+								</button>
+							}
 							hint={
 								availableAmount === null
 									? t`Available amount is not verified`

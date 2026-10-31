@@ -19,9 +19,10 @@ function createOrders() {
 			statusTimestamp: 2,
 			order: {
 				coin: "BTC",
+				limitPx: "0.18342",
 				oid: 1,
 				orderType: "Limit",
-				origSz: "1",
+				origSz: "1.2345",
 				reduceOnly: false,
 				side: "B",
 				timestamp: 1,
@@ -209,6 +210,75 @@ describe("desktop order history direction semantics", () => {
 			"order_history.csv",
 			expect.arrayContaining([expect.arrayContaining(["Time", "Asset", "Direction", "Type", "Status"])]),
 		);
+		const exportRows = mocks.downloadCsv.mock.calls.at(-1)?.[1] as string[][] | undefined;
+		const header = exportRows?.[0] ?? [];
+		const btcRow = exportRows?.find((row) => row.includes("BTC")) ?? [];
+		expect(btcRow[header.indexOf("Price")]).toBe("0.18342");
+		expect(btcRow[header.indexOf("Size")]).toBe("1.2345");
+	});
+
+	it("shows the official status names with each cancellation or rejection reason", () => {
+		mocks.orders = [
+			{
+				status: "marginCanceled",
+				statusTimestamp: 6,
+				order: {
+					coin: "BTC",
+					oid: 3,
+					orderType: "Limit",
+					origSz: "1",
+					sz: "1",
+					reduceOnly: false,
+					side: "B",
+					timestamp: 5,
+				},
+			},
+			{
+				status: "filled",
+				statusTimestamp: 8,
+				order: {
+					coin: "ETH",
+					oid: 4,
+					orderType: "Limit",
+					origSz: "2",
+					sz: "0.5",
+					reduceOnly: false,
+					side: "A",
+					timestamp: 7,
+				},
+			},
+			{
+				status: "iocCancelRejected",
+				statusTimestamp: 10,
+				order: {
+					coin: "SOL",
+					oid: 5,
+					orderType: "Limit",
+					origSz: "3",
+					sz: "3",
+					reduceOnly: false,
+					side: "B",
+					timestamp: 9,
+				},
+			},
+		];
+		act(() => root.render(<OrdersHistoryTab />));
+
+		const statuses = [...container.querySelectorAll("tbody tr")].map(
+			(row) => row.querySelectorAll("td")[5]?.textContent?.trim() ?? "",
+		);
+		expect(statuses).toEqual(
+			expect.arrayContaining([
+				"Margin Canceled, Canceled due to insufficient margin",
+				"Partially filled",
+				"Rejected, Rejected because the IOC order could not match",
+			]),
+		);
+		expect(statuses).toHaveLength(3);
+		const badges = [...container.querySelectorAll("tbody tr")].map(
+			(row) => row.querySelectorAll("td")[5]?.firstElementChild,
+		);
+		expect(badges.filter((badge) => badge?.tagName === "BUTTON")).toHaveLength(2);
 	});
 
 	it("keeps full order export available when the recent snapshot is empty", () => {

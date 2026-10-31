@@ -79,6 +79,10 @@ msgstr "{days} 日"
 msgid "{days} days left"
 msgstr "残り {days} 日"
 
+#: src/lib/trade/fill-direction.ts
+msgid "{direction} (Price Improved)"
+msgstr "{direction}（価格改善）"
+
 #: src/components/funding-history/funding-history-page.tsx
 msgid "{FUNDING_HISTORY_WINDOW_DAYS}-day API window"
 msgstr "API の取得期間：{FUNDING_HISTORY_WINDOW_DAYS} 日間"
@@ -497,6 +501,10 @@ msgstr "マーク価格 ≤ {triggerPrice} で開始"
 msgid "Activates when mark ≥ {triggerPrice}"
 msgstr "マーク価格 ≥ {triggerPrice} で開始"
 
+#: src/lib/trade/trailing-stop-condition.ts
+msgid "Activation: {price} / Retracement: {retracement}"
+msgstr "発動価格：{price} / トレール幅：{retracement}"
+
 #: src/components/api-wallet/api-wallet-list.tsx
 #: src/components/staking/staking-view.tsx
 #: src/components/staking/staking-view.tsx
@@ -685,6 +693,7 @@ msgstr "ALO（流動性追加のみ）"
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/staking/staking-view.tsx
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
+#: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
@@ -955,6 +964,10 @@ msgstr "承認済み API ウォレット"
 msgid "Authorizing request"
 msgstr "リクエストを承認中"
 
+#: src/lib/trade/fill-direction.ts
+msgid "Auto-Deleveraging"
+msgstr "自動デレバレッジ"
+
 #: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
 msgid "Automatic USDC deposit failed"
 msgstr "USDC の自動入金に失敗しました"
@@ -1034,6 +1047,7 @@ msgstr "平均 {price}"
 #: src/components/trade/components/mobile-agent-qr-scanner.tsx
 #: src/components/trade/components/wallet-modal.tsx
 #: src/components/trade/positions/cancel-all-orders-modal.tsx
+#: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/tradebox/bridge/amount-entry-screen.tsx
 #: src/components/trade/tradebox/bridge/bridge-error-screen.tsx
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
@@ -1054,6 +1068,10 @@ msgstr "取引に戻る"
 #: src/components/vaults/vaults-page.tsx
 msgid "Back to Vaults"
 msgstr "ボールトに戻る"
+
+#: src/lib/trade/fill-direction.ts
+msgid "Backstop Liquidation: {direction}"
+msgstr "バックストップ清算：{direction}"
 
 #: src/config/ui-text.ts
 msgid "Balance"
@@ -1181,6 +1199,7 @@ msgstr "ビルダー報酬は累計報酬の内訳であり、追加の報酬残
 #: src/config/trade-panel-labels.ts
 #: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-order-display-labels.ts
+#: src/lib/trade/fill-direction.ts
 msgid "Buy"
 msgstr "買い"
 
@@ -1280,6 +1299,10 @@ msgstr "選択した注文をキャンセル"
 msgid "Canceled"
 msgstr "キャンセル済み"
 
+#: src/lib/trade/order-notification-copy.ts
+msgid "Canceled {accepted}/{total} · Review orders"
+msgstr "キャンセル済み {accepted}/{total} · 注文を確認"
+
 #: src/lib/trade/order-status-reasons.ts
 msgid "Canceled because the asset was delisted"
 msgstr "資産の上場廃止によりキャンセルされました"
@@ -1333,6 +1356,10 @@ msgstr "ポジション保有中は分離モードに切り替えできません
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Cannot switch to Isolated mode with an open position. Close your position first."
 msgstr "ポジション保有中は分離モードに切り替えできません。先にポジションを決済してください。"
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Cannot withdraw to the USDC contract address."
+msgstr "USDC のコントラクトアドレスには出金できません。"
 
 #: src/components/trade/tradebox/deposit/deposit-method-chooser.tsx
 msgid "Card or bank transfer through a third-party payment provider. USDC arrives in your wallet on Arbitrum."
@@ -1619,13 +1646,10 @@ msgstr "API ウォレット操作を閉じる"
 msgid "Close close-all confirmation"
 msgstr "全決済の確認を閉じる"
 
-#: src/components/trade-history/trade-history-page.tsx
-#: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
-#: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/twap-fill-history-table.tsx
 #: src/hooks/trade/use-order-display-labels.ts
-#: src/hooks/trade/use-twap-fill-history-csv.ts
+#: src/lib/trade/fill-direction.ts
 msgid "Close Long"
 msgstr "ロングを決済"
 
@@ -1682,13 +1706,10 @@ msgstr "ポジションを決済"
 msgid "Close reverse confirmation"
 msgstr "ドテンの確認を閉じる"
 
-#: src/components/trade-history/trade-history-page.tsx
-#: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
-#: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/twap-fill-history-table.tsx
 #: src/hooks/trade/use-order-display-labels.ts
-#: src/hooks/trade/use-twap-fill-history-csv.ts
+#: src/lib/trade/fill-direction.ts
 msgid "Close Short"
 msgstr "ショートを決済"
 
@@ -1825,6 +1846,7 @@ msgstr "設定済み TP/SL 数量"
 #: src/components/trade/components/hip3-deployer-disclaimer.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/tradebox/account-mode-modal.tsx
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
@@ -1845,6 +1867,7 @@ msgstr "読み取れない記録の削除を確定"
 #: src/components/trade/components/establish-connection-modal.tsx
 #: src/components/trade/components/legal-acceptance-modal.tsx
 #: src/components/trade/positions/send-modal.tsx
+#: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Confirm in wallet"
@@ -1853,6 +1876,10 @@ msgstr "ウォレットで確認"
 #: src/components/trade/tradebox/order-confirmation-modal.tsx
 msgid "Confirm Order"
 msgstr "注文を確認"
+
+#: src/components/trade/positions/orders-tab.tsx
+msgid "Confirm order price change"
+msgstr "注文価格の変更を確認"
 
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Confirm order size change"
@@ -2525,6 +2552,7 @@ msgstr "送信先"
 
 #: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/positions/send-modal.tsx
+#: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Destination address"
@@ -2730,6 +2758,12 @@ msgstr "獲得済み"
 #. placeholder {0}: order.coin
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
+msgid "Edit {0} order price"
+msgstr "{0} の注文価格を編集"
+
+#. placeholder {0}: order.coin
+#: src/components/trade/positions/orders-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
 msgid "Edit {0} order size"
 msgstr "{0} の注文数量を編集"
 
@@ -2814,6 +2848,11 @@ msgstr "有効な上限価格を入力してください"
 msgid "Enter a valid min price"
 msgstr "有効な下限価格を入力してください"
 
+#: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
+msgid "Enter a valid price using the market's price precision."
+msgstr "市場の価格精度に合った有効な価格を入力してください。"
+
 #: src/lib/errors/format.ts
 #: src/lib/trade/order-submission-feedback.ts
 msgid "Enter a valid scale skew"
@@ -2836,8 +2875,8 @@ msgstr "有効なトリガー価格を入力してください"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
-msgid "Enter a valid trigger price using the market's price precision."
-msgstr "市場の価格精度に合った有効なトリガー価格を入力してください。"
+#~ msgid "Enter a valid trigger price using the market's price precision."
+#~ msgstr "市場の価格精度に合った有効なトリガー価格を入力してください。"
 
 #: src/components/staking/staking-action-modal.tsx
 msgid "Enter an amount."
@@ -2962,7 +3001,6 @@ msgid "Ethereum is a programmable blockchain for smart contracts and decentraliz
 msgstr "Ethereum は、スマートコントラクトと分散型アプリケーションのためのプログラム可能なブロックチェーンです。"
 
 #: src/components/trade/positions/twap-tab.tsx
-#: src/components/trade/tradebox/twap-order-summary.tsx
 msgid "Every {TWAP_SUBORDER_INTERVAL_SECONDS} seconds"
 msgstr "{TWAP_SUBORDER_INTERVAL_SECONDS}秒ごと"
 
@@ -3153,8 +3191,8 @@ msgid "Failed to load balances"
 msgstr "残高を読み込めませんでした"
 
 #: src/components/trade/positions/account-transfers-tab.tsx
-msgid "Failed to load deposits and withdrawals."
-msgstr "入出金を読み込めませんでした。"
+#~ msgid "Failed to load deposits and withdrawals."
+#~ msgstr "入出金を読み込めませんでした。"
 
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Failed to load market categories."
@@ -3356,8 +3394,8 @@ msgid "Forwarding deposit"
 msgstr "入金を転送中"
 
 #: src/components/trade/tradebox/twap-order-summary.tsx
-msgid "Frequency"
-msgstr "頻度"
+#~ msgid "Frequency"
+#~ msgstr "頻度"
 
 #: src/components/api-wallet/use-api-wallet-controller.ts
 #: src/components/api-wallet/use-api-wallet-controller.ts
@@ -3383,6 +3421,10 @@ msgstr "交換元"
 #: src/components/trade/chart/funding-history-chart.tsx
 msgid "From {startTime} to {endTime}. Latest funding rate {latestRate}; cumulative funding rate {cumulativeRate}. Highest {maxRate}; lowest {minRate}."
 msgstr "{startTime} から {endTime} まで。最新資金調達率 {latestRate}、累積資金調達率 {cumulativeRate}。最高 {maxRate}、最低 {minRate}。"
+
+#: src/lib/trade/fill-direction.ts
+msgid "Full Borrow Liquidation"
+msgstr "借入の全額清算"
 
 #: src/components/trade/tradebox/order-toast.tsx
 msgid "Fully filled"
@@ -3426,8 +3468,8 @@ msgid "Funding Payments"
 msgstr "資金調達料"
 
 #: src/components/funding-history/funding-history-page.tsx
-msgid "Funding payments are unavailable"
-msgstr "資金調達料を利用できません"
+#~ msgid "Funding payments are unavailable"
+#~ msgstr "資金調達料を利用できません"
 
 #. placeholder {0}: shortenAddress(address, 8, 6)
 #: src/components/funding-history/funding-history-page.tsx
@@ -3439,8 +3481,8 @@ msgid "Funding payments pagination"
 msgstr "資金調達料のページ切り替え"
 
 #: src/components/funding-history/funding-history-page.tsx
-msgid "Funding payments will load automatically when the connection returns."
-msgstr "接続が復旧すると、資金調達料が自動的に読み込まれます。"
+#~ msgid "Funding payments will load automatically when the connection returns."
+#~ msgstr "接続が復旧すると、資金調達料が自動的に読み込まれます。"
 
 #: src/components/funding-comparison/funding-comparison-view.tsx
 msgid "Funding period"
@@ -3695,6 +3737,10 @@ msgstr "Hyperliquid が表示された未請求報酬を確認し、対象報酬
 msgid "Hyperliquid will unlock code creation when the required volume is confirmed."
 msgstr "必要な取引高が確認されると、Hyperliquid がコード作成を有効にします。"
 
+#: src/components/trade/positions/send-modal.tsx
+msgid "I am sending assets on the Hyperliquid blockchain, not withdrawing to another chain. Assets sent to a platform that does not support Hyperliquid will be lost."
+msgstr "Hyperliquid ブロックチェーン上で資産を送金するものであり、他のチェーンへの出金ではないことを確認します。Hyperliquid に対応していないプラットフォームに送った資産は失われます。"
+
 #: src/components/trade/components/legal-acceptance-modal.tsx
 msgid "I have read and agree to the {BRAND_NAME} <0>Terms of Use</0>, <1>Privacy Policy</1>, and the <2>Hyperliquid Terms of Use</2>."
 msgstr "{BRAND_NAME} の<0>利用規約</0>、<1>プライバシーポリシー</1>および<2>Hyperliquid の利用規約</2>を読み、同意します。"
@@ -3767,6 +3813,10 @@ msgstr "このウェブアプリをインストールすると、全画面でア
 #: src/lib/errors/definitions/spot-balance.ts
 msgid "Insufficient {0} balance"
 msgstr "{0} の残高が不足しています"
+
+#: src/lib/errors/definitions/spot-balance.ts
+msgid "Insufficient {quoteToken} balance at max slippage"
+msgstr "最大スリッページで計算すると {quoteToken} の残高が不足しています"
 
 #: src/components/trade/components/spot-swap-modal.tsx
 msgid "Insufficient <0/> balance"
@@ -4079,21 +4129,15 @@ msgstr "モバイル端末をリンク"
 msgid "Linked staking account: <0>{0}</0>."
 msgstr "リンク済みステーキングアカウント：<0>{0}</0>。"
 
+#: src/components/trade/chart/use-tradingview-overlay-lines.ts
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/config/trade-panel-labels.ts
 #: src/config/ui-text.ts
 msgid "Liq. Price"
 msgstr "清算価格"
 
-#: src/components/trade-history/trade-history-page.tsx
-#: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
-#: src/components/trade/mobile/mobile-history-tab.tsx
-#: src/components/trade/mobile/mobile-history-tab.tsx
-#: src/components/trade/positions/history-tab.tsx
-#: src/components/trade/positions/history-tab.tsx
 #: src/config/account-ledger.ts
-#: src/hooks/trade/use-twap-fill-history-csv.ts
 msgid "Liquidated"
 msgstr "清算済み"
 
@@ -4143,6 +4187,7 @@ msgid "Loading balances across all chains..."
 msgstr "全チェーンの残高を読み込み中..."
 
 #: src/components/funding-history/funding-history-page.tsx
+#: src/components/funding-history/funding-history-page.tsx
 msgid "Loading funding payments"
 msgstr "資金調達料を読み込み中"
 
@@ -4162,6 +4207,7 @@ msgstr "リーダーボードを読み込み中"
 msgid "Loading markets..."
 msgstr "市場を読み込み中..."
 
+#: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/historical-orders/historical-orders-page.tsx
 msgid "Loading order history"
 msgstr "注文履歴を読み込み中"
@@ -4191,6 +4237,7 @@ msgid "Loading token metadata..."
 msgstr "トークンのメタデータを読み込み中..."
 
 #: src/components/trade-history/trade-history-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
 msgid "Loading trade history"
 msgstr "約定履歴を読み込み中"
 
@@ -4213,7 +4260,6 @@ msgstr "ウォレットを読み込み中..."
 #: src/components/trade/chart/tradingview-chart.tsx
 #: src/components/trade/components/deposit-modal-loading-fallback.tsx
 #: src/components/trade/components/global-modals.tsx
-#: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/ui/lazy-dialog-boundary.tsx
 #: src/components/ui/lazy-dialog-boundary.tsx
 #: src/config/ui-text.ts
@@ -4255,8 +4301,13 @@ msgstr "メールでログイン"
 #: src/components/trade/positions/position-row.tsx
 #: src/config/trade-panel-labels.ts
 #: src/domain/trade/order-confirmation.ts
+#: src/lib/trade/funding-position.ts
 msgid "Long"
 msgstr "ロング"
+
+#: src/lib/trade/fill-direction.ts
+msgid "Long > Short"
+msgstr "ロング > ショート"
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Long position"
@@ -4318,6 +4369,10 @@ msgstr "証拠金額"
 #: src/hooks/trade/use-account-overview-labels.ts
 msgid "Margin and account risk at a glance"
 msgstr "証拠金とアカウントリスクの概要"
+
+#: src/hooks/trade/use-order-display-labels.ts
+msgid "Margin Canceled"
+msgstr "証拠金不足キャンセル"
 
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
@@ -4461,6 +4516,10 @@ msgstr "市場のメタデータが変更されました。更新して再試行
 msgid "Market not ready"
 msgstr "市場の準備ができていません"
 
+#: src/lib/trade/fill-direction.ts
+msgid "Market Order Liquidation: {direction}"
+msgstr "成行注文による清算：{direction}"
+
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Market orders cannot be modified after submission."
@@ -4498,6 +4557,7 @@ msgstr "マスターウォレットを確認しました"
 #: src/components/trade/tradebox/bridge/amount-entry-screen.tsx
 #: src/components/trade/tradebox/deposit/amount-input.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
+#: src/components/vaults/vault-action-modal.tsx
 #: src/config/trade-panel-labels.ts
 msgid "Max"
 msgstr "最大"
@@ -4592,7 +4652,9 @@ msgstr "最小 <0>{0}</0>、最大 <1>{1}</1>。"
 
 #. placeholder {0}: ctx.minDeposit
 #. placeholder {0}: numberFormat.formatDecimalString(formatUnits(cctpDepositBelowMinimumRaw, 6))
+#. placeholder {0}: numberFormat.formatDecimalString(minimumAmount)
 #: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/vaults/vault-action-modal.tsx
 #: src/lib/errors/definitions/deposit.ts
 msgid "Minimum deposit is {0} USDC"
 msgstr "最低入金額は {0} USDC です"
@@ -5240,12 +5302,13 @@ msgstr "未決済建玉"
 msgid "Open interest cap"
 msgstr "未決済建玉の上限"
 
-#: src/components/trade-history/trade-history-page.tsx
-#: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/config/account-ledger.ts
+msgid "Open Interest Reward"
+msgstr "未決済建玉リワード"
+
 #: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
-#: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/twap-fill-history-table.tsx
-#: src/hooks/trade/use-twap-fill-history-csv.ts
+#: src/lib/trade/fill-direction.ts
 msgid "Open Long"
 msgstr "ロングを新規建て"
 
@@ -5278,12 +5341,9 @@ msgstr "未約定注文が変更されました。確認画面を開き直して
 msgid "Open related page"
 msgstr "関連ページを開く"
 
-#: src/components/trade-history/trade-history-page.tsx
-#: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
-#: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/twap-fill-history-table.tsx
-#: src/hooks/trade/use-twap-fill-history-csv.ts
+#: src/lib/trade/fill-direction.ts
 msgid "Open Short"
 msgstr "ショートを新規建て"
 
@@ -5378,16 +5438,16 @@ msgid "Order History"
 msgstr "注文履歴"
 
 #: src/components/historical-orders/historical-orders-page.tsx
-msgid "Order history is unavailable"
-msgstr "注文履歴を利用できません"
+#~ msgid "Order history is unavailable"
+#~ msgstr "注文履歴を利用できません"
 
 #: src/components/historical-orders/historical-orders-page.tsx
 msgid "Order history pagination"
 msgstr "注文履歴のページ切り替え"
 
 #: src/components/historical-orders/historical-orders-page.tsx
-msgid "Order history will load automatically when the connection returns."
-msgstr "接続が復旧すると、注文履歴が自動的に読み込まれます。"
+#~ msgid "Order history will load automatically when the connection returns."
+#~ msgstr "接続が復旧すると、注文履歴が自動的に読み込まれます。"
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/lib/trade/order-submission-feedback.ts
@@ -5457,13 +5517,17 @@ msgstr "注文"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
-msgid "Orders with a client order ID cannot be modified here. Cancel and replace the order instead."
-msgstr "クライアント注文 ID がある注文は、ここでは変更できません。キャンセルして再発注してください。"
+#~ msgid "Orders with a client order ID cannot be modified here. Cancel and replace the order instead."
+#~ msgstr "クライアント注文 ID がある注文は、ここでは変更できません。キャンセルして再発注してください。"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Orders with linked TP/SL orders cannot be modified here."
 msgstr "TP/SL 注文が連動する注文は、ここでは変更できません。"
+
+#: src/components/trade/components/global-settings-modal.tsx
+msgid "Orders, cancels and other trading actions expire if the exchange has not accepted them within 15 seconds."
+msgstr "注文やキャンセルなどの取引操作は、15 秒以内に取引所に受理されなければ失効します。"
 
 #. placeholder {0}: shortenAddress(address, 8, 6)
 #: src/components/historical-orders/historical-orders-page.tsx
@@ -5516,11 +5580,16 @@ msgstr "変更するとページを再読み込みします"
 msgid "Partial amount"
 msgstr "一部の数量"
 
+#: src/lib/trade/fill-direction.ts
+msgid "Partial Borrow Liquidation"
+msgstr "借入の部分清算"
+
 #: src/lib/trade/order-notification-copy.ts
 msgid "Partially completed"
 msgstr "一部完了"
 
 #: src/components/trade/tradebox/order-toast.tsx
+#: src/hooks/trade/use-order-display-labels.ts
 #: src/lib/trade/order-notification-copy.ts
 msgid "Partially filled"
 msgstr "一部約定"
@@ -5548,6 +5617,12 @@ msgstr "一時停止は利用できません：Hyperliquid は稼働中の TWAP 
 #: src/components/trade/positions/funding-tab.tsx
 msgid "Payment"
 msgstr "支払い"
+
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/positions/funding-tab.tsx
+msgid "Payment Token"
+msgstr "支払いトークン"
 
 #: src/components/trade/tradebox/order-toast.tsx
 msgid "Pending"
@@ -5759,10 +5834,7 @@ msgstr "ポートフォリオ評価額"
 
 #: src/components/funding-history/funding-history-page.tsx
 #: src/components/funding-history/funding-history-page.tsx
-#: src/components/funding-history/funding-history-page.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
-#: src/components/trade/mobile/mobile-funding-tab.tsx
-#: src/components/trade/positions/funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
 #: src/config/trade-panel-labels.ts
 msgid "Position"
@@ -5918,6 +5990,8 @@ msgstr "ボールトの前のページ"
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-order-modification-modal.tsx
+#: src/components/trade/mobile/mobile-order-modification-modal.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
@@ -5959,6 +6033,10 @@ msgstr "{price} より低い価格"
 #: src/config/orderbook-labels.ts
 msgid "Price grouping"
 msgstr "価格の集約単位"
+
+#: src/lib/errors/definitions/price-tick.ts
+msgid "Price must be a multiple of the tick size, with at most 5 significant figures. E.g., {validPrice}"
+msgstr "価格は呼値単位の倍数で、有効数字は最大 5 桁にしてください。例：{validPrice}"
 
 #: src/lib/errors/exchange-error-text.ts
 msgid "Price must be a multiple of the tick size."
@@ -6315,16 +6393,16 @@ msgid "Refresh both devices to update phone access, then create a new QR."
 msgstr "両方の端末を再読み込みしてスマートフォンアクセスを更新し、新しい QR コードを作成してください。"
 
 #: src/components/funding-history/funding-history-page.tsx
-msgid "Refresh failed. Previously loaded funding payments remain visible."
-msgstr "更新に失敗しました。読み込み済みの資金調達料を引き続き表示します。"
+#~ msgid "Refresh failed. Previously loaded funding payments remain visible."
+#~ msgstr "更新に失敗しました。読み込み済みの資金調達料を引き続き表示します。"
 
 #: src/components/historical-orders/historical-orders-page.tsx
-msgid "Refresh failed. Previously loaded order history remains visible."
-msgstr "更新に失敗しました。読み込み済みの注文履歴を引き続き表示します。"
+#~ msgid "Refresh failed. Previously loaded order history remains visible."
+#~ msgstr "更新に失敗しました。読み込み済みの注文履歴を引き続き表示します。"
 
 #: src/components/trade-history/trade-history-page.tsx
-msgid "Refresh failed. Previously loaded trade history remains visible."
-msgstr "更新に失敗しました。読み込み済みの約定履歴を引き続き表示します。"
+#~ msgid "Refresh failed. Previously loaded trade history remains visible."
+#~ msgstr "更新に失敗しました。読み込み済みの約定履歴を引き続き表示します。"
 
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 msgid "Refresh quote"
@@ -6564,15 +6642,12 @@ msgstr "追跡を再開"
 
 #: src/components/api-wallet/api-wallet-list.tsx
 #: src/components/funding-comparison/funding-comparison-view.tsx
-#: src/components/funding-history/funding-history-page.tsx
-#: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/portfolio/portfolio-overview.tsx
 #: src/components/portfolio/portfolio-performance-chart.tsx
 #: src/components/referrals/referral-activity.tsx
 #: src/components/referrals/referral-dashboard.tsx
 #: src/components/staking/staking-view.tsx
 #: src/components/staking/staking-view.tsx
-#: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/chart/funding-history-load-boundary.tsx
 #: src/components/trade/chart/funding-history-panel.tsx
 #: src/components/trade/chart/token-selector-content.tsx
@@ -6584,6 +6659,7 @@ msgstr "追跡を再開"
 #: src/components/trade/layout/terminal-boot-error.tsx
 #: src/components/trade/mobile/offline-banner.tsx
 #: src/components/trade/positions/account-transfers-tab.tsx
+#: src/components/trade/positions/account-transfers-tab.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
@@ -6594,6 +6670,7 @@ msgstr "追跡を再開"
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #: src/components/trade/twap-history-feedback.tsx
+#: src/components/ui/history-page-unavailable.tsx
 #: src/components/vaults/vaults-list.tsx
 #: src/components/vaults/vaults-page.tsx
 msgid "Retry"
@@ -6998,6 +7075,7 @@ msgstr "選択期間の損益"
 #: src/config/trade-panel-labels.ts
 #: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-order-display-labels.ts
+#: src/lib/trade/fill-direction.ts
 msgid "Sell"
 msgstr "売り"
 
@@ -7014,6 +7092,7 @@ msgstr "売り・ショート"
 #: src/components/portfolio/portfolio-page.tsx
 #: src/components/portfolio/portfolio-page.tsx
 #: src/components/trade/positions/balances-tab.tsx
+#: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/positions/send-modal.tsx
 #: src/config/account-ledger.ts
 msgid "Send"
@@ -7038,6 +7117,10 @@ msgstr "別の Hyperliquid アカウントへ送金します。Arbitrum 上で U
 #: src/components/trade/positions/send-modal.tsx
 msgid "Send Tokens"
 msgstr "トークンを送金"
+
+#: src/components/trade/positions/send-modal.tsx
+msgid "Send with Fee"
+msgstr "手数料を払って送金"
 
 #: src/components/trade/positions/send-modal.tsx
 msgid "Sent {sentAmount} {sentToken}"
@@ -7092,8 +7175,13 @@ msgstr "{displayName} の損益を共有"
 #: src/components/trade/positions/position-row.tsx
 #: src/config/trade-panel-labels.ts
 #: src/domain/trade/order-confirmation.ts
+#: src/lib/trade/funding-position.ts
 msgid "Short"
 msgstr "ショート"
+
+#: src/lib/trade/fill-direction.ts
+msgid "Short > Long"
+msgstr "ショート > ロング"
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Short position"
@@ -7124,6 +7212,9 @@ msgid "Shows reward claims reported in the last 30 days. Claims can include refe
 msgstr "過去30日間に報告された報酬請求を表示します。紹介報酬とビルダー報酬が含まれる場合があります。"
 
 #: src/components/funding-history/funding-history-page.tsx
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/positions/funding-tab.tsx
 msgid "Side"
 msgstr "売買方向"
 
@@ -7164,6 +7255,7 @@ msgstr "メールウォレットで署名中"
 msgid "Signing..."
 msgstr "署名中..."
 
+#: src/components/funding-history/funding-history-page.tsx
 #: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/historical-orders/historical-orders-page.tsx
@@ -7172,6 +7264,7 @@ msgstr "署名中..."
 #: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
+#: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
@@ -7187,6 +7280,7 @@ msgstr "署名中..."
 #: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
 #: src/components/trade/orderbook/orderbook-row.tsx
 #: src/components/trade/orderbook/trades-panel.tsx
+#: src/components/trade/positions/funding-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
@@ -7213,6 +7307,10 @@ msgstr "数量（%）"
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Size cannot exceed the order's remaining size."
 msgstr "数量は注文の残数量を超えることはできません。"
+
+#: src/components/trade/tradebox/twap-order-summary.tsx
+msgid "Size per Suborder"
+msgstr "子注文あたりの数量"
 
 #: src/lib/trade/position-market-close-errors.ts
 #: src/lib/trade/position-submit-feedback.ts
@@ -7990,6 +8088,10 @@ msgstr "アドレスが無効か、Hyperliquid がこのアドレスのボール
 msgid "The amount exceeds the freshly verified maximum."
 msgstr "金額が最新の確認済み最大額を超えています。"
 
+#: src/components/vaults/use-vault-action-controller.ts
+msgid "The amount is below this Vault's minimum deposit."
+msgstr "金額がこのボールトの最低入金額を下回っています。"
+
 #: src/components/api-wallet/use-api-wallet-controller.ts
 msgid "The API wallet request was rejected."
 msgstr "API ウォレットのリクエストが拒否されました。"
@@ -8043,6 +8145,10 @@ msgstr "デスクトップでこのキーが承認されていません。デス
 #: src/components/trade/components/mobile-agent-ended-notifier.tsx
 msgid "The desktop-approved key expired or was replaced from desktop. Scan a new QR from Link mobile device."
 msgstr "デスクトップで承認したキーの期限が切れたか、デスクトップから置き換えられました。「モバイル端末をリンク」から新しい QR コードを読み取ってください。"
+
+#: src/components/trade/positions/send-modal.tsx
+msgid "The destination address has never sent a transaction on Hyperliquid. Do not use Send to transfer to an exchange or another platform that does not support the Hyperliquid blockchain, or your funds will be lost. To move USDC to Arbitrum, use Withdraw instead."
+msgstr "送信先アドレスは Hyperliquid で一度も取引を送信したことがありません。取引所など Hyperliquid ブロックチェーンに対応していないプラットフォームへの送金に「送金」を使わないでください。資金が失われます。USDC を Arbitrum に移すには「出金」を使ってください。"
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "The exact name and public address are now present in fresh extraAgents data."
@@ -8236,6 +8342,7 @@ msgid "The QR stays on this device and is never uploaded."
 msgstr "QR コードはこの端末内に留まり、アップロードされることはありません。"
 
 #: src/components/trade-history/trade-history-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
 msgid "The recent trade snapshot could not be loaded or validated."
 msgstr "最近の約定スナップショットを読み込みまたは検証できませんでした。"
 
@@ -8268,9 +8375,11 @@ msgid "The request was submitted, but its final status is still updating. Check 
 msgstr "リクエストは送信されましたが、最終状態は更新中です。再試行する前に紹介データと請求履歴を確認してください。"
 
 #: src/components/funding-history/funding-history-page.tsx
+#: src/components/funding-history/funding-history-page.tsx
 msgid "The requested 30-day window could not be verified. No partial history is shown."
 msgstr "リクエストした30日間を確認できませんでした。不完全な履歴は表示しません。"
 
+#: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/historical-orders/historical-orders-page.tsx
 msgid "The response could not be verified. No partial order history is shown."
 msgstr "応答を確認できませんでした。不完全な注文履歴は表示しません。"
@@ -8660,6 +8769,10 @@ msgstr "この厳格な分離市場では、保有ポジションから証拠金
 msgid "This terminal has not enabled new portfolio margin activation. Existing accounts can switch to another mode."
 msgstr "このターミナルではポートフォリオマージンの新規有効化に対応していません。既存のアカウントは別のモードに切り替えできます。"
 
+#: src/components/trade/positions/send-modal.tsx
+msgid "This transfer will incur a one-time fee of {reviewFee} in a USD stablecoin to activate the destination account."
+msgstr "この送金では、送信先アカウントを有効化するために米ドル建てステーブルコインで {reviewFee} の手数料が 1 回だけかかります。"
+
 #: src/components/vaults/vault-detail-view.tsx
 msgid "This Vault is closed and no longer accepts deposits."
 msgstr "このボールトは閉鎖され、入金を受け付けていません。"
@@ -8844,6 +8957,7 @@ msgstr "利確価格はエントリー価格より低くしてください"
 msgid "TP Price"
 msgstr "利確価格"
 
+#: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/positions-tab.tsx
 #: src/config/trade-panel-labels.ts
@@ -8894,16 +9008,16 @@ msgid "Trade history for <0>{0}</0>"
 msgstr "<0>{0}</0> の約定履歴"
 
 #: src/components/trade-history/trade-history-page.tsx
-msgid "Trade history is unavailable"
-msgstr "約定履歴を利用できません"
+#~ msgid "Trade history is unavailable"
+#~ msgstr "約定履歴を利用できません"
 
 #: src/components/trade-history/trade-history-page.tsx
 msgid "Trade history pagination"
 msgstr "約定履歴のページ切り替え"
 
 #: src/components/trade-history/trade-history-page.tsx
-msgid "Trade history will load automatically when the connection returns."
-msgstr "接続が復旧すると、約定履歴が自動的に読み込まれます。"
+#~ msgid "Trade history will load automatically when the connection returns."
+#~ msgstr "接続が復旧すると、約定履歴が自動的に読み込まれます。"
 
 #: src/components/referrals/referral-code-card.tsx
 msgid "Trade on Hyperliquid"
@@ -8986,6 +9100,7 @@ msgstr "このアカウントでは取引がまだ有効化されていません
 
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/config/trade-panel-labels.ts
+#: src/lib/trade/position-submit-feedback.ts
 msgid "Trading is not available in your region"
 msgstr "お住まいの地域では取引を利用できません"
 
@@ -9002,6 +9117,10 @@ msgstr "取引高の進捗"
 msgid "Traditional Finance"
 msgstr "伝統的金融"
 
+#: src/hooks/trade/use-order-display-labels.ts
+msgid "Trailing Stop"
+msgstr "トレーリングストップ"
+
 #: src/components/staking/staking-view.tsx
 #: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
@@ -9013,6 +9132,11 @@ msgstr "トランザクション"
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 msgid "Transaction breakdown"
 msgstr "トランザクションの内訳"
+
+#: src/components/trade/components/global-settings-modal.tsx
+#: src/components/trade/components/global-settings-modal.tsx
+msgid "Transaction delay protection"
+msgstr "取引遅延保護"
 
 #: src/lib/errors/action-error.ts
 msgid "Transaction reverted on Arbitrum"
@@ -9107,6 +9231,10 @@ msgstr "トリガー価格"
 #: src/lib/errors/definitions/twap.ts
 msgid "Trigger price must differ from mark"
 msgstr "トリガー価格はマーク価格と異なる値にしてください"
+
+#: src/lib/trade/trailing-stop-condition.ts
+msgid "Trigger: {price} / Retracement: {retracement}"
+msgstr "トリガー：{price} / トレール幅：{retracement}"
 
 #: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
@@ -9239,6 +9367,10 @@ msgstr "未決済建玉（両側合計）：このコントラクトのロング
 msgid "Type"
 msgstr "タイプ"
 
+#: src/components/trade/positions/send-modal.tsx
+msgid "Unable to check the destination address. Nothing was sent."
+msgstr "送信先アドレスを確認できませんでした。何も送金されていません。"
+
 #: src/lib/trade/order-submission-feedback.ts
 msgid "Unable to identify this TWAP market. Refresh market data before retrying."
 msgstr "この TWAP の市場を特定できません。再試行する前に市場データを更新してください。"
@@ -9252,6 +9384,10 @@ msgstr "Arbitrum の USDC 残高を読み込めません"
 #: src/lib/trade/funds-action-feedback.ts
 msgid "Unable to load the current CCTP withdrawal fee."
 msgstr "現在の CCTP 出金手数料を読み込めません。"
+
+#: src/components/trade/positions/send-modal.tsx
+msgid "Unable to send funds to this address."
+msgstr "このアドレスには送金できません。"
 
 #. placeholder {0}: config.chainName
 #: src/lib/hyperliquid/use-deposit.ts
@@ -9293,6 +9429,7 @@ msgid "Unable to verify regional availability. This referral request was not sub
 msgstr "地域別の利用可否を確認できません。この紹介リクエストは送信されていません。"
 
 #: src/lib/errors/action-error.ts
+#: src/lib/trade/position-submit-feedback.ts
 msgid "Unable to verify regional availability. Trading is temporarily unavailable."
 msgstr "地域別の利用可否を確認できません。取引は一時的に利用できません。"
 
@@ -9898,6 +10035,10 @@ msgstr "紹介リクエストの確認前にウォレットまたはネットワ
 msgid "Wallet returned a transaction hash, but it is not visible on Arbitrum yet. Check your wallet activity or Arbiscan before retrying to avoid sending the deposit twice."
 msgstr "ウォレットがトランザクションハッシュを返しましたが、まだ Arbitrum 上に表示されていません。入金の二重送信を避けるため、再試行する前にウォレットの履歴または Arbiscan を確認してください。"
 
+#: src/lib/trade/trailing-stop-condition.ts
+msgid "Watermark: {watermark}"
+msgstr "最良到達価格：{watermark}"
+
 #: src/components/trade/components/legal-acceptance-modal.tsx
 msgid "We could not finish setting up your wallet. Check your connection and try again, or disconnect and log in again."
 msgstr "ウォレットの設定を完了できませんでした。接続を確認して再試行するか、切断して再ログインしてください。"
@@ -10039,6 +10180,10 @@ msgstr "出金ロック解除済み"
 msgid "Withdrawals are unavailable for this address."
 msgstr "このアドレスでは出金を利用できません。"
 
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Withdrawing to yourself is not allowed because it would automatically trigger a deposit. Enter a different address."
+msgstr "自分自身のアドレスへの出金は、自動的に入金が実行されるためできません。別のアドレスを入力してください。"
+
 #: src/components/earn/earn-action-modal.tsx
 msgid "Withdraws your entire {token} supply at the moment it executes, including accrued interest."
 msgstr "執行時点の {token} の預入全額を、発生済み利息を含めて引き出します。"
@@ -10077,29 +10222,32 @@ msgstr "紹介コードを作成する資格があります。"
 #: src/components/funding-history/funding-history-page.tsx
 #: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/trade-history/trade-history-page.tsx
-msgid "You are offline"
-msgstr "オフラインです"
+#~ msgid "You are offline"
+#~ msgstr "オフラインです"
 
+#: src/components/funding-history/funding-history-page.tsx
 #: src/components/funding-history/funding-history-page.tsx
 msgid "You are offline. Funding payments will load when the connection returns."
 msgstr "オフラインです。接続が復旧すると資金調達料を読み込みます。"
 
 #: src/components/historical-orders/historical-orders-page.tsx
+#: src/components/historical-orders/historical-orders-page.tsx
 msgid "You are offline. Order history will load when the connection returns."
 msgstr "オフラインです。接続が復旧すると注文履歴を読み込みます。"
 
 #: src/components/funding-history/funding-history-page.tsx
-msgid "You are offline. Previously loaded funding payments remain visible."
-msgstr "オフラインです。読み込み済みの資金調達料を引き続き表示します。"
+#~ msgid "You are offline. Previously loaded funding payments remain visible."
+#~ msgstr "オフラインです。読み込み済みの資金調達料を引き続き表示します。"
 
 #: src/components/historical-orders/historical-orders-page.tsx
-msgid "You are offline. Previously loaded order history remains visible."
-msgstr "オフラインです。読み込み済みの注文履歴を引き続き表示します。"
+#~ msgid "You are offline. Previously loaded order history remains visible."
+#~ msgstr "オフラインです。読み込み済みの注文履歴を引き続き表示します。"
 
 #: src/components/trade-history/trade-history-page.tsx
-msgid "You are offline. Previously loaded trade history remains visible."
-msgstr "オフラインです。読み込み済みの約定履歴を引き続き表示します。"
+#~ msgid "You are offline. Previously loaded trade history remains visible."
+#~ msgstr "オフラインです。読み込み済みの約定履歴を引き続き表示します。"
 
+#: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade-history/trade-history-page.tsx
 msgid "You are offline. Trade history will load when the connection returns."
 msgstr "オフラインです。接続が復旧すると約定履歴を読み込みます。"

@@ -17,6 +17,7 @@ export function useAccountLedgerLabels(): AccountLedgerLabels {
 		},
 		getLocationLabel: (location) => {
 			if (location.kind === "arbitrum") return "Arbitrum";
+			if (location.kind === "hyperevm") return "HyperEVM";
 			if (location.kind === "perpDex") {
 				return location.dex
 					? `${_(ACCOUNT_LEDGER_LOCATION_MESSAGES.perps)} (${location.dex})`

@@ -23,7 +23,17 @@ const baseProps = {
 		execution: "twap",
 	}),
 	szDecimals: 5,
+	totalSize: "6.1",
+	referencePx: 100,
+	baseToken: "BTC",
 } as const;
+
+function getRowValue(container: HTMLElement, label: string): string | undefined {
+	const row = [...container.querySelectorAll("span.truncate")].find(
+		(node) => node.textContent === label,
+	)?.parentElement;
+	return row?.lastElementChild?.textContent ?? undefined;
+}
 
 function getRowLabels(container: HTMLElement): string[] {
 	return [...container.querySelectorAll("span.truncate")].map((node) => node.textContent ?? "");
@@ -48,23 +58,37 @@ describe("TwapOrderSummary trigger and stop rows", () => {
 		act(() => root.render(<TwapOrderSummary {...baseProps} />));
 
 		const labels = getRowLabels(container);
-		expect(container.textContent).toContain("Every 30 seconds");
-		expect(labels).toContain("Frequency");
-		expect(labels).toContain("Runtime");
-		expect(labels).not.toContain("Number of Orders");
-		expect(labels).not.toContain("Size per Suborder");
-		expect(labels).not.toContain("Trigger Price");
-		expect(labels).not.toContain("Max Price");
-		expect(labels).not.toContain("Min Price");
+		expect(labels).toEqual(["Runtime", "Size per Suborder", "Fees"]);
+		expect(container.textContent).not.toContain("Every 30 seconds");
 		expect(container.textContent).toContain("0.0450% ($0.05)");
 		expect(container.textContent).not.toContain("Hyperliquid fee");
 		expect(container.textContent).not.toMatch(/\b(?:gatu|sairn)\s+fee\b/i);
 	});
 
-	it("keeps the documented 30-second cadence for a multi-day order", () => {
-		act(() => root.render(<TwapOrderSummary {...baseProps} twapMinutesNum={4 * 24 * 60} />));
+	it("splits the size over one suborder per 30 seconds of runtime plus the first", () => {
+		act(() => root.render(<TwapOrderSummary {...baseProps} totalSize="61" />));
 
-		expect(container.textContent).toContain("Every 30 seconds");
+		expect(getRowValue(container, "Size per Suborder")).toBe("~1.00000 BTC");
+	});
+
+	it("raises each suborder to the $10 minimum at the reference price, so a small order runs fewer suborders", () => {
+		act(() => root.render(<TwapOrderSummary {...baseProps} totalSize="3" />));
+
+		expect(getRowValue(container, "Size per Suborder")).toBe("~0.10000 BTC");
+	});
+
+	it("never shows a suborder larger than the whole order", () => {
+		act(() => root.render(<TwapOrderSummary {...baseProps} totalSize="0.05" />));
+
+		expect(getRowValue(container, "Size per Suborder")).toBe("~0.05000 BTC");
+	});
+
+	it("shows a placeholder until a size and runtime are entered", () => {
+		act(() => root.render(<TwapOrderSummary {...baseProps} totalSize="" />));
+		expect(getRowValue(container, "Size per Suborder")).toBe("-");
+
+		act(() => root.render(<TwapOrderSummary {...baseProps} twapMinutesNum={null} />));
+		expect(getRowValue(container, "Size per Suborder")).toBe("-");
 	});
 
 	it("shows the trigger row and labels the stop as max price for a buy TWAP", () => {

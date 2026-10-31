@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
+import { SMALL_BALANCE_THRESHOLD_USD } from "@/config/trade";
 import {
 	accountOverviewNeedsTokenUsdPrices,
 	addSpotMarketPriceAliases,
+	type BalanceRow,
+	filterBalanceRowsByUsdValue,
 	getAccountBalanceSummary,
 	getAccountEquityValue,
 	getAvailableFromTotals,
@@ -444,11 +447,12 @@ describe("trade balances", () => {
 		});
 	});
 
-	it("fails closed instead of treating entry notional as a current account valuation", () => {
+	it("counts an unpriced token as zero, never at entry notional, and fails closed without a price snapshot", () => {
 		const hypeBalance: SpotBalance = { coin: "HYPE", token: 150, total: "10", hold: "0", entryNtl: "200" };
 
 		expect(getSpotAccountValueUsdValue([settledSpotUsdcBalance, hypeBalance], { HYPE: "30" })).toBe("867.680532");
 		expect(getSpotAccountValueUsdValue([settledSpotUsdcBalance, hypeBalance])).toBeNull();
+		expect(getSpotAccountValueUsdValue([settledSpotUsdcBalance, hypeBalance], {})).toBe("567.680532");
 		expect(getTokenAmountUsdValue("10", "HYPE", { HYPE: "30" })).toBe("300");
 		expect(getTokenAmountUsdValue("10", "HYPE", {})).toBeNull();
 		expect(
@@ -667,5 +671,48 @@ describe("trade balances", () => {
 		);
 
 		expect(data.quoteAvailable).toBeCloseTo(4947.18019669);
+	});
+});
+
+describe("hide small balances", () => {
+	function row(asset: string, usdValue: string): BalanceRow {
+		return {
+			asset,
+			type: "spot",
+			available: "1",
+			transferable: "1",
+			inOrder: "0",
+			total: "1",
+			usdValue,
+			entryNtl: "0",
+		};
+	}
+
+	it("hides rows under $5 except HYPE, as the official terminal does", () => {
+		const rows = [row("PURR", "4.99"), row("UBTC", "5"), row("HYPE", "0.5"), row("USDC", "12")];
+
+		expect(SMALL_BALANCE_THRESHOLD_USD).toBe(5);
+		expect(filterBalanceRowsByUsdValue(rows, SMALL_BALANCE_THRESHOLD_USD).map((item) => item.asset)).toEqual([
+			"UBTC",
+			"HYPE",
+			"USDC",
+		]);
+	});
+});
+
+describe("outcome token prices", () => {
+	it("prices an outcome balance +N at the mid of its outcome market #N, as the official terminal does", () => {
+		const prices = addSpotMarketPriceAliases({ "#1230": "0.6", "@107": "30" }, []);
+
+		expect(prices?.["+1230"]).toBe("0.6");
+		expect(
+			getSpotAccountValueUsdValue(
+				[
+					{ coin: "USDC", token: 0, total: "100", hold: "0", entryNtl: "0" },
+					{ coin: "+1230", token: 100_001_230, total: "10", hold: "0", entryNtl: "9" },
+				],
+				prices,
+			),
+		).toBe("106");
 	});
 });

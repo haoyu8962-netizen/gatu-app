@@ -7,9 +7,9 @@ import { type ReactNode, Suspense, useMemo, useState } from "react";
 import { DashboardHeader, FooterBar, GlobalModals } from "@/components/dashboard/dashboard-chrome";
 import { DashboardFrameView } from "@/components/dashboard/dashboard-frame-view";
 import { AssetBadge } from "@/components/trade/components/asset-badge";
+import { HistoryPageUnavailable } from "@/components/ui/history-page-unavailable";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { DASHBOARD_FRAMES } from "@/config/dashboard-frames";
-import { getToolbarNonZeroPnl } from "@/domain/trade/trading-toolbar-metrics";
 import { useUserFillsCsvExport } from "@/hooks/trade/use-history-csv-export";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { useTradeHistory } from "@/hooks/trade/use-trade-history";
@@ -26,6 +26,8 @@ import {
 	isAccountHistoryAddress,
 	isAccountHistoryPageSize,
 } from "@/lib/trade/account-history";
+import { getFillDirectionPresentation, getFillDirectionTone } from "@/lib/trade/fill-direction";
+import { getMarketPriceFormatOptions } from "@/lib/trade/market-price-format";
 import {
 	filterTradeHistory,
 	getTradeHistoryMarkets,
@@ -38,7 +40,7 @@ import {
 	type TradeHistoryRoleFilter,
 	type TradeHistoryTypeFilter,
 } from "@/lib/trade/trade-history";
-import { getUserFillKey, hasUserFillExplorerTransaction } from "@/lib/trade/user-fills";
+import { getUserFillKey, getUserFillNetClosedPnl, hasUserFillExplorerTransaction } from "@/lib/trade/user-fills";
 import { getMarketCloseValueColorClass } from "@/lib/ui/value-color";
 import { useIsTestnet } from "@/stores/use-global-settings-store";
 
@@ -51,14 +53,14 @@ interface Props {
 
 type UserFill = UserFillsResponse[number];
 
-function getDirectionColorClass(fill: UserFill) {
-	if (fill.liquidation) return "text-error";
+function getDirectionColorClass(fill: UserFill, owner: string) {
+	if (getFillDirectionTone(fill, owner) === "liquidation") return "text-error";
 	if (fill.side === "B") return "text-success";
 	return "text-error";
 }
 
 export function TradeHistoryPage({ address }: Props) {
-	const { formatNumber, formatToken, formatUSD } = useNumberFormat();
+	const { formatNumber, formatPrice, formatToken, formatUSD } = useNumberFormat();
 	const { i18n, t } = useLingui();
 	const locale = i18n.locale;
 	const isMobile = useIsMobile();
@@ -92,12 +94,8 @@ export function TradeHistoryPage({ address }: Props) {
 	);
 	const pagination = getAccountHistoryPage(filteredFills, requestedPage, rowsPerPage);
 
-	function getDirectionLabel(direction: string) {
-		if (direction === "Open Long") return t`Open Long`;
-		if (direction === "Close Long") return t`Close Long`;
-		if (direction === "Open Short") return t`Open Short`;
-		if (direction === "Close Short") return t`Close Short`;
-		return direction;
+	function getDirection(fill: UserFill) {
+		return getFillDirectionPresentation(fill, address, (descriptor) => t(descriptor));
 	}
 
 	function getTypeLabel(fill: UserFill) {
@@ -127,7 +125,7 @@ export function TradeHistoryPage({ address }: Props) {
 				[
 					{ header: t`Time`, getValue: (fill) => formatDateTimeShort(fill.time, { locale: i18n.locale }) },
 					{ header: t`Asset`, getValue: (fill) => fill.coin },
-					{ header: t`Direction`, getValue: (fill) => getDirectionLabel(fill.dir) },
+					{ header: t`Direction`, getValue: (fill) => getDirection(fill).label },
 					{ header: t`Type`, getValue: getTypeLabel },
 					{ header: t`Role`, getValue: getRoleLabel },
 					{ header: t`Price`, getValue: (fill) => fill.px },
@@ -174,6 +172,12 @@ export function TradeHistoryPage({ address }: Props) {
 		setRequestedPage(1);
 	}
 
+	function getUnconfirmedEmptyDescription() {
+		if (history.isOffline) return t`You are offline. Trade history will load when the connection returns.`;
+		if (history.isRefreshing) return t`Loading trade history`;
+		return t`The recent trade snapshot could not be loaded or validated.`;
+	}
+
 	let content: ReactNode;
 	if (history.status === "disabled") {
 		content = (
@@ -189,18 +193,12 @@ export function TradeHistoryPage({ address }: Props) {
 		);
 	} else if (history.status === "offline") {
 		content = (
-			<div className="flex min-h-80 flex-col items-center justify-center px-6 text-center">
-				<output aria-live="polite" className="sr-only">
-					<Trans>You are offline. Trade history will load when the connection returns.</Trans>
-				</output>
-				<WarningCircleIcon className="size-9 text-warning" weight="fill" />
-				<h2 className="mt-3 text-lg font-bold text-fg">
-					<Trans>You are offline</Trans>
-				</h2>
-				<p className="mt-1 max-w-lg text-xs leading-5 text-fg-muted">
-					<Trans>Trade history will load automatically when the connection returns.</Trans>
-				</p>
-			</div>
+			<HistoryPageUnavailable
+				offline
+				refreshing={false}
+				description={t`You are offline. Trade history will load when the connection returns.`}
+				onRetry={history.refresh}
+			/>
 		);
 	} else if (history.status === "loading") {
 		content = (
@@ -218,18 +216,21 @@ export function TradeHistoryPage({ address }: Props) {
 		);
 	} else if (history.status === "error") {
 		content = (
-			<div role="alert" className="flex min-h-80 flex-col items-center justify-center px-6 text-center">
-				<WarningCircleIcon className="size-9 text-error" weight="fill" />
-				<h2 className="mt-3 text-lg font-bold text-fg">
-					<Trans>Trade history is unavailable</Trans>
-				</h2>
-				<p className="mt-1 max-w-lg text-xs leading-5 text-fg-muted">
-					<Trans>The recent trade snapshot could not be loaded or validated.</Trans>
-				</p>
-				<Button className="mt-4" onClick={history.refresh}>
-					<Trans>Retry</Trans>
-				</Button>
-			</div>
+			<HistoryPageUnavailable
+				offline={false}
+				refreshing={false}
+				description={t`The recent trade snapshot could not be loaded or validated.`}
+				onRetry={history.refresh}
+			/>
+		);
+	} else if (history.fills.length === 0 && (history.error || history.isOffline || history.isRefreshing)) {
+		content = (
+			<HistoryPageUnavailable
+				offline={history.isOffline}
+				refreshing={history.isRefreshing}
+				description={getUnconfirmedEmptyDescription()}
+				onRetry={history.refresh}
+			/>
 		);
 	} else if (history.fills.length === 0) {
 		content = (
@@ -317,7 +318,7 @@ export function TradeHistoryPage({ address }: Props) {
 					<>
 						<div className="divide-y divide-stroke-weak min-[1001px]:hidden">
 							{pagination.rows.map((fill) => {
-								const closedPnl = getToolbarNonZeroPnl(fill.closedPnl);
+								const closedPnl = getUserFillNetClosedPnl(fill, markets.getMarket(fill.coin));
 								return (
 									<article key={getUserFillKey(fill)} className="px-4 py-3">
 										<div className="flex min-w-0 items-center justify-between gap-3">
@@ -334,9 +335,7 @@ export function TradeHistoryPage({ address }: Props) {
 											</time>
 										</div>
 										<div className="mt-2 flex items-center gap-2 text-2xs font-semibold">
-											<span className={getDirectionColorClass(fill)}>
-												{fill.liquidation ? t`Liquidated` : getDirectionLabel(fill.dir)}
-											</span>
+											<span className={getDirectionColorClass(fill, address)}>{getDirection(fill).label}</span>
 											<span className="text-fg-muted">{getRoleLabel(fill)}</span>
 										</div>
 										<dl className="mt-3 grid grid-cols-3 gap-3">
@@ -345,7 +344,9 @@ export function TradeHistoryPage({ address }: Props) {
 													<Trans>Price</Trans>
 												</dt>
 												<dd className="mt-0.5 truncate text-xs font-semibold tabular-nums text-fg">
-													<bdi dir="ltr">{formatUSD(fill.px)}</bdi>
+													<bdi dir="ltr">
+														{formatPrice(fill.px, getMarketPriceFormatOptions(markets.getMarket(fill.coin)))}
+													</bdi>
 												</dd>
 											</div>
 											<div className="min-w-0">
@@ -432,7 +433,7 @@ export function TradeHistoryPage({ address }: Props) {
 								</TableHeader>
 								<TableBody>
 									{pagination.rows.map((fill) => {
-										const closedPnl = getToolbarNonZeroPnl(fill.closedPnl);
+										const closedPnl = getUserFillNetClosedPnl(fill, markets.getMarket(fill.coin));
 										const hasExplorerTransaction = hasUserFillExplorerTransaction(fill);
 										return (
 											<TableRow key={getUserFillKey(fill)} className="h-12 border-stroke-weak hover:bg-fill-hover">
@@ -446,13 +447,15 @@ export function TradeHistoryPage({ address }: Props) {
 														fit
 													/>
 												</TableCell>
-												<TableCell className={cn("px-3 py-0 font-semibold", getDirectionColorClass(fill))}>
-													{fill.liquidation ? t`Liquidated` : getDirectionLabel(fill.dir)}
+												<TableCell className={cn("px-3 py-0 font-semibold", getDirectionColorClass(fill, address))}>
+													{getDirection(fill).label}
 												</TableCell>
 												<TableCell className="px-3 py-0 text-fg-muted">{getTypeLabel(fill)}</TableCell>
 												<TableCell className="px-3 py-0 text-fg-muted">{getRoleLabel(fill)}</TableCell>
 												<TableCell className="px-3 py-0 text-right text-fg">
-													<bdi dir="ltr">{formatUSD(fill.px)}</bdi>
+													<bdi dir="ltr">
+														{formatPrice(fill.px, getMarketPriceFormatOptions(markets.getMarket(fill.coin)))}
+													</bdi>
 												</TableCell>
 												<TableCell className="px-3 py-0 text-right text-fg">
 													<bdi dir="ltr">{formatNumber(fill.sz, markets.getSzDecimals(fill.coin))}</bdi>
@@ -604,17 +607,8 @@ export function TradeHistoryPage({ address }: Props) {
 							data-state={history.status}
 							className="overflow-hidden rounded-24 bg-surface shadow-raised"
 						>
-							{history.status === "ready" && (history.error || history.isOffline) ? (
-								<div role="alert" className="border-b border-warning/30 bg-warning/10 px-4 py-2 text-xs text-warning">
-									{history.isOffline ? (
-										<Trans>You are offline. Previously loaded trade history remains visible.</Trans>
-									) : (
-										<Trans>Refresh failed. Previously loaded trade history remains visible.</Trans>
-									)}
-								</div>
-							) : null}
 							{history.status === "ready" && history.reachedLimit ? (
-								<output className="block w-full border-b border-warning/30 bg-warning/10 px-4 py-2 text-xs text-warning">
+								<output className="block w-full border-b border-stroke-warning-weak bg-warning-soft px-4 py-2 text-xs text-warning">
 									<Trans>
 										This account reached the {TRADE_HISTORY_SNAPSHOT_LIMIT}-fill snapshot limit. Older fills may exist
 										and are not included in this page count.

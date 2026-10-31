@@ -14,4 +14,16 @@ describe("order margin metrics", () => {
 		expect(getOrderMetrics({ sizeValue: 1, price: 100, leverage: null })).toEqual({ marginRequired: 0 });
 		expect(getOrderMetrics({ sizeValue: Number.NaN, price: 100, leverage: 10 })).toEqual({ marginRequired: 0 });
 	});
+
+	it("takes a scale order's margin from the value of its levels rather than size × price", () => {
+		expect(getOrderMetrics({ sizeValue: 3, price: 60, leverage: 10, scaleOrderValue: 220 })).toEqual({
+			marginRequired: 22,
+		});
+		expect(getOrderMetrics({ sizeValue: 3, price: 60, leverage: 10, scaleOrderValue: undefined })).toEqual({
+			marginRequired: 18,
+		});
+		expect(
+			getOrderMetrics({ sizeValue: 3, price: 60, leverage: 10, reduceOnly: true, scaleOrderValue: 220 }).marginRequired,
+		).toBeNull();
+	});
 });

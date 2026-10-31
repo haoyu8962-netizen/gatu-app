@@ -100,7 +100,14 @@ const budgets = {
 	// bootstrap error copy, mobile and desktop runtime startup +4 each). Measured as the fixed-identity Node 22.15.0
 	// build with VITE_MOBILE_PAIRING_ENABLED=false of the Japanese branch (3,350,633) minus that of dev f7423d70
 	// (3,311,897), both without .env.local; the +140 dev had already used stays counted.
-	totalGzipBaselineBytes: 3_350_493,
+	// Raised 2026-10-31 by +15,708 for the P1 and P2 fixes of the 2026-10-30 feature audit, merged into dev as one
+	// integration pull request with PR #123-#128: their new and changed messages in the six lazy catalogs (+4,246, a
+	// viewer loads one) and in the English catalog, the order expiry clock (ADR 0045), partial-cancel and status
+	// feedback, history labels and exports, and the funds and order checks (trade startup +6,577, desktop runtime
+	// startup +91, mobile +68). Measured as the fixed-identity Node 22.15.0 build with VITE_MOBILE_PAIRING_ENABLED=false
+	// of the integration a5aa0d7f (3,366,564) minus that of dev d99c2bc9 (3,350,856), both without .env.local; the +363
+	// dev had already used stays counted (docs/terminal-performance-baseline.md).
+	totalGzipBaselineBytes: 3_366_201,
 	totalGzipAllowedIncreaseBytes: 10_000,
 	tradeStartup: {
 		requiredRouteIds: ["__root__", "/trade/$symbol"],

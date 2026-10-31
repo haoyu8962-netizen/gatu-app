@@ -8,6 +8,7 @@ import {
 	HyperliquidAgentApprovalProvider,
 	HyperliquidExchangePolicyProvider,
 	HyperliquidProvider,
+	setTransactionDelayProtectionReader,
 	useLegalStatusLifecycle,
 } from "@sairn/hl-react";
 import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
@@ -38,10 +39,11 @@ import { HyperliquidOwnerSignerBridge } from "@/providers/hyperliquid-owner-sign
 import { PrivyLoginMethodObserver } from "@/providers/privy-login-method-observer";
 import { PwaInstallProvider } from "@/providers/pwa-install";
 import { QueryPersistenceFlush } from "@/providers/query-persistence-flush";
-import { useTheme } from "@/stores/use-global-settings-store";
+import { getTransactionDelayProtection, useTheme } from "@/stores/use-global-settings-store";
 
 const network = getNetwork();
 const env = network === "testnet" ? "Testnet" : "Mainnet";
+setTransactionDelayProtectionReader(getTransactionDelayProtection);
 const persister = createSyncStoragePersister({
 	storage: window.localStorage,
 	key: STORAGE_KEYS.RQ_CACHE,

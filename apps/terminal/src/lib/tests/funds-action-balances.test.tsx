@@ -59,6 +59,7 @@ const testState = vi.hoisted(() => ({
 		env: "Mainnet" as "Mainnet" | "Testnet",
 		exchangeLifecycle: { active: true, id: Symbol("exchange-lifecycle") },
 		sessionMode: "wallet" as "wallet" | "agent-only" | "disconnected",
+		info: { preTransferCheck: vi.fn() },
 	},
 	walletSession: {
 		address: "0x1111111111111111111111111111111111111111" as string | undefined,
@@ -117,6 +118,28 @@ vi.mock("@sairn/ui", () => ({
 		open ? createElement("section", null, children) : null,
 	Button: ({ children, ...props }: { children: ReactNode; [key: string]: unknown }) =>
 		createElement("button", { ...props, type: "button" }, children),
+	Checkbox: ({
+		checked,
+		disabled,
+		label,
+		onCheckedChange,
+	}: {
+		checked: boolean;
+		disabled?: boolean;
+		label: ReactNode;
+		onCheckedChange: (checked: boolean) => void;
+	}) =>
+		createElement(
+			"label",
+			null,
+			createElement("input", {
+				type: "checkbox",
+				checked,
+				disabled,
+				onChange: (event: { target: { checked: boolean } }) => onCheckedChange(event.target.checked),
+			}),
+			label,
+		),
 	Modal: ({ children, open }: { children: ReactNode; open: boolean }) => (open ? renderChildren(children) : null),
 	ModalContent: ({ children }: { children: ReactNode }) => createElement("div", null, children),
 	ModalDescription: ({ children }: { children: ReactNode }) => createElement("p", null, children),
@@ -311,6 +334,13 @@ describe("funds action balance wiring", () => {
 		testState.assertAccountAbstraction.mockResolvedValue(undefined);
 		testState.assertFreshGeoAllowed.mockReset();
 		testState.assertFreshGeoAllowed.mockResolvedValue(undefined);
+		testState.exchangeIdentity.info.preTransferCheck.mockReset();
+		testState.exchangeIdentity.info.preTransferCheck.mockResolvedValue({
+			fee: "0.0",
+			isSanctioned: false,
+			userExists: true,
+			userHasSentTx: true,
+		});
 		container = document.createElement("div");
 		document.body.appendChild(container);
 		root = createI18nRoot(container);
@@ -358,6 +388,30 @@ describe("funds action balance wiring", () => {
 				amount: "1000000000000000.99",
 				toPerp: initialDirection === "toPerp",
 			});
+		},
+	);
+
+	it.each(["spot", "perp"] as const)(
+		"keeps Send Max and the over-balance check exact from the %s account",
+		(accountType) => {
+			testState.balances.withdrawable = "1000000000000000.999999";
+			testState.balances.spotBalances[0].total = "1000000000000001.000001";
+			testState.balances.spotBalances[0].hold = "0.000002";
+			act(() =>
+				root.render(createElement(SendModal, { initialAccountType: accountType, onOpenChange: vi.fn(), open: true })),
+			);
+
+			expect(container.querySelector('[data-testid="available-balance"] span')?.textContent).toBe(
+				"1,000,000,000,000,000.99 USDC",
+			);
+			const destinationInput = container.querySelector<HTMLInputElement>('input[placeholder="Destination address"]');
+			if (!destinationInput) throw new Error("Destination input not found");
+			act(() => setInputValue(destinationInput, "0x2222222222222222222222222222222222222222"));
+			clickAvailableBalance(container);
+			expect(getAmountInput(container).value).toBe("1000000000000000.99");
+			expect(getButton(container, "Send").disabled).toBe(false);
+			act(() => setInputValue(getAmountInput(container), "1000000000000001"));
+			expect(getButton(container, "Send").disabled).toBe(true);
 		},
 	);
 
@@ -539,7 +593,7 @@ describe("funds action balance wiring", () => {
 		expect(container.querySelector("h2")).toBe(title);
 	});
 
-	it("wires the fresh mode check into each mode-dependent SDK boundary", async () => {
+	it("wires the fresh mode and region checks into each mode-dependent SDK boundary", async () => {
 		act(() => root.render(createElement(SendModal, { onOpenChange: vi.fn(), open: true })));
 		const signal = new AbortController().signal;
 
@@ -548,12 +602,28 @@ describe("funds action balance wiring", () => {
 		expect(testState.assertAccountAbstraction).toHaveBeenCalledTimes(2);
 		expect(testState.assertAccountAbstraction).toHaveBeenNthCalledWith(1, signal);
 		expect(testState.assertAccountAbstraction).toHaveBeenNthCalledWith(2, signal);
+		expect(testState.assertFreshGeoAllowed).toHaveBeenCalledTimes(2);
 
 		act(() => root.render(createElement(TransferModal, { onOpenChange: vi.fn(), open: true })));
 		await testState.exchangeGuards.get("usdClassTransfer")?.({ amount: "1", toPerp: false }, signal);
 		expect(testState.assertAccountAbstraction).toHaveBeenNthCalledWith(3, signal);
-		expect(testState.assertFreshGeoAllowed).toHaveBeenCalledOnce();
-		expect(testState.assertFreshGeoAllowed).toHaveBeenCalledWith(signal);
+		expect(testState.assertFreshGeoAllowed).toHaveBeenCalledTimes(3);
+		for (const call of testState.assertFreshGeoAllowed.mock.calls) expect(call).toEqual([signal]);
+	});
+
+	it("fails the send SDK boundaries closed when fresh geo cannot be verified", async () => {
+		testState.assertFreshGeoAllowed.mockRejectedValue(new FundsActionGeoExecutionError("restricted"));
+		act(() => root.render(createElement(SendModal, { onOpenChange: vi.fn(), open: true })));
+		const signal = new AbortController().signal;
+
+		await expect(
+			testState.exchangeGuards.get("sendAsset")?.({ amount: "1", sourceDex: "spot", token: "USDC:0" }, signal),
+		).rejects.toThrow("Funds actions are not available in your region");
+		await expect(testState.exchangeGuards.get("spotSend")?.({ amount: "1", token: "USDC:0" }, signal)).rejects.toThrow(
+			"Funds actions are not available in your region",
+		);
+		expect(testState.exchangeMutations.sendAsset).not.toHaveBeenCalled();
+		expect(testState.exchangeMutations.spotSend).not.toHaveBeenCalled();
 	});
 
 	it("fails the internal-transfer SDK boundary closed when fresh geo cannot be verified", async () => {
@@ -1159,6 +1229,237 @@ describe("funds action balance wiring", () => {
 			);
 		}
 	});
+
+	it("checks the destination and sends at once when no fee or warning applies", async () => {
+		renderValidSend(root, container);
+		await clickAndFlush(getButton(container, "Send"));
+
+		expect(testState.exchangeIdentity.info.preTransferCheck).toHaveBeenCalledWith({
+			user: "0x2222222222222222222222222222222222222222",
+			source: "0x1111111111111111111111111111111111111111",
+		});
+		expect(testState.exchangeMutations.spotSend).toHaveBeenCalledOnce();
+	});
+
+	it("asks for an acknowledged review before sending to a new account with an activation fee", async () => {
+		testState.exchangeIdentity.info.preTransferCheck.mockResolvedValue({
+			fee: "1.0",
+			isSanctioned: false,
+			userExists: false,
+			userHasSentTx: false,
+		});
+		renderValidSend(root, container);
+		await clickAndFlush(getButton(container, "Send"));
+
+		expect(testState.exchangeMutations.spotSend).not.toHaveBeenCalled();
+		expect(container.textContent).toContain(
+			"This transfer will incur a one-time fee of 1.0 in a USD stablecoin to activate the destination account.",
+		);
+		expect(container.textContent).toContain("The destination address has never sent a transaction on Hyperliquid.");
+		expect(container.textContent).toContain("0x2222222222222222222222222222222222222222");
+		const confirm = getButton(container, "Send with Fee");
+		expect(confirm.disabled).toBe(true);
+
+		const acknowledgement = container.querySelector<HTMLInputElement>('input[type="checkbox"]');
+		act(() => acknowledgement?.click());
+		expect(confirm.disabled).toBe(false);
+		await clickAndFlush(confirm);
+
+		expect(testState.exchangeMutations.spotSend).toHaveBeenCalledOnce();
+		expect(testState.exchangeMutations.spotSend).toHaveBeenCalledWith(
+			expect.objectContaining({ amount: "1", destination: "0x2222222222222222222222222222222222222222" }),
+		);
+	});
+
+	it("locks the draft while the destination check runs and drops its answer once the account changed", async () => {
+		let resolveCheck!: (value: unknown) => void;
+		testState.exchangeIdentity.info.preTransferCheck.mockReturnValueOnce(
+			new Promise((resolve) => {
+				resolveCheck = resolve;
+			}),
+		);
+		renderValidSend(root, container);
+		act(() => getButton(container, "Send").click());
+
+		expect(getAmountInput(container).disabled).toBe(true);
+		expect(container.querySelector<HTMLInputElement>('input[placeholder="Destination address"]')?.disabled).toBe(true);
+
+		act(() => {
+			testState.walletSession.address = "0x3333333333333333333333333333333333333333";
+			testState.exchangeIdentity.clientKey = "0x3333333333333333333333333333333333333333";
+			root.render(createElement(SendModal, { onOpenChange: vi.fn(), open: true }));
+		});
+		await act(async () => {
+			resolveCheck({ fee: "0.0", isSanctioned: false, userExists: true, userHasSentTx: true });
+			for (let tick = 0; tick < 8; tick += 1) await Promise.resolve();
+		});
+
+		expect(testState.exchangeMutations.spotSend).not.toHaveBeenCalled();
+		expect(testState.exchangeMutations.sendAsset).not.toHaveBeenCalled();
+	});
+
+	it("discards an acknowledged review when the account changes, even after switching back", async () => {
+		testState.exchangeIdentity.info.preTransferCheck.mockResolvedValue({
+			fee: "1.0",
+			isSanctioned: false,
+			userExists: false,
+			userHasSentTx: false,
+		});
+		renderValidSend(root, container);
+		await clickAndFlush(getButton(container, "Send"));
+		act(() => container.querySelector<HTMLInputElement>('input[type="checkbox"]')?.click());
+		expect(getButton(container, "Send with Fee").disabled).toBe(false);
+
+		act(() => {
+			testState.exchangeIdentity.clientKey = "0x3333333333333333333333333333333333333333";
+			testState.walletSession.address = "0x3333333333333333333333333333333333333333";
+			root.render(createElement(SendModal, { onOpenChange: vi.fn(), open: true }));
+		});
+		expect(container.textContent).not.toContain("one-time fee");
+
+		act(() => {
+			testState.exchangeIdentity.clientKey = "0x1111111111111111111111111111111111111111";
+			testState.walletSession.address = "0x1111111111111111111111111111111111111111";
+			root.render(createElement(SendModal, { onOpenChange: vi.fn(), open: true }));
+		});
+		expect(container.textContent).not.toContain("one-time fee");
+		expect(container.querySelector('input[placeholder="Destination address"]')).not.toBeNull();
+		expect(testState.exchangeMutations.spotSend).not.toHaveBeenCalled();
+	});
+
+	it("discards an acknowledged review when only the provider lifecycle is replaced", async () => {
+		testState.exchangeIdentity.info.preTransferCheck.mockResolvedValue({
+			fee: "1.0",
+			isSanctioned: false,
+			userExists: false,
+			userHasSentTx: false,
+		});
+		renderValidSend(root, container);
+		await clickAndFlush(getButton(container, "Send"));
+		act(() => container.querySelector<HTMLInputElement>('input[type="checkbox"]')?.click());
+		expect(getButton(container, "Send with Fee").disabled).toBe(false);
+
+		act(() => {
+			testState.exchangeIdentity.exchangeLifecycle = { active: true, id: Symbol("replacement") };
+			root.render(createElement(SendModal, { onOpenChange: vi.fn(), open: true }));
+		});
+
+		expect(container.textContent).not.toContain("one-time fee");
+		expect(container.querySelector('input[placeholder="Destination address"]')).not.toBeNull();
+		expect(testState.exchangeMutations.spotSend).not.toHaveBeenCalled();
+	});
+
+	async function openFeeReview(amount: string) {
+		testState.exchangeIdentity.info.preTransferCheck.mockResolvedValue({
+			fee: "1.0",
+			isSanctioned: false,
+			userExists: false,
+			userHasSentTx: true,
+		});
+		act(() => root.render(createElement(SendModal, { onOpenChange: vi.fn(), open: true })));
+		const destinationInput = container.querySelector<HTMLInputElement>('input[placeholder="Destination address"]');
+		act(() => {
+			if (destinationInput) setInputValue(destinationInput, "0x2222222222222222222222222222222222222222");
+			setInputValue(getAmountInput(container), amount);
+		});
+		await clickAndFlush(getButton(container, "Send"));
+		const amountRow = [...container.querySelectorAll("div")].find(
+			(element) => element.children.length === 2 && element.children[0]?.textContent === "Amount",
+		);
+		act(() => container.querySelector<HTMLInputElement>('input[type="checkbox"]')?.click());
+		return amountRow?.children[1]?.textContent ?? "";
+	}
+
+	it("sends exactly once, through the execution guards, the amount and token the review shows", async () => {
+		testState.runGuardsOnMutation = true;
+		const shownAmount = await openFeeReview("1.25");
+		await clickAndFlush(getButton(container, "Send with Fee"));
+
+		await vi.waitFor(() => expect(testState.exchangeMutations.spotSend).toHaveBeenCalledOnce());
+		const sent = testState.exchangeMutations.spotSend.mock.calls[0]?.[0] as { amount: string; token: string };
+		expect(shownAmount).toBe(`${sent.amount} USDC`);
+		expect(sent.amount).toBe("1.25");
+		expect(sent.token).toContain("USDC");
+	});
+
+	it("sends nothing when the account changes while a reviewed send waits before the SDK", async () => {
+		let release!: () => void;
+		testState.beforeSdk.mockReturnValueOnce(
+			new Promise<void>((resolve) => {
+				release = resolve;
+			}),
+		);
+		testState.runGuardsOnMutation = true;
+		await openFeeReview("1.25");
+		act(() => getButton(container, "Send with Fee").click());
+		await vi.waitFor(() => expect(testState.beforeSdk).toHaveBeenCalledOnce());
+
+		act(() => {
+			testState.exchangeIdentity.clientKey = "0x3333333333333333333333333333333333333333";
+			testState.walletSession.address = "0x3333333333333333333333333333333333333333";
+			root.render(createElement(SendModal, { onOpenChange: vi.fn(), open: true }));
+		});
+		await act(async () => {
+			release();
+			for (let tick = 0; tick < 8; tick += 1) await Promise.resolve();
+		});
+
+		expect(testState.exchangeMutations.spotSend).not.toHaveBeenCalled();
+		expect(testState.exchangeMutations.sendAsset).not.toHaveBeenCalled();
+	});
+
+	it("returns from the review to the form without sending", async () => {
+		testState.exchangeIdentity.info.preTransferCheck.mockResolvedValue({
+			fee: "0.0",
+			isSanctioned: false,
+			userExists: true,
+			userHasSentTx: false,
+		});
+		renderValidSend(root, container);
+		await clickAndFlush(getButton(container, "Send"));
+
+		expect(container.textContent).not.toContain("one-time fee");
+		expect(getButton(container, "Send").disabled).toBe(true);
+		act(() => getButton(container, "Back").click());
+
+		expect(container.querySelector('input[placeholder="Destination address"]')).not.toBeNull();
+		expect(testState.exchangeMutations.spotSend).not.toHaveBeenCalled();
+		expect(testState.exchangeMutations.sendAsset).not.toHaveBeenCalled();
+	});
+
+	it("refuses a sanctioned destination without sending", async () => {
+		testState.exchangeIdentity.info.preTransferCheck.mockResolvedValue({
+			fee: "0.0",
+			isSanctioned: true,
+			userExists: true,
+			userHasSentTx: true,
+		});
+		renderValidSend(root, container);
+		await clickAndFlush(getButton(container, "Send"));
+
+		expect(toastMocks.error).toHaveBeenCalledWith("Unable to send funds to this address.");
+		expect(testState.exchangeMutations.spotSend).not.toHaveBeenCalled();
+	});
+
+	it.each([
+		["a failed request", () => testState.exchangeIdentity.info.preTransferCheck.mockRejectedValue(new Error("down"))],
+		[
+			"an unexpected answer",
+			() =>
+				testState.exchangeIdentity.info.preTransferCheck.mockResolvedValue({
+					fee: "unknown",
+					isSanctioned: false,
+					userHasSentTx: true,
+				}),
+		],
+	])("sends nothing after %s from the destination check", async (_case, arrange) => {
+		arrange();
+		renderValidSend(root, container);
+		await clickAndFlush(getButton(container, "Send"));
+
+		expect(toastMocks.error).toHaveBeenCalledWith("Unable to check the destination address. Nothing was sent.");
+		expect(testState.exchangeMutations.spotSend).not.toHaveBeenCalled();
+	});
 });
 
 function renderValidSend(
@@ -1184,8 +1485,6 @@ function renderValidTransfer(root: Root, container: HTMLElement, onOpenChange = 
 async function clickAndFlush(button: HTMLButtonElement) {
 	await act(async () => {
 		button.click();
-		await Promise.resolve();
-		await Promise.resolve();
-		await Promise.resolve();
+		for (let tick = 0; tick < 8; tick += 1) await Promise.resolve();
 	});
 }

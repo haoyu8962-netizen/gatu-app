@@ -58,10 +58,15 @@ export function getLatestHistoryValue(history: PortfolioSnapshot["accountValueHi
 	return toBig(history?.at(-1)?.[1])?.toString() ?? null;
 }
 
+/**
+ * The exchange's daily volume list ends with the current, unfinished day; like the official
+ * terminal, the 14-day volume leaves it out and sums the 14 completed days before it.
+ */
 export function calculateFourteenDayVolume(dailyVolume: DailyUserVolume | null | undefined): string | null {
 	if (dailyVolume == null) return null;
 	let total = Big(0);
-	for (const day of [...dailyVolume].sort((a, b) => a.date.localeCompare(b.date)).slice(-14)) {
+	const completedDays = [...dailyVolume].sort((a, b) => a.date.localeCompare(b.date)).slice(0, -1);
+	for (const day of completedDays.slice(-14)) {
 		const cross = toBig(day.userCross);
 		const add = toBig(day.userAdd);
 		if (!cross || !add || cross.lt(0) || add.lt(0)) return null;

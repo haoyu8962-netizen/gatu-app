@@ -641,7 +641,7 @@ describe("desktop account panel", () => {
 		expect(findButton(container, "Withdraw").getAttribute("aria-disabled")).toBe("true");
 	});
 
-	it("keeps shared-account valuation failures quiet and never falls back to entry notional", () => {
+	it("counts a token without a market price as zero and never at its entry notional, as the official terminal does", () => {
 		testState.accountAbstraction = "unifiedAccount";
 		testState.builderCollateral = "HYPE";
 		testState.spotBalances = [
@@ -652,7 +652,7 @@ describe("desktop account panel", () => {
 		renderPanel();
 
 		expect(container.querySelector("output:not(.sr-only)")).toBeNull();
-		expect(getMetricRowText(container, "Portfolio Value")).toContain("—");
+		expect(getMetricRowText(container, "Portfolio Value")).toContain("$53.50");
 		expect(container.textContent).not.toContain("$253.50");
 
 		testState.priceStatus = "error";

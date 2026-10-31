@@ -23,6 +23,7 @@ const testState = vi.hoisted(() => ({
 	}),
 	modalProps: null as Record<string, unknown> | null,
 	isMobile: false,
+	popupProps: {} as Record<string, unknown>,
 	marketOrderSlippagePercent: 0.5,
 	formatLocale: "en-US",
 	setMarketOrderSlippagePercent: vi.fn((value: number) => {
@@ -36,6 +37,10 @@ const testState = vi.hoisted(() => ({
 	skipOrderConfirmation: false,
 	setSkipOrderConfirmation: vi.fn((value: boolean) => {
 		testState.skipOrderConfirmation = value;
+	}),
+	transactionDelayProtection: true,
+	setTransactionDelayProtection: vi.fn((value: boolean) => {
+		testState.transactionDelayProtection = value;
 	}),
 	numberInputProps: null as Record<string, unknown> | null,
 	toggleProps: [] as Record<string, unknown>[],
@@ -58,7 +63,10 @@ vi.mock("@sairn/ui", () => ({
 	},
 	ModalContent: ({ children }: { children: ReactNode }) => createElement("div", null, children),
 	ModalHeader: ({ children }: { children: ReactNode }) => createElement("div", null, children),
-	ModalPopup: ({ children }: { children: ReactNode }) => createElement("div", null, children),
+	ModalPopup: ({ children, ...props }: { children: ReactNode } & Record<string, unknown>) => {
+		testState.popupProps = props;
+		return createElement("div", null, children);
+	},
 	ModalTitle: ({ children }: { children: ReactNode }) => createElement("h2", null, children),
 	SegmentedControlItem: ({ children }: { children: ReactNode }) => createElement("div", null, children),
 	SegmentedControls: ({ children }: { children: ReactNode }) => createElement("div", null, children),
@@ -123,10 +131,12 @@ vi.mock("@/stores/use-global-settings-store", () => ({
 		setShowOrderbookInQuote: testState.setShowOrderbookInQuote,
 		setAnimateOrderbook: testState.setAnimateOrderbook,
 		setSkipOrderConfirmation: testState.setSkipOrderConfirmation,
+		setTransactionDelayProtection: testState.setTransactionDelayProtection,
 	}),
 	useMarketOrderSlippagePercent: () => testState.marketOrderSlippagePercent,
 	useNetwork: () => "mainnet",
 	useSkipOrderConfirmation: () => testState.skipOrderConfirmation,
+	useTransactionDelayProtection: () => testState.transactionDelayProtection,
 	useAnimateOrderbook: () => testState.animateOrderbook,
 }));
 
@@ -154,6 +164,8 @@ describe("GlobalSettingsModal", () => {
 		testState.setAnimateOrderbook.mockClear();
 		testState.skipOrderConfirmation = false;
 		testState.setSkipOrderConfirmation.mockClear();
+		testState.transactionDelayProtection = true;
+		testState.setTransactionDelayProtection.mockClear();
 		testState.numberInputProps = null;
 		testState.toggleProps = [];
 		container = document.createElement("div");
@@ -311,6 +323,19 @@ describe("GlobalSettingsModal", () => {
 		expect(testState.setSkipOrderConfirmation).toHaveBeenCalledWith(false);
 	});
 
+	it("keeps transaction delay protection on by default and stores the choice when it is turned off", () => {
+		const toggle = testState.toggleProps.find((props) => props["aria-label"] === "Transaction delay protection");
+
+		expect(toggle?.checked).toBe(true);
+		expect(container.textContent).toContain(
+			"Orders, cancels and other trading actions expire if the exchange has not accepted them within 15 seconds.",
+		);
+
+		act(() => (toggle?.onCheckedChange as ((next: boolean) => void) | undefined)?.(false));
+
+		expect(testState.setTransactionDelayProtection).toHaveBeenCalledExactlyOnceWith(false);
+	});
+
 	it("writes the slippage range with the number-format decimal sign", () => {
 		const rangeId = container.querySelector("input")?.getAttribute("aria-describedby");
 		testState.formatLocale = "de-DE";
@@ -327,6 +352,7 @@ describe("GlobalSettingsModal", () => {
 		expect(testState.numberInputProps?.className).toContain("max-[1000px]:h-8");
 		expect(testState.toggleProps.map((props) => props["aria-label"])).toEqual([
 			"Order confirmation",
+			"Transaction delay protection",
 			"Order book animations",
 		]);
 
@@ -338,6 +364,7 @@ describe("GlobalSettingsModal", () => {
 
 		expect(testState.toggleProps.map((props) => props["aria-label"])).toEqual([
 			"Order confirmation",
+			"Transaction delay protection",
 			"Order book animations",
 			"Order book in quote asset",
 		]);
@@ -356,6 +383,19 @@ describe("GlobalSettingsModal", () => {
 			button?.click();
 		});
 		expect(writeText).toHaveBeenCalledWith(`${APP_VERSION} ${APP_RELEASE_ID} ${APP_BUILD_COMMIT}`);
+	});
+
+	it("opens on the phone with focus on the dialog, not the slippage input, and without the desktop layout reset", () => {
+		testState.isMobile = true;
+		renderModal();
+		const popupRef = testState.popupProps.ref as { current: unknown } | undefined;
+		expect(testState.popupProps.initialFocus).toBe(popupRef);
+		expect(container.textContent).not.toContain("Desktop layout");
+
+		testState.isMobile = false;
+		renderModal();
+		expect(testState.popupProps.initialFocus).toBeUndefined();
+		expect(container.textContent).toContain("Desktop layout");
 	});
 
 	it("hides the order book unit setting on the desktop layout", () => {
@@ -441,6 +481,22 @@ describe("GlobalSettingsModal", () => {
 		for (const [locale, translation] of Object.entries(translations)) {
 			const catalog = readFileSync(resolve(TEST_DIR, "../..", "locales", locale, "messages.po"), "utf8");
 			expect(catalog).toContain(`msgid "Order book animations"\nmsgstr "${translation}"`);
+		}
+	});
+
+	it("ships the transaction delay protection label in every locale catalog", () => {
+		const translations = {
+			en: "Transaction delay protection",
+			zh: "交易延迟保护",
+			ja: "取引遅延保護",
+			hi: "लेनदेन विलंब सुरक्षा",
+			es: "Protección contra retrasos de transacción",
+			fr: "Protection contre les retards de transaction",
+			ar: "الحماية من تأخر المعاملات",
+		};
+		for (const [locale, translation] of Object.entries(translations)) {
+			const catalog = readFileSync(resolve(TEST_DIR, "../..", "locales", locale, "messages.po"), "utf8");
+			expect(catalog).toContain(`msgid "Transaction delay protection"\nmsgstr "${translation}"`);
 		}
 	});
 

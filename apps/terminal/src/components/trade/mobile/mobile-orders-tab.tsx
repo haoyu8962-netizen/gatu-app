@@ -15,7 +15,11 @@ import {
 	validateCancelAllConfirmationSnapshot,
 } from "@/domain/trade/cancel-all-orders-confirmation";
 import { isLiveMarkPriceReady } from "@/domain/trade/market-price";
-import { buildOpenOrderCancelActions, isConfirmedOpenOrderCancelResponse } from "@/domain/trade/open-order-cancel";
+import {
+	buildOpenOrderCancelActions,
+	getPartialOpenOrderCancel,
+	isConfirmedOpenOrderCancelResponse,
+} from "@/domain/trade/open-order-cancel";
 import {
 	getOpenOrderModifyCapabilities,
 	type OpenOrderModifyBlockReason,
@@ -52,13 +56,21 @@ import {
 	useMarketsInfo,
 	useSubscription,
 } from "@/lib/hyperliquid";
-import { isClosePositionOrder, isMarketTriggerOrder, type OpenOrder } from "@/lib/trade/open-orders";
+import {
+	isClosePositionOrder,
+	isMarketTriggerOrder,
+	isStopOrder,
+	isTakeProfitOrder,
+	type OpenOrder,
+} from "@/lib/trade/open-orders";
 import {
 	ensurePendingTradingActionFeedback,
+	settlePartialOrderCancellation,
 	syncPendingTradingActionFeedback,
 	updatePendingTradingActionFeedback,
 } from "@/lib/trade/pending-trading-action-feedback";
 import { classifyTradingActionError } from "@/lib/trade/trading-action-failure";
+import { getTrailingStopConditionLabels } from "@/lib/trade/trailing-stop-condition";
 import type { Side } from "@/lib/trade/types";
 import { useOrderEntryActions } from "@/stores/use-order-entry-store";
 import type { OrderQueueItem } from "@/stores/use-order-queue-store";
@@ -145,8 +157,10 @@ interface ModifyExecutionContext {
 	target: OpenOrderModifyFormTarget;
 	size: string;
 	triggerPrice?: string;
+	limitPrice?: string;
 	normalizedSize: string;
 	normalizedTriggerPrice: string | null;
+	normalizedLimitPrice: string | null;
 	params: ExchangeParams<"batchModify">;
 	session: {
 		clientKey: string;
@@ -265,6 +279,7 @@ export function MobileOrdersTab({ className, disclosureState, scrollMode = "cont
 	const [modifyTarget, setModifyTarget] = useState<OpenOrderModifyFormTarget | null>(null);
 	const [modifySize, setModifySize] = useState("");
 	const [modifyTriggerPrice, setModifyTriggerPrice] = useState<string | undefined>(undefined);
+	const [modifyLimitPrice, setModifyLimitPrice] = useState<string | undefined>(undefined);
 	const [modifyPhase, setModifyPhaseState] = useState<ModifyPhase>("idle");
 	const [modifyValidationError, setModifyValidationErrorState] = useState<OrderValidationError | null>(null);
 	const [modifyValidationActionId, setModifyValidationActionId] = useState<string | null>(null);
@@ -273,6 +288,7 @@ export function MobileOrdersTab({ className, disclosureState, scrollMode = "cont
 	const modifyTargetRef = useRef<OpenOrderModifyFormTarget | null>(null);
 	const modifySizeRef = useRef("");
 	const modifyTriggerPriceRef = useRef<string | undefined>(undefined);
+	const modifyLimitPriceRef = useRef<string | undefined>(undefined);
 	const modifyPhaseRef = useRef<ModifyPhase>("idle");
 	const modifyExecutionRef = useRef<ModifyExecutionContext | null>(null);
 	const localTradingSessionKeyRef = useRef(tradingSessionKey);
@@ -451,8 +467,6 @@ export function MobileOrdersTab({ className, disclosureState, scrollMode = "cont
 			case "order-changed":
 			case "order-not-open":
 				return msg`This order changed or is no longer open. Refresh and try again.`;
-			case "client-order-id":
-				return msg`Orders with a client order ID cannot be modified here. Cancel and replace the order instead.`;
 			case "grouped-order":
 				return msg`Orders with linked TP/SL orders cannot be modified here.`;
 			case "invalid-market-binding":
@@ -463,7 +477,7 @@ export function MobileOrdersTab({ className, disclosureState, scrollMode = "cont
 			case "invalid-owner":
 				return msg`Reconnect the trading account before modifying this order.`;
 			case "invalid-price":
-				return msg`Enter a valid trigger price using the market's price precision.`;
+				return msg`Enter a valid price using the market's price precision.`;
 			case "invalid-size":
 				return msg`Enter a valid size using the market's size precision.`;
 			case "invalid-trigger-direction":
@@ -542,7 +556,12 @@ export function MobileOrdersTab({ className, disclosureState, scrollMode = "cont
 		return { message: getValidationErrorDescriptor(error) };
 	}
 
-	function buildPlanFromLive(target: OpenOrderModifyFormTarget, size: string, triggerPrice: string | undefined) {
+	function buildPlanFromLive(
+		target: OpenOrderModifyFormTarget,
+		size: string,
+		triggerPrice: string | undefined,
+		limitPrice: string | undefined,
+	) {
 		const live = liveModifyContextRef.current;
 		const market = live.getMarketBinding(target.size.order.coin);
 		if (!market) return { status: "blocked", reason: "market-binding-changed", field: null } as const;
@@ -558,6 +577,7 @@ export function MobileOrdersTab({ className, disclosureState, scrollMode = "cont
 			market,
 			size,
 			triggerPrice,
+			limitPrice,
 		});
 	}
 
@@ -569,7 +589,12 @@ export function MobileOrdersTab({ className, disclosureState, scrollMode = "cont
 		if (!isModifyExecutionSessionCurrent(execution, liveModifyContextRef.current)) {
 			throw createValidationErrorCause({ kind: "modify-block", reason: "session-changed" });
 		}
-		const currentPlan = buildPlanFromLive(execution.target, execution.size, execution.triggerPrice);
+		const currentPlan = buildPlanFromLive(
+			execution.target,
+			execution.size,
+			execution.triggerPrice,
+			execution.limitPrice,
+		);
 		if (currentPlan.status === "blocked") {
 			throw createValidationErrorCause({ kind: "modify-block", reason: currentPlan.reason });
 		}
@@ -612,11 +637,13 @@ export function MobileOrdersTab({ className, disclosureState, scrollMode = "cont
 		modifyTargetRef.current = null;
 		modifySizeRef.current = "";
 		modifyTriggerPriceRef.current = undefined;
+		modifyLimitPriceRef.current = undefined;
 		modifyExecutionRef.current = null;
 		modifyPhaseRef.current = "idle";
 		setModifyTarget(null);
 		setModifySize("");
 		setModifyTriggerPrice(undefined);
+		setModifyLimitPrice(undefined);
 		setModifyValidationErrorState(null);
 		setModifyValidationActionId(null);
 		setModifyPhaseState("idle");
@@ -628,10 +655,12 @@ export function MobileOrdersTab({ className, disclosureState, scrollMode = "cont
 		modifyTargetRef.current = null;
 		modifySizeRef.current = "";
 		modifyTriggerPriceRef.current = undefined;
+		modifyLimitPriceRef.current = undefined;
 		modifyExecutionRef.current = null;
 		setModifyTarget(null);
 		setModifySize("");
 		setModifyTriggerPrice(undefined);
+		setModifyLimitPrice(undefined);
 		setModifyValidationError(error, actionId);
 		setModifyPhase("idle");
 	}
@@ -657,13 +686,16 @@ export function MobileOrdersTab({ className, disclosureState, scrollMode = "cont
 		}
 
 		const triggerPrice = result.target.triggerPrice ? order.triggerPx : undefined;
+		const limitPrice = result.target.limitPrice ? order.limitPx : undefined;
 		modifyTargetRef.current = result.target;
 		modifySizeRef.current = order.sz;
 		modifyTriggerPriceRef.current = triggerPrice;
+		modifyLimitPriceRef.current = limitPrice;
 		modifyExecutionRef.current = null;
 		setModifyTarget(result.target);
 		setModifySize(order.sz);
 		setModifyTriggerPrice(triggerPrice);
+		setModifyLimitPrice(limitPrice);
 		setModifyValidationError(null);
 		resetModifyError();
 	}
@@ -694,13 +726,22 @@ export function MobileOrdersTab({ className, disclosureState, scrollMode = "cont
 		resetModifyError();
 	}
 
+	function handleModifyLimitPriceChange(value: string) {
+		if (modifyPhaseRef.current !== "idle") return;
+		modifyLimitPriceRef.current = value;
+		setModifyLimitPrice(value);
+		setModifyValidationError(null);
+		resetModifyError();
+	}
+
 	async function handleConfirmModify() {
 		if (modifyPhaseRef.current !== "idle") return;
 		const target = modifyTargetRef.current;
 		if (!target) return;
 		const size = modifySizeRef.current;
 		const triggerPrice = modifyTriggerPriceRef.current;
-		const plan = buildPlanFromLive(target, size, triggerPrice);
+		const limitPrice = modifyLimitPriceRef.current;
+		const plan = buildPlanFromLive(target, size, triggerPrice, limitPrice);
 		if (plan.status === "blocked") {
 			setModifyValidationError({ kind: "modify-block", reason: plan.reason });
 			return;
@@ -717,8 +758,8 @@ export function MobileOrdersTab({ className, disclosureState, scrollMode = "cont
 			oid: target.size.order.oid,
 			originalSize: target.size.order.sz,
 			originalTriggerPx: target.size.order.triggerPx,
-			expectedSize: plan.normalizedSize,
-			...(plan.normalizedTriggerPrice === null ? {} : { expectedTriggerPx: plan.normalizedTriggerPrice }),
+			originalLimitPx: target.size.order.limitPx,
+			...plan.expectation,
 		});
 		if (!pendingAction) {
 			setModifyValidationError({ kind: "code", code: "previous-modification-unconfirmed" });
@@ -731,8 +772,10 @@ export function MobileOrdersTab({ className, disclosureState, scrollMode = "cont
 			target,
 			size,
 			triggerPrice,
+			limitPrice,
 			normalizedSize: plan.normalizedSize,
 			normalizedTriggerPrice: plan.normalizedTriggerPrice,
+			normalizedLimitPrice: plan.normalizedLimitPrice,
 			params: plan.params,
 			session,
 		};
@@ -797,11 +840,13 @@ export function MobileOrdersTab({ className, disclosureState, scrollMode = "cont
 		modifyTargetRef.current = null;
 		modifySizeRef.current = "";
 		modifyTriggerPriceRef.current = undefined;
+		modifyLimitPriceRef.current = undefined;
 		modifyExecutionRef.current = null;
 		modifyPhaseRef.current = "idle";
 		setModifyTarget(null);
 		setModifySize("");
 		setModifyTriggerPrice(undefined);
+		setModifyLimitPrice(undefined);
 		setModifyValidationErrorState(
 			pending?.phase === "unconfirmed" ? { kind: "code", code: "modification-unconfirmed" } : null,
 		);
@@ -890,7 +935,14 @@ export function MobileOrdersTab({ className, disclosureState, scrollMode = "cont
 			syncPendingTradingActionFeedback({ ...feedbackIdentity, phase: "awaiting" }, "cancel");
 			if (!mountedRef.current || !isCancelExecutionCurrent(execution)) return;
 		} catch (cause) {
-			if (execution.guardPasses >= 2 && isAmbiguousExchangeRequestError(cause)) {
+			const partialCancel = getPartialOpenOrderCancel(cause, execution.params.cancels.length);
+			if (partialCancel) {
+				settlePartialOrderCancellation(
+					feedbackIdentity,
+					execution.orders.map((order) => order.oid),
+					partialCancel,
+				);
+			} else if (execution.guardPasses >= 2 && isAmbiguousExchangeRequestError(cause)) {
 				getPendingTradingActionActions().markOrderCancellationUnconfirmed(execution.actionId);
 				syncPendingTradingActionFeedback({ ...feedbackIdentity, phase: "unconfirmed" }, "cancel");
 				if (mountedRef.current && isCancelExecutionCurrent(execution)) {
@@ -1014,7 +1066,9 @@ export function MobileOrdersTab({ className, disclosureState, scrollMode = "cont
 		setCancelAllOpen(open);
 	}
 
-	const draftModifyPlan = modifyTarget ? buildPlanFromLive(modifyTarget, modifySize, modifyTriggerPrice) : null;
+	const draftModifyPlan = modifyTarget
+		? buildPlanFromLive(modifyTarget, modifySize, modifyTriggerPrice, modifyLimitPrice)
+		: null;
 	const draftModifyError =
 		draftModifyPlan?.status === "blocked" &&
 		draftModifyPlan.reason !== "no-change" &&
@@ -1185,13 +1239,16 @@ export function MobileOrdersTab({ className, disclosureState, scrollMode = "cont
 					typeLabel={getFullOrderTypeLabel(modifyOrder)}
 					sizeValue={modifySize}
 					triggerPriceValue={modifyTriggerPrice}
+					limitPriceValue={modifyLimitPrice}
 					sizeInvalid={draftInvalidField === "size"}
 					triggerPriceInvalid={draftInvalidField === "triggerPrice"}
+					limitPriceInvalid={draftInvalidField === "limitPrice"}
 					isInteractionLocked={isModifyBusy}
 					isConfirmDisabled={isModifyConfirmDisabled}
 					errorMessage={modalError}
 					onSizeChange={handleModifySizeChange}
 					onTriggerPriceChange={handleModifyTriggerPriceChange}
+					onLimitPriceChange={handleModifyLimitPriceChange}
 					onOpenChange={handleModifyOpenChange}
 					onConfirm={handleConfirmModify}
 				/>
@@ -1259,7 +1316,7 @@ function MobileOrderCard({
 	onSelectMarket,
 	onExpandedChange,
 }: MobileOrderCardProps) {
-	const { formatNumber, formatPercent, formatPrice, formatToken } = useNumberFormat();
+	const { formatDecimalString, formatNumber, formatPercent, formatPrice, formatToken } = useNumberFormat();
 	const { i18n, t } = useLingui();
 	const locale = i18n.locale;
 	const detailsId = useId();
@@ -1273,14 +1330,25 @@ function MobileOrderCard({
 		? t`Close Position`
 		: formatToken(order.origSz, { decimals: szDecimals });
 	const priceLabel = isMarketTriggerOrder(order) ? t`Market` : formatPrice(order.limitPx, { szDecimals, marketType });
+	const takeProfitPx = order.children.find(isTakeProfitOrder)?.triggerPx;
+	const stopLossPx = order.children.find(isStopOrder)?.triggerPx;
+	const tpSlLabel = `${formatPrice(takeProfitPx, { szDecimals, marketType })} / ${formatPrice(stopLossPx, { szDecimals, marketType })}`;
 	const triggerOperator = getToolbarTriggerConditionOperator(order.triggerCondition);
-	const triggerConditionLabel = order.isTrigger
+	const standardTriggerConditionLabel = order.isTrigger
 		? triggerOperator
 			? `${triggerOperator} ${formatNumber(order.triggerPx)}`
 			: order.triggerCondition
 				? getTriggerConditionLabel(order.triggerCondition)
 				: FALLBACK_VALUE_PLACEHOLDER
 		: FALLBACK_VALUE_PLACEHOLDER;
+	const trailingStopCondition = getTrailingStopConditionLabels(order, {
+		translate: (descriptor) => t(descriptor),
+		formatPrice: (price) => formatPrice(price, { szDecimals, marketType }),
+		formatDecimalString,
+	});
+	const triggerConditionLabel = trailingStopCondition
+		? [trailingStopCondition.label, trailingStopCondition.watermarkLabel].filter(Boolean).join(" · ")
+		: standardTriggerConditionLabel;
 	const metrics = getToolbarOrderMetrics({
 		isTrigger: order.isTrigger,
 		limitPx: order.limitPx,
@@ -1342,6 +1410,7 @@ function MobileOrderCard({
 						/>
 						<OrderMetric label={t`Original Size`} value={originalSizeLabel} />
 						<OrderMetric label={t`Reduce Only`} value={order.reduceOnly ? t`Yes` : t`No`} />
+						<OrderMetric label={t`TP/SL`} value={tpSlLabel} />
 					</div>
 
 					<div className="flex items-center border-t border-market-close-stroke-card/60 pt-2.5">

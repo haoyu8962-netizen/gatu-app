@@ -210,7 +210,7 @@ describe("entry order SDK execution guard", () => {
 		).toThrow("Trigger price is no longer valid");
 	});
 
-	it("accepts an opening trigger that is not reduce-only and still enforces directional capacity", () => {
+	it("accepts an opening trigger beyond the current directional capacity, as the official terminal does", () => {
 		const opening = triggerOrder(true, "sl", "101");
 		expect(opening.orders[0]?.r).toBe(false);
 		expect(() => assertEntryOrderExecutionAllowed(opening, executionState(), 1_001)).not.toThrow();
@@ -224,7 +224,14 @@ describe("entry order SDK execution guard", () => {
 				executionState({ availability: { kind: "perp", maxBaseBySide: { buy: "0.5", sell: "10" } } }),
 				1_001,
 			),
-		).toThrow("Trading availability changed");
+		).not.toThrow();
+		expect(() =>
+			assertEntryOrderExecutionAllowed(
+				opening,
+				executionState({ availability: { kind: "perp", maxBaseBySide: { buy: undefined, sell: undefined } } }),
+				1_001,
+			),
+		).not.toThrow();
 	});
 
 	it("fails closed for a reduce-only trigger without a fresh matching position", () => {
@@ -697,5 +704,124 @@ describe("open-interest cap SDK re-check", () => {
 		expect(() =>
 			assertEntryTwapExecutionAllowed({ twap: { a: 0, b: true, s: "1", r: false, m: 10, t: false } }, capped(), 1_001),
 		).not.toThrow();
+	});
+});
+
+describe("entry order margin and reference prices (official terminal parity)", () => {
+	function restingLimit(isBuy: boolean, price: string, size: string): OrderParameters {
+		return {
+			orders: [{ a: 0, b: isBuy, p: price, s: size, r: false, t: { limit: { tif: "Gtc" } } }],
+			grouping: "na",
+		};
+	}
+
+	it("lets a buy resting below mark reserve margin at its own price, as the official maximum does", () => {
+		const state = executionState({ availability: { kind: "perp", maxBaseBySide: { buy: "10", sell: "10" } } });
+		expect(() => assertEntryOrderExecutionAllowed(restingLimit(true, "80", "12.5"), state, 1_001)).not.toThrow();
+		expect(() => assertEntryOrderExecutionAllowed(restingLimit(true, "80", "12.501"), state, 1_001)).toThrow(
+			"Trading availability changed",
+		);
+		expect(() => assertEntryOrderExecutionAllowed(restingLimit(true, "120", "10"), state, 1_001)).not.toThrow();
+		expect(() => assertEntryOrderExecutionAllowed(restingLimit(true, "120", "10.001"), state, 1_001)).toThrow(
+			"Trading availability changed",
+		);
+	});
+
+	it("compares a resting order's size at mark when no live mark can value its margin, as before", () => {
+		const stale = executionState({
+			availability: { kind: "perp", maxBaseBySide: { buy: "10", sell: "10" } },
+			markPriceReceivedAt: -60_000,
+		});
+		expect(() => assertEntryOrderExecutionAllowed(restingLimit(true, "80", "12"), stale, 1_001)).toThrow(
+			"Trading availability changed",
+		);
+		expect(() => assertEntryOrderExecutionAllowed(restingLimit(true, "80", "10"), stale, 1_001)).not.toThrow();
+		expect(() => assertEntryOrderExecutionAllowed(restingLimit(false, "125", "10"), stale, 1_001)).not.toThrow();
+		expect(() => assertEntryOrderExecutionAllowed(restingLimit(false, "125", "10"), executionState(), 1_001)).toThrow(
+			"Trading availability changed",
+		);
+	});
+
+	it("holds a sell resting above mark to the margin its own price reserves", () => {
+		const state = executionState({ availability: { kind: "perp", maxBaseBySide: { buy: "10", sell: "10" } } });
+		expect(() => assertEntryOrderExecutionAllowed(restingLimit(false, "125", "8"), state, 1_001)).not.toThrow();
+		expect(() => assertEntryOrderExecutionAllowed(restingLimit(false, "125", "8.001"), state, 1_001)).toThrow(
+			"Trading availability changed",
+		);
+	});
+
+	it("sums a scale order level by level at the price each level rests at", () => {
+		const scale: OrderParameters = {
+			orders: [
+				{ a: 0, b: true, p: "90", s: "6", r: false, t: { limit: { tif: "Gtc" } } },
+				{ a: 0, b: true, p: "110", s: "2", r: false, t: { limit: { tif: "Gtc" } } },
+			],
+			grouping: "na",
+		};
+		const fits = executionState({ availability: { kind: "perp", maxBaseBySide: { buy: "7.4", sell: "10" } } });
+		const tooSmall = executionState({ availability: { kind: "perp", maxBaseBySide: { buy: "7.399", sell: "10" } } });
+		expect(() => assertEntryOrderExecutionAllowed(scale, fits, 1_001)).not.toThrow();
+		expect(() => assertEntryOrderExecutionAllowed(scale, tooSmall, 1_001)).toThrow("Trading availability changed");
+	});
+
+	it("checks a market order's attached TP/SL against the reference price the form built them from", () => {
+		const params: OrderParameters = {
+			orders: [
+				{ a: 0, b: true, p: "102.5", s: "1", r: false, t: { limit: { tif: "FrontendMarket" } } },
+				{
+					a: 0,
+					b: false,
+					p: "90",
+					s: "1",
+					r: true,
+					t: { trigger: { isMarket: true, triggerPx: "100.5", tpsl: "tp" } },
+				},
+			],
+			grouping: "normalTpsl",
+		};
+		const midBelowMark = executionState({ markPx: "101", executionReferencePx: "100" });
+		expect(() => assertEntryOrderExecutionAllowed(params, midBelowMark, 1_001)).not.toThrow();
+
+		const stopLoss: OrderParameters = {
+			...params,
+			orders: [
+				params.orders[0],
+				{
+					a: 0,
+					b: false,
+					p: "90",
+					s: "1",
+					r: true,
+					t: { trigger: { isMarket: true, triggerPx: "100.5", tpsl: "sl" } },
+				},
+			],
+		};
+		expect(() => assertEntryOrderExecutionAllowed(stopLoss, midBelowMark, 1_001)).toThrow(
+			"Trigger price is no longer valid",
+		);
+	});
+
+	it("checks a TWAP's max or min price against its trigger price when one is set", () => {
+		const buyBelowMark = {
+			twap: { a: 0, b: true, s: "2", r: false, m: 10, t: false },
+			details: { t: { p: "95", a: false }, s: "97" },
+		};
+		expect(() => assertEntryTwapExecutionAllowed(buyBelowMark, executionState(), 1_001)).not.toThrow();
+		expect(() =>
+			assertEntryTwapExecutionAllowed(
+				{ ...buyBelowMark, details: { t: { p: "95", a: false }, s: "94" } },
+				executionState(),
+				1_001,
+			),
+		).toThrow("Stop price is no longer valid");
+
+		const sellAboveMark = {
+			twap: { a: 0, b: false, s: "2", r: false, m: 10, t: false },
+			details: { t: { p: "105", a: true }, s: "103" },
+		};
+		expect(() => assertEntryTwapExecutionAllowed(sellAboveMark, executionState(), 1_001)).not.toThrow();
+		expect(() =>
+			assertEntryTwapExecutionAllowed({ ...sellAboveMark, details: { t: null, s: "103" } }, executionState(), 1_001),
+		).toThrow("Stop price is no longer valid");
 	});
 });

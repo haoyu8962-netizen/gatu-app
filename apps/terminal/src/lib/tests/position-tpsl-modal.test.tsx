@@ -1365,6 +1365,7 @@ describe("PositionTpSlModal live data", () => {
 		});
 
 		expect(getButton(container, "Confirm").disabled).toBe(true);
+		expect(container.textContent).not.toContain("Loading...");
 		expect(() =>
 			testState.executionGuards.order?.({
 				grouping: "positionTpsl",

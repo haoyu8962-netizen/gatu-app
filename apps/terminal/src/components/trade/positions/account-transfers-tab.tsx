@@ -32,7 +32,7 @@ export function AccountTransfersTab() {
 	const { i18n, t } = useLingui();
 	const locale = i18n.locale;
 	const numberFormat = useNumberFormat();
-	const { error, isConnected, retry, rows, status } = useAccountLedger();
+	const { canConfirmEmpty, error, isConnected, isRefreshing, retry, rows, status } = useAccountLedger();
 	const { getActionLabel, getLocationLabel } = useAccountLedgerLabels();
 	const { exportCsv, isExporting } = useAccountLedgerCsv();
 	const isTestnet = useIsTestnet();
@@ -45,22 +45,27 @@ export function AccountTransfersTab() {
 		}
 		if (status === "error" || status === "unavailable") {
 			return (
-				<Placeholder variant="error">
-					<span>{t`Failed to load deposits and withdrawals.`}</span>
+				<Placeholder>
 					{historyLimitReached ? (
-						<span className="mt-1 text-xs text-fg-muted">
-							{t`Recent history exceeds the safe display limit. Export CSV to retrieve a larger range.`}
-						</span>
+						<span>{t`Recent history exceeds the safe display limit. Export CSV to retrieve a larger range.`}</span>
 					) : (
-						<Button variant="outline" intent="neutral" size="xxs" className="mt-2" onClick={retry}>
+						<Button variant="outline" intent="neutral" size="xxs" onClick={retry}>
 							{t`Retry`}
 						</Button>
 					)}
 				</Placeholder>
 			);
 		}
-		if (rows.length === 0) return <Placeholder>{t`No deposits or withdrawals found.`}</Placeholder>;
-		return null;
+		if (rows.length > 0) return null;
+		if (canConfirmEmpty) return <Placeholder>{t`No deposits or withdrawals found.`}</Placeholder>;
+		if (isRefreshing) return <PassiveDataPlaceholder busy />;
+		return (
+			<Placeholder>
+				<Button variant="outline" intent="neutral" size="xxs" onClick={retry}>
+					{t`Retry`}
+				</Button>
+			</Placeholder>
+		);
 	}
 
 	const placeholder = renderPlaceholder();

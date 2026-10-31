@@ -74,6 +74,7 @@ function FixtureTradePanel({ feedback, hasPosition, sizeMessage }: FixtureTradeP
 	const [requests, setRequests] = useState(0);
 	const orderEntryData = {
 		availableBalance: 1_000,
+		requiresAvailableBalance: true,
 		baseToken: "CLS_HYPE",
 		capabilities: {
 			allowsCrossMargin: true,
@@ -130,6 +131,9 @@ function FixtureTradePanel({ feedback, hasPosition, sizeMessage }: FixtureTradeP
 					side={side}
 					feeQuote={feeQuote}
 					szDecimals={2}
+					totalSize={size}
+					referencePx={100}
+					baseToken="CLS_HYPE"
 				/>
 			);
 		}

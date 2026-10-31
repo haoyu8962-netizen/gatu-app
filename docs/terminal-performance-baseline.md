@@ -433,6 +433,56 @@ The sixth round (commit `4af147fd`) changed one classification function in the d
 3,286,638 in total (+16), 1,626,663 static trade startup, 117,769 mobile and 201,070 desktop, with the desktop runtime
 increment 918 bytes under its allowance. Later commits on the branch change tests and documents only.
 
+## Audit fixes total-client re-baseline (2026-10-31)
+
+The P1 and P2 fixes of the 2026-10-30 feature audit go to `dev` as one integration pull request
+(`claude/p2-integration`): the six P1 branches of [PR #123](https://github.com/zora4523-bot/gatu-app/pull/123) to
+[#128](https://github.com/zora4523-bot/gatu-app/pull/128), the close-all fixture fix that #124 does not carry yet, and
+five P2 branches. Each P1 pull request passed its own pairing-off CI build, +874 to +3,096 gzip bytes over the
+3,350,598 that `dev` `d99c2bc9` read with CI metadata (+10,225 together), so merged one by one the later ones would
+have run out of the shared allowance. The CI-metadata build of the integration read 3,366,306 (+15,813 over the
+baseline) and failed only the total-client budget.
+
+The three trees were built one after another in their own worktree without `.env.local`, with Node 22.15.0, pnpm
+10.21.0, the fixed identity of the reproduction protocol, `NITRO_PRESET=node-server` and
+`VITE_MOBILE_PAIRING_ENABLED=false`. The middle column is the P1 integration `329f241d` (`dev`, the six P1 branches and
+the fixture fix) that the P2 branches start from:
+
+| Metric | dev `d99c2bc9` | P1 integration `329f241d` | integration `a5aa0d7f` | Change |
+| --- | ---: | ---: | ---: | ---: |
+| All client JS + CSS | 3,350,856 (443 chunks) | 3,359,216 (443 chunks) | 3,366,564 (447 chunks) | +15,708 |
+| Static trade startup | 1,640,991 (101 assets) | 1,643,452 (101 assets) | 1,647,568 (103 assets) | +6,577 |
+| Mobile runtime increment | 118,317 | 118,326 | 118,385 | +68 |
+| Desktop runtime increment | 202,665 | 201,716 | 202,756 | +91 |
+
+The P1 half adds +8,360 (static trade startup +2,461, mobile runtime +9, desktop runtime −949); its six CI builds
+had added up to +10,225 against the CI build of `dev`. The P2 half adds +7,348 (static trade startup +4,116, mobile
+runtime +59, desktop runtime +1,040).
+
+Per-asset comparison of `dev` and the integration, grouped by chunk name without its content hash:
+
+- The six lazy catalogs grow by 4,246 for the new and changed messages; a viewer loads one of them.
+- The English catalog is compiled into `vendor-tanstack-router` together with the other modules Rollup groups beside
+  the router (228 application and `hl-react` modules, the exchange client among them). That chunk grows by 1,541: the
+  English messages, the changed exchange modules it holds and the one module it gains, the exchange server clock of
+  the L1 action expiry ([ADR 0045](adr/0045-l1-action-expiry.md)).
+- The other chunks add +9,921: 44 chunks that change by 100 bytes or more carry +8,627, and 230 smaller changes,
+  mostly renamed imports, +1,294. Rollup regroups shared modules when their importers change, so some chunks
+  disappear or shrink while a neighbour grows by a similar amount: `use-funds-action-availability` (−1,685) and
+  `funds-execution-guard` (+1,488),
+  `action-error` (−1,067) and the new `exchange-error-text` (+1,288), `trading-toolbar-metrics` (−914) and the new
+  `open-orders` (+900), `funding-history` with `account-history` (−796) and the new `funding-position` (+811). The
+  fixes themselves show in the chunks of the order submission feedback (+1,246), Send (+1,006), the history CSV export
+  (+843), the trade page (+761), the account ledger (+746), the vault page (+646) and the order list (+466).
+- No dependency changed: `pnpm-lock.yaml` and every `package.json` are identical to `dev`.
+
+The total-client baseline is raised by the measured +15,708 to 3,366,201; the +363 that `dev` had already used stays
+counted, so the integration reads +363 against the new baseline (its CI-metadata build +105). The startup baselines
+are unchanged: the static trade startup is 3,639 over its baseline (6,361 left), the desktop runtime increment 73 over
+(9,927 left) and the mobile one 7,805 over (2,195 left). Two route surfaces are now close to their allowances, and the
+next growth there needs its own measured re-baseline: `trade-terminal-page` at 126,853 (389 bytes left, +761 here)
+and `vaults-page` at 29,849 (226 left, +646 here, all from the vault fixes of #125).
+
 ## Japanese catalog total-client re-baseline (2026-10-28)
 
 Adding Japanese as a seventh interface language (`claude/japanese-locale`, base `f7423d70`) adds one lazy catalog

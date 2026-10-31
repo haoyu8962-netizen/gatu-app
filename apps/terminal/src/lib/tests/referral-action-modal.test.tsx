@@ -34,7 +34,9 @@ vi.mock("@sairn/ui", () => ({
 	ModalFooter: ({ children }: { children: ReactNode }) => <footer>{children}</footer>,
 	ModalHeader: ({ children }: { children: ReactNode }) => <header>{children}</header>,
 	ModalTitle: ({ children }: { children: ReactNode }) => <h2>{children}</h2>,
-	TextInput: () => <input />,
+	TextInput: ({ value, onChange }: { value?: string; onChange?: (event: { target: { value: string } }) => void }) => (
+		<input aria-label="Referral code" value={value} onChange={onChange} />
+	),
 }));
 
 vi.mock("@/hooks/use-mobile", () => ({ useIsMobile: () => false }));
@@ -65,7 +67,25 @@ describe("ReferralActionModal invitation flow", () => {
 		vi.clearAllMocks();
 	});
 
-	it("shows a deep-linked code for review without submitting it automatically", async () => {
+	it("upper-cases a typed code and ignores characters a code cannot contain", async () => {
+		await act(async () => {
+			root.render(<ReferralActionModal action="create" unclaimedRewards={[]} onClose={vi.fn()} onSubmit={vi.fn()} />);
+		});
+		const input = container.querySelector<HTMLInputElement>('input[aria-label="Referral code"]');
+		if (!input) throw new Error("Referral code input was not rendered");
+		const type = (value: string) =>
+			act(() => {
+				Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set?.call(input, value);
+				input.dispatchEvent(new Event("input", { bubbles: true }));
+			});
+
+		type("sairn");
+		expect(input.value).toBe("SAIRN");
+		type("SAIRN-");
+		expect(input.value).toBe("SAIRN");
+	});
+
+	it("shows a deep-linked code upper-cased for review without submitting it automatically", async () => {
 		const onSubmit = vi.fn().mockResolvedValue(undefined);
 		await act(async () => {
 			root.render(
@@ -79,7 +99,7 @@ describe("ReferralActionModal invitation flow", () => {
 			);
 		});
 
-		expect(container.textContent).toContain("sairnappweb3");
+		expect(container.textContent).toContain("SAIRNAPPWEB3");
 		expect(onSubmit).not.toHaveBeenCalled();
 
 		const confirm = Array.from(container.querySelectorAll("button")).find((button) => button.textContent === "Confirm");
@@ -88,7 +108,7 @@ describe("ReferralActionModal invitation flow", () => {
 			confirm.click();
 		});
 
-		expect(onSubmit).toHaveBeenCalledExactlyOnceWith("apply", "sairnappweb3");
+		expect(onSubmit).toHaveBeenCalledExactlyOnceWith("apply", "SAIRNAPPWEB3");
 	});
 
 	it("keeps a deep-linked code locked when the secondary action is selected", async () => {

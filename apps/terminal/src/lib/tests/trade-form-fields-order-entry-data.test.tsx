@@ -55,6 +55,7 @@ vi.mock("@/components/trade/components/trade-size-slider", () => ({
 import { TradeFormFields } from "@/components/trade/tradebox/trade-form-fields";
 import { TradeHeader } from "@/components/trade/tradebox/trade-header";
 import { useOrderEntryData } from "@/hooks/trade/use-order-entry-data";
+import type { ValidationError } from "@/lib/errors/types";
 import { notifyNumberFormatChange } from "@/lib/number-format-reactivity";
 import { useOrderEntryActions } from "@/stores/use-order-entry-store";
 import { createI18nRoot } from "./harness/react";
@@ -108,10 +109,12 @@ describe("TradeFormFields order-entry data ownership", () => {
 		maxSize = 10,
 		positionSize = 0,
 		swapTargetToken = null,
+		visibleValidationErrors = [],
 	}: {
 		maxSize?: number;
 		positionSize?: number;
 		swapTargetToken?: string | null;
+		visibleValidationErrors?: ValidationError[];
 	}) {
 		const hookOrderEntryData = useOrderEntryData({
 			market: undefined,
@@ -143,7 +146,7 @@ describe("TradeFormFields order-entry data ownership", () => {
 				<output aria-label="Parent margin required">{marginRequired}</output>
 				<TradeFormFields
 					orderEntryData={orderEntryData}
-					visibleValidationErrors={[]}
+					visibleValidationErrors={visibleValidationErrors}
 					price={100}
 					positionSize={positionSize}
 					swapTargetToken={swapTargetToken}
@@ -174,6 +177,58 @@ describe("TradeFormFields order-entry data ownership", () => {
 		container.remove();
 		localStorage.clear();
 		i18n.loadAndActivate({ locale: "en", messages: {} });
+	});
+
+	it("marks the limit and trigger price fields whose price is off the market tick", () => {
+		act(() => root.render(<ParentHarness />));
+		act(() => actions.setOrderType("stopLimit"));
+		const tickError = (id: string): ValidationError => ({
+			id,
+			code: id === "limit-price-tick" ? "INP_006" : "INP_007",
+			severity: "error",
+			category: "input",
+			priority: 105,
+			message: "Price must be a multiple of the tick size",
+		});
+		const trigger = () => container.querySelector<HTMLInputElement>('input[aria-label="Trigger Price (USDC)"]');
+		const invalidInputs = () => [...container.querySelectorAll<HTMLInputElement>('input[aria-invalid="true"]')];
+
+		expect(invalidInputs()).toEqual([]);
+
+		act(() => root.render(<ParentHarness visibleValidationErrors={[tickError("trigger-price-tick")]} />));
+		expect(invalidInputs()).toEqual([trigger()]);
+
+		act(() => root.render(<ParentHarness visibleValidationErrors={[tickError("limit-price-tick")]} />));
+		expect(invalidInputs()).toHaveLength(1);
+		expect(invalidInputs()[0]).not.toBe(trigger());
+	});
+
+	it("marks the TWAP trigger and price limit fields whose price is off the market tick", () => {
+		act(() => root.render(<ParentHarness />));
+		act(() => {
+			actions.setOrderType("twap");
+			actions.setTwapAdvancedEnabled(true);
+		});
+		const tickError = (id: string): ValidationError => ({
+			id,
+			code: id === "twap-trigger-price-tick" ? "INP_008" : "INP_009",
+			severity: "error",
+			category: "input",
+			priority: 107,
+			message: "Price must be a multiple of the tick size",
+		});
+		const invalidLabels = () =>
+			[...container.querySelectorAll<HTMLInputElement>('input[aria-invalid="true"]')].map((input) =>
+				input.getAttribute("aria-label"),
+			);
+
+		expect(invalidLabels()).toEqual([]);
+
+		act(() => root.render(<ParentHarness visibleValidationErrors={[tickError("twap-trigger-price-tick")]} />));
+		expect(invalidLabels()).toEqual(["Trigger Price (USDC)"]);
+
+		act(() => root.render(<ParentHarness visibleValidationErrors={[tickError("twap-stop-price-tick")]} />));
+		expect(invalidLabels()).toEqual(["Max Price (USDC)"]);
 	});
 
 	it("writes the open position size with the number-format separators, truncated to the size decimals", () => {

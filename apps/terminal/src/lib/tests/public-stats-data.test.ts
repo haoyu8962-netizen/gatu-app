@@ -148,9 +148,9 @@ describe("public Hyperliquid stats data", () => {
 			"https://stats-data.hyperliquid.xyz/Mainnet/leaderboard",
 		);
 		expect(getPublicStatsDataUrl("Testnet", "vaults")).toBe("https://stats-data.hyperliquid.xyz/Testnet/vaults");
-		expect(getExplorerAddressUrl(ADDRESS)).toBe(`https://app.hyperliquid.xyz/explorer/address/${ADDRESS}`);
+		expect(getExplorerAddressUrl(ADDRESS, false)).toBe(`https://app.hyperliquid.xyz/explorer/address/${ADDRESS}`);
 		expect(getExplorerAddressUrl(ADDRESS, true)).toBe(
-			`https://testnet.app.hyperliquid.xyz/explorer/address/${ADDRESS}`,
+			`https://app.hyperliquid-testnet.xyz/explorer/address/${ADDRESS}`,
 		);
 		expect(publicStatsDataKeys.leaderboard("Mainnet")).toEqual(["hl", "public-stats", "leaderboard", "Mainnet"]);
 		expect(publicStatsDataKeys.leaderboard("Testnet")).not.toEqual(publicStatsDataKeys.leaderboard("Mainnet"));

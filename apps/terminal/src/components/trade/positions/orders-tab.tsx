@@ -27,7 +27,11 @@ import {
 	validateCancelAllConfirmationSnapshot,
 } from "@/domain/trade/cancel-all-orders-confirmation";
 import { isLiveMarkPriceReady } from "@/domain/trade/market-price";
-import { buildOpenOrderCancelActions, isConfirmedOpenOrderCancelResponse } from "@/domain/trade/open-order-cancel";
+import {
+	buildOpenOrderCancelActions,
+	getPartialOpenOrderCancel,
+	isConfirmedOpenOrderCancelResponse,
+} from "@/domain/trade/open-order-cancel";
 import {
 	buildOpenOrderModifyPlan,
 	createOpenOrderModifyTarget,
@@ -72,10 +76,12 @@ import {
 } from "@/lib/trade/open-orders";
 import {
 	ensurePendingTradingActionFeedback,
+	settlePartialOrderCancellation,
 	syncPendingTradingActionFeedback,
 	updatePendingTradingActionFeedback,
 } from "@/lib/trade/pending-trading-action-feedback";
 import { classifyTradingActionError } from "@/lib/trade/trading-action-failure";
+import { getTrailingStopConditionLabels } from "@/lib/trade/trailing-stop-condition";
 import type { Side } from "@/lib/trade/types";
 import { useOrderEntryActions } from "@/stores/use-order-entry-store";
 import type { OrderQueueItem } from "@/stores/use-order-queue-store";
@@ -206,6 +212,18 @@ function cancelParamsEqual(left: ExchangeParams<"cancel">, right: ExchangeParams
 			return other?.a === cancel.a && other.o === cancel.o;
 		})
 	);
+}
+
+function getModificationExpectation(field: OpenOrderModifyField, value: string) {
+	if (field === "size") return { expectedSize: value };
+	if (field === "limitPrice") return { expectedLimitPx: value };
+	return { expectedTriggerPx: value };
+}
+
+function getOrderEditValue(order: OpenOrder, field: OpenOrderModifyField): string {
+	if (field === "size") return order.sz;
+	if (field === "limitPrice") return order.limitPx;
+	return order.triggerPx;
 }
 
 function getOrderEditTriggerId(oid: number, field: OpenOrderModifyField): string {
@@ -429,8 +447,6 @@ export function OrdersTab({ toolbarTarget }: Props = {}) {
 			case "order-changed":
 			case "order-not-open":
 				return msg`This order changed or is no longer open. Refresh and try again.`;
-			case "client-order-id":
-				return msg`Orders with a client order ID cannot be modified here. Cancel and replace the order instead.`;
 			case "grouped-order":
 				return msg`Orders with linked TP/SL orders cannot be modified here.`;
 			case "invalid-market-binding":
@@ -441,7 +457,7 @@ export function OrdersTab({ toolbarTarget }: Props = {}) {
 			case "invalid-owner":
 				return msg`Reconnect the trading account before modifying this order.`;
 			case "invalid-price":
-				return msg`Enter a valid trigger price using the market's price precision.`;
+				return msg`Enter a valid price using the market's price precision.`;
 			case "invalid-size":
 				return msg`Enter a valid size using the market's size precision.`;
 			case "invalid-trigger-direction":
@@ -777,7 +793,21 @@ export function OrdersTab({ toolbarTarget }: Props = {}) {
 				return next;
 			});
 		} catch (cause) {
-			if (execution.guardPasses >= 2 && isAmbiguousExchangeRequestError(cause)) {
+			const partialCancel = getPartialOpenOrderCancel(cause, execution.params.cancels.length);
+			if (partialCancel) {
+				const canceledOids = settlePartialOrderCancellation(
+					feedbackIdentity,
+					execution.orders.map((order) => order.oid),
+					partialCancel,
+				);
+				if (mountedRef.current && isCancelExecutionCurrent(execution)) {
+					setSelectedOrderIds((prev) => {
+						const next = new Set(prev);
+						for (const oid of canceledOids) next.delete(oid);
+						return next;
+					});
+				}
+			} else if (execution.guardPasses >= 2 && isAmbiguousExchangeRequestError(cause)) {
 				getPendingTradingActionActions().markOrderCancellationUnconfirmed(execution.actionId);
 				syncPendingTradingActionFeedback({ ...feedbackIdentity, phase: "unconfirmed" }, "cancel");
 				if (mountedRef.current && isCancelExecutionCurrent(execution)) {
@@ -908,7 +938,7 @@ export function OrdersTab({ toolbarTarget }: Props = {}) {
 			return;
 		}
 
-		const value = field === "size" ? order.sz : order.triggerPx;
+		const value = getOrderEditValue(order, field);
 		editReturnTargetRef.current = { field, oid: order.oid };
 		editTargetRef.current = result.target;
 		editValueRef.current = value;
@@ -951,9 +981,8 @@ export function OrdersTab({ toolbarTarget }: Props = {}) {
 			oid: target.order.oid,
 			originalSize: target.order.sz,
 			originalTriggerPx: target.order.triggerPx,
-			...(target.field === "size"
-				? { expectedSize: plan.normalizedValue }
-				: { expectedTriggerPx: plan.normalizedValue }),
+			originalLimitPx: target.order.limitPx,
+			...getModificationExpectation(target.field, plan.normalizedValue),
 		});
 		if (!pendingAction) {
 			setModifyValidationError({ kind: "code", code: "previous-modification-unconfirmed" });
@@ -1430,11 +1459,20 @@ function OrderRow({
 		? formatPercent(metrics.markDistanceRatio, { decimals: 1, signDisplay: "exceptZero" })
 		: null;
 	const isNearMark = isToolbarOrderNearMark(metrics.markDistanceRatio);
+	const trailingStopCondition = getTrailingStopConditionLabels(order, {
+		translate: (descriptor) => t(descriptor),
+		formatPrice: (price) => formatPrice(price, { szDecimals, marketType }),
+		formatDecimalString: numberFormat.formatDecimalString,
+	});
 	const triggerConditionLabel =
-		order.isTrigger && order.triggerCondition
+		trailingStopCondition?.label ??
+		(order.isTrigger && order.triggerCondition
 			? (getCurrentOrderTriggerConditionLabel(order.triggerCondition, order.triggerPx, numberFormat) ??
 				getTriggerConditionLabel(order.triggerCondition))
-			: FALLBACK_VALUE_PLACEHOLDER;
+			: FALLBACK_VALUE_PLACEHOLDER);
+	const triggerConditionTooltip = trailingStopCondition?.watermarkLabel
+		? `${triggerConditionLabel} · ${trailingStopCondition.watermarkLabel}`
+		: triggerConditionLabel;
 	const takeProfitPx = order.children.find(isTakeProfitOrder)?.triggerPx;
 	const stopLossPx = order.children.find(isStopOrder)?.triggerPx;
 	const tpSlLabel = `${formatPrice(takeProfitPx, { szDecimals, marketType })} / ${formatPrice(stopLossPx, { szDecimals, marketType })}`;
@@ -1571,9 +1609,43 @@ function OrderRow({
 				size="dense"
 				className={cn(positionsPanelTableCellClass, ordersTableCellClass, "justify-end text-right tabular-nums")}
 			>
-				<span className="font-semibold leading-tight tabular-nums">
-					{isMarketTriggerOrder(order) ? t`Market` : formatPrice(order.limitPx, { szDecimals, marketType })}
-				</span>
+				<div className="relative flex min-w-0 items-center justify-end gap-1">
+					{editField === "limitPrice" ? (
+						<>
+							<span className="h-[33px] w-full" aria-hidden="true" />
+							<OrderInlineEdit
+								value={editValue}
+								inputLabel={t`Edit ${order.coin} order price`}
+								confirmLabel={t`Confirm order price change`}
+								confirmText={t`Confirm`}
+								describedBy={editInvalid ? editErrorId : undefined}
+								disabled={editDisabled}
+								invalid={editInvalid}
+								onChange={onEditValueChange}
+								onCancel={onCancelEdit}
+								onConfirm={onConfirmEdit}
+							/>
+						</>
+					) : (
+						<>
+							<span className="font-semibold leading-tight tabular-nums">
+								{isMarketTriggerOrder(order) ? t`Market` : formatPrice(order.limitPx, { szDecimals, marketType })}
+							</span>
+							{modifyCapabilities.limitPrice.supported ? (
+								<button
+									id={getOrderEditTriggerId(order.oid, "limitPrice")}
+									type="button"
+									className="inline-flex size-4 shrink-0 items-center justify-center rounded-8 text-market-close-subtle transition-colors duration-[120ms] hover:bg-market-close-hover hover:text-market-close-fg focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-market-close-focus disabled:cursor-not-allowed disabled:opacity-50"
+									aria-label={t`Edit ${order.coin} order price`}
+									disabled={editDisabled}
+									onClick={() => onStartEdit(order, "limitPrice")}
+								>
+									<PencilIcon className="size-2.5" aria-hidden="true" />
+								</button>
+							) : null}
+						</>
+					)}
+				</div>
 			</TableCell>
 			<TableCell
 				size="dense"
@@ -1605,7 +1677,7 @@ function OrderRow({
 				) : (
 					<div className="flex min-w-0 flex-col gap-px">
 						<div className="flex min-w-0 items-center gap-1">
-							<Tooltip content={triggerConditionLabel}>
+							<Tooltip content={triggerConditionTooltip}>
 								<span className="truncate whitespace-nowrap tabular-nums text-market-close-fg">
 									{triggerConditionLabel}
 								</span>

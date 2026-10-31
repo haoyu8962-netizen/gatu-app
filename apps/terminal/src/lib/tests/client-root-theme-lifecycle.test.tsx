@@ -7,12 +7,13 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { PRIVY_CONFIG_BY_THEME } from "@/config/privy";
 import { ClientRootProvider } from "@/providers/client-root";
-import { useSetTheme, useTheme } from "@/stores/use-global-settings-store";
+import { useGlobalSettingsActions, useSetTheme, useTheme } from "@/stores/use-global-settings-store";
 
 const runtime = vi.hoisted(() => ({
 	childMounts: 0,
 	childUnmounts: 0,
 	privyConfigs: [] as PrivyClientConfig[],
+	transactionDelayProtectionReader: undefined as (() => boolean) | undefined,
 }));
 
 vi.mock("@sairn/hl-react", () => ({
@@ -20,6 +21,9 @@ vi.mock("@sairn/hl-react", () => ({
 	HyperliquidExchangePolicyProvider: ({ children }: { children: React.ReactNode }) => children,
 	HyperliquidOwnerSignerProvider: ({ children }: { children: React.ReactNode }) => children,
 	HyperliquidProvider: ({ children }: { children: React.ReactNode }) => children,
+	setTransactionDelayProtectionReader: (read: () => boolean) => {
+		runtime.transactionDelayProtectionReader = read;
+	},
 	subscribeMobileAgentEnded: () => () => undefined,
 	useHyperliquid: () => ({ clientKey: "disconnected", env: "Mainnet", sessionMode: "disconnected" }),
 	useLegalStatusLifecycle: () => undefined,
@@ -147,6 +151,27 @@ describe("ClientRootProvider theme lifecycle", () => {
 		queryClient.clear();
 		container.remove();
 		window.localStorage.clear();
+	});
+
+	it("lets the exchange clients read the stored transaction delay protection choice", () => {
+		let actions: ReturnType<typeof useGlobalSettingsActions> | undefined;
+		function ActionsProbe() {
+			actions = useGlobalSettingsActions();
+			return null;
+		}
+		act(() => {
+			root.render(
+				<ClientRootProvider queryClient={queryClient}>
+					<ActionsProbe />
+				</ClientRootProvider>,
+			);
+		});
+
+		expect(runtime.transactionDelayProtectionReader?.()).toBe(true);
+		act(() => actions?.setTransactionDelayProtection(false));
+		expect(runtime.transactionDelayProtectionReader?.()).toBe(false);
+		act(() => actions?.setTransactionDelayProtection(true));
+		expect(runtime.transactionDelayProtectionReader?.()).toBe(true);
 	});
 
 	it("passes the current theme's Privy config without remounting the application", () => {

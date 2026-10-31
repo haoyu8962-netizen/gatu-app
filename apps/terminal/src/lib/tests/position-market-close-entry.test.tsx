@@ -86,6 +86,7 @@ describe("PositionRow market close entry", () => {
 							onShare,
 							onLimitClose,
 							onReverse,
+							reverseBlocked: false,
 							onOpenTpSl,
 							onAdjustMargin,
 							onSelectMarket: vi.fn(),
@@ -202,6 +203,7 @@ describe("PositionRow market close entry", () => {
 							onShare: vi.fn(),
 							onLimitClose,
 							onReverse: vi.fn(),
+							reverseBlocked: false,
 							onOpenTpSl: vi.fn(),
 							onAdjustMargin: vi.fn(),
 							onSelectMarket: vi.fn(),
@@ -265,6 +267,7 @@ describe("PositionRow market close entry", () => {
 							onShare: vi.fn(),
 							onLimitClose: vi.fn(),
 							onReverse: vi.fn(),
+							reverseBlocked: false,
 							onOpenTpSl: vi.fn(),
 							onAdjustMargin: vi.fn(),
 							onSelectMarket: vi.fn(),
@@ -304,6 +307,7 @@ describe("PositionRow market close entry", () => {
 							onShare: vi.fn(),
 							onLimitClose: vi.fn(),
 							onReverse: vi.fn(),
+							reverseBlocked: false,
 							onOpenTpSl: vi.fn(),
 							onAdjustMargin: vi.fn(),
 							onSelectMarket: vi.fn(),
@@ -319,6 +323,50 @@ describe("PositionRow market close entry", () => {
 		act(() => render("priceChange"));
 		expect(container.textContent).toMatch(/2\.9%/);
 		expect(container.textContent).not.toMatch(/33\.7%/);
+	});
+
+	it("states a HIP-3 position's PNL, margin and funding in the DEX collateral", () => {
+		const collateralMarkets = {
+			getMarket: () => ({ ...markets.getMarket("xyz:CXMT"), quoteToken: { displayName: "USDE" } }),
+		} as unknown as Markets;
+		act(() =>
+			root.render(
+				createElement(
+					"table",
+					null,
+					createElement(
+						"tbody",
+						null,
+						createElement(PositionRow, {
+							position,
+							env: "Mainnet",
+							isDataStale: false,
+							markets: collateralMarkets,
+							markPx: "7.575900",
+							markPriceStatus: "success",
+							tpSlInfo: undefined,
+							isRowClosing: false,
+							isEven: false,
+							pnlMode: "roe",
+							onMarketClose: vi.fn(),
+							onShare: vi.fn(),
+							onLimitClose: vi.fn(),
+							onReverse: vi.fn(),
+							reverseBlocked: false,
+							onOpenTpSl: vi.fn(),
+							onAdjustMargin: vi.fn(),
+							onSelectMarket: vi.fn(),
+						}),
+					),
+				),
+			),
+		);
+
+		const text = container.textContent ?? "";
+		expect(text).toContain("-46.18 USDE");
+		expect(text).toContain("137.19 USDE");
+		expect(text).toMatch(/[+-]22\.59 USDE/);
+		expect(text).not.toContain("$");
 	});
 
 	it("disables PNL sharing while the position stream is stale", () => {
@@ -345,6 +393,7 @@ describe("PositionRow market close entry", () => {
 							onShare: vi.fn(),
 							onLimitClose: vi.fn(),
 							onReverse: vi.fn(),
+							reverseBlocked: false,
 							onOpenTpSl: vi.fn(),
 							onAdjustMargin: vi.fn(),
 							onSelectMarket: vi.fn(),
@@ -389,6 +438,7 @@ describe("PositionRow market close entry", () => {
 							onShare: vi.fn(),
 							onLimitClose,
 							onReverse,
+							reverseBlocked: false,
 							onOpenTpSl,
 							onAdjustMargin,
 							onSelectMarket: vi.fn(),
@@ -410,5 +460,49 @@ describe("PositionRow market close entry", () => {
 		expect(onReverse).not.toHaveBeenCalled();
 		expect(onOpenTpSl).not.toHaveBeenCalled();
 		expect(onAdjustMargin).not.toHaveBeenCalled();
+	});
+
+	it("keeps Reverse disabled while trading is blocked in the region but leaves closing available", () => {
+		const onReverse = vi.fn();
+		const onMarketClose = vi.fn();
+
+		act(() => {
+			root.render(
+				createElement(
+					"table",
+					null,
+					createElement(
+						"tbody",
+						null,
+						createElement(PositionRow, {
+							position,
+							env: "Mainnet",
+							isDataStale: false,
+							markets,
+							markPx: "7.575900",
+							markPriceStatus: "success",
+							tpSlInfo: undefined,
+							isRowClosing: false,
+							isEven: false,
+							pnlMode: "roe",
+							onMarketClose,
+							onShare: vi.fn(),
+							onLimitClose: vi.fn(),
+							onReverse,
+							reverseBlocked: true,
+							onOpenTpSl: vi.fn(),
+							onAdjustMargin: vi.fn(),
+							onSelectMarket: vi.fn(),
+						}),
+					),
+				),
+			);
+		});
+
+		const reverse = container.querySelector<HTMLButtonElement>('button[aria-label="Reverse Position"]');
+		expect(reverse?.disabled).toBe(true);
+		act(() => reverse?.click());
+		expect(onReverse).not.toHaveBeenCalled();
+		expect(container.querySelector<HTMLButtonElement>('button[aria-label="Market Close"]')?.disabled).toBe(false);
 	});
 });

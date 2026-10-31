@@ -36,6 +36,7 @@ export {
 	getInfoClient,
 	getSubscriptionClient,
 	initializeClients,
+	setTransactionDelayProtectionReader,
 	subscribeWsReconnect,
 	warmL2BookSubscription,
 } from "./clients";

@@ -38,7 +38,6 @@ const REVIEWED_PROGRESS_LABELS: Record<string, { labels: string[]; reason: strin
 		reason: "Enable Trading signature, prerequisite of the order button",
 	},
 	"positions/position-pnl-share-modal.tsx": { labels: ["Saving..."], reason: "image export" },
-	"positions/position-tpsl-modal.tsx": { labels: ["Loading..."], reason: "passive mark price loading" },
 	"tradebox/bridge/asset-selection-screen.tsx": {
 		labels: ["Loading balances across all chains..."],
 		reason: "passive loading",

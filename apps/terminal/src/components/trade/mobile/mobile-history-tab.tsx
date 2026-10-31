@@ -16,8 +16,9 @@ import { cn } from "@/lib/cn";
 import { buildCsvRows } from "@/lib/csv";
 import { formatDateTimeShort, useNumberFormat } from "@/lib/format";
 import { getExplorerTxUrl, useMarkets } from "@/lib/hyperliquid";
-import { toNumber } from "@/lib/trade/numbers";
-import { getUserFillKey, hasUserFillExplorerTransaction } from "@/lib/trade/user-fills";
+import { getFillDirectionPresentation, getFillDirectionTone } from "@/lib/trade/fill-direction";
+import { getMarketPriceFormatOptions } from "@/lib/trade/market-price-format";
+import { getUserFillKey, getUserFillNetClosedPnl, hasUserFillExplorerTransaction } from "@/lib/trade/user-fills";
 import { getMarketCloseValueColorClass } from "@/lib/ui/value-color";
 import { useIsTestnet } from "@/stores/use-global-settings-store";
 import { MobileBulkDisclosureActions } from "./mobile-bulk-disclosure-actions";
@@ -42,9 +43,8 @@ const filterTriggerClassName = MOBILE_FILTER_CHIP_CLASS;
 const footerActionClassName =
 	"relative inline-flex h-[38px] min-h-0 items-center text-xs text-market-close-muted transition-colors duration-[120ms] after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] active:text-market-close-fg focus-visible:rounded-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-focus disabled:cursor-not-allowed disabled:text-market-close-subtle";
 
-function getTradeHistoryType(fill: UserFill): Exclude<TradeHistoryTypeFilter, "all"> {
-	if (fill.liquidation) return "liquidation";
-	return "trade";
+function getTradeHistoryType(fill: UserFill, owner: string | undefined): Exclude<TradeHistoryTypeFilter, "all"> {
+	return getFillDirectionTone(fill, owner) === "liquidation" ? "liquidation" : "trade";
 }
 
 function isTradeHistoryTypeFilter(value: string | null): value is TradeHistoryTypeFilter {
@@ -78,7 +78,7 @@ function MobileHistoryTabContent({
 	ownerKey,
 	scrollMode = "contained",
 }: MobileHistoryTabContentProps) {
-	const { formatNumber, formatToken, formatUSD } = useNumberFormat();
+	const { formatNumber, formatPrice, formatToken, formatUSD } = useNumberFormat();
 	const { i18n, t } = useLingui();
 	const locale = i18n.locale;
 	const { error, fills, isConnected, isOffline, isStale, status } = useUserFills();
@@ -93,7 +93,7 @@ function MobileHistoryTabContent({
 	const filteredFills = fills
 		.filter(
 			(fill) =>
-				(typeFilter === "all" || getTradeHistoryType(fill) === typeFilter) &&
+				(typeFilter === "all" || getTradeHistoryType(fill, address) === typeFilter) &&
 				(directionFilter === "all" || (directionFilter === "buy") === (fill.side === "B")) &&
 				(roleFilter === "all" || (roleFilter === "taker") === fill.crossed),
 		)
@@ -137,12 +137,8 @@ function MobileHistoryTabContent({
 		return t`Trade`;
 	}
 
-	function getDirectionLabel(direction: string) {
-		if (direction === "Open Long") return t`Open Long`;
-		if (direction === "Close Long") return t`Close Long`;
-		if (direction === "Open Short") return t`Open Short`;
-		if (direction === "Close Short") return t`Close Short`;
-		return direction;
+	function getDirection(fill: UserFill) {
+		return getFillDirectionPresentation(fill, address, (descriptor) => t(descriptor));
 	}
 
 	const { exportCsv, isExporting } = useUserFillsCsvExport({
@@ -151,7 +147,7 @@ function MobileHistoryTabContent({
 			buildCsvRows(
 				exportFills.filter(
 					(fill) =>
-						(typeFilter === "all" || getTradeHistoryType(fill) === typeFilter) &&
+						(typeFilter === "all" || getTradeHistoryType(fill, address) === typeFilter) &&
 						(directionFilter === "all" || (directionFilter === "buy") === (fill.side === "B")) &&
 						(roleFilter === "all" || (roleFilter === "taker") === fill.crossed),
 				),
@@ -160,7 +156,7 @@ function MobileHistoryTabContent({
 					{ header: t`Asset`, getValue: (fill) => fill.coin },
 					{
 						header: t`Direction`,
-						getValue: (fill) => (fill.liquidation ? t`Liquidated` : getDirectionLabel(fill.dir)),
+						getValue: (fill) => getDirection(fill).label,
 					},
 					{ header: t`Type`, getValue: () => t`Trade` },
 					{ header: t`Price`, getValue: (fill) => fill.px },
@@ -293,11 +289,10 @@ function MobileHistoryTabContent({
 								const cardKey = getUserFillKey(fill);
 								const detailsId = `mobile-trade-history-${fill.hash}-${fill.tid}`;
 								const isExpanded = expandedKeys.has(cardKey);
-								const closedPnl = toNumber(fill.closedPnl);
-								const showPnl = closedPnl !== null && closedPnl !== 0;
-								const isLiquidation = !!fill.liquidation;
+								const closedPnl = getUserFillNetClosedPnl(fill, markets.getMarket(fill.coin));
+								const showPnl = closedPnl !== null;
+								const direction = getDirection(fill);
 								const isBuy = fill.side === "B";
-								const directionLabel = getDirectionLabel(fill.dir);
 								const explorerUrl = hasUserFillExplorerTransaction(fill)
 									? getExplorerTxUrl(fill.hash, isTestnet)
 									: null;
@@ -357,20 +352,20 @@ function MobileHistoryTabContent({
 														<div
 															className={cn(
 																"truncate whitespace-nowrap text-xs font-semibold leading-[17px]",
-																isLiquidation
+																direction.tone === "liquidation"
 																	? "text-market-close-danger"
 																	: isBuy
 																		? "text-market-close-success"
 																		: "text-market-close-danger",
 															)}
 														>
-															{isLiquidation ? t`Liquidated` : directionLabel}
+															{direction.label}
 														</div>
 													</div>
 													<div className="min-w-0">
 														<div className="truncate text-3xs leading-[14px] text-market-close-subtle">{t`Price`}</div>
 														<div className="truncate whitespace-nowrap text-xs font-semibold leading-[17px] text-market-close-fg tabular-nums">
-															{formatUSD(fill.px)}
+															{formatPrice(fill.px, getMarketPriceFormatOptions(markets.getMarket(fill.coin)))}
 														</div>
 													</div>
 													<div className="min-w-0">

@@ -6,6 +6,8 @@ import { type ReactNode, Suspense, useMemo, useState } from "react";
 import { DashboardHeader, FooterBar, GlobalModals } from "@/components/dashboard/dashboard-chrome";
 import { DashboardFrameView } from "@/components/dashboard/dashboard-frame-view";
 import { AssetBadge } from "@/components/trade/components/asset-badge";
+import { HistoryPageUnavailable } from "@/components/ui/history-page-unavailable";
+import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { DASHBOARD_FRAMES } from "@/config/dashboard-frames";
 import { getToolbarAbsoluteSize } from "@/domain/trade/trading-toolbar-metrics";
 import { useFundingHistory } from "@/hooks/trade/use-funding-history";
@@ -16,6 +18,7 @@ import { cn } from "@/lib/cn";
 import { buildCsvRows } from "@/lib/csv";
 import { formatDateTimeShort, shortenAddress, useNumberFormat } from "@/lib/format";
 import { useMarkets } from "@/lib/hyperliquid";
+import { getFundingCollateralSymbol } from "@/lib/trade/collateral-amount";
 import {
 	DEFAULT_FUNDING_HISTORY_PAGE_SIZE,
 	FUNDING_HISTORY_PAGE_SIZES,
@@ -29,6 +32,7 @@ import {
 	isFundingHistoryPageSize,
 	isFundingHistorySideFilter,
 } from "@/lib/trade/funding-history";
+import { getFundingPositionPresentation, getFundingSideLabel } from "@/lib/trade/funding-position";
 import { getUserFundingKey } from "@/lib/trade/user-funding";
 import { getMarketCloseValueColorClass } from "@/lib/ui/value-color";
 import { useIsTestnet } from "@/stores/use-global-settings-store";
@@ -76,21 +80,18 @@ export function FundingHistoryPage({ address }: Props) {
 				{ header: t`Time`, getValue: (funding) => formatDateTimeShort(funding.time, { locale: i18n.locale }) },
 				{ header: t`Asset`, getValue: (funding) => funding.coin },
 				{
-					header: t`Position`,
-					getValue: (funding) => {
-						const market = markets.getMarket(funding.coin);
-						return formatToken(getToolbarAbsoluteSize(funding.szi), {
-							decimals: market?.szDecimals,
-							symbol: market?.shortName,
-						});
-					},
-				},
-				{
-					header: t`Rate`,
+					header: t`Side`,
 					getValue: (funding) =>
-						formatPercent(funding.fundingRate, { maximumFractionDigits: 4, minimumFractionDigits: 4 }),
+						getFundingSideLabel(funding.szi, (descriptor) => t(descriptor)) ?? FALLBACK_VALUE_PLACEHOLDER,
 				},
-				{ header: t`Payment`, getValue: (funding) => formatToken(funding.usdc, { symbol: "USDC" }) },
+				{ header: t`Size`, getValue: (funding) => getToolbarAbsoluteSize(funding.szi) ?? funding.szi },
+				{ header: t`Rate`, getValue: (funding) => funding.fundingRate },
+				{ header: t`Payment`, getValue: (funding) => funding.usdc },
+				{
+					header: t`Payment Token`,
+					getValue: (funding) =>
+						getFundingCollateralSymbol(funding.coin, markets.getMarket(funding.coin)) ?? FALLBACK_VALUE_PLACEHOLDER,
+				},
 			]),
 	});
 
@@ -113,6 +114,12 @@ export function FundingHistoryPage({ address }: Props) {
 		setRequestedPage(1);
 	}
 
+	function getUnconfirmedEmptyDescription() {
+		if (history.isOffline) return t`You are offline. Funding payments will load when the connection returns.`;
+		if (history.isRefreshing) return t`Loading funding payments`;
+		return t`The requested 30-day window could not be verified. No partial history is shown.`;
+	}
+
 	let content: ReactNode;
 	if (history.status === "disabled") {
 		content = (
@@ -128,18 +135,12 @@ export function FundingHistoryPage({ address }: Props) {
 		);
 	} else if (history.status === "offline") {
 		content = (
-			<div className="flex min-h-80 flex-col items-center justify-center px-6 text-center">
-				<output aria-live="polite" className="sr-only">
-					<Trans>You are offline. Funding payments will load when the connection returns.</Trans>
-				</output>
-				<WarningCircleIcon className="size-9 text-warning" weight="fill" />
-				<h2 className="mt-3 text-lg font-bold text-fg">
-					<Trans>You are offline</Trans>
-				</h2>
-				<p className="mt-1 max-w-lg text-xs leading-5 text-fg-muted">
-					<Trans>Funding payments will load automatically when the connection returns.</Trans>
-				</p>
-			</div>
+			<HistoryPageUnavailable
+				offline
+				refreshing={false}
+				description={t`You are offline. Funding payments will load when the connection returns.`}
+				onRetry={history.refresh}
+			/>
 		);
 	} else if (history.status === "loading") {
 		content = (
@@ -157,18 +158,21 @@ export function FundingHistoryPage({ address }: Props) {
 		);
 	} else if (history.status === "error") {
 		content = (
-			<div role="alert" className="flex min-h-80 flex-col items-center justify-center px-6 text-center">
-				<WarningCircleIcon className="size-9 text-error" weight="fill" />
-				<h2 className="mt-3 text-lg font-bold text-fg">
-					<Trans>Funding payments are unavailable</Trans>
-				</h2>
-				<p className="mt-1 max-w-lg text-xs leading-5 text-fg-muted">
-					<Trans>The requested 30-day window could not be verified. No partial history is shown.</Trans>
-				</p>
-				<Button className="mt-4" onClick={history.refresh}>
-					<Trans>Retry</Trans>
-				</Button>
-			</div>
+			<HistoryPageUnavailable
+				offline={false}
+				refreshing={false}
+				description={t`The requested 30-day window could not be verified. No partial history is shown.`}
+				onRetry={history.refresh}
+			/>
+		);
+	} else if (history.fundings.length === 0 && (history.error || history.isOffline || history.isRefreshing)) {
+		content = (
+			<HistoryPageUnavailable
+				offline={history.isOffline}
+				refreshing={history.isRefreshing}
+				description={getUnconfirmedEmptyDescription()}
+				onRetry={history.refresh}
+			/>
 		);
 	} else if (history.fundings.length === 0) {
 		content = (
@@ -187,15 +191,6 @@ export function FundingHistoryPage({ address }: Props) {
 	} else {
 		content = (
 			<>
-				{history.error || history.isOffline ? (
-					<div role="alert" className="border-b border-warning/30 bg-warning/10 px-4 py-2 text-xs text-warning">
-						{history.isOffline ? (
-							<Trans>You are offline. Previously loaded funding payments remain visible.</Trans>
-						) : (
-							<Trans>Refresh failed. Previously loaded funding payments remain visible.</Trans>
-						)}
-					</div>
-				) : null}
 				<div className="flex flex-wrap gap-3 border-b border-stroke-weak px-4 py-3">
 					<Select
 						size="sm"
@@ -240,6 +235,9 @@ export function FundingHistoryPage({ address }: Props) {
 						<div className="divide-y divide-stroke-weak min-[1001px]:hidden">
 							{pagination.rows.map((funding) => {
 								const market = markets.getMarket(funding.coin);
+								const position = getFundingPositionPresentation(funding.szi, market, formatToken, (descriptor) =>
+									t(descriptor),
+								);
 								return (
 									<article key={getUserFundingKey(funding)} className="px-4 py-3">
 										<div className="flex min-w-0 items-center justify-between gap-3">
@@ -260,12 +258,17 @@ export function FundingHistoryPage({ address }: Props) {
 													<Trans>Position</Trans>
 												</dt>
 												<dd className="mt-0.5 truncate text-xs font-semibold tabular-nums text-fg">
-													<bdi dir="ltr">
-														{formatToken(getToolbarAbsoluteSize(funding.szi), {
-															decimals: market?.szDecimals,
-															symbol: market?.shortName,
-														})}
-													</bdi>
+													{position.sideLabel ? (
+														<span
+															className={cn(
+																"me-1",
+																position.side === "long" ? "text-market-close-success" : "text-market-close-danger",
+															)}
+														>
+															{position.sideLabel}
+														</span>
+													) : null}
+													<bdi dir="ltr">{position.size}</bdi>
 												</dd>
 											</div>
 											<div className="min-w-0">
@@ -291,7 +294,11 @@ export function FundingHistoryPage({ address }: Props) {
 														getMarketCloseValueColorClass(funding.usdc),
 													)}
 												>
-													<bdi dir="ltr">{formatToken(funding.usdc, { symbol: "USDC" })}</bdi>
+													<bdi dir="ltr">
+														{formatToken(funding.usdc, {
+															symbol: getFundingCollateralSymbol(funding.coin, market) ?? undefined,
+														})}
+													</bdi>
 												</dd>
 											</div>
 										</dl>
@@ -338,6 +345,9 @@ export function FundingHistoryPage({ address }: Props) {
 								<TableBody>
 									{pagination.rows.map((funding) => {
 										const market = markets.getMarket(funding.coin);
+										const position = getFundingPositionPresentation(funding.szi, market, formatToken, (descriptor) =>
+											t(descriptor),
+										);
 										return (
 											<TableRow
 												key={getUserFundingKey(funding)}
@@ -353,12 +363,17 @@ export function FundingHistoryPage({ address }: Props) {
 													/>
 												</TableCell>
 												<TableCell className="px-3 py-0 text-right text-fg">
-													<bdi dir="ltr">
-														{formatToken(getToolbarAbsoluteSize(funding.szi), {
-															decimals: market?.szDecimals,
-															symbol: market?.shortName,
-														})}
-													</bdi>
+													{position.sideLabel ? (
+														<span
+															className={cn(
+																"me-1",
+																position.side === "long" ? "text-market-close-success" : "text-market-close-danger",
+															)}
+														>
+															{position.sideLabel}
+														</span>
+													) : null}
+													<bdi dir="ltr">{position.size}</bdi>
 												</TableCell>
 												<TableCell className="px-3 py-0 text-right text-fg-muted">
 													<bdi dir="ltr">
@@ -374,7 +389,11 @@ export function FundingHistoryPage({ address }: Props) {
 														getMarketCloseValueColorClass(funding.usdc),
 													)}
 												>
-													<bdi dir="ltr">{formatToken(funding.usdc, { symbol: "USDC" })}</bdi>
+													<bdi dir="ltr">
+														{formatToken(funding.usdc, {
+															symbol: getFundingCollateralSymbol(funding.coin, market) ?? undefined,
+														})}
+													</bdi>
 												</TableCell>
 												<TableCell className="px-5 py-0 text-right text-xs text-fg-muted">
 													{formatDateTimeShort(funding.time, { locale })}

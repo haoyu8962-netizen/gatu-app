@@ -9,6 +9,7 @@ interface ButtonContentInput {
 	isConnected: boolean;
 	availableBalance: number;
 	reduceOnly?: boolean;
+	requiresAvailableBalance?: boolean;
 	isBalanceLoading?: boolean;
 	hasBalanceError?: boolean;
 	isAwaitingFirstDeposit?: boolean;
@@ -54,6 +55,7 @@ export function useButtonContent(input: ButtonContentInput): ButtonContent {
 			isBalanceLoading: input.isBalanceLoading === true,
 			availableBalance: input.availableBalance,
 			reduceOnly: input.reduceOnly,
+			requiresAvailableBalance: input.requiresAvailableBalance,
 			isAwaitingFirstDeposit: input.isAwaitingFirstDeposit === true,
 		});
 
@@ -102,6 +104,7 @@ export function useButtonContent(input: ButtonContentInput): ButtonContent {
 		input.isConnected,
 		input.availableBalance,
 		input.reduceOnly,
+		input.requiresAvailableBalance,
 		input.isBalanceLoading,
 		input.hasBalanceError,
 		input.isAwaitingFirstDeposit,

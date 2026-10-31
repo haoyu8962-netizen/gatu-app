@@ -21,6 +21,7 @@ describe("pending trading action store", () => {
 			oid: 42,
 			originalSize: "2",
 			originalTriggerPx: "0",
+			originalLimitPx: "100",
 			expectedSize: "1",
 		};
 		expect(actions.claimModification(input)).not.toBeNull();
@@ -38,6 +39,7 @@ describe("pending trading action store", () => {
 			oid: 42,
 			originalSize: "2",
 			originalTriggerPx: "0",
+			originalLimitPx: "100",
 			expectedSize: "1",
 		});
 		if (!modification) throw new Error("Expected modification claim");
@@ -59,6 +61,7 @@ describe("pending trading action store", () => {
 			oid: 42,
 			originalSize: "2",
 			originalTriggerPx: "0",
+			originalLimitPx: "100",
 			expectedSize: "1",
 		});
 		expect(modification).not.toBeNull();
@@ -71,6 +74,7 @@ describe("pending trading action store", () => {
 				oid: 42,
 				originalSize: "2",
 				originalTriggerPx: "0",
+				originalLimitPx: "100",
 				expectedSize: "1",
 			}),
 		).toBeNull();
@@ -86,6 +90,7 @@ describe("pending trading action store", () => {
 				oid: 42,
 				originalSize: "2",
 				originalTriggerPx: "0",
+				originalLimitPx: "100",
 				expectedSize: "1",
 			}),
 		).toBeNull();
@@ -99,6 +104,7 @@ describe("pending trading action store", () => {
 			oid: 42,
 			originalSize: "2",
 			originalTriggerPx: "0",
+			originalLimitPx: "100",
 			expectedSize: "1",
 		});
 		if (!modification) throw new Error("Expected modification claim");
@@ -114,9 +120,27 @@ describe("pending trading action store", () => {
 				oid: 42,
 				originalSize: "2",
 				originalTriggerPx: "0",
+				originalLimitPx: "100",
 				expectedSize: "1",
 			}),
 		).not.toBeNull();
+	});
+
+	it("narrows a cancellation to its canceled orders and releases the rest", () => {
+		const actions = getPendingTradingActionActions();
+		const cancellation = actions.claimOrderCancellation({ env: "Mainnet", owner: OWNER, oids: [1, 2, 3] });
+		const other = actions.claimOrderCancellation({ env: "Mainnet", owner: OWNER, oids: [4] });
+		expect(cancellation && other).toBeTruthy();
+
+		const partialResult = { acceptedCount: 2, totalCount: 3, errors: [{ index: 1, text: "Order was never placed." }] };
+		actions.narrowOrderCancellation(cancellation?.id ?? "", [3, 1, 9], partialResult);
+		expect(getPendingTradingActionSnapshot().orderCancellations.map((action) => action.oids)).toEqual([[1, 3], [4]]);
+		expect(getPendingTradingActionSnapshot().orderCancellations[0]?.partialResult).toEqual(partialResult);
+		expect(getPendingTradingActionSnapshot().orderCancellations[1]?.partialResult).toBeUndefined();
+		expect(actions.claimOrderCancellation({ env: "Mainnet", owner: OWNER, oids: [2] })).not.toBeNull();
+
+		actions.narrowOrderCancellation(other?.id ?? "", [], partialResult);
+		expect(getPendingTradingActionSnapshot().orderCancellations.map((action) => action.id)).not.toContain(other?.id);
 	});
 
 	it("expires only a currently awaiting action and reports whether the transition occurred", () => {
@@ -127,6 +151,7 @@ describe("pending trading action store", () => {
 			oid: 50,
 			originalSize: "2",
 			originalTriggerPx: "0",
+			originalLimitPx: "100",
 			expectedSize: "1",
 		});
 		if (!modification) throw new Error("Expected modification claim");
@@ -196,6 +221,7 @@ describe("pending trading action store", () => {
 			oid: 53,
 			originalSize: "2",
 			originalTriggerPx: "0",
+			originalLimitPx: "100",
 			expectedSize: "1",
 		});
 		if (!modification) throw new Error("Expected modification claim");

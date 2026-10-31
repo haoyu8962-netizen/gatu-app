@@ -14,6 +14,7 @@ export default mergeConfig(
 				{ find: /^@\/lib\/hyperliquid$/u, replacement: mock },
 				{ find: /^@\/lib\/hyperliquid\/markets\/use-markets$/u, replacement: mock },
 				{ find: /^@\/hooks\/wallet\/use-wallet-session$/u, replacement: mock },
+				{ find: /^@\/hooks\/use-geo-restriction$/u, replacement: mock },
 				{
 					find: /^@\/hooks\/trade\/(?:use-market-navigation|use-position-market-close-action|use-hip3-disclaimer)$/u,
 					replacement: mock,

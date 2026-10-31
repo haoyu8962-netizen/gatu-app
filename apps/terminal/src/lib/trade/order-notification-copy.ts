@@ -143,6 +143,7 @@ function getCountSummary(order: OrderQueueItem, translate: Translate): string | 
 			? translate(msg`Review positions`)
 			: translate(msg`Fully filled ${accepted}/${total} · Review positions`);
 	}
+	if (order.countMode === "canceled") return translate(msg`Canceled ${accepted}/${total} · Review orders`);
 	return translate(msg`Accepted ${accepted}/${total} · Review orders`);
 }
 

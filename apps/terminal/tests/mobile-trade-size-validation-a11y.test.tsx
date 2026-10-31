@@ -9,6 +9,9 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const testState = vi.hoisted(() => ({
+	twapAdvancedEnabled: false,
+	twapTriggerPrice: "",
+	twapStopPrice: "",
 	hasWalletAccess: true,
 	isSignerLoading: false,
 	signerMode: "owner" as "owner" | "agent",
@@ -19,6 +22,7 @@ const testState = vi.hoisted(() => ({
 	openDeposit: vi.fn(),
 	kind: "perp" as "perp" | "spot",
 	limitPrice: "",
+	triggerPrice: "",
 	markPx: "100",
 	prevDayPx: undefined as string | undefined,
 	formatLocale: "en-US",
@@ -28,9 +32,15 @@ const testState = vi.hoisted(() => ({
 	orderType: "market",
 	orderValue: 100,
 	quoteAvailable: 100,
+	spotBuyQuoteCost: undefined as number | undefined,
 	reduceOnly: false,
 	side: "buy" as "buy" | "sell",
 	sizeValue: 1,
+	scaleStart: "",
+	scaleEnd: "",
+	scaleLevels: null as number | null,
+	scaleSkew: "",
+	orderEntryInput: undefined as unknown,
 	requestSubmit: vi.fn(),
 	submitOrder: vi.fn(),
 	executionGuard: undefined as ((params: OrderParameters) => void) | undefined,
@@ -135,59 +145,64 @@ vi.mock("@/hooks/trade/use-order-confirmation", () => ({
 }));
 
 vi.mock("@/hooks/trade/use-order-entry-data", () => ({
-	useOrderEntryData: () => ({
-		accountAbstraction: "disabled",
-		allowsIsolatedMarginRemoval: false,
-		applyMarginAndLeverage: vi.fn(),
-		availabilityMaxAgeMs: 10_000,
-		availabilityReceivedAt: Date.now(),
-		availabilityStatus: testState.availabilityStatus,
-		availableBalance: testState.availableBalance,
-		availableBalanceToken: testState.side === "sell" && testState.kind === "spot" ? "BTC" : "USDC",
-		baseToken: "BTC",
-		capabilities: {
-			allowsCrossMargin: true,
-			hasReduceOnly: false,
-			hasTpSl: false,
-			isLeveraged: testState.kind === "perp",
-		},
-		committedLeverage: null,
-		toggleSizeDenomination: vi.fn(),
-		currentLeverage: 10,
-		executionAvailability: { kind: "perp", maxBaseBySide: { buy: "10", sell: "10" } },
-		applySizePercent: vi.fn(),
-		beginSizePercentGesture: vi.fn(),
-		endSizePercentGesture: vi.fn(),
-		hasAvailabilityError: testState.availabilityStatus === "error",
-		isAwaitingFirstDeposit: testState.isAwaitingFirstDeposit,
-		hasPosition: false,
-		isAvailabilityBlocked: testState.availabilityStatus !== "success",
-		isBalanceAvailabilityBlocked: testState.availabilityStatus !== "success",
-		conversionPrice: 100,
-		isAvailabilityLoading: testState.availabilityStatus === "loading",
-		isAvailabilityStale: testState.availabilityStatus === "stale",
-		isSpotMarket: testState.kind === "spot",
-		isOpenInterestCapped: testState.openInterestCapped,
-		isSwitchingMode: false,
-		leverage: 10,
-		marginMode: "cross",
-		maxLeverage: 50,
-		maxSize: testState.maxSize,
-		orderValue: testState.orderValue,
-		pendingLeverage: null,
-		positionStateReady: true,
-		quoteToken: "USDC",
-		resetPendingLeverage: vi.fn(),
-		setPendingLeverage: vi.fn(),
-		sideLabels: { buy: "Buy", sell: "Sell" },
-		sizeValue: testState.sizeValue,
-		spotBalance: {
-			baseAvailable: testState.baseAvailable,
-			quoteAvailable: testState.quoteAvailable,
-		},
-		switchModeError: null,
-		szDecimals: 3,
-	}),
+	useOrderEntryData: (input: { orderValueForSize?: (size: string) => number | undefined }) => {
+		testState.orderEntryInput = input;
+		return {
+			accountAbstraction: "disabled",
+			allowsIsolatedMarginRemoval: false,
+			applyMarginAndLeverage: vi.fn(),
+			availabilityMaxAgeMs: 10_000,
+			availabilityReceivedAt: Date.now(),
+			availabilityStatus: testState.availabilityStatus,
+			availableBalance: testState.availableBalance,
+			availableBalanceToken: testState.side === "sell" && testState.kind === "spot" ? "BTC" : "USDC",
+			baseToken: "BTC",
+			capabilities: {
+				allowsCrossMargin: true,
+				hasReduceOnly: false,
+				hasTpSl: false,
+				isLeveraged: testState.kind === "perp",
+			},
+			committedLeverage: null,
+			toggleSizeDenomination: vi.fn(),
+			currentLeverage: 10,
+			executionAvailability: { kind: "perp", maxBaseBySide: { buy: "10", sell: "10" } },
+			applySizePercent: vi.fn(),
+			beginSizePercentGesture: vi.fn(),
+			endSizePercentGesture: vi.fn(),
+			hasAvailabilityError: testState.availabilityStatus === "error",
+			isAwaitingFirstDeposit: testState.isAwaitingFirstDeposit,
+			hasPosition: false,
+			isAvailabilityBlocked: testState.availabilityStatus !== "success",
+			isBalanceAvailabilityBlocked: testState.availabilityStatus !== "success",
+			conversionPrice: 100,
+			isAvailabilityLoading: testState.availabilityStatus === "loading",
+			isAvailabilityStale: testState.availabilityStatus === "stale",
+			isSpotMarket: testState.kind === "spot",
+			isOpenInterestCapped: testState.openInterestCapped,
+			isSwitchingMode: false,
+			leverage: 10,
+			marginMode: "cross",
+			maxLeverage: 50,
+			maxSize: testState.maxSize,
+			orderValue: input.orderValueForSize?.(String(testState.sizeValue)) ?? testState.orderValue,
+			pendingLeverage: null,
+			positionStateReady: true,
+			quoteToken: "USDC",
+			resetPendingLeverage: vi.fn(),
+			setPendingLeverage: vi.fn(),
+			sideLabels: { buy: "Buy", sell: "Sell" },
+			sizeForOrder: String(testState.sizeValue),
+			sizeValue: testState.sizeValue,
+			spotBalance: {
+				baseAvailable: testState.baseAvailable,
+				quoteAvailable: testState.quoteAvailable,
+			},
+			spotBuyQuoteCost: testState.spotBuyQuoteCost ?? testState.orderValue,
+			switchModeError: null,
+			szDecimals: 3,
+		};
+	},
 }));
 
 vi.mock("@/hooks/trade/use-order-submit", () => ({
@@ -294,21 +309,21 @@ vi.mock("@/stores/use-order-entry-store", () => ({
 	useOrderSizeSource: () => null,
 	useOrderType: () => testState.orderType,
 	useReduceOnly: () => testState.reduceOnly,
-	useScaleEnd: () => "",
-	useScaleLevels: () => null,
-	useScaleSkew: () => "",
-	useScaleStart: () => "",
+	useScaleEnd: () => testState.scaleEnd,
+	useScaleLevels: () => testState.scaleLevels,
+	useScaleSkew: () => testState.scaleSkew,
+	useScaleStart: () => testState.scaleStart,
 	useSlPrice: () => "",
 	useTif: () => "Gtc",
 	useTpPrice: () => "",
 	useTpSlEnabled: () => false,
 	useTpSlReturnInvalid: () => false,
-	useTriggerPrice: () => "",
-	useTwapAdvancedEnabled: () => false,
+	useTriggerPrice: () => testState.triggerPrice,
+	useTwapAdvancedEnabled: () => testState.twapAdvancedEnabled,
 	useTwapMinutes: () => null,
 	useTwapRandomize: () => false,
-	useTwapStopPrice: () => "",
-	useTwapTriggerPrice: () => "",
+	useTwapStopPrice: () => testState.twapStopPrice,
+	useTwapTriggerPrice: () => testState.twapTriggerPrice,
 }));
 
 vi.mock("@/stores/use-orderbook-actions-store", () => ({
@@ -321,6 +336,7 @@ import { MobileTradeView } from "@/components/trade/mobile/mobile-trade-view";
 import { EntryExecutionError } from "@/domain/trade/order/entry-execution-guard";
 import { notifyNumberFormatChange } from "@/lib/number-format-reactivity";
 import { LOADING_INDICATOR_SELECTOR } from "@/lib/tests/harness/loading-indicator";
+import { getScaleOrderNotional } from "@/domain/trade/orders";
 
 const LOCALES = ["en", "zh", "ja", "hi", "es", "fr", "ar"] as const;
 const OPEN_INTEREST_CAP_COPY =
@@ -405,6 +421,112 @@ describe("MobileTradeView order-size validation accessibility", () => {
 		expect(getValidationError(container)).toBeNull();
 		for (const control of getSizeControls(container)) expectDescriptionCleared(control);
 		await expectSubmissionBlocked(container);
+	});
+
+	it("blocks a limit price off the market tick and names a valid price", async () => {
+		testState.orderType = "limit";
+		testState.limitPrice = "100.1234";
+		await renderView(root);
+
+		expect(getValidationError(container)?.textContent).toContain(
+			"Price must be a multiple of the tick size, with at most 5 significant figures. E.g., 100.12",
+		);
+		await expectSubmissionBlocked(container);
+	});
+
+	it("blocks a TWAP price limit off the market tick on its own", async () => {
+		testState.orderType = "twap";
+		testState.twapStopPrice = "101.1234";
+		testState.twapAdvancedEnabled = true;
+		await renderView(root);
+
+		expect(getValidationError(container)?.textContent).toContain("E.g., 101.12");
+		await expectSubmissionBlocked(container);
+	});
+
+	it("blocks a TWAP trigger price off the market tick while the advanced settings are on", async () => {
+		testState.orderType = "twap";
+		testState.twapTriggerPrice = "100.1234";
+		testState.twapAdvancedEnabled = true;
+		await renderView(root);
+
+		expect(getValidationError(container)?.textContent).toContain("E.g., 100.12");
+		await expectSubmissionBlocked(container);
+	});
+
+	it("blocks a trigger price off the market tick and names a valid price", async () => {
+		testState.orderType = "stopMarket";
+		testState.triggerPrice = "100.1234";
+		await renderView(root);
+
+		expect(getValidationError(container)?.textContent).toContain(
+			"Price must be a multiple of the tick size, with at most 5 significant figures. E.g., 100.12",
+		);
+		await expectSubmissionBlocked(container);
+	});
+
+	it("estimates a scale order's margin from the value of its lot-rounded levels", async () => {
+		testState.orderType = "scale";
+		testState.scaleStart = "100000";
+		testState.scaleEnd = "20000";
+		testState.scaleLevels = 2;
+		testState.scaleSkew = "1";
+		testState.sizeValue = 0.003;
+		await renderView(root);
+
+		const summaryValue = (label: string) =>
+			[...container.querySelectorAll("div")].find(
+				(element) => element.children.length === 2 && element.children[0]?.textContent === label,
+			)?.children[1]?.textContent;
+		expect(summaryValue("Order Value")).toBe("$220.00");
+		expect(summaryValue("Margin Req.")).toBe("$22.00");
+	});
+
+	it("checks a spot market buy against what it locks at the slippage limit before it is sent", async () => {
+		testState.kind = "spot";
+		testState.orderType = "market";
+		testState.orderValue = 100;
+		testState.quoteAvailable = 100;
+		testState.spotBuyQuoteCost = 102.5;
+		await renderView(root);
+
+		expect(getValidationError(container)?.textContent).toContain("Insufficient USDC balance at max slippage");
+		await expectSubmissionBlocked(container);
+	});
+
+	it("hands order entry the margin a resting limit order reserves at the official terminal's price", async () => {
+		testState.orderType = "limit";
+		testState.limitPrice = "125";
+		testState.side = "sell";
+		await renderView(root);
+
+		const marginForSize = (testState.orderEntryInput as { marginNotionalForSize?: (size: string) => number | undefined })
+			.marginNotionalForSize;
+		expect(marginForSize?.("2")).toBe(250);
+	});
+
+	it("sizes a scale order at the size-weighted average of its levels instead of the mark price", async () => {
+		testState.orderType = "scale";
+		testState.scaleStart = "80";
+		testState.scaleEnd = "60";
+		testState.scaleLevels = 4;
+		testState.scaleSkew = "3";
+		await renderView(root);
+
+		const limitPx = (testState.orderEntryInput as { limitPx?: number } | undefined)?.limitPx;
+		expect(limitPx).toBeCloseTo((80 * 3 + 73.333 * 5 + 66.667 * 7 + 60 * 9) / 24, 10);
+		const valueForSize = (testState.orderEntryInput as { orderValueForSize?: (size: string) => number | undefined })
+			.orderValueForSize;
+		const levels = {
+			assetId: 0,
+			szDecimals: 3,
+			scaleStartPriceInput: "80",
+			scaleEndPriceInput: "60",
+			scaleLevelsNum: 4,
+			scaleSkew: "3",
+		};
+		expect(valueForSize?.("1.003")).toBe(getScaleOrderNotional({ ...levels, sizeValue: "1.003" })?.toNumber());
+		expect(valueForSize?.("1.003")).not.toBeUndefined();
 	});
 
 	it("offers Deposit to a new account awaiting its first deposit and never submits its valid-looking draft", async () => {
@@ -987,6 +1109,7 @@ function setValidPerpScenario() {
 	testState.isAwaitingFirstDeposit = false;
 	testState.kind = "perp";
 	testState.limitPrice = "";
+	testState.triggerPrice = "";
 	testState.markPx = "100";
 	testState.prevDayPx = undefined;
 	testState.formatLocale = "en-US";
@@ -996,9 +1119,18 @@ function setValidPerpScenario() {
 	testState.orderType = "market";
 	testState.orderValue = 100;
 	testState.quoteAvailable = 100;
+	testState.spotBuyQuoteCost = undefined;
 	testState.reduceOnly = false;
 	testState.side = "buy";
 	testState.sizeValue = 1;
+	testState.scaleStart = "";
+	testState.scaleEnd = "";
+	testState.scaleLevels = null;
+	testState.scaleSkew = "";
+	testState.twapAdvancedEnabled = false;
+	testState.twapTriggerPrice = "";
+	testState.twapStopPrice = "";
+	testState.orderEntryInput = undefined;
 }
 
 function setPerpMinimumScenario() {

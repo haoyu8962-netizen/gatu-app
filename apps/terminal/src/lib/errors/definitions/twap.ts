@@ -87,6 +87,7 @@ export const twapStopDirectionValidator: Validator<TwapContext> = createValidato
 	getMessage: (ctx) => (ctx.side === "buy" ? t`Max price must be above mark` : t`Min price must be below mark`),
 	validate: (ctx) => {
 		if (!ctx.twapOrder || !isPositive(ctx.twapStopPriceNum) || ctx.markPx <= 0) return true;
+		if (isPositive(ctx.twapTriggerPriceNum)) return true;
 		if (ctx.side === "buy") return ctx.twapStopPriceNum > ctx.markPx;
 		return ctx.twapStopPriceNum < ctx.markPx;
 	},

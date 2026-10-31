@@ -5,7 +5,6 @@ import { Link } from "@tanstack/react-router";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { RECENT_ACCOUNT_HISTORY_ROWS } from "@/config/trade";
-import { getToolbarNonZeroPnl } from "@/domain/trade/trading-toolbar-metrics";
 import { useUserFillsCsvExport } from "@/hooks/trade/use-history-csv-export";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { useUserFills } from "@/hooks/trade/use-user-fills";
@@ -14,7 +13,9 @@ import { cn } from "@/lib/cn";
 import { buildCsvRows } from "@/lib/csv";
 import { formatDateTimeShort, useNumberFormat } from "@/lib/format";
 import { getExplorerTxUrl, useMarkets } from "@/lib/hyperliquid";
-import { getUserFillKey, hasUserFillExplorerTransaction } from "@/lib/trade/user-fills";
+import { getFillDirectionPresentation } from "@/lib/trade/fill-direction";
+import { getMarketPriceFormatOptions } from "@/lib/trade/market-price-format";
+import { getUserFillKey, getUserFillNetClosedPnl, hasUserFillExplorerTransaction } from "@/lib/trade/user-fills";
 import { getMarketCloseValueColorClass } from "@/lib/ui/value-color";
 import { useIsTestnet } from "@/stores/use-global-settings-store";
 import { AssetBadge } from "../components/asset-badge";
@@ -39,7 +40,7 @@ const historyFooterButtonClass =
 export function HistoryTab() {
 	const { i18n, t } = useLingui();
 	const locale = i18n.locale;
-	const { formatNumber, formatToken, formatUSD } = useNumberFormat();
+	const { formatNumber, formatPrice, formatToken, formatUSD } = useNumberFormat();
 	const { error, fills, isConnected, isOffline, isStale, status } = useUserFills();
 	const { address } = useWalletSession();
 	const navigateToMarket = useMarketNavigation();
@@ -47,12 +48,8 @@ export function HistoryTab() {
 	const isTestnet = useIsTestnet();
 	const visibleFills = fills.slice(0, RECENT_ACCOUNT_HISTORY_ROWS);
 
-	function getDirectionLabel(direction: string) {
-		if (direction === "Open Long") return t`Open Long`;
-		if (direction === "Close Long") return t`Close Long`;
-		if (direction === "Open Short") return t`Open Short`;
-		if (direction === "Close Short") return t`Close Short`;
-		return direction;
+	function getDirection(fill: (typeof fills)[number]) {
+		return getFillDirectionPresentation(fill, address, (descriptor) => t(descriptor));
 	}
 
 	const { exportCsv, isExporting } = useUserFillsCsvExport({
@@ -61,7 +58,7 @@ export function HistoryTab() {
 			buildCsvRows(exportFills, [
 				{ header: t`Time`, getValue: (fill) => formatDateTimeShort(fill.time, { locale: i18n.locale }) },
 				{ header: t`Asset`, getValue: (fill) => fill.coin },
-				{ header: t`Direction`, getValue: (fill) => (fill.liquidation ? t`Liquidated` : getDirectionLabel(fill.dir)) },
+				{ header: t`Direction`, getValue: (fill) => getDirection(fill).label },
 				{ header: t`Type`, getValue: () => t`Trade` },
 				{ header: t`Price`, getValue: (fill) => fill.px },
 				{ header: t`Size`, getValue: (fill) => fill.sz },
@@ -135,8 +132,8 @@ export function HistoryTab() {
 							</TableHeader>
 							<TableBody className={cn(positionsPanelTableBodyClass, "[&_tr]:border-market-close-stroke-card/60")}>
 								{visibleFills.map((fill) => {
-									const closedPnl = getToolbarNonZeroPnl(fill.closedPnl);
-									const directionLabel = getDirectionLabel(fill.dir);
+									const closedPnl = getUserFillNetClosedPnl(fill, markets.getMarket(fill.coin));
+									const direction = getDirection(fill);
 									const hasExplorerTransaction = hasUserFillExplorerTransaction(fill);
 
 									return (
@@ -162,14 +159,14 @@ export function HistoryTab() {
 												<span
 													className={cn(
 														"inline-flex w-fit whitespace-nowrap rounded-[4px] px-2 py-0.5 text-2xs leading-[14px] font-semibold",
-														fill.liquidation
+														direction.tone === "liquidation"
 															? "bg-error-soft text-market-close-danger"
-															: fill.dir === "Open Long" || fill.dir === "Open Short"
+															: direction.tone === "open"
 																? "bg-success-soft text-market-close-success"
 																: "bg-market-close-hover text-market-close-muted",
 													)}
 												>
-													{fill.liquidation ? t`Liquidated` : directionLabel}
+													{direction.label}
 												</span>
 											</TableCell>
 											<TableCell size="dense" className={cn(positionsPanelTableCellClass, historyTableCellClass)}>
@@ -183,7 +180,7 @@ export function HistoryTab() {
 													"text-right text-market-close-fg",
 												)}
 											>
-												{formatUSD(fill.px)}
+												{formatPrice(fill.px, getMarketPriceFormatOptions(markets.getMarket(fill.coin)))}
 											</TableCell>
 											<TableCell
 												size="dense"
