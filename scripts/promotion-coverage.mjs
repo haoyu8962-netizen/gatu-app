@@ -104,7 +104,8 @@ export function pathFilterMatcher(patterns) {
 				return part.replace(/[.^${}()|\\]/g, "\\$&");
 			})
 			.join("");
-		return { negated, expression: new RegExp(`^${source}$`) };
+		// Git allows line breaks in file names, and GitHub's `**` matches any character, so `.` must match them too.
+		return { negated, expression: new RegExp(`^${source}$`, "s") };
 	});
 	return (files) =>
 		files.some((file) => rules.reduce((included, rule) => (rule.expression.test(file) ? !rule.negated : included), false));

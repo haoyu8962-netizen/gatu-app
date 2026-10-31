@@ -24,7 +24,7 @@
 - **D8 晋升 PR 只重跑 `dev` 没测过的部分（2026-10-31 新增，运营方在两种方案中选定）。** 晋升 PR 会对同一棵树重跑进 `dev` 时已经通过的检查。2026-10 的 11 次晋升，每次按作业取整为 66–75 计费分钟；85 次重跑里只有 4 次失败，都是 `Build terminal (pairing true)`。现在 `Terminal Tests`、浏览器回归、`Production Builds` 与 `Website and Brand` 各有一个 `Promotion coverage` 作业，只在 `pull_request`、目标为 `main`、来源为 `dev` 时运行 `scripts/promotion-coverage.mjs <本工作流文件>`，并按工作流分别判断。同时满足以下三条时，才输出 `covered=true`：
   1. 晋升 PR 的合并提交与 `dev` 头是同一棵树，即 `main` 没有 `dev` 缺的内容；
   2. 在上次晋升点（`dev` 主线上最新一个已被 `main` 包含的提交）之后，最后一个改过本工作流输入的 PR，其最新一次运行成功（重跑沿用原来的合并，看最后一次尝试的结论）。一次合入「改过输入」，指它在 `dev` 主线上的差异匹配本工作流自己的 `paths` 过滤，或者本工作流为这个 PR 运行过。没有运行记录不算没改：改过输入却没有运行记录，就全跑；
-  3. 这次运行的检出日志里，有且只有一行写着它测的合并 `<时间> HEAD is now at … Merge <PR 头> into <dev 提交>`，这个 `dev` 提交在 `dev` 主线上；此后 `dev` 的每次变动都是 GitHub 的 PR 合并，且除这个 PR 外，没有一个改过本工作流的输入。
+  3. 这次运行的检出日志在独立一行写着它测的合并 `<时间> HEAD is now at … Merge <PR 头> into <dev 提交>`，整份日志只出现这一个合并，这个 `dev` 提交在 `dev` 主线上；此后 `dev` 的每次变动都是 GitHub 的 PR 合并，且除这个 PR 外，没有一个改过本工作流的输入。
 
   判定作业用无 blob 克隆读取全部提交与树，差异由脚本从 git 算出。`covered=true` 时，三个工作流的作业被跳过，`Production Builds` 只构建发布实际使用的 `pairing true`。任何一条不满足，或查询失败、出错，都输出 `covered=false` 并照常全跑。`Static Checks` 没有判定作业，晋升时照常运行。判定作业的令牌只有 `actions: read` 与 `contents: read`。进 `dev` 的 PR、紧急修复 PR（从 `main` 开分支直接进 `main`）、发布标签与手动运行，判定作业都会跳过，下游照旧运行。本条修改 D2′ 中进 `main` 的 PR 构建两组的晋升部分，D2′ 原文保留。
 
@@ -76,5 +76,5 @@
 ## 证据
 
 - 工作流：`.github/workflows/production-build.yml`、`terminal-tests.yml`、`static-checks.yml`、`website-build.yml`、`slider-browser.yml`、`claude-code-review.yml`、`claude.yml`；2026-10-26 起另有定时的 `website-markets-check.yml`。
-- 回归：`scripts/ci-workflows.test.mjs` 钉住并发分组（含 `claude.yml` 不得有）、按事件取值的矩阵与无 `branches` 过滤、发版标签模式（用样例标签验证，`archive/**` 不匹配）、每次浏览器调用都带分片参数、静态检查合并为一个 job、`test:brand` 里的终端单测全部出现在 `terminal-tests.yml`；逐条变异确认会失败。`scripts/check-client-bundle-budget.test.mjs` 钉住“预算测试在 `terminal-tests.yml` 运行、构建工作流内不再有测试步骤、测试工作流不含矩阵”。两个文件都由 `terminal-tests.yml` 运行，工作流目录的任何改动都会触发它。D8 由 `scripts/promotion-coverage.test.mjs` 钉住判定逻辑，其中在临时仓库里复现了 `merge-base` 离开 `dev` 主线的情形；`scripts/ci-workflows.test.mjs` 按九种事件（含被取消的运行）对作业条件与构建矩阵求值（不调用状态函数的 `if` 按 GitHub 的规则隐式加 `success()`，字符串里的函数名不算调用），并钉住四个判定作业同形、只读、只在晋升时运行，`Static Checks` 不受影响。对工作流、判定逻辑与 GitHub 接口代码共做 50 处变异，全部能让测试失败。（2026-10-31 更正：自 2026-10-12 测试分片起，`check-client-bundle-budget.test.mjs` 钉住的是「校验器只在第一片运行」，上文「测试工作流不含矩阵」已过时。）
+- 回归：`scripts/ci-workflows.test.mjs` 钉住并发分组（含 `claude.yml` 不得有）、按事件取值的矩阵与无 `branches` 过滤、发版标签模式（用样例标签验证，`archive/**` 不匹配）、每次浏览器调用都带分片参数、静态检查合并为一个 job、`test:brand` 里的终端单测全部出现在 `terminal-tests.yml`；逐条变异确认会失败。`scripts/check-client-bundle-budget.test.mjs` 钉住“预算测试在 `terminal-tests.yml` 运行、构建工作流内不再有测试步骤、测试工作流不含矩阵”。两个文件都由 `terminal-tests.yml` 运行，工作流目录的任何改动都会触发它。D8 由 `scripts/promotion-coverage.test.mjs` 钉住判定逻辑，其中在临时仓库里复现了 `merge-base` 离开 `dev` 主线的情形；`scripts/ci-workflows.test.mjs` 按九种事件（含被取消的运行）对作业条件与构建矩阵求值（不调用状态函数的 `if` 按 GitHub 的规则隐式加 `success()`，字符串里的函数名不算调用），并钉住四个判定作业同形、只读、只在晋升时运行，`Static Checks` 不受影响。对工作流、判定逻辑与 GitHub 接口代码共做 51 处变异，全部能让测试失败。（2026-10-31 更正：自 2026-10-12 测试分片起，`check-client-bundle-budget.test.mjs` 钉住的是「校验器只在第一片运行」，上文「测试工作流不含矩阵」已过时。）
 - 验证命令与结果见两份任务记录；CI 在 GitHub 上的实际触发、矩阵取值、标签触发与取消行为需在推送后的第一个 PR 上观察，本 ADR 不包含该证据。

@@ -134,7 +134,7 @@ test("runs in full when a merge changed the inputs but the workflow never ran fo
 	const tested = { 10: merged("feature", "promoted") };
 	const touchedLast = devHistory("#1 promoted", "#2 feature", "#3 unrun");
 	const touchedBetween = devHistory("#1 promoted", "#2 unrun", "#3 feature");
-	const files = { unrun: ["docs/notes.md", "apps/terminal/src/hooks/use-orders.ts"] };
+	const files = { unrun: ["docs/notes.md", "apps/terminal/src/hooks/use\norders.ts"] };
 
 	const last = await decideCoverage(promotion(touchedLast, { runs: { feature: [run(10)] }, tested, files }).input);
 	const between = await decideCoverage(promotion(touchedBetween, { runs: { feature: [run(10)] }, tested, files }).input);
@@ -485,6 +485,12 @@ test("matches changed files the way GitHub's path filters do", () => {
 	assert.equal(matches(["apps/**", "!apps/**/*.md", "apps/README.md"], "apps/README.md"), true, "the last match decides");
 	assert.equal(matches(null, "anything.txt"), true);
 	assert.equal(matches(null), false);
+	for (const name of ["a\nb.ts", "a\rb.ts", "a b.ts"]) {
+		assert.equal(matches(["apps/**"], `apps/terminal/src/${name}`), true, `** matches ${JSON.stringify(name)}`);
+		assert.equal(matches(["apps/terminal/**/*.ts"], `apps/terminal/src/${name}`), true);
+		assert.equal(matches(["apps/terminal/src/*.ts"], `apps/terminal/src/${name}`), true, "* matches a line break");
+	}
+	assert.equal(matches(["apps/*.ts"], "apps/a.ts\n"), false, "a pattern must match the whole name");
 	for (const unsupported of ["src/*.jsx?", "v[0-9].ts", "a+.ts"]) {
 		assert.throws(() => pathFilterMatcher([unsupported]), /unsupported path pattern/);
 	}
