@@ -121,6 +121,18 @@ export function useWalletSession() {
 	const { owner, connected } = useCloseAllFixture();
 	return { address: connected ? owner : undefined, isConnected: connected };
 }
+export function useGeoRestriction() {
+	return {
+		actionsBlocked: false,
+		tradeRestricted: false,
+		country: "GB",
+		proxy: false,
+		isResolving: false,
+		isError: false,
+		isResolved: true,
+		retry: async () => undefined,
+	};
+}
 export function useUserPositions() {
 	const { positions, status } = useCloseAllFixture();
 	return {
