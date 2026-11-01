@@ -605,6 +605,11 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Fixed
 
+- A language link (`?lang=`) loads the current shell from the network instead of the offline shell
+  cache, so a returning visitor still gets the link's language after a release. The cached shell is
+  used only when the network fails or the server returns a 5xx error, and the first navigation
+  still handled by a previously installed Service Worker can show the previous version (takes effect
+  with the next release).
 - Phone trade history filters search older fills too, up to the latest 2,000, instead of only the 30
   most recent, and a matching fill that arrives while a filter is on stays listed. "No fills match
   these filters." appears only after that search has finished and covers every fill since it, and
