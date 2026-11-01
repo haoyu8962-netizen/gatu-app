@@ -89,7 +89,8 @@ function MobileHistoryTabContent({
 	const { formatNumber, formatPrice, formatToken, formatUSD } = useNumberFormat();
 	const { i18n, t } = useLingui();
 	const locale = i18n.locale;
-	const { bufferedFills, error, fills, isConnected, isOffline, isStale, status } = useUserFills();
+	const { bufferedFills, error, fills, isConnected, isOffline, isStale, oldestBufferedFillTime, status } =
+		useUserFills();
 	const navigateToMarket = useMarketNavigation();
 	const { setActiveTab } = useMobileTerminalTab();
 	const markets = useMarkets();
@@ -117,7 +118,7 @@ function MobileHistoryTabContent({
 			fetching: fillSnapshot.isFetching,
 			offline: fillSnapshot.isOffline,
 			reachedLimit: fillSnapshot.reachedLimit,
-			reachesLive: fillSnapshotReachesLiveFills(fillSnapshot.fills, bufferedFills),
+			reachesLive: fillSnapshotReachesLiveFills(fillSnapshot.newestFillTime, oldestBufferedFillTime),
 		},
 	});
 	const snapshotLimit = formatNumber(TRADE_HISTORY_SNAPSHOT_LIMIT, 0);
@@ -312,7 +313,7 @@ function MobileHistoryTabContent({
 		);
 	}
 
-	if (status === "ready" && fills.length === 0) {
+	if (status === "ready" && fills.length === 0 && !filtersActive) {
 		return (
 			<div className={cn("font-market-close min-h-0 flex flex-1 flex-col", className)}>
 				<div className="flex flex-1 items-center justify-center p-6 text-sm text-market-close-muted">

@@ -13,6 +13,8 @@ type UserFillsStatus = "error" | "idle" | "loading" | "offline" | "ready";
 interface UserFillsResult {
 	/** Every fill the subscription holds, newest first; `fills` is the start of it. */
 	bufferedFills: UserFillsResponse;
+	/** Time of the oldest fill the subscription still holds, TWAP fills included; null while it holds none. */
+	oldestBufferedFillTime: number | null;
 	error: unknown;
 	fills: UserFillsResponse;
 	isConnected: boolean;
@@ -39,7 +41,8 @@ export function useUserFills(): UserFillsResult {
 			realtimeFills.some((fill) => !isValidUserFillHistoryItem(fill)));
 	const hasValidRealtime = payload !== undefined && !hasMalformedRealtime && Array.isArray(realtimeFills);
 	const isStale = enabled && hasValidRealtime && (fillsSubscription.isStale || fillsSubscription.status !== "active");
-	const bufferedFills = filterNonTwapUserFills(mergeUserFillSources(hasValidRealtime ? realtimeFills : undefined));
+	const realtimeBuffer = mergeUserFillSources(hasValidRealtime ? realtimeFills : undefined);
+	const bufferedFills = filterNonTwapUserFills(realtimeBuffer);
 	const fills = bufferedFills.slice(0, RECENT_ACCOUNT_HISTORY_ROWS);
 
 	let status: UserFillsStatus = "loading";
@@ -57,6 +60,7 @@ export function useUserFills(): UserFillsResult {
 
 	return {
 		bufferedFills,
+		oldestBufferedFillTime: realtimeBuffer.at(-1)?.time ?? null,
 		error: fillsSubscription.error ?? (hasMalformedRealtime ? new MalformedHistoryPageError() : undefined),
 		fills,
 		isConnected: enabled,

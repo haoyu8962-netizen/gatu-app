@@ -15,18 +15,17 @@ export interface FillSnapshotState {
 }
 
 /**
- * Whether a `userFills` snapshot and the live fills the subscription still holds, both newest first,
- * leave no gap: the subscription keeps a bounded number of fills, so after enough new fills its oldest
- * one can be newer than anything the snapshot saw, and fills in between are in neither. An empty
- * snapshot means the account had no fills when it was taken, so every live fill is newer.
+ * Whether a `userFills` snapshot and the live fills the subscription still holds leave no gap: the
+ * subscription keeps a bounded number of fills, TWAP fills included, so after enough new fills its oldest
+ * one can be newer than anything the snapshot saw, and fills in between are in neither. Both times count
+ * TWAP fills, which the lists leave out. A snapshot without fills means the account had none when it was
+ * taken, so every live fill is newer.
  */
 export function fillSnapshotReachesLiveFills(
-	snapshotFills: ReadonlyArray<{ time: number }>,
-	liveFills: ReadonlyArray<{ time: number }>,
+	newestSnapshotFillTime: number | null,
+	oldestLiveFillTime: number | null,
 ): boolean {
-	const newestSnapshotFill = snapshotFills[0];
-	const oldestLiveFill = liveFills[liveFills.length - 1];
-	return !newestSnapshotFill || !oldestLiveFill || oldestLiveFill.time <= newestSnapshotFill.time;
+	return newestSnapshotFillTime === null || oldestLiveFillTime === null || oldestLiveFillTime <= newestSnapshotFillTime;
 }
 
 /**

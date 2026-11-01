@@ -79,19 +79,17 @@ describe("filtered fills empty presentation", () => {
 });
 
 describe("whether a fills snapshot reaches the live fills", () => {
-	const fills = (...times: number[]) => times.map((time) => ({ time }));
-
 	it("reaches them when the oldest live fill is not newer than the newest snapshot fill", () => {
-		expect(fillSnapshotReachesLiveFills(fills(300, 200, 100), fills(500, 400, 300))).toBe(true);
-		expect(fillSnapshotReachesLiveFills(fills(300, 200, 100), fills(500, 250))).toBe(true);
+		expect(fillSnapshotReachesLiveFills(300, 300)).toBe(true);
+		expect(fillSnapshotReachesLiveFills(300, 250)).toBe(true);
 	});
 
-	it("leaves a gap when every live fill is newer than the newest snapshot fill", () => {
-		expect(fillSnapshotReachesLiveFills(fills(300, 200, 100), fills(500, 400, 301))).toBe(false);
+	it("leaves a gap when the oldest live fill is newer than the newest snapshot fill", () => {
+		expect(fillSnapshotReachesLiveFills(300, 301)).toBe(false);
 	});
 
-	it("has nothing to bridge when either side is empty", () => {
-		expect(fillSnapshotReachesLiveFills([], fills(500, 400))).toBe(true);
-		expect(fillSnapshotReachesLiveFills(fills(300), [])).toBe(true);
+	it("has nothing to bridge when either side holds no fill", () => {
+		expect(fillSnapshotReachesLiveFills(null, 500)).toBe(true);
+		expect(fillSnapshotReachesLiveFills(300, null)).toBe(true);
 	});
 });

@@ -363,6 +363,37 @@ describe("phone fills filter backfill", () => {
 		expect(retryButton()).toBeUndefined();
 	});
 
+	it("counts TWAP fills when it checks that the live fills still reach the snapshot", async () => {
+		mocks.userFills.mockResolvedValue([fill(1)]);
+		setLiveFills([fill(1)]);
+		await render();
+		await selectOption("Direction", "Sell");
+		expect(container.textContent).toContain("No fills match these filters.");
+
+		const sell = fill(10, { coin: "ETH", side: "A" });
+		setLiveFills([sell, fill(1)]);
+		await flush();
+		expect(container.querySelectorAll("article")).toHaveLength(1);
+
+		setLiveFills(Array.from({ length: 30 }, (_, index) => fill(129 - index, { twapId: 7 })));
+		await flush();
+		expect(container.textContent).not.toContain("No fills match these filters");
+		expect(retryButton()).toBeDefined();
+	});
+
+	it("keeps an active filter's search when the live fills no longer hold an ordinary fill", async () => {
+		const olderSell = fill(1, { coin: "SOL", crossed: true, side: "A" });
+		mocks.userFills.mockResolvedValue([...recentBuys(), olderSell]);
+		await render();
+		await selectOption("Direction", "Sell");
+		expect(container.querySelector('[aria-label="Switch to SOL market"]')).not.toBeNull();
+
+		setLiveFills([]);
+		await flush();
+		expect(container.textContent).not.toContain("No fills found.");
+		expect(container.querySelector('[aria-label="Switch to SOL market"]')).not.toBeNull();
+	});
+
 	it("drops the snapshot from the list again once every filter is cleared", async () => {
 		const liveFills = recentBuys().slice(0, 5);
 		const olderSell = fill(1, { coin: "SOL", crossed: true, side: "A" });
