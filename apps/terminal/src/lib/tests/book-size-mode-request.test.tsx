@@ -108,3 +108,25 @@ describe("order book size unit requests with the real stores", () => {
 		expect(form).toMatchObject({ request: null, size: "2", sizeMode: "base", toggles: 0 });
 	});
 });
+
+describe("taking an order book size unit request", () => {
+	afterEach(() => {
+		getOrderbookActionsStore().actions.clearSizeModeRequest();
+	});
+
+	it("takes only the request it was handed, so an older effect cannot take a newer pick", () => {
+		const { actions } = getOrderbookActionsStore();
+		actions.requestSizeMode("BTC", "quote");
+		const first = getOrderbookActionsStore().sizeModeRequest;
+		actions.requestSizeMode("BTC", "quote");
+		const second = getOrderbookActionsStore().sizeModeRequest;
+		if (!first || !second) throw new Error("the picks were not stored");
+
+		expect(second).not.toBe(first);
+		expect(actions.takeSizeModeRequest(first)).toBe(false);
+		expect(getOrderbookActionsStore().sizeModeRequest).toBe(second);
+		expect(actions.takeSizeModeRequest(second)).toBe(true);
+		expect(getOrderbookActionsStore().sizeModeRequest).toBeNull();
+		expect(actions.takeSizeModeRequest(second)).toBe(false);
+	});
+});
