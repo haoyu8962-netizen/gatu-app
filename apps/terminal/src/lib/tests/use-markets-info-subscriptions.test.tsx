@@ -1,8 +1,11 @@
 // @vitest-environment jsdom
 
+import { i18n } from "@lingui/core";
+import { I18nProvider } from "@lingui/react";
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { TokenSelectorRow } from "@/components/trade/chart/token-selector-row";
 import { useMarketsInfoInternal } from "@/lib/hyperliquid/hooks/useMarketsInfo";
 
 const mocks = vi.hoisted(() => ({
@@ -42,7 +45,24 @@ vi.mock("@/lib/hyperliquid/markets/market-ctxs-fallback", () => ({
 
 vi.mock("@/lib/hyperliquid/markets/use-markets", () => ({
 	useMarkets: () => ({
-		builderPerp: [],
+		builderPerp: [
+			{
+				assetId: 110_000,
+				ctxIndex: 0,
+				deployerFeeScale: "1",
+				dex: "xyz",
+				dexIndex: 1,
+				iconUrl: undefined,
+				kind: "builderPerp",
+				maxLeverage: 10,
+				name: "xyz:AAPL",
+				pairName: "AAPL-USDC",
+				quoteToken: undefined,
+				routeName: "xyz:AAPL",
+				shortName: "AAPL",
+				szDecimals: 3,
+			},
+		],
 		error: null,
 		isLoading: false,
 		perp: [
@@ -86,6 +106,10 @@ vi.mock("@/providers/exchange-scope", () => ({
 
 vi.mock("@/stores/use-market-store", () => ({
 	useSelectedMarket: () => "BTC",
+}));
+
+vi.mock("@/components/trade/components/asset-display", () => ({
+	AssetDisplay: ({ coin }: { coin: string }) => <span>{coin}</span>,
 }));
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
@@ -346,5 +370,156 @@ describe("useMarketsInfoInternal subscription gate", () => {
 			markPriceReceivedAt: 11_000,
 			midPriceReceivedAt: 11_000,
 		});
+	});
+
+	it.each([
+		["live", {}, true],
+		["stale", { isStale: true }, false],
+		["recovering", { status: "subscribing" }, false],
+		["failed", { status: "error", error: new Error("closed") }, false],
+	])("marks each row's asset context as live only for %s compact frames", (_state, overrides, live) => {
+		mocks.responses.pac = subscriptionResponse([["", [BTC_PERP_CTX]]], overrides);
+		mocks.responses.sac = subscriptionResponse({ "@1": SPOT_CTX }, overrides);
+
+		renderProbe(true);
+
+		expect(captured.getMarketByName("BTC")?.assetContextLive).toBe(live);
+		expect(captured.getMarketByName("@1")?.assetContextLive).toBe(live);
+	});
+
+	it("tracks spot and perp context liveness separately", () => {
+		mocks.responses.pac = subscriptionResponse([["", [BTC_PERP_CTX]]], { isStale: true });
+		mocks.responses.sac = subscriptionResponse({ "@1": SPOT_CTX });
+
+		renderProbe(true);
+
+		expect(captured.getMarketByName("BTC")?.assetContextLive).toBe(false);
+		expect(captured.getMarketByName("@1")?.assetContextLive).toBe(true);
+	});
+
+	it.each([
+		["active and fresh", {}, true],
+		["stale", { isStale: true }, false],
+		["recovering", { status: "subscribing" }, false],
+	])("marks plain-channel spot contexts that are %s after the compact fallback", (_state, overrides, live) => {
+		mocks.compactDisabled = true;
+		mocks.responses.spotAssetCtxs = subscriptionResponse([{ coin: "@1", ...SPOT_CTX }], overrides);
+
+		renderProbe(true);
+
+		expect(captured.getMarketByName("@1")).toMatchObject({ prevDayPx: "40", assetContextLive: live });
+	});
+
+	it.each([
+		["live all-dex perp contexts", {}, { isStale: true }, true],
+		["stale all-dex perp contexts", { isStale: true }, {}, false],
+	])(
+		"marks builder-deployed perp rows by %s, whatever the spot contexts",
+		(_case, perpOverrides, spotOverrides, live) => {
+			mocks.responses.pac = subscriptionResponse(
+				[
+					["", [BTC_PERP_CTX]],
+					["xyz", [{ ...BTC_PERP_CTX, markPx: "200" }]],
+				],
+				perpOverrides,
+			);
+			mocks.responses.sac = subscriptionResponse({ "@1": SPOT_CTX }, spotOverrides);
+
+			renderProbe(true);
+
+			expect(captured.getMarketByName("xyz:AAPL")).toMatchObject({ markPx: "200", assetContextLive: live });
+		},
+	);
+
+	it("does not mark a row live when its own context has not arrived", () => {
+		mocks.responses.pac = subscriptionResponse([["", []]]);
+		mocks.responses.sac = subscriptionResponse({ "@2": SPOT_CTX });
+
+		renderProbe(true);
+
+		expect(captured.perpContextsLive).toBe(true);
+		expect(captured.getMarketByName("BTC")?.assetContextLive).toBe(false);
+		expect(captured.getMarketByName("@1")?.assetContextLive).toBe(false);
+	});
+});
+
+describe("market selector rows from the live market contexts", () => {
+	let container: HTMLDivElement;
+	let root: Root;
+
+	beforeEach(() => {
+		i18n.loadAndActivate({ locale: "en", messages: {} });
+		container = document.createElement("div");
+		document.body.appendChild(container);
+		root = createRoot(container);
+		mocks.compactDisabled = false;
+		for (const key of Object.keys(mocks.responses)) delete mocks.responses[key];
+		mocks.fastPriceSubscription.data = { BTC: { markPx: "100000", midPx: "100001" } };
+		mocks.fastPriceSubscription.status = "active";
+		mocks.fastPriceSubscription.error = null;
+		mocks.fastPriceSubscription.isStale = false;
+		mocks.fastPriceSubscription.lastMessageAt = Date.now();
+		mocks.responses.pac = subscriptionResponse([["", [BTC_PERP_CTX]]]);
+	});
+
+	afterEach(() => {
+		act(() => root.unmount());
+		container.remove();
+	});
+
+	function SelectorRowProbe() {
+		const { getMarketByName } = useMarketsInfoInternal({ alwaysSubscribeAll: true });
+		const market = getMarketByName("BTC");
+		if (!market) return null;
+		return (
+			<I18nProvider i18n={i18n}>
+				<TokenSelectorRow
+					market={market}
+					mobile={false}
+					showDerivativesMetrics
+					showSpotMarketCap={false}
+					isSelected={false}
+					isHighlighted={false}
+					isFavorite={false}
+					top={0}
+					height={48}
+					onSelect={vi.fn()}
+					onToggleFavorite={vi.fn()}
+				/>
+			</I18nProvider>
+		);
+	}
+
+	function renderSelectorRow() {
+		act(() => root.render(<SelectorRowProbe />));
+		const row = container.querySelector("li");
+		if (!row) throw new Error("Missing selector row");
+		return { price: row.children[2]?.textContent, change: row.children[3]?.textContent, text: row.textContent };
+	}
+
+	it("prices the row from the live mid and compares it with the live context's previous day price", () => {
+		const row = renderSelectorRow();
+
+		expect(row.price).toBe("100,001");
+		expect(row.change).toBe("+10,001 / +11.11%");
+		expect(row.text).toContain("$1,200,000");
+	});
+
+	it("drops the 24h change while the context carrying the previous day price is stale", () => {
+		mocks.responses.pac = subscriptionResponse([["", [BTC_PERP_CTX]]], { isStale: true });
+
+		const row = renderSelectorRow();
+
+		expect(row.price).toBe("100,001");
+		expect(row.change).toBe("-");
+	});
+
+	it("shows neither price nor change while the fast prices are stale", () => {
+		mocks.fastPriceSubscription.isStale = true;
+
+		const row = renderSelectorRow();
+
+		expect(row.price).toBe("-");
+		expect(row.change).toBe("-");
 	});
 });

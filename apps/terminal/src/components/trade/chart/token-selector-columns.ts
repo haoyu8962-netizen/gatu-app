@@ -1,5 +1,7 @@
 import { createColumnHelper, type SortingFn } from "@tanstack/react-table";
-import { get24hChange, getEightHourFundingRate, getMarketCapUsd, getOiUsd } from "@/domain/market";
+import { getEightHourFundingRate, getMarketCapUsd, getOiUsd } from "@/domain/market";
+import { getMarketSelectorChange, getMarketSelectorPrice } from "@/domain/market/selector-quote";
+import { type Big, toBig } from "@/lib/trade/numbers";
 import type { MarketRow } from "./token-selector-categories";
 
 export type { MarketRow, MarketScope } from "./token-selector-categories";
@@ -27,21 +29,29 @@ const numericStringSortFn: SortingFn<MarketRow> = (rowA, rowB, columnId) => {
 	return a - b;
 };
 
+const decimalSortFn: SortingFn<MarketRow> = (rowA, rowB, columnId) => {
+	const a = rowA.getValue<Big | undefined>(columnId);
+	const b = rowB.getValue<Big | undefined>(columnId);
+	if (!a || !b) return 0;
+	return a.cmp(b);
+};
+
 export const TOKEN_SELECTOR_COLUMNS = [
 	columnHelper.accessor("pairName", {
 		size: 220,
 		enableSorting: false,
 	}),
-	columnHelper.accessor("markPx", {
+	columnHelper.accessor((row: MarketRow) => toBig(getMarketSelectorPrice(row)) ?? undefined, {
 		id: "price",
 		size: 80,
 		sortUndefined: "last",
-		sortingFn: numericStringSortFn,
+		sortingFn: decimalSortFn,
 	}),
-	columnHelper.accessor((row: MarketRow) => get24hChange(row.prevDayPx, row.markPx) ?? undefined, {
+	columnHelper.accessor((row: MarketRow) => getMarketSelectorChange(row)?.ratio, {
 		id: "24h-change",
 		size: 112,
 		sortUndefined: "last",
+		sortingFn: decimalSortFn,
 	}),
 	columnHelper.accessor((row: MarketRow) => getEightHourFundingRate(row.funding) ?? undefined, {
 		id: "funding",

@@ -128,6 +128,8 @@
 
 `open-interest-cap.test.ts` 验证上限集合只在活跃、有数据、未过期、同一账户的快照上得出，其余状态为未知；`mobile-trade-size-validation-a11y.test.tsx` 与 `trade-panel-open-interest-cap.test.tsx` 在真实移动与桌面下单面板上验证已确认上限时的限制说明、禁用与未提交，以及未知或未上限时保持安静；`market-asset-info.test.tsx` 验证 HIP-3 上限行在加载、失败、空值和畸形响应时不出现。
 
+`market-selector-quote.test.ts`、`token-selector-row.test.tsx` 与 `token-selector-wiring.test.tsx` 验证市场选择器的价格只来自实时价格上下文、涨跌只对实时资产上下文的 `prevDayPx` 计算，失效时为占位，排序用同样的值；`use-markets-info-subscriptions.test.tsx` 验证首帧前不读本地快照、每行的 `assetContextLive`，并把真实 `useMarketsInfoInternal` 的行交给真实选择器行渲染。
+
 `account-mode-query.test.ts` 验证模式来源解析与三态分类；`mobile-account-view.test.tsx`、`funds-action-balances.test.tsx` 和 `deposit-modal-withdrawal-routing-guard.test.tsx` 使用真实资金能力计算验证未解析静默、确认限制、按钮禁用和未发起请求。`desktop-positions-readiness.test.tsx` 连接真实持仓 hook 与桌面页，验证首快照等待、错误优先和恢复，不依赖源码匹配。
 
 ```bash
@@ -149,7 +151,11 @@ pnpm --dir apps/terminal exec vitest run \
   tests/mobile-trade-size-validation-a11y.test.tsx \
   tests/trade-panel-open-interest-cap.test.tsx \
   src/lib/tests/funding-history-panel.test.tsx \
-  src/lib/tests/funding-history-panel-snapshot.test.tsx
+  src/lib/tests/funding-history-panel-snapshot.test.tsx \
+  src/lib/tests/market-selector-quote.test.ts \
+  src/lib/tests/token-selector-row.test.tsx \
+  src/lib/tests/token-selector-wiring.test.tsx \
+  src/lib/tests/use-markets-info-subscriptions.test.tsx
 ```
 
 契约测试的文案清单不能替代行为审查；新增入口仍须覆盖未知、失败、恢复和确认空快照，检查禁用逻辑是否独立于文案。
@@ -157,5 +163,13 @@ pnpm --dir apps/terminal exec vitest run \
 ## 行情标题的数据来源
 
 移动端顶部价格与桌面现货价格统一取当前有效资产上下文的 `midPx`，仅在其缺失或为 null 时回退到同一上下文的 `markPx`。价格和 24 小时变化使用同一上下文的 `prevDayPx`，不混入 BBO、allMids 或其他市场的值。失效、错市场及缺少接收时间的上下文保持安静占位；非法或非正 mid 不作为正常空值回退。数据源、市场、网络切换或重连时建立新的颜色反馈基准。桌面合约“标记”仍使用标记价，盘口中间价仍只使用服务端 mid。
+
+市场选择器（桌面弹层与手机全屏列表是同一组件 `TokenSelectorRow`，共用 `useTokenSelector` 与列定义）按同一规则取价（`domain/market/selector-quote.ts`）：
+
+- 价格取该行实时价格上下文（`fastAssetCtxs`，合并进 `useMarketsInfo` 的行）的 `midPx`，仅在它缺失或为 null 时回退到同一上下文的 `markPx`；上下文须为 `success`、标记价为正、本地接收不超过 `LIVE_MARK_MAX_STALE_MS`（`isLiveMarkPriceReady`，与行情头相同），否则价格与涨跌都显示既有占位 `-`。共享的快价解析（`resolveFastMarketPrice`）只把正数或 null 的 mid 放进行里，非法或非正的 mid 到不了选择器，在那里按缺失处理；2026-11-01 的公开流样本（1,976 个币）里没有这样的 mid，697 个为 null。
+- 24 小时涨跌是该价格对同一行 `prevDayPx` 的变化，并要求这份资产上下文来自当前实时帧（行字段 `assetContextLive`：`pac`/`sac` 或回退后的原频道有帧、`active`、未过期，且该行自己的条目已到达）；上下文过期、失败、恢复中或未到达时只显示价格，涨跌为占位。实时价格不与过期的 `prevDayPx` 拼在一起（[ADR 0047](adr/0047-no-local-market-stats-snapshot.md)）。
+- 按价格、按 24 小时涨跌排序用同样的值（Big.js 比较），没有值的行在两个方向都排在最后。市值与未平仓量仍按 `markPx` 计算。
+- 位数与官方选择器相同：至多五位有效数字，小数位不超过永续 `6 - szDecimals`、现货 `8 - szDecimals`，保留尾零（与行情头共用 `getTradePriceDecimals`）；桌面的涨跌额取当前价与前日价两者中较多的位数。涨跌为零时与官方一样显示 `+`（`+0.00%`），颜色为默认文字色。
+- 与官方的差异：官方选择器在 mid 缺失时价格显示 `--`、涨跌按 0 计算显示 `-100.00%`（2026-10-31 生产包：`CoinSelector.provider-hKfAGsw-.js` 的 ``midPx:u?.midPx||0``；`series-BBY5PmtX.js` 的 ``lastPrice:{value:w??0,element:w?`${ne(w,v,P)}`:`--`}``；涨跌格式化 `config-BhZylSmU.js` 的 `Fce` 只在 `G3(prev)||G3(cur)||prev===0` 时显示 `--`，`G3` 只判断 null 与 NaN）；本终端按行情头规则回退到同一上下文的标记价并据此计算涨跌。价格恰为 1,000 时官方用浮点 `Math.log(x)/Math.log(10)`（得 2.9999999999999996）算出 2 位小数，本终端按精确的五位有效数字得到 1 位。官方不检查行情新鲜度，本终端按上文显示占位。
 
 来源审查与验证范围见 [价格来源审查](price-source-audit.md)。

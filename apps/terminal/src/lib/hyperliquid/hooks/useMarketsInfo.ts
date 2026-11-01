@@ -30,6 +30,8 @@ interface LiveMarketPriceFields {
 	markPriceReceivedAt: number | undefined;
 	midPriceReceivedAt: number | undefined;
 	marginMetadataReady?: boolean;
+	/** The row's own context (`prevDayPx`, volume, funding, open interest) came from a live, current frame. */
+	assetContextLive?: boolean;
 }
 
 export type PerpMarketInfo = PerpMarket & Partial<DexAssetCtx> & LiveMarketPriceFields;
@@ -145,7 +147,12 @@ export function useMarketsInfoInternal(options: UseMarketsInfoOptions = {}) {
 		enabled: perpSubscriptionEnabled && useCompactCtxs,
 		throttleMs: updateInterval,
 	});
-	const { data: compactSpotCtxs, error: compactSpotError } = useSubscription("sac", undefined, {
+	const {
+		data: compactSpotCtxs,
+		error: compactSpotError,
+		status: compactSpotStatus,
+		isStale: isCompactSpotStale,
+	} = useSubscription("sac", undefined, {
 		enabled: spotSubscriptionEnabled && useCompactCtxs,
 		throttleMs: updateInterval,
 	});
@@ -157,7 +164,11 @@ export function useMarketsInfoInternal(options: UseMarketsInfoOptions = {}) {
 		enabled: perpSubscriptionEnabled && !useCompactCtxs,
 		throttleMs: updateInterval,
 	});
-	const { data: spotCtxsEvent } = useSubscription("spotAssetCtxs", undefined, {
+	const {
+		data: spotCtxsEvent,
+		status: spotCtxsStatus,
+		isStale: isSpotCtxsStale,
+	} = useSubscription("spotAssetCtxs", undefined, {
 		enabled: spotSubscriptionEnabled && !useCompactCtxs,
 		throttleMs: updateInterval,
 	});
@@ -185,6 +196,10 @@ export function useMarketsInfoInternal(options: UseMarketsInfoOptions = {}) {
 			: isLiveContextsSubscription(allDexsCtxsEvent?.ctxs, allDexsCtxsStatus, isAllDexsCtxsStale);
 	const legacySpotCtxs = useMemo(() => (spotCtxsEvent ? keySpotCtxsByCoin(spotCtxsEvent) : undefined), [spotCtxsEvent]);
 	const spotCtxs = compactSpotCtxs ?? legacySpotCtxs;
+	const spotContextsLive =
+		compactSpotCtxs !== undefined
+			? isLiveContextsSubscription(compactSpotCtxs, compactSpotStatus, isCompactSpotStale)
+			: isLiveContextsSubscription(spotCtxsEvent, spotCtxsStatus, isSpotCtxsStale);
 
 	const result = useMemo((): MarketsInfoResult => {
 		const perpCtxs = getDexCtxs(allDexsCtxs, "");
@@ -192,6 +207,7 @@ export function useMarketsInfoInternal(options: UseMarketsInfoOptions = {}) {
 		const withLivePrice = <T extends PerpMarket | SpotMarket | BuilderPerpMarket, C extends object | undefined>(
 			market: T,
 			context: C,
+			contextsLive: boolean,
 		): T & C & LiveMarketPriceFields => {
 			const price = resolveFastMarketPrice({
 				coin: market.name,
@@ -210,22 +226,23 @@ export function useMarketsInfoInternal(options: UseMarketsInfoOptions = {}) {
 				markPriceReceivedAt: price.receivedAt,
 				midPriceReceivedAt: price.midReceivedAt,
 				marginMetadataReady: market.kind !== "spot" && catalogMetadataReady && market.marginTiers !== undefined,
+				assetContextLive: contextsLive && context !== undefined,
 			} as T & C & LiveMarketPriceFields;
 		};
 
 		const perpMarketsInfo: PerpMarketInfo[] = markets.perp.map((market) =>
-			withLivePrice(market, perpCtxs?.[market.ctxIndex]),
+			withLivePrice(market, perpCtxs?.[market.ctxIndex], perpContextsLive),
 		);
 
 		const spotMarketsInfo: SpotMarketInfo[] = markets.spot.map((market) =>
-			withLivePrice(market, spotCtxs?.[market.name]),
+			withLivePrice(market, spotCtxs?.[market.name], spotContextsLive),
 		);
 
 		const builderPerpMarketsInfo: BuilderPerpMarketsInfo = { all: [] };
 
 		for (const market of markets.builderPerp) {
 			const dexCtxs = getDexCtxs(allDexsCtxs, market.dex);
-			const marketInfo: BuilderPerpMarketInfo = withLivePrice(market, dexCtxs?.[market.ctxIndex]);
+			const marketInfo: BuilderPerpMarketInfo = withLivePrice(market, dexCtxs?.[market.ctxIndex], perpContextsLive);
 
 			builderPerpMarketsInfo.all.push(marketInfo);
 
@@ -249,6 +266,8 @@ export function useMarketsInfoInternal(options: UseMarketsInfoOptions = {}) {
 		markets.catalogState?.isStale,
 		allDexsCtxs,
 		spotCtxs,
+		perpContextsLive,
+		spotContextsLive,
 		fastPriceSubscriptionEnabled,
 		fastAssetCtxs,
 		fastPriceSubscriptionStatus,

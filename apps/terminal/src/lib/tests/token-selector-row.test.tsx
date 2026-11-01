@@ -14,6 +14,15 @@ vi.mock("@/components/trade/components/asset-display", () => ({
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 
+function livePrice(overrides: Partial<MarketRow> = {}): Partial<MarketRow> {
+	return {
+		markPriceStatus: "success",
+		markPriceReceivedAt: Date.now(),
+		assetContextLive: true,
+		...overrides,
+	} as Partial<MarketRow>;
+}
+
 describe("TokenSelectorRow", () => {
 	let container: HTMLDivElement;
 	let root: Root;
@@ -185,14 +194,15 @@ describe("TokenSelectorRow", () => {
 			dayNtlVlm: "125000000",
 			openInterest: "2000000",
 			funding: "0.00001",
+			...livePrice(),
 		} as MarketRow);
 
 		expect(row.children).toHaveLength(4);
 		expect(row.children[1]?.textContent).toContain("HYPE-USDC");
 		expect(row.children[2]?.textContent).toContain("$125M");
 		expect(row.children[2]?.textContent).toContain("$129M");
-		expect(row.children[3]?.textContent).toContain("64.5");
-		expect(row.children[3]?.textContent).toContain("+7.50%");
+		expect(row.children[3]?.children[0]?.textContent).toBe("64.500");
+		expect(row.children[3]?.children[1]?.textContent).toBe("+7.50%");
 		const favoriteButton = row.querySelector<HTMLButtonElement>('button[aria-pressed="false"]');
 		expect(favoriteButton?.className).toContain("size-11");
 		expect(favoriteButton?.className).toContain("absolute");
@@ -268,11 +278,166 @@ describe("TokenSelectorRow", () => {
 					{ name: "HREKT", displayName: "HREKT", szDecimals: 0 },
 					{ name: "USDC", displayName: "USDC", szDecimals: 6 },
 				],
+				...livePrice(),
 			} as MarketRow,
 			{ mobile: false, showSpotMarketCap: true },
 		);
 
 		expect(row.textContent).toContain("0.00000011");
+	});
+
+	function getQuoteCells(row: HTMLElement, mobile: boolean) {
+		if (mobile) {
+			const column = row.children[3];
+			return { price: column?.children[0], change: column?.children[1] };
+		}
+		return { price: row.children[2]?.firstElementChild, change: row.children[3]?.firstElementChild };
+	}
+
+	const HYPE_PERP = {
+		name: "HYPE",
+		kind: "perp",
+		shortName: "HYPE",
+		pairName: "HYPE-USDC",
+		szDecimals: 2,
+		maxLeverage: 10,
+		markPx: "64.5",
+		midPx: "64.45",
+		prevDayPx: "60",
+		dayNtlVlm: "125000000",
+		openInterest: "2000000",
+		funding: "0.00001",
+	} as MarketRow;
+
+	it.each([
+		["mobile", true, "+7.42%", "$129M"],
+		["desktop", false, "+4.450 / +7.42%", "$129,000,000"],
+	] as const)(
+		"prices a %s row from the live mid and keeps open interest on the mark",
+		(_surface, mobile, change, oi) => {
+			const { row } = renderRow({ ...HYPE_PERP, ...livePrice() } as MarketRow, { mobile });
+
+			const cells = getQuoteCells(row, mobile);
+			expect(cells.price?.textContent).toBe("64.450");
+			expect(cells.change?.textContent).toBe(change);
+			expect(cells.change?.className).toContain("text-trading-panel-success");
+			expect(row.textContent).toContain(oi);
+		},
+	);
+
+	it("falls back to the same context's mark only when the mid is null", () => {
+		const { row } = renderRow({ ...HYPE_PERP, ...livePrice({ midPx: null }) } as MarketRow, { mobile: false });
+
+		const cells = getQuoteCells(row, false);
+		expect(cells.price?.textContent).toBe("64.500");
+		expect(cells.change?.textContent).toBe("+4.500 / +7.50%");
+	});
+
+	it.each([
+		["stale", livePrice({ markPriceStatus: "stale" })],
+		["failed", livePrice({ markPriceStatus: "error" })],
+		["still loading", livePrice({ markPriceStatus: "loading" })],
+		["received too long ago", livePrice({ markPriceReceivedAt: Date.now() - 10_001 })],
+		["missing its receipt", livePrice({ markPriceReceivedAt: undefined })],
+	])("keeps the quiet placeholder when the price context is %s", (_state, fields) => {
+		const { row } = renderRow({ ...HYPE_PERP, ...fields } as MarketRow, { mobile: false });
+
+		const cells = getQuoteCells(row, false);
+		expect(cells.price?.textContent).toBe("-");
+		expect(cells.change?.textContent).toBe("-");
+		expect(cells.change?.className).toContain("text-trading-panel-subtle");
+		expect(row.textContent).not.toContain("64.4");
+	});
+
+	it("shows the live price without a 24h change while the asset context is not live", () => {
+		const { row } = renderRow({ ...HYPE_PERP, ...livePrice({ assetContextLive: false }) } as MarketRow, {
+			mobile: false,
+		});
+
+		const cells = getQuoteCells(row, false);
+		expect(cells.price?.textContent).toBe("64.450");
+		expect(cells.change?.textContent).toBe("-");
+		expect(cells.change?.className).toContain("text-trading-panel-subtle");
+	});
+
+	it.each([
+		["mobile", true, "+0.00%"],
+		["desktop", false, "+0.000 / +0.00%"],
+	] as const)("signs an unchanged %s price with a plus like the official selector", (_surface, mobile, change) => {
+		const { row } = renderRow({ ...HYPE_PERP, ...livePrice({ midPx: "60" }) } as MarketRow, { mobile });
+
+		const cells = getQuoteCells(row, mobile);
+		expect(cells.change?.textContent).toBe(change);
+		expect(cells.change?.className).toContain("text-trading-panel-fg");
+	});
+
+	it.each([
+		["a large perp price", { szDecimals: 5, midPx: "77677.5", prevDayPx: "77000" }, "77,678"],
+		["trailing zeros", { szDecimals: 2, midPx: "180.1", prevDayPx: "170" }, "180.10"],
+		["the perp decimal cap", { szDecimals: 0, midPx: "0.00001234", prevDayPx: "0.00001" }, "0.000012"],
+	])("formats %s with five significant figures and the market's decimal cap", (_case, fields, price) => {
+		const { row } = renderRow({ ...HYPE_PERP, ...fields, ...livePrice() } as MarketRow, { mobile: false });
+
+		expect(getQuoteCells(row, false).price?.textContent).toBe(price);
+	});
+
+	it("caps a spot price at eight decimals minus the base token's size decimals", () => {
+		const { row } = renderRow(
+			{
+				name: "@300",
+				kind: "spot",
+				shortName: "TINY",
+				pairName: "TINY/USDC",
+				markPx: "0.0011",
+				midPx: "0.0012345678",
+				prevDayPx: "0.0012",
+				dayNtlVlm: "1000",
+				tokensInfo: [
+					{ name: "TINY", displayName: "TINY", szDecimals: 2 },
+					{ name: "USDC", displayName: "USDC", szDecimals: 6 },
+				],
+				...livePrice(),
+			} as MarketRow,
+			{ mobile: false, showSpotMarketCap: true },
+		);
+
+		expect(getQuoteCells(row, false).price?.textContent).toBe("0.001235");
+	});
+
+	it("gives the desktop price change the finer precision of the two prices", () => {
+		const { row } = renderRow(
+			{ ...HYPE_PERP, szDecimals: 1, ...livePrice({ midPx: "10.5", prevDayPx: "9.8" }) } as MarketRow,
+			{ mobile: false },
+		);
+
+		const cells = getQuoteCells(row, false);
+		expect(cells.price?.textContent).toBe("10.500");
+		expect(cells.change?.textContent).toBe("+0.7000 / +7.14%");
+	});
+
+	it("keeps the spot market cap on the mark while the price follows the mid", () => {
+		const { row } = renderRow(
+			{
+				name: "@1",
+				kind: "spot",
+				shortName: "HYPE",
+				pairName: "HYPE-USDC",
+				markPx: "64.5",
+				midPx: "60",
+				prevDayPx: "60",
+				dayNtlVlm: "125000000",
+				circulatingSupply: "100000000",
+				tokensInfo: [
+					{ name: "HYPE", displayName: "HYPE", szDecimals: 2 },
+					{ name: "USDC", displayName: "USDC", szDecimals: 6 },
+				],
+				...livePrice(),
+			} as MarketRow,
+			{ showSpotMarketCap: true },
+		);
+
+		expect(row.children[2]?.textContent).toContain("$6.45B");
+		expect(row.children[3]?.children[0]?.textContent).toBe("60.000");
 	});
 
 	it("uses a visible background for the selected row", () => {
