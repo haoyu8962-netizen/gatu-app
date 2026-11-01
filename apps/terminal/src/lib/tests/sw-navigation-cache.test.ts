@@ -18,6 +18,13 @@ function html(body: string) {
 	});
 }
 
+function opaqueRedirect() {
+	const response = new Response(null, { status: 302, headers: { location: `${origin}/trade/BTC` } });
+	Object.defineProperty(response, "type", { value: "opaqueredirect" });
+	Object.defineProperty(response, "status", { value: 0 });
+	return response;
+}
+
 function createHarness() {
 	const stores = new Map<string, Map<string, Response>>();
 	const listeners = new Map<string, (event: Record<string, unknown>) => void>();
@@ -48,7 +55,7 @@ function createHarness() {
 	const context = { self, caches: { open }, fetch, Request, Response, URL, setTimeout, clearTimeout };
 	runInNewContext(serviceWorker, context);
 	function navigate(path: string) {
-		const request = new Request(new URL(path, origin));
+		const request = new Request(new URL(path, origin), { redirect: "manual" });
 		Object.defineProperty(request, "mode", { value: "navigate" });
 		let response: Promise<Response> | undefined;
 		const background: Promise<unknown>[] = [];
@@ -254,15 +261,31 @@ describe("service worker navigation for a language link", () => {
 		expect(await (await navigation.response)?.text()).toBe("cached");
 	});
 
-	it("serves the cached shell instead of a server error, like any other navigation, and keeps it", async () => {
+	it.each([500, 503, 599])(
+		"serves the cached shell instead of a %s server error, like any other navigation, and keeps it",
+		async (status) => {
+			const harness = createHarness();
+			const cache = await harness.open("shell-v10");
+			await cache.put(`${origin}/shell-v10`, html("cached"));
+			harness.fetch.mockResolvedValueOnce(new Response("busy", { status, headers: { "content-type": "text/html" } }));
+			const navigation = harness.navigate("/trade/BTC?lang=ja");
+			expect(await (await navigation.response)?.text()).toBe("cached");
+			await Promise.all(navigation.background);
+			expect(await harness.stores.get("shell-v10")?.get(`${origin}/shell-v10`)?.clone().text()).toBe("cached");
+		},
+	);
+
+	it.each([
+		["a 404", () => new Response("missing", { status: 404, headers: { "content-type": "text/html" } })],
+		["a redirect", opaqueRedirect],
+	])("passes %s to the browser even when a shell is cached, and keeps the cache", async (_, answer) => {
 		const harness = createHarness();
 		const cache = await harness.open("shell-v10");
 		await cache.put(`${origin}/shell-v10`, html("cached"));
-		harness.fetch.mockResolvedValueOnce(
-			new Response("busy", { status: 503, headers: { "content-type": "text/html" } }),
-		);
+		const network = answer();
+		harness.fetch.mockResolvedValueOnce(network);
 		const navigation = harness.navigate("/trade/BTC?lang=ja");
-		expect(await (await navigation.response)?.text()).toBe("cached");
+		expect(await navigation.response).toBe(network);
 		await Promise.all(navigation.background);
 		expect(await harness.stores.get("shell-v10")?.get(`${origin}/shell-v10`)?.clone().text()).toBe("cached");
 	});
