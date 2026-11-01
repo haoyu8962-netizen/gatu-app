@@ -18,7 +18,7 @@
 | 地址流程与复用 | [Persistent Deposit Addresses](https://docs.across.to/introduction/persistent-deposit-addresses) |
 | 创建、目的地、退款与支持输入 | [POST /deposit-addresses](https://docs.across.to/api-reference/deposit-addresses/post) |
 | 多笔记录与单笔详情 | [GET /deposits](https://docs.across.to/api-reference/deposits/get)、[GET /deposit](https://docs.across.to/api-reference/deposit/get) |
-| 生产权限与集成身份 | [API Keys & Integrator ID](https://docs.across.to/introduction/api-keys) |
+| 生产权限与集成身份 | [API Keys & Integrator ID](https://docs.across.to/introduction/api-keys)；自助申请表 [Integrator ID](https://docs.across.to/tools/integrator-id) 的实际行为与持久地址权限的探测结果见 [2026-10-31 任务记录](work-memory/sessions/2026-10-31-across-shelved-and-open-issues.md) |
 | HyperCore 资金落点 | [Working with Hypercore](https://docs.across.to/introduction/hypercore)；同时按 [Hyperliquid 核对流程](hyperliquid-sdk-reference.md)检查账户语义 |
 | 跟踪与退款说明 | [Tracking Deposits](https://docs.across.to/introduction/tracking-deposits)、[Refunds](https://docs.across.to/introduction/refunds)；确认是否适用于所用 PDA 路线 |
 

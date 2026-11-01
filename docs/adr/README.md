@@ -7,7 +7,7 @@ ADR 记录采用某个方案的理由、备选方案和后果，完整实现契�
 | [0001](0001-account-overview-cross-shell-model.md) | 已采用；展示规则随后修订 | 桌面与移动端共享账户数据契约，独立渲染；Portfolio 保持独立语义 |
 | [0002](0002-exact-owner-trading-signers.md) | 已实现决策的回溯记录 | 精确 owner 签名身份与邮箱/外部钱包/Agent-only 的 signer 分工 |
 | [0003](0003-orderbook-transport-isolation.md) | 已实现决策的回溯记录 | 通过有界共享 transport 池隔离公共 l2Book 流身份 |
-| [0004](0004-across-deposit-addresses.md) | 拟议，尚未实施；2026-09-20 实现分支未合并，归档为远端标签 `archive/across-deposit-addresses-20260920`（另有含周整理修订的 `…-weekly-revisions`），其服务端持久化设计基于已退役的 EC2 宿主 | 邮箱充值新增 Across 持久地址，保留 CCTP 与恢复；服务端身份、两张地址表及按需转账查询 |
+| [0004](0004-across-deposit-addresses.md) | 拟议，尚未实施；2026-09-20 实现分支未合并，归档为远端标签 `archive/across-deposit-addresses-20260920`（另有含周整理修订的 `…-weekly-revisions`），其服务端持久化设计基于已退役的 EC2 宿主；2026-10-31 运营方决定搁置，保持现行 CCTP 方案（见正文补记） | 邮箱充值新增 Across 持久地址，保留 CCTP 与恢复；服务端身份、两张地址表及按需转账查询 |
 | [0005](0005-spa-static-shell.md) | 已采用；2026-09-15 起生产由 CloudFront + S3 + Lambda 提供（2026-10-02 起域名为 sairn.ai）；静态文档页部分被 ADR 0020 取代 | 以预渲染 SPA 壳与静态文档页交付客户端产物，运行时不再 SSR；`/api/*` 处理器跑在 Lambda 函数 URL 上，Nitro 退为过渡宿主 |
 | [0007](0007-csp-report-only-hardening.md) | 已采用；2026-09-14 report-only 上线，同日内联脚本哈希与 `img-src` 收窄改为强制（[CSP 计划](../csp-inline-script-hashes-plan.md) C、D 阶段） | 候选 CSP 先以 report-only 下发，报告进独立的公开 Lambda 接收器；内联脚本哈希留到第二步 |
 | [0006](0006-startup-preloads-and-edge-caching.md) | 已采用；阶段 1、2 已发布；文档页缓存与地区预取例外被 ADR 0020 取代 | 壳内预加载交易页启动闭包，壳与文档页边缘缓存并后台刷新，图表哈希 bundle immutable，地区判定从引导入口预取，Lambda 保温；不做边缘初判 |

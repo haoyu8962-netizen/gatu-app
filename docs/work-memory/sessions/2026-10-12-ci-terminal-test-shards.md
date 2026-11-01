@@ -7,10 +7,10 @@
   "kind": "task",
   "status": "verified",
   "topics": ["docs-governance"],
-  "summary": "运营方问小改动是否都要跑 CI、一轮多久，并同意缩短。实测一轮约 17 分钟等待、约 33 计费分钟，最长项是 Terminal Tests（十四组手选 Vitest 文件单 job 单 worker 串行，约 15.5 分钟）。改为两个分片并行（每步加 --shard 与 --passWithNoTests，三个非 Vitest 步骤只在第一片跑），浏览器回归的路径过滤排除 *.test.ts(x)。ci-workflows.test.mjs 新增两条结构断言并做了两次变异检查；本地确认一个步骤的两片互不重叠且合起来等于清单。手册写入「一个 PR 尽量只推一次」。GitHub 上的实际耗时待本 PR 的首轮运行观察。",
+  "summary": "Terminal Tests 两片并行与测试文件路径过滤已随 PR #103 合入并进入 p31；PR #104 加固结构断言，PR #106 补入滑杆测试清单。首轮校验器失败及单片 585 秒的历史读数保留；本轮只查最终 head 的 CI 状态，没有重新测量等待时间或计费。",
   "thread": null,
   "baseCommit": "2eeec75d",
-  "commits": [],
+  "commits": ["9aca57af", "dec3e539"],
   "sources": [
     {"path": ".github/workflows/terminal-tests.yml"},
     {"path": ".github/workflows/slider-browser.yml"},
@@ -48,3 +48,11 @@
 ## 后续与替代关系
 
 补充 [ADR 0016](../../adr/0016-dev-first-pull-requests-and-ci-tiers.md)，不替代。若两片耗时明显不均，可再调清单分组；全量 Vitest 仍只在本地按需运行。
+
+## 周整理补注（2026-10-19）
+
+PR #103 已合并，所查 head 的五项检查成功；原“等待首轮”的阶段已过时。后续 PR #104 修复结构断言的绕过，PR #106 补 CI 清单。原末条关于浏览器回归同时写“不会启动”与“所以会启动”有歧义：本次改动包含 slider-browser.yml 自身，不能套用仅修改应用单测文件时的排除结论；原文保留，不把这次通过扩大为所有过滤组合或计费验证。
+
+后续来源：[2026-10-12-codex-cli-review-followups](2026-10-12-codex-cli-review-followups.md)；[2026-10-12-cloudfront-release-p31](2026-10-12-cloudfront-release-p31.md)。
+
+本补注为事后整理，只核对当前规范、代码、Git 和来源记录；来源测试及发布结果不作为本轮执行。查询时间和实际 head 见[本周整理](2026-10-19-weekly-memory-review.md)。
