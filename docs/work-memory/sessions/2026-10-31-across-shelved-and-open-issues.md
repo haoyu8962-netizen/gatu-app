@@ -118,3 +118,20 @@
 - 第二批按审查记录的修复规划分 PR。
 - 本记录所在的分支 `claude/across-shelved-record` 没有推送。按惯例，它随下一次 PR 更新（例如合并 `dev` 解决冲突时）一起带上，不单开文档 PR。
 - 本记录不替代全功能审查记录与 2026-10-13 生产审计记录，只补充 10-31 的现状；ADR 0004 的历史方案保留不改。
+
+## 合入补注（2026-11-02）
+
+本记录的两个提交（`680c93e1`、`5d2e72c6`）一直只在本地分支 `claude/across-shelved-record`，没有像上一节设想的那样随下一次 PR 带上。2026-11-02 由集成分支 `claude/local-records-sync` 以 `--no-ff` 合并（合并提交 `cfd3e0fd`），随该分支的文档 PR 进入 `dev`；[ADR 目录](../../adr/README.md)的 0004 行与[文档地图](../../README.md)的 Across 行同时补记搁置。
+
+「2026-10-31 仍未修复的问题」一表是当天中午的快照，原文保留。之后的变化以后续记录为准，本补注没有逐项重核：
+
+- 第一批 #123–#128 由集成 PR #129 合入 `dev`（`90658436`，2026-10-31 20:26），六个分支头都是它的祖先；第二批五个 P2 分支在同一个 PR 里，见 [P2 集成记录](2026-10-31-p2-integration.md)。审查确认仍存在的问题又经 PR #131（`ec067207`）与 PR #132（`26c06d02`）处理，见[第一组](2026-11-01-audit-confirmed-fixes.md)与[第二组](2026-11-01-audit-group2.md)记录。
+- 「已修、未推送」一行里的 `codex/work-memory-2026-10-19`、`codex/work-memory-2026-10-26` 由同一集成分支合并；`claude/link-language-review-fixes` 与 `claude/release-p35-record` 不在本次范围，2026-11-02 查询时仍不在远端。
+
+2026-11-02 按[阅读入口](../../across-reference.md)只读复核了 ADR 0004 补记引用的官方页面（读 `llms.txt` 与各页 `.mdx` 正文）：
+
+- [API Keys & Integrator ID](https://docs.across.to/introduction/api-keys) 仍写 Integrator ID 经共享渠道（Telegram、Slack）向 Across 团队申请；[Technical FAQ](https://docs.across.to/introduction/faq) 仍写 `GET /swap/counterfactual` 已弃用、地址 24 小时有效。
+- [持久地址指南](https://docs.across.to/introduction/persistent-deposit-addresses)开头的警示框写明 `POST /deposit-addresses` 需要带 `deposit-address` 权限的 API Key，并把取得 Key 的链接指向自助申请页 [`/tools/integrator-id`](https://docs.across.to/tools/integrator-id)；该页的 `.mdx` 只有标题和一个表单组件，读不出表单发放的 Key 带哪些权限。
+- 所以正文「持久地址权限需要 Across 另行开通，自助表单拿不到」仍是未经确认的推断：官方指南把自助表单当作取得 Key 的入口，表单里勾选存款地址接口得到的 Key 是否带 `deposit-address` 权限，没有探测，也没有向 Across 确认。搁置决定不变。重新启动时可以先用自助表单新发的 Key 按正文的无效请求体方法探测一次：仍是 403 说明没有权限，400 或 422 说明鉴权已通过。
+
+核对方法与证据见[本地记录分支合入记录](2026-11-02-local-record-branches-sync.md)。
