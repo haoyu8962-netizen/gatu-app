@@ -4,9 +4,7 @@ import {
 	COMPACT_ASSET_CTXS_MAX_PENDING_FRAMES,
 	createCompactAssetCtxsAccumulator,
 	decodeCompactAssetCtxs,
-	parseCompactPerpAssetCtxsView,
 	parseCompactSpotAssetCtxsDelta,
-	parseCompactSpotAssetCtxsView,
 	subscribeCompactAssetCtxs,
 } from "../../../../../packages/hl-react/src/subscriptions/compact-asset-ctxs";
 import { L2BookStreamError } from "../../../../../packages/hl-react/src/subscriptions/l2";
@@ -92,13 +90,6 @@ describe("compact market context frames", () => {
 			"@1": { markPx: "1" },
 			"@2": { midPx: null },
 		});
-	});
-
-	it("validates stored views and treats null perp entries as still incomplete", () => {
-		expect(parseCompactPerpAssetCtxsView([["", [PERP_CTX, null]]])).toEqual([["", [PERP_CTX, undefined]]]);
-		expect(() => parseCompactPerpAssetCtxsView([["", [{ markPx: "1" }]]])).toThrow(L2BookStreamError);
-		expect(parseCompactSpotAssetCtxsView({ "@1": SPOT_CTX, "@2": { markPx: "1" } })).toEqual({ "@1": SPOT_CTX });
-		expect(() => parseCompactSpotAssetCtxsView({ "@2": { markPx: "1" } })).toThrow(L2BookStreamError);
 	});
 });
 

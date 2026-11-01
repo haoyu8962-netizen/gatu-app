@@ -93,6 +93,7 @@ export function MobileTwapFillHistoryList({ className, scrollMode = "contained" 
 					const isBuy = fill.side === "B";
 					const notional = getUserFillNotional(fill);
 					const quoteToken = getMarketQuoteToken(market);
+					const feeToken = markets.getTokenDisplayName(fill.feeToken);
 
 					return (
 						<article
@@ -149,7 +150,7 @@ export function MobileTwapFillHistoryList({ className, scrollMode = "contained" 
 								<div className="min-w-0">
 									<div className="truncate text-[10px] text-market-close-subtle">{t`Fee`}</div>
 									<div className="truncate text-xs font-semibold text-market-close-fg tabular-nums">
-										{formatToken(fill.fee, { compact: false, symbol: fill.feeToken })}
+										{formatToken(fill.fee, { compact: false, symbol: feeToken })}
 									</div>
 								</div>
 								<div className="min-w-0">
@@ -164,7 +165,7 @@ export function MobileTwapFillHistoryList({ className, scrollMode = "contained" 
 											compact: false,
 											decimals: 2,
 											signDisplay: "exceptZero",
-											symbol: fill.feeToken,
+											symbol: feeToken,
 										})}
 									</div>
 								</div>

@@ -328,6 +328,10 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 		return availableSpotTokens.map((b) => b.asset);
 	}, [activeAccountType, availableSpotTokens]);
 
+	function getTokenDisplayName(tokenName: string) {
+		return getToken(tokenName)?.displayName ?? tokenName;
+	}
+
 	const tokenInfo = getToken(selectedToken);
 	const tokenId = tokenInfo ? formatTokenId(tokenInfo) : "";
 
@@ -476,7 +480,8 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 			submissionIdentityRef.current === submissionIdentity && submissionSequenceRef.current === submissionSequence;
 		const draftAmount = amount;
 		const sentAmount = formatNumber(amount);
-		const sentToken = selectedToken;
+		const draftToken = selectedToken;
+		const sentToken = getTokenDisplayName(selectedToken);
 		try {
 			if (usesTradingAccount) {
 				await sendAsset({
@@ -519,7 +524,7 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 					ownerKey: draftOwnerKey,
 					destination,
 					amount: draftAmount,
-					token: sentToken,
+					token: draftToken,
 					accountType: activeAccountType,
 				});
 				toast.error(
@@ -545,7 +550,7 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 
 	const tokenSelectOptions = tokenOptions.map((tokenName) => ({
 		value: tokenName,
-		label: tokenName,
+		label: getTokenDisplayName(tokenName),
 	}));
 
 	const reviewFee = review ? formatDecimalString(review.fee) : "";
@@ -568,7 +573,7 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 							<div className="flex items-center justify-between gap-3">
 								<span className="text-fg-muted">{t`Amount`}</span>
 								<span className="tabular-nums">
-									{formatDecimalString(review.amount)} {review.token}
+									{formatDecimalString(review.amount)} {getTokenDisplayName(review.token)}
 								</span>
 							</div>
 						</div>
@@ -679,7 +684,7 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 									{t`Available`}:{" "}
 									<span className="underline decoration-dashed underline-offset-2 decoration-fg-muted/50">
 										{accountModeReady && accountDataReady
-											? `${formatDecimalString(floorToString(availableBalanceExact, decimals))} ${selectedToken}`
+											? `${formatDecimalString(floorToString(availableBalanceExact, decimals))} ${getTokenDisplayName(selectedToken)}`
 											: "—"}
 									</span>
 								</>

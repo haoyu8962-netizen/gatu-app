@@ -24,6 +24,9 @@ const testState = vi.hoisted(() => ({
 	limitPrice: "100",
 	openInterestCapped: false,
 	orderType: "limit",
+	selectedPrice: null as { marketName: string; price: string } | null,
+	sizeModeRequest: null as { marketName: string; mode: "base" | "quote" } | null,
+	toggleSizeDenomination: vi.fn(),
 	triggerPrice: "",
 	scaleStart: "",
 	scaleEnd: "",
@@ -170,7 +173,7 @@ vi.mock("@/hooks/trade/use-order-entry-data", () => ({
 			spotBalance: { baseAvailable: 0, quoteAvailable: testState.quoteAvailable },
 			spotBuyQuoteCost: testState.spotBuyQuoteCost ?? input.orderValueForSize?.(testState.sizeForOrder) ?? 100,
 			szDecimals: 3,
-			toggleSizeDenomination: vi.fn(),
+			toggleSizeDenomination: testState.toggleSizeDenomination,
 		};
 	},
 }));
@@ -281,9 +284,13 @@ vi.mock("@/stores/use-order-entry-store", () => ({
 	useTwapTriggerPrice: () => testState.twapTriggerPrice,
 }));
 vi.mock("@/stores/use-orderbook-actions-store", () => ({
-	getOrderbookActionsStore: () => ({ actions: { clearSelectedPrice: vi.fn() } }),
-	getSelectedPriceForMarket: () => null,
-	useSelectedPrice: () => null,
+	getOrderbookActionsStore: () => ({
+		actions: { clearSelectedPrice: vi.fn(), clearSizeModeRequest: vi.fn(), takeSizeModeRequest: () => true },
+	}),
+	getSelectedPriceForMarket: (selection: { marketName: string; price: string } | null, marketName?: string) =>
+		selection && selection.marketName === marketName ? selection.price : null,
+	useSelectedPrice: () => testState.selectedPrice,
+	useSizeModeRequest: () => testState.sizeModeRequest,
 }));
 
 import { TradePanel } from "@/components/trade/tradebox/trade-panel";
@@ -358,6 +365,8 @@ describe("desktop TradePanel open-interest cap restriction", () => {
 		testState.limitPrice = "100";
 		testState.openInterestCapped = false;
 		testState.orderType = "limit";
+		testState.selectedPrice = null;
+		testState.sizeModeRequest = null;
 		testState.triggerPrice = "";
 		container = document.createElement("div");
 		document.body.appendChild(container);
@@ -387,6 +396,50 @@ describe("desktop TradePanel open-interest cap restriction", () => {
 		expect(getOrderButton(container).textContent?.trim()).toBe("Place Buy Order");
 		expect(getOrderButton(container).getAttribute("aria-label")).toBe("Place Buy Order");
 		await expectSubmissionBlocked(container);
+	});
+
+	it.each([
+		["market", "limit"],
+		["limit", "limit"],
+		["stopMarket", "stopLimit"],
+		["stopLimit", "stopLimit"],
+		["takeProfitLimit", "takeProfitLimit"],
+	] as const)("prices a %s order at a clicked book level as a %s order, like the official terminal", async (orderType, expected) => {
+		testState.orderType = orderType;
+		testState.selectedPrice = { marketName: "BTC", price: "98.5" };
+		await renderPanel(root);
+
+		expect(testState.actions.setOrderType.mock.calls).toEqual(expected === orderType ? [] : [[expected]]);
+		expect(testState.actions.setLimitPriceFromUser).toHaveBeenCalledWith(`BTC|${expected}`, "98.5");
+	});
+
+	it.each(["takeProfitMarket", "twap", "scale"] as const)(
+		"leaves a %s order unchanged when a book level is clicked",
+		async (orderType) => {
+			testState.orderType = orderType;
+			testState.selectedPrice = { marketName: "BTC", price: "98.5" };
+			await renderPanel(root);
+
+			expect(testState.actions.setOrderType).not.toHaveBeenCalled();
+			expect(testState.actions.setLimitPriceFromUser).not.toHaveBeenCalled();
+		},
+	);
+
+	it("converts the entered size once through the form's own unit toggle when the book picks the other unit", async () => {
+		testState.sizeModeRequest = { marketName: "BTC", mode: "quote" };
+		await renderPanel(root);
+
+		expect(testState.toggleSizeDenomination).toHaveBeenCalledTimes(1);
+	});
+
+	it.each([
+		["the unit already in use", { marketName: "BTC", mode: "base" as const }],
+		["another market's book", { marketName: "ETH", mode: "quote" as const }],
+	])("ignores a unit request from %s", async (_name, request) => {
+		testState.sizeModeRequest = request;
+		await renderPanel(root);
+
+		expect(testState.toggleSizeDenomination).not.toHaveBeenCalled();
 	});
 
 	it("shows the restriction before a limit price is typed", async () => {

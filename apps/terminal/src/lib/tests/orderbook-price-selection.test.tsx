@@ -101,13 +101,13 @@ describe("orderbook price selection", () => {
 				/>,
 			);
 		});
-		expect(container.querySelectorAll(".orderbook-value-text")[1]?.textContent).toBe("98.25");
+		expect(container.querySelectorAll(".orderbook-value-text")[1]?.textContent).toBe("98");
 
 		act(() => {
 			root.render(
 				<OrderbookRow
 					flashResetKey="HYPE:full"
-					level={{ ...initialLevel, quoteTotal: "99.25" }}
+					level={{ ...initialLevel, quoteTotal: "99.75" }}
 					marketName="HYPE"
 					side="ask"
 					maxTotal="500"
@@ -118,7 +118,34 @@ describe("orderbook price selection", () => {
 			);
 		});
 
-		expect(container.querySelectorAll(".orderbook-value-text")[1]?.textContent).toBe("99.25");
+		expect(container.querySelectorAll(".orderbook-value-text")[1]?.textContent).toBe("100");
+	});
+
+	it.each([
+		[153.75, "4472287", "4,472,287"],
+		[124, "4472287", "4.47M"],
+		[140, "698254", "698,254"],
+		[124, "698254", "698.3K"],
+		[124, "1250", "1,250"],
+	])("on a %s px compact ladder shows the size %s as %s", (ladderWidthPx, size, shown) => {
+		act(() => {
+			root.render(
+				<OrderbookRow
+					compact
+					flashResetKey="kPEPE:full"
+					ladderWidthPx={ladderWidthPx}
+					level={{ price: "0.004812", size, total: size, quoteSize: "21520", quoteTotal: "21520" }}
+					marketName="kPEPE"
+					side="bid"
+					maxTotal="4472287"
+					priceDecimals={6}
+					szDecimals={0}
+				/>,
+			);
+		});
+
+		expect(container.querySelector('[data-slot="orderbook-size-value"]')?.textContent).toBe(shown);
+		expect(container.querySelector("button")?.getAttribute("aria-label")).not.toMatch(/Size [\d.]+[KMB],/);
 	});
 
 	it("does not select a price while the snapshot is disabled", () => {

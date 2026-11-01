@@ -1,9 +1,10 @@
 import { useLingui } from "@lingui/react/macro";
 import { ArrowsClockwiseIcon, StarIcon } from "@phosphor-icons/react";
 import { TOUCH_PRESS_CLASS } from "@/components/ui/touch-press";
-import { get24hChange, get24hPriceChange, getEightHourFundingRate, getMarketCapUsd, getOiUsd } from "@/domain/market";
+import { getEightHourFundingRate, getMarketCapUsd, getOiUsd } from "@/domain/market";
+import { getMarketSelectorQuote } from "@/domain/market/selector-quote";
 import { cn } from "@/lib/cn";
-import { szDecimalsToPriceDecimals, useNumberFormat } from "@/lib/format";
+import { useNumberFormat } from "@/lib/format";
 import { AssetDisplay } from "../components/asset-display";
 import { getMarketSelectorPairName } from "./token-selector-categories";
 import { getMarketTableGridClass, type MarketRow, type MarketTableLayout } from "./token-selector-columns";
@@ -61,7 +62,7 @@ export function TokenSelectorRow({
 	const szDecimals = getSzDecimals(market);
 	const isSpot = market.kind === "spot";
 	const maxLeverage = getMaxLeverage(market);
-	const priceDecimals = szDecimalsToPriceDecimals(szDecimals, isSpot ? "spot" : "perp");
+	const quote = getMarketSelectorQuote(market, { szDecimals, marketType: isSpot ? "spot" : "perp" });
 	const spotBaseToken = isSpot ? market.tokensInfo[0] : undefined;
 	const spotQuoteToken = isSpot ? market.tokensInfo[1] : undefined;
 	const spotPairName =
@@ -69,23 +70,23 @@ export function TokenSelectorRow({
 			? `${spotBaseToken.displayName ?? spotBaseToken.name}/${spotQuoteToken.displayName ?? spotQuoteToken.name}`
 			: null;
 	const displayPairName = !mobile && spotPairName ? spotPairName : getMarketSelectorPairName(market);
-	const priceText = formatNumber(market.markPx, {
-		minimumFractionDigits: 0,
-		maximumFractionDigits: priceDecimals,
+	const priceText = formatNumber(quote.price, {
+		minimumFractionDigits: quote.priceDecimals,
+		maximumFractionDigits: quote.priceDecimals,
 	});
-	const changePercent = get24hChange(market.prevDayPx, market.markPx);
-	const priceChange = get24hPriceChange(market.prevDayPx, market.markPx);
+	const change = quote.change;
 	const changeClass = cn(
 		"font-semibold tabular-nums",
-		changePercent === null ? "text-trading-panel-subtle" : getMarketValueColorClass(changePercent),
+		change ? getMarketValueColorClass(change.direction) : "text-trading-panel-subtle",
 	);
-	const changePercentText = formatPercent(changePercent !== null ? changePercent / 100 : null);
+	const changePercentText = formatPercent(change?.ratio, { signDisplay: "always" });
 	const changeText =
-		changePercent === null || mobile
+		!change || mobile
 			? changePercentText
-			: `${formatNumber(priceChange, {
-					maximumFractionDigits: priceDecimals,
-					signDisplay: "exceptZero",
+			: `${formatNumber(change.amount, {
+					minimumFractionDigits: change.decimals,
+					maximumFractionDigits: change.decimals,
+					signDisplay: "always",
 				})} / ${changePercentText}`;
 
 	const isHip3 = market.kind === "builderPerp";

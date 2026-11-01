@@ -369,14 +369,18 @@ describe("trade balances", () => {
 		expect(withOrders[0]).toMatchObject({ available: "70", inOrder: "30" });
 	});
 
-	it("values non-USDC spot balances at current mid price with entryNtl fallback", () => {
+	it("values non-USDC spot balances at the current mid price and an unpriced one at zero, never at entry notional", () => {
 		const hypeBalance: SpotBalance = { coin: "HYPE", token: 150, total: "10", hold: "0", entryNtl: "200" };
 
 		const pricedRows = getSpotBalanceRows([hypeBalance], undefined, "disabled", { HYPE: "30" });
 		expect(pricedRows[0]).toMatchObject({ asset: "HYPE", usdValue: "300", entryNtl: "200" });
 
 		const unpricedRows = getSpotBalanceRows([hypeBalance], undefined, "disabled");
-		expect(unpricedRows[0]).toMatchObject({ asset: "HYPE", usdValue: "200" });
+		expect(unpricedRows[0]).toMatchObject({ asset: "HYPE", usdValue: "0", entryNtl: "200" });
+		for (const price of ["0", "-1", "not a price"]) {
+			const rows = getSpotBalanceRows([hypeBalance], undefined, "disabled", { HYPE: price });
+			expect(rows[0]).toMatchObject({ asset: "HYPE", usdValue: "0", entryNtl: "200" });
+		}
 
 		const summary = getAccountBalanceSummary({
 			accountAbstraction: "unifiedAccount",
@@ -634,11 +638,11 @@ describe("trade balances", () => {
 		);
 
 		expect(prices?.AXL).toBeUndefined();
-		expect(rows[0]?.usdValue).toBe("0.5");
+		expect(rows[0]?.usdValue).toBe("0");
 	});
 
 	it("keeps outcome-market balances in account value and display rows", () => {
-		const rows = getSpotBalanceRows([outcomeBalance], undefined, "disabled");
+		const rows = getSpotBalanceRows([outcomeBalance], undefined, "disabled", { "+42": "8.625" });
 
 		expect(rows).toEqual([
 			expect.objectContaining({
@@ -648,6 +652,7 @@ describe("trade balances", () => {
 				usdValue: "17.25",
 			}),
 		]);
+		expect(getSpotBalanceRows([outcomeBalance], undefined, "disabled")[0]?.usdValue).toBe("0");
 
 		const summary = getAccountBalanceSummary({
 			accountAbstraction: "unifiedAccount",
@@ -655,9 +660,19 @@ describe("trade balances", () => {
 			perpSummary: { accountValue: "0", totalMarginUsed: "0" },
 			withdrawable: "0",
 			spotBalances: [settledSpotUsdcBalance, outcomeBalance],
+			tokenUsdPrices: { "+42": "8.625" },
 		});
 
 		expect(summary.accountEquity).toBeCloseTo(584.930532);
+		expect(
+			getAccountBalanceSummary({
+				accountAbstraction: "unifiedAccount",
+				marginSummary: { accountValue: "0", totalMarginUsed: "0", totalRawUsd: "0" } as never,
+				perpSummary: { accountValue: "0", totalMarginUsed: "0" },
+				withdrawable: "0",
+				spotBalances: [settledSpotUsdcBalance, outcomeBalance],
+			}).accountEquity,
+		).toBeCloseTo(567.680532);
 	});
 
 	it("uses maintenance-adjusted available values for spot order-entry balances", () => {

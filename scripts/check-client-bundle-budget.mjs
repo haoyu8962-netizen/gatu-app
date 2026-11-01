@@ -152,7 +152,11 @@ const budgets = {
 		],
 	},
 	surfaces: [
-		{ name: "trade-terminal-page", baselineGzipBytes: 123_242, allowedIncreaseBytes: 4_000 },
+		// Raised 2026-11-01 by +762 for the second batch of audit fixes: the order-book unit request, compact-book size
+		// fitting, the shared book-price click and the spot address redirect. Measured as the fixed-identity Node 22.15.0
+		// build with VITE_MOBILE_PAIRING_ENABLED=false of a9973c83 (127,646) minus that of PR #131's d8a2acf5 (126,884),
+		// both without .env.local (docs/terminal-performance-baseline.md).
+		{ name: "trade-terminal-page", baselineGzipBytes: 124_004, allowedIncreaseBytes: 4_000 },
 		{ name: "token-selector-popup", baselineGzipBytes: 14_355, allowedIncreaseBytes: 1_500 },
 		{ name: "api-wallet", baselineGzipBytes: 17_967, allowedIncreaseBytes: 2_000 },
 		{ name: "fundingHistory._address", baselineGzipBytes: 6_820, allowedIncreaseBytes: 1_500 },
@@ -160,7 +164,10 @@ const budgets = {
 		{ name: "historicalOrders._address", baselineGzipBytes: 8_163, allowedIncreaseBytes: 1_500 },
 		{ name: "leaderboard", baselineGzipBytes: 12_083, allowedIncreaseBytes: 1_500 },
 		{ name: "staking", baselineGzipBytes: 23_131, allowedIncreaseBytes: 2_500 },
-		{ name: "vaults-page", baselineGzipBytes: 27_075, allowedIncreaseBytes: 3_000 },
+		// Raised 2026-11-01 by +701 for the silent passive-data states of the Vault pages and the Vault dialog's data Retry
+		// (second batch of audit fixes), measured with the same pair of builds: 30,550 minus 29,849
+		// (docs/terminal-performance-baseline.md).
+		{ name: "vaults-page", baselineGzipBytes: 27_776, allowedIncreaseBytes: 3_000 },
 		// Added 2026-09-27 with the Funding Comparison route (Node 22.15.0 build of the SDK feature batch).
 		{ name: "fundingComparison", baselineGzipBytes: 11_133, allowedIncreaseBytes: 1_500 },
 		{ name: "funding-history-panel", baselineGzipBytes: 8_661, allowedIncreaseBytes: 1_500 },

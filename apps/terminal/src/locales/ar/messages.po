@@ -406,7 +406,7 @@ msgstr "الوصول معطّل"
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "Access is stored in this browser only. If you use {BRAND_NAME} from your Home Screen, scan the QR from that app instead: Connect, then Link Desktop Wallet."
-msgstr ""
+msgstr "يُحفظ الوصول في هذا المتصفح فقط. إذا كنت تستخدم {BRAND_NAME} من الشاشة الرئيسية، فامسح رمز QR من ذلك التطبيق بدلاً من ذلك: ربط، ثم ربط محفظة سطح المكتب."
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
 msgid "Access restricted"
@@ -467,8 +467,8 @@ msgstr "تغيّر وضع الحساب قبل إرسال الطلب. راجع ا
 #~ msgstr "تم تحديث وضع الحساب"
 
 #: src/components/staking/staking-view.tsx
-msgid "Account staking data unavailable"
-msgstr "بيانات تخزين الحساب غير متاحة"
+#~ msgid "Account staking data unavailable"
+#~ msgstr "بيانات تخزين الحساب غير متاحة"
 
 #: src/components/staking/staking-view.tsx
 msgid "Account staking status"
@@ -508,8 +508,8 @@ msgid "Account Value weighted by LTV / Borrowed Amount. If this number is below 
 msgstr "قيمة الحساب المرجّحة بنسبة LTV / المبلغ المقترض. إذا كانت أقل من 100% فلا يمكن للحساب اقتراض المزيد."
 
 #: src/components/vaults/vaults-list.tsx
-msgid "Account Vault data could not be verified"
-msgstr "تعذّر التحقق من بيانات خزائن الحساب"
+#~ msgid "Account Vault data could not be verified"
+#~ msgstr "تعذّر التحقق من بيانات خزائن الحساب"
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Account-level agent approval"
@@ -1184,6 +1184,7 @@ msgid "Back to trade"
 msgstr "العودة إلى التداول"
 
 #: src/components/vaults/vaults-page.tsx
+#: src/components/vaults/vaults-page.tsx
 msgid "Back to Vaults"
 msgstr "العودة إلى الخزائن"
 
@@ -1224,8 +1225,8 @@ msgid "Balances"
 msgstr "الأرصدة"
 
 #: src/components/staking/staking-view.tsx
-msgid "Balances remain unknown and every staking action is disabled until fresh data is verified."
-msgstr "تظل الأرصدة غير معروفة وتُعطّل جميع إجراءات التخزين حتى يتم التحقق من بيانات حديثة."
+#~ msgid "Balances remain unknown and every staking action is disabled until fresh data is verified."
+#~ msgstr "تظل الأرصدة غير معروفة وتُعطّل جميع إجراءات التخزين حتى يتم التحقق من بيانات حديثة."
 
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/orderbook/orderbook-row.tsx
@@ -1618,8 +1619,8 @@ msgstr "جارٍ التحقق من التوفر في منطقتك. عمليات 
 #~ msgstr "جارٍ التحقق من التوفر الإقليمي. التداول غير متاح مؤقتًا."
 
 #: src/components/vaults/vault-detail-view.tsx
-msgid "Checking regional availability. Vault actions are temporarily unavailable."
-msgstr "جارٍ التحقق من التوفر الإقليمي. إجراءات الخزائن غير متاحة مؤقتًا."
+#~ msgid "Checking regional availability. Vault actions are temporarily unavailable."
+#~ msgstr "جارٍ التحقق من التوفر الإقليمي. إجراءات الخزائن غير متاحة مؤقتًا."
 
 #: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
 msgid "Checking the current Hyperliquid deposit route..."
@@ -2394,11 +2395,11 @@ msgstr "نسخ الإصدار"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Could not check on Hyperliquid whether trading is activated. Nothing was signed. Try again."
-msgstr ""
+msgstr "تعذّر التحقق على Hyperliquid مما إذا كان التداول مفعّلًا. لم يُوقَّع أي شيء. حاول مرة أخرى."
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "Could not check the approval on Hyperliquid. Nothing was imported. Try again."
-msgstr ""
+msgstr "تعذّر التحقق من الموافقة على Hyperliquid. لم يُستورد أي شيء. حاول مرة أخرى."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Could not check the builder fee approval on Hyperliquid. Nothing was signed. Try again."
@@ -2749,8 +2750,8 @@ msgid "Deposited"
 msgstr "تم الإيداع"
 
 #: src/components/vaults/vaults-list.tsx
-msgid "Deposited and Leading filters fail closed until both account snapshots are available."
-msgstr "تظل عوامل تصفية «تم الإيداع» و«القيادة» غير متاحة احترازيًا حتى تتوفر لقطتا الحساب."
+#~ msgid "Deposited and Leading filters fail closed until both account snapshots are available."
+#~ msgstr "تظل عوامل تصفية «تم الإيداع» و«القيادة» غير متاحة احترازيًا حتى تتوفر لقطتا الحساب."
 
 #: src/components/trade/tradebox/deposit/deposit-method-chooser.tsx
 #: src/lib/trade/privy-fiat-funding-feedback.ts
@@ -2934,8 +2935,8 @@ msgid "Display and language"
 msgstr "العرض واللغة"
 
 #: src/components/trade/mobile/mobile-book-view.tsx
-msgid "Display units"
-msgstr "وحدات العرض"
+#~ msgid "Display units"
+#~ msgstr "وحدات العرض"
 
 #: src/components/trade/orderbook/orderbook-hover-tooltip.tsx
 msgid "Distance from mid"
@@ -3271,14 +3272,14 @@ msgstr "الانزلاق المقدر"
 msgid "Establish Connection"
 msgstr "إنشاء اتصال"
 
-#. placeholder {0}: formatStakingRatio(props.weightedApr, numberFormat)
+#. placeholder {0}: props.weightedApr === null ? UNKNOWN_VALUE : formatStakingRatio(props.weightedApr, numberFormat)
 #: src/components/staking/staking-view.tsx
 msgid "Estimated APR {0}"
 msgstr "معدل العائد السنوي التقديري {0}"
 
 #: src/components/staking/staking-view.tsx
-msgid "Estimated APR unavailable"
-msgstr "معدل العائد السنوي التقديري غير متاح"
+#~ msgid "Estimated APR unavailable"
+#~ msgstr "معدل العائد السنوي التقديري غير متاح"
 
 #: src/components/trade/components/spot-swap-modal.tsx
 msgid "Estimated fee"
@@ -3378,7 +3379,7 @@ msgstr "منتهي الصلاحية"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Expires {expiresAt}"
-msgstr ""
+msgstr "تنتهي الصلاحية: {expiresAt}"
 
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "Expires {expiresAtLabel}."
@@ -4049,7 +4050,7 @@ msgstr "السجل"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Hold for {holdSeconds} seconds to reveal the QR code"
-msgstr ""
+msgstr "اضغط مع الاستمرار لمدة {holdSeconds} ثوانٍ لإظهار رمز QR"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Hold for 4 seconds to reveal phone access QR"
@@ -4061,7 +4062,7 @@ msgstr ""
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Hold to reveal"
-msgstr ""
+msgstr "اضغط مع الاستمرار للإظهار"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Hold to reveal QR"
@@ -4212,7 +4213,7 @@ msgstr "تم حفظ الصورة"
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "Import"
-msgstr ""
+msgstr "استيراد"
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "Import phone access"
@@ -4377,7 +4378,7 @@ msgstr "تاريخ الانضمام"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Keep holding for {remainingSeconds}s"
-msgstr ""
+msgstr "استمر في الضغط لمدة {remainingSeconds} ث"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Keep holding for 4 seconds. Release, leave, blur, or press Escape to cancel."
@@ -4745,6 +4746,7 @@ msgstr "جارٍ تحميل البيانات الوصفية للرمز..."
 
 #: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade-history/trade-history-page.tsx
+#: src/components/trade/mobile/mobile-history-tab.tsx
 msgid "Loading trade history"
 msgstr "جارٍ تحميل سجل الصفقات"
 
@@ -5360,7 +5362,7 @@ msgstr "إجراءات الأموال الجديدة مقفلة حتى تسوي�
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "New mobile pairing is temporarily unavailable."
-msgstr ""
+msgstr "ربط هاتف جديد غير متاح مؤقتًا."
 
 #: src/components/funding-history/funding-history-page.tsx
 #: src/components/historical-orders/historical-orders-page.tsx
@@ -5489,7 +5491,7 @@ msgstr "لا توجد حسابات مؤهلة للوحة المتصدرين"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "No expiry"
-msgstr ""
+msgstr "بلا انتهاء صلاحية"
 
 #: src/components/api-wallet/api-wallet-list.tsx
 msgid "No expiry reported"
@@ -5511,6 +5513,10 @@ msgstr "لم يتم العثور على تنفيذات."
 #: src/components/trade-history/trade-history-page.tsx
 msgid "No fills match the selected filters."
 msgstr "لا توجد عمليات تنفيذ تطابق عوامل التصفية المحددة."
+
+#: src/components/trade/mobile/mobile-history-tab.tsx
+msgid "No fills match these filters among the latest {snapshotLimit}."
+msgstr "لا يطابق أيٌّ من آخر {snapshotLimit} تنفيذ عوامل التصفية هذه."
 
 #: src/components/trade/mobile/mobile-history-tab.tsx
 msgid "No fills match these filters."
@@ -5578,6 +5584,7 @@ msgid "No market"
 msgstr "لا يوجد سوق"
 
 #: src/components/trade/chart/token-selector-content.tsx
+#: src/components/trade/components/command-menu.tsx
 #: src/components/trade/positions/position-market-filter.tsx
 msgid "No markets found."
 msgstr "لم يتم العثور على أسواق."
@@ -5820,13 +5827,13 @@ msgstr "على iPhone أو iPad، افتح قائمة المشاركة واخت�
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "On your phone, open {BRAND_NAME}, tap Connect, then Link Desktop Wallet and scan this code."
-msgstr ""
+msgstr "على هاتفك، افتح {BRAND_NAME} واضغط على ربط، ثم ربط محفظة سطح المكتب، وامسح هذا الرمز."
 
 #. placeholder {0}: payload.env
 #. placeholder {1}: formatDateTime(payload.agentValidUntilMs, { locale })
 #: src/routes/mobile-agent-sync.tsx
 msgid "Once imported, this phone trades on {0} with the desktop-approved key until {1}. It cannot withdraw."
-msgstr ""
+msgstr "بعد الاستيراد، يتداول هذا الهاتف على {0} بالمفتاح المعتمد من سطح المكتب حتى {1}. ولا يمكنه السحب."
 
 #: src/components/staking/staking-action-modal.tsx
 msgid "One-day validator lock"
@@ -5871,7 +5878,7 @@ msgstr "مفتوح"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Open API Wallet"
-msgstr ""
+msgstr "فتح محفظة API"
 
 #: src/config/footer-links.ts
 msgid "Open command menu"
@@ -6003,8 +6010,8 @@ msgstr "رسوم دفتر الأوامر المتحركة"
 
 #: src/components/trade/components/global-settings-modal.tsx
 #: src/components/trade/components/global-settings-modal.tsx
-msgid "Order book in quote asset"
-msgstr "دفتر الأوامر بعملة التسعير"
+#~ msgid "Order book in quote asset"
+#~ msgstr "دفتر الأوامر بعملة التسعير"
 
 #: src/config/orderbook-labels.ts
 msgid "Order book view"
@@ -6326,6 +6333,7 @@ msgstr "رابط تخزين دائم"
 #: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/chart/token-selector-trigger.tsx
+#: src/components/trade/components/command-menu.tsx
 #: src/components/trade/components/market-asset-info.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
@@ -6379,7 +6387,7 @@ msgstr "أرباح وخسائر العقود الدائمة"
 
 #: src/components/trade/components/mobile-agent-ended-notifier.tsx
 msgid "Phone access ended for {account}"
-msgstr ""
+msgstr "انتهى وصول الهاتف للحساب {account}"
 
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "Phone access is ready, but the temporary QR copy could not be cleared. Close this tab and clear this site's data."
@@ -6907,8 +6915,8 @@ msgid "Recent reward claims"
 msgstr "المطالبات الحديثة بالمكافآت"
 
 #: src/components/referrals/referral-activity.tsx
-msgid "Recent reward claims could not be verified."
-msgstr "تعذّر التحقق من المطالبات الحديثة بالمكافآت."
+#~ msgid "Recent reward claims could not be verified."
+#~ msgstr "تعذّر التحقق من المطالبات الحديثة بالمكافآت."
 
 #: src/config/orderbook-labels.ts
 msgid "Recent Trades"
@@ -7036,8 +7044,8 @@ msgid "Referral codes must be between 1 and 20 characters."
 msgstr "يجب أن تتكون رموز الإحالة من 1 إلى 20 حرفًا."
 
 #: src/components/referrals/referral-dashboard.tsx
-msgid "Referral data unavailable"
-msgstr "بيانات الإحالة غير متاحة"
+#~ msgid "Referral data unavailable"
+#~ msgstr "بيانات الإحالة غير متاحة"
 
 #: src/components/referrals/referral-rewards-card.tsx
 msgid "Referral discounts do not apply to vaults or subaccounts."
@@ -7130,16 +7138,16 @@ msgid "Refresh referral data before submitting another signed request."
 msgstr "حدّث بيانات الإحالة قبل إرسال طلب موقّع آخر."
 
 #: src/components/referrals/referral-dashboard.tsx
-msgid "Refreshing referral data…"
-msgstr "جارٍ تحديث بيانات الإحالة…"
+#~ msgid "Refreshing referral data…"
+#~ msgstr "جارٍ تحديث بيانات الإحالة…"
 
 #: src/components/staking/staking-view.tsx
-msgid "Refreshing staking data…"
-msgstr "جارٍ تحديث بيانات التخزين…"
+#~ msgid "Refreshing staking data…"
+#~ msgstr "جارٍ تحديث بيانات التخزين…"
 
 #: src/components/vaults/vault-detail-view.tsx
-msgid "Refreshing Vault data. Actions are temporarily unavailable."
-msgstr "جارٍ تحديث بيانات الخزنة. الإجراءات غير متاحة مؤقتًا."
+#~ msgid "Refreshing Vault data. Actions are temporarily unavailable."
+#~ msgstr "جارٍ تحديث بيانات الخزنة. الإجراءات غير متاحة مؤقتًا."
 
 #: src/components/api-wallet/api-wallet-list.tsx
 #: src/components/leaderboard/leaderboard-view.tsx
@@ -7387,7 +7395,8 @@ msgstr "استئناف التتبع"
 #: src/components/portfolio/portfolio-performance-chart.tsx
 #: src/components/referrals/referral-activity.tsx
 #: src/components/referrals/referral-dashboard.tsx
-#: src/components/staking/staking-view.tsx
+#: src/components/referrals/referral-dashboard.tsx
+#: src/components/referrals/referral-rewards-card.tsx
 #: src/components/staking/staking-view.tsx
 #: src/components/trade/chart/funding-history-load-boundary.tsx
 #: src/components/trade/chart/funding-history-panel.tsx
@@ -7398,6 +7407,7 @@ msgstr "استئناف التتبع"
 #: src/components/trade/components/market-asset-info.tsx
 #: src/components/trade/components/market-asset-info.tsx
 #: src/components/trade/layout/terminal-boot-error.tsx
+#: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/offline-banner.tsx
 #: src/components/trade/positions/account-transfers-tab.tsx
 #: src/components/trade/positions/account-transfers-tab.tsx
@@ -7412,14 +7422,17 @@ msgstr "استئناف التتبع"
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #: src/components/trade/twap-history-feedback.tsx
 #: src/components/ui/history-page-unavailable.tsx
+#: src/components/vaults/vault-action-modal.tsx
+#: src/components/vaults/vault-detail-view.tsx
+#: src/components/vaults/vaults-list.tsx
 #: src/components/vaults/vaults-list.tsx
 #: src/components/vaults/vaults-page.tsx
 msgid "Retry"
 msgstr "إعادة المحاولة"
 
 #: src/components/vaults/vault-detail-view.tsx
-msgid "Retry account data"
-msgstr "إعادة محاولة تحميل بيانات الحساب"
+#~ msgid "Retry account data"
+#~ msgstr "إعادة محاولة تحميل بيانات الحساب"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Retry check"
@@ -7590,8 +7603,8 @@ msgid "Reward history is scoped to the verified owner."
 msgstr "يقتصر سجل المكافآت على المالك الذي تم التحقق منه."
 
 #: src/components/staking/staking-view.tsx
-msgid "Reward history unavailable"
-msgstr "سجل المكافآت غير متاح"
+#~ msgid "Reward history unavailable"
+#~ msgstr "سجل المكافآت غير متاح"
 
 #: src/components/staking/staking-view.tsx
 msgid "Reward source"
@@ -7755,7 +7768,7 @@ msgstr "يجب أن يتراوح انحراف المقياس بين {SCALE_SKEW_
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "Scan the QR from Link mobile device on your desktop to load a trading key."
-msgstr ""
+msgstr "امسح رمز QR من ربط جهاز الجوال على سطح المكتب لتحميل مفتاح تداول."
 
 #: src/components/trade/components/mobile-agent-qr-scanner.tsx
 msgid "Scan the QR from the QR icon in the top-right of {BRAND_NAME} on desktop (Link mobile device)."
@@ -7782,16 +7795,22 @@ msgstr "البحث حسب الخزنة أو العنوان أو القائد"
 msgid "Search by wallet address or display name"
 msgstr "البحث حسب عنوان المحفظة أو اسم العرض"
 
+#: src/components/trade/components/command-menu.tsx
+msgid "Search for a market to trade"
+msgstr "ابحث عن سوق للتداول"
+
 #: src/components/leaderboard/leaderboard-view.tsx
 msgid "Search leaderboard"
 msgstr "البحث في لوحة المتصدرين"
 
 #: src/components/funding-comparison/funding-comparison-view.tsx
+#: src/components/trade/components/command-menu.tsx
 #: src/components/trade/positions/position-market-filter.tsx
 msgid "Search markets"
 msgstr "البحث في الأسواق"
 
 #: src/components/trade/chart/token-selector-content.tsx
+#: src/components/trade/components/command-menu.tsx
 #: src/components/trade/positions/position-market-filter.tsx
 msgid "Search markets..."
 msgstr "البحث في الأسواق..."
@@ -8100,7 +8119,7 @@ msgstr "التوقيع جاهز"
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Signing with your email wallet"
-msgstr ""
+msgstr "جارٍ التوقيع بمحفظة بريدك الإلكتروني"
 
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/config/ui-text.ts
@@ -8180,6 +8199,10 @@ msgstr "انحراف الحجم"
 #: src/lib/trade/order-submission-feedback.ts
 msgid "Size skew is too aggressive for the total size"
 msgstr "انحراف الحجم كبير جدًا بالنسبة للحجم الإجمالي"
+
+#: src/config/orderbook-labels.ts
+msgid "Size unit"
+msgstr "وحدة الحجم"
 
 #: src/components/trade/tradebox/trade-form-tp-sl.tsx
 #: src/lib/errors/definitions/tpsl.ts
@@ -8295,6 +8318,7 @@ msgstr "المصدر"
 #: src/components/trade/chart/token-selector-row.tsx
 #: src/components/trade/chart/token-selector-row.tsx
 #: src/components/trade/chart/token-selector-trigger.tsx
+#: src/components/trade/components/command-menu.tsx
 #: src/components/trade/components/market-asset-info.tsx
 #: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
@@ -8346,8 +8370,8 @@ msgid "Staking action history table"
 msgstr "جدول سجل إجراءات التخزين"
 
 #: src/components/staking/staking-view.tsx
-msgid "Staking action history unavailable"
-msgstr "سجل إجراءات التخزين غير متاح"
+#~ msgid "Staking action history unavailable"
+#~ msgstr "سجل إجراءات التخزين غير متاح"
 
 #: src/components/staking/staking-view.tsx
 msgid "Staking actions"
@@ -8483,7 +8507,7 @@ msgstr "البقاء على اتصال"
 #. placeholder {0}: formatDateTime(agentValidUntilMs, { locale: i18n.locale })
 #: src/routes/mobile-agent-sync.tsx
 msgid "Stays on this phone until {0} unless you revoke it from the master wallet on desktop."
-msgstr ""
+msgstr "يبقى على هذا الهاتف حتى {0} ما لم تُلغِه من المحفظة الرئيسية على سطح المكتب."
 
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "Stays on this phone until {validUntilLabel} unless you disconnect it here or revoke it from the master wallet on desktop."
@@ -9077,11 +9101,11 @@ msgstr "تعذر إكمال الاتصال. ربما تمت الموافقة ع�
 #: src/lib/tests/mobile-agent-sync-route.test.tsx
 #: src/routes/mobile-agent-sync.tsx
 msgid "The desktop has not approved this key. Create a new QR on desktop."
-msgstr ""
+msgstr "لم يعتمد سطح المكتب هذا المفتاح. أنشئ رمز QR جديدًا على سطح المكتب."
 
 #: src/components/trade/components/mobile-agent-ended-notifier.tsx
 msgid "The desktop-approved key expired or was replaced from desktop. Scan a new QR from Link mobile device."
-msgstr ""
+msgstr "انتهت صلاحية المفتاح المعتمد من سطح المكتب أو استُبدل من سطح المكتب. امسح رمز QR جديدًا من ربط جهاز الجوال."
 
 #: src/components/trade/positions/send-modal.tsx
 msgid "The destination address has never sent a transaction on Hyperliquid. Do not use Send to transfer to an exchange or another platform that does not support the Hyperliquid blockchain, or your funds will be lost. To move USDC to Arbitrum, use Withdraw instead."
@@ -9129,8 +9153,8 @@ msgstr "محفظة الرسوم المموّلة مهيأة لشبكة Arbitrum 
 #~ msgstr "يبقى المفتاح المُنشأ في علامة التبويب هذه فقط. لا توافق على مفتاح آخر ولا تُعِد تحميل الصفحة."
 
 #: src/components/staking/staking-view.tsx
-msgid "The history response could not be verified."
-msgstr "تعذر التحقق من استجابة السجل."
+#~ msgid "The history response could not be verified."
+#~ msgstr "تعذر التحقق من استجابة السجل."
 
 #: src/lib/trade/funds-action-feedback.ts
 msgid "The Hyperliquid deposit route changed before signing. Review the updated route and retry."
@@ -9287,8 +9311,8 @@ msgstr "يُنشأ المفتاح الخاص في هذا المتصفح ولا �
 #~ msgstr "يُنشأ المفتاح الخاص على جهاز سطح المكتب هذا ويُضمَّن في رمز QR."
 
 #: src/components/vaults/vaults-list.tsx
-msgid "The public Vault feed could not be verified. No cached or cross-network rows are shown in its place."
-msgstr "تعذر التحقق من موجز الخزائن العام. لا تُعرض بدلًا منه صفوف مخزنة مؤقتًا أو من شبكة أخرى."
+#~ msgid "The public Vault feed could not be verified. No cached or cross-network rows are shown in its place."
+#~ msgstr "تعذر التحقق من موجز الخزائن العام. لا تُعرض بدلًا منه صفوف مخزنة مؤقتًا أو من شبكة أخرى."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "The QR can trade but not withdraw. Approving replaces the key on a phone that is already linked. Do not share it, screenshot it or show it while sharing your screen."
@@ -9296,7 +9320,7 @@ msgstr "تعذر التحقق من موجز الخزائن العام. لا تُ
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "The QR can trade but not withdraw. Approving replaces the mobile key of a phone that is already linked, including one linked in the Hyperliquid app. Do not share it, screenshot it or show it while sharing your screen."
-msgstr ""
+msgstr "يمكن لرمز QR التداول لكن لا يمكنه السحب. تؤدي الموافقة إلى استبدال مفتاح الهاتف لهاتف مرتبط بالفعل، بما في ذلك هاتف مرتبط في تطبيق Hyperliquid. لا تشاركه ولا تلتقط له لقطة شاشة ولا تعرضه أثناء مشاركة شاشتك."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "The QR can trade but not withdraw. Do not share it, screenshot it or show it while sharing your screen."
@@ -9312,11 +9336,11 @@ msgstr ""
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "The QR could not be drawn. Hold to reveal to try again, or reload the page if it keeps failing."
-msgstr ""
+msgstr "تعذّر رسم رمز QR. اضغط مع الاستمرار للإظهار للمحاولة مرة أخرى، أو أعد تحميل الصفحة إذا استمر الفشل."
 
 #: src/components/trade/components/mobile-agent-qr-scanner.tsx
 msgid "The QR scanner could not load. Check your connection, reload the page and try again."
-msgstr ""
+msgstr "تعذّر تحميل ماسح رمز QR. تحقق من اتصالك، وأعد تحميل الصفحة، ثم حاول مرة أخرى."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "The QR stays hidden until you deliberately reveal it."
@@ -9374,20 +9398,20 @@ msgid "The response could not be verified. No partial order history is shown."
 msgstr "تعذر التحقق من الاستجابة. لا يُعرض سجل أوامر جزئي."
 
 #: src/components/referrals/referral-dashboard.tsx
-msgid "The response could not be verified. No referral action is available until fresh data loads."
-msgstr "تعذّر التحقق من الاستجابة. لن يتوفر أي إجراء إحالة حتى يتم تحميل بيانات حديثة."
+#~ msgid "The response could not be verified. No referral action is available until fresh data loads."
+#~ msgstr "تعذّر التحقق من الاستجابة. لن يتوفر أي إجراء إحالة حتى يتم تحميل بيانات حديثة."
 
 #: src/components/staking/staking-view.tsx
-msgid "The response could not be verified. No validator action is available."
-msgstr "تعذر التحقق من الاستجابة. لا يتوفر أي إجراء لجهة التحقق."
+#~ msgid "The response could not be verified. No validator action is available."
+#~ msgstr "تعذر التحقق من الاستجابة. لا يتوفر أي إجراء لجهة التحقق."
 
 #: src/components/vaults/vaults-page.tsx
-msgid "The response was missing, malformed, or could not be verified. No placeholder financial data is shown."
-msgstr "كانت الاستجابة مفقودة أو مشوهة أو تعذر التحقق منها. لا تُعرض بيانات مالية مؤقتة."
+#~ msgid "The response was missing, malformed, or could not be verified. No placeholder financial data is shown."
+#~ msgstr "كانت الاستجابة مفقودة أو مشوهة أو تعذر التحقق منها. لا تُعرض بيانات مالية مؤقتة."
 
 #: src/components/staking/staking-view.tsx
-msgid "The reward response could not be verified."
-msgstr "تعذر التحقق من استجابة المكافآت."
+#~ msgid "The reward response could not be verified."
+#~ msgstr "تعذر التحقق من استجابة المكافآت."
 
 #: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
@@ -9530,7 +9554,7 @@ msgstr "لا توجد مكافآت غير مطالب بها متاحة للمط�
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "This account already has {count} named API wallets and none of them is a mobile key. Hyperliquid allows {limit} (more with sub-accounts or higher trading volume), so this approval may be rejected. If it is, remove one you no longer use:"
-msgstr ""
+msgstr "يحتوي هذا الحساب بالفعل على {count} من محافظ API المسمّاة، وليس أي منها مفتاح هاتف. يسمح Hyperliquid بـ {limit} (أكثر مع الحسابات الفرعية أو حجم تداول أعلى)، لذا قد تُرفض هذه الموافقة. إذا حدث ذلك، فأزل محفظة لم تعد تستخدمها:"
 
 #: src/lib/errors/action-error.ts
 msgid "This account already has a referral code and cannot apply another one."
@@ -9538,7 +9562,7 @@ msgstr "لدى هذا الحساب رمز إحالة بالفعل، ولا يم�
 
 #: src/lib/errors/exchange-error-text.ts
 msgid "This account already has the {limit} named API wallets its trading volume allows. Remove one on the API Wallet page before approving another."
-msgstr ""
+msgstr "يحتوي هذا الحساب بالفعل على {limit} من محافظ API المسمّاة، وهو الحد الذي يسمح به حجم تداوله. أزل واحدة من صفحة محفظة API قبل الموافقة على أخرى."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "This account already uses the {limit} named API wallets Hyperliquid allows, and none of them is a mobile key, so the approval will be rejected unless your trading volume allows more. Remove one you no longer use first:"
@@ -9744,7 +9768,7 @@ msgstr "تعذّر تحميل هذه اللوحة. أعد المحاولة أو 
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "This phone could not store the trading key. Clear this site's data and scan again."
-msgstr ""
+msgstr "تعذّر على هذا الهاتف حفظ مفتاح التداول. احذف بيانات هذا الموقع ثم امسح الرمز ضوئيًا مرة أخرى."
 
 #: src/lib/trade/owner-approval-message.ts
 #~ msgid "This phone uses a desktop-approved trading key. Approve trading with the master wallet on desktop first: open Link mobile device there."
@@ -9757,11 +9781,11 @@ msgstr "يستخدم هذا الهاتف مفتاح تداول معتمدًا م
 
 #: src/lib/trade/owner-approval-message.ts
 msgid "This phone uses a desktop-approved trading key. Finish trading authorization on desktop first by placing a first order there."
-msgstr ""
+msgstr "يستخدم هذا الهاتف مفتاح تداول معتمدًا من سطح المكتب. أكمل أولًا تفويض التداول على سطح المكتب بتقديم أول أمر هناك."
 
 #: src/hooks/trade/use-master-wallet-action-reason.ts
 msgid "This phone uses a desktop-approved trading key. This action needs the master wallet on desktop."
-msgstr ""
+msgstr "يستخدم هذا الهاتف مفتاح تداول معتمدًا من سطح المكتب. يتطلب هذا الإجراء المحفظة الرئيسية على سطح المكتب."
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-market-close-modal.tsx
@@ -9793,7 +9817,7 @@ msgstr "لم يعد هذا المركز يستخدم الهامش المعزول
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "This QR belongs to a different network. Use the same network on both devices, then scan a new QR from desktop."
-msgstr ""
+msgstr "رمز QR هذا يخص شبكة أخرى. استخدم الشبكة نفسها على كلا الجهازين، ثم امسح رمز QR جديدًا من سطح المكتب."
 
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "This QR belongs to a different owner account."
@@ -9806,7 +9830,7 @@ msgstr ""
 #: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
 msgid "This QR expired. Create a new QR on desktop."
-msgstr ""
+msgstr "انتهت صلاحية رمز QR هذا. أنشئ رمز QR جديدًا على سطح المكتب."
 
 #: src/components/trade/components/mobile-agent-qr-scanner.tsx
 #: src/routes/mobile-agent-sync.tsx
@@ -10229,7 +10253,7 @@ msgstr "قد ينطوي التداول في هذه الأسواق على مخا�
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Trading is not activated on this account yet. Deposit and place a first order on this desktop to finish trading authorization, then link your phone."
-msgstr ""
+msgstr "لم يُفعَّل التداول على هذا الحساب بعد. أودِع وقدّم أول أمر على سطح المكتب هذا لإكمال تفويض التداول، ثم اربط هاتفك."
 
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/config/trade-panel-labels.ts
@@ -10604,8 +10628,8 @@ msgid "Unable to verify regional availability. Trading is temporarily unavailabl
 msgstr "تعذر التحقق من التوفر الإقليمي. التداول غير متاح مؤقتًا."
 
 #: src/components/vaults/vault-detail-view.tsx
-msgid "Unable to verify regional availability. Vault actions are temporarily unavailable."
-msgstr "تعذر التحقق من التوفر الإقليمي. إجراءات الخزنة غير متاحة مؤقتًا."
+#~ msgid "Unable to verify regional availability. Vault actions are temporarily unavailable."
+#~ msgstr "تعذر التحقق من التوفر الإقليمي. إجراءات الخزنة غير متاحة مؤقتًا."
 
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
@@ -10942,8 +10966,8 @@ msgid "Validator commission"
 msgstr "عمولة جهة التحقق"
 
 #: src/components/staking/staking-view.tsx
-msgid "Validator data unavailable"
-msgstr "بيانات جهة التحقق غير متاحة"
+#~ msgid "Validator data unavailable"
+#~ msgstr "بيانات جهة التحقق غير متاحة"
 
 #: src/components/staking/staking-view.tsx
 msgid "Validator performance"
@@ -10993,8 +11017,8 @@ msgid "Vault Commission"
 msgstr "عمولة الخزنة"
 
 #: src/components/vaults/vaults-list.tsx
-msgid "Vault data is unavailable"
-msgstr "بيانات الخزنة غير متاحة"
+#~ msgid "Vault data is unavailable"
+#~ msgstr "بيانات الخزنة غير متاحة"
 
 #: src/components/funds-action/funds-action-recovery-host.tsx
 msgid "Vault deposit"
@@ -11013,8 +11037,8 @@ msgid "Vault depositors"
 msgstr "مودعو الخزنة"
 
 #: src/components/vaults/vaults-page.tsx
-msgid "Vault details are unavailable"
-msgstr "تفاصيل الخزنة غير متاحة"
+#~ msgid "Vault details are unavailable"
+#~ msgstr "تفاصيل الخزنة غير متاحة"
 
 #: src/config/account-ledger.ts
 msgid "Vault Distribution"
@@ -11089,8 +11113,8 @@ msgid "Verification reference"
 msgstr "مرجع التحقق"
 
 #: src/components/vaults/vault-detail-view.tsx
-msgid "Verified Vault details are unavailable."
-msgstr "تفاصيل الخزنة المتحقق منها غير متاحة."
+#~ msgid "Verified Vault details are unavailable."
+#~ msgstr "تفاصيل الخزنة المتحقق منها غير متاحة."
 
 #. placeholder {0}: formatVaultUsd(availableAmount, numberFormat)
 #: src/components/vaults/vault-action-modal.tsx
@@ -11130,8 +11154,8 @@ msgid "Verifying from history"
 msgstr "جارٍ التحقق من السجل"
 
 #: src/components/vaults/vault-detail-view.tsx
-msgid "Verifying the owner Vault balance before enabling withdrawals."
-msgstr "جارٍ التحقق من رصيد المالك في الخزنة قبل إتاحة عمليات السحب."
+#~ msgid "Verifying the owner Vault balance before enabling withdrawals."
+#~ msgstr "جارٍ التحقق من رصيد المالك في الخزنة قبل إتاحة عمليات السحب."
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Verifying the result"
@@ -11412,8 +11436,8 @@ msgid "Withdrawal remains locked until the server-reported unlock time."
 msgstr "يظل السحب مقفلًا حتى وقت إلغاء القفل الذي أبلغ عنه الخادم."
 
 #: src/components/vaults/vault-detail-view.tsx
-msgid "Withdrawal remains unavailable until the owner balance is verified."
-msgstr "يظل السحب غير متاح حتى التحقق من رصيد المالك."
+#~ msgid "Withdrawal remains unavailable until the owner balance is verified."
+#~ msgstr "يظل السحب غير متاح حتى التحقق من رصيد المالك."
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Withdrawal status unknown"
@@ -11625,7 +11649,7 @@ msgstr "محفظة البريد الإلكتروني غير متاحة. اقطع
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Your email wallet signs the reviewed request automatically. Nothing changes before Hyperliquid accepts it."
-msgstr ""
+msgstr "توقّع محفظة بريدك الإلكتروني الطلب الذي راجعته تلقائيًا. لا يتغير شيء قبل أن يقبله Hyperliquid."
 
 #: src/components/vaults/vault-detail-view.tsx
 #: src/components/vaults/vaults-list.tsx
@@ -11694,8 +11718,8 @@ msgid "Your transaction is being processed"
 msgstr "جارٍ معالجة معاملتك"
 
 #: src/components/vaults/vault-detail-view.tsx
-msgid "Your Vault balance could not be verified. Account values and withdrawal remain unavailable."
-msgstr "تعذر التحقق من رصيدك في الخزنة. تظل قيم الحساب والسحب غير متاحة."
+#~ msgid "Your Vault balance could not be verified. Account values and withdrawal remain unavailable."
+#~ msgstr "تعذر التحقق من رصيدك في الخزنة. تظل قيم الحساب والسحب غير متاحة."
 
 #: src/lib/trade/privy-fiat-funding-feedback.ts
 msgid "Your wallet session changed, so the card purchase did not open. Reconnect your wallet and try again."

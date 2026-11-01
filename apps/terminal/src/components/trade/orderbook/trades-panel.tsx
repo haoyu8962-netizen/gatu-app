@@ -9,10 +9,9 @@ import { TradeRow } from "./trade-row";
 
 interface Props {
 	compact?: boolean;
-	showInQuote: boolean;
 }
 
-export function TradesPanel({ compact = false, showInQuote }: Props) {
+export function TradesPanel({ compact = false }: Props) {
 	const { t, i18n } = useLingui();
 	const { data: selectedMarket } = useSelectedMarketInfo();
 	const subscriptionCoin = selectedMarket?.name ?? "";
@@ -26,10 +25,10 @@ export function TradesPanel({ compact = false, showInQuote }: Props) {
 	});
 	const isTestnet = useIsTestnet();
 
-	const { baseToken, quoteToken } = useMemo(() => {
-		if (!selectedMarket) return { baseToken: "", quoteToken: "" };
-		return getBaseQuoteFromPairName(selectedMarket.pairName, selectedMarket.kind);
-	}, [selectedMarket]);
+	const baseToken = useMemo(
+		() => (selectedMarket ? getBaseQuoteFromPairName(selectedMarket.pairName, selectedMarket.kind).baseToken : ""),
+		[selectedMarket],
+	);
 
 	const szDecimals = selectedMarket?.szDecimals ?? 4;
 	const marketType = selectedMarket?.kind === "spot" ? "spot" : "perp";
@@ -48,7 +47,6 @@ export function TradesPanel({ compact = false, showInQuote }: Props) {
 	if (initialTradeIds.current === null && processed.length > 0) {
 		initialTradeIds.current = new Set(processed.map((trade) => trade.id));
 	}
-	const displayAsset = showInQuote ? quoteToken : baseToken;
 	const showRows = hasCurrentSnapshot && processed.length > 0;
 	const showEmpty = hasCurrentSnapshot && processed.length === 0;
 
@@ -64,7 +62,7 @@ export function TradesPanel({ compact = false, showInQuote }: Props) {
 				<div className="min-w-0 overflow-hidden text-right">
 					<span className="flex min-w-0 items-center justify-end gap-0.5">
 						<span className="shrink-0">{t`Size`}</span>
-						<span className="trades-asset-heading min-w-0 truncate text-fg">({displayAsset})</span>
+						<span className="trades-asset-heading min-w-0 truncate text-fg">({baseToken})</span>
 					</span>
 				</div>
 				{!compact && <div className="min-w-0 truncate text-right">{t`Time`}</div>}
@@ -79,7 +77,6 @@ export function TradesPanel({ compact = false, showInQuote }: Props) {
 								trade={trade}
 								priceDecimals={priceDecimals}
 								szDecimals={szDecimals}
-								showInQuote={showInQuote}
 								isTestnet={isTestnet}
 								compact={compact}
 								initial={initialTradeIds.current?.has(trade.id)}

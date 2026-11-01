@@ -1,7 +1,14 @@
 import { useActiveAgentOwner } from "@sairn/hl-react";
 import { useState } from "react";
+import { useDataReceivedSinceMount } from "@/hooks/portfolio/use-data-received-since-mount";
 import { useReconnectWallet, useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { useHyperliquid, useInfo } from "@/lib/hyperliquid";
+import {
+	combinePassiveQueryStates,
+	getPassiveQueryState,
+	isPassiveQueryShown,
+	type PassiveQueryState,
+} from "@/lib/passive-query-state";
 import { hasSameWalletAddress } from "@/lib/wallet/privy-wagmi";
 import {
 	calculateDelegationWeightedApr,
@@ -53,7 +60,7 @@ export interface ResolveStakingOwnerInput {
 export interface StakingController {
 	env: "Mainnet" | "Testnet";
 	pageState: StakingPageState;
-	publicState: "ready" | "loading" | "error";
+	publicState: PassiveQueryState;
 	accountState: StakingAccountDataState;
 	ownerAddress: `0x${string}` | undefined;
 	hasExactMasterSigner: boolean;
@@ -65,7 +72,6 @@ export interface StakingController {
 	networkStakeApproximate: string | null;
 	weightedApr: string | null;
 	account: StakingAccountSnapshot | null;
-	isRefreshing: boolean;
 	isReconnecting: boolean;
 	retryPublic: () => void;
 	retryAccount: () => void;
@@ -123,10 +129,22 @@ export function useStakingController(): StakingController {
 	const spotQuery = useInfo("spotClearinghouseState", { user }, accountQueryOptions);
 	const feesQuery = useInfo("userFees", { user }, accountQueryOptions);
 
+	function sourceKey(method: string): string {
+		return JSON.stringify([env, method, user]);
+	}
+	const validatorsReceived = useDataReceivedSinceMount(
+		JSON.stringify([env, "validatorSummaries"]),
+		validatorsQuery.dataUpdatedAt,
+	);
+	const summaryReceived = useDataReceivedSinceMount(sourceKey("delegatorSummary"), summaryQuery.dataUpdatedAt);
+	const delegationsReceived = useDataReceivedSinceMount(sourceKey("delegations"), delegationsQuery.dataUpdatedAt);
+	const rewardsReceived = useDataReceivedSinceMount(sourceKey("delegatorRewards"), rewardsQuery.dataUpdatedAt);
+	const historyReceived = useDataReceivedSinceMount(sourceKey("delegatorHistory"), historyQuery.dataUpdatedAt);
+	const spotReceived = useDataReceivedSinceMount(sourceKey("spotClearinghouseState"), spotQuery.dataUpdatedAt);
+	const feesReceived = useDataReceivedSinceMount(sourceKey("userFees"), feesQuery.dataUpdatedAt);
+
 	const validators = parseValidatorSummaries(validatorsQuery.data);
-	const publicMalformed = validatorsQuery.data !== undefined && validators === null;
-	const publicState: StakingController["publicState"] =
-		validatorsQuery.isError || publicMalformed ? "error" : validators === null ? "loading" : "ready";
+	const publicState = getSourceState(validatorsQuery, validators !== null, validatorsReceived);
 
 	const summary = parseStakingSummary(summaryQuery.data);
 	const delegations = parseStakingDelegations(delegationsQuery.data);
@@ -135,22 +153,19 @@ export function useStakingController(): StakingController {
 	const spotHypeAvailable = parseSpotHypeAvailable(spotQuery.data);
 	const stakingLink = parseStakingLink(feesQuery.data);
 	const accountQueries = [summaryQuery, delegationsQuery, rewardsQuery, historyQuery, spotQuery, feesQuery];
-	const accountMalformed =
-		(summaryQuery.data !== undefined && summary === null) ||
-		(delegationsQuery.data !== undefined && delegations === null) ||
-		(rewardsQuery.data !== undefined && rewards === null) ||
-		(historyQuery.data !== undefined && history === null) ||
-		(spotQuery.data !== undefined && spotHypeAvailable === null) ||
-		(feesQuery.data !== undefined && stakingLink === undefined);
-	const accountState: StakingAccountDataState = !ownerAddress
-		? "disconnected"
-		: accountMalformed || accountQueries.some((query) => query.isError)
-			? "error"
-			: summary && delegations && rewards && history && spotHypeAvailable !== null && stakingLink !== undefined
-				? "ready"
-				: "loading";
+	const accountState: StakingAccountDataState = ownerAddress
+		? combinePassiveQueryStates([
+				getSourceState(summaryQuery, summary !== null, summaryReceived),
+				getSourceState(delegationsQuery, delegations !== null, delegationsReceived),
+				getSourceState(rewardsQuery, rewards !== null, rewardsReceived),
+				getSourceState(historyQuery, history !== null, historyReceived),
+				getSourceState(spotQuery, spotHypeAvailable !== null, spotReceived),
+				getSourceState(feesQuery, stakingLink !== undefined, feesReceived),
+			])
+		: "disconnected";
 	const account: StakingAccountSnapshot | null =
-		accountState === "ready" &&
+		accountState !== "disconnected" &&
+		isPassiveQueryShown(accountState) &&
 		summary &&
 		delegations &&
 		rewards &&
@@ -178,7 +193,6 @@ export function useStakingController(): StakingController {
 		networkStakeApproximate: validators ? sumApproximateNetworkStake(validators) : null,
 		weightedApr: validators && account ? calculateDelegationWeightedApr(validators, account.delegations, period) : null,
 		account,
-		isRefreshing: validatorsQuery.isFetching || accountQueries.some((query) => query.isFetching),
 		isReconnecting,
 		retryPublic: () => {
 			void validatorsQuery.refetch();
@@ -190,4 +204,16 @@ export function useStakingController(): StakingController {
 			void reconnectWallet();
 		},
 	};
+}
+
+function getSourceState(
+	query: { data: unknown; isError: boolean },
+	hasData: boolean,
+	receivedSinceMount: boolean,
+): PassiveQueryState {
+	return getPassiveQueryState({
+		hasData,
+		failed: query.isError || (query.data !== undefined && !hasData),
+		receivedSinceMount,
+	});
 }

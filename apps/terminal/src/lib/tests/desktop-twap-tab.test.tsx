@@ -155,6 +155,7 @@ vi.mock("@/lib/hyperliquid", () => ({
 			tokensInfo: [{ name: "GOOGL" }, { name: "USDH" }],
 		}),
 		getSzDecimals: () => 2,
+		getTokenDisplayName: (name: string) => (name === "USDT0" ? "USDT" : name),
 	}),
 	useSubscription: vi.fn(() => ({
 		data: { states: testState.hasActiveOrder ? [[45, testState.twap]] : [] },
@@ -169,6 +170,7 @@ vi.mock("@/stores/use-order-entry-store", () => ({
 }));
 
 import { TwapTab } from "@/components/trade/positions/twap-tab";
+import { formatDateTime } from "@/lib/format";
 import { useSubscription } from "@/lib/hyperliquid";
 
 describe("desktop TWAP toolbar", () => {
@@ -355,6 +357,9 @@ describe("desktop TWAP toolbar", () => {
 		expect(container.textContent).toContain("$374.88");
 		expect(container.textContent).toContain("00:10:00");
 		expect(container.textContent).toContain("Filled");
+		expect(container.textContent).toContain(
+			formatDateTime(Date.UTC(2026, 0, 1, 0, 10, 0), { dateStyle: "short", timeStyle: "short" }),
+		);
 
 		const fillHistoryTab = Array.from(container.querySelectorAll<HTMLButtonElement>('[role="tab"]')).find(
 			(tab) => tab.textContent === "Fill History",
@@ -375,6 +380,27 @@ describe("desktop TWAP toolbar", () => {
 		expect(container.textContent).toContain("1,875.00 USDH");
 		expect(container.textContent).toContain("0.01000 USDC");
 		expect(container.textContent).toContain("+2.50 USDC");
+		expect(container.textContent).toContain(
+			formatDateTime(Date.UTC(2026, 0, 1, 0, 5, 0), { dateStyle: "short", timeStyle: "short" }),
+		);
+	});
+
+	it("shows a slice fill's fee token by its display name", () => {
+		const fills = testState.twapFills;
+		testState.twapFills = fills.map((fill) => ({ ...fill, feeToken: "USDT0" })) as UserFillsResponse;
+		try {
+			render();
+			const fillHistoryTab = Array.from(container.querySelectorAll<HTMLButtonElement>('[role="tab"]')).find(
+				(tab) => tab.textContent === "Fill History",
+			);
+			act(() => fillHistoryTab?.click());
+
+			expect(container.textContent).toContain("0.01000 USDT");
+			expect(container.textContent).toContain("+2.50 USDT");
+			expect(container.textContent).not.toContain("USDT0");
+		} finally {
+			testState.twapFills = fills;
+		}
 	});
 
 	it("keeps cached history visible while exposing realtime recovery and pagination controls", () => {

@@ -11,7 +11,7 @@ import { useUserFills } from "@/hooks/trade/use-user-fills";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { buildCsvRows } from "@/lib/csv";
-import { formatDateTimeShort, useNumberFormat } from "@/lib/format";
+import { formatDateTime, useNumberFormat } from "@/lib/format";
 import { getExplorerTxUrl, useMarkets } from "@/lib/hyperliquid";
 import { getFillDirectionPresentation } from "@/lib/trade/fill-direction";
 import { getMarketPriceFormatOptions } from "@/lib/trade/market-price-format";
@@ -56,7 +56,11 @@ export function HistoryTab() {
 		filename: "trade_history.csv",
 		buildRows: (exportFills) =>
 			buildCsvRows(exportFills, [
-				{ header: t`Time`, getValue: (fill) => formatDateTimeShort(fill.time, { locale: i18n.locale }) },
+				{
+					header: t`Time`,
+					getValue: (fill) =>
+						formatDateTime(fill.time, { locale: i18n.locale, dateStyle: "short", timeStyle: "short" }),
+				},
 				{ header: t`Asset`, getValue: (fill) => fill.coin },
 				{ header: t`Direction`, getValue: (fill) => getDirection(fill).label },
 				{ header: t`Type`, getValue: () => t`Trade` },
@@ -198,7 +202,7 @@ export function HistoryTab() {
 											>
 												<span className="text-market-close-muted">
 													{formatToken(fill.fee, {
-														symbol: fill.feeToken,
+														symbol: markets.getTokenDisplayName(fill.feeToken),
 													})}
 												</span>
 											</TableCell>
@@ -232,14 +236,16 @@ export function HistoryTab() {
 															target="_blank"
 															rel="noopener noreferrer"
 														>
-															<span>{formatDateTimeShort(fill.time, { locale })}</span>
+															<span>
+																{formatDateTime(fill.time, { locale, dateStyle: "short", timeStyle: "short" })}
+															</span>
 															<ArrowSquareOutIcon
 																className="size-2.5 text-market-close-stroke-control"
 																aria-hidden="true"
 															/>
 														</a>
 													) : (
-														<span>{formatDateTimeShort(fill.time, { locale })}</span>
+														<span>{formatDateTime(fill.time, { locale, dateStyle: "short", timeStyle: "short" })}</span>
 													)}
 												</div>
 											</TableCell>

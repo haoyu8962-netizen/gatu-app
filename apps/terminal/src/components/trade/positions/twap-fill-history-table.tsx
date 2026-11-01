@@ -8,7 +8,7 @@ import { useTwapFillHistoryCsv } from "@/hooks/trade/use-twap-fill-history-csv";
 import { useTwapSliceFills } from "@/hooks/trade/use-twap-slice-fills";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
-import { formatDateTimeShort, useNumberFormat } from "@/lib/format";
+import { formatDateTime, useNumberFormat } from "@/lib/format";
 import { useMarkets } from "@/lib/hyperliquid";
 import { getUserFillNotional } from "@/lib/trade/user-fills";
 import { getMarketCloseValueColorClass } from "@/lib/ui/value-color";
@@ -81,6 +81,7 @@ export function TwapFillHistoryTable() {
 									const isBuy = fill.side === "B";
 									const notional = getUserFillNotional(fill);
 									const quoteToken = getMarketQuoteToken(market);
+									const feeToken = markets.getTokenDisplayName(fill.feeToken);
 
 									return (
 										<tr
@@ -91,7 +92,7 @@ export function TwapFillHistoryTable() {
 											)}
 										>
 											<td className="p-0 whitespace-nowrap text-market-close-muted tabular-nums">
-												{formatDateTimeShort(fill.time, { locale })}
+												{formatDateTime(fill.time, { locale, dateStyle: "short", timeStyle: "short" })}
 											</td>
 											<td className="p-0">
 												<button
@@ -124,7 +125,7 @@ export function TwapFillHistoryTable() {
 												{formatToken(notional, { compact: false, decimals: 2, symbol: quoteToken })}
 											</td>
 											<td className="p-0 text-right text-market-close-fg tabular-nums">
-												{formatToken(fill.fee, { compact: false, symbol: fill.feeToken })}
+												{formatToken(fill.fee, { compact: false, symbol: feeToken })}
 											</td>
 											<td
 												className={cn(
@@ -136,7 +137,7 @@ export function TwapFillHistoryTable() {
 													compact: false,
 													decimals: 2,
 													signDisplay: "exceptZero",
-													symbol: fill.feeToken,
+													symbol: feeToken,
 												})}
 											</td>
 										</tr>

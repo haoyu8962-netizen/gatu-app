@@ -133,6 +133,7 @@ export function MobileBalancesTab() {
 								<div className="flex min-w-0 items-center gap-2">
 									<AssetDisplay
 										coin={row.asset}
+										isToken
 										iconClassName="size-[26px]"
 										nameClassName="truncate text-[13px] font-bold text-market-close-fg"
 									/>

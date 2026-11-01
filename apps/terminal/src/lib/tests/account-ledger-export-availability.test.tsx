@@ -36,6 +36,11 @@ vi.mock("@/hooks/trade/use-account-ledger", () => ({
 	}),
 }));
 
+vi.mock("@/lib/hyperliquid", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/lib/hyperliquid")>()),
+	useMarkets: () => ({ getTokenDisplayName: (name: string) => name }),
+}));
+
 vi.mock("@/hooks/trade/use-account-ledger-csv", () => ({
 	useAccountLedgerCsv: () => ({ exportCsv: mocks.exportCsv, isExporting: false }),
 }));

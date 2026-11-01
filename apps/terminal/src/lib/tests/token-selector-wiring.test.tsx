@@ -162,6 +162,12 @@ function SelectorHookProbe() {
 			<button type="button" data-testid="retry" onClick={selector.retryClassifications}>
 				Retry
 			</button>
+			<button type="button" data-testid="sort-price" onClick={() => selector.handleSort("price")}>
+				Sort by price
+			</button>
+			<button type="button" data-testid="sort-change" onClick={() => selector.handleSort("24h-change")}>
+				Sort by change
+			</button>
 			<output
 				data-loading={String(selector.isLoading)}
 				data-error={String(selector.hasClassificationError)}
@@ -400,6 +406,55 @@ describe("token selector wiring", () => {
 
 		expect(output.getAttribute("data-scope")).toBe("spot");
 		expect(output.getAttribute("data-subcategory")).toBe("USDT");
+	});
+
+	function quotedMarket(name: string, fields: Partial<MarketRow>): MarketRow {
+		return {
+			name,
+			kind: "perp",
+			shortName: name,
+			pairName: `${name}-USDC`,
+			szDecimals: 2,
+			maxLeverage: 10,
+			dayNtlVlm: "1000",
+			markPriceStatus: "success",
+			markPriceReceivedAt: Date.now(),
+			assetContextLive: true,
+			...fields,
+		} as MarketRow;
+	}
+
+	function sortBy(column: "price" | "change") {
+		act(() => container.querySelector<HTMLButtonElement>(`[data-testid="sort-${column}"]`)?.click());
+	}
+
+	it("sorts by price on the live mid, falling back to the mark only without a mid", () => {
+		testState.markets = [
+			quotedMarket("AAA", { markPx: "100", midPx: "90" }),
+			quotedMarket("BBB", { markPx: "95", midPx: "99" }),
+			quotedMarket("CCC", { markPx: "97", midPx: null }),
+			quotedMarket("DDD", { markPx: "200", midPx: "200", markPriceStatus: "stale" }),
+		];
+		const output = renderHookProbe(null);
+
+		sortBy("price");
+		expect(output.getAttribute("data-markets")).toBe("BBB,CCC,AAA,DDD");
+		sortBy("price");
+		expect(output.getAttribute("data-markets")).toBe("AAA,CCC,BBB,DDD");
+	});
+
+	it("sorts by the 24h change of the live mid against the same row's previous day price", () => {
+		testState.markets = [
+			quotedMarket("AAA", { markPx: "100", midPx: "90", prevDayPx: "95" }),
+			quotedMarket("BBB", { markPx: "95", midPx: "99", prevDayPx: "98" }),
+			quotedMarket("CCC", { markPx: "50", midPx: "60", prevDayPx: "40", assetContextLive: false }),
+		];
+		const output = renderHookProbe(null);
+
+		sortBy("change");
+		expect(output.getAttribute("data-markets")).toBe("BBB,AAA,CCC");
+		sortBy("change");
+		expect(output.getAttribute("data-markets")).toBe("AAA,BBB,CCC");
 	});
 
 	it("does not block the unclassified All scope while annotations are pending", () => {

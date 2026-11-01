@@ -448,14 +448,14 @@ function formatSignedFixed(
 	if (!value) return FALLBACK_VALUE_PLACEHOLDER;
 	const rounded = value.round(decimals);
 	const sign = rounded.gt(0) ? "+" : "";
-	return `${sign}${numberFormat.formatDecimalString(rounded.toFixed(decimals))}`;
+	return numberFormat.markLeadingSign(`${sign}${numberFormat.formatDecimalString(rounded.toFixed(decimals))}`);
 }
 
 function formatSignedPercent(value: number | null, numberFormat: NumberFormatters): string {
 	if (typeof value !== "number" || !Number.isFinite(value)) return FALLBACK_VALUE_PLACEHOLDER;
 	if (Math.abs(value) < 0.005) return `${numberFormat.formatDecimalString("0.00")}%`;
 	const sign = value > 0 ? "+" : "";
-	return `${sign}${numberFormat.formatDecimalString(value.toFixed(2))}%`;
+	return numberFormat.markLeadingSign(`${sign}${numberFormat.formatDecimalString(value.toFixed(2))}%`);
 }
 
 function getPriceChangeColorClass(value: number | null): string {

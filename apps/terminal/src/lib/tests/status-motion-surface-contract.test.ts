@@ -17,8 +17,6 @@ const ALLOWED_SPINNERS: Record<string, { count: number; reason: string }> = {
 	"components/funding-history/funding-history-page.tsx": { count: 1, reason: "refresh button while refetching" },
 	"components/historical-orders/historical-orders-page.tsx": { count: 1, reason: "refresh button while refetching" },
 	"components/leaderboard/leaderboard-view.tsx": { count: 1, reason: "refresh button while refetching" },
-	"components/referrals/referral-dashboard.tsx": { count: 1, reason: "passive referral data refresh" },
-	"components/staking/staking-view.tsx": { count: 1, reason: "passive staking data refresh" },
 	"components/trade-history/trade-history-page.tsx": { count: 1, reason: "refresh button while refetching" },
 	"components/trade/chart/tradingview-chart.tsx": {
 		count: 2,
@@ -51,6 +49,15 @@ const ALLOWED_SPINNERS: Record<string, { count: number; reason: string }> = {
 	"components/ui/lazy-dialog-boundary.tsx": { count: 1, reason: "lazy dialog chunk fallback" },
 	"components/ui/spinner.tsx": { count: 1, reason: "shared passive positions loading" },
 	"components/vaults/vaults-list.tsx": { count: 1, reason: "refresh button while refetching" },
+};
+
+// Passive refresh spinners that were removed, with the reason: their files must stay without one. The
+// equality check above already rejects a new spinner; this list keeps why these may not come back.
+const RETIRED_PASSIVE_SPINNERS: Record<string, string> = {
+	"components/referrals/referral-dashboard.tsx":
+		'"Refreshing referral data…" was a passive data notice (docs/mobile-data-presentation.md, 2026-11-01)',
+	"components/staking/staking-view.tsx":
+		'"Refreshing staking data…" was a passive data notice (docs/mobile-data-presentation.md, 2026-11-01)',
 };
 
 // Surfaces that report a requested action's status and must keep using the motion components.
@@ -91,6 +98,14 @@ describe("status motion surfaces", () => {
 		}
 		const expected = Object.fromEntries(Object.entries(ALLOWED_SPINNERS).map(([file, entry]) => [file, entry.count]));
 		expect(actual).toEqual(expected);
+	});
+
+	it("keeps retired passive refresh spinners out of their pages", () => {
+		for (const [file, reason] of Object.entries(RETIRED_PASSIVE_SPINNERS)) {
+			const source = readFileSync(resolve(SOURCE_ROOT, file), "utf8");
+			expect(source.includes("animate-spin"), `${file}: ${reason}`).toBe(false);
+			expect(source.includes("SpinnerGapIcon"), `${file}: ${reason}`).toBe(false);
+		}
 	});
 
 	it("reports requested actions with the Sairn motion components", () => {

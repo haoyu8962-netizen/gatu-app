@@ -10,7 +10,8 @@
 
 ## 数据
 
-- WebSocket `px`、`sz` 保持字符串，直到格式化或 Big.js 计算；计价资产口径的成交额在 `lib/trade/trades.ts` 中用 Big.js 计算，不在行渲染器里做 JavaScript 数字乘法。
+- WebSocket `px`、`sz` 保持字符串，直到格式化或 Big.js 计算。
+- 数量恒为基础资产：表头 `Size (基础资产)`，按 `szDecimals` 显示，不随下单数量或订单簿的单位切换，与官方终端相同（2026-11-01，审查 M9，[ADR 0046](adr/0046-one-size-unit-for-order-entry-and-order-book.md)）。此前跟随订单簿单位显示计价成交额，`getTradeQuoteSize` 已删除。
 - 价格精度由所选市场推导，不写死小数位：同时满足 Hyperliquid 的两项约束——至多五位有效数字，且小数位不超过永续 `6 - szDecimals`、现货 `8 - szDecimals`（`szDecimalsToPriceDecimals`）。分组精度同样受这两项约束。
 - TradingView 图表遵循同样的两项约束，但逐个价格取档（`variable_tick_size`，按舍入到五位有效数字后的数量级），而本面板以标记价的数量级为整列取一个精度；两者都不看价格字符串的尾数，对合法报价的小数位相同，见 [ADR 0035](adr/0035-chart-price-precision-from-market-rules.md)。
 - 成交时间显示为本地 24 小时制 `HH:mm:ss`（`hourCycle: "h23"`）。

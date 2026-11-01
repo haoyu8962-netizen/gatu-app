@@ -257,7 +257,25 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/funds-action-availability.test.ts \
   src/lib/tests/user-positions-readiness.test.tsx \
   src/lib/tests/deposit-empty-balances-entry.test.tsx \
-  src/lib/tests/mobile-account-view.test.tsx
+  src/lib/tests/mobile-account-view.test.tsx \
+  src/lib/tests/portfolio-overview.test.tsx \
+  src/lib/tests/portfolio-refresh-since-mount.test.tsx \
+  src/lib/tests/portfolio.test.ts \
+  src/lib/tests/balances.test.ts \
+  src/lib/tests/market-selector-quote.test.ts \
+  src/lib/tests/token-selector-row.test.tsx \
+  src/lib/tests/token-selector-wiring.test.tsx \
+  src/lib/tests/use-markets-info-subscriptions.test.tsx \
+  src/lib/tests/passive-query-state.test.ts \
+  src/components/staking/__tests__/staking-passive-data.test.tsx \
+  src/lib/tests/referral-passive-data.test.tsx \
+  src/lib/tests/vault-passive-data.test.tsx \
+  src/components/vaults/__tests__/use-vaults-controller.test.tsx \
+  src/lib/tests/use-referrals.test.tsx \
+  src/lib/tests/vaults-domain.test.ts \
+  src/lib/tests/mobile-fill-filter-backfill.test.tsx \
+  src/lib/tests/trade-history.test.ts \
+  src/lib/tests/fill-filter-presentation.test.ts
 
 # Trading terminal visual contract
 pnpm --dir apps/terminal exec vitest run \
@@ -290,7 +308,11 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/orderbook-l2-feature-gate.test.ts \
   src/lib/tests/l2-book-transport-pool.test.ts \
   src/lib/tests/mobile-orderbook-subscription.test.tsx \
-  src/lib/tests/use-l2-book-subscription.test.tsx
+  src/lib/tests/use-l2-book-subscription.test.tsx \
+  src/lib/tests/orderbook-panel-safety.test.tsx \
+  src/lib/tests/orderbook-price-selection.test.tsx \
+  src/lib/tests/mobile-orderbook-mode.test.tsx \
+  src/lib/tests/mobile-book-header-contract.test.ts
 
 # Recent trades
 pnpm --dir apps/terminal exec vitest run \
@@ -306,6 +328,7 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/number-format-settings.test.ts \
   src/lib/tests/number-format-reactivity-contract.test.ts \
   src/lib/tests/date-locale-reactivity-contract.test.ts \
+  src/lib/tests/number-format-direction.test.tsx \
   src/lib/tests/locale-format-contract.test.ts \
   src/lib/tests/decimal-display-contract.test.ts \
   src/lib/tests/decimal-input-normalization.test.tsx \
@@ -321,6 +344,13 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/historical-order-status.test.tsx \
   src/lib/tests/user-fills.test.ts \
   src/lib/tests/desktop-history-exports.test.tsx \
+  src/lib/tests/trade-history-page.test.tsx \
+  src/lib/tests/funding-history-page.test.tsx \
+  src/lib/tests/desktop-twap-tab.test.tsx \
+  src/lib/tests/history-csv-twap.test.tsx \
+  src/lib/tests/mobile-history-cards.test.tsx \
+  src/lib/tests/account-ledger-number-format.test.tsx \
+  src/lib/tests/mobile-market-bar.test.tsx \
   src/lib/tests/account-ledger.test.ts
 
 # Desktop trading layout and order entry
@@ -339,7 +369,11 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/scale-conversion-price.test.ts \
   src/lib/tests/trade-form-twap-advanced.test.tsx \
   src/lib/tests/trade-form-compact-fields.test.tsx \
-  src/lib/tests/trade-form-tp-sl.test.tsx
+  src/lib/tests/trade-form-tp-sl.test.tsx \
+  src/lib/tests/limit-price-prefill-contract.test.ts \
+  src/lib/tests/book-price-selection.test.tsx \
+  src/lib/tests/book-size-mode-request.test.tsx \
+  tests/trade-panel-open-interest-cap.test.tsx
 
 # Confirmation surfaces (see docs/confirmation-surfaces.md)
 pnpm --dir apps/terminal exec vitest run \
@@ -438,7 +472,25 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/i18n-hot-switch.test.tsx \
   src/lib/tests/action-error.test.ts \
   src/lib/tests/errors.test.ts \
-  src/lib/tests/lingui-helper-translator-contract.test.ts
+  src/lib/tests/lingui-helper-translator-contract.test.ts \
+  src/lib/tests/catalog-completeness-contract.test.ts \
+  src/lib/tests/command-menu.test.tsx \
+  src/components/staking/__tests__/use-staking-actions.test.tsx \
+  src/lib/tests/use-api-wallet-controller.test.tsx
+
+# Spot market names and addresses (see docs/spot-market-names.md and ADR 0048)
+pnpm --dir apps/terminal exec vitest run \
+  src/lib/tests/spot-token-display-names-contract.test.ts \
+  src/lib/tests/market-catalog.test.ts \
+  src/lib/tests/market-catalog-query-policy.test.tsx \
+  src/lib/tests/market-route.test.ts \
+  src/lib/tests/market-route-canonical.test.ts \
+  src/lib/tests/orderbook-boot.test.ts \
+  src/lib/tests/trade-terminal-page-boot.test.tsx \
+  src/lib/tests/asset-display-token-name.test.tsx \
+  src/lib/tests/mobile-twap-card.test.tsx \
+  src/lib/tests/account-ledger-export-availability.test.tsx \
+  src/lib/tests/rtl-financial-ui-contract.test.ts
 
 # Brand identity (brand/, names, logo, icons, status motion, domains, legal text; see docs/brand-assets.md and ADR 0027)
 pnpm test:brand

@@ -6,6 +6,7 @@ import {
 	calculateFourteenDayVolume,
 	getLatestHistoryValue,
 	getPortfolioSnapshot,
+	isPortfolioSourceShown,
 	type PortfolioPeriod,
 	type PortfolioScope,
 } from "@/domain/portfolio";
@@ -28,7 +29,7 @@ export function PortfolioOverview() {
 	const perpsSnapshot = getPortfolioSnapshot(data.portfolio, "perps", period);
 	const fourteenDayVolume = calculateFourteenDayVolume(data.fees?.dailyUserVlm);
 	const pnl = getLatestHistoryValue(snapshot?.pnlHistory);
-	const isPortfolioLoading = data.portfolioStatus === "loading";
+	const isPortfolioLoading = data.portfolioStatus === "loading" || data.portfolioStatus === "stale";
 	const isPortfolioUnavailable =
 		data.isConnected && !isPortfolioLoading && (snapshot === null || perpsSnapshot === null);
 	const isFeesLoading = data.feesStatus === "loading";
@@ -150,7 +151,9 @@ export function PortfolioOverview() {
 					period={period}
 					isLoading={isPortfolioLoading}
 					isUnavailable={isPortfolioUnavailable}
-					hasConfirmedHistory={data.portfolioStatus === "ready" && snapshot !== null && perpsSnapshot !== null}
+					hasConfirmedHistory={
+						isPortfolioSourceShown(data.portfolioStatus) && snapshot !== null && perpsSnapshot !== null
+					}
 					onRetry={data.retry}
 				/>
 			</div>

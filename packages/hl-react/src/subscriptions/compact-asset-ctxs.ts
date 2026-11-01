@@ -117,37 +117,6 @@ export function parseCompactSpotAssetCtxsDelta(value: unknown): CompactSpotAsset
 	return delta;
 }
 
-/** Validates a stored accumulated view (session cache); null entries mark contexts still incomplete. */
-export function parseCompactPerpAssetCtxsView(value: unknown): CompactPerpAssetCtxsEvent {
-	if (!Array.isArray(value)) throw new L2BookStreamError("invalid_frame");
-	return value.map((entry) => {
-		if (!Array.isArray(entry) || entry.length !== 2 || typeof entry[0] !== "string" || !Array.isArray(entry[1])) {
-			throw new L2BookStreamError("invalid_frame");
-		}
-		const ctxs = entry[1].map((ctx) => {
-			if (ctx === null || ctx === undefined) return undefined;
-			const read = readDelta<CompactPerpAssetCtx>(ctx, PERP_FIELDS);
-			if (!read || !isCompletePerpAssetCtx(read)) throw new L2BookStreamError("invalid_frame");
-			return read;
-		});
-		return [entry[0], ctxs];
-	});
-}
-
-export function parseCompactSpotAssetCtxsView(value: unknown): CompactSpotAssetCtxsEvent {
-	if (!isRecord(value)) throw new L2BookStreamError("invalid_frame");
-	const view: CompactSpotAssetCtxsEvent = {};
-	let usable = 0;
-	for (const [coin, entry] of Object.entries(value)) {
-		const ctx = readDelta<CompactSpotAssetCtx>(entry, SPOT_FIELDS);
-		if (!ctx || !isCompleteSpotAssetCtx(ctx)) continue;
-		view[coin] = ctx;
-		usable += 1;
-	}
-	if (usable === 0) throw new L2BookStreamError("invalid_frame");
-	return view;
-}
-
 export async function decodeCompactAssetCtxs<C extends CompactAssetCtxsChannel>(
 	channel: C,
 	payload: unknown,

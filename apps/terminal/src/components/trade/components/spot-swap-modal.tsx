@@ -461,7 +461,7 @@ function SpotSwapModalContent({ initialFromToken, initialToToken, mode, onClose 
 										<Trans>You will approximately receive</Trans>
 									</span>
 									<span className="shrink-0 tabular-nums text-fg">
-										{formatToken(estimatedReceive, 6)} <AssetDisplay coin={toToken} hideIcon />
+										{formatToken(estimatedReceive, 6)} <AssetDisplay coin={toToken} isToken hideIcon />
 									</span>
 								</div>
 								<div className="h-px bg-stroke-weak/30" />
@@ -470,7 +470,7 @@ function SpotSwapModalContent({ initialFromToken, initialToToken, mode, onClose 
 										<Trans>Estimated fee</Trans>
 									</span>
 									<span className="shrink-0 tabular-nums text-fg">
-										{formatToken(quote?.feeAmount ?? "0", 6)} <AssetDisplay coin={toToken} hideIcon />
+										{formatToken(quote?.feeAmount ?? "0", 6)} <AssetDisplay coin={toToken} isToken hideIcon />
 									</span>
 								</div>
 							</div>
@@ -491,8 +491,8 @@ function SpotSwapModalContent({ initialFromToken, initialToToken, mode, onClose 
 								<span className="tabular-nums text-fg">
 									{quote ? (
 										<>
-											1 <AssetDisplay coin={fromToken} hideIcon /> ≈ {formatToken(quote.rate, 6)}{" "}
-											<AssetDisplay coin={toToken} hideIcon />
+											1 <AssetDisplay coin={fromToken} isToken hideIcon /> ≈ {formatToken(quote.rate, 6)}{" "}
+											<AssetDisplay coin={toToken} isToken hideIcon />
 										</>
 									) : (
 										"-"
@@ -521,7 +521,7 @@ function SpotSwapModalContent({ initialFromToken, initialToToken, mode, onClose 
 							<WarningIcon className="size-3.5 text-warning shrink-0 mt-0.5" />
 							<p className="text-xs text-warning">
 								<Trans>
-									Insufficient <AssetDisplay coin={fromToken} hideIcon /> balance
+									Insufficient <AssetDisplay coin={fromToken} isToken hideIcon /> balance
 								</Trans>
 							</p>
 						</div>
@@ -550,8 +550,8 @@ function SpotSwapModalContent({ initialFromToken, initialToToken, mode, onClose 
 							<WarningIcon className="size-3.5 text-warning shrink-0 mt-0.5" />
 							<p className="text-xs text-warning">
 								<Trans>
-									No trading pair available for <AssetDisplay coin={fromToken} hideIcon />/
-									<AssetDisplay coin={toToken} hideIcon />
+									No trading pair available for <AssetDisplay coin={fromToken} isToken hideIcon />/
+									<AssetDisplay coin={toToken} isToken hideIcon />
 								</Trans>
 							</p>
 						</div>

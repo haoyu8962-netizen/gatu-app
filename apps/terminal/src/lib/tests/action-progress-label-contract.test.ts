@@ -15,6 +15,7 @@ const REVIEWED_PROGRESS_LABELS: Record<string, { labels: string[]; reason: strin
 		reason: "passive loading and an input placeholder",
 	},
 	"chart/tradingview-chart.tsx": { labels: ["Loading..."], reason: "passive chart loading" },
+	"components/command-menu.tsx": { labels: ["Search markets..."], reason: "an input placeholder" },
 	"components/deposit-modal-loading-fallback.tsx": { labels: ["Loading..."], reason: "lazy chunk fallback" },
 	"components/establish-connection-modal.tsx": {
 		labels: ["Connecting...", "Verifying..."],

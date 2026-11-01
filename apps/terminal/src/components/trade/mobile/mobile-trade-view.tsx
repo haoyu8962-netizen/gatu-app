@@ -39,6 +39,9 @@ import {
 	type SelectableAccountAbstraction,
 	useAccountAbstractionControl,
 } from "@/hooks/trade/use-account-abstraction-control";
+import { useBookPriceSelection } from "@/hooks/trade/use-book-price-selection";
+import { useBookSizeModeRequest } from "@/hooks/trade/use-book-size-mode-request";
+
 import { useBuilderFeeTenthsBps } from "@/hooks/trade/use-builder-fee-config";
 import { useDepositAvailability } from "@/hooks/trade/use-deposit-availability";
 import { useMarketFeeRates } from "@/hooks/trade/use-fee-rates";
@@ -111,11 +114,6 @@ import {
 	useTwapStopPrice,
 	useTwapTriggerPrice,
 } from "@/stores/use-order-entry-store";
-import {
-	getOrderbookActionsStore,
-	getSelectedPriceForMarket,
-	useSelectedPrice,
-} from "@/stores/use-orderbook-actions-store";
 import { TokenSelector } from "../chart/token-selector";
 import { OrderFeeSummaryValue } from "../components/order-fee-summary-value";
 import { MarginModeModal, warmTradeSettingsModals } from "../tradebox/lazy-trade-settings-modals";
@@ -173,8 +171,6 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 
 	const slippageBps = useMarketOrderSlippageBps();
 	const slippagePercent = useMarketOrderSlippagePercent();
-
-	const selectedPrice = useSelectedPrice();
 
 	const orderType = useOrderType();
 	const twapOrder = isTwapOrderType(orderType);
@@ -434,16 +430,8 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 		if (active && isSpotMarket && isTriggerOrder) setOrderType("market");
 	}, [active, isSpotMarket, isTriggerOrder, setOrderType]);
 
-	useEffect(() => {
-		if (selectedPrice === null) return;
-
-		const price = getSelectedPriceForMarket(selectedPrice, market?.name);
-		getOrderbookActionsStore().actions.clearSelectedPrice();
-		if (price === null) return;
-
-		setOrderType("limit");
-		setLimitPriceFromUser(`${market?.name ?? ""}|limit`, price);
-	}, [market?.name, selectedPrice, setOrderType, setLimitPriceFromUser]);
+	useBookPriceSelection(market?.name);
+	useBookSizeModeRequest(market?.name, sizeMode, toggleSizeDenomination);
 	const price = getOrderPrice(
 		orderType,
 		executionReferencePx,
@@ -905,8 +893,9 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 						</div>
 						{typeof change24h === "number" && (
 							<div className={cn("truncate whitespace-nowrap text-xs tabular-nums", getValueColorClass(change24h))}>
-								{change24h >= 0 ? "+" : ""}
-								{numberFormat.formatDecimalString(change24h.toFixed(2))}%
+								{numberFormat.markLeadingSign(
+									`${change24h >= 0 ? "+" : ""}${numberFormat.formatDecimalString(change24h.toFixed(2))}%`,
+								)}
 							</div>
 						)}
 					</div>

@@ -32,7 +32,6 @@ import {
 import { useSettingsDialogActions, useSettingsDialogOpen } from "@/stores/use-global-modal-store";
 import {
 	useAnimateOrderbook,
-	useGlobalSettings,
 	useGlobalSettingsActions,
 	useMarketOrderSlippagePercent,
 	useNetwork,
@@ -54,12 +53,10 @@ export function GlobalSettingsModal() {
 	const walletExport = useEmailWalletExport();
 	const { copy: copyVersion } = useCopyToClipboard();
 	const slippagePercent = useMarketOrderSlippagePercent();
-	const { showOrderbookInQuote } = useGlobalSettings();
 	const animateOrderbook = useAnimateOrderbook();
 	const skipOrderConfirmation = useSkipOrderConfirmation();
 	const transactionDelayProtection = useTransactionDelayProtection();
 	const {
-		setShowOrderbookInQuote,
 		setAnimateOrderbook,
 		setMarketOrderSlippagePercent,
 		setNetwork,
@@ -218,16 +215,6 @@ export function GlobalSettingsModal() {
 								onCheckedChange={setAnimateOrderbook}
 							/>
 						</SettingRow>
-						{isMobile && (
-							<SettingRow label={t`Order book in quote asset`}>
-								<Toggle
-									size="xs"
-									aria-label={t`Order book in quote asset`}
-									checked={showOrderbookInQuote}
-									onCheckedChange={setShowOrderbookInQuote}
-								/>
-							</SettingRow>
-						)}
 						{!isMobile && (
 							<SettingRow label={t`Desktop layout`} hint={t`Page reloads when changed`}>
 								<Button variant="outline" intent="neutral" size="xs" onClick={handleDesktopLayoutReset}>

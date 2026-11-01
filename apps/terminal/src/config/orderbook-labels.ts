@@ -16,6 +16,7 @@ export const ORDERBOOK_LABELS = {
 	total: msg`Total`,
 	spread: msg`Spread`,
 	priceGrouping: msg`Price grouping`,
+	sizeUnit: msg`Size unit`,
 	waiting: msg`Waiting for order book...`,
 	noOrders: msg`No orders`,
 };

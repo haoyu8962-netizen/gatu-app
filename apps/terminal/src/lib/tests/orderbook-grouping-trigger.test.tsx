@@ -47,6 +47,7 @@ it("forwards ladder ref, both side styles and row slots without owning them", ()
 			<OrderbookPanelView
 				labels={{ price: "Price", size: "Size", total: "Total", spread: "Spread" }}
 				grouping={null}
+				unit={null}
 				assetLabel="BTC"
 				spreadText="—"
 				ladderRef={ladderRef}

@@ -433,6 +433,70 @@ The sixth round (commit `4af147fd`) changed one classification function in the d
 3,286,638 in total (+16), 1,626,663 static trade startup, 117,769 mobile and 201,070 desktop, with the desktop runtime
 increment 918 bytes under its allowance. Later commits on the branch change tests and documents only.
 
+## Second audit batch route-surface re-baseline (2026-11-01)
+
+The second batch of confirmed audit fixes (`claude/audit-group2`, stacked on the branch of
+[PR #131](https://github.com/zora4523-bot/gatu-app/pull/131) at `d8a2acf5`) carries the unpriced-balance and
+order-book click fixes and the eight decisions taken after the 2026-10-30 feature audit: one size unit and full
+numbers in the order book ([ADR 0046](adr/0046-one-size-unit-for-order-entry-and-order-book.md)), no local market
+statistics snapshot ([ADR 0047](adr/0047-no-local-market-stats-snapshot.md)), the market selector priced from the
+live mid, the official spot display names and addresses
+([ADR 0048](adr/0048-official-spot-display-names-and-addresses.md)), silent passive data on Staking, Referrals and
+Vaults, and the phone fills filter backfill ([task record](work-memory/sessions/2026-11-01-audit-group2.md)). Its
+production build failed only two named route surfaces, `trade-terminal-page` and `vaults-page`; PR #131 itself passed
+its pairing-off CI build.
+
+Both trees were built one after another in their own worktree without `.env.local`, with Node 22.15.0, pnpm 10.21.0,
+`NITRO_PRESET=node-server`, `VITE_MOBILE_PAIRING_ENABLED=false` and the fixed identity of the reproduction protocol
+(`SAIRN_BUILD_SHA=e4e09966b175679ac7e13ea192246ce27fae15b5 SAIRN_RELEASE_ID=startup-guardrail-baseline
+SAIRN_BUILD_TIME=2026-08-27T00:00:00.000Z NODE_ENV=production pnpm --filter @sairn/terminal build`). The branch side is
+`a9973c83` (fix(vaults): retry kept data inside the dialog and gate search results), the code measured when the
+baselines were raised.
+
+| Metric | PR #131 `d8a2acf5` | branch `a9973c83` | Change |
+| --- | ---: | ---: | ---: |
+| All client JS + CSS | 3,366,511 (449 assets) | 3,372,763 (451 assets) | +6,252 |
+| Route preloads only (6 files, diagnostic) | 522,195 | 522,726 | +531 |
+| Static trade startup (103 assets) | 1,648,090 | 1,651,527 | +3,437 |
+| Mobile runtime increment (15 assets) | 118,352 | 119,780 | +1,428 |
+| Desktop runtime increment (30 assets) | 202,775 | 204,609 | +1,834 |
+| Mobile static + runtime (118 assets) | 1,766,442 | 1,771,307 | +4,865 |
+| Desktop static + runtime (133 assets) | 1,850,865 | 1,856,136 | +5,271 |
+| `trade-terminal-page` | 126,884 | 127,646 | +762 |
+| `vaults-page` | 29,849 | 30,550 | +701 |
+
+Per-asset comparison, grouped by chunk name without its content hash (270 assets change):
+
+- `trade-terminal-page` +762: the order-book unit request and the shared book-price click
+  (`use-book-size-mode-request`, `use-book-price-selection`), compact-book size fitting, the phone split book's unit
+  menu and the spot address redirect.
+- `vaults-page` +701, `referrals-page` +606 and `staking` −201, with two new shared chunks
+  `use-data-received-since-mount` (+246) and `passive-query-state` (+186): the silent passive-data states and the Vault
+  dialog's data Retry.
+- `token-selector-popup` +1,428: the selector priced from the live mid (`selector-quote`) and its row changes.
+- `fill-direction` +1,364 and `tradeHistory._address` −908: the phone fills tab now imports the `userFills` snapshot
+  hook, so Rollup moves `use-trade-history` and `trade-history` out of the history page into a chunk both share (+456
+  together); `use-account-abstraction-control` +766 gains the fills filter presentation and the changed phone tabs.
+- `vendor-tanstack-router` +530: the official display-name table (`config/spot-token-display-names.ts`) and the
+  English messages compiled beside the router; `orderbook-panel` +447: the desktop control row and its unit menu;
+  `global-settings-modal` −107: the removed order-book unit setting.
+- The other 257 assets change by less than 100 bytes each, +432 together, mostly the six lazy catalogs and renamed
+  imports.
+- No dependency changed: `pnpm-lock.yaml` and every `package.json` are identical to `d8a2acf5`.
+
+The `trade-terminal-page` baseline is raised by the measured +762 to 124,004 and the `vaults-page` baseline by +701 to
+27,776; their allowances are unchanged, so both keep the room PR #131 left them (358 and 226 bytes). The total-client,
+static-startup and runtime baselines are unchanged; against them the branch reads +6,562 (3,438 left), +7,598 (2,402
+left), mobile +9,200 (800 left) and desktop +1,926 (8,074 left). The mobile runtime increment is now the closest to its
+allowance, and its next growth needs its own measured re-baseline.
+
+A later commit on the branch, `9839c340` (fix(vaults): offer the dialog retry when a detail refresh fails), changes
+production code in `vaults-page` again, so the table describes `a9973c83` only. The CI-metadata builds that followed
+(`SAIRN_BUILD_SHA` set to the commit, `SAIRN_RELEASE_ID=ci-99999999999-1`, otherwise the same settings) passed every
+budget: `1c5c2b1f` before that commit and `da80d4b2` after it, the latter with `trade-terminal-page` at 127,640 (364
+left), `vaults-page` at 30,521 (255 left), the total at +6,756 (3,244 left), the static trade startup at +7,604 (2,396
+left) and the mobile runtime increment at +9,206 (794 left).
+
 ## Audit fixes total-client re-baseline (2026-10-31)
 
 The P1 and P2 fixes of the 2026-10-30 feature audit go to `dev` as one integration pull request

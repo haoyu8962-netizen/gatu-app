@@ -16,7 +16,7 @@ import { useTradeHistory } from "@/hooks/trade/use-trade-history";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/cn";
 import { buildCsvRows } from "@/lib/csv";
-import { formatDateTimeShort, shortenAddress, useNumberFormat } from "@/lib/format";
+import { formatDateTime, shortenAddress, useNumberFormat } from "@/lib/format";
 import { getExplorerTxUrl, useMarkets } from "@/lib/hyperliquid";
 import {
 	ACCOUNT_HISTORY_PAGE_SIZES,
@@ -123,7 +123,11 @@ export function TradeHistoryPage({ address }: Props) {
 					(coin) => markets.getMarket(coin)?.kind,
 				),
 				[
-					{ header: t`Time`, getValue: (fill) => formatDateTimeShort(fill.time, { locale: i18n.locale }) },
+					{
+						header: t`Time`,
+						getValue: (fill) =>
+							formatDateTime(fill.time, { locale: i18n.locale, dateStyle: "short", timeStyle: "short" }),
+					},
 					{ header: t`Asset`, getValue: (fill) => fill.coin },
 					{ header: t`Direction`, getValue: (fill) => getDirection(fill).label },
 					{ header: t`Type`, getValue: getTypeLabel },
@@ -331,7 +335,7 @@ export function TradeHistoryPage({ address }: Props) {
 												fit
 											/>
 											<time className="shrink-0 text-xs tabular-nums text-fg-muted">
-												{formatDateTimeShort(fill.time, { locale })}
+												{formatDateTime(fill.time, { locale, dateStyle: "short", timeStyle: "short" })}
 											</time>
 										</div>
 										<div className="mt-2 flex items-center gap-2 text-2xs font-semibold">
@@ -435,6 +439,7 @@ export function TradeHistoryPage({ address }: Props) {
 									{pagination.rows.map((fill) => {
 										const closedPnl = getUserFillNetClosedPnl(fill, markets.getMarket(fill.coin));
 										const hasExplorerTransaction = hasUserFillExplorerTransaction(fill);
+										const feeToken = markets.getTokenDisplayName(fill.feeToken);
 										return (
 											<TableRow key={getUserFillKey(fill)} className="h-12 border-stroke-weak hover:bg-fill-hover">
 												<TableCell className="px-5 py-0 font-semibold">
@@ -461,7 +466,7 @@ export function TradeHistoryPage({ address }: Props) {
 													<bdi dir="ltr">{formatNumber(fill.sz, markets.getSzDecimals(fill.coin))}</bdi>
 												</TableCell>
 												<TableCell className="px-3 py-0 text-right text-fg-muted">
-													<bdi dir="ltr">{formatToken(fill.fee, { symbol: fill.feeToken })}</bdi>
+													<bdi dir="ltr">{formatToken(fill.fee, { symbol: feeToken })}</bdi>
 												</TableCell>
 												<TableCell
 													className={cn(
@@ -483,11 +488,13 @@ export function TradeHistoryPage({ address }: Props) {
 															target="_blank"
 															rel="noopener noreferrer"
 														>
-															<span>{formatDateTimeShort(fill.time, { locale })}</span>
+															<span>
+																{formatDateTime(fill.time, { locale, dateStyle: "short", timeStyle: "short" })}
+															</span>
 															<ArrowSquareOutIcon className="size-3" aria-hidden="true" />
 														</a>
 													) : (
-														formatDateTimeShort(fill.time, { locale })
+														formatDateTime(fill.time, { locale, dateStyle: "short", timeStyle: "short" })
 													)}
 												</TableCell>
 											</TableRow>

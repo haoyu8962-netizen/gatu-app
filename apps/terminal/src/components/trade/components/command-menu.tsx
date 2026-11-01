@@ -1,6 +1,7 @@
+import { useLingui } from "@lingui/react/macro";
 import { useMemo, useState } from "react";
 import { CommandDialog, CommandEmpty, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { KIND_LABELS, marketSearchConfig } from "@/config/search";
+import { marketSearchConfig } from "@/config/search";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { cn } from "@/lib/cn";
 import { useNumberFormat } from "@/lib/format";
@@ -13,6 +14,7 @@ const COMMAND_DIALOG_MAX_WIDTH_CLASS = "sm:max-w-[30rem]";
 const COMMAND_LIST_HEIGHT_CLASS = "h-[22.5rem] max-h-[22.5rem]";
 
 export function CommandMenu() {
+	const { t } = useLingui();
 	const { formatPrice } = useNumberFormat();
 	const open = useCommandMenuOpen();
 	const { close } = useCommandMenuActions();
@@ -31,6 +33,12 @@ export function CommandMenu() {
 		setQuery("");
 	}
 
+	function getKindLabel(market: UnifiedMarketInfo): string {
+		if (market.kind === "spot") return t`Spot`;
+		if (market.kind === "builderPerp") return market.dex;
+		return t`Perp`;
+	}
+
 	function handleOpenChange(nextOpen: boolean) {
 		if (!nextOpen) {
 			close();
@@ -42,15 +50,15 @@ export function CommandMenu() {
 		<CommandDialog
 			open={!!open}
 			onOpenChange={handleOpenChange}
-			title="Search Markets"
-			description="Search for a market to trade"
+			title={t`Search markets`}
+			description={t`Search for a market to trade`}
 			showCloseButton={false}
 			shouldFilter={false}
 			className={COMMAND_DIALOG_MAX_WIDTH_CLASS}
 		>
-			<CommandInput placeholder="Search markets..." value={query} onValueChange={setQuery} />
+			<CommandInput placeholder={t`Search markets...`} value={query} onValueChange={setQuery} />
 			<CommandList className={COMMAND_LIST_HEIGHT_CLASS}>
-				<CommandEmpty>No markets found.</CommandEmpty>
+				<CommandEmpty>{t`No markets found.`}</CommandEmpty>
 				{displayItems.map((market) => (
 					<CommandItem
 						key={`${market.kind}-${market.name}`}
@@ -61,7 +69,10 @@ export function CommandMenu() {
 						<AssetDisplay coin={market.name} iconClassName="size-5" />
 						<div className="ms-auto flex items-center gap-2">
 							<span className="text-fg-muted text-xs">
-								{formatPrice(market.markPx, { szDecimals: market.szDecimals })}
+								{formatPrice(market.markPx, {
+									szDecimals: market.szDecimals,
+									marketType: market.kind === "spot" ? "spot" : "perp",
+								})}
 							</span>
 							<span
 								className={cn(
@@ -71,7 +82,7 @@ export function CommandMenu() {
 									market.kind === "builderPerp" && "bg-fill-weak text-scope-builders",
 								)}
 							>
-								{KIND_LABELS[market.kind]}
+								{getKindLabel(market)}
 							</span>
 						</div>
 					</CommandItem>

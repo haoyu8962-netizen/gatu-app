@@ -6,7 +6,8 @@ import { useAccountLedger } from "@/hooks/trade/use-account-ledger";
 import { useAccountLedgerCsv } from "@/hooks/trade/use-account-ledger-csv";
 import { useAccountLedgerLabels } from "@/hooks/trade/use-account-ledger-labels";
 import { cn } from "@/lib/cn";
-import { formatDateTimeShort, useNumberFormat } from "@/lib/format";
+import { formatDateTime, useNumberFormat } from "@/lib/format";
+import { useMarkets } from "@/lib/hyperliquid";
 import { formatAccountLedgerAmount, formatAccountLedgerFee } from "@/lib/trade/account-ledger-format";
 import { getAccountLedgerExplorerUrl } from "@/lib/trade/account-ledger-links";
 import { isIncompleteHistorySnapshotError } from "@/lib/trade/history-pagination";
@@ -32,6 +33,7 @@ export function AccountTransfersTab() {
 	const { i18n, t } = useLingui();
 	const locale = i18n.locale;
 	const numberFormat = useNumberFormat();
+	const markets = useMarkets();
 	const { canConfirmEmpty, error, isConnected, isRefreshing, retry, rows, status } = useAccountLedger();
 	const { getActionLabel, getLocationLabel } = useAccountLedgerLabels();
 	const { exportCsv, isExporting } = useAccountLedgerCsv();
@@ -148,7 +150,7 @@ export function AccountTransfersTab() {
 													rel="noopener noreferrer"
 													className="inline-flex items-center gap-1 underline decoration-dashed decoration-fg-muted/30 hover:text-fg"
 												>
-													{formatDateTimeShort(row.time, { locale })}
+													{formatDateTime(row.time, { locale, dateStyle: "short", timeStyle: "short" })}
 													<ArrowSquareOutIcon className="size-2.5" aria-hidden="true" />
 												</a>
 											</TableCell>
@@ -173,13 +175,13 @@ export function AccountTransfersTab() {
 													amount !== null && getValueColorClass(amount),
 												)}
 											>
-												<bdi dir="ltr">{formatAccountLedgerAmount(row, numberFormat)}</bdi>
+												<bdi dir="ltr">{formatAccountLedgerAmount(row, numberFormat, markets.getTokenDisplayName)}</bdi>
 											</TableCell>
 											<TableCell
 												size="dense"
 												className={cn(positionsPanelTableCellClass, "text-right tabular-nums", row.fee && "text-error")}
 											>
-												<bdi dir="ltr">{formatAccountLedgerFee(row, numberFormat)}</bdi>
+												<bdi dir="ltr">{formatAccountLedgerFee(row, numberFormat, markets.getTokenDisplayName)}</bdi>
 											</TableCell>
 										</TableRow>
 									);

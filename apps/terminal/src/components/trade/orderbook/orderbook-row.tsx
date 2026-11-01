@@ -3,6 +3,7 @@ import { memo } from "react";
 import { cn } from "@/lib/cn";
 import { useNumberFormat } from "@/lib/format";
 import { type BookLevel, getDepthPercentage, getOrderbookQuoteDecimals } from "@/lib/trade/orderbook";
+import { COMPACT_ORDERBOOK_ROW_GRID_CLASS, getCompactOrderbookSizeText } from "@/lib/ui/orderbook-layout";
 import type { OrderbookLevelPulseEvent } from "@/lib/ui/orderbook-level-pulses";
 import { useOrderbookActions } from "@/stores/use-orderbook-actions-store";
 import { OrderbookLevelPulse } from "./orderbook-level-pulse";
@@ -18,6 +19,7 @@ interface Props {
 	showInQuote?: boolean;
 	szDecimals: number;
 	compact?: boolean;
+	ladderWidthPx?: number;
 	disabled?: boolean;
 	rank?: number;
 	hoverState?: "active" | "range";
@@ -36,6 +38,7 @@ function OrderbookRowComponent({
 	showInQuote = false,
 	szDecimals,
 	compact = false,
+	ladderWidthPx,
 	disabled = false,
 	rank,
 	hoverState,
@@ -55,10 +58,21 @@ function OrderbookRowComponent({
 	const sizeDecimals = showInQuote ? getOrderbookQuoteDecimals(sizeValue) : szDecimals;
 	const totalDecimals = showInQuote ? getOrderbookQuoteDecimals(totalValue) : szDecimals;
 	const priceText = formatNumber(level.price, priceDecimals);
-	const sizeText = formatNumber(sizeValue, { decimals: sizeDecimals, compact: true });
-	const totalText = formatNumber(totalValue, { decimals: totalDecimals, compact: true });
+	const fullSizeText = formatNumber(sizeValue, sizeDecimals);
+	const sizeText =
+		compact && ladderWidthPx
+			? getCompactOrderbookSizeText({
+					value: sizeValue,
+					fullText: fullSizeText,
+					decimals: sizeDecimals,
+					priceText,
+					ladderWidthPx,
+					formatNumber,
+				})
+			: fullSizeText;
+	const totalText = formatNumber(totalValue, totalDecimals);
 	const sideText = isAsk ? t`Ask` : t`Bid`;
-	const ariaLabel = `${sideText}, ${t`Price`} ${priceText}, ${t`Size`} ${sizeText}, ${t`Total`} ${totalText}. ${t`Use ${priceText} as limit price`}`;
+	const ariaLabel = `${sideText}, ${t`Price`} ${priceText}, ${t`Size`} ${fullSizeText}, ${t`Total`} ${totalText}. ${t`Use ${priceText} as limit price`}`;
 
 	return (
 		<button
@@ -92,27 +106,28 @@ function OrderbookRowComponent({
 			<span
 				className={cn(
 					"grid h-full items-center gap-1 tabular-nums py-0.5 relative z-10",
-					compact ? "grid-cols-2 pl-2 pr-3 text-xs" : "orderbook-grid px-2 text-xs",
+					compact ? COMPACT_ORDERBOOK_ROW_GRID_CLASS : "orderbook-grid px-2 text-xs",
 				)}
 			>
-				<span className="min-w-0 truncate text-left">
+				<span className="min-w-0 whitespace-nowrap text-start">
 					<span
 						data-slot="orderbook-price-text"
-						className={cn(
-							"inline-block max-w-full truncate align-top",
-							isAsk ? "orderbook-price-ask" : "orderbook-price-bid",
-						)}
+						className={cn("inline-block align-top", isAsk ? "orderbook-price-ask" : "orderbook-price-bid")}
 					>
 						{priceText}
 					</span>
 				</span>
 				<OrderbookSizeCell
-					className="min-w-0 truncate text-right orderbook-value-text"
+					className="flex min-w-0 justify-end whitespace-nowrap orderbook-value-text"
 					displayValue={sizeText}
 					resetKey={flashResetKey}
 					value={level.size}
 				/>
-				{!compact && <span className="min-w-0 truncate text-right orderbook-value-text">{totalText}</span>}
+				{!compact && (
+					<span className="flex min-w-0 justify-end whitespace-nowrap orderbook-value-text">
+						<span data-slot="orderbook-total-value">{totalText}</span>
+					</span>
+				)}
 			</span>
 		</button>
 	);
@@ -138,7 +153,8 @@ function areEqual(prev: Props, next: Props): boolean {
 		prev.level.total === next.level.total &&
 		prev.level.quoteSize === next.level.quoteSize &&
 		prev.level.quoteTotal === next.level.quoteTotal &&
-		prev.compact === next.compact
+		prev.compact === next.compact &&
+		prev.ladderWidthPx === next.ladderWidthPx
 	);
 }
 
