@@ -184,8 +184,7 @@ export function createMarkets(params: CreateMarketsParams): MarketsWithExactLook
 		marketByName.set(market.name, market);
 	}
 
-	const tokenByProtocolName = new Map(spotTokens.map((token) => [token.name, token]));
-	const tokenByName = new Map(tokenByProtocolName);
+	const tokenByName = new Map(spotTokens.map((token) => [token.name, token]));
 	const tokenDisplayNameCounts = new Map<string, number>();
 	for (const token of spotTokens) {
 		tokenDisplayNameCounts.set(token.displayName, (tokenDisplayNameCounts.get(token.displayName) ?? 0) + 1);
@@ -222,7 +221,7 @@ export function createMarkets(params: CreateMarketsParams): MarketsWithExactLook
 		},
 
 		getTokenDisplayName(name: string): string {
-			return tokenByProtocolName.get(name)?.displayName ?? name;
+			return tokenByName.get(name)?.displayName ?? name;
 		},
 
 		getSzDecimals(coin: string): number {
