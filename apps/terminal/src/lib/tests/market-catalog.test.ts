@@ -239,6 +239,17 @@ describe("official spot display names", () => {
 		expect(markets.getToken("MOG")?.isWrapped).toBe(false);
 	});
 
+	it("names protocol tokens for balances, fees and the ledger by display name, keyed by protocol name only", () => {
+		const markets = createTestMarkets(mainnetSpotMeta);
+
+		expect(markets.getTokenDisplayName("PAIR")).toBe("PEAR");
+		expect(markets.getTokenDisplayName("PEAR")).toBe("PEAR-71");
+		expect(markets.getTokenDisplayName("UFART")).toBe("FARTCOIN");
+		expect(markets.getTokenDisplayName("FARTCOIN")).toBe("FARTCOIN");
+		expect(markets.getTokenDisplayName("USDC")).toBe("USDC");
+		expect(markets.getTokenDisplayName("DELISTED")).toBe("DELISTED");
+	});
+
 	it("applies a table entry only to the token that carries the recorded name at that index", () => {
 		const spotMeta = {
 			tokens: [spotToken("USDC", 0), spotToken("NEWCOIN", 299), spotToken("UPUMP", 300, "Unit Pump Fun")],

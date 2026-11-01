@@ -8,19 +8,30 @@ const LEDGER_FORMAT_OPTIONS = {
 	minimumFractionDigits: 0,
 } as const;
 
-export function formatAccountLedgerAmount(row: AccountLedgerRow, numberFormat: NumberFormatters): string {
+/** Protocol token name to the name shown for it (`useMarkets().getTokenDisplayName`). */
+type TokenDisplayName = (token: string) => string;
+
+export function formatAccountLedgerAmount(
+	row: AccountLedgerRow,
+	numberFormat: NumberFormatters,
+	getTokenDisplayName: TokenDisplayName,
+): string {
 	if (row.amount === null) return FALLBACK_VALUE_PLACEHOLDER;
 	return numberFormat.formatToken(row.amount, {
 		...LEDGER_FORMAT_OPTIONS,
 		signDisplay: "exceptZero",
-		symbol: row.token || undefined,
+		symbol: row.token ? getTokenDisplayName(row.token) : undefined,
 	});
 }
 
-export function formatAccountLedgerFee(row: AccountLedgerRow, numberFormat: NumberFormatters): string {
+export function formatAccountLedgerFee(
+	row: AccountLedgerRow,
+	numberFormat: NumberFormatters,
+	getTokenDisplayName: TokenDisplayName,
+): string {
 	if (!row.fee) return FALLBACK_VALUE_PLACEHOLDER;
 	return numberFormat.formatToken(row.fee.amount, {
 		...LEDGER_FORMAT_OPTIONS,
-		symbol: row.fee.token,
+		symbol: getTokenDisplayName(row.fee.token),
 	});
 }

@@ -7,6 +7,7 @@ import { useAccountLedgerCsv } from "@/hooks/trade/use-account-ledger-csv";
 import { useAccountLedgerLabels } from "@/hooks/trade/use-account-ledger-labels";
 import { cn } from "@/lib/cn";
 import { formatDateTimeShort, useNumberFormat } from "@/lib/format";
+import { useMarkets } from "@/lib/hyperliquid";
 import { formatAccountLedgerAmount, formatAccountLedgerFee } from "@/lib/trade/account-ledger-format";
 import { getAccountLedgerExplorerUrl } from "@/lib/trade/account-ledger-links";
 import { toNumber } from "@/lib/trade/numbers";
@@ -24,6 +25,7 @@ export function MobileAccountTransfersTab({ className, scrollMode = "contained" 
 	const { i18n, t } = useLingui();
 	const locale = i18n.locale;
 	const numberFormat = useNumberFormat();
+	const markets = useMarkets();
 	const { canConfirmEmpty, isConnected, isRefreshing, rows, status } = useAccountLedger();
 	const { getActionLabel, getLocationLabel } = useAccountLedgerLabels();
 	const { exportCsv, isExporting } = useAccountLedgerCsv();
@@ -111,7 +113,7 @@ export function MobileAccountTransfersTab({ className, scrollMode = "contained" 
 										amount !== null && getValueColorClass(amount),
 									)}
 								>
-									{formatAccountLedgerAmount(row, numberFormat)}
+									{formatAccountLedgerAmount(row, numberFormat, markets.getTokenDisplayName)}
 								</span>
 							</div>
 							<div className="grid grid-cols-3 divide-x divide-stroke-weak">
@@ -119,7 +121,7 @@ export function MobileAccountTransfersTab({ className, scrollMode = "contained" 
 								<MetricCell label={t`Destination`} value={getLocationLabel(row.destination)} />
 								<MetricCell
 									label={t`Fee`}
-									value={formatAccountLedgerFee(row, numberFormat)}
+									value={formatAccountLedgerFee(row, numberFormat, markets.getTokenDisplayName)}
 									valueClass={row.fee ? "text-error" : undefined}
 								/>
 							</div>

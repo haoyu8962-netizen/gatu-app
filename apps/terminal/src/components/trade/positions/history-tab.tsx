@@ -202,7 +202,7 @@ export function HistoryTab() {
 											>
 												<span className="text-market-close-muted">
 													{formatToken(fill.fee, {
-														symbol: fill.feeToken,
+														symbol: markets.getTokenDisplayName(fill.feeToken),
 													})}
 												</span>
 											</TableCell>

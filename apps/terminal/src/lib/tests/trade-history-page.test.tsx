@@ -140,6 +140,7 @@ vi.mock("@/lib/hyperliquid", () => ({
 	useMarkets: () => ({
 		getMarket: (coin: string) => ({ kind: coin === "PURR/USDC" ? "spot" : "perp" }),
 		getSzDecimals: () => 2,
+		getTokenDisplayName: (name: string) => (name === "UBTC" ? "BTC" : name),
 	}),
 }));
 vi.mock("@/lib/lazy", () => ({ createLazyComponent: () => () => null }));
@@ -281,6 +282,14 @@ describe("TradeHistoryPage", () => {
 		renderPage();
 
 		expect(container.querySelector("tbody")?.textContent).toContain("-$0.01");
+	});
+
+	it("shows a fill's fee token by its display name", () => {
+		mocks.history.fills = [{ ...createFill(0), feeToken: "UBTC", fee: "0.00001" }];
+		renderPage();
+
+		expect(container.querySelector("tbody")?.textContent).toContain("0.00001 BTC");
+		expect(container.querySelector("tbody")?.textContent).not.toContain("UBTC");
 	});
 
 	it("renders the account's own buy-side liquidation with danger styling", () => {

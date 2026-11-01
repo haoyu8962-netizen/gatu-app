@@ -394,7 +394,7 @@ function MobileHistoryTabContent({
 													<div className="min-w-0">
 														<div className="truncate text-3xs leading-[14px] text-market-close-subtle">{t`Fee`}</div>
 														<div className="truncate whitespace-nowrap text-xs font-semibold leading-[17px] text-market-close-fg tabular-nums">
-															{formatToken(fill.fee, { symbol: fill.feeToken })}
+															{formatToken(fill.fee, { symbol: markets.getTokenDisplayName(fill.feeToken) })}
 														</div>
 													</div>
 												</div>

@@ -247,6 +247,7 @@ vi.mock("@/lib/hyperliquid", () => ({
 	useMarkets: () => ({
 		getMarket: (coin: string) => ({ kind: "perp", shortName: coin, szDecimals: coin === "BTC" ? 4 : 3 }),
 		getSzDecimals: (coin: string) => (coin === "BTC" ? 4 : 3),
+		getTokenDisplayName: (name: string) => (name === "UBTC" ? "BTC" : name),
 	}),
 	useSubscription: () => ({
 		data: {
@@ -532,6 +533,16 @@ describe("mobile history disclosure cards", () => {
 
 		expect(container.textContent).toContain("+$12.38");
 		expect(container.textContent).toContain("-$0.08");
+	});
+
+	it("shows a fill's fee token by its display name", () => {
+		const [fill] = createFills();
+		mocks.fills = [{ ...fill, feeToken: "UBTC", fee: "0.00001" }];
+		render(<MobileHistoryTab scrollMode="page" />);
+		clickButton("Expand all");
+
+		expect(container.textContent).toContain("0.00001 BTC");
+		expect(container.textContent).not.toContain("UBTC");
 	});
 
 	it("separates the owner's liquidation from a fill against another account's liquidation", () => {

@@ -41,6 +41,8 @@ import {
 
 export interface MarketsWithExactLookup extends Markets {
 	getMarketByName(name: string): UnifiedMarket | undefined;
+	/** The display name of a token named as the protocol names it (balances, fee and ledger tokens). */
+	getTokenDisplayName(name: string): string;
 }
 
 export interface MarketsContextValue extends MarketsWithExactLookup {
@@ -182,10 +184,8 @@ export function createMarkets(params: CreateMarketsParams): MarketsWithExactLook
 		marketByName.set(market.name, market);
 	}
 
-	const tokenByName = new Map<string, SpotToken>();
-	for (const token of spotTokens) {
-		tokenByName.set(token.name, token);
-	}
+	const tokenByProtocolName = new Map(spotTokens.map((token) => [token.name, token]));
+	const tokenByName = new Map(tokenByProtocolName);
 	const tokenDisplayNameCounts = new Map<string, number>();
 	for (const token of spotTokens) {
 		tokenDisplayNameCounts.set(token.displayName, (tokenDisplayNameCounts.get(token.displayName) ?? 0) + 1);
@@ -219,6 +219,10 @@ export function createMarkets(params: CreateMarketsParams): MarketsWithExactLook
 
 		getToken(name: string): SpotToken | undefined {
 			return tokenByName.get(name);
+		},
+
+		getTokenDisplayName(name: string): string {
+			return tokenByProtocolName.get(name)?.displayName ?? name;
 		},
 
 		getSzDecimals(coin: string): number {

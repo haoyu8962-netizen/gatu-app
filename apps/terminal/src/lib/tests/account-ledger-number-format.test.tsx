@@ -41,6 +41,11 @@ vi.mock("@/hooks/trade/use-account-ledger", () => ({
 	useAccountLedger: () => ({ error: null, isConnected: true, retry: vi.fn(), rows: ROWS, status: "ready" }),
 }));
 
+vi.mock("@/lib/hyperliquid", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/lib/hyperliquid")>()),
+	useMarkets: () => ({ getTokenDisplayName: (name: string) => (name === "UBTC" ? "BTC" : name) }),
+}));
+
 vi.mock("@/hooks/trade/use-account-ledger-csv", () => ({
 	useAccountLedgerCsv: () => ({ exportCsv: vi.fn(), isExporting: false }),
 }));
@@ -90,6 +95,33 @@ describe("account ledger number format", () => {
 		expect(container.textContent).toContain("-1.234,5 USDC");
 		expect(container.textContent).toContain("1,25 USDC");
 		expect(container.textContent).not.toContain("1,234.5");
+	});
+
+	it.each([
+		["desktop", () => <AccountTransfersTab />],
+		["mobile", () => <MobileAccountTransfersTab scrollMode="page" />],
+	] as const)("names a renamed spot token by its display name on %s", (_surface, renderSurface) => {
+		ROWS.push({
+			action: "send",
+			amount: "-0.5",
+			destination: { kind: "spot" },
+			explorer: "hyperliquid",
+			fee: { amount: "0.0001", token: "UBTC" },
+			hash: "0xdef",
+			id: "send-1",
+			rawType: "spotSend",
+			source: { kind: "spot" },
+			time: Date.UTC(2026, 9, 2, 9, 30),
+			token: "UBTC",
+		});
+		try {
+			act(() => root.render(renderSurface()));
+			expect(container.textContent).toContain("-0.5 BTC");
+			expect(container.textContent).toContain("0.0001 BTC");
+			expect(container.textContent).not.toContain("UBTC");
+		} finally {
+			ROWS.pop();
+		}
 	});
 
 	it("dates desktop transfers with the year and keeps the compact date on phone cards", () => {
