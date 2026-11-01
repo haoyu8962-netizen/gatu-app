@@ -2,7 +2,7 @@
 
 ## 目的与范围
 
-移动端的行情、交易、账户、资产组合，以及这些入口使用的共享资金和仓位弹窗，在首次加载、后台刷新和重连期间保持安静、稳定。数据尚未返回不代表账户为空、连接故障、账户模式不受支持或平台不支持充值提现。
+移动端的行情、交易、账户、资产组合，以及这些入口使用的共享资金和仓位弹窗，在首次加载、后台刷新和重连期间保持安静、稳定。数据尚未返回不代表账户为空、连接故障、账户模式不受支持或平台不支持充值提现。质押、推荐、金库列表与金库详情页在桌面与手机上同样遵循本规范（2026-11-01 起，见下文「受约束的入口」）。
 
 本规范先于实现更新。修改上述界面时必须同时检查本规范与 `AGENTS.md`，不得重新引入被动数据状态警告。
 
@@ -22,6 +22,8 @@
 | 已确认的命名 API 钱包基础名额用完（关联移动设备弹窗：本次打开后成功返回的 `extraAgents` 里，有效的命名 Agent 已达文档基础上限 3 个且没有 `Mobile QR`） | 签名前在弹窗里显示一条 warning 提示，用条件句说明授权可能被拒绝（子账户与成交量会提高上限），列出占用的名字与到期日，附 API 钱包页入口；授权按钮不因此禁用（[ADR 0039](adr/0039-link-mobile-device-builder-fee-and-session-priority.md)） | 加载中、失败、过期或格式不符时显示任何名额文字；用提示是否存在决定能否授权 |
 | 已确认的手机访问结束（状态检查确认导入的密钥已过期或被电脑端替换，并已删除） | 一条常驻通知「手机访问已结束」，说明需要在电脑端重新生成二维码扫码（[ADR 0039](adr/0039-link-mobile-device-builder-fee-and-session-priority.md)） | 在答案不确定（请求失败、刷新中、快照早于导入）时提示或删除；把它当作被动加载失败文案 |
 | 用户实际提交的操作失败或结果待确认 | 保留与该操作有关的错误、重试与追踪反馈 | 静默吞掉提交失败，或把待确认交易当作失败后允许重复提交 |
+| 质押、推荐与金库页（桌面与手机）：某一来源刷新失败，但本页开始读取后已收到过它的数据（同一 owner、网络与金库，按 `useDataReceivedSinceMount` 判断，界定与[资产组合 E13](portfolio-statistics.md) 相同） | 静默保留这份数据；依赖它的操作按可用性布尔值禁用，直到刷新成功，并在操作旁提供中性「Retry」；空列表不下结论，改为中性「Retry」。进入本页之前缓存、本页没有收到过的数据在请求失败后不保留，按首次失败处理 | 用错误页、红色提示框或警告图标替换已显示的数据；把余额置 0；用保留的数据启用操作或得出「没有记录」 |
+| 质押、推荐与金库页的数值未知（未连接、加载中、首次读取失败） | 稳定占位符 `--` | `0 HYPE`、`$0` 等看似确定的零 |
 | 由市场静态元数据推导的说明值（目前仅杠杆编辑器的「最大仓位」行，桌面弹窗与移动抽屉共用） | 是否出现只取决于该市场的保证金分档表：有效且多于一档才显示，数值随编辑器显示的杠杆变化；「无档位上限」只能由有效分档表得出；杠杆超出分档范围、缺少计价币符号或截断后的下界超出 JavaScript 安全整数范围（合成情形）时用稳定占位符（[杠杆仓位上限](leverage-position-limit.md)） | 分档表缺失、无效或单档时显示「加载中」「不可用」等文字；让该行随预览杠杆出现或消失；用该行是否存在或其数值决定确认按钮能否点击 |
 | 确认弹窗打开期间，待确认对象与开窗时不同（目前仅市价平仓的仓位数量） | 在需要重新核对的内容旁明示一条 `aria-live="polite"` 提示，说明哪一项与开窗时不同；只在可见、可编辑的确认阶段显示；执行仍以点击时展示的数量为上限（[确认面契约](confirmation-surfaces.md)） | 静默改写待确认数值；把变化写进确认按钮名称；用提示是否存在决定能否提交；弹窗关闭后的后台执行期继续播报 |
 | 手机成交历史开启任一筛选（类型、方向、角色）：WebSocket 只有最近 30 条成交，页签同时补拉 `userFills` 快照（最多 2,000 条），与实时成交按 `(time, coin, tid)` 去重合并（[筛选映射](trading-toolbar-redesign.md#mobile-filter-mappings)） | 有匹配就显示匹配的成交（最多 30 张卡片）。只有补拉属于当前 owner 与网络、最近一次请求成功、没有请求在进行、未离线，且实时成交快照当前（就绪、未过期、未离线、无错误）时，无匹配才显示「No fills match these filters.」；补拉恰好返回 2,000 条上限时改为「No fills match these filters among the latest 2,000.」，不声称检查过更早的成交。补拉加载、重新请求、离线或实时快照不当前时为空白列表加 `aria-busy` 与读屏说明；补拉失败（包括已有快照后的刷新失败）时只给中性「Retry」 | 补拉未完成、失败、刷新中或实时快照不当前时得出「无匹配」结论；在不到上限或达到上限的检查范围外声称没有匹配；显示补拉的错误文字或警告图标 |
@@ -107,6 +109,7 @@
 - 资金费率历史图（桌面图表区与手机行情区的 Funding 页签，桌面同样适用）：首次加载、重试和惰性块加载为空白绘图区加 `aria-busy` 与读屏专用加载说明；首次失败只给中性「重试」，不显示原因；已加载的非空快照刷新失败时静默保留；离线保持空白；只有分页未截断、当前键、最近一次请求成功、未超过 5 分钟新鲜期（取本地单调时钟与墙钟中较大的年龄，墙钟退到接收时间之前即视为过期，系统时间回拨不会延长）、没有刷新在进行或暂停且在线时的空快照显示「暂无资金费率历史」；视图可见期间空快照一过期就自动刷新（非空快照不轮询），刷新失败只给中性「重试」，刷新中、页面在后台尚未刷新、暂停或离线时保持空白。它使用上表已有的类别，不新增被动提示类别；详见[资金费率历史](market-funding-history.md)。
 - 移动端使用的兑换、发送、划转、充值提现、仓位设置和平仓弹窗。
 - 资金费率对比页（`/fundingComparison`，桌面与手机）：首份快照、市场目录或离线等待期间只显示数据骨架与 `aria-busy`；首份快照失败、格式不符或市场目录失败时，数据区只保留中性的「重试」按钮，不显示错误文字或警告图标；已有非空快照的刷新失败只在快照自本地接收起不到 120 秒（两个刷新周期，以本地单调时钟计龄，本地墙钟年龄只会让它更早失效，系统时间回拨不会延长）时保留原数据且不提示，满 120 秒或查询因离线暂停时数据区换成骨架或中性「重试」，不显示旧数值；只有解析成功、在该时限内、目录就绪且最近一次请求成功的空快照才显示「暂无资金费率对比数据」；搜索无匹配单独显示为搜索结果。缺少换算间隔或资产上下文的数值使用 `--` 占位；Hyperliquid OI 另外只在持仓量所在的资产上下文来自当前实时订阅（`useMarketsInfo().perpContextsLive`，未送达、过期、失败或恢复中都不算；本地不保存行情快照，见 [ADR 0047](adr/0047-no-local-market-stats-snapshot.md)）且该市场标记价格实时（与行情头同一规则）时显示，否则为 `--` 并在两个排序方向都排在最后，资金费率照常显示。详见 [资金费率对比页](funding-comparison.md)。
+- 质押（`/staking`）、推荐（`/referrals`）、金库列表（`/vaults`）与金库详情（`/vaults/<地址>`），桌面与手机相同（2026-11-01，审查项 E5）。每个数据来源（质押的验证人与六个账户查询、推荐快照、金库公开列表、账户金库份额与领先金库、金库详情）按 `lib/passive-query-state.ts` 分为四态：`loading`（还没有可用数据、没有失败）为空白或既有骨架加 `aria-busy` 与读屏说明；`failed`（没有可用数据且最近一次请求失败或响应格式不符）时数据区只有中性「Retry」，没有错误文字、警告图标或 `role="alert"`，金库详情另保留「Back to Vaults」导航；`ready`（最近一次请求成功，可以正在后台刷新）照常显示数据、空列表结论与操作，金库存款、提款按钮不再因后台刷新禁用；`retained` 按上表静默保留本页收到过的数据，质押页在操作按钮旁、推荐页在内容顶部、金库详情在存款与提款按钮下方提供中性「Retry」，金库列表保留已显示的行，刷新入口仍是原有的「Refresh」。推荐的领取记录是历史列表：加载时为空白加 `aria-busy` 与读屏说明，读取失败只给中性「Retry」，已加载的记录在刷新失败后保留，「No recent reward claims.」只在最近一次快照成功且没有刷新在进行（`useAccountLedger().canConfirmEmpty`）时出现。不显示被动刷新文字或转圈（原「Refreshing staking data…」「Refreshing referral data…」「Refreshing Vault data. Actions are temporarily unavailable.」与领取记录的「Loading recent reward claims…」可见文字）。操作只由可用性布尔值禁用：质押的四个操作要求账户快照为 `ready`，委托与解除委托另要求验证人列表为 `ready`；推荐的领取、创建与使用邀请码要求推荐快照为 `ready`；金库存款要求详情为 `ready`，提款另要求账户份额为 `ready`（`deriveVaultActionsAvailability`），详情保留期间已打开的存款或提款弹窗停在输入步骤（`canReview` 为假），弹窗本身与输入不卸载。只有已确认的限制显示说明（地区受限、Agent-only 会话、金库已关闭、不接受存款、未连接 owner、提款锁定、没有可提金额、「No unclaimed rewards are currently available.」只在推荐快照为 `ready` 时）；地区检查中或无法确认、详情或份额加载中或读取失败、刷新中这类被动原因不显示文字。用户发起的提交、失败与待确认结果仍按原有弹窗与通知反馈，执行路径各自的新鲜数据预检（质押 `loadStakingPreflightSnapshot`、推荐提交前 `refetchReferral`、金库 `verifyVaultActionPreflight`）不变。与官方终端的差异（2026-10-31 生产包）：官方质押页读取失败时弹出错误通知（`provideDelegations-CJcxKbEv.js`：`An error occurred while fetching validators`），推荐页读取失败时整页显示 `Unexpected error loading referral data`（`Referrals-DzsUY3Ry.js`），未知余额显示 0；本终端按本规范保持静默、只给中性重试并显示 `--`。官方金库详情刷新失败时保留上一份详情、首次失败时整页空白（`VaultDetailsPage-NS0z_PHx.js` 只在响应含 `response` 时更新），金库列表失败时列表为空（`VaultMainPage-Biimvm9f.js`）；本终端同样保留已收到的数据，首次失败时给中性重试。
 
 ## 验证与防回归
 
@@ -127,7 +130,9 @@
 
 ## 回归入口
 
-`apps/terminal/src/lib/tests/mobile-data-presentation-contract.test.ts` 检查已移除的移动文案、共享弹窗被动警告和规范入口；`user-positions-readiness.test.tsx` 验证订阅确认与首份数据的区别。余额、委托、TWAP、历史和仓位弹窗的组件测试同时验证静默展示、恢复和操作保护。
+`apps/terminal/src/lib/tests/mobile-data-presentation-contract.test.ts` 检查已移除的移动文案、共享弹窗被动警告和规范入口，并扫描质押、推荐与金库目录：不得出现被动刷新文字、`role="alert"` 失败框、警告图标或 `0 HYPE` 占位，金库操作按钮不得由说明文字是否存在决定禁用；`user-positions-readiness.test.tsx` 验证订阅确认与首份数据的区别。余额、委托、TWAP、历史和仓位弹窗的组件测试同时验证静默展示、恢复和操作保护。
+
+质押、推荐与金库页：`passive-query-state.test.ts` 覆盖四态与合并规则；`staking-passive-data.test.tsx`、`referral-passive-data.test.tsx` 与 `vault-passive-data.test.tsx` 用真实的控制器、视图与 QueryClient（只替换传输层）验证首次失败只有中性重试、刷新失败保留本页收到的数据并禁用依赖它的操作、进入页面前缓存的数据在失败后不保留、后台刷新时没有文字且操作可用、`--` 占位，以及失败或保留的快照不得出「没有记录」结论；`use-referrals.test.tsx`、`vaults-domain.test.ts` 与 `use-vault-action-controller.test.tsx` 分别钉住推荐快照的当前性、`deriveVaultActionsAvailability` 的 `detailCurrent` 与被动原因分类、保留详情时暂停复核步骤；`referral-ui-contract.test.ts` 与 `status-motion-surface-contract.test.ts` 登记已移除的刷新文字与转圈。
 
 `mobile-fill-filter-backfill.test.tsx` 用真实的手机成交页签、`useUserFills`、`useTradeHistory` 与 QueryClient 验证：只在筛选开启时补拉、按 `(time, coin, tid)` 合并且保留实时副本、加载与重新请求时安静、失败只给中性重试、实时快照过期时不下结论、2,000 条上限的说明，以及清除筛选后回到实时列表；`fill-filter-presentation.test.ts` 覆盖其判定函数。
 
@@ -162,7 +167,15 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/market-selector-quote.test.ts \
   src/lib/tests/token-selector-row.test.tsx \
   src/lib/tests/token-selector-wiring.test.tsx \
-  src/lib/tests/use-markets-info-subscriptions.test.tsx
+  src/lib/tests/use-markets-info-subscriptions.test.tsx \
+  src/lib/tests/passive-query-state.test.ts \
+  src/components/staking/__tests__/staking-passive-data.test.tsx \
+  src/lib/tests/referral-passive-data.test.tsx \
+  src/lib/tests/vault-passive-data.test.tsx \
+  src/lib/tests/use-referrals.test.tsx \
+  src/lib/tests/vaults-domain.test.ts \
+  src/lib/tests/referral-ui-contract.test.ts \
+  src/lib/tests/status-motion-surface-contract.test.ts
 ```
 
 契约测试的文案清单不能替代行为审查；新增入口仍须覆盖未知、失败、恢复和确认空快照，检查禁用逻辑是否独立于文案。
