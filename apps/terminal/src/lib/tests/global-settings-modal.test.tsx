@@ -29,7 +29,6 @@ const testState = vi.hoisted(() => ({
 	setMarketOrderSlippagePercent: vi.fn((value: number) => {
 		testState.marketOrderSlippagePercent = value;
 	}),
-	setShowOrderbookInQuote: vi.fn(),
 	animateOrderbook: true,
 	setAnimateOrderbook: vi.fn((value: boolean) => {
 		testState.animateOrderbook = value;
@@ -124,11 +123,9 @@ vi.mock("@/stores/use-global-modal-store", () => ({
 
 vi.mock("@/stores/use-global-settings-store", () => ({
 	getResolvedFormatLocale: () => testState.formatLocale,
-	useGlobalSettings: () => ({ showOrderbookInQuote: false }),
 	useGlobalSettingsActions: () => ({
 		setMarketOrderSlippagePercent: testState.setMarketOrderSlippagePercent,
 		setNetwork: vi.fn(),
-		setShowOrderbookInQuote: testState.setShowOrderbookInQuote,
 		setAnimateOrderbook: testState.setAnimateOrderbook,
 		setSkipOrderConfirmation: testState.setSkipOrderConfirmation,
 		setTransactionDelayProtection: testState.setTransactionDelayProtection,
@@ -159,7 +156,6 @@ describe("GlobalSettingsModal", () => {
 		testState.marketOrderSlippagePercent = 0.5;
 		testState.formatLocale = "en-US";
 		testState.setMarketOrderSlippagePercent.mockClear();
-		testState.setShowOrderbookInQuote.mockClear();
 		testState.animateOrderbook = true;
 		testState.setAnimateOrderbook.mockClear();
 		testState.skipOrderConfirmation = false;
@@ -366,7 +362,6 @@ describe("GlobalSettingsModal", () => {
 			"Order confirmation",
 			"Transaction delay protection",
 			"Order book animations",
-			"Order book in quote asset",
 		]);
 	});
 
@@ -398,25 +393,17 @@ describe("GlobalSettingsModal", () => {
 		expect(container.textContent).toContain("Desktop layout");
 	});
 
-	it("hides the order book unit setting on the desktop layout", () => {
-		expect(findOrderbookUnitToggle()).toBeUndefined();
-		expect(container.textContent).not.toContain("Order book in quote asset");
-	});
+	it.each([false, true])(
+		"offers no separate order book unit setting on the mobile=%s layout, as the book follows the order size unit",
+		(isMobile) => {
+			testState.isMobile = isMobile;
+			testState.toggleProps = [];
+			renderModal();
 
-	it("shows the order book unit setting on the mobile layout and writes the global preference", () => {
-		testState.isMobile = true;
-		testState.toggleProps = [];
-		renderModal();
-
-		const toggle = findOrderbookUnitToggle();
-		expect(toggle?.checked).toBe(false);
-
-		act(() => (toggle?.onCheckedChange as ((next: boolean) => void) | undefined)?.(true));
-
-		expect(testState.setShowOrderbookInQuote).toHaveBeenCalledTimes(1);
-		expect(testState.setShowOrderbookInQuote).toHaveBeenCalledWith(true);
-		expect(testState.setSkipOrderConfirmation).not.toHaveBeenCalled();
-	});
+			expect(findOrderbookUnitToggle()).toBeUndefined();
+			expect(container.textContent).not.toContain("Order book in quote asset");
+		},
+	);
 
 	it.each([false, true])("changes the shared animation preference on the mobile=%s layout", (isMobile) => {
 		testState.isMobile = isMobile;
@@ -436,7 +423,6 @@ describe("GlobalSettingsModal", () => {
 
 		expect(testState.setAnimateOrderbook).toHaveBeenLastCalledWith(true);
 		expect(toggle?.getAttribute("aria-checked")).toBe("true");
-		expect(testState.setShowOrderbookInQuote).not.toHaveBeenCalled();
 		expect(testState.setSkipOrderConfirmation).not.toHaveBeenCalled();
 	});
 

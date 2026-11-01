@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getOrderbookLadderLayout, ORDERBOOK_ROW_METRICS } from "@/lib/ui/orderbook-layout";
+import { fitsCompactOrderbookRow, getOrderbookLadderLayout, ORDERBOOK_ROW_METRICS } from "@/lib/ui/orderbook-layout";
 
 describe("orderbook complete-row layout", () => {
 	it.each([287, 290.5])("fills the reported %s px ladder with eleven complete rows", (height) => {
@@ -36,5 +36,19 @@ describe("orderbook complete-row layout", () => {
 				rowHeightPx: 23,
 			});
 		}
+	});
+});
+
+describe("compact order book text fit", () => {
+	it("holds a full kPEPE size beside its price on a 390 px phone but not on a 320 px phone", () => {
+		expect(fitsCompactOrderbookRow("0.004812", "4,472,287", 153.75)).toBe(true);
+		expect(fitsCompactOrderbookRow("0.004812", "4,472,287", 124)).toBe(false);
+		expect(fitsCompactOrderbookRow("0.004812", "4.47M", 124)).toBe(true);
+	});
+
+	it("never claims a fit below the measured widths of IBM Plex Sans figures at 12 px", () => {
+		const measuredPx = 7.203125 * 15 + 3.265625 * 4;
+		expect(fitsCompactOrderbookRow("123,456.7", "12,345,678", measuredPx + 24 - 1)).toBe(false);
+		expect(fitsCompactOrderbookRow("123,456.7", "12,345,678", 0)).toBe(false);
 	});
 });

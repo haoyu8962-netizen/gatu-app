@@ -2934,8 +2934,8 @@ msgid "Display and language"
 msgstr "العرض واللغة"
 
 #: src/components/trade/mobile/mobile-book-view.tsx
-msgid "Display units"
-msgstr "وحدات العرض"
+#~ msgid "Display units"
+#~ msgstr "وحدات العرض"
 
 #: src/components/trade/orderbook/orderbook-hover-tooltip.tsx
 msgid "Distance from mid"
@@ -6004,8 +6004,8 @@ msgstr "رسوم دفتر الأوامر المتحركة"
 
 #: src/components/trade/components/global-settings-modal.tsx
 #: src/components/trade/components/global-settings-modal.tsx
-msgid "Order book in quote asset"
-msgstr "دفتر الأوامر بعملة التسعير"
+#~ msgid "Order book in quote asset"
+#~ msgstr "دفتر الأوامر بعملة التسعير"
 
 #: src/config/orderbook-labels.ts
 msgid "Order book view"
@@ -8188,6 +8188,10 @@ msgstr "انحراف الحجم"
 #: src/lib/trade/order-submission-feedback.ts
 msgid "Size skew is too aggressive for the total size"
 msgstr "انحراف الحجم كبير جدًا بالنسبة للحجم الإجمالي"
+
+#: src/config/orderbook-labels.ts
+msgid "Size unit"
+msgstr "وحدة الحجم"
 
 #: src/components/trade/tradebox/trade-form-tp-sl.tsx
 #: src/lib/errors/definitions/tpsl.ts

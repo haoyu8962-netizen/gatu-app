@@ -2645,8 +2645,8 @@ msgid "Display and language"
 msgstr "表示と言語"
 
 #: src/components/trade/mobile/mobile-book-view.tsx
-msgid "Display units"
-msgstr "表示単位"
+#~ msgid "Display units"
+#~ msgstr "表示単位"
 
 #: src/components/trade/orderbook/orderbook-hover-tooltip.tsx
 msgid "Distance from mid"
@@ -5396,8 +5396,8 @@ msgstr "板のアニメーション"
 
 #: src/components/trade/components/global-settings-modal.tsx
 #: src/components/trade/components/global-settings-modal.tsx
-msgid "Order book in quote asset"
-msgstr "板を決済通貨で表示"
+#~ msgid "Order book in quote asset"
+#~ msgstr "板を決済通貨で表示"
 
 #: src/config/orderbook-labels.ts
 msgid "Order book view"
@@ -7336,6 +7336,10 @@ msgstr "数量の偏り"
 #: src/lib/trade/order-submission-feedback.ts
 msgid "Size skew is too aggressive for the total size"
 msgstr "合計数量に対して数量の偏りが大きすぎます"
+
+#: src/config/orderbook-labels.ts
+msgid "Size unit"
+msgstr "数量の単位"
 
 #: src/components/trade/tradebox/trade-form-tp-sl.tsx
 #: src/lib/errors/definitions/tpsl.ts

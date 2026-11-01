@@ -40,6 +40,7 @@ import {
 	useAccountAbstractionControl,
 } from "@/hooks/trade/use-account-abstraction-control";
 import { useBookPriceSelection } from "@/hooks/trade/use-book-price-selection";
+import { useBookSizeModeRequest } from "@/hooks/trade/use-book-size-mode-request";
 
 import { useBuilderFeeTenthsBps } from "@/hooks/trade/use-builder-fee-config";
 import { useDepositAvailability } from "@/hooks/trade/use-deposit-availability";
@@ -430,6 +431,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 	}, [active, isSpotMarket, isTriggerOrder, setOrderType]);
 
 	useBookPriceSelection(market?.name);
+	useBookSizeModeRequest(market?.name, sizeMode, toggleSizeDenomination);
 	const price = getOrderPrice(
 		orderType,
 		executionReferencePx,

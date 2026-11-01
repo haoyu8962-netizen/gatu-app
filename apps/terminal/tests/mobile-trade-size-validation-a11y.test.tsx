@@ -31,6 +31,8 @@ const testState = vi.hoisted(() => ({
 	openInterestCapped: false,
 	orderType: "market",
 	selectedPrice: null as { marketName: string; price: string } | null,
+	sizeModeRequest: null as { marketName: string; mode: "base" | "quote" } | null,
+	toggleSizeDenomination: vi.fn(),
 	orderValue: 100,
 	quoteAvailable: 100,
 	spotBuyQuoteCost: undefined as number | undefined,
@@ -165,7 +167,7 @@ vi.mock("@/hooks/trade/use-order-entry-data", () => ({
 				isLeveraged: testState.kind === "perp",
 			},
 			committedLeverage: null,
-			toggleSizeDenomination: vi.fn(),
+			toggleSizeDenomination: testState.toggleSizeDenomination,
 			currentLeverage: 10,
 			executionAvailability: { kind: "perp", maxBaseBySide: { buy: "10", sell: "10" } },
 			applySizePercent: vi.fn(),
@@ -328,10 +330,11 @@ vi.mock("@/stores/use-order-entry-store", () => ({
 }));
 
 vi.mock("@/stores/use-orderbook-actions-store", () => ({
-	getOrderbookActionsStore: () => ({ actions: { clearSelectedPrice: vi.fn() } }),
+	getOrderbookActionsStore: () => ({ actions: { clearSelectedPrice: vi.fn(), clearSizeModeRequest: vi.fn() } }),
 	getSelectedPriceForMarket: (selection: { marketName: string; price: string } | null, marketName?: string) =>
 		selection && selection.marketName === marketName ? selection.price : null,
 	useSelectedPrice: () => testState.selectedPrice,
+	useSizeModeRequest: () => testState.sizeModeRequest,
 }));
 
 import { MobileTradeView } from "@/components/trade/mobile/mobile-trade-view";
@@ -925,6 +928,7 @@ describe("MobileTradeView order book price clicks", () => {
 		await act(async () => root.unmount());
 		container.remove();
 		testState.selectedPrice = null;
+		testState.sizeModeRequest = null;
 		vi.clearAllMocks();
 	});
 
@@ -954,6 +958,23 @@ describe("MobileTradeView order book price clicks", () => {
 			expect(testState.actions.setLimitPriceFromUser).not.toHaveBeenCalled();
 		},
 	);
+
+	it("converts the entered size once through the form's own unit toggle when the book picks the other unit", async () => {
+		testState.sizeModeRequest = { marketName: "BTC", mode: "quote" };
+		await renderView(root);
+
+		expect(testState.toggleSizeDenomination).toHaveBeenCalledTimes(1);
+	});
+
+	it.each([
+		["the unit already in use", { marketName: "BTC", mode: "base" as const }],
+		["another market's book", { marketName: "ETH", mode: "quote" as const }],
+	])("ignores a unit request from %s", async (_name, request) => {
+		testState.sizeModeRequest = request;
+		await renderView(root);
+
+		expect(testState.toggleSizeDenomination).not.toHaveBeenCalled();
+	});
 });
 
 describe("MobileTradeView order button status", () => {

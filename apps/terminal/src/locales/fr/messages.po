@@ -2934,8 +2934,8 @@ msgid "Display and language"
 msgstr "Affichage et langue"
 
 #: src/components/trade/mobile/mobile-book-view.tsx
-msgid "Display units"
-msgstr "Unités d'affichage"
+#~ msgid "Display units"
+#~ msgstr "Unités d'affichage"
 
 #: src/components/trade/orderbook/orderbook-hover-tooltip.tsx
 msgid "Distance from mid"
@@ -6004,8 +6004,8 @@ msgstr "Animations du carnet d’ordres"
 
 #: src/components/trade/components/global-settings-modal.tsx
 #: src/components/trade/components/global-settings-modal.tsx
-msgid "Order book in quote asset"
-msgstr "Carnet d'ordres en actif de cotation"
+#~ msgid "Order book in quote asset"
+#~ msgstr "Carnet d'ordres en actif de cotation"
 
 #: src/config/orderbook-labels.ts
 msgid "Order book view"
@@ -8188,6 +8188,10 @@ msgstr "Asymétrie de taille"
 #: src/lib/trade/order-submission-feedback.ts
 msgid "Size skew is too aggressive for the total size"
 msgstr "L'asymétrie de taille est trop importante pour la taille totale"
+
+#: src/config/orderbook-labels.ts
+msgid "Size unit"
+msgstr "Unité de taille"
 
 #: src/components/trade/tradebox/trade-form-tp-sl.tsx
 #: src/lib/errors/definitions/tpsl.ts

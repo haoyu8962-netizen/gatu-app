@@ -102,8 +102,12 @@ describe("order book display derivations", () => {
 		expect(getDepthPercentage(levels[1].quoteTotal, maxQuoteTotal)).toBe(100);
 	});
 
-	it("keeps non-zero sub-cent quote values visible", () => {
-		expect(getOrderbookQuoteDecimals("0")).toBe(2);
+	it("shows quote values in whole units, as the official book does, and keeps values below one visible", () => {
+		expect(getOrderbookQuoteDecimals("11780616.42")).toBe(0);
+		expect(getOrderbookQuoteDecimals("1")).toBe(0);
+		expect(getOrderbookQuoteDecimals("0")).toBe(0);
+		expect(getOrderbookQuoteDecimals("0.35")).toBe(2);
+		expect(getOrderbookQuoteDecimals("-0.35")).toBe(2);
 		expect(getOrderbookQuoteDecimals("0.0042")).toBe(4);
 		expect(getOrderbookQuoteDecimals("0.00000001")).toBe(8);
 	});

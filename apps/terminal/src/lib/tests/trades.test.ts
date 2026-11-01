@@ -1,11 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-	getTradeKey,
-	getTradePriceDecimals,
-	getTradeQuoteSize,
-	processTrades,
-	type RawTrade,
-} from "@/lib/trade/trades";
+import { getTradeKey, getTradePriceDecimals, processTrades, type RawTrade } from "@/lib/trade/trades";
 
 describe("trades", () => {
 	it("builds globally unique trade keys from time, coin, and tid", () => {
@@ -23,11 +17,6 @@ describe("trades", () => {
 	it("caps low-price precision at Hyperliquid market limits", () => {
 		expect(getTradePriceDecimals("0.6058", 2, "perp")).toBe(4);
 		expect(getTradePriceDecimals("0.0000004", 1, "spot")).toBe(7);
-	});
-
-	it("calculates quote size with decimal-safe arithmetic", () => {
-		expect(getTradeQuoteSize("0.1", "0.2")).toBe("0.02");
-		expect(getTradeQuoteSize("invalid", "0.2")).toBeNull();
 	});
 
 	it("preserves API price and size strings while formatting a 24-hour time", () => {

@@ -268,7 +268,7 @@ describe("OrderbookPanel safety", () => {
 		expect(container.querySelector('[data-slot="orderbook-spread"]')?.textContent).toContain("1.00 (0.995%)");
 	});
 
-	it("derives static headings, cumulative totals, and depth from the shared order size mode", () => {
+	it("derives book headings, cumulative totals and depth from the shared order size mode, and keeps trades in base", () => {
 		mocks.book = snapshot(
 			"HYPE",
 			[
@@ -309,15 +309,68 @@ describe("OrderbookPanel safety", () => {
 
 		const quoteHeadings = container.querySelectorAll(".orderbook-asset-heading");
 		expect(Array.from(quoteHeadings, (heading) => heading.textContent)).toEqual(["(USDC)", "(USDC)"]);
-		expect(container.querySelector(".trades-asset-heading")?.textContent).toBe("(USDC)");
+		expect(container.querySelector(".trades-asset-heading")?.textContent).toBe("(HYPE)");
 		expect(
 			container.querySelector<HTMLAnchorElement>('a[href="https://example.test/tx/0xtrade"]')?.children[1]?.textContent,
-		).toBe("150.00");
+		).toBe("1.50");
 		const quoteBidDepth = container.querySelectorAll<HTMLElement>(".depth-bar-bid");
 		expect(Number.parseFloat(quoteBidDepth[0]?.style.width ?? "0")).toBeCloseTo(66.67, 2);
 		expect(quoteBidDepth[1]?.style.width).toBe("100%");
 		expect(container.querySelector('button[aria-label*="Total 150"]')).not.toBeNull();
 		expect(mocks.lastL2Subscription).toEqual({ enabled: true, params: { coin: "HYPE" } });
+	});
+
+	it("puts price grouping and the size unit in a control row above text-only column headings, as the official book does", () => {
+		renderPanel();
+
+		const controls = container.querySelector('[data-slot="orderbook-controls"]');
+		expect(controls?.querySelector('button[aria-label="Price grouping"]')).not.toBeNull();
+		expect(controls?.querySelector('button[aria-label="Size unit"]')?.textContent).toBe("HYPE");
+		const headingRow = controls?.nextElementSibling;
+		expect(headingRow?.firstElementChild?.textContent).toBe("Price");
+		expect(headingRow?.querySelector("button")).toBeNull();
+	});
+
+	it("asks the order form to switch the size unit when a unit is picked in the book", async () => {
+		renderPanel();
+		const trigger = container.querySelector<HTMLButtonElement>('button[aria-label="Size unit"]');
+
+		await act(async () => trigger?.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true })));
+		const items = [...document.querySelectorAll<HTMLElement>('[role="menuitem"]')];
+		expect(items.map((item) => item.textContent)).toEqual(["USDC", "HYPE"]);
+
+		try {
+			await act(async () => items[0]?.click());
+			expect(getOrderbookActionsStore().sizeModeRequest).toEqual({ marketName: "HYPE", mode: "quote" });
+		} finally {
+			act(() => getOrderbookActionsStore().actions.clearSizeModeRequest());
+		}
+	});
+
+	it("shows full sizes and totals without abbreviating or truncating them", () => {
+		mocks.market = { kind: "perp", markPx: "0.0048", name: "kPEPE", pairName: "kPEPE-USDC", szDecimals: 0 };
+		mocks.book = snapshot(
+			"kPEPE",
+			[{ n: 3, px: "0.004812", sz: "11780616" }],
+			[{ n: 2, px: "0.004813", sz: "205000" }],
+		);
+		mocks.status = "active";
+		renderPanel();
+
+		const bidRow = container.querySelector<HTMLButtonElement>('button[data-orderbook-side="bid"]');
+		const values = [...(bidRow?.querySelectorAll(".orderbook-value-text") ?? [])];
+		expect(values.map((value) => value.textContent)).toEqual(["11,780,616", "11,780,616"]);
+		expect(values.every((value) => !value.className.includes("truncate"))).toBe(true);
+		expect(bidRow?.querySelector('[data-slot="orderbook-price-text"]')?.className).not.toContain("truncate");
+
+		mocks.sizeMode = "quote";
+		renderPanel();
+
+		const quoteValues = [
+			...(container.querySelector('button[data-orderbook-side="bid"]')?.querySelectorAll(".orderbook-value-text") ??
+				[]),
+		];
+		expect(quoteValues.map((value) => value.textContent)).toEqual(["56,688", "56,688"]);
 	});
 
 	it("keeps the desktop subscription active across tabs and fails closed while the market identity changes", () => {

@@ -2934,8 +2934,8 @@ msgid "Display and language"
 msgstr "डिस्प्ले और भाषा"
 
 #: src/components/trade/mobile/mobile-book-view.tsx
-msgid "Display units"
-msgstr "डिस्प्ले इकाइयाँ"
+#~ msgid "Display units"
+#~ msgstr "डिस्प्ले इकाइयाँ"
 
 #: src/components/trade/orderbook/orderbook-hover-tooltip.tsx
 msgid "Distance from mid"
@@ -6004,8 +6004,8 @@ msgstr "ऑर्डर बुक एनिमेशन"
 
 #: src/components/trade/components/global-settings-modal.tsx
 #: src/components/trade/components/global-settings-modal.tsx
-msgid "Order book in quote asset"
-msgstr "क्वोट एसेट में ऑर्डर बुक"
+#~ msgid "Order book in quote asset"
+#~ msgstr "क्वोट एसेट में ऑर्डर बुक"
 
 #: src/config/orderbook-labels.ts
 msgid "Order book view"
@@ -8188,6 +8188,10 @@ msgstr "साइज़ स्क्यू"
 #: src/lib/trade/order-submission-feedback.ts
 msgid "Size skew is too aggressive for the total size"
 msgstr "कुल साइज़ के लिए साइज़ स्क्यू बहुत अधिक है"
+
+#: src/config/orderbook-labels.ts
+msgid "Size unit"
+msgstr "आकार इकाई"
 
 #: src/components/trade/tradebox/trade-form-tp-sl.tsx
 #: src/lib/errors/definitions/tpsl.ts

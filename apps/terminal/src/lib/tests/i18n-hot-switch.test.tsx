@@ -134,12 +134,10 @@ vi.mock(import("../../stores/use-global-settings-store"), async (importOriginal)
 		useGlobalSettings: () => ({
 			...actual.useGlobalSettings(),
 			numberFormatLocale: "en-US" as const,
-			showOrderbookInQuote: false,
 		}),
 		useGlobalSettingsActions: () => ({
 			...actual.useGlobalSettingsActions(),
 			setNumberFormatLocale: vi.fn(),
-			setShowOrderbookInQuote: vi.fn(),
 		}),
 		useIsTestnet: () => false,
 		useTheme: () => "light" as const,
