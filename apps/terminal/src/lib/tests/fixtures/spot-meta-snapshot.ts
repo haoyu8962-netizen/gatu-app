@@ -3,6 +3,7 @@
  * (docs/spot-market-names.md): every mainnet token and pair, the testnet tokens the testnet table and
  * its collisions involve with their pairs, and the listed mainnet perps. Tokens are `index:name`,
  * pairs `pairIndex:baseIndex:quoteIndex`; pair 0 is `PURR/USDC`, every other pair is `@pairIndex`.
+ * Written by scripts/spot-meta-snapshot.mjs.
  */
 export const SPOT_META_SNAPSHOT = {
 	capturedAt: "2026-11-01",
