@@ -130,7 +130,7 @@
 
 ## 回归入口
 
-`apps/terminal/src/lib/tests/mobile-data-presentation-contract.test.ts` 检查已移除的移动文案、共享弹窗被动警告和规范入口，并扫描质押、推荐与金库目录：不得出现被动刷新文字、`role="alert"` 失败框、警告图标或 `0 HYPE` 占位，金库操作按钮不得由说明文字是否存在决定禁用；`user-positions-readiness.test.tsx` 验证订阅确认与首份数据的区别。余额、委托、TWAP、历史和仓位弹窗的组件测试同时验证静默展示、恢复和操作保护。
+`apps/terminal/src/lib/tests/mobile-data-presentation-contract.test.ts` 检查已移除的移动文案、共享弹窗被动警告和规范入口，并扫描质押、推荐与金库目录：不得出现已移除的被动刷新、读取失败与未知数值文案（含 `0 HYPE` 占位）；`role="alert"` 与警告图标只留在逐个登记理由与次数的已确认状态和操作反馈里（金库未找到、金库操作弹窗的失败与未知结果、操作弹窗与金库详情的风险说明、分类不可用的警告），新增一处即失败；金库操作按钮不得由说明文字是否存在决定禁用；`user-positions-readiness.test.tsx` 验证订阅确认与首份数据的区别。余额、委托、TWAP、历史和仓位弹窗的组件测试同时验证静默展示、恢复和操作保护。
 
 质押、推荐与金库页：`passive-query-state.test.ts` 覆盖四态与合并规则；`staking-passive-data.test.tsx`、`referral-passive-data.test.tsx` 与 `vault-passive-data.test.tsx` 用真实的控制器、视图与 QueryClient（只替换传输层）验证首次失败只有中性重试、刷新失败保留本页收到的数据并禁用依赖它的操作、进入页面前缓存的数据在失败后不保留、后台刷新时没有文字且操作可用、`--` 占位，以及失败或保留的快照不得出「没有记录」结论；`use-referrals.test.tsx`、`vaults-domain.test.ts` 与 `use-vault-action-controller.test.tsx` 分别钉住推荐快照的当前性、`deriveVaultActionsAvailability` 的 `detailCurrent` 与被动原因分类、保留详情时暂停复核步骤；`referral-ui-contract.test.ts` 与 `status-motion-surface-contract.test.ts` 登记已移除的刷新文字与转圈。
 
