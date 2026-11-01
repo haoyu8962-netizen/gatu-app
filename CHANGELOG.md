@@ -579,6 +579,25 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Fixed
 
+- Trade history dates now include the year, like the order history, on the desktop tab, the full page
+  and in CSV exports, and the market order summary shows the maximum slippage in the accent colour instead
+  of the error red. Funding history, TWAP history and fill history, and deposits and withdrawals show the
+  year on desktop, on the funding history page and in their exports too; the Trade page's phone cards keep
+  the short date.
+- Returning to a Portfolio browser tab after a while no longer flashes "Something went wrong" and $0
+  while its statistics and history reload: the last figures stay until the refresh answers, as on the
+  official terminal.
+- When Hyperliquid rejects a staking action, the notification now shows the exchange's reason (translated
+  when it is a known one) instead of only "No changes were made."
+- A Vault transfer or API wallet change that Hyperliquid rejects is no longer reported as declined in
+  the wallet when the exchange's reason happens to mention a user rejection; the notification shows that
+  reason.
+- The ⌘K market search now follows the interface language (title, field, empty result and market
+  type) and shows spot prices with the spot price precision instead of the perp one.
+- In Arabic, a plus or minus sign now stays in front of its number, as in the 24h change, PnL and
+  funding rates, instead of appearing after the digits.
+- Spanish, French, Hindi and Arabic now translate the Link mobile device, phone import and API
+  wallet email-signing messages (31 per language) that still showed in English.
 - Unified and portfolio-margin accounts holding an outcome token or a token without a market price now
   show their portfolio value, as the official terminal does: an outcome token is valued at its outcome
   market's price and a token without a price counts as zero instead of hiding the whole value.

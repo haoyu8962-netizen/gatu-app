@@ -6,7 +6,7 @@ import { useAccountLedger } from "@/hooks/trade/use-account-ledger";
 import { useAccountLedgerCsv } from "@/hooks/trade/use-account-ledger-csv";
 import { useAccountLedgerLabels } from "@/hooks/trade/use-account-ledger-labels";
 import { cn } from "@/lib/cn";
-import { formatDateTimeShort, useNumberFormat } from "@/lib/format";
+import { formatDateTime, useNumberFormat } from "@/lib/format";
 import { formatAccountLedgerAmount, formatAccountLedgerFee } from "@/lib/trade/account-ledger-format";
 import { getAccountLedgerExplorerUrl } from "@/lib/trade/account-ledger-links";
 import { isIncompleteHistorySnapshotError } from "@/lib/trade/history-pagination";
@@ -148,7 +148,7 @@ export function AccountTransfersTab() {
 													rel="noopener noreferrer"
 													className="inline-flex items-center gap-1 underline decoration-dashed decoration-fg-muted/30 hover:text-fg"
 												>
-													{formatDateTimeShort(row.time, { locale })}
+													{formatDateTime(row.time, { locale, dateStyle: "short", timeStyle: "short" })}
 													<ArrowSquareOutIcon className="size-2.5" aria-hidden="true" />
 												</a>
 											</TableCell>

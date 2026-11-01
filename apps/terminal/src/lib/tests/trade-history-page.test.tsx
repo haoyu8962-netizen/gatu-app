@@ -9,12 +9,14 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { TradeHistoryPage } from "@/components/trade-history/trade-history-page";
+import { formatDateTime } from "@/lib/format";
 
 const ADDRESS = "0x1111111111111111111111111111111111111111";
 
 type UserFill = UserFillsResponse[number];
 
 const mocks = vi.hoisted(() => ({
+	buildRows: undefined as ((fills: UserFillsResponse) => string[][]) | undefined,
 	exportAddress: undefined as `0x${string}` | undefined,
 	exportCsv: vi.fn(),
 	history: {
@@ -118,8 +120,15 @@ vi.mock("@/components/trade/header/top-nav", () => ({ TopNav: () => null }));
 vi.mock("@/components/trade/mobile/mobile-header", () => ({ MobileHeader: () => null }));
 vi.mock("@/components/trade/testnet-banner", () => ({ TestnetBanner: () => null }));
 vi.mock("@/hooks/trade/use-history-csv-export", () => ({
-	useUserFillsCsvExport: ({ address }: { address?: `0x${string}` }) => {
+	useUserFillsCsvExport: ({
+		address,
+		buildRows,
+	}: {
+		address?: `0x${string}`;
+		buildRows: (fills: UserFillsResponse) => string[][];
+	}) => {
 		mocks.exportAddress = address;
+		mocks.buildRows = buildRows;
 		return { exportCsv: mocks.exportCsv, isExporting: false };
 	},
 }));
@@ -389,6 +398,17 @@ describe("TradeHistoryPage", () => {
 		renderPage();
 
 		expect(container.textContent).toContain("reached the 2000-fill snapshot limit");
+	});
+
+	it("dates desktop rows, phone cards and exported fills with the year", () => {
+		const fill = createFill(0);
+		mocks.history.fills = [fill];
+		renderPage();
+
+		const withYear = formatDateTime(fill.time, { locale: "en", dateStyle: "short", timeStyle: "short" });
+		expect(container.querySelector("tbody")?.textContent).toContain(withYear);
+		expect(container.querySelector("time")?.textContent).toBe(withYear);
+		expect(mocks.buildRows?.([fill])[1]?.[0]).toBe(withYear);
 	});
 
 	it("exports the public address and disables actions for an invalid address", () => {

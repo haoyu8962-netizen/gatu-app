@@ -550,6 +550,17 @@ describe("useVaultActionController", () => {
 		expect(error && describeActionFailure(error, (descriptor) => i18n._(descriptor))).toBe(text);
 	});
 
+	it("keeps an exchange rejection that mentions a user rejection as the exchange's reason", async () => {
+		const text = "User rejected the request because the vault is closed";
+		mocks.exchangeMutate.mockRejectedValueOnce(new ApiRequestError({ status: "err", response: text }, text));
+		await openAndReview();
+		await act(async () => current().confirm());
+
+		expect(current().action).toMatchObject({ state: { stage: "done", result: "apiError" } });
+		const error = current().action?.error;
+		expect(error && describeActionFailure(error, (descriptor) => i18n._(descriptor))).toBe(text);
+	});
+
 	it("hydrates and verifies the exact owner marker read-only in an Agent-only session", async () => {
 		act(() => root.unmount());
 		controller = null;

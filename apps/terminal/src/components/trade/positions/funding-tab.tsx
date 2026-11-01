@@ -10,7 +10,7 @@ import { useUserFunding } from "@/hooks/trade/use-user-funding";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { buildCsvRows } from "@/lib/csv";
-import { formatDateTimeShort, useNumberFormat } from "@/lib/format";
+import { formatDateTime, useNumberFormat } from "@/lib/format";
 import { useMarkets } from "@/lib/hyperliquid";
 import { getFundingCollateralSymbol } from "@/lib/trade/collateral-amount";
 import { getFundingPositionPresentation, getFundingSideLabel } from "@/lib/trade/funding-position";
@@ -69,7 +69,11 @@ export function FundingTab({ toolbarTarget }: Props = {}) {
 		filename: "funding_history.csv",
 		buildRows: (fundings) =>
 			buildCsvRows(fundings, [
-				{ header: t`Time`, getValue: (update) => formatDateTimeShort(update.time, { locale: i18n.locale }) },
+				{
+					header: t`Time`,
+					getValue: (update) =>
+						formatDateTime(update.time, { locale: i18n.locale, dateStyle: "short", timeStyle: "short" }),
+				},
 				{ header: t`Asset`, getValue: (update) => update.coin },
 				{
 					header: t`Side`,
@@ -218,7 +222,7 @@ export function FundingTab({ toolbarTarget }: Props = {}) {
 												)}
 											>
 												<div className="flex flex-col items-end">
-													<span>{formatDateTimeShort(update.time, { locale })}</span>
+													<span>{formatDateTime(update.time, { locale, dateStyle: "short", timeStyle: "short" })}</span>
 												</div>
 											</TableCell>
 										</TableRow>

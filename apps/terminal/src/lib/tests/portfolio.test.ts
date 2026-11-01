@@ -9,6 +9,7 @@ import {
 	getPortfolioQueryStatus,
 	getPortfolioSnapshot,
 	hasBorrowLendExposure,
+	isPortfolioSourceShown,
 	PORTFOLIO_MAX_AGE_MS,
 	resolveCurrentTotalEquity,
 } from "@/domain/portfolio";
@@ -232,16 +233,48 @@ describe("portfolio query freshness", () => {
 	const query = {
 		data: [],
 		dataUpdatedAt: now,
+		fetchStatus: "idle" as "fetching" | "paused" | "idle",
 		isError: false,
 		isPending: false,
 		isPlaceholderData: false,
 		isFetchedAfterMount: true,
+		receivedSinceMount: true,
 	};
 	it("keeps fresh data during a normal refresh and rejects expired or failed cached data", () => {
 		expect(getPortfolioQueryStatus(query, true, now)).toBe("ready");
 		expect(getPortfolioQueryStatus(query, true, now + PORTFOLIO_MAX_AGE_MS)).toBe("stale");
 		expect(getPortfolioQueryStatus({ ...query, isError: true }, true, now)).toBe("error");
 		expect(getPortfolioQueryStatus({ ...query, dataUpdatedAt: now + 1 }, true, now)).toBe("stale");
+	});
+	it("keeps the last successful data while a request after expiry or a failure is on its way", () => {
+		const fetching = { ...query, fetchStatus: "fetching" as const };
+		expect(getPortfolioQueryStatus(fetching, true, now)).toBe("ready");
+		expect(getPortfolioQueryStatus(fetching, true, now + PORTFOLIO_MAX_AGE_MS)).toBe("refreshing");
+		expect(getPortfolioQueryStatus({ ...fetching, isError: true }, true, now)).toBe("refreshing");
+		expect(getPortfolioQueryStatus({ ...query, fetchStatus: "paused" }, true, now + PORTFOLIO_MAX_AGE_MS)).toBe(
+			"stale",
+		);
+		expect(getPortfolioQueryStatus({ ...fetching, data: undefined, isError: true }, true, now)).toBe("error");
+		expect(getPortfolioQueryStatus({ ...fetching, isPlaceholderData: true }, true, now)).toBe("loading");
+		expect(isPortfolioSourceShown("refreshing")).toBe(true);
+		expect(isPortfolioSourceShown("stale")).toBe(false);
+	});
+	it("withholds data stamped in the future, received before this mount or never received while refreshing", () => {
+		const fetching = { ...query, fetchStatus: "fetching" as const };
+		const failed = { ...fetching, isError: true };
+		expect(getPortfolioQueryStatus({ ...fetching, dataUpdatedAt: now + 60_000 }, true, now)).toBe("stale");
+		expect(getPortfolioQueryStatus({ ...failed, dataUpdatedAt: now + 60_000 }, true, now)).toBe("error");
+		expect(getPortfolioQueryStatus({ ...failed, receivedSinceMount: false }, true, now)).toBe("error");
+		expect(getPortfolioQueryStatus({ ...fetching, receivedSinceMount: false }, true, now + PORTFOLIO_MAX_AGE_MS)).toBe(
+			"stale",
+		);
+		expect(getPortfolioQueryStatus({ ...fetching, isFetchedAfterMount: false }, true, now + PORTFOLIO_MAX_AGE_MS)).toBe(
+			"loading",
+		);
+		expect(getPortfolioQueryStatus({ ...failed, isPlaceholderData: true }, true, now)).toBe("error");
+		for (const dataUpdatedAt of [0, -1, Number.NaN, Number.POSITIVE_INFINITY]) {
+			expect(getPortfolioQueryStatus({ ...failed, dataUpdatedAt }, true, now)).toBe("error");
+		}
 	});
 	it("does not reuse disabled, placeholder, missing, or pending data", () => {
 		expect(getPortfolioQueryStatus(query, false, now)).toBe("unavailable");

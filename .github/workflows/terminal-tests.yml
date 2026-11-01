@@ -281,6 +281,7 @@ jobs:
           src/lib/tests/earn-fresh-state.test.ts
           src/components/staking/__tests__/staking-view.test.tsx
           src/components/staking/__tests__/use-staking-controller.test.tsx
+          src/components/staking/__tests__/use-staking-actions.test.tsx
           src/components/vaults/__tests__/use-vault-action-controller.test.tsx
           src/lib/tests/action-progress-label-contract.test.ts
           tests/slider-effective-leverage-regression.test.tsx
@@ -338,10 +339,13 @@ jobs:
           src/lib/tests/global-settings-store.test.ts
           src/lib/tests/i18n-reactivity-contract.test.ts
           src/lib/tests/date-locale-reactivity-contract.test.ts
+          src/lib/tests/number-format-direction.test.tsx
           src/lib/tests/i18n-hot-switch.test.tsx
           src/lib/tests/action-error.test.ts
           src/lib/tests/errors.test.ts
           src/lib/tests/lingui-helper-translator-contract.test.ts
+          src/lib/tests/catalog-completeness-contract.test.ts
+          src/lib/tests/command-menu.test.tsx
           src/lib/tests/footer-bar.test.tsx
           src/lib/tests/vaults-view.test.tsx
           src/lib/tests/portfolio-performance-chart.test.tsx
@@ -372,6 +376,7 @@ jobs:
           src/lib/tests/position-close-all-submit.test.tsx
           src/lib/tests/trade-form-fields-order-entry-data.test.tsx
           src/lib/tests/history-csv-twap.test.tsx
+          src/lib/tests/desktop-twap-tab.test.tsx
           src/lib/tests/bridge-success-screen-locale.test.tsx
           src/components/staking/__tests__/staking-action-modal.test.tsx
           src/lib/tests/react-source-harness.test.ts
@@ -440,6 +445,8 @@ jobs:
           src/lib/tests/balances.test.ts
           src/lib/tests/spot-token-usd-price-state.test.tsx
           src/lib/tests/portfolio.test.ts
+          src/lib/tests/portfolio-overview.test.tsx
+          src/lib/tests/portfolio-refresh-since-mount.test.tsx
 
       # `pnpm test:brand` in the Website and Brand workflow also runs these, but that workflow
       # only starts when the website or a brand asset changes. Terminal changes are covered here.

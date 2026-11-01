@@ -483,4 +483,24 @@ describe("MobileMarketBar", () => {
 		act(() => notifyNumberFormatChange());
 		expect(change()?.textContent).toBe("-1 234,6 / -12,35%");
 	});
+
+	it("keeps each change sign before its digits in a right-to-left interface", () => {
+		Object.assign(mocks.selectedMarket, { markPx: "12345", prevDayPx: "10000", dayNtlVlm: "0" });
+
+		renderBar();
+		const change = () => container.querySelector<HTMLElement>("[title$='%']");
+		const section = change();
+		expect(change()?.textContent).toBe("+2,345 / +23.45%");
+
+		act(() => i18n.loadAndActivate({ locale: "ar", messages: {} }));
+		expect(change()).toBe(section);
+		expect(change()?.textContent).toBe("\u200E+2,345 / \u200E+23.45%");
+
+		Object.assign(mocks.selectedMarket, { markPx: "8765.4", prevDayPx: "10000" });
+		renderBar();
+		expect(change()?.textContent).toBe("\u200E-1,234.6 / \u200E-12.35%");
+
+		act(() => i18n.loadAndActivate({ locale: "en", messages: {} }));
+		expect(change()?.textContent).toBe("-1,234.6 / -12.35%");
+	});
 });

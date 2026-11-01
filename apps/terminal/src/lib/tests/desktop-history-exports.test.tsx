@@ -7,7 +7,7 @@ import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { FundingTab } from "@/components/trade/positions/funding-tab";
 import { HistoryTab } from "@/components/trade/positions/history-tab";
-import { formatDateTimeShort } from "@/lib/format";
+import { formatDateTime } from "@/lib/format";
 import { createI18nRoot } from "./harness/react";
 
 const mocks = vi.hoisted(() => ({
@@ -307,10 +307,13 @@ describe("desktop history exports", () => {
 		const rows = buildRowsFromEnglishRender?.([mocks.fills[0]]) ?? [];
 
 		expect(rows[0]?.slice(0, 4)).toEqual(["时间", "资产", "方向", "类型"]);
-		expect(rows[1]?.[0]).toBe(formatDateTimeShort(1_754_350_400_000, { locale: "zh" }));
+		expect(rows[1]?.[0]).toBe(
+			formatDateTime(1_754_350_400_000, { locale: "zh", dateStyle: "short", timeStyle: "short" }),
+		);
 		expect(rows[1]?.slice(1, 4)).toEqual(["BTC", "平多", "交易"]);
-		expect(formatDateTimeShort(1_754_350_400_000, { locale: "zh" })).not.toBe(
-			formatDateTimeShort(1_754_350_400_000, { locale: "en" }),
+		expect(rows[1]?.[0]).toContain("2025");
+		expect(formatDateTime(1_754_350_400_000, { locale: "zh", dateStyle: "short", timeStyle: "short" })).not.toBe(
+			formatDateTime(1_754_350_400_000, { locale: "en", dateStyle: "short", timeStyle: "short" }),
 		);
 	});
 
@@ -325,6 +328,16 @@ describe("desktop history exports", () => {
 		act(() => root.render(<HistoryTab />));
 
 		expect(container.querySelectorAll("tbody tr")).toHaveLength(30);
+	});
+
+	it("dates each fill with its year like the order history", () => {
+		act(() => root.render(<HistoryTab />));
+
+		const filledAt = new Date(1_754_350_400_000);
+		expect(container.textContent).toContain(
+			formatDateTime(filledAt.getTime(), { locale: "en", dateStyle: "short", timeStyle: "short" }),
+		);
+		expect(container.textContent).toContain(`${filledAt.getMonth() + 1}/${filledAt.getDate()}/25`);
 	});
 
 	it("labels ordinary fills as trades", () => {
@@ -390,6 +403,20 @@ describe("desktop history exports", () => {
 				["Time", "Asset", "Side", "Size", "Rate", "Payment", "Payment Token"],
 				[expect.any(String), "BTC", "Long", "0.01", "0.0001", "1.25", "USDC"],
 			]),
+		);
+	});
+
+	it("dates each funding payment with its year in the table and the export", () => {
+		act(() => root.render(<FundingTab />));
+
+		const paidAt = new Date(1_754_350_400_000);
+		const withYear = formatDateTime(paidAt.getTime(), { locale: "en", dateStyle: "short", timeStyle: "short" });
+		expect(container.querySelector("tbody")?.textContent).toContain(withYear);
+		expect(container.textContent).toContain(`${paidAt.getMonth() + 1}/${paidAt.getDate()}/25`);
+		clickExport();
+		expect(mocks.downloadCsv).toHaveBeenCalledWith(
+			"funding_history.csv",
+			expect.arrayContaining([[withYear, "BTC", "Long", "0.01", "0.0001", "1.25", "USDC"]]),
 		);
 	});
 

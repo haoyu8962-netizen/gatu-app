@@ -76,6 +76,7 @@ These were measured against Mainnet while reviewing the history and onboarding w
 - A self-trade produces no fill (the resting order is canceled), so `(time, coin, tid)` identifies a user's fills without collisions.
 - `fastAssetCtxs` sends one full snapshot and then only the coins that changed. A coin missing from later frames still has its last value; a per-coin staleness check is wrong for this stream. The compact `pac`/`sac` channels follow the same snapshot-then-delta pattern ([ADR 0008](adr/0008-compact-market-context-channels.md)).
 - Trigger orders carry no time-in-force field; do not add TIF controls or validation to them.
+- Measured 2026-11-01 on Mainnet with read-only public requests (about a dozen accounts that run TWAPs, one point in time): `userFills` (WebSocket snapshot, live pushes and the info request, aggregated or not) and `userFillsByTime` return no TWAP slice fills, and every fill they return has `twapId: null`; slice fills come only from `userTwapSliceFills`. The `userFills` WebSocket snapshot carried the latest 30 fills for each account. So filtering `userFills` by `twapId` removes nothing; the official terminal does not filter at all. This settled audit item B6 of 2026-10-30 (a trade history emptied by TWAP slices) as not reproducible.
 
 ## Review 3965ddff / 0bc72134 disposition
 

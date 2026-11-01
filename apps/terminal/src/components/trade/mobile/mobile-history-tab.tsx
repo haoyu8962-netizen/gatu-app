@@ -14,7 +14,7 @@ import { useUserFills } from "@/hooks/trade/use-user-fills";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { buildCsvRows } from "@/lib/csv";
-import { formatDateTimeShort, useNumberFormat } from "@/lib/format";
+import { formatDateTime, formatDateTimeShort, useNumberFormat } from "@/lib/format";
 import { getExplorerTxUrl, useMarkets } from "@/lib/hyperliquid";
 import { getFillDirectionPresentation, getFillDirectionTone } from "@/lib/trade/fill-direction";
 import { getMarketPriceFormatOptions } from "@/lib/trade/market-price-format";
@@ -152,7 +152,11 @@ function MobileHistoryTabContent({
 						(roleFilter === "all" || (roleFilter === "taker") === fill.crossed),
 				),
 				[
-					{ header: t`Time`, getValue: (fill) => formatDateTimeShort(fill.time, { locale: i18n.locale }) },
+					{
+						header: t`Time`,
+						getValue: (fill) =>
+							formatDateTime(fill.time, { locale: i18n.locale, dateStyle: "short", timeStyle: "short" }),
+					},
 					{ header: t`Asset`, getValue: (fill) => fill.coin },
 					{
 						header: t`Direction`,

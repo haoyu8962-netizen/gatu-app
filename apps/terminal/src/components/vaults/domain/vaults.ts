@@ -574,7 +574,9 @@ export function getLatestVaultHistoryValue(
 export function formatVaultUsd(value: string | null | undefined, numberFormat: NumberFormatters, decimals = 2): string {
 	const parsed = toBig(value, true);
 	if (!parsed) return "—";
-	return `${parsed.lt(0) ? "-" : ""}$${numberFormat.formatDecimalString(parsed.abs().toFixed(decimals))}`;
+	return numberFormat.markLeadingSign(
+		`${parsed.lt(0) ? "-" : ""}$${numberFormat.formatDecimalString(parsed.abs().toFixed(decimals))}`,
+	);
 }
 
 export function formatVaultSignedUsd(
@@ -584,7 +586,9 @@ export function formatVaultSignedUsd(
 ): string {
 	const parsed = toBig(value, true);
 	if (!parsed) return "—";
-	return `${parsed.gt(0) ? "+" : parsed.lt(0) ? "-" : ""}$${numberFormat.formatDecimalString(parsed.abs().toFixed(decimals))}`;
+	return numberFormat.markLeadingSign(
+		`${parsed.gt(0) ? "+" : parsed.lt(0) ? "-" : ""}$${numberFormat.formatDecimalString(parsed.abs().toFixed(decimals))}`,
+	);
 }
 
 export function formatVaultCompactUsd(value: string | null | undefined, numberFormat: NumberFormatters): string {
@@ -601,7 +605,7 @@ export function formatVaultCompactUsd(value: string | null | undefined, numberFo
 	const scaled = absolute.div(unit.divisor);
 	const decimals = scaled.gte(100) ? 0 : scaled.gte(10) ? 1 : 2;
 	const amount = numberFormat.formatDecimalString(scaled.toFixed(decimals), { trimTrailingZeros: true });
-	return `${parsed.lt(0) ? "-" : ""}$${amount}${unit.suffix}`;
+	return numberFormat.markLeadingSign(`${parsed.lt(0) ? "-" : ""}$${amount}${unit.suffix}`);
 }
 
 export function formatVaultRatio(
@@ -614,7 +618,7 @@ export function formatVaultRatio(
 	if (!parsed) return "—";
 	const percent = parsed.times(100);
 	const prefix = signed && percent.gt(0) ? "+" : "";
-	return `${prefix}${numberFormat.formatDecimalString(percent.toFixed(decimals))}%`;
+	return numberFormat.markLeadingSign(`${prefix}${numberFormat.formatDecimalString(percent.toFixed(decimals))}%`);
 }
 
 export function getVaultValueTone(value: string | null | undefined): "positive" | "negative" | "neutral" {
