@@ -109,7 +109,7 @@ Addresses whose meaning changed on mainnet (`spotMeta` 2026-11-01): `/trade/PEAR
 
 The table is copied by hand; nothing fetches official assets at runtime.
 
-1. Download the official production frontend (the `config-*.js` chunk of app.hyperliquid.xyz) and find the table: search for `l1Name:t,displayName:n`. Copy the `Mainnet` and `Testnet` `Rh(index, l1Name, displayName)` lists into `spot-token-display-names.ts` in the same order.
+1. Download the official production frontend (the `config-*.js` chunk of app.hyperliquid.xyz) and find the table: search for `l1Name:t,displayName:n`. Copy the `Mainnet` and `Testnet` `Rh(index, l1Name, displayName)` lists into `spot-token-display-names.ts` in the same order, and copy them a second time, every testnet entry included, into `OFFICIAL_TABLE` of the contract test with the bundle's file name and date. The test compares the two, so a changed or mistyped entry in either copy fails.
 2. Save `spotMeta` for both networks and `meta` for mainnet, then rewrite the snapshot:
 
    ```bash
@@ -120,7 +120,7 @@ The table is copied by hand; nothing fetches official assets at runtime.
    ```
 
    The last argument lists the official testnet indexes left out of the table, so the contract test can show why.
-3. Run `pnpm --dir apps/terminal exec vitest run src/lib/tests/spot-token-display-names-contract.test.ts`. It fails when an entry's protocol name is not the token at that index (leave the entry out and record it above), when a display name repeats on a network, when a mainnet token would need an index suffix (the official table has not caught up with a listing; record it), or when a market's address does not resolve back to it. The other tests that pin these rules are `market-catalog`, `market-route`, `market-route-canonical` and `trade-terminal-page-boot`.
+3. Run `pnpm --dir apps/terminal exec vitest run src/lib/tests/spot-token-display-names-contract.test.ts`. It fails when the table differs from the official copy other than by the testnet entries left out, when an entry's protocol name is not the token at that index (leave the entry out and record it above), when a display name repeats on a network, when a mainnet token would need an index suffix (the official table has not caught up with a listing; record it), when a market's address does not resolve back to it, or when one of the fixed official addresses (`/trade/NIL/USDC`, `/trade/PEAR/USDC`, `/trade/PEAR-71/USDC`, `/trade/PUMP/USDC`, `/trade/PUMP-26/USDC`) opens another market. The other tests that pin these rules are `market-catalog`, `market-route`, `market-route-canonical` and `trade-terminal-page-boot`.
 4. Check the changed names read-only on the official site (no wallet): open `/trade/<BASE>/<QUOTE>` and compare `localStorage.activeCoin` with the pair's API coin.
 
 Risk: the official team edits its table without notice; until the next sync this terminal shows the older names and may resolve a new or renamed address differently.

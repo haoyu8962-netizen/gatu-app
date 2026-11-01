@@ -20,6 +20,62 @@ const OFFICIAL_TESTNET_ENTRIES_LEFT_OUT = [
 	[1397, "UUENA", "ENA"],
 ] as const;
 
+/**
+ * The official terminal's display-name table as its production bundle of 2026-10-31 ships it
+ * (`config-BhZylSmU.js`), written out here apart from the table under test so that a changed or
+ * mistyped entry in either one fails (docs/spot-market-names.md).
+ */
+const OFFICIAL_TABLE: Record<HyperliquidEnv, readonly (readonly [number, string, string])[]> = {
+	Mainnet: [
+		[197, "UBTC", "BTC"],
+		[221, "UETH", "ETH"],
+		[254, "USOL", "SOL"],
+		[269, "UFART", "FARTCOIN"],
+		[268, "USDT0", "USDT"],
+		[292, "HPENGU", "PENGU"],
+		[297, "XAUT0", "XAUT"],
+		[299, "UPUMP", "PUMP"],
+		[26, "PUMP", "PUMP-26"],
+		[19, "ANSEM", "ANSEM-19"],
+		[293, "PAIR", "PEAR"],
+		[71, "PEAR", "PEAR-71"],
+		[844, "UANSEM", "ANSEM"],
+		[319, "UUUSPX", "SPX"],
+		[320, "UBONK", "BONK"],
+		[246, "WMNT", "MNT"],
+		[343, "UXPL", "XPL"],
+		[361, "UDZ", "2Z"],
+		[338, "UENA", "ENA"],
+		[164, "MON", "MONPRO"],
+		[383, "UMON", "MON"],
+		[395, "MMOVE", "MOVE"],
+		[419, "UZEC", "ZEC"],
+		[437, "HSEI", "SEI"],
+		[443, "UVIRT", "VIRTUAL"],
+		[451, "UAVAX", "AVAX"],
+		[513, "ONEAR", "NEAR"],
+		[842, "HNIL", "NIL"],
+	],
+	Testnet: [
+		[1129, "UNIT", "BTC"],
+		[1242, "UETH", "ETH"],
+		[1279, "USOL", "SOL"],
+		[1301, "UFART", "FARTCOIN"],
+		[1204, "TZERO", "USDT"],
+		[1344, "UPUMP", "PUMP"],
+		[100, "PUMP", "PUMP-26"],
+		[1370, "USPXS", "SPX"],
+		[1398, "UXPL", "XPL"],
+		[1427, "UDZ", "2Z"],
+		[1426, "UMON", "MON"],
+		[1474, "UENA", "ENA"],
+		[1397, "UUENA", "ENA"],
+		[1526, "XZEC", "ZEC"],
+		[1834, "UAVAX", "AVAX"],
+		[1588, "UUVIRT", "VIRTUAL"],
+	],
+};
+
 function parseTokens(snapshot: string) {
 	return snapshot.split(" ").map((entry) => {
 		const separator = entry.indexOf(":");
@@ -77,6 +133,35 @@ function duplicates(values: readonly string[]): string[] {
 }
 
 describe("spot display-name table contract", () => {
+	it("copies the official mainnet table entry for entry, in its order", () => {
+		expect(SPOT_TOKEN_DISPLAY_NAMES.Mainnet).toEqual(OFFICIAL_TABLE.Mainnet);
+	});
+
+	it("copies the official testnet table except the entries it documents as left out", () => {
+		const leftOut = new Set<number>(OFFICIAL_TESTNET_ENTRIES_LEFT_OUT.map(([index]) => index));
+		expect(OFFICIAL_TABLE.Testnet).toEqual(
+			expect.arrayContaining(OFFICIAL_TESTNET_ENTRIES_LEFT_OUT.map((entry) => [...entry])),
+		);
+		expect(SPOT_TOKEN_DISPLAY_NAMES.Testnet).toEqual(OFFICIAL_TABLE.Testnet.filter(([index]) => !leftOut.has(index)));
+	});
+
+	it.each([
+		["/trade/NIL/USDC", 842],
+		["/trade/PEAR/USDC", 293],
+		["/trade/PEAR-71/USDC", 71],
+		["/trade/PUMP/USDC", 299],
+		["/trade/PUMP-26/USDC", 26],
+	])("opens %s on the USDC market of mainnet token %i, as the official terminal does", (path, tokenIndex) => {
+		const markets = snapshotMarkets("Mainnet");
+		const pair = snapshotSpotMeta("Mainnet").universe.find(({ tokens }) => tokens[0] === tokenIndex && tokens[1] === 0);
+		const routeName = getTradeRouteMarketFromPath(path)?.name ?? "";
+
+		expect(pair).toBeDefined();
+		expect(findCanonicalMarketForRoute(markets.all as UnifiedMarketInfo[], routeName, markets.tokens)?.name).toBe(
+			pair?.name,
+		);
+	});
+
 	it.each(NETWORKS)("keeps one entry per token index and one token per display name on %s", (env) => {
 		const entries = SPOT_TOKEN_DISPLAY_NAMES[env];
 		expect(duplicates(entries.map(([index]) => String(index)))).toEqual([]);
