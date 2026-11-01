@@ -1,4 +1,5 @@
-import { DEFAULT_MARKET_NAME } from "@/config/app";
+import type { MarketSpotToken } from "@sairn/hl-react";
+import { DEFAULT_MARKET_NAME, DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import type { ExchangeScope } from "@/domain/market";
 import { BUILDER_DEX_SEPARATOR, SPOT_MARKET_NAME_SEPARATOR } from "@/domain/market";
 import type { UnifiedMarketInfo } from "./hooks/useMarketsInfo";
@@ -9,7 +10,10 @@ export interface TradeRouteMarket {
 	dex: string | undefined;
 }
 
+export type TradeRouteToken = Pick<MarketSpotToken, "displayName" | "tokenId">;
+
 const MAX_TRADE_ROUTE_MARKET_NAME_LENGTH = 128;
+const TOKEN_ID_ROUTE_PREFIX = "0x";
 
 function hasUnsafeRouteCharacter(segment: string): boolean {
 	for (const character of segment) {
@@ -107,7 +111,7 @@ export function getTradeRouteMarketFromPath(pathname: string): TradeRouteMarket 
 		};
 	}
 
-	if (symbol.startsWith("@")) {
+	if (symbol.startsWith("@") || symbol.startsWith(TOKEN_ID_ROUTE_PREFIX)) {
 		return {
 			name: symbol,
 			scope: "spot",
@@ -129,16 +133,36 @@ export function isMalformedTradeMarketPath(pathname: string): boolean {
 	return getTradeRouteMarketFromPath(pathname) === undefined;
 }
 
+export function getTradeRouteName(market: UnifiedMarketInfo): string {
+	return market.kind === "spot" ? (market.routeName ?? market.pairName) : market.name;
+}
+
 export function getTradePathForMarket(market: UnifiedMarketInfo): string {
 	if (market.kind === "spot") {
-		const routeName = market.routeName ?? market.pairName;
-		const [baseToken, quoteToken] = routeName.split(SPOT_MARKET_NAME_SEPARATOR);
+		const [baseToken, quoteToken] = getTradeRouteName(market).split(SPOT_MARKET_NAME_SEPARATOR);
 		if (baseToken && quoteToken) {
 			return `/trade/${encodeSegment(baseToken)}/${encodeSegment(quoteToken)}`;
 		}
 	}
 
 	return `/trade/${encodeSegment(market.name)}`;
+}
+
+/**
+ * The path a trade route is replaced with: a resolved spot address (`@N`, a token ID, another case or
+ * an unknown quote) goes to its display path, and an address that names no market to the default one.
+ */
+export function getTradeRouteRedirectPath(
+	routeMarketName: string | undefined,
+	redirectMarket: UnifiedMarketInfo | undefined,
+	isUnresolved: boolean,
+): string | undefined {
+	if (redirectMarket) {
+		return routeMarketName === getTradeRouteName(redirectMarket) ? undefined : getTradePathForMarket(redirectMarket);
+	}
+	return isUnresolved && routeMarketName !== DEFAULT_MARKET_NAME
+		? getTradePathForMarketName(DEFAULT_MARKET_NAME)
+		: undefined;
 }
 
 export function getTradePathForMarketName(marketName: string): string {
@@ -151,7 +175,49 @@ export function getTradePathForMarketName(marketName: string): string {
 	return `/trade/${encodeSegment(safeMarketName)}`;
 }
 
+function findSpotMarketByTokenIds(
+	markets: readonly UnifiedMarketInfo[],
+	requestedName: string,
+	tokens: readonly TradeRouteToken[],
+): UnifiedMarketInfo | undefined {
+	const [baseTokenId, quoteTokenId, extra] = requestedName.split(SPOT_MARKET_NAME_SEPARATOR);
+	if (extra !== undefined) return undefined;
+	const quoteName = tokens.find((token) => token.tokenId === quoteTokenId)?.displayName ?? DEFAULT_QUOTE_TOKEN;
+	const matches = markets.filter(
+		(market) =>
+			market.kind === "spot" &&
+			market.tokensInfo[0]?.tokenId === baseTokenId &&
+			market.tokensInfo[1]?.displayName === quoteName,
+	);
+	return matches.length === 1 ? matches[0] : undefined;
+}
+
+function getSpotRouteWithDefaultQuote(requestedName: string, tokens: readonly TradeRouteToken[]): string | undefined {
+	const [baseName, quoteName, extra] = requestedName.split(SPOT_MARKET_NAME_SEPARATOR);
+	if (!baseName || quoteName === undefined || extra !== undefined) return undefined;
+	const normalizedQuoteName = quoteName.toLocaleLowerCase("en-US");
+	if (tokens.some((token) => token.displayName.toLocaleLowerCase("en-US") === normalizedQuoteName)) return undefined;
+	return `${baseName}${SPOT_MARKET_NAME_SEPARATOR}${DEFAULT_QUOTE_TOKEN}`;
+}
+
+/**
+ * Resolves what the official terminal resolves: a token-ID address (`0x<base>` or `0x<base>/0x<quote>`),
+ * a display pair in any case, and a display pair whose quote names no token, which opens the base
+ * against USDC. Raw protocol token names (`UBTC/USDC`) resolve to nothing.
+ */
 export function findCanonicalMarketForRoute(
+	markets: readonly UnifiedMarketInfo[],
+	requestedName: string,
+	tokens: readonly TradeRouteToken[],
+): UnifiedMarketInfo | undefined {
+	if (requestedName.startsWith(TOKEN_ID_ROUTE_PREFIX)) return findSpotMarketByTokenIds(markets, requestedName, tokens);
+	const market = findMarketByRouteName(markets, requestedName);
+	if (market) return market;
+	const defaultQuoteRoute = getSpotRouteWithDefaultQuote(requestedName, tokens);
+	return defaultQuoteRoute ? findMarketByRouteName(markets, defaultQuoteRoute) : undefined;
+}
+
+function findMarketByRouteName(
 	markets: readonly UnifiedMarketInfo[],
 	requestedName: string,
 ): UnifiedMarketInfo | undefined {

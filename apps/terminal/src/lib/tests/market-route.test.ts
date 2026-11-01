@@ -16,6 +16,18 @@ describe("trade route market parsing", () => {
 		["/trade/hyna:XPL", { name: "hyna:XPL", scope: "builders-perp", dex: "hyna" }],
 		["/trade/%40107", { name: "@107", scope: "spot", dex: undefined }],
 		["/trade/ETH/USDH", { name: "ETH/USDH", scope: "spot", dex: undefined }],
+		[
+			"/trade/0x0d01dc56dcaaca66ad901c959b4011ec",
+			{ name: "0x0d01dc56dcaaca66ad901c959b4011ec", scope: "spot", dex: undefined },
+		],
+		[
+			"/trade/0x0d01dc56dcaaca66ad901c959b4011ec/0x6d1e7cde53ba9467b783cb7c530ce054",
+			{
+				name: "0x0d01dc56dcaaca66ad901c959b4011ec/0x6d1e7cde53ba9467b783cb7c530ce054",
+				scope: "spot",
+				dex: undefined,
+			},
+		],
 	])("parses %s", (path, expected) => {
 		expect(getTradeRouteMarketFromPath(path)).toEqual(expected);
 	});
