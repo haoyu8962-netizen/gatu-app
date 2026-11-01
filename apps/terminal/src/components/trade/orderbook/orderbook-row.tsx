@@ -107,7 +107,7 @@ function OrderbookRowComponent({
 					compact ? COMPACT_ORDERBOOK_ROW_GRID_CLASS : "orderbook-grid px-2 text-xs",
 				)}
 			>
-				<span className="min-w-0 whitespace-nowrap text-left">
+				<span className="min-w-0 whitespace-nowrap text-start">
 					<span
 						data-slot="orderbook-price-text"
 						className={cn("inline-block align-top", isAsk ? "orderbook-price-ask" : "orderbook-price-bid")}
