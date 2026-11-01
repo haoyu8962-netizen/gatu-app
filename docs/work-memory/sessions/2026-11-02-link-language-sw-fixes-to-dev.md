@@ -7,13 +7,16 @@
   "kind": "task",
   "status": "verified",
   "topics": ["i18n-runtime", "static-hosting", "pr-review"],
-  "summary": "运营方问所有修复是否都已合入 dev；核对后没进 dev 的只剩两条从未推送的本地分支：claude/link-language-review-fixes（p35 之后按 Codex 审查做的 Service Worker 修复，头 452a2247）与 p35 发布记录分支 claude/release-p35-record（b6da1036）。新分支 claude/link-language-sw-fixes 从前者切出，以合并（不变基，保留记录引用的提交号）并入 origin/dev（26c06d02，含 PR #132）与记录分支，无冲突，INDEX.md 重新生成无差异。452a2247（带 lang 的导航遇到 5xx 时回退缓存壳）此前未经审查：Codex gpt-6-astra 只读 low 8.3/10、两项 P2（文档称只有旧 SW 那一次导航会是旧壳，过度表述；测试钉不住 500 边界与 4xx、重定向透传），658f5ddd 补参数化与透传用例、3a50a097 改正文档并补 CHANGELOG，窄范围复审 9.2/10 无发现；六个变异全被抓到，修复前的测试漏掉其中两个。类型检查、定向 22 个文件 678 项、ci-workflows 与 CloudFront 部署测试通过；全量终端 Vitest 9,849 项中 9,847 项通过、1 项跳过，另 1 项在沙盒里因不能监听端口失败，沙盒外重跑通过。推送与开 PR 等运营方同意；真实浏览器、生产构建与线上未验证，改动未发布。",
+  "summary": "运营方问所有修复是否都已合入 dev；核对后没进 dev 的只剩两条从未推送的本地分支：claude/link-language-review-fixes（p35 之后按 Codex 审查做的 Service Worker 修复，头 452a2247）与 p35 发布记录分支 claude/release-p35-record（b6da1036）。新分支 claude/link-language-sw-fixes 从前者切出，以合并（不变基，保留记录引用的提交号）并入 origin/dev（26c06d02，含 PR #132）与记录分支，无冲突，INDEX.md 重新生成无差异。452a2247（带 lang 的导航遇到 5xx 时回退缓存壳）此前未经审查：Codex gpt-6-astra 只读 low 8.3/10、两项 P2（文档称只有旧 SW 那一次导航会是旧壳，过度表述；测试钉不住 500 边界与 4xx、重定向透传），658f5ddd 补参数化与透传用例、3a50a097 改正文档并补 CHANGELOG，窄范围复审 9.2/10 无发现；六个变异全被抓到，修复前的测试漏掉其中两个。类型检查、定向 22 个文件 678 项、ci-workflows 与 CloudFront 部署测试通过；全量终端 Vitest 9,849 项中 9,847 项通过、1 项跳过，另 1 项在沙盒里因不能监听端口失败，沙盒外重跑通过。运营方同意后推送并开 PR #134、开启 Auto-fix；之后两次并入 dev（只在生成的 INDEX.md 冲突）。CI 在 client-bootstrap-error.test.ts 偶发失败，根因是 Vitest 4.0.16 把上一个用例 afterEach 的 vi.doUnmock 与下一个用例的 vi.doMock 放进同一批并发解析、按完成先后生效；0aa53f58 去掉这两个文件 afterEach 里的 doUnmock，Codex 复审 9.3/10 无发现。真实浏览器、生产构建与线上未验证，改动未发布。",
   "thread": null,
   "baseCommit": "26c06d02",
-  "commits": ["452a2247", "b6da1036", "479824c4", "fbed3feb", "658f5ddd", "3a50a097"],
+  "commits": ["452a2247", "b6da1036", "479824c4", "fbed3feb", "658f5ddd", "3a50a097", "fdf81093", "52420aa2", "0aa53f58"],
   "sources": [
     {"path": "apps/terminal/public/sw.js"},
     {"path": "apps/terminal/src/lib/tests/sw-navigation-cache.test.ts"},
+    {"path": "apps/terminal/src/lib/tests/client-bootstrap-error.test.ts"},
+    {"path": "apps/terminal/src/lib/tests/link-locale.test.ts"},
+    {"url": "https://github.com/zora4523-bot/gatu-app/pull/134"},
     {"path": "docs/i18n-presentation.md"},
     {"path": "deploy/cloudfront/README.md"},
     {"path": "docs/work-memory/sessions/2026-10-28-cloudfront-release-p35-link-language.md"},
@@ -61,6 +64,20 @@
 | 5xx | 给缓存壳 | 回退缓存壳 | 原样返回 5xx |
 | 网络失败 | 给缓存壳 | 回退缓存壳 | 导航失败 |
 
+### PR #134 之后
+
+**推送与 PR。** 运营方同意「推送并开 PR」后，推送 `1c088b71`，开 [PR #134](https://github.com/zora4523-bot/gatu-app/pull/134)（base `dev`）。运营方随后同意开启 Auto-fix，auto-merge 关闭。Codex 机器人审完 `1c088b71`，没有发现。
+
+**跟进 dev。** `dev` 先合入 PR #130、#135（`1262bf5d`），后又合入 #136、#138、#137（`df119e05`），两次都只在生成的 `INDEX.md` 冲突。分别以合并提交 `fdf81093`、`52420aa2` 并入，`pnpm memory:index` 重建索引。
+
+**CI 失败的根因。** `fdf81093` 上「Test terminal and release tooling (1/2)」失败在 `client-bootstrap-error.test.ts:47`：第二个用例等错误页的 `vi.waitFor` 在 1010 ms 时超时，同文件第一个用例 215 ms 通过。本地用 CI 同一条命令（`--maxWorkers=1 --shard=1/2`，同一组 12 个文件）连跑 15 轮，3 轮同样失败。把等待临时放宽到 15 秒再跑 15 轮，14 轮第二个用例 53–56 ms 就通过，1 轮一直等到 5 秒的默认用例超时。结果只有这两种，说明不是机器慢。
+
+根因在 Vitest 4.0.16 的 `resolveMocks()`。`vi.doMock`、`vi.doUnmock` 只是排进队列，到下一次导入时用 `Promise.all` 一起解析，每条在自己的路径解析完成时生效，不按排队顺序；`vi.resetModules()` 和 `vi.restoreAllMocks()` 都不处理这个队列。上一个用例 `afterEach` 的 `vi.doUnmock` 与下一个用例的 `vi.doMock` 因此进了同一批。撤销后生效时，`error-reporting/client` 变回真模块，`client-hydrate` 仍是 `{}` 替身，`client.ts` 两段导入都成功，错误页不会出现。
+
+**修复。** `0aa53f58` 去掉 `client-bootstrap-error.test.ts` 与 `link-locale.test.ts`（「client entry」组是同样写法）`afterEach` 里的 `vi.doUnmock`，留一行注释说明原因。每个用例在导入入口前本来就会重新 `vi.doMock` 需要的路径，测试文件之间默认隔离。手册第 6 节记下了这个陷阱。
+
+Codex 只读窄范围复审（low）给 9.3/10，无发现。它认为源码层面的竞态机制成立，但指出失败的那几轮没有直接追踪到执行顺序。它还核对了另外两个使用 `vi.doUnmock` 的测试：`client-root-fatal.test.tsx` 有同样的窗口；`privy-fiat-funding-host-gate.test.tsx` 的 `beforeEach` 先 `await` 一次导入，遗留的撤销在用例 `doMock` 之前就处理完了，不是同一个竞态。作者看过源码，确认这两点。
+
 ## 验证与限制
 
 - **环境**：Node 22.15.0（与 CI 相同），pnpm 10.21.0。沙盒里 pnpm 用不了全局存储，`pnpm install --frozen-lockfile --prefer-offline` 把依赖下载到工作树内 Git 忽略的 `.pnpm-store`；`prepare` 里的 `lefthook install` 因写不了 `.git/hooks` 失败，钩子本来就在，不影响安装。
@@ -86,6 +103,10 @@
   - `pnpm test:cloudfront` 46 项通过。
 - **`2d5e7a74`（记录提交）**：`pnpm --filter @sairn/terminal typecheck` 再跑一次通过，覆盖 `658f5ddd` 改过的测试文件（terminal 的 tsconfig 包含 `**/*.ts`、`**/*.tsx`）。之后的提交只改本记录。
 - **记录提交**（本记录、p35 记录的更正、手册与 `INDEX.md`）：`pnpm memory:index`、`pnpm memory:check` 通过，`pnpm memory:test` 8 项通过，`git diff --check` 无输出。
+- **跟进 dev 的两次合并（`fdf81093`、`52420aa2`）**：`pnpm memory:check` 通过，`pnpm memory:test` 8 项通过。`fdf81093` 上 `node --test scripts/*.test.mjs` 96 项中 95 项通过，失败的 `serve-spa-static` 是沙盒 `listen EPERM`，沙盒外重跑 10 项通过；这两次从 `dev` 带进来的改动都没有动 `apps/`。
+- **`0aa53f58`（竞态修复）**：
+  - 两个文件 19 项通过，Biome 通过，`pnpm --filter @sairn/terminal typecheck` 通过。
+  - 用 CI 同一条命令连跑 30 轮：30 轮全部通过，第二个用例 53–92 ms，期间机器负载 21–58。`link-locale.test.ts` 单独用 `--maxWorkers=1` 连跑 30 轮，全部通过。修复前同样的命令 15 轮失败 3 轮；放宽到 15 秒等待的 15 轮失败 1 轮。
 - **未做**：
   - 真实浏览器（Chrome、Safari、Firefox）里的 Service Worker 行为。Node `vm` harness 只证明 `sw.js` 在模拟环境下走哪条分支。
   - 浏览器回归套件：没有覆盖 Service Worker 的用例，没有运行。
@@ -95,7 +116,8 @@
 
 ## 后续与替代关系
 
-- 推送 `claude/link-language-sw-fixes`、开 PR（`gh pr create --base dev`）都等运营方同意，一次同意只对应一个动作；不开 auto-merge。
+- 推送与开 PR 已经运营方同意完成（PR #134，Auto-fix 开）。合并 PR #134 仍要运营方同意；auto-merge 保持关闭。
+- `client-root-fatal.test.tsx` 与这里修掉的写法一样：`afterEach` 里 `vi.doUnmock`，下一个用例在任何导入之前再 `vi.doMock` 同一路径。它可能同样偶发失败，本 PR 没有改它。
 - 复审列出了几项可选的测试补强，本次没有做，它们都不是缺陷：有缓存时 499 透传（钉住 `< 500` 的紧邻边界）；有缓存时不可缓存的 200（如 JSON）透传；无缓存时 5xx 返回同一个响应对象；语言分支里 `caches.open`、`match`、`put` 失败时的容错。
 - 发布后要在真实浏览器里验证：回访者第一次点语言链接（仍由旧 SW 回答）；之后的语言链接走网络；离线与 5xx 时回退缓存壳；以及 CloudFront README 已列的 iOS Safari。
 - PR 合入 `dev` 后，两条源分支 `claude/link-language-review-fixes`、`claude/release-p35-record` 与工作树 `sync-code-start-dev-08b8d0` 可以清理。它们属于别的会话，按手册第 4 节要逐个经运营方同意后再删。
