@@ -3,22 +3,62 @@
   "schemaVersion": 1,
   "id": "2026-11-01-audit-group2",
   "date": "2026-11-01",
-  "title": "全功能审查确认问题第二组：无价代币计 0、订单簿点击保留订单类型（C7），其余八项的官方做法与待决事项",
+  "title": "全功能审查确认问题第二组：按官方实践修完无价代币、C7 与八项待决（订单簿 M2、M9、C5，选择器 M4、C9，现货显示名 C3，被动数据 E5，手机成交筛选）",
   "kind": "task",
   "status": "recorded",
-  "topics": ["order-entry", "market-recovery", "account-funding", "hyperliquid-api"],
-  "summary": "运营方「继续修复剩下存在的问题」。分支 claude/audit-group2，叠在 PR #131 分支 claude/audit-confirmed-fixes 的 c29cb2c0 上（本地，未推送）。按官方终端修完两项：余额表无价代币的 USDC 价值计 0（不再回落到入账成本 entryNtl），以及点击订单簿档位时按官方映射订单类型（市价→限价、止损市价→止损限价，限价类只更新价格，TWAP、Scale、止盈市价不动）。三个只读调研代理核对了其余八项（M2、M9、C5、M4、C9、C3、E5、手机成交筛选）的我方现状与官方 2026-10-31 生产包，修法都牵涉布局、链接、设置或契约范围，按项列出待运营方决定的问题，未改代码。",
+  "topics": [
+    "order-entry",
+    "market-recovery",
+    "account-funding",
+    "hyperliquid-api"
+  ],
+  "summary": "运营方先说「继续修复剩下存在的问题」，修完无价代币计 0 与订单簿点击保留订单类型（C7），并调研了其余八项；随后说「需要决定的八项 请根据官方的实践来修复，确保符合规范」，按官方 2026-10-31 生产包的做法实施，与 AGENTS.md 契约冲突时以契约为准并在归属文档写明偏差。订单簿：控制行（分组左、单位右）、订单簿单位即下单数量单位并删除设置开关、盘口完整数字与计价取整、紧凑簿放不下才降位（ADR 0046）；选择器：删除本地行情统计快照（ADR 0047）、价格与涨跌改用 mid；现货显示名照搬官方按 index 的表并按官方解析地址（ADR 0048）；质押、推荐、金库页按静默数据规则改、手机成交筛选补拉最多 2,000 条。Codex 三路对抗审查逐轮修复（第一轮七项、第二轮四项），交易页与金库页两个命名面按成对实测重定基线。分支 claude/audit-group2，叠在 PR #131 分支 d8a2acf5 上，本地未推送。",
   "thread": null,
-  "baseCommit": "c29cb2c0",
+  "baseCommit": "d8a2acf5",
   "commits": [],
   "sources": [
-    {"path": "docs/work-memory/sessions/2026-10-30-full-feature-audit.md"},
-    {"path": "docs/work-memory/sessions/2026-11-01-audit-confirmed-fixes.md"},
-    {"path": "docs/trading-toolbar-redesign.md"},
-    {"path": "docs/order-entry-surface-parity.md"},
-    {"path": "docs/orderbook-layout.md"},
-    {"path": "docs/mobile-data-presentation.md"},
-    {"path": "docs/adr/0008-compact-market-context-channels.md"}
+    {
+      "path": "docs/work-memory/sessions/2026-10-30-full-feature-audit.md"
+    },
+    {
+      "path": "docs/work-memory/sessions/2026-11-01-audit-confirmed-fixes.md"
+    },
+    {
+      "path": "docs/trading-toolbar-redesign.md"
+    },
+    {
+      "path": "docs/order-entry-surface-parity.md"
+    },
+    {
+      "path": "docs/orderbook-layout.md"
+    },
+    {
+      "path": "docs/mobile-data-presentation.md"
+    },
+    {
+      "path": "docs/adr/0008-compact-market-context-channels.md"
+    },
+    {
+      "path": "docs/adr/0046-one-size-unit-for-order-entry-and-order-book.md"
+    },
+    {
+      "path": "docs/adr/0047-no-local-market-stats-snapshot.md"
+    },
+    {
+      "path": "docs/adr/0048-official-spot-display-names-and-addresses.md"
+    },
+    {
+      "path": "docs/spot-market-names.md"
+    },
+    {
+      "path": "docs/recent-trades.md"
+    },
+    {
+      "path": "docs/price-source-audit.md"
+    },
+    {
+      "path": "docs/terminal-performance-baseline.md"
+    }
   ],
   "supersedes": []
 }
@@ -29,7 +69,8 @@
 
 同步记录，未取得任务标识。PR #131（第一组）推送后，运营方答「继续修复剩下存在的问题」，要求仍按官方终端的做法修。
 
-- 分支 `claude/audit-group2`，叠在 PR #131 分支的 `c29cb2c0` 上，本地、未推送。第一组合入 `dev` 后要按 `dev` 变基；变基会改提交号，引用本分支提交时请按标题。
+- 分支 `claude/audit-group2`，最初叠在 PR #131 分支的 `c29cb2c0` 上，随 PR #131 的审查修复变基到 `d8a2acf5`；本地、未推送。第一组合入 `dev` 后要按 `dev` 变基；变基会改提交号，引用本分支提交时请按标题。
+- 第二阶段（同日）：运营方说「需要决定的八项 请根据官方的实践来修复，确保符合规范，晚上修复后，调用codex 模型对抗review」。决策规则：按官方终端做，官方与 `AGENTS.md` 契约或归属文档冲突时以契约为准，在归属文档写明偏差。订单簿三项由主会话实现；选择器（M4、C9）、现货显示名（C3）、被动数据与手机筛选（E5）由三个实现代理各在独立工作树里实现（基于 `52f9dc18`，不改 CHANGELOG、AGENTS、CI 清单、翻译目录与本记录）。主会话逐个审阅差异后按顺序 cherry-pick 进本分支，统一补翻译、清单与 CHANGELOG；被动数据代理的一个提交标题超过 72 字符，整合时改短后重新提交。
 - 官方依据：2026-10-31 下载的官方生产前端包（`/tmp/claude-501/hl-official-1031/assets/`，未入库）。2026-11-01 的线上包已换名（`index-BWNbZckR.js`、`config-Carig3W2.js`），调研代理逐条复核过引用片段，内容一致。
 - 三个只读调研代理分别负责订单簿（M2、M9、C5、C7）、选择器与显示名（M4、C9、C3）、被动数据与手机筛选（E5、手机成交筛选）。它们读了我方代码与官方包；订单簿与选择器两路还在一次性无头 Chromium 里只读打开官方终端与线上 sairn（未登录、未连钱包、未点 Connect 或下单），并订阅公开行情频道计时。下文的实测都出自这些代理的报告，本记录没有重做。
 
@@ -42,7 +83,51 @@
 | 无价代币 | 没有价格的现货代币在余额表里按入账成本 `entryNtl` 估值 | 官方余额表无价代币的 USDC Value 为 0 | `getSpotUsdValue` 对零、负或读不出的价格一律计 0；可见影响只在余额表的 USDC Value 与 Hide small balances（HYPE 照常保留）；`getTradingToolbarBalanceSummary` 没有生产调用者，充值弹窗不读受影响的汇总 | fix(balances): value a spot balance without a price at zero；fix(balances): say where the unpriced zero shows and pin bad prices；docs(balances): keep HYPE visible in the unpriced balance note |
 | C7 | 点击订单簿任一档位，桌面与手机表单都无条件切成限价单，条件单、Scale、TWAP 的设置丢失 | 官方订单簿行 onClick：市价切限价、止损市价切止损限价，然后写共享限价；实测 Stop Market 变 Stop Limit、触发价不动，Scale、TWAP、止盈市价类型不变 | `getOrderTypeForBookPrice`：市价→限价、止损市价→止损限价，限价类只更新价格，TWAP、Scale、止盈市价返回 `null` 不改任何字段；不像官方那样静默写入共享限价（预填只填空值，写入会在看不见的表单留价，并清掉只减仓的数量来源 `sizeSource`）；预填身份用切换后的类型 | fix(trade): keep the order type when a book price is clicked；test(trade): narrow the selected price stub before reading it；refactor(trade): share the book price click and test it on real stores（桌面与手机的选价 effect 合成 `useBookPriceSelection`，一次点击只应用一次） |
 
-### 调研结论与待运营方决定
+### 第二阶段：八项按官方实践修复（2026-11-01）
+
+| 项 | 修法 | 与官方的差异 | 归属文档 | 提交（标题） |
+| --- | --- | --- | --- | --- |
+| M2 | 桌面订单簿列头上方加 24px 控制行，分组下拉靠左、单位下拉靠右，列头只有文字；删除容器 ≤319px 隐藏价格列头的规则；默认面板每侧仍 11 档 | 无 | `orderbook-layout.md`、ADR 0046 | fix(orderbook): one size unit, a control row and full numbers |
+| M9 | 只保留下单草稿的 `sizeMode`，删除设置开关与全局 `showOrderbookInQuote`；订单簿单位下拉（计价币在前）写一次请求，表单按对象身份领取后调用自己的 `toggleSizeDenomination` 换算已填数量；最近成交恒用基础币 | 表单既有换算优先用标记价，官方有限价时用限价（原有行为，未改） | ADR 0046、`order-entry-surface-parity.md`、`recent-trades.md` | 同上；fix(orderbook): fit compact sizes and take unit picks once；test(orderbook): pin the unit request identity check |
+| C5 | 数量与累计完整显示、不截断；计价取整到 0 位，绝对值小于 1 保留小数；数值单元格靠右并向起始侧溢出；价格单元格 `text-start`；手机紧凑簿按实测宽度逐级降位（少一位小数、再从 10,000 起缩写），价格始终完整 | 小于 1 的计价值保留小数；紧凑簿降位是本终端的布局约束（官方无紧凑簿） | `orderbook-layout.md`、ADR 0046 | 同 M2；fix(orderbook): align book prices to the start edge in rtl layouts；fix(orderbook): fit compact sizes and take unit picks once |
+| M4 | 删除 `hl-mkt-stats-v2` 读写与只为恢复它存在的 hl-react 解析器；旧键在客户端运行时加载时删除一次；首帧前用既有占位 | 无 | ADR 0047（取代 ADR 0008 的会话缓存部分）、`mobile-data-presentation.md` | fix(markets): drop the local market statistics snapshot |
+| C9 | 选择器（桌面与手机共用一行组件）的价格、24h 涨跌与排序用行情头同一规则（实时上下文的 mid，缺失才退回同一上下文的标记价），涨跌要求资产上下文来自实时帧；市值与 OI 仍用标记价；五位有效数字加尾零，零变化显示 `+` | mid 缺失时退回标记价（官方显示 −100%）；过期显示占位（官方不查新鲜度） | `mobile-data-presentation.md`、`price-source-audit.md` | fix(trade): price the market selector from the live mid |
+| C3 | 照搬官方按网络、代币 index 的显示名表（主网 28 项，测试网收 13 项），表项只在该 index 的代币为记录名时生效；余额、手续费、充提、Send 用同一名字，CSV 仍写协议值；地址：`0x<代币 ID>`、未知计价币按 USDC、`@N` 换成显示名路径、解析不出的换到默认市场（replace，默认市场解析不出仍 404） | `@N` 保留可开（路由契约）；默认市场是 BTC；replace 代替 push；大小写不敏感；USDH 计价对照常可开；三段以上路径仍 404；测试网少 3 项并给冲突名加 `-index` | `spot-market-names.md`、ADR 0048 | feat(markets): name spot tokens by the official display table 等 7 个提交 |
+| E5 | 质押、推荐、金库详情与金库列表按 `lib/passive-query-state.ts` 四态静默显示：首次失败只有中性 Retry，刷新失败静默保留本页收到的数据并暂停依赖它的操作，未知值 `--`，无「没有记录」误判；操作只由可用性布尔值禁用 | 官方弹通知、整页错误文字、未知显示 0；保留期间官方操作照常可用 | `mobile-data-presentation.md` | fix(dashboard): keep staking, referral and vault reads silent；docs(presentation): silent data rules for staking, referrals, vaults；docs(presentation): name the reviewed alerts on vault and referral pages |
+| 手机成交筛选 | 任一筛选开启时补拉 `userFills`（最多 2,000 条）并按 `(time, coin, tid)` 与实时数据合并；只有补拉成功、当前且实时快照当前时才下「无匹配」结论，达到上限时写明范围 | 空结论比官方严（官方加载或失败时也会显示）；清除筛选后不再读快照 | `mobile-data-presentation.md`、`trading-toolbar-redesign.md` | fix(trade): search the fills snapshot while phone filters are on |
+
+整批 Codex 第一轮（见下文「验证与限制」）提出的七项都核实成立，修复与补测如下：
+
+| 发现 | 修复 | 提交（标题） |
+| --- | --- | --- |
+| 手机筛选只把最近 30 条实时成交并入补拉结果：补拉之后到达的匹配成交被更新的成交挤出 30 条后消失，并显示「无匹配」 | 筛选开启时合并订阅保留的全部实时成交（`useUserFills().bufferedFills`，hl-react 最多 200 条）；订阅保留的最早一条比快照最新一条还新时（中间可能漏成交），不下结论，只给中性 Retry | fix(trade): keep phone filter matches pushed out of the latest 30 |
+| 只开 Type 筛选时的补拉没有测试 | 新增只开 Type 的补拉用例 | 同上 |
+| 金库弹窗已在复核步骤时，详情或份额刷新失败不暂停 Confirm | `canConfirm` 与 `confirm()` 都要求该操作的可用性（`actionAvailability`），刷新成功后恢复 | fix(vaults): hold review confirms and empty filters on kept data |
+| 金库公开列表保留、账户份额成功时仍下「No Vaults in this filter」 | 控制器输出 `listCurrent`，筛选空结论要求公开列表为 `ready` | 同上 |
+| 金库「本页收到过」边界没有接线测试 | 详情、份额与公开列表各一条「进入页面前缓存、本页请求失败」用例 | 同上 |
+| 显示名表的期望值取自待测表本身 | 契约测试另存一份官方 2026-10-31 生产包里的表（`OFFICIAL_TABLE`，主网 28 项、测试网 16 项），逐项比较；加 5 条固定外部地址（如 `/trade/NIL/USDC`） | test(markets): pin the display table to an official copy |
+| 紧凑簿真实页面的宽度传递没有测试 | 挂载真实 `MobileBookView`，按窄、宽、窄三次测量断言数量文字与完整读屏名称 | test(orderbook): pin the width the phone book measures for its rows |
+
+整合时还发现一个测试替身遗漏：`mobile-history-cards.test.tsx` 替换的 `useUserFills` 缺少新字段 `bufferedFills`，页面渲染时报错；已在第一个提交里补上。
+
+Codex 第二轮复核上面四个提交，又提出四项，都核实成立：
+
+| 发现 | 修复 | 提交（标题） |
+| --- | --- | --- |
+| 订阅的 200 条保留上限也算 TWAP 成交，缺口判断却用去掉 TWAP 之后的列表：TWAP 成交占满订阅后，普通成交被挤出也看不出缺口；订阅里一时没有普通成交时，页签还会退回「No fills found.」并收起已开启的筛选 | 缺口判断改用两边的原始时间（快照最新一条、订阅最旧一条，都算 TWAP）；已开启筛选时，不再因为订阅里没有普通成交而退回「No fills found.」 | fix(trade): count twap fills in the phone filter's gap check |
+| 上一轮的 Confirm 暂停让确认前的预检读取失败后，弹窗里没有恢复入口：页面上的 Retry 被阻断式弹窗盖住，退回输入步骤也不能复核 | 弹窗在输入与复核步骤给出中性「Retry」（与页面同一个重新读取，只在需要重试时出现），金额与步骤保留 | fix(vaults): retry kept data inside the dialog and gate search results |
+| 搜索与账户筛选或保留的公开列表组合时，仍先显示「No matching Vaults」 | 先检查是否已确认，再判断搜索无结果 | 同上 |
+| 页面到弹窗按钮的 `canConfirm` 接线没有测试 | 弹窗测试钉住 Confirm 跟随 `canConfirm`、数据 Retry 只在传入时出现；页面结果测试钉住两者的传递 | 同上 |
+
+Codex 第三轮复核又提出两项（另有一项 P3），都核实成立：
+
+| 发现 | 修复 | 提交（标题） |
+| --- | --- | --- |
+| 详情刷新返回格式不符的数据时，详情是「失败」而不是「保留」，`needsRetry` 只认保留，已打开的弹窗没有数据 Retry | 详情失败或保留都算需要重试 | fix(vaults): offer the dialog retry when a detail refresh fails |
+| 缺口判断两个时间端点的接线（快照最新一条要算 TWAP、订阅取最旧一条）没有反例测试 | 新增快照里最新一条是 TWAP、订阅窗口与快照重叠的用例，断言下结论且没有 Retry | 同上 |
+| P3：新增的快照时间单测 `trade-history.test.ts` 不在 CI 与回归清单里 | 加入 `.github/workflows/terminal-tests.yml` 与 `AGENTS.md` | 同上 |
+
+### 调研结论（第一阶段，保留为依据；其中的「待决」已由第二阶段按官方实践决定）
 
 #### 订单簿
 
@@ -64,14 +149,48 @@
 
 ## 验证与限制
 
+### 第一阶段（无价代币、C7）
+
 - 两项都先写在旧代码上会失败的测试，再做变异：无价代币 2 个、C7 的类型映射与两端接线 5 个、C7 的点击消费与接线 5 个，全部被抓到。
 - C7 的第一版测试把 `clearSelectedPrice` 与下单 store 的动作都换成替身，Codex 第三轮指出它钉不住「一次点击只应用一次」（P2，代码本身无误）。于是把桌面与手机相同的选价 effect 合成 `useBookPriceSelection`，新增 `book-price-selection.test.tsx` 用真实的两个 store 核对：八类订单的结果；点击后选价被清除，之后切换类型、改价、重新渲染都不重放；被忽略类型与别的市场的点击也被清除。第四轮只审这次修复：没有发现。
 - 浏览器：本地开发服务器（3005，本分支），无头 Chromium，1440×900，未连接钱包、未提交订单。从 Market、Stop Market、Take Profit Limit、TWAP、Scale 各点一次 BTC 订单簿首档（77,677），结果依次为 Limit、Stop Limit（价格为 `77677.0`，触发价不变，见截图）、Take Profit Limit、TWAP、Scale。这些是脚本注入的点击，不能证明真实鼠标或触屏的事件时序。
-- 全量终端单测：本分支最终头上 703 个文件、9,608 项通过（1 个跳过），这一次在沙箱外运行，`vite-development-cache` 能绑定本地端口。更早一次在沙箱内运行（第一组 `c29cb2c0` 加 C7 提交、测试替身修正之前），只有这个文件以 `listen EPERM 127.0.0.1:5173` 失败，单独放开端口后通过。`pnpm typecheck`（hl-react、ui、terminal）通过；C7 测试替身最初有 `selection` 可能为 null 的类型错误，已修。
+- 全量终端单测：第一阶段结束时的分支头上 703 个文件、9,608 项通过（1 个跳过），这一次在沙箱外运行，`vite-development-cache` 能绑定本地端口。更早一次在沙箱内运行（第一组 `c29cb2c0` 加 C7 提交、测试替身修正之前），只有这个文件以 `listen EPERM 127.0.0.1:5173` 失败，单独放开端口后通过。`pnpm typecheck`（hl-react、ui、terminal）通过；C7 测试替身最初有 `selection` 可能为 null 的类型错误，已修。
 - Codex 对抗审查（`gpt-6-astra`，medium，只读），四轮评分与发现见 PR #131 记录 `2026-11-01-audit-confirmed-fixes.md`。本分支相关的两项（CHANGELOG 漏写 HYPE 例外、C7 测试替身）都已处理。第四轮按修复后的状态给整批打 9.2 分。
 - 调研结论来自代理报告与官方包，未在浏览器复测；没有真机与真实账户验收；浏览器回归套件未在本地运行。
 
+### 第二阶段（八项）
+
+主会话亲自运行的：
+
+- 订单簿三项：新测试先在 `52f9dc18` 上运行全部失败，在本分支通过。变异 24 个先分批在实现当时的代码上运行，最后在 `d52d1cc9` 的干净检出上全部重跑，都被抓到（重跑前基线：10 个测试文件、245 项通过）；其中数量缩写与请求清除两个变异的原写法已对不上改过的代码，按现有代码重写后再跑。
+- 宽度测量：本地开发服务器（3005，本分支）、无头 Chromium、未连接钱包，在 320、390、1100、1440 宽测 kPEPE 与 BTC 的基础币与计价币，价格、数量与累计的文字互不重叠，也不超出梯子。这是脚本测量，脚本没有入库，不是真机。
+- 整合另外三路之前：订单簿四个 Playwright 套件 59 项通过；`AGENTS.md` 的订单簿、最近成交与下单分组共 35 个文件、761 项通过。
+- 整合之后（`3440562e`）：`pnpm typecheck`（hl-react、ui、terminal）通过；Biome 检查 127 个改动文件无问题；选择器相关测试 159 项、显示名相关测试 310 项、目录完整性契约与 `scripts/ci-workflows.test.mjs` 的 17 项通过。
+- 全量终端单测（`3440562e`，沙箱外，12:05 开始，用时 31 分钟）：713 个文件中 23 个失败、689 个通过、1 个跳过；9,790 项中 109 项失败、9,669 项通过、12 项跳过，另有 1 个工作进程应答超时。当时机器负载很高，13:47 测得负载均值约 157；109 项里 72 项是超时。失败的文件除下一条外用 `--maxWorkers=4` 重跑，22 个里 20 个通过；`mobile-agent-sync-modal` 与 `chart-build-assets` 再次超时，单独运行时两个文件共 44 项通过。唯一的真失败是 `mobile-fill-filter-backfill`：显示名改动让手机成交卡片的手续费调用 `getTokenDisplayName`，而补拉一路的测试替身里没有这个函数。两路在各自工作树里都通过，整合后才暴露。已用「test(history): add the token display name to the fills backfill mock」补上，该文件 7 项通过。
+- `funds-modal-scroll-contract` 在本工作树失败：Claude Code 工具在 `packages/ui/src` 等多个目录下留下了空的未跟踪目录 `.claude/.cc-writes`（Git 不收录空目录），契约把它当成 UI 包的子目录。在同一提交 `d52d1cc9` 的干净检出里 122 项通过。
+- 生产构建与包体（不含 `.env.local` 的隔离工作树，Node 22.15.0、pnpm 10.21.0、`VITE_MOBILE_PAIRING_ENABLED=false`）：
+  - CI 式元数据（40 位提交号、`SAIRN_RELEASE_ID=ci-99999999999-1`）构建 `d52d1cc9`：两个命名面超出允许值，`trade-terminal-page` 127,638（超 396 字节）、`vaults-page` 30,421（超 346）；其余预算通过。PR #131 自己的 CI 生产构建（`695080a6`，配对关）通过。
+  - 按基线文档的复现规程，用固定构建身份依次构建 PR #131 的 `d8a2acf5`、第二阶段基点 `52f9dc18`、`d52d1cc9`、`78bbf476` 与 `a9973c83`，逐块比较模块归属：增长对应本批的功能代码和随之在块之间移动的模块（`d8a2acf5` 到 `a9973c83`：总量 +6,252，交易页 +762，金库页 +701），没有找到不改变行为就能去掉的部分。于是按规程把两个命名面按实测增量重定基线（124,004 与 27,776，允许值不变），写进 `docs/terminal-performance-baseline.md` 的「Second audit batch route-surface re-baseline (2026-11-01)」；用新基线检查 `a9973c83` 的固定身份构建，全部预算通过。手机运行时增量剩 800 字节，是余量最小的一项。
+  - 重定基线后用 CI 式元数据构建 `1c5c2b1f`：全部预算通过，`trade-terminal-page` 127,628（余 376 字节）、`vaults-page` 30,549（余 227）、总量 +6,340（余 3,660）、静态启动 +7,495（余 2,505）、手机运行时 +9,177（余 823）、桌面运行时 +1,832（余 8,168），449 个块没有静态循环导入。本地 CI 式读数与真实 CI 可能相差几十字节（基线文档与操作手册记录的已知现象）。
+
+实现代理报告、主会话没有重做的：
+
+- 选择器：32 项新测试先在旧代码上失败，变异 21 个全部被抓到。
+- 现货显示名：新测试 22 项与 14 项先在旧代码上失败，变异 33 个全部被抓到；代理在自己的工作树里跑了 76 个文件、1,339 项。
+- 被动数据与手机筛选：40 项新测试先在旧代码上失败，变异 33 个全部被抓到。
+- 主会话整合后重跑了这些测试（见上面的整合与全量单测），没有重跑这些变异。
+
+Codex 对抗审查（`gpt-6-astra`，medium，只读）：
+
+- 订单簿一路两轮：8.0 分（P2 两项、P3 一项）、8.5 分（P2 一项、P3 一项），都已修复，见 ADR 0046 的「验证」。
+- 整批第一轮（`52f9dc18..d52d1cc9`，行为证伪与遗漏变异两路）：行为 8.0（P2 三项）、遗漏 8.2（P2 四项），没有 P1；七项都已修复或补测，见上文「整批 Codex 第一轮」一表。针对这些修复的变异 16 个，在 `78bbf476` 的干净检出上运行，全部被抓到（运行前基线：6 个测试文件、128 项通过）。修复后的相关回归（`AGENTS.md` 的手机数据呈现、订单簿、现货显示名、数字与日期格式、桌面布局与下单分组，外加金库控制器、金库弹窗与最近成交）共 101 个文件、1,972 项，分两次运行；其中 `mobile-history-cards` 第一次因测试替身缺 `bufferedFills` 失败 10 项，补上后单独重跑 21 项通过，其余一次通过；12 个扫描源码的契约 327 项通过，类型检查与 Biome 通过。
+- 第二轮（`d52d1cc9..78bbf476`，复核第一轮修复）：行为 8.0（P2 三项）、遗漏 8.5（P2 一项），没有 P1；第一轮七项里五项确认已解决，成交与金库两项另有遗漏路径。四项都已修复，见上文第二张表。针对这些修复的变异 9 个，在 `a9973c83` 的干净检出上运行，全部被抓到（运行前基线：5 个测试文件、60 项通过）；其中「页面不给弹窗传数据 Retry」一个的原写法在文件里出现两次被跳过，加上下文只改弹窗那一处后重跑。修复后成交、金库与对话框相关的 21 个测试文件、520 项通过，类型检查通过。
+- 第三轮（`78bbf476..1c5c2b1f`，复核第二轮修复）：行为 8.5（P2 一项）、遗漏 8.5（P2 一项、P3 一项），没有 P1；三项都已修复，见上文第三张表。针对这些修复的变异 4 个，在 `9839c340` 的干净检出上运行，全部被抓到（运行前基线：3 个测试文件、26 项通过）；其中「只有保留的详情才需要重试」一个的原写法因格式化换行对不上，按现有代码重写后再跑。修复后相关的 5 个测试文件、56 项与 `scripts/ci-workflows.test.mjs` 的 17 项通过。
+
+限制：没有真机与真实账户验收；除订单簿四个 Playwright 套件外，浏览器回归套件没有在本地运行；调研结论来自代理报告与官方包，官方终端只读打开、未登录。
+
 ## 后续与替代关系
 
-- 推送本分支与开 PR 前先问运营方。
-- 运营方对上述待决项作出决定后，按「最小修法」实施；M2 与 M9 建议同一改动，C5 等窄宽方案。
+- 第一阶段写的「运营方作出决定后按最小修法实施」已由第二阶段取代（见上表）。
+- 推送本分支与开 PR 前先问运营方。本分支叠在 PR #131 的分支上，PR #131 合入 `dev` 后要按 `dev` 变基。
+- 留作后续，ADR 与归属文档已写明：表单单位换算按限价（官方做法）；官方「点击数量填数量」；手机分栏簿的行仍可点击、价格单元格仍是物理左右对齐；收藏栏与命令菜单仍按标记价算涨跌；可访问名称 `Switch to {coin} market`、成交与委托历史页的市场筛选、TWAP 对账通知仍显示 API 币名；手机委托历史与资金费的筛选同样只在最近 30 条里找；显示名表靠人工同步，测试网少收 3 项；保留的被动数据没有时长上限；手机成交页签在最近的实时成交里没有普通成交时显示「No fills found.」且不显示筛选行，无法开启筛选去找更早的成交（官方始终显示筛选，2026-11-01 Codex 第二轮复核时发现，本批未改）；补拉快照为空、之后的新成交又超过订阅保留上限（200 条）时，缺口判断识别不出被挤掉的成交。
