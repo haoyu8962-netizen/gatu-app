@@ -275,6 +275,7 @@
 
 当前规范：[docs/adr/0005-spa-static-shell.md](../../docs/adr/0005-spa-static-shell.md) · [deploy/cloudfront/README.md](../../deploy/cloudfront/README.md)
 
+- [CloudFront 生产发布 p36（全功能审查 P1、P2 与两组确认修复）](sessions/2026-11-02-cloudfront-release-p36.md) — 2026-11-02；已验证，范围见正文。运营方要求「请部署最新的代码到生产环境」。合并前在仓库外工作树 gatu-release-p36 按发布配置预检 dev 26c06d02：总量比基线多 9,913，只剩 87 字节余量；打包开关与 p35 产物一致。晋升 PR #133（dev→main，含 #129 的 P1 第一批与 P2 批次、#131、#132）八项 CI 全绿（含配对开启构建），Codex 机器人无发现，运营方点「继续发布」后以 merge commit 合入 main（047b4bb3，代码树与 26c06d02 相同）。用 Node 22.15.0 构建 cloudfront-2026-11-02-p36（三个闸门全开，总量 3,375,833，比基线 +9,632），按 functions → lambda（版本 20）→ sync（1,652 次上传、0 失败、发布标记一致）→ 两次失效 → verify 主网 15/15、测试网 16/16 → csp-coverage 33 步 0 违规发布。真实钱包、真机与本批修复的线上逐项验收未做。
 - [CloudFront 生产发布 p34（交易终端日语）](sessions/2026-10-28-cloudfront-release-p34.md) — 2026-10-28；已验证，范围见正文。运营方同意整条流程后，晋升 PR #119（dev→main，含 #117 p33 记录与 #118 日语）八项 CI 全绿（含配对开启构建），以 merge commit 合入 main（2047ee8d）。在仓库外工作树 gatu-release-p34 用 Node 22.15.0 构建 cloudfront-2026-10-28-p34（三个闸门全开，总量 3,353,963，比新基线 +3,470），按 functions → lambda（版本 18）→ sync（首次因本机代理连接失败中断于资源阶段，重跑补传 11 个文件后发布标记一致）→ 两次失效 → verify 主网 15/15、测试网 16/16 → csp-coverage 33 步 0 违规发布。线上终端自 p33 升到 p34，带上日语界面与订单类型标签的上下文修复。真实钱包、真机与母语审校未做。
 - [CloudFront 生产发布 p33（日本解封、EntropyIO 文档链接）与官网首页改版上线](sessions/2026-10-27-cloudfront-release-p33-and-website.md) — 2026-10-27；已验证，范围见正文。运营方同意整条流程：PR #115 合入 dev（c2d57946），晋升 PR #116 八项 CI 全绿后合入 main（2dcfd3e0）。在仓库外工作树 gatu-release-p33 用 Node 22.15.0 构建 cloudfront-2026-10-27-p33（三个闸门全开，总量 3,314,849），按 functions → lambda（版本 17）→ sync（1,645 个文件，发布标记一致）→ 两次失效 → verify 主网 15/15、测试网 16/16 → csp-coverage 33 步 0 违规。线上终端自 p32 升到 p33，带上 ADR 0042（日本不再受限）与 T1（io → EntropyIO 文档链接），terminal:check 随后通过。官网从同一提交构建（test 97、test:dist 56），备份线上 34 个对象后按资源 → 其余非 HTML → HTML 上传并失效 EP2DIBP3T7M3G，手册的发布后检查全部符合，线上无头浏览器桌面与手机均无控制台错误。真实日本 IP 交易、真实钱包与社交卡片抓取未做。
 - [CloudFront 生产发布 p32：生产审计两批修复、自动统一账户](sessions/2026-10-14-cloudfront-release-p32.md) — 2026-10-14；已验证，范围见正文。运营方要求把 dev 晋升到 main 并发布。晋升 PR #112 的配对开启构建因总量 +10,160 超允许量失败，经 PR #113 重定总量与桌面运行时基线后八项 CI 全绿，以 merge commit 合入 main（9ccb88c0）。在仓库外工作树 gatu-release-p32 用 Node 22.15.0 构建 cloudfront-2026-10-14-p32（三个闸门全开，总量 3,314,565），按 functions → lambda（版本 16）→ sync（1,645 个文件，发布标记一致）→ 两次失效 → verify 主网 15/15、测试网 16/16 → csp-coverage 33 步 0 违规。线上自 p31 升到 p32。新账号自动统一账户、外部钱包存款未知结果、现货兑换 Max 等真实验收与真机配对清单均未做。
@@ -474,6 +475,7 @@
 
 | 记录日期 | 任务记录 | 来源任务 | 基线提交 | 状态 |
 | --- | --- | --- | --- | --- |
+| 2026-11-02 | [CloudFront 生产发布 p36（全功能审查 P1、P2 与两组确认修复）](sessions/2026-11-02-cloudfront-release-p36.md) | 未取得任务标识，见正文 | `cdb47637` | 已验证，范围见正文 |
 | 2026-11-01 | [全功能审查确认仍存在的问题：第一组按官方做法修复（F1、F2、M3、E12、E13、M7、成交日期，B6 更正）](sessions/2026-11-01-audit-confirmed-fixes.md) | 未取得任务标识，见正文 | `90658436` | 已整理，验证见正文 |
 | 2026-11-01 | [全功能审查确认问题第二组：按官方实践修完无价代币、C7 与八项待决（订单簿 M2、M9、C5，选择器 M4、C9，现货显示名 C3，被动数据 E5，手机成交筛选）](sessions/2026-11-01-audit-group2.md) | 未取得任务标识，见正文 | `d8a2acf5` | 已整理，验证见正文 |
 | 2026-10-31 | [第二批 P2 资金：Send 精确余额与无价代币的组合价值](sessions/2026-10-31-p2-funds.md) | 未取得任务标识，见正文 | `329f241d` | 已整理，验证见正文 |
