@@ -84,6 +84,7 @@
   - 全量终端 Vitest（`pnpm --filter @sairn/terminal test --maxWorkers=4`，16:42–16:46 UTC，254 秒）：714 个文件、9,849 项，其中 9,847 项通过、1 项跳过、1 项失败。失败的是 `vite-development-cache.test.ts` 的「revalidates optimized dependencies and rejects a second server on the same port」，原因是沙盒里 `listen EPERM: operation not permitted 127.0.0.1:5173`；在沙盒外单独重跑这个文件，1 项通过。
   - 测试运行期间写入了本记录、p35 记录、`INDEX.md` 与手册，没有测试读取这些文件（检索过 `apps/terminal` 的测试，只有一个测试读 `AGENTS.md`，它在此期间没有改动）。
   - `pnpm test:cloudfront` 46 项通过。
+- **`2d5e7a74`（记录提交）**：`pnpm --filter @sairn/terminal typecheck` 再跑一次通过，覆盖 `658f5ddd` 改过的测试文件（terminal 的 tsconfig 包含 `**/*.ts`、`**/*.tsx`）。之后的提交只改本记录。
 - **记录提交**（本记录、p35 记录的更正、手册与 `INDEX.md`）：`pnpm memory:index`、`pnpm memory:check` 通过，`pnpm memory:test` 8 项通过，`git diff --check` 无输出。
 - **未做**：
   - 真实浏览器（Chrome、Safari、Firefox）里的 Service Worker 行为。Node `vm` harness 只证明 `sw.js` 在模拟环境下走哪条分支。
