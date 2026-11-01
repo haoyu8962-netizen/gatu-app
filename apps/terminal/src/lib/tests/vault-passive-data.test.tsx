@@ -327,6 +327,48 @@ describe("Vault pages passive data", () => {
 			expect(retryButtons()).toHaveLength(1);
 		});
 
+		it("does not keep a detail cached before the page mounted when the page's own request fails", async () => {
+			client.setQueryData(["hl", "Mainnet", "vaultDetails", { vaultAddress: VAULT, user: OWNER }], rawDetail());
+			await render(<VaultDetailPage vaultAddress={VAULT} />);
+			expect(container.querySelector("h1")?.textContent).toBe("Alpha Vault");
+
+			answerAll({ vaultDetails: fail() });
+			await refetch("vaultDetails");
+			expectNoFailureCopy();
+			expect(container.textContent).not.toContain("Alpha Vault");
+			expect(button("Deposit")).toBeUndefined();
+			expect(retryButtons()).toHaveLength(1);
+
+			answerAll();
+			await act(async () => retryButtons()[0]?.click());
+			await flush();
+			expect(container.querySelector("h1")?.textContent).toBe("Alpha Vault");
+			expect(button("Deposit")?.disabled).toBe(false);
+		});
+
+		it("does not keep an owner balance cached before the page mounted when the page's own request fails", async () => {
+			client.setQueryData(
+				["hl", "Mainnet", "userVaultEquities", { user: OWNER }],
+				[{ vaultAddress: VAULT, equity: "25", lockedUntilTimestamp: 1 }],
+			);
+			await render(<VaultDetailPage vaultAddress={VAULT} />);
+			expect(container.textContent).toContain("$25.00");
+
+			answerAll({ userVaultEquities: fail() });
+			await refetch("userVaultEquities");
+			expectNoFailureCopy();
+			expect(container.textContent).not.toContain("$25.00");
+			expect(container.textContent).toContain("--");
+			expect(button("Withdraw")?.disabled).toBe(true);
+			expect(retryButtons()).toHaveLength(1);
+
+			answerAll();
+			await act(async () => retryButtons()[0]?.click());
+			await flush();
+			expect(container.textContent).toContain("$25.00");
+			expect(button("Withdraw")?.disabled).toBe(false);
+		});
+
 		it("keeps the owner-loading wait silent", async () => {
 			answerAll({ userVaultEquities: () => new Promise(() => undefined) });
 			await render(<VaultDetailPage vaultAddress={VAULT} />);
@@ -395,6 +437,39 @@ describe("Vault pages passive data", () => {
 			await refetch("userVaultEquities");
 			expect(container.textContent).not.toContain("No Vaults in this filter");
 			expectNoFailureCopy();
+			expect(retryButtons()).toHaveLength(1);
+		});
+
+		it("draws no definitive empty filter result from a public list kept after a failed refresh", async () => {
+			answerAll({ userVaultEquities: async () => [] });
+			await render(<VaultsPage />);
+			await act(async () => button("Deposited")?.click());
+			await flush();
+			expect(container.textContent).toContain("No Vaults in this filter");
+
+			answerAll({
+				publicVaults: fail(),
+				userVaultEquities: async () => [
+					{ vaultAddress: "0x0000000000000000000000000000000000000003", equity: "5", lockedUntilTimestamp: 1 },
+				],
+			});
+			await act(async () => button("Refresh")?.click());
+			await flush();
+			expect(container.textContent).not.toContain("No Vaults in this filter");
+			expectNoFailureCopy();
+			expect(retryButtons()).toHaveLength(1);
+		});
+
+		it("does not keep a public list cached before the page mounted when the page's own request fails", async () => {
+			client.setQueryData(["hl", "public-stats", "vaults", "Mainnet"], [rawPublicVault()]);
+			await render(<VaultsPage />);
+			expect(container.textContent).toContain("Alpha Vault");
+
+			answerAll({ publicVaults: fail() });
+			await act(async () => button("Refresh")?.click());
+			await flush();
+			expectNoFailureCopy();
+			expect(container.textContent).not.toContain("Alpha Vault");
 			expect(retryButtons()).toHaveLength(1);
 		});
 	});

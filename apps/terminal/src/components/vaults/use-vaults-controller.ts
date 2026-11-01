@@ -34,6 +34,8 @@ export interface VaultsController {
 	account: VaultAccountFactsState;
 	/** False while `account` holds the snapshots kept after a failed refresh: shown, but no basis for an empty result. */
 	accountCurrent: boolean;
+	/** False while `rows` is the public list kept after a failed refresh: shown, but no basis for an empty result. */
+	listCurrent: boolean;
 	isRefreshing: boolean;
 	fetchedAt: number | null;
 	onRetry: () => void;
@@ -122,6 +124,7 @@ export function useVaultsController(): VaultsController {
 		rows: isPassiveQueryShown(publicSource) ? rows : [],
 		account: getAccountFactsState(accountAddress, accountSource, facts),
 		accountCurrent: accountSource === "ready" && facts !== null,
+		listCurrent: publicSource === "ready",
 		isRefreshing: publicVaults.isFetching && publicVaults.data !== undefined,
 		fetchedAt: publicVaults.dataUpdatedAt || null,
 		onRetry: () => {

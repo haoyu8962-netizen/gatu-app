@@ -376,7 +376,6 @@ export function useVaultActionController({
 			compareFundsAmounts(amount.displayAmount, availableAmount) !== 1 &&
 			!findPendingFundsAction(hyperliquid.env, visibleAction.ownerAddress),
 	);
-	const canConfirm = Boolean(visibleAction?.state.stage === "review" && !visibleAction.isPreflighting);
 	const actionAvailability = deriveVaultActionsAvailability({
 		detail,
 		detailCurrent,
@@ -385,6 +384,11 @@ export function useVaultActionController({
 		request: getVaultRequestAvailability(geo),
 		sessionMode: hyperliquid.sessionMode,
 	});
+	const canConfirm = Boolean(
+		visibleAction?.state.stage === "review" &&
+			!visibleAction.isPreflighting &&
+			actionAvailability[visibleAction.action].available,
+	);
 
 	function updateAction(next: ActiveVaultAction | null) {
 		actionRef.current = next;
@@ -500,7 +504,14 @@ export function useVaultActionController({
 
 	async function confirm(): Promise<void> {
 		const current = actionRef.current;
-		if (!current || current.state.stage !== "review" || current.isPreflighting) return;
+		if (
+			!current ||
+			current.state.stage !== "review" ||
+			current.isPreflighting ||
+			!actionAvailability[current.action].available
+		) {
+			return;
+		}
 		const startRoute = routeIdentityRef.current;
 		if (!isVaultActionCurrent(current, startRoute, mountedRef.current)) return;
 		const scaledAmount = scaleFundsAmount(current.amount, USDC_ATOMIC_DECIMALS);

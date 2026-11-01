@@ -35,6 +35,7 @@ export interface VaultsListProps {
 	rows: readonly VaultListItem[];
 	account: VaultAccountFactsState;
 	accountCurrent?: boolean;
+	listCurrent?: boolean;
 	isRefreshing?: boolean;
 	fetchedAt?: number | null;
 	onRetry: () => void;
@@ -45,6 +46,7 @@ export function VaultsList({
 	rows,
 	account,
 	accountCurrent = true,
+	listCurrent = true,
 	isRefreshing = false,
 	fetchedAt = null,
 	onRetry,
@@ -184,7 +186,7 @@ export function VaultsList({
 				selectedRows.length === 0 ? (
 					<VaultListEmptyResult
 						isSearchNoResults={selection.isSearchNoResults}
-						confirmed={!accountFilter || accountCurrent}
+						confirmed={listCurrent && (!accountFilter || accountCurrent)}
 						onRetry={onRetry}
 					/>
 				) : (

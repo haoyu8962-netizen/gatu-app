@@ -122,12 +122,14 @@ function Probe({
 	vaultAddress = VAULT,
 	detail = DETAIL,
 	detailCurrent = true,
+	owner = OWNER_VIEW,
 }: {
 	vaultAddress?: string;
 	detail?: VaultDetail | null;
 	detailCurrent?: boolean;
+	owner?: VaultOwnerViewState;
 }) {
-	controller = useVaultActionController({ vaultAddress, detail, detailCurrent, owner: OWNER_VIEW });
+	controller = useVaultActionController({ vaultAddress, detail, detailCurrent, owner });
 	return null;
 }
 
@@ -289,6 +291,35 @@ describe("useVaultActionController", () => {
 
 		act(() => root.render(<Probe />));
 		expect(current().canReview).toBe(true);
+	});
+
+	it("pauses Confirm at the review step while the shown detail is the one kept after a failed refresh", async () => {
+		await openAndReview();
+		expect(current().canConfirm).toBe(true);
+
+		act(() => root.render(<Probe detailCurrent={false} />));
+		expect(current().action?.state.stage).toBe("review");
+		expect(current().canConfirm).toBe(false);
+		await act(async () => current().confirm());
+		expect(mocks.exchangeMutate).not.toHaveBeenCalled();
+		expect(current().action?.state.stage).toBe("review");
+
+		act(() => root.render(<Probe />));
+		expect(current().canConfirm).toBe(true);
+	});
+
+	it("pauses a withdrawal's Confirm at the review step while the owner balance is unverified", async () => {
+		await openAndReview("withdraw");
+		expect(current().canConfirm).toBe(true);
+
+		act(() => root.render(<Probe owner={{ status: "error" }} />));
+		expect(current().action?.state.stage).toBe("review");
+		expect(current().canConfirm).toBe(false);
+		await act(async () => current().confirm());
+		expect(mocks.exchangeMutate).not.toHaveBeenCalled();
+
+		act(() => root.render(<Probe />));
+		expect(current().canConfirm).toBe(true);
 	});
 
 	it("lets the Vault leader deposit after deposits from others are disabled", () => {
