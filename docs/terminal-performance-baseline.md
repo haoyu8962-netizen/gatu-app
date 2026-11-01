@@ -450,8 +450,8 @@ Both trees were built one after another in their own worktree without `.env.loca
 `NITRO_PRESET=node-server`, `VITE_MOBILE_PAIRING_ENABLED=false` and the fixed identity of the reproduction protocol
 (`SAIRN_BUILD_SHA=e4e09966b175679ac7e13ea192246ce27fae15b5 SAIRN_RELEASE_ID=startup-guardrail-baseline
 SAIRN_BUILD_TIME=2026-08-27T00:00:00.000Z NODE_ENV=production pnpm --filter @sairn/terminal build`). The branch side is
-`a9973c83` (fix(vaults): retry kept data inside the dialog and gate search results); later commits on the branch change
-the budget script and documents only.
+`a9973c83` (fix(vaults): retry kept data inside the dialog and gate search results), the code measured when the
+baselines were raised.
 
 | Metric | PR #131 `d8a2acf5` | branch `a9973c83` | Change |
 | --- | ---: | ---: | ---: |
@@ -460,6 +460,8 @@ the budget script and documents only.
 | Static trade startup (103 assets) | 1,648,090 | 1,651,527 | +3,437 |
 | Mobile runtime increment (15 assets) | 118,352 | 119,780 | +1,428 |
 | Desktop runtime increment (30 assets) | 202,775 | 204,609 | +1,834 |
+| Mobile static + runtime (118 assets) | 1,766,442 | 1,771,307 | +4,865 |
+| Desktop static + runtime (133 assets) | 1,850,865 | 1,856,136 | +5,271 |
 | `trade-terminal-page` | 126,884 | 127,646 | +762 |
 | `vaults-page` | 29,849 | 30,550 | +701 |
 
@@ -487,6 +489,13 @@ The `trade-terminal-page` baseline is raised by the measured +762 to 124,004 and
 static-startup and runtime baselines are unchanged; against them the branch reads +6,562 (3,438 left), +7,598 (2,402
 left), mobile +9,200 (800 left) and desktop +1,926 (8,074 left). The mobile runtime increment is now the closest to its
 allowance, and its next growth needs its own measured re-baseline.
+
+A later commit on the branch, `9839c340` (fix(vaults): offer the dialog retry when a detail refresh fails), changes
+production code in `vaults-page` again, so the table describes `a9973c83` only. The CI-metadata builds that followed
+(`SAIRN_BUILD_SHA` set to the commit, `SAIRN_RELEASE_ID=ci-99999999999-1`, otherwise the same settings) passed every
+budget: `1c5c2b1f` before that commit and `da80d4b2` after it, the latter with `trade-terminal-page` at 127,640 (364
+left), `vaults-page` at 30,521 (255 left), the total at +6,756 (3,244 left), the static trade startup at +7,604 (2,396
+left) and the mobile runtime increment at +9,206 (794 left).
 
 ## Audit fixes total-client re-baseline (2026-10-31)
 
