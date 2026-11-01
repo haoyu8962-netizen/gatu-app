@@ -77,7 +77,8 @@
 
 - 工具链是 Node 22.15.0 与 pnpm 10.21.0（见 `package.json` 的 `engines` 与 `packageManager`）。生产构建脚本已带 8 GB 堆（`--max-old-space-size=8192`），因为 Privy 的依赖树在默认堆大小下会内存不足。
 - **选择检查**：按 [AGENTS.md 的 Verification](../AGENTS.md#verification) 跑改动触及的契约分组；跨多个契约时跑全量 `pnpm --filter @sairn/terminal test`。纯文档改动只需核对链接和路径并运行 `git diff --check`，不要声称跑过运行时测试。
-- **全量单测的偶发超时**：机器负载高时（其他会话在构建或运行 Codex），`vi.waitFor` 的 1 秒等待会偶发超时，常见于 `mobile-agent-sync-modal`、`client-bootstrap-error`、`chart-build-assets`、`positions-panel-preload`、`global-modals-hip3-disclaimer`。单独重跑这些文件，或用 `--maxWorkers=4` 再跑一次全量作为干净证据。不要和 Codex 审查或生产构建同时跑全量。
+- **全量单测的偶发超时**：机器负载高时（其他会话在构建或运行 Codex），`vi.waitFor` 的 1 秒等待会偶发超时，常见于 `mobile-agent-sync-modal`、`chart-build-assets`、`positions-panel-preload`、`global-modals-hip3-disclaimer`。单独重跑这些文件，或用 `--maxWorkers=4` 再跑一次全量作为干净证据。不要和 Codex 审查或生产构建同时跑全量。`client-bootstrap-error` 原来也在这份名单里，它的失败另有原因，见下一条。
+- **`afterEach` 里的 `vi.doUnmock` 会和下一个用例的 `vi.doMock` 竞态**（2026-11-02，PR #134 的 CI 与本地同样偶发）：Vitest 4.0.16 只把 `doMock`、`doUnmock` 排进队列，到下一次导入时用 `Promise.all` 一起解析，每条在自己的路径解析完成时生效，不按排队顺序；`vi.resetModules()` 和 `vi.restoreAllMocks()` 都不处理这个队列。如果 `afterEach` 撤销了某个路径，下一个用例在任何导入之前又替换同一路径，两条操作就会进同一批，撤销可能后生效，结果加载了真模块。这时用例要么约 50 ms 通过，要么一直等不到；放宽 `vi.waitFor` 没有用。写法：每个用例在导入前自己 `vi.doMock` 需要的路径，`afterEach` 里不要 `doUnmock` 同一路径。`client-bootstrap-error` 与 `link-locale` 已经改了。`client-root-fatal` 还有同样的窗口。`privy-fiat-funding-host-gate` 不受影响：它的 `beforeEach` 先 `await` 一次导入，遗留的撤销在用例 `doMock` 之前就处理完了。
 - **包体测量**（规则见[性能基线](terminal-performance-baseline.md#reproduction-protocol)）：
   - 在不含 `apps/terminal/.env.local` 的隔离工作树里构建。这个文件会让 Privy 应用 ID 与各个开关进入每个 `import.meta.env` 字面量，总量约多 530 字节，而 CI 没有它。两侧各自 `pnpm install --frozen-lockfile --prefer-offline`，可以并行构建。
   - 固定构建元数据（`SAIRN_BUILD_SHA`、`SAIRN_RELEASE_ID`、`SAIRN_BUILD_TIME`）。CI 式元数据（40 位提交号、`ci-…` 发布号、不固定构建时间）比文档里的固定元数据约多 323 字节。本地余量不到约 1 kB 时，按 CI 元数据再量一次；离上限 100 字节以内时，本地读数预测不了 CI 的结果。
