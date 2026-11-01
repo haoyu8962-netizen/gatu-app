@@ -9,12 +9,14 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { TradeHistoryPage } from "@/components/trade-history/trade-history-page";
+import { formatDateTime } from "@/lib/format";
 
 const ADDRESS = "0x1111111111111111111111111111111111111111";
 
 type UserFill = UserFillsResponse[number];
 
 const mocks = vi.hoisted(() => ({
+	buildRows: undefined as ((fills: UserFillsResponse) => string[][]) | undefined,
 	exportAddress: undefined as `0x${string}` | undefined,
 	exportCsv: vi.fn(),
 	history: {
@@ -118,8 +120,15 @@ vi.mock("@/components/trade/header/top-nav", () => ({ TopNav: () => null }));
 vi.mock("@/components/trade/mobile/mobile-header", () => ({ MobileHeader: () => null }));
 vi.mock("@/components/trade/testnet-banner", () => ({ TestnetBanner: () => null }));
 vi.mock("@/hooks/trade/use-history-csv-export", () => ({
-	useUserFillsCsvExport: ({ address }: { address?: `0x${string}` }) => {
+	useUserFillsCsvExport: ({
+		address,
+		buildRows,
+	}: {
+		address?: `0x${string}`;
+		buildRows: (fills: UserFillsResponse) => string[][];
+	}) => {
 		mocks.exportAddress = address;
+		mocks.buildRows = buildRows;
 		return { exportCsv: mocks.exportCsv, isExporting: false };
 	},
 }));
@@ -131,6 +140,7 @@ vi.mock("@/lib/hyperliquid", () => ({
 	useMarkets: () => ({
 		getMarket: (coin: string) => ({ kind: coin === "PURR/USDC" ? "spot" : "perp" }),
 		getSzDecimals: () => 2,
+		getTokenDisplayName: (name: string) => (name === "UBTC" ? "BTC" : name),
 	}),
 }));
 vi.mock("@/lib/lazy", () => ({ createLazyComponent: () => () => null }));
@@ -267,16 +277,31 @@ describe("TradeHistoryPage", () => {
 		expect(container.textContent).toContain("No fills match the selected filters");
 	});
 
-	it("renders buy-side liquidations with danger styling", () => {
+	it("shows an opening fill's fee as its closed PNL, as the official terminal does", () => {
+		mocks.history.fills = [createFill(0)];
+		renderPage();
+
+		expect(container.querySelector("tbody")?.textContent).toContain("-$0.01");
+	});
+
+	it("shows a fill's fee token by its display name", () => {
+		mocks.history.fills = [{ ...createFill(0), feeToken: "UBTC", fee: "0.00001" }];
+		renderPage();
+
+		expect(container.querySelector("tbody")?.textContent).toContain("0.00001 BTC");
+		expect(container.querySelector("tbody")?.textContent).not.toContain("UBTC");
+	});
+
+	it("renders the account's own buy-side liquidation with danger styling", () => {
 		mocks.history.fills = [createFill(0)];
 		mocks.history.fills[0] = {
 			...mocks.history.fills[0],
-			liquidation: { markPx: "90", method: "market" },
+			liquidation: { liquidatedUser: ADDRESS, markPx: "90", method: "market" },
 		};
 		renderPage();
 
 		const labels = [...container.querySelectorAll("span, td")].filter(
-			(element) => element.textContent === "Liquidated",
+			(element) => element.textContent === "Market Order Liquidation: Open Long",
 		);
 		expect(labels).toHaveLength(2);
 		for (const label of labels) {
@@ -285,11 +310,30 @@ describe("TradeHistoryPage", () => {
 		}
 	});
 
+	it("renders a fill against another account's liquidation as an ordinary price-improved fill", () => {
+		mocks.history.fills = [createFill(0)];
+		mocks.history.fills[0] = {
+			...mocks.history.fills[0],
+			liquidation: { liquidatedUser: "0x9999999999999999999999999999999999999999", markPx: "90", method: "market" },
+		};
+		renderPage();
+
+		const labels = [...container.querySelectorAll("span, td")].filter(
+			(element) => element.textContent === "Open Long (Price Improved)",
+		);
+		expect(labels).toHaveLength(2);
+		for (const label of labels) {
+			expect(label.className).toContain("text-success");
+			expect(label.className).not.toContain("text-error");
+		}
+		expect(container.textContent).not.toContain("Liquidation");
+	});
+
 	it.each([
 		["disabled", "Invalid account address"],
 		["loading", "Loading trade history"],
 		["offline", "You are offline"],
-		["error", "Trade history is unavailable"],
+		["error", "The recent trade snapshot could not be loaded or validated."],
 	] as const)("keeps the %s state distinct", (status, expectedText) => {
 		mocks.history.status = status;
 		mocks.history.fills = [];
@@ -304,7 +348,8 @@ describe("TradeHistoryPage", () => {
 		renderPage();
 
 		expect(container.querySelectorAll("tbody tr")).toHaveLength(25);
-		expect(container.textContent).toContain("Refresh failed. Previously loaded trade history remains visible.");
+		expect(container.querySelector('[role="alert"]')).toBeNull();
+		expect(container.textContent).not.toContain("Refresh failed");
 	});
 
 	it("shows an empty result only after the snapshot is ready", () => {
@@ -315,15 +360,46 @@ describe("TradeHistoryPage", () => {
 		expect(container.textContent).not.toContain("Trade history is unavailable");
 	});
 
-	it("keeps degraded and snapshot-limit warnings visible for an empty cached result", () => {
+	it("keeps an empty cached result busy while it refreshes, then offers a working Retry if the refresh fails", () => {
+		mocks.history.fills = [];
+		mocks.history.isRefreshing = true;
+		renderPage();
+		expect(container.textContent).not.toContain("No fills found");
+		expect([...container.querySelectorAll("button")].some((button) => button.textContent === "Retry")).toBe(false);
+		const busy = container.querySelector('[data-slot="history-page-unavailable"] [aria-busy="true"]');
+		expect(busy).not.toBeNull();
+		expect(
+			container.querySelector('[data-slot="history-page-unavailable"] output')?.closest('[aria-busy="true"]'),
+		).toBeNull();
+
+		mocks.history.isRefreshing = false;
+		mocks.history.error = new Error("refresh failed");
+		renderPage();
+		const retry = [...container.querySelectorAll("button")].find((button) => button.textContent === "Retry");
+		act(() => retry?.click());
+		expect(mocks.history.refresh).toHaveBeenCalled();
+	});
+
+	it("offers Retry instead of an empty conclusion when an empty cached result failed to refresh", () => {
 		mocks.history.error = new Error("refresh failed");
 		mocks.history.fills = [];
 		mocks.history.reachedLimit = true;
 		renderPage();
 
-		expect(container.textContent).toContain("Refresh failed. Previously loaded trade history remains visible.");
 		expect(container.textContent).toContain("reached the 2000-fill snapshot limit");
-		expect(container.textContent).toContain("No fills found");
+		expect(container.textContent).not.toContain("No fills found");
+		expect(container.textContent).not.toContain("Refresh failed");
+		expect(container.querySelector('[role="alert"]')).toBeNull();
+		const retry = [...container.querySelectorAll("button")].find((button) => button.textContent === "Retry");
+		expect(retry).toBeDefined();
+		act(() => retry?.click());
+		expect(mocks.history.refresh).toHaveBeenCalled();
+
+		mocks.history.isOffline = true;
+		mocks.history.error = null;
+		renderPage();
+		expect(container.textContent).not.toContain("No fills found");
+		expect([...container.querySelectorAll("button")].some((button) => button.textContent === "Retry")).toBe(false);
 	});
 
 	it("warns when the public snapshot reaches 2000 fills", () => {
@@ -331,6 +407,17 @@ describe("TradeHistoryPage", () => {
 		renderPage();
 
 		expect(container.textContent).toContain("reached the 2000-fill snapshot limit");
+	});
+
+	it("dates desktop rows, phone cards and exported fills with the year", () => {
+		const fill = createFill(0);
+		mocks.history.fills = [fill];
+		renderPage();
+
+		const withYear = formatDateTime(fill.time, { locale: "en", dateStyle: "short", timeStyle: "short" });
+		expect(container.querySelector("tbody")?.textContent).toContain(withYear);
+		expect(container.querySelector("time")?.textContent).toBe(withYear);
+		expect(mocks.buildRows?.([fill])[1]?.[0]).toBe(withYear);
 	});
 
 	it("exports the public address and disables actions for an invalid address", () => {

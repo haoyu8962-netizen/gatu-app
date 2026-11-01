@@ -266,6 +266,50 @@ implementation.
 
 - External wallet deposits use Arbitrum native USDC and require the wallet to
   have ETH for gas unless the path is explicitly sponsored.
+- Send (`sendAsset` / `spotSend`) uses the same funds-action availability as
+  withdrawals (owner wallet session, supported account mode, current balances,
+  region) on the balances table and in the dialog, and re-checks the region in
+  each pre-execution guard. Before submitting, the dialog asks `preTransferCheck`
+  about the destination, as the official terminal does: a sanctioned destination
+  is refused; an activation fee, or a destination that has never sent a
+  transaction on Hyperliquid, opens a review step in the same dialog with the fee
+  and a loss warning, and its static `Send` / `Send with Fee` control stays
+  disabled until the user acknowledges that this is not a withdrawal to another
+  chain; a failed or malformed answer sends nothing. The draft is locked while
+  the check runs, and an answer that arrives after the account, network or
+  draft changed is dropped. The review belongs to the account it was checked
+  for: an account change discards it and its acknowledgement, and confirming
+  re-checks that identity. Max does not reserve the activation fee, as on the
+  official terminal (its Max is the withdrawable balance floored to 2 decimals,
+  or to the token's decimals for spot). Max, the available label and the
+  over-balance check read the exact balance string, the same one the execution
+  guard compares with Big.js; a JavaScript number rounds a large balance (such
+  as `999999999.99999999`) up, so a Max taken from it could exceed the balance
+  and be refused on every retry (2026-10-31, P2 D8).
+- Email-wallet withdrawals name their Arbitrum destination. Refuse the wallet's
+  own address (the automatic email-wallet deposit would put it straight back)
+  and the native USDC token contracts of both networks, in the form and again at
+  submission.
+- Spot Swap and position Reverse trade, so they follow the trading region gate
+  (`useGeoRestriction().actionsBlocked`) like order entry: the balances table
+  hides Swap, the swap dialog disables its control and names the restriction, the
+  position rows disable Reverse, and the reverse submission re-checks the region
+  inside its asset lock. Both also refuse in their SDK execution guard when the
+  live region check has turned restricted or unverified since the click, so a
+  request waiting for a lock or the legal check cannot be signed after the
+  region changed. Closing actions keep their current availability.
+- Exits stay open under this terminal's own region check: when only
+  `useGeoRestriction()` reports a restricted or unverified region, closing a
+  position (market, limit, Close All), TP/SL, cancelling and isolated-margin
+  changes remain available; opening trades, Swap, Reverse and funds actions are
+  blocked. The exchange's own verdict still blocks everything: `legalCheck`
+  `restrictions: "a"` makes `canPerformActions` false, and every signed action
+  fails closed on it. The official terminal goes further and hides its close and
+  cancel columns and the order form while its IP check is blocked or still
+  loading (bundle of 2026-10-30); that is not copied here, because a wrong or
+  failed lookup of the terminal's own check would then leave positions that
+  cannot be closed, and exchanges that withdraw from a region usually keep a
+  close-only mode.
 - Privy embedded EOA can sign, but it still needs gas for EVM transactions.
 - Smart Wallet sponsorship is a Privy/paymaster concern and must be configured
   per chain. UI must not claim sponsorship is available unless the chain is
@@ -483,6 +527,19 @@ mobile regressions.
   `docs/market-funding-history.md` owns the view.
 - Chart datafeed callbacks must not capture stale symbols. Use stable refs or
   request-scoped guards for async responses.
+- The datafeed declares `has_weekly_and_monthly: false`, as the official
+  terminal does, so the library requests daily bars for 1W and 1M charts and
+  builds those bars itself. The history-target guard compares a request with
+  the resolution the library asks for (`getDatafeedRequestResolution`: `1D` for
+  daily, weekly and monthly charts), never with the chart's own resolution;
+  comparing with `1W` or `1M` drops every request and leaves those charts, and
+  the daily chart opened after them, without bars (2026-10-30 audit, C1).
+  `chart-datafeed.test.ts` covers history and realtime;
+  `node apps/terminal/tests/browser/chart-resolution-probe.mjs <origin>` checks
+  the real library against a running server.
+- Overlay line text comes from translated labels and the number formatters
+  (`use-tradingview-overlay-lines.ts`); the position size goes through
+  `formatDecimalString`, never `Big#toString`.
 - The widget iframe must remain interactive on mobile. Do not apply
   `pointer-events: none` to the loaded TradingView iframe.
 - CSP changes must keep the main document strict while allowing the

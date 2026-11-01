@@ -86,6 +86,9 @@ describe("OrderSummary information rows", () => {
 		expect(getRowValue(container, "Liq. Price")).toBe("$65");
 		expect(getRowValue(container, "Est. Slippage")).toBe("0.37%");
 		expect(container.textContent).toContain("1.4%");
+		const slippageValue = [...container.querySelectorAll("button span")].find((span) => span.textContent === "1.4%");
+		expect(slippageValue?.className).toContain("text-signal");
+		expect(slippageValue?.className).not.toContain("error");
 		expect(getRowValue(container, "Fees")).toBe("0.0190% / 0.0130%");
 		expect(container.textContent).not.toContain("Hyperliquid fee");
 		expect(container.textContent).not.toMatch(/\b(?:gatu|sairn)\s+fee\b/i);

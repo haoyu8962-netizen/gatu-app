@@ -4,6 +4,7 @@ import { cn } from "@/lib/cn";
 interface Props {
 	labels: { price: string; size: string; total: string; spread: string };
 	grouping: ReactNode;
+	unit: ReactNode;
 	assetLabel: string | null;
 	spreadText: string;
 	asks?: ReactNode;
@@ -19,6 +20,7 @@ export const ORDERBOOK_TAB_CONTENT_CLASS = "flex-1 min-h-0 mt-0 pt-0 flex flex-c
 export function OrderbookPanelView({
 	labels,
 	grouping,
+	unit,
 	assetLabel,
 	spreadText,
 	asks,
@@ -28,11 +30,15 @@ export function OrderbookPanelView({
 }: Props) {
 	return (
 		<>
-			<div className="orderbook-grid grid gap-1 px-2 py-1.5 items-center text-xs orderbook-header-text border-b border-stroke-weak shrink-0">
-				<div className="min-w-0 flex items-center gap-1 overflow-hidden">
-					<span className="orderbook-price-heading shrink-0">{labels.price}</span>
-					{grouping}
-				</div>
+			<div
+				data-slot="orderbook-controls"
+				className="flex h-6 shrink-0 items-center justify-between gap-2 px-1 text-xs orderbook-header-text"
+			>
+				{grouping}
+				{unit}
+			</div>
+			<div className="orderbook-grid grid gap-1 px-2 pb-1 items-center text-xs orderbook-header-text border-b border-stroke-weak shrink-0">
+				<div className="min-w-0 truncate">{labels.price}</div>
 				<div className="min-w-0 truncate">
 					<span className="flex min-w-0 items-center justify-end gap-0.5">
 						{labels.size}

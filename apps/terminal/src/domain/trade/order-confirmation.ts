@@ -15,7 +15,7 @@ import {
 import { getTifOptionLabel } from "@/lib/trade/tif";
 import { getTwapStopPriceLabel } from "@/lib/trade/twap-labels";
 import type { Side } from "@/lib/trade/types";
-import { formatPriceForOrder, formatSizeForOrder } from "./orders";
+import { formatLimitPriceForOrder, formatPriceForOrder, formatSizeForOrder } from "./orders";
 
 export type OrderConfirmationTone = "up" | "down";
 
@@ -130,7 +130,7 @@ function getPriceRows(
 	if (isScaleOrderType(draft.orderType)) return getScalePriceRows(draft, numberFormat);
 	if (isTriggerOrderType(draft.orderType)) return getTriggerPriceRows(draft, numberFormat);
 	if (usesLimitPriceForOrder(draft.orderType)) {
-		return [{ key: "price", label: t`Price`, value: formatSubmittedPrice(draft, draft.limitPrice, numberFormat) }];
+		return [{ key: "price", label: t`Price`, value: formatSubmittedLimitPrice(draft, numberFormat) }];
 	}
 	return [{ key: "price", label: t`Price`, value: getMarketExecutionLabel() }];
 }
@@ -181,7 +181,7 @@ function getScalePriceRows(draft: OrderConfirmationDraft, numberFormat: NumberFo
 
 function getTriggerPriceRows(draft: OrderConfirmationDraft, numberFormat: NumberFormatters): OrderConfirmationRow[] {
 	const limitRow: OrderConfirmationRow = usesLimitPriceForOrder(draft.orderType)
-		? { key: "price", label: t`Price`, value: formatSubmittedPrice(draft, draft.limitPrice, numberFormat) }
+		? { key: "price", label: t`Price`, value: formatSubmittedLimitPrice(draft, numberFormat) }
 		: { key: "price", label: t`Price`, value: getMarketExecutionLabel() };
 	return [
 		{ key: "trigger", label: t`Trigger Price`, value: formatSubmittedPrice(draft, draft.triggerPrice, numberFormat) },
@@ -243,6 +243,16 @@ function formatSubmittedPrice(
 ): string {
 	if (!isPositive(value)) return FALLBACK_VALUE_PLACEHOLDER;
 	const submitted = formatPriceForOrder(value, { assetId: draft.assetId, szDecimals: draft.szDecimals ?? 0 });
+	return formatEstimatedPrice(draft, Number(submitted), numberFormat);
+}
+
+function formatSubmittedLimitPrice(draft: OrderConfirmationDraft, numberFormat: NumberFormatters): string {
+	if (!isPositive(draft.limitPrice)) return FALLBACK_VALUE_PLACEHOLDER;
+	const submitted = formatLimitPriceForOrder(
+		draft.limitPrice,
+		{ assetId: draft.assetId, szDecimals: draft.szDecimals ?? 0 },
+		draft.side,
+	);
 	return formatEstimatedPrice(draft, Number(submitted), numberFormat);
 }
 

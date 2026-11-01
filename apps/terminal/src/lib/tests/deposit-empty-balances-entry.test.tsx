@@ -9,7 +9,9 @@ import { MobileBalancesTab } from "@/components/trade/mobile/mobile-balances-tab
 import { BalancesTab } from "@/components/trade/positions/balances-tab";
 
 vi.mock("@/components/trade/components/asset-display", () => ({
-	AssetDisplay: ({ coin }: { coin: string }) => <span>{coin}</span>,
+	AssetDisplay: ({ coin, isToken }: { coin: string; isToken?: boolean }) => (
+		<span data-token-name={isToken ? coin : undefined}>{coin}</span>
+	),
 }));
 
 vi.mock("@/components/ui/scroll-area", () => ({
@@ -31,7 +33,12 @@ const testState = vi.hoisted(() => ({
 	hasError: false,
 	hasBalance: false,
 	isConnected: true,
+	tradingBlocked: false,
 	openDeposit: vi.fn(),
+}));
+
+vi.mock("@/hooks/use-geo-restriction", () => ({
+	useGeoRestriction: () => ({ actionsBlocked: testState.tradingBlocked }),
 }));
 
 vi.mock("@/hooks/trade/use-balance-rows", () => ({
@@ -160,6 +167,7 @@ describe("empty balance Deposit entries", () => {
 		testState.isDataStale = false;
 		testState.hasError = false;
 		testState.isConnected = true;
+		testState.tradingBlocked = false;
 		testState.openDeposit.mockReset();
 		i18n.loadAndActivate({ locale: "en", messages: {} });
 		container = document.createElement("div");
@@ -182,6 +190,15 @@ describe("empty balance Deposit entries", () => {
 			);
 		});
 	}
+
+	it("names each balance as a token on both surfaces, never by a market with the same coin", () => {
+		testState.hasBalance = true;
+		renderEntries();
+
+		expect(
+			Array.from(container.querySelectorAll("[data-token-name]"), (node) => node.getAttribute("data-token-name")),
+		).toEqual(["USDC", "USDC"]);
+	});
 
 	it.each([{ isLoading: true }, { hasError: true }, { isDataStale: true }, { accountDataReady: false }])(
 		"keeps an incomplete desktop snapshot quiet without a deposit suggestion: %o",
@@ -427,7 +444,7 @@ describe("empty balance Deposit entries", () => {
 		expect(testState.openDeposit).toHaveBeenCalledTimes(2);
 	});
 
-	it("does not expose transfer or withdrawal entries while funds actions are blocked", () => {
+	it("does not expose transfer, send or withdrawal entries while funds actions are blocked", () => {
 		testState.fundsActionAvailable = false;
 		testState.hasBalance = true;
 		renderEntries();
@@ -436,5 +453,21 @@ describe("empty balance Deposit entries", () => {
 		expect(labels).not.toContain("Transfer");
 		expect(labels).not.toContain("To Perp");
 		expect(labels).not.toContain("Withdraw");
+		expect(labels).not.toContain("Send");
+	});
+
+	it("offers Swap only while trading is allowed in the region", () => {
+		testState.hasBalance = true;
+		renderEntries();
+		const labels = () =>
+			Array.from(container.querySelectorAll<HTMLButtonElement>("button"), (button) => button.textContent);
+		expect(labels()).toContain("Swap");
+		expect(labels()).toContain("Send");
+
+		act(() => root.unmount());
+		testState.tradingBlocked = true;
+		root = createRoot(container);
+		renderEntries();
+		expect(labels()).not.toContain("Swap");
 	});
 });

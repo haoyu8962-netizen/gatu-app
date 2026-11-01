@@ -38,6 +38,10 @@ import {
 const SOURCE_ROOT = resolve(__dirname, "../..");
 const FORMAT_MODULE = "lib/format.ts";
 const LANGUAGE_FORMATTERS = new Set(["formatDateTime", "formatDateTimeShort", "formatList", "formatTime"]);
+// useNumberFormat reads the interface language only to choose the formatter set for its direction, and it
+// subscribes to Lingui's change event through useSyncExternalStore: a switch renders its callers again with
+// new formatter identities, so its calls need no locale option.
+const SUBSCRIBING_LANGUAGE_READERS = new Set(["useNumberFormat"]);
 const LINGUI_I18N_READ = "@lingui/core#i18n";
 
 describe("date and list locale contract", () => {
@@ -47,7 +51,9 @@ describe("date and list locale contract", () => {
 
 	it("covers every lib/format.ts export that reads the interface language", () => {
 		const source = readFileSync(resolve(SOURCE_ROOT, FORMAT_MODULE), "utf8");
-		expect(findLanguageReadingExports(source)).toEqual([...LANGUAGE_FORMATTERS].sort());
+		expect(findLanguageReadingExports(source)).toEqual(
+			[...LANGUAGE_FORMATTERS, ...SUBSCRIBING_LANGUAGE_READERS].sort(),
+		);
 	});
 
 	it("finds a new lib/format.ts export that reads the interface language", () => {

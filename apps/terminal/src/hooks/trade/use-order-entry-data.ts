@@ -2,7 +2,7 @@ import { useLingui } from "@lingui/react/macro";
 import { useRef } from "react";
 import { SIDE_LABELS } from "@/config/trade-panel-labels";
 import type { SideLabels } from "@/config/ui-text";
-import { getSpotAvailableValue, getSpotBalance } from "@/domain/trade/balances";
+import { getSpotAvailableValue, getSpotBalance, hasAccountFunds } from "@/domain/trade/balances";
 import { getMarketOpenInterestCapStatus } from "@/domain/trade/open-interest-cap";
 import {
 	type AssetAvailabilityStatus,
@@ -19,6 +19,7 @@ import {
 	getSizeForPercent as getSizeForPercentCalc,
 	getSizeValueForModeToggle,
 } from "@/domain/trade/order/size";
+import { entryOrderRequiresAvailableBalance } from "@/domain/trade/order-action-stage";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import type { UnifiedMarketInfo } from "@/lib/hyperliquid/hooks/useMarketsInfo";
 import type { Side, SizeMode } from "@/lib/trade/types";
@@ -41,6 +42,8 @@ interface OrderEntryData extends OrderEntryDerived {
 	isAvailabilityStale: boolean;
 	hasAvailabilityError: boolean;
 	isAwaitingFirstDeposit: boolean;
+	/** False for a trigger order on a funded perp account; see `entryOrderRequiresAvailableBalance`. */
+	requiresAvailableBalance: boolean;
 	isOpenInterestCapped: boolean;
 	sideLabels: SideLabels;
 
@@ -82,6 +85,10 @@ interface UseOrderEntryDataOptions {
 	sizeInput: string;
 	/** Limit price for limit-priced order types; when > 0 it drives size/value conversion instead of mark. */
 	limitPx?: number;
+	/** A scale order's value for a total size, from its actual levels; see `getOrderEntryValueForSize`. */
+	orderValueForSize?: (size: string) => number | undefined;
+	/** The margin a resting perp order reserves; see `getOrderEntryMarginNotionalForSize`. */
+	marginNotionalForSize?: (size: string) => number | undefined;
 	marketOrderSizing: MarketOrderSizingInput | null;
 }
 
@@ -102,6 +109,8 @@ export function useOrderEntryData({
 	sizeMode,
 	sizeInput,
 	limitPx,
+	orderValueForSize,
+	marginNotionalForSize,
 	marketOrderSizing,
 	reduceOnly = false,
 	positionSnapshot,
@@ -111,6 +120,8 @@ export function useOrderEntryData({
 	const {
 		accountAbstraction,
 		isLoading: areBalancesLoading,
+		allDexClearinghouseStates,
+		perpStateStatus: allDexsPerpStateStatus,
 		spotBalances,
 		spotAvailableAfterMaintenance,
 		spotStateStatus,
@@ -212,6 +223,9 @@ export function useOrderEntryData({
 		market,
 		side,
 		conversionPrice,
+		markPx,
+		orderValueForSize,
+		marginNotionalForSize,
 		sizeMode,
 		sizeInput,
 		spotBalances,
@@ -313,6 +327,18 @@ export function useOrderEntryData({
 		isAvailabilityStale,
 		hasAvailabilityError,
 		isAwaitingFirstDeposit: isConnected && accountModeSetup === "awaiting-funds",
+		requiresAvailableBalance: entryOrderRequiresAvailableBalance({
+			orderType,
+			isSpotMarket: derived.isSpotMarket,
+			hasAccountFunds:
+				isConnected &&
+				hasAccountFunds({
+					perpStateStatus: allDexsPerpStateStatus,
+					spotStateStatus,
+					clearinghouseStates: allDexClearinghouseStates,
+					spotBalances,
+				}),
+		}),
 		isOpenInterestCapped,
 		...derived,
 		sideLabels,

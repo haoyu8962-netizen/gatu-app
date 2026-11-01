@@ -38,7 +38,7 @@ import {
 } from "@/lib/ui/orderbook-layout";
 import type { OrderbookLevelPulseEvent } from "@/lib/ui/orderbook-level-pulses";
 import { tradingPanelDropdownPopupClass } from "@/lib/ui/trading-dropdown";
-import { useGlobalSettings, useGlobalSettingsActions } from "@/stores/use-global-settings-store";
+import { useSizeMode } from "@/stores/use-order-entry-store";
 import { useOrderbookActions } from "@/stores/use-orderbook-actions-store";
 import { OrderbookGroupingTriggerView } from "../orderbook/orderbook-grouping-trigger-view";
 import { OrderbookHoverTooltip } from "../orderbook/orderbook-hover-tooltip";
@@ -157,8 +157,6 @@ interface MobileBookViewProps {
 	compact?: boolean;
 	/** Embedded in a parent tab layout: hide the Book/Trades toggle + bottom spacer; view is parent-controlled. */
 	inTabLayout?: boolean;
-	/** Controlled display unit for the compact book. Defaults to the global preference. */
-	showOrderbookInQuote?: boolean;
 	view?: View;
 }
 
@@ -167,7 +165,6 @@ export function MobileBookView({
 	className,
 	compact,
 	inTabLayout,
-	showOrderbookInQuote: controlledShowOrderbookInQuote,
 	view: viewProp,
 }: MobileBookViewProps) {
 	const { formatDecimalString, formatNumber } = useNumberFormat();
@@ -177,9 +174,8 @@ export function MobileBookView({
 	const view = viewProp ?? internalView;
 	const [compactOrderbookMode, setCompactOrderbookMode] = useState<CompactOrderbookMode>("both");
 	const [selectedOptionKey, setSelectedOptionKey] = useState<string | null>(null);
-	const { showOrderbookInQuote: globalShowOrderbookInQuote } = useGlobalSettings();
-	const { setShowOrderbookInQuote } = useGlobalSettingsActions();
-	const showOrderbookInQuote = controlledShowOrderbookInQuote ?? globalShowOrderbookInQuote;
+	const showOrderbookInQuote = useSizeMode() === "quote";
+	const { requestSizeMode } = useOrderbookActions();
 
 	const { data: selectedMarket } = useSelectedMarketInfo();
 	const name = selectedMarket?.name ?? "";
@@ -387,13 +383,13 @@ export function MobileBookView({
 					triggerVariant="minimal"
 					size="xxs"
 					trigger={showOrderbookInQuote ? quoteToken : baseToken}
-					triggerAriaLabel={t`Display units`}
+					triggerAriaLabel={t(ORDERBOOK_LABELS.sizeUnit)}
 					triggerClassName={MOBILE_FILTER_CHIP_CLASS}
 					popupClassName="min-w-28"
 					align="end"
 					items={[
-						{ label: baseToken, active: !showOrderbookInQuote, onSelect: () => setShowOrderbookInQuote(false) },
-						{ label: quoteToken, active: showOrderbookInQuote, onSelect: () => setShowOrderbookInQuote(true) },
+						{ label: quoteToken, active: showOrderbookInQuote, onSelect: () => requestSizeMode(name, "quote") },
+						{ label: baseToken, active: !showOrderbookInQuote, onSelect: () => requestSizeMode(name, "base") },
 					]}
 				/>
 			</div>
@@ -446,9 +442,7 @@ export function MobileBookView({
 					/>
 				)
 			) : (
-				<div className="flex-1 min-h-0 flex flex-col">
-					{active && <TradesPanel key={name} compact={compact} showInQuote={showOrderbookInQuote} />}
-				</div>
+				<div className="flex-1 min-h-0 flex flex-col">{active && <TradesPanel key={name} compact={compact} />}</div>
 			)}
 
 			{!inTabLayout && <MobileBottomNavSpacer />}
@@ -512,7 +506,7 @@ export function CompactOrderbook({
 }: CompactOrderbookProps) {
 	const { formatDecimalString, formatNumber } = useNumberFormat();
 	const { t } = useLingui();
-	const [height, orderbookRef] = useOrderbookHeight<HTMLFieldSetElement>();
+	const [height, orderbookRef, ladderWidthPx] = useOrderbookHeight<HTMLFieldSetElement>();
 	const measuredLayout = getCompactOrderbookLayout(height, mode);
 	const { rowCount, fullRowCount, rowHeightPx } =
 		height > 0
@@ -619,6 +613,7 @@ export function CompactOrderbook({
 											showInQuote={showOrderbookInQuote}
 											szDecimals={szDecimals}
 											compact
+											ladderWidthPx={ladderWidthPx}
 										/>
 									</CompactOrderbookRowPosition>
 								);
@@ -664,6 +659,7 @@ export function CompactOrderbook({
 									showInQuote={showOrderbookInQuote}
 									szDecimals={szDecimals}
 									compact
+									ladderWidthPx={ladderWidthPx}
 								/>
 							</CompactOrderbookRowPosition>
 						))}
@@ -1077,12 +1073,14 @@ export function SplitOrderbookRow({
 	const { formatNumber } = useNumberFormat();
 	const { setSelectedPrice } = useOrderbookActions();
 	const isAsk = side === "ask";
+	const sizeValue = showInQuote ? level.quoteSize : level.size;
 	const totalValue = showInQuote ? level.quoteTotal : level.total;
 	const depthPct = getDepthPercentage(totalValue, maxTotal);
+	const sizeDecimals = showInQuote ? getOrderbookQuoteDecimals(sizeValue) : szDecimals;
 	const totalDecimals = showInQuote ? getOrderbookQuoteDecimals(totalValue) : szDecimals;
 	const priceText = formatNumber(level.price, priceDecimals);
-	const sizeText = formatNumber(level.size, { decimals: szDecimals, compact: true });
-	const totalText = formatNumber(totalValue, { decimals: totalDecimals, compact: true });
+	const sizeText = formatNumber(sizeValue, sizeDecimals);
+	const totalText = formatNumber(totalValue, totalDecimals);
 	const { t } = useLingui();
 	const sideLabel = isAsk ? t`Ask` : t`Bid`;
 	const price = (
@@ -1096,8 +1094,13 @@ export function SplitOrderbookRow({
 		</span>
 	);
 	const total = (
-		<span className={cn("truncate tabular-nums orderbook-value-text", isAsk ? "text-right" : "text-left")}>
-			{totalText}
+		<span
+			className={cn(
+				"flex min-w-0 whitespace-nowrap tabular-nums orderbook-value-text",
+				isAsk ? "justify-end" : "justify-start",
+			)}
+		>
+			<span data-slot="orderbook-total-value">{totalText}</span>
 		</span>
 	);
 
@@ -1151,6 +1154,7 @@ function useOrderbookLadderRows(defaultRows: number, enabled: boolean, metrics: 
 function useOrderbookHeight<T extends HTMLElement>(enabled = true) {
 	const elementRef = useRef<T>(null);
 	const [height, setHeight] = useState(0);
+	const [width, setWidth] = useState(0);
 
 	useEffect(() => {
 		if (!enabled) return;
@@ -1158,7 +1162,10 @@ function useOrderbookHeight<T extends HTMLElement>(enabled = true) {
 		if (!element) return;
 
 		function measure() {
-			if (element) setHeight(element.getBoundingClientRect().height);
+			if (!element) return;
+			const rect = element.getBoundingClientRect();
+			setHeight(rect.height);
+			setWidth(rect.width);
 		}
 
 		measure();
@@ -1168,5 +1175,5 @@ function useOrderbookHeight<T extends HTMLElement>(enabled = true) {
 		return () => observer.disconnect();
 	}, [enabled]);
 
-	return [enabled ? height : 0, elementRef] as const;
+	return [enabled ? height : 0, elementRef, enabled ? width : 0] as const;
 }

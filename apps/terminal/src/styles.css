@@ -1070,12 +1070,6 @@
     grid-template-columns: minmax(3.25rem, 1fr) minmax(0, 2fr) minmax(4.5rem, 2fr);
   }
 
-  @container orderbook-panel (max-width: 19.9375rem) {
-    .orderbook-price-heading {
-      display: none;
-    }
-  }
-
   @container orderbook-panel (max-width: 17.4375rem) {
     .orderbook-grid {
       grid-template-columns: repeat(3, minmax(0, 1fr));

@@ -62,6 +62,41 @@ describe("MobilePositionCard isolated margin entry", () => {
 		vi.clearAllMocks();
 	});
 
+	it("keeps Reverse disabled while trading is blocked in the region but leaves Market Close available", () => {
+		const onReverse = vi.fn();
+
+		act(() => {
+			root.render(
+				createElement(MobilePositionCard, {
+					position: isolatedPosition,
+					env: "Mainnet",
+					isDataStale: false,
+					markets,
+					markPx: "7.5759",
+					markPriceStatus: "success",
+					tpSlInfo: undefined,
+					isRowClosing: false,
+					onMarketClose: vi.fn(),
+					onShare: vi.fn(),
+					onReverse,
+					reverseBlocked: true,
+					onLimitClose: vi.fn(),
+					onOpenTpSl: vi.fn(),
+					onAdjustMargin: vi.fn(),
+					onSelectMarket: vi.fn(),
+				}),
+			);
+		});
+		expandPositionDetails();
+		const button = (label: string) =>
+			[...container.querySelectorAll<HTMLButtonElement>("button")].find((candidate) => candidate.textContent === label);
+
+		expect(button("Reverse")?.disabled).toBe(true);
+		act(() => button("Reverse")?.click());
+		expect(onReverse).not.toHaveBeenCalled();
+		expect(button("Market Close")?.disabled).toBe(false);
+	});
+
 	it("opens the margin flow with the exact HIP-3 market identity", () => {
 		const onAdjustMargin = vi.fn();
 
@@ -79,6 +114,7 @@ describe("MobilePositionCard isolated margin entry", () => {
 					onMarketClose: vi.fn(),
 					onShare: vi.fn(),
 					onReverse: vi.fn(),
+					reverseBlocked: false,
 					onLimitClose: vi.fn(),
 					onOpenTpSl: vi.fn(),
 					onAdjustMargin,
@@ -141,6 +177,7 @@ describe("MobilePositionCard isolated margin entry", () => {
 					onMarketClose,
 					onShare: vi.fn(),
 					onReverse,
+					reverseBlocked: false,
 					onLimitClose,
 					onOpenTpSl: vi.fn(),
 					onAdjustMargin: vi.fn(),
@@ -207,6 +244,7 @@ describe("MobilePositionCard isolated margin entry", () => {
 					onMarketClose: vi.fn(),
 					onShare: vi.fn(),
 					onReverse: vi.fn(),
+					reverseBlocked: false,
 					onLimitClose: vi.fn(),
 					onOpenTpSl: vi.fn(),
 					onAdjustMargin: vi.fn(),
@@ -257,6 +295,7 @@ describe("MobilePositionCard isolated margin entry", () => {
 					onMarketClose,
 					onShare: vi.fn(),
 					onReverse,
+					reverseBlocked: false,
 					onLimitClose,
 					onOpenTpSl: vi.fn(),
 					onAdjustMargin: vi.fn(),
@@ -315,6 +354,7 @@ describe("MobilePositionCard isolated margin entry", () => {
 					onMarketClose: vi.fn(),
 					onShare: vi.fn(),
 					onReverse: vi.fn(),
+					reverseBlocked: false,
 					onLimitClose: vi.fn(),
 					onOpenTpSl: vi.fn(),
 					onAdjustMargin: vi.fn(),
@@ -350,6 +390,7 @@ describe("MobilePositionCard isolated margin entry", () => {
 					onMarketClose: vi.fn(),
 					onShare: vi.fn(),
 					onReverse: vi.fn(),
+					reverseBlocked: false,
 					onLimitClose: vi.fn(),
 					onOpenTpSl: vi.fn(),
 					onAdjustMargin: vi.fn(),
@@ -417,6 +458,7 @@ describe("MobilePositionCard isolated margin entry", () => {
 					onMarketClose: vi.fn(),
 					onShare: vi.fn(),
 					onReverse: vi.fn(),
+					reverseBlocked: false,
 					onLimitClose: vi.fn(),
 					onOpenTpSl: vi.fn(),
 					onAdjustMargin: vi.fn(),
@@ -489,6 +531,7 @@ describe("MobilePositionCard isolated margin entry", () => {
 					onMarketClose: vi.fn(),
 					onShare: vi.fn(),
 					onReverse: vi.fn(),
+					reverseBlocked: false,
 					onLimitClose: vi.fn(),
 					onOpenTpSl: vi.fn(),
 					onAdjustMargin,
@@ -522,6 +565,7 @@ describe("MobilePositionCard isolated margin entry", () => {
 					onMarketClose,
 					onShare: vi.fn(),
 					onReverse,
+					reverseBlocked: false,
 					onLimitClose,
 					onOpenTpSl,
 					onAdjustMargin,

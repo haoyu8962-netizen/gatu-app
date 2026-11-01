@@ -18,6 +18,7 @@ export const ACCOUNT_LEDGER_ACTION_MESSAGES: Record<AccountLedgerAction, Message
 	hip3LiquidatorDeposit: msg`HIP-3 Liquidator Deposit`,
 	hip3LiquidatorWithdrawal: msg`HIP-3 Liquidator Withdrawal`,
 	liquidation: msg`Liquidated`,
+	openInterestReward: msg`Open Interest Reward`,
 	other: msg`Other Ledger Update`,
 	repay: msg`Repay`,
 	rewardsClaim: msg`Rewards Claim`,
@@ -37,7 +38,7 @@ export const ACCOUNT_LEDGER_ACTION_MESSAGES: Record<AccountLedgerAction, Message
 };
 
 export const ACCOUNT_LEDGER_LOCATION_MESSAGES: Record<
-	Exclude<AccountLedgerLocation["kind"], "arbitrum" | "perpDex">,
+	Exclude<AccountLedgerLocation["kind"], "arbitrum" | "hyperevm" | "perpDex">,
 	MessageDescriptor
 > = {
 	earn: msg`Earn`,

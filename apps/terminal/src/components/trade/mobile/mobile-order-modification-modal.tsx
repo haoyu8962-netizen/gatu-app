@@ -12,13 +12,16 @@ interface Props {
 	typeLabel: string;
 	sizeValue: string;
 	triggerPriceValue?: string;
+	limitPriceValue?: string;
 	sizeInvalid: boolean;
 	triggerPriceInvalid: boolean;
+	limitPriceInvalid: boolean;
 	isInteractionLocked: boolean;
 	isConfirmDisabled: boolean;
 	errorMessage?: string | null;
 	onSizeChange: (value: string) => void;
 	onTriggerPriceChange: (value: string) => void;
+	onLimitPriceChange: (value: string) => void;
 	onOpenChange: (open: boolean) => void;
 	onConfirm: () => void;
 }
@@ -31,13 +34,16 @@ export function MobileOrderModificationModal({
 	typeLabel,
 	sizeValue,
 	triggerPriceValue,
+	limitPriceValue,
 	sizeInvalid,
 	triggerPriceInvalid,
+	limitPriceInvalid,
 	isInteractionLocked,
 	isConfirmDisabled,
 	errorMessage,
 	onSizeChange,
 	onTriggerPriceChange,
+	onLimitPriceChange,
 	onOpenChange,
 	onConfirm,
 }: Props) {
@@ -122,7 +128,31 @@ export function MobileOrderModificationModal({
 								onChange={(event) => onTriggerPriceChange(normalizeDecimalInputEvent(event).target.value)}
 								onKeyDown={handleInputKeyDown}
 							/>
-							<span className="ms-2 shrink-0 text-xs text-market-close-muted">USDC</span>
+						</label>
+					) : null}
+
+					{limitPriceValue !== undefined ? (
+						<label
+							className={cn(
+								"flex min-h-11 items-center rounded-20 border bg-modal px-3 transition-colors duration-[120ms] focus-within:border-market-close-focus",
+								limitPriceInvalid ? "border-market-close-danger" : "border-market-close-stroke-input",
+							)}
+						>
+							<span className="me-2 shrink-0 text-xs text-market-close-subtle">{t`Price`}</span>
+							<input
+								type="text"
+								inputMode="decimal"
+								enterKeyHint="next"
+								autoComplete="off"
+								value={limitPriceValue}
+								disabled={isInteractionLocked}
+								aria-label={t`Price`}
+								aria-invalid={limitPriceInvalid || undefined}
+								aria-describedby={describedBy}
+								className="min-w-0 flex-1 border-0 bg-transparent py-2.5 text-right text-base font-semibold tabular-nums text-market-close-fg outline-none disabled:cursor-not-allowed disabled:text-market-close-subtle"
+								onChange={(event) => onLimitPriceChange(normalizeDecimalInputEvent(event).target.value)}
+								onKeyDown={handleInputKeyDown}
+							/>
 						</label>
 					) : null}
 

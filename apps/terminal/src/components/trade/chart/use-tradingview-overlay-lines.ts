@@ -53,6 +53,7 @@ export function useTradingViewOverlayLines(market: UnifiedMarketInfo | undefined
 				labels: {
 					limitBuy: t`Limit Buy`,
 					limitSell: t`Limit Sell`,
+					liquidation: t`Liq. Price`,
 					long: t`Long`,
 					pnl: t`PNL`,
 					roe: "ROE",

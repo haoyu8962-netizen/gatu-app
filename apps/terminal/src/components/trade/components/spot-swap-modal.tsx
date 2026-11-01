@@ -6,6 +6,7 @@ import { labelTypographyClass } from "@/components/ui/field-label";
 import { NumberInput } from "@/components/ui/number-input";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import { ORDER_MIN_NOTIONAL_USD } from "@/config/trade";
+import { TRADE_PANEL_LABELS } from "@/config/trade-panel-labels";
 import { getSpotAvailable, getSpotAvailableValue, getSpotBalance } from "@/domain/trade/balances";
 import { getCloseOrderFeedbackChildren } from "@/domain/trade/close-order-feedback";
 import { formatPriceForOrder, formatSizeForOrder, throwIfAnyResponseError } from "@/domain/trade/orders";
@@ -27,6 +28,7 @@ import {
 import { isSupportedAccountAbstraction, useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
 import { useFeeRates } from "@/hooks/trade/use-fee-rates";
 import { useTrackedOrder } from "@/hooks/trade/use-tracked-order";
+import { useGeoRestriction } from "@/hooks/use-geo-restriction";
 import { cn } from "@/lib/cn";
 import { useNumberFormat } from "@/lib/format";
 import { type ExchangeParams, useHyperliquid, useSubscription } from "@/lib/hyperliquid";
@@ -79,6 +81,7 @@ interface Props {
 
 function SpotSwapModalContent({ initialFromToken, initialToToken, mode, onClose }: Props) {
 	const { t } = useLingui();
+	const { actionsBlocked: tradingActionsBlocked, tradeRestricted } = useGeoRestriction();
 	const { formatToken } = useNumberFormat();
 	const { spotMarkets } = useMarketsInfo();
 	const {
@@ -198,6 +201,8 @@ function SpotSwapModalContent({ initialFromToken, initialToToken, mode, onClose 
 	const executionStateRef = useRef<SpotSwapExecutionState>({
 		active: true,
 		accountDataReady,
+		tradeRestricted,
+		tradingActionsBlocked,
 		assetId: spotMarket?.assetId,
 		marketName: spotMarket?.name,
 		bookCoin: orderbook?.coin,
@@ -214,6 +219,8 @@ function SpotSwapModalContent({ initialFromToken, initialToToken, mode, onClose 
 	executionStateRef.current = {
 		active: true,
 		accountDataReady,
+		tradeRestricted,
+		tradingActionsBlocked,
 		assetId: spotMarket?.assetId,
 		marketName: spotMarket?.name,
 		bookCoin: orderbook?.coin,
@@ -286,7 +293,7 @@ function SpotSwapModalContent({ initialFromToken, initialToToken, mode, onClose 
 	}
 
 	async function handleSubmit() {
-		if (!isOpen || !accountDataReady || !spotMarket || !quote || !expectedOrder) return;
+		if (tradingActionsBlocked || !isOpen || !accountDataReady || !spotMarket || !quote || !expectedOrder) return;
 		if (isSubmitting || submittedRef.current) return;
 		const submissionSequence = ++submissionSequenceRef.current;
 		const submissionIdentity = executionSessionIdentityRef.current;
@@ -354,6 +361,7 @@ function SpotSwapModalContent({ initialFromToken, initialToToken, mode, onClose 
 	const belowMinimumNotional = Boolean(quote?.isBelowMinimumNotional);
 	const partialFill = Boolean(quote?.isPartial);
 	const canSubmit =
+		!tradingActionsBlocked &&
 		accountDataReady &&
 		hasPositiveAmount &&
 		!insufficientBalance &&
@@ -453,7 +461,7 @@ function SpotSwapModalContent({ initialFromToken, initialToToken, mode, onClose 
 										<Trans>You will approximately receive</Trans>
 									</span>
 									<span className="shrink-0 tabular-nums text-fg">
-										{formatToken(estimatedReceive, 6)} <AssetDisplay coin={toToken} hideIcon />
+										{formatToken(estimatedReceive, 6)} <AssetDisplay coin={toToken} isToken hideIcon />
 									</span>
 								</div>
 								<div className="h-px bg-stroke-weak/30" />
@@ -462,7 +470,7 @@ function SpotSwapModalContent({ initialFromToken, initialToToken, mode, onClose 
 										<Trans>Estimated fee</Trans>
 									</span>
 									<span className="shrink-0 tabular-nums text-fg">
-										{formatToken(quote?.feeAmount ?? "0", 6)} <AssetDisplay coin={toToken} hideIcon />
+										{formatToken(quote?.feeAmount ?? "0", 6)} <AssetDisplay coin={toToken} isToken hideIcon />
 									</span>
 								</div>
 							</div>
@@ -483,8 +491,8 @@ function SpotSwapModalContent({ initialFromToken, initialToToken, mode, onClose 
 								<span className="tabular-nums text-fg">
 									{quote ? (
 										<>
-											1 <AssetDisplay coin={fromToken} hideIcon /> ≈ {formatToken(quote.rate, 6)}{" "}
-											<AssetDisplay coin={toToken} hideIcon />
+											1 <AssetDisplay coin={fromToken} isToken hideIcon /> ≈ {formatToken(quote.rate, 6)}{" "}
+											<AssetDisplay coin={toToken} isToken hideIcon />
 										</>
 									) : (
 										"-"
@@ -501,12 +509,19 @@ function SpotSwapModalContent({ initialFromToken, initialToToken, mode, onClose 
 						</div>
 					)}
 
+					{tradeRestricted && (
+						<div className="flex items-start gap-2 rounded-16 border border-stroke-warning-weak bg-warning-soft p-2.5">
+							<WarningIcon className="mt-0.5 size-3.5 shrink-0 text-icon-warning" />
+							<p className="text-xs text-warning">{t(TRADE_PANEL_LABELS.regionRestricted)}</p>
+						</div>
+					)}
+
 					{insufficientBalance && (
 						<div className="flex items-start gap-2 p-2.5 bg-warning-soft border border-stroke-warning-strong/20 rounded-8">
 							<WarningIcon className="size-3.5 text-warning shrink-0 mt-0.5" />
 							<p className="text-xs text-warning">
 								<Trans>
-									Insufficient <AssetDisplay coin={fromToken} hideIcon /> balance
+									Insufficient <AssetDisplay coin={fromToken} isToken hideIcon /> balance
 								</Trans>
 							</p>
 						</div>
@@ -535,8 +550,8 @@ function SpotSwapModalContent({ initialFromToken, initialToToken, mode, onClose 
 							<WarningIcon className="size-3.5 text-warning shrink-0 mt-0.5" />
 							<p className="text-xs text-warning">
 								<Trans>
-									No trading pair available for <AssetDisplay coin={fromToken} hideIcon />/
-									<AssetDisplay coin={toToken} hideIcon />
+									No trading pair available for <AssetDisplay coin={fromToken} isToken hideIcon />/
+									<AssetDisplay coin={toToken} isToken hideIcon />
 								</Trans>
 							</p>
 						</div>

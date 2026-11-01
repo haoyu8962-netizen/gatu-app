@@ -87,6 +87,65 @@ describe("global settings order-confirmation preference", () => {
 	});
 });
 
+describe("global settings transaction delay protection", () => {
+	let container: HTMLDivElement;
+	let root: Root | undefined;
+
+	beforeEach(() => {
+		vi.spyOn(console, "warn").mockImplementation(() => {});
+		container = document.createElement("div");
+		document.body.append(container);
+	});
+
+	afterEach(() => {
+		act(() => root?.unmount());
+		root = undefined;
+		container.remove();
+		vi.restoreAllMocks();
+		window.localStorage.clear();
+		vi.resetModules();
+	});
+
+	function renderPreference(store: GlobalSettingsModule) {
+		function Preference() {
+			const enabled = store.useTransactionDelayProtection();
+			const { setTransactionDelayProtection } = store.useGlobalSettingsActions();
+			return createElement("button", {
+				type: "button",
+				role: "switch",
+				"aria-checked": enabled,
+				onClick: () => setTransactionDelayProtection(!enabled),
+			});
+		}
+		root = createRoot(container);
+		act(() => root?.render(createElement(Preference)));
+		const toggle = container.querySelector("button");
+		if (!toggle) throw new Error("Missing transaction delay protection toggle");
+		return toggle;
+	}
+
+	it("keeps the protection on by default and for an unreadable stored value", async () => {
+		expect((await loadStore()).getTransactionDelayProtection()).toBe(true);
+		const store = await loadStore({
+			state: { transactionDelayProtection: "off" },
+			version: GLOBAL_SETTINGS_VERSION,
+		});
+
+		expect(store.getTransactionDelayProtection()).toBe(true);
+	});
+
+	it("persists a turned-off protection and restores it after a reload", async () => {
+		const toggle = renderPreference(await loadStore());
+		act(() => toggle.click());
+
+		const persisted = JSON.parse(window.localStorage.getItem(STORAGE_KEYS.GLOBAL_SETTINGS) ?? "{}");
+		expect(persisted.state?.transactionDelayProtection).toBe(false);
+		act(() => root?.unmount());
+		root = undefined;
+		expect((await loadStore(persisted)).getTransactionDelayProtection()).toBe(false);
+	});
+});
+
 describe("global settings order-book animations", () => {
 	let container: HTMLDivElement;
 	let root: Root | undefined;

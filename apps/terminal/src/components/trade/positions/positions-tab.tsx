@@ -13,6 +13,7 @@ import {
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { usePositionCloseAllAction } from "@/hooks/trade/use-position-close-all-action";
 import { usePositionMarketCloseAction } from "@/hooks/trade/use-position-market-close-action";
+import { useGeoRestriction } from "@/hooks/use-geo-restriction";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { useHyperliquid, useMarkets, useMarketsInfo, useSubscription, useUserPositions } from "@/lib/hyperliquid";
@@ -72,6 +73,7 @@ export function PositionsTab({ directionFilter, marketFilter, currentMarket }: P
 	}
 	const closeAll = usePositionCloseAllAction();
 	const { openIsolatedMargin, openLimitClose, openReverse, openTpSl } = usePositionDialogActions();
+	const tradingActionsBlocked = useGeoRestriction().actionsBlocked;
 	const [selectedPnlShare, setSelectedPnlShare] = useState<OwnedPositionPnlShare | null>(null);
 	const [pnlMode, setPnlMode] = useState<PositionPnlMode>("roe");
 
@@ -102,6 +104,7 @@ export function PositionsTab({ directionFilter, marketFilter, currentMarket }: P
 	}
 
 	function handleReverse(data: PositionReverseRef) {
+		if (tradingActionsBlocked) return;
 		if (!address) return;
 		openReverse({ ...data, owner: address.toLowerCase(), env });
 	}
@@ -290,6 +293,7 @@ export function PositionsTab({ directionFilter, marketFilter, currentMarket }: P
 											onLimitClose={handleOpenLimitCloseModal}
 											onShare={handleOpenPnlShare}
 											onReverse={handleReverse}
+											reverseBlocked={tradingActionsBlocked}
 											onOpenTpSl={handleOpenTpSlModal}
 											onAdjustMargin={handleOpenIsolatedMarginModal}
 											onSelectMarket={handleSelectMarket}

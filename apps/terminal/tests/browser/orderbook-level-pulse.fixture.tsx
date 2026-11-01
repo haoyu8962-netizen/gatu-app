@@ -83,7 +83,6 @@ function OrderbookPulseFixture() {
 						active={options.active}
 						compact={options.view === "compact"}
 						inTabLayout
-						showOrderbookInQuote={options.quote}
 						view="book"
 					/>
 				)}

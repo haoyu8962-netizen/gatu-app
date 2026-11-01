@@ -1,7 +1,16 @@
 import { useLingui } from "@lingui/react/macro";
-import { PaperPlaneTiltIcon, WarningCircleIcon } from "@phosphor-icons/react";
+import { InfoIcon, PaperPlaneTiltIcon, WarningCircleIcon } from "@phosphor-icons/react";
 import { ExchangeRequestInvalidatedError } from "@sairn/hl-react/internal/exchange/request-scheduler";
-import { Button, ModalContent, ModalDescription, ModalHeader, ModalTitle, Select, TextInput } from "@sairn/ui";
+import {
+	Button,
+	Checkbox,
+	ModalContent,
+	ModalDescription,
+	ModalHeader,
+	ModalTitle,
+	Select,
+	TextInput,
+} from "@sairn/ui";
 import { type ChangeEvent, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { isAddress } from "viem";
@@ -12,12 +21,13 @@ import { exceedsBalance, getTokenTransferDecimals, isAmountWithinBalance } from 
 import { getAccountModeAvailability } from "@/domain/trade/account-abstraction";
 import {
 	type BalanceRow,
-	getAccountBalanceSummary,
 	getSpotTransferable,
 	getSpotTransferableValue,
 	isQuoteBalanceSharedWithPerps,
 } from "@/domain/trade/balances";
+import { getFundsAvailabilityNotice } from "@/domain/trade/data-presentation";
 import { assertFreshFundsAmount, FundsExecutionError } from "@/domain/trade/funds-execution-guard";
+import { getSendDestinationVerdict } from "@/domain/trade/send-destination";
 import {
 	AccountAbstractionExecutionError,
 	useAccountAbstractionPreExecutionGuard,
@@ -27,6 +37,7 @@ import {
 	isTokenSpotBalance,
 	useDefaultDexBalances,
 } from "@/hooks/trade/use-account-balances";
+import { FundsActionGeoExecutionError, useFundsActionAvailability } from "@/hooks/trade/use-funds-action-availability";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { STATUS_GLYPH_UNKNOWN } from "@/lib/brand/status-glyph.gen";
 import { cn } from "@/lib/cn";
@@ -55,6 +66,30 @@ interface SendSubmission {
 	token: string;
 	sourceDex: string | undefined;
 	destinationDex: string | undefined;
+}
+
+interface SendDraft {
+	destination: string;
+	amount: string;
+	token: string;
+	accountType: AccountType;
+}
+
+interface SendReview extends SendDraft {
+	identity: object;
+	identityKey: string;
+	fee: string;
+	feeDue: boolean;
+	destinationHasSentTx: boolean;
+}
+
+function isSameSendDraft(current: SendDraft, checked: SendDraft): boolean {
+	return (
+		current.destination === checked.destination &&
+		current.amount === checked.amount &&
+		current.token === checked.token &&
+		current.accountType === checked.accountType
+	);
 }
 
 interface Props {
@@ -95,7 +130,7 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 	const submissionIdentityRef = useRef<object | null>(null);
 	const submissionRef = useRef<SendSubmission | null>(null);
 	const requestSubmissionsRef = useRef(new WeakMap<object, SendSubmission>());
-	const { clientKey, env, exchangeLifecycle, sessionMode: exchangeSessionMode } = useHyperliquid();
+	const { clientKey, env, exchangeLifecycle, info, sessionMode: exchangeSessionMode } = useHyperliquid();
 	const draftOwnerKey = `${env}:${clientKey.toLowerCase()}`;
 	const [restoredDraft] = useState(() => getSendDraft(draftOwnerKey));
 	const restoresAsset =
@@ -104,13 +139,13 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 	const [accountType, setAccountType] = useState<AccountType>(initialAccountType);
 	const [selectedToken, setSelectedToken] = useState(initialAsset);
 	const [amount, setAmount] = useState(restoresAsset ? restoredDraft.amount : "");
+	const [review, setReview] = useState<SendReview | null>(null);
+	const [reviewAcknowledged, setReviewAcknowledged] = useState(false);
+	const [isCheckingDestination, setIsCheckingDestination] = useState(false);
 
 	const { getToken } = useSpotTokens();
 	const {
-		marginSummary,
-		perpSummary,
 		spotBalances,
-		spotAvailableAfterMaintenance,
 		accountAbstraction,
 		withdrawable,
 		spotStateStatus,
@@ -147,9 +182,30 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 			if (submissionIdentityRef.current === identity) submissionIdentityRef.current = null;
 			if (submissionRef.current?.identity === identity) submissionRef.current = null;
 			submissionSequenceRef.current += 1;
+			setReview(null);
+			setReviewAcknowledged(false);
 		};
 	}, [exchangeLifecycle, submissionIdentityKey]);
 	const assertAccountAbstraction = useAccountAbstractionPreExecutionGuard(accountAbstraction, address);
+	const fundsActionAvailability = useFundsActionAvailability({
+		accountDataReady,
+		accountAbstraction,
+		fundsActionsEnabled: true,
+		hasWalletAccess,
+		internalTransfersEnabled: !isQuoteBalanceSharedWithPerps(accountAbstraction),
+	});
+	const sendAvailability = fundsActionAvailability.withdrawal;
+	async function assertCurrentGeo(signal: AbortSignal) {
+		try {
+			await fundsActionAvailability.assertFreshGeoAllowed(signal);
+		} catch (error) {
+			if (signal.aborted) throw signal.reason ?? error;
+			if (error instanceof FundsActionGeoExecutionError) {
+				throw fundsActionFeedbackCause(error.reason === "restricted" ? "geo-restricted" : "geo-unavailable");
+			}
+			throw error;
+		}
+	}
 	async function assertCurrentAccountAbstraction(signal: AbortSignal) {
 		try {
 			await assertAccountAbstraction(signal);
@@ -217,6 +273,7 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 		},
 		preExecutionGuard: async (params, signal) => {
 			assertCurrentSendAssetBalance(params);
+			await assertCurrentGeo(signal);
 			await assertCurrentAccountAbstraction(signal);
 			signal.throwIfAborted();
 			assertCurrentSendAssetBalance(params);
@@ -229,6 +286,7 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 		},
 		preExecutionGuard: async (params, signal) => {
 			assertCurrentSpotSendBalance(params);
+			await assertCurrentGeo(signal);
 			await assertCurrentAccountAbstraction(signal);
 			signal.throwIfAborted();
 			assertCurrentSpotSendBalance(params);
@@ -236,17 +294,12 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 	});
 
 	const isPending = isSendAssetPending || isSpotSendPending;
+	const draftLocked = isPending || isCheckingDestination;
 	const accountModeReady = isSupportedAccountAbstraction(accountAbstraction);
-	const accountSummary = getAccountBalanceSummary({
-		accountAbstraction,
-		marginSummary,
-		perpSummary,
-		withdrawable,
-		spotBalances,
-		spotAvailableAfterMaintenance,
-	});
 	const usesTradingAccount = isQuoteBalanceSharedWithPerps(accountAbstraction);
 	const activeAccountType = usesTradingAccount ? "spot" : accountType;
+	const draftRef = useRef<SendDraft>({ destination, amount, token: selectedToken, accountType: activeAccountType });
+	draftRef.current = { destination, amount, token: selectedToken, accountType: activeAccountType };
 
 	const availableSpotTokens = useMemo((): BalanceRow[] => {
 		if (!accountModeReady || !accountDataReady || !spotBalances?.length) return [];
@@ -275,18 +328,16 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 		return availableSpotTokens.map((b) => b.asset);
 	}, [activeAccountType, availableSpotTokens]);
 
+	function getTokenDisplayName(tokenName: string) {
+		return getToken(tokenName)?.displayName ?? tokenName;
+	}
+
 	const tokenInfo = getToken(selectedToken);
 	const tokenId = tokenInfo ? formatTokenId(tokenInfo) : "";
 
 	const decimals = getTokenTransferDecimals(tokenInfo);
 
 	const selectedSpotBalance = spotBalances?.find((balance) => balance.coin === selectedToken);
-	const availableBalance =
-		!accountModeReady || !accountDataReady
-			? 0
-			: activeAccountType === "perp"
-				? accountSummary.withdrawable
-				: getSpotTransferable(selectedSpotBalance);
 	const availableBalanceExact =
 		!accountModeReady || !accountDataReady
 			? "0"
@@ -302,18 +353,31 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 
 	const isValidDestination = isAddress(destination);
 	const destinationError = destination && !isValidDestination ? t`Enter a valid Ethereum address.` : undefined;
-	const isValidAmount = isAmountWithinBalance(amount, availableBalance);
+	const isValidAmount = isAmountWithinBalance(amount, availableBalanceExact);
 	const canSend =
+		sendAvailability.available &&
 		accountModeReady &&
 		accountDataReady &&
 		hasWalletAccess &&
 		isValidDestination &&
 		isValidAmount &&
 		!!tokenId &&
-		!isPending;
+		!isPending &&
+		!isCheckingDestination;
+	const sendUnavailableNotice =
+		hasWalletAccess && (sendAvailability.reason === "geo-restricted" || sendAvailability.reason === "geo-unresolved")
+			? getFundsAvailabilityNotice(sendAvailability)
+			: null;
+	const reviewIsCurrent =
+		review !== null &&
+		review.destination === destination &&
+		review.amount === amount &&
+		review.token === selectedToken &&
+		review.accountType === activeAccountType &&
+		review.identityKey === submissionIdentityKey;
 
 	function handleAccountTypeChange(value: string | null) {
-		if (!value || usesTradingAccount || !accountDataReady || isPending) return;
+		if (!value || usesTradingAccount || !accountDataReady || draftLocked) return;
 		const v = value as AccountType;
 		setAccountType(v);
 		if (v === "perp") {
@@ -325,22 +389,75 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 	}
 
 	function handleTokenChange(value: string | null) {
-		if (!value || !accountDataReady || isPending) return;
+		if (!value || !accountDataReady || draftLocked) return;
 		setSelectedToken(value);
 		setAmount("");
 	}
 
 	function handleAmountChange(value: string) {
-		if (!accountDataReady || isPending) return;
+		if (!accountDataReady || draftLocked) return;
 		setAmount(limitDecimalInput(value, decimals));
 	}
 
 	function handleMaxClick() {
-		if (!accountDataReady || isPending) return;
-		setAmount(floorToString(availableBalance, decimals));
+		if (!accountDataReady || draftLocked) return;
+		setAmount(floorToString(availableBalanceExact, decimals));
 	}
 
-	async function handleSend() {
+	function getReviewConfirmLabel(): string {
+		if (isPending && walletIntent === "external") return t`Confirm in wallet`;
+		return review?.feeDue ? t`Send with Fee` : t`Send`;
+	}
+
+	function closeReview() {
+		setReview(null);
+		setReviewAcknowledged(false);
+	}
+
+	async function handleSendClick() {
+		if (!canSend || !address) return;
+		const checked: SendDraft = { destination, amount, token: selectedToken, accountType: activeAccountType };
+		const checkedIdentity = submissionIdentityRef.current;
+		if (!checkedIdentity) return;
+		setIsCheckingDestination(true);
+		let verdict: ReturnType<typeof getSendDestinationVerdict>;
+		try {
+			verdict = getSendDestinationVerdict(await info.preTransferCheck({ user: destination, source: address }));
+		} catch {
+			verdict = { kind: "unavailable" };
+		} finally {
+			setIsCheckingDestination(false);
+		}
+		if (submissionIdentityRef.current !== checkedIdentity || !isSameSendDraft(draftRef.current, checked)) return;
+		if (verdict.kind === "sanctioned") {
+			toast.error(t`Unable to send funds to this address.`);
+			return;
+		}
+		if (verdict.kind === "unavailable") {
+			toast.error(t`Unable to check the destination address. Nothing was sent.`);
+			return;
+		}
+		if (verdict.kind === "review") {
+			setReviewAcknowledged(false);
+			setReview({
+				...checked,
+				identity: checkedIdentity,
+				identityKey: submissionIdentityKey,
+				fee: verdict.fee,
+				feeDue: verdict.feeDue,
+				destinationHasSentTx: verdict.destinationHasSentTx,
+			});
+			return;
+		}
+		await submitSend();
+	}
+
+	async function handleReviewConfirm() {
+		if (!reviewIsCurrent || !reviewAcknowledged || review?.identity !== submissionIdentityRef.current) return;
+		await submitSend();
+	}
+
+	async function submitSend() {
 		if (!canSend) return;
 
 		const submissionIdentity = submissionIdentityRef.current;
@@ -363,7 +480,8 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 			submissionIdentityRef.current === submissionIdentity && submissionSequenceRef.current === submissionSequence;
 		const draftAmount = amount;
 		const sentAmount = formatNumber(amount);
-		const sentToken = selectedToken;
+		const draftToken = selectedToken;
+		const sentToken = getTokenDisplayName(selectedToken);
 		try {
 			if (usesTradingAccount) {
 				await sendAsset({
@@ -406,7 +524,7 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 					ownerKey: draftOwnerKey,
 					destination,
 					amount: draftAmount,
-					token: sentToken,
+					token: draftToken,
 					accountType: activeAccountType,
 				});
 				toast.error(
@@ -432,8 +550,10 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 
 	const tokenSelectOptions = tokenOptions.map((tokenName) => ({
 		value: tokenName,
-		label: tokenName,
+		label: getTokenDisplayName(tokenName),
 	}));
+
+	const reviewFee = review ? formatDecimalString(review.fee) : "";
 
 	return (
 		<PendingActionModal open={open} onOpenChange={onOpenChange} isPending={isPending}>
@@ -443,86 +563,152 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 			</ModalHeader>
 
 			<ModalContent>
-				<div className="space-y-4">
-					<div className="flex items-center justify-between gap-3 text-sm">
-						<span className="text-fg-muted">{t`Network`}</span>
-						<span>Hyperliquid (HyperCore)</span>
-					</div>
-					{!hasWalletAccess && (
-						<div className="flex items-center gap-2 rounded-8 border border-stroke-warning-weak bg-warning-soft p-2.5 text-xs text-warning">
-							<WarningCircleIcon className="size-3.5 shrink-0" />
-							<span className="flex-1">{t`Connect your wallet to send funds.`}</span>
-						</div>
-					)}
-					{hasWalletAccess && getAccountModeAvailability(accountAbstraction) === "unsupported" ? (
-						<p className="text-xs text-fg-muted">{t`Select a supported account mode before moving funds.`}</p>
-					) : null}
-					<TextInput
-						placeholder={t`Destination address`}
-						aria-label={t`Destination address`}
-						value={destination}
-						onChange={(e: ChangeEvent<HTMLInputElement>) => setDestination(e.target.value)}
-						dir="auto"
-						autoCapitalize="none"
-						autoComplete="off"
-						spellCheck={false}
-						error={destinationError}
-						disabled={isPending || !accountModeReady || !accountDataReady}
-						mobileSafe
-						className="max-[1000px]:min-h-11"
-					/>
-
-					<div className="flex gap-2">
-						<Select
-							value={accountModeReady ? activeAccountType : ""}
-							onValueChange={handleAccountTypeChange}
-							options={accountTypeOptions}
-							triggerAriaLabel={t`Account`}
-							disabled={!accountModeReady || !accountDataReady || usesTradingAccount || isPending}
-							className="flex-1"
-						/>
-
-						<Select
-							value={accountModeReady ? selectedToken : ""}
-							onValueChange={handleTokenChange}
-							options={tokenSelectOptions}
-							triggerAriaLabel={t`Asset`}
-							disabled={isPending || !accountModeReady || !accountDataReady}
-							className="flex-1"
-						/>
-					</div>
-
-					<NumberInput
-						label={t`Amount`}
-						labelValue={
-							<>
-								{t`Available`}:{" "}
-								<span className="underline decoration-dashed underline-offset-2 decoration-fg-muted/50">
-									{accountModeReady && accountDataReady
-										? `${formatDecimalString(floorToString(availableBalance, decimals))} ${selectedToken}`
-										: "—"}
+				{reviewIsCurrent && review ? (
+					<div className="space-y-4">
+						<div className="space-y-2 text-xs">
+							<div className="flex items-start justify-between gap-3">
+								<span className="shrink-0 text-fg-muted">{t`Destination address`}</span>
+								<span className="min-w-0 break-all text-end font-mono">{review.destination}</span>
+							</div>
+							<div className="flex items-center justify-between gap-3">
+								<span className="text-fg-muted">{t`Amount`}</span>
+								<span className="tabular-nums">
+									{formatDecimalString(review.amount)} {getTokenDisplayName(review.token)}
 								</span>
-							</>
-						}
-						onLabelValueClick={handleMaxClick}
-						placeholder="0.00"
-						value={amount}
-						onChange={(e: ChangeEvent<HTMLInputElement>) => handleAmountChange(e.target.value)}
-						disabled={isPending || !accountModeReady || !accountDataReady}
-						mobileSafe
-						className={cn(
-							"w-full tabular-nums max-[1000px]:h-11",
-							accountDataReady &&
-								exceedsBalance(amount, availableBalance) &&
-								"border-stroke-error-strong focus:border-stroke-error-strong",
+							</div>
+						</div>
+						{review.feeDue && (
+							<div className="flex items-start gap-2 rounded-16 border border-stroke-info-weak bg-info-soft p-2.5 text-xs text-info">
+								<InfoIcon className="mt-0.5 size-3.5 shrink-0 text-icon-info" />
+								<span className="flex-1">
+									{t`This transfer will incur a one-time fee of ${reviewFee} in a USD stablecoin to activate the destination account.`}
+								</span>
+							</div>
 						)}
-					/>
+						{!review.destinationHasSentTx && (
+							<div className="flex items-start gap-2 rounded-16 border border-stroke-warning-weak bg-warning-soft p-2.5 text-xs text-warning">
+								<WarningCircleIcon className="mt-0.5 size-3.5 shrink-0 text-icon-warning" />
+								<span className="flex-1">
+									{t`The destination address has never sent a transaction on Hyperliquid. Do not use Send to transfer to an exchange or another platform that does not support the Hyperliquid blockchain, or your funds will be lost. To move USDC to Arbitrum, use Withdraw instead.`}
+								</span>
+							</div>
+						)}
+						<Checkbox
+							size="lg"
+							checked={reviewAcknowledged}
+							onCheckedChange={setReviewAcknowledged}
+							disabled={isPending}
+							label={
+								<span className="text-fg-muted">
+									{t`I am sending assets on the Hyperliquid blockchain, not withdrawing to another chain. Assets sent to a platform that does not support Hyperliquid will be lost.`}
+								</span>
+							}
+						/>
+						<div className="flex gap-2">
+							<Button variant="outline" intent="neutral" onClick={closeReview} disabled={isPending} className="flex-1">
+								{t`Back`}
+							</Button>
+							<Button
+								variant="filled"
+								intent="neutral"
+								onClick={handleReviewConfirm}
+								disabled={!canSend || !reviewAcknowledged}
+								className="flex-1"
+							>
+								{getReviewConfirmLabel()}
+							</Button>
+						</div>
+					</div>
+				) : (
+					<div className="space-y-4">
+						<div className="flex items-center justify-between gap-3 text-sm">
+							<span className="text-fg-muted">{t`Network`}</span>
+							<span>Hyperliquid (HyperCore)</span>
+						</div>
+						{!hasWalletAccess && (
+							<div className="flex items-center gap-2 rounded-8 border border-stroke-warning-weak bg-warning-soft p-2.5 text-xs text-warning">
+								<WarningCircleIcon className="size-3.5 shrink-0" />
+								<span className="flex-1">{t`Connect your wallet to send funds.`}</span>
+							</div>
+						)}
+						{hasWalletAccess && getAccountModeAvailability(accountAbstraction) === "unsupported" ? (
+							<p className="text-xs text-fg-muted">{t`Select a supported account mode before moving funds.`}</p>
+						) : null}
+						{sendUnavailableNotice && (
+							<div className="flex items-center gap-2 rounded-16 border border-stroke-warning-weak bg-warning-soft p-2.5 text-xs text-warning">
+								<WarningCircleIcon className="size-3.5 shrink-0 text-icon-warning" />
+								<span className="flex-1">{sendUnavailableNotice}</span>
+							</div>
+						)}
+						<TextInput
+							placeholder={t`Destination address`}
+							aria-label={t`Destination address`}
+							value={destination}
+							onChange={(e: ChangeEvent<HTMLInputElement>) => {
+								if (!draftLocked) setDestination(e.target.value);
+							}}
+							dir="auto"
+							autoCapitalize="none"
+							autoComplete="off"
+							spellCheck={false}
+							error={destinationError}
+							disabled={draftLocked || !accountModeReady || !accountDataReady}
+							mobileSafe
+							className="max-[1000px]:min-h-11"
+						/>
 
-					<Button variant="filled" intent="neutral" onClick={handleSend} disabled={!canSend} className="w-full">
-						<PaperPlaneTiltIcon className="me-2 size-3.5" />
-						{isPending && walletIntent === "external" ? t`Confirm in wallet` : t`Send`}
-					</Button>
-				</div>
+						<div className="flex gap-2">
+							<Select
+								value={accountModeReady ? activeAccountType : ""}
+								onValueChange={handleAccountTypeChange}
+								options={accountTypeOptions}
+								triggerAriaLabel={t`Account`}
+								disabled={!accountModeReady || !accountDataReady || usesTradingAccount || draftLocked}
+								className="flex-1"
+							/>
+
+							<Select
+								value={accountModeReady ? selectedToken : ""}
+								onValueChange={handleTokenChange}
+								options={tokenSelectOptions}
+								triggerAriaLabel={t`Asset`}
+								disabled={draftLocked || !accountModeReady || !accountDataReady}
+								className="flex-1"
+							/>
+						</div>
+
+						<NumberInput
+							label={t`Amount`}
+							labelValue={
+								<>
+									{t`Available`}:{" "}
+									<span className="underline decoration-dashed underline-offset-2 decoration-fg-muted/50">
+										{accountModeReady && accountDataReady
+											? `${formatDecimalString(floorToString(availableBalanceExact, decimals))} ${getTokenDisplayName(selectedToken)}`
+											: "—"}
+									</span>
+								</>
+							}
+							onLabelValueClick={handleMaxClick}
+							placeholder="0.00"
+							value={amount}
+							onChange={(e: ChangeEvent<HTMLInputElement>) => handleAmountChange(e.target.value)}
+							disabled={draftLocked || !accountModeReady || !accountDataReady}
+							mobileSafe
+							className={cn(
+								"w-full tabular-nums max-[1000px]:h-11",
+								accountDataReady &&
+									exceedsBalance(amount, availableBalanceExact) &&
+									"border-stroke-error-strong focus:border-stroke-error-strong",
+							)}
+						/>
+
+						<Button variant="filled" intent="neutral" onClick={handleSendClick} disabled={!canSend} className="w-full">
+							<PaperPlaneTiltIcon className="me-2 size-3.5" />
+							{isPending && walletIntent === "external" ? t`Confirm in wallet` : t`Send`}
+						</Button>
+					</div>
+				)}
 			</ModalContent>
 		</PendingActionModal>
 	);

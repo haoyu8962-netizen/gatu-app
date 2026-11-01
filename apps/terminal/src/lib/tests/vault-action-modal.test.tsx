@@ -27,10 +27,12 @@ vi.mock("@sairn/ui", () => ({
 	ModalFooter: ({ children }: { children: ReactNode }) => <footer>{children}</footer>,
 	ModalHeader: ({ children }: { children: ReactNode }) => <header>{children}</header>,
 	ModalTitle: ({ children }: { children: ReactNode }) => <h2>{children}</h2>,
-	TextInput: ({ hint }: { hint?: ReactNode }) => (
+	TextInput: ({ error, hint, iconRight }: { error?: ReactNode; hint?: ReactNode; iconRight?: ReactNode }) => (
 		<label>
 			<input />
+			{iconRight}
 			<span data-testid="text-input-hint">{hint}</span>
+			{error ? <span data-testid="text-input-error">{error}</span> : null}
 		</label>
 	),
 }));
@@ -86,6 +88,32 @@ describe("Vault action modal", () => {
 		expect(onVerifyAgain).toHaveBeenCalledOnce();
 	});
 
+	it("enables Confirm at the review step only while the controller allows it", () => {
+		act(() => root.render(<VaultActionModal {...props({ stage: "review", result: undefined, canConfirm: false })} />));
+		expect(button("Confirm")?.disabled).toBe(true);
+
+		act(() => root.render(<VaultActionModal {...props({ stage: "review", result: undefined, canConfirm: true })} />));
+		expect(button("Confirm")?.disabled).toBe(false);
+	});
+
+	it.each(["input", "review"] as const)(
+		"offers a neutral data Retry at the %s step only when the page passes one",
+		(stage) => {
+			act(() => root.render(<VaultActionModal {...props({ stage, result: undefined })} />));
+			expect(button("Retry")).toBeUndefined();
+
+			const onRetry = vi.fn();
+			act(() => root.render(<VaultActionModal {...props({ stage, result: undefined, onRetry })} />));
+			act(() => button("Retry")?.click());
+			expect(onRetry).toHaveBeenCalledOnce();
+			expect(container.querySelector('[role="alert"]')).toBeNull();
+		},
+	);
+
+	function button(label: string): HTMLButtonElement | undefined {
+		return [...container.querySelectorAll("button")].find((candidate) => candidate.textContent === label);
+	}
+
 	it("shows exact owner and Vault addresses plus the documented lock context before signing", () => {
 		act(() => root.render(<VaultActionModal {...props({ stage: "review", result: undefined })} />));
 
@@ -96,6 +124,28 @@ describe("Vault action modal", () => {
 		).toBe(true);
 		expect(container.textContent).toContain("four-day lock after the latest HLP deposit");
 		expect(container.textContent).toContain("one-day lock for user Vaults");
+	});
+
+	it("fills Max from the verified amount and explains the minimum deposit", () => {
+		const onAmountChange = vi.fn();
+		act(() =>
+			root.render(
+				<VaultActionModal
+					{...props({ stage: "input", result: undefined, amount: "3", belowMinimum: true, onAmountChange })}
+				/>,
+			),
+		);
+
+		expect(container.textContent).toContain("Minimum deposit is 5 USDC");
+		const max = [...container.querySelectorAll("button")].find((button) => button.textContent === "Max");
+		act(() => max?.click());
+		expect(onAmountChange).toHaveBeenCalledWith("10");
+
+		act(() => root.render(<VaultActionModal {...props({ stage: "input", result: undefined, maxAmount: null })} />));
+		expect([...container.querySelectorAll("button")].find((button) => button.textContent === "Max")?.disabled).toBe(
+			true,
+		);
+		expect(container.textContent).not.toContain("Minimum deposit is");
 	});
 
 	it("writes the verified balance, leader commission and reviewed amount with the number-format separators", () => {
@@ -135,6 +185,9 @@ function props(overrides: Partial<VaultActionModalProps> = {}): VaultActionModal
 		ownerAddress: OWNER,
 		amount: "1",
 		availableAmount: "10",
+		maxAmount: "10",
+		minimumAmount: "5",
+		belowMinimum: false,
 		canReview: false,
 		canConfirm: false,
 		onAmountChange: vi.fn(),

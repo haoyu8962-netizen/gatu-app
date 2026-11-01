@@ -82,6 +82,15 @@ describe("buildTpSlOrdersByCoin", () => {
 		});
 	});
 
+	it("leaves a trailing stop out of the position TP/SL, as the official terminal does", () => {
+		const orders = [
+			openOrder({ oid: 1, triggerPx: "110", orderType: "Take Profit Market" }),
+			openOrder({ oid: 2, orderType: "Trailing Stop Market" as OpenOrder["orderType"] }),
+		];
+
+		expect(buildTpSlOrdersByCoin(orders).get("BTC")).toMatchObject({ tpOrderId: 1, incompatible: false });
+	});
+
 	it("flags mismatched TP/SL sizes or execution modes as incompatible", () => {
 		const info = buildTpSlOrdersByCoin([
 			openOrder({ oid: 1, triggerPx: "110", limitPx: "99", sz: "1", origSz: "1" }),

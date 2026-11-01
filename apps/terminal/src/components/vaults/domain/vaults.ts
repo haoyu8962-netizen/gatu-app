@@ -9,6 +9,9 @@ export type VaultFilter = (typeof VAULT_FILTERS)[number];
 
 export type VaultClassification = "official" | "user" | null;
 
+/** The stable placeholder of a Vault value that is unknown (docs/mobile-data-presentation.md). */
+export const VAULT_UNKNOWN_VALUE = "--";
+
 export interface VaultListItem {
 	vaultAddress: `0x${string}`;
 	name: string;
@@ -151,6 +154,22 @@ export type VaultActionAvailability =
 	| { available: true; reason: null }
 	| { available: false; reason: VaultActionUnavailableReason };
 
+const PASSIVE_ACTION_REASONS: ReadonlySet<VaultActionUnavailableReason> = new Set([
+	"geo-checking",
+	"geo-unavailable",
+	"detail-unavailable",
+	"owner-loading",
+	"owner-error",
+]);
+
+/**
+ * Reasons that only say data is still loading, unresolved or failed. The action stays disabled, but no
+ * text is shown for them (docs/mobile-data-presentation.md); confirmed restrictions keep their reason.
+ */
+export function isPassiveVaultActionReason(reason: VaultActionUnavailableReason): boolean {
+	return PASSIVE_ACTION_REASONS.has(reason);
+}
+
 export interface VaultActionsAvailability {
 	deposit: VaultActionAvailability;
 	withdraw: VaultActionAvailability;
@@ -207,14 +226,32 @@ export function getVaultRequestAvailability({
 	return { available: true, reason: null };
 }
 
+/** The leader may add to its own Vault even after it stops accepting deposits from others. */
+export function isVaultLeader(detail: Pick<VaultDetail, "leader">, ownerAddress: string | null | undefined): boolean {
+	return !!ownerAddress && normalizeVaultAddress(detail.leader) === normalizeVaultAddress(ownerAddress);
+}
+
+const LARGE_VAULT_TVL_USD = 100_000_000;
+
+/** Smallest deposit the official terminal accepts: 10 USDC above $100M of TVL, otherwise 5 USDC. */
+export function getVaultMinimumDeposit(detail: Pick<VaultDetail, "portfolio">): string {
+	const tvl = toBig(getLatestVaultHistoryValue(detail.portfolio.day, "accountValue"), false);
+	return tvl?.gt(LARGE_VAULT_TVL_USD) ? "10" : "5";
+}
+
 export function deriveVaultActionsAvailability({
 	detail,
+	detailCurrent = true,
 	owner,
+	ownerAddress,
 	request,
 	sessionMode,
 }: {
 	detail: VaultDetail | null;
+	/** False while `detail` is the snapshot kept after a failed refresh (docs/mobile-data-presentation.md). */
+	detailCurrent?: boolean;
 	owner: VaultOwnerViewState;
+	ownerAddress?: string | null;
 	request: VaultRequestAvailability;
 	sessionMode?: "wallet" | "agent-only" | "disconnected";
 }): VaultActionsAvailability {
@@ -226,14 +263,14 @@ export function deriveVaultActionsAvailability({
 		const unavailable = { available: false, reason: "agent-only-session" } as const;
 		return { deposit: unavailable, withdraw: unavailable };
 	}
-	if (!detail) {
+	if (!detail || !detailCurrent) {
 		const unavailable = { available: false, reason: "detail-unavailable" } as const;
 		return { deposit: unavailable, withdraw: unavailable };
 	}
 
 	const deposit: VaultActionAvailability = detail.isClosed
 		? { available: false, reason: "vault-closed" }
-		: detail.allowDeposits
+		: detail.allowDeposits || isVaultLeader(detail, ownerAddress)
 			? { available: true, reason: null }
 			: { available: false, reason: "deposits-disabled" };
 	let withdraw: VaultActionAvailability;
@@ -558,8 +595,10 @@ export function getLatestVaultHistoryValue(
 
 export function formatVaultUsd(value: string | null | undefined, numberFormat: NumberFormatters, decimals = 2): string {
 	const parsed = toBig(value, true);
-	if (!parsed) return "—";
-	return `${parsed.lt(0) ? "-" : ""}$${numberFormat.formatDecimalString(parsed.abs().toFixed(decimals))}`;
+	if (!parsed) return VAULT_UNKNOWN_VALUE;
+	return numberFormat.markLeadingSign(
+		`${parsed.lt(0) ? "-" : ""}$${numberFormat.formatDecimalString(parsed.abs().toFixed(decimals))}`,
+	);
 }
 
 export function formatVaultSignedUsd(
@@ -568,13 +607,15 @@ export function formatVaultSignedUsd(
 	decimals = 2,
 ): string {
 	const parsed = toBig(value, true);
-	if (!parsed) return "—";
-	return `${parsed.gt(0) ? "+" : parsed.lt(0) ? "-" : ""}$${numberFormat.formatDecimalString(parsed.abs().toFixed(decimals))}`;
+	if (!parsed) return VAULT_UNKNOWN_VALUE;
+	return numberFormat.markLeadingSign(
+		`${parsed.gt(0) ? "+" : parsed.lt(0) ? "-" : ""}$${numberFormat.formatDecimalString(parsed.abs().toFixed(decimals))}`,
+	);
 }
 
 export function formatVaultCompactUsd(value: string | null | undefined, numberFormat: NumberFormatters): string {
 	const parsed = toBig(value, true);
-	if (!parsed) return "—";
+	if (!parsed) return VAULT_UNKNOWN_VALUE;
 	const absolute = parsed.abs();
 	const units = [
 		{ threshold: Big("1000000000"), divisor: Big("1000000000"), suffix: "B" },
@@ -586,7 +627,7 @@ export function formatVaultCompactUsd(value: string | null | undefined, numberFo
 	const scaled = absolute.div(unit.divisor);
 	const decimals = scaled.gte(100) ? 0 : scaled.gte(10) ? 1 : 2;
 	const amount = numberFormat.formatDecimalString(scaled.toFixed(decimals), { trimTrailingZeros: true });
-	return `${parsed.lt(0) ? "-" : ""}$${amount}${unit.suffix}`;
+	return numberFormat.markLeadingSign(`${parsed.lt(0) ? "-" : ""}$${amount}${unit.suffix}`);
 }
 
 export function formatVaultRatio(
@@ -596,10 +637,10 @@ export function formatVaultRatio(
 	signed = false,
 ): string {
 	const parsed = toBig(value, true);
-	if (!parsed) return "—";
+	if (!parsed) return VAULT_UNKNOWN_VALUE;
 	const percent = parsed.times(100);
 	const prefix = signed && percent.gt(0) ? "+" : "";
-	return `${prefix}${numberFormat.formatDecimalString(percent.toFixed(decimals))}%`;
+	return numberFormat.markLeadingSign(`${prefix}${numberFormat.formatDecimalString(percent.toFixed(decimals))}%`);
 }
 
 export function getVaultValueTone(value: string | null | undefined): "positive" | "negative" | "neutral" {

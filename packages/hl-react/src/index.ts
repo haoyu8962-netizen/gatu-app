@@ -36,6 +36,7 @@ export {
 	getInfoClient,
 	getSubscriptionClient,
 	initializeClients,
+	setTransactionDelayProtectionReader,
 	subscribeWsReconnect,
 	warmL2BookSubscription,
 } from "./clients";
@@ -338,9 +339,7 @@ export {
 	createCompactAssetCtxsAccumulator,
 	decodeCompactAssetCtxs,
 	parseCompactPerpAssetCtxsDelta,
-	parseCompactPerpAssetCtxsView,
 	parseCompactSpotAssetCtxsDelta,
-	parseCompactSpotAssetCtxsView,
 	subscribeCompactAssetCtxs,
 } from "./subscriptions/compact-asset-ctxs";
 export { CompactSubscriptionClient } from "./subscriptions/compact-subscription-client";

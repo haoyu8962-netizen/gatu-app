@@ -4,6 +4,7 @@ import {
 	calculateVaultEquity,
 	derivePortfolioAccountEquity,
 	getPortfolioQueryStatus,
+	isPortfolioSourceShown,
 	resolveCurrentTotalEquity,
 } from "@/domain/portfolio";
 import { useDefaultAccountSnapshot } from "@/hooks/trade/use-default-account-snapshot";
@@ -46,10 +47,10 @@ export function usePortfolioData() {
 	const vaultStatus = getPortfolioQueryStatus(vaultsQuery, enabled, now);
 	const borrowLendStatus = getPortfolioQueryStatus(borrowLendQuery, enabled, now);
 	const reserveStatus = getPortfolioQueryStatus(reserveStatesQuery, enabled, now);
-	const borrowLendState = borrowLendStatus === "ready" ? borrowLendQuery.data : undefined;
+	const borrowLendState = isPortfolioSourceShown(borrowLendStatus) ? borrowLendQuery.data : undefined;
 	const earnBalance = calculateEarnBalance(
 		borrowLendState,
-		reserveStatus === "ready" ? reserveStatesQuery.data : undefined,
+		isPortfolioSourceShown(reserveStatus) ? reserveStatesQuery.data : undefined,
 	);
 	const account = derivePortfolioAccountEquity({
 		balances,
@@ -59,7 +60,7 @@ export function usePortfolioData() {
 		isConnected: enabled,
 		borrowLendState,
 	});
-	const vaultEquity = calculateVaultEquity(vaultStatus === "ready" ? vaultsQuery.data : undefined);
+	const vaultEquity = calculateVaultEquity(isPortfolioSourceShown(vaultStatus) ? vaultsQuery.data : undefined);
 	const totalEquity = resolveCurrentTotalEquity({
 		coreEquity: account.coreEquity,
 		vaultEquity,
@@ -70,18 +71,18 @@ export function usePortfolioData() {
 	return {
 		...account,
 		isConnected: enabled,
-		portfolio: portfolioStatus === "ready" ? portfolioQuery.data : undefined,
-		fees: feesStatus === "ready" ? feesQuery.data : undefined,
+		portfolio: isPortfolioSourceShown(portfolioStatus) ? portfolioQuery.data : undefined,
+		fees: isPortfolioSourceShown(feesStatus) ? feesQuery.data : undefined,
 		portfolioStatus,
 		feesStatus,
 		earnBalance,
 		totalEquity,
 		retry: () => {
-			void portfolioQuery.refetch();
-			void feesQuery.refetch();
-			void vaultsQuery.refetch();
-			void borrowLendQuery.refetch();
-			void reserveStatesQuery.refetch();
+			void portfolioQuery.refetch({ cancelRefetch: false });
+			void feesQuery.refetch({ cancelRefetch: false });
+			void vaultsQuery.refetch({ cancelRefetch: false });
+			void borrowLendQuery.refetch({ cancelRefetch: false });
+			void reserveStatesQuery.refetch({ cancelRefetch: false });
 		},
 	};
 }

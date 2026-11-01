@@ -23,6 +23,7 @@ import {
 	usesTriggerPrice as usesTriggerPriceForOrder,
 } from "@/lib/trade/order-types";
 import { getTpSlCollateralSymbol } from "@/lib/trade/tpsl";
+import { tradingInputFrameErrorClass } from "@/lib/ui/trading-input";
 import { getValueColorClass } from "@/lib/ui/value-color";
 import {
 	useLimitPrice,
@@ -58,6 +59,7 @@ type TradeFormOrderEntryData = Pick<
 	| "quoteToken"
 	| "capabilities"
 	| "availableBalance"
+	| "requiresAvailableBalance"
 	| "displayAvailableBalance"
 	| "displayAvailableBalanceToken"
 	| "leverage"
@@ -81,9 +83,6 @@ interface Props {
 	onSwapClick: () => void;
 }
 
-const inputFrameErrorClass =
-	"border-trading-panel-error focus-within:border-trading-panel-error focus-within:ring-trading-panel-error/10";
-
 export function TradeFormFields({
 	orderEntryData,
 	visibleValidationErrors,
@@ -96,7 +95,7 @@ export function TradeFormFields({
 	onSizeInteractionChange,
 	onSwapClick,
 }: Props) {
-	const { formatDecimalString, formatToken } = useNumberFormat();
+	const { formatDecimalString, formatToken, markLeadingSign } = useNumberFormat();
 	const { t } = useLingui();
 	const sizeFieldId = useId();
 	const sizeErrorId = useId();
@@ -127,6 +126,7 @@ export function TradeFormFields({
 		quoteToken,
 		capabilities,
 		availableBalance,
+		requiresAvailableBalance,
 		displayAvailableBalance,
 		displayAvailableBalanceToken,
 		leverage,
@@ -141,7 +141,9 @@ export function TradeFormFields({
 		useOrderEntryActions();
 
 	const isFormDisabled =
-		!isConnected || isAvailabilityBlocked || (!(capabilities.hasReduceOnly && reduceOnly) && availableBalance <= 0);
+		!isConnected ||
+		isAvailabilityBlocked ||
+		(!(capabilities.hasReduceOnly && reduceOnly) && requiresAvailableBalance !== false && availableBalance <= 0);
 	const isSizeSliderPaused = isConnected && isAvailabilityBlocked;
 	const isSizeSliderDisabled = !isSizeSliderPaused && (isFormDisabled || maxSize <= 0);
 	const maxSizeLabel =
@@ -154,10 +156,17 @@ export function TradeFormFields({
 	const canUseTpSl = canUseTpSlForOrder(orderType);
 	const marketType = isSpotMarket ? "spot" : "perp";
 
-	const triggerHasError = sizeValue > 0 && visibleValidationErrors.some((error) => error.id === "enter-trigger-price");
+	const triggerHasError =
+		(sizeValue > 0 && visibleValidationErrors.some((error) => error.id === "enter-trigger-price")) ||
+		visibleValidationErrors.some((error) => error.id === "trigger-price-tick");
 	const limitHasError =
-		sizeValue > 0 &&
-		visibleValidationErrors.some((error) => error.id === "enter-limit-price" || error.id === "spot-enter-limit-price");
+		(sizeValue > 0 &&
+			visibleValidationErrors.some(
+				(error) => error.id === "enter-limit-price" || error.id === "spot-enter-limit-price",
+			)) ||
+		visibleValidationErrors.some((error) => error.id === "limit-price-tick");
+	const twapTriggerHasError = visibleValidationErrors.some((error) => error.id === "twap-trigger-price-tick");
+	const twapStopHasError = visibleValidationErrors.some((error) => error.id === "twap-stop-price-tick");
 
 	const sliderValue = getSliderValue(sizeValue, maxSize);
 	const sliderInteractionIdentity = `${leverageInteractionIdentity}:${side}:${orderType}:${reduceOnly}:${sizeMode}:${szDecimals}`;
@@ -260,8 +269,10 @@ export function TradeFormFields({
 					}
 					positionValue={
 						<span className={cn("whitespace-nowrap font-semibold tabular-nums", getValueColorClass(positionSize))}>
-							{positionSize > 0 ? "+" : ""}
-							{formatDecimalString(formatDecimalFloor(positionSize, szDecimals))} {baseToken}
+							{markLeadingSign(
+								`${positionSize > 0 ? "+" : ""}${formatDecimalString(formatDecimalFloor(positionSize, szDecimals))}`,
+							)}{" "}
+							{baseToken}
 						</span>
 					}
 				/>
@@ -271,7 +282,7 @@ export function TradeFormFields({
 					{usesTriggerPrice && (
 						<TradeInputFrameView
 							id={triggerFieldId}
-							frameClassName={cn(triggerHasError && inputFrameErrorClass, isFormDisabled && "opacity-50")}
+							frameClassName={cn(triggerHasError && tradingInputFrameErrorClass, isFormDisabled && "opacity-50")}
 							label={
 								<>
 									{t`Trigger Price`} <span className="trade-card-label-full">({quoteToken})</span>
@@ -297,7 +308,7 @@ export function TradeFormFields({
 							<TradeInputFrameView
 								id={limitFieldId}
 								label={t`Price`}
-								frameClassName={cn(limitHasError && inputFrameErrorClass, isFormDisabled && "opacity-50")}
+								frameClassName={cn(limitHasError && tradingInputFrameErrorClass, isFormDisabled && "opacity-50")}
 								input={
 									<NumberInput
 										id={limitFieldId}
@@ -334,7 +345,7 @@ export function TradeFormFields({
 				<TradeInputFrameView
 					id={sizeFieldId}
 					label={t(TRADE_PANEL_LABELS.size)}
-					frameClassName={cn(hasDisplayedSizeError && inputFrameErrorClass, isFormDisabled && "opacity-50")}
+					frameClassName={cn(hasDisplayedSizeError && tradingInputFrameErrorClass, isFormDisabled && "opacity-50")}
 					input={
 						<NumberInput
 							id={sizeFieldId}
@@ -428,6 +439,8 @@ export function TradeFormFields({
 							}
 							desktop
 							disabled={isFormDisabled}
+							triggerPriceInvalid={twapTriggerHasError}
+							stopPriceInvalid={twapStopHasError}
 							side={side}
 							quoteToken={quoteToken}
 							markPx={markPx}

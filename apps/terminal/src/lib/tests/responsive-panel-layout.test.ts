@@ -80,7 +80,7 @@ describe("responsive panel layout contract", () => {
 		expect(ORDERBOOK_PANEL_SOURCE.match(/<TradesPanel/g)).toHaveLength(1);
 		expect(ORDERBOOK_PANEL_SOURCE).toMatch(/<TabsContent\s+value="book"/);
 		expect(ORDERBOOK_PANEL_SOURCE).toMatch(/<TabsContent\s+value="trades"\s+keepMounted/);
-		expect(ORDERBOOK_PANEL_SOURCE).toContain("<TradesPanel showInQuote={showOrderbookInQuote} />");
+		expect(ORDERBOOK_PANEL_SOURCE).toContain("<TradesPanel />");
 		expect(ORDERBOOK_PANEL_SOURCE).not.toContain("<TradesPanel key=");
 		expect(ORDERBOOK_PANEL_SOURCE).toContain("useSizeMode");
 		expect(ORDERBOOK_PANEL_SOURCE).not.toContain("use-global-settings-store");

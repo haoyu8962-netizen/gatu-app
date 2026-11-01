@@ -477,11 +477,15 @@ describe("compact mobile orderbook modes", () => {
 		expect(container.querySelector('button[aria-label^="Bid,"]')).toBeNull();
 	});
 
-	it("uses the controlled quote unit for the header and displayed sizes", () => {
+	it("uses the controlled quote unit for the header and shows quote sizes in whole units like the official book", () => {
 		act(() => root.render(<CompactOrderbookHarness showOrderbookInQuote />));
 
+		const askSizes = [...getLadder("asks").querySelectorAll('[data-slot="orderbook-size-value"]')].map(
+			(node) => node.textContent,
+		);
 		expect(container.textContent).toContain("Size (USDC)");
-		expect(getLadder("asks").textContent).toContain("101.00");
+		expect(askSizes).toContain("101");
+		expect(askSizes).not.toContain("101.00");
 	});
 
 	it("fills sparse snapshots from the far edge while keeping each BBO next to the mid", () => {

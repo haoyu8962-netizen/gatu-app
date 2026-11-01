@@ -9,6 +9,7 @@ import { isLiveExecutionPriceReceiptFresh } from "@/domain/trade/market-price";
 import { throwIfAnyResponseError } from "@/domain/trade/orders";
 import { buildPositionReverseOrder, type PositionReverseOrderError } from "@/domain/trade/position-reverse";
 import { type TrackedOrderResult, useTrackedOrder } from "@/hooks/trade/use-tracked-order";
+import { useGeoRestriction } from "@/hooks/use-geo-restriction";
 import {
 	type ExchangeParams,
 	parseAssetId,
@@ -113,6 +114,9 @@ export function usePositionReverseSubmit(target: PositionReverseTarget) {
 		{ enabled: !!address },
 	);
 	const slippageBps = useMarketOrderSlippageBpsString();
+	const geoRestriction = useGeoRestriction();
+	const geoRestrictionRef = useRef(geoRestriction);
+	geoRestrictionRef.current = geoRestriction;
 	const [phase, setPhaseState] = useState<PositionReverseSubmitPhase>("idle");
 	const [error, setError] = useState<PositionSubmitFeedback | null>(null);
 	const phaseRef = useRef<PositionReverseSubmitPhase>("idle");
@@ -141,6 +145,12 @@ export function usePositionReverseSubmit(target: PositionReverseTarget) {
 		if (lifecycleRef.current.mounted) setPhaseState(nextPhase);
 	}
 
+	function assertTradingRegionAllowed(): void {
+		const geo = geoRestrictionRef.current;
+		if (geo.tradeRestricted) throw positionSubmitFeedbackCause("trading-region-restricted");
+		if (geo.actionsBlocked) throw positionSubmitFeedbackCause("trading-region-unverified");
+	}
+
 	function assertLifecycleActive(epoch: number): void {
 		if (!lifecycleRef.current.mounted || lifecycleRef.current.epoch !== epoch) {
 			throw tradingDataChangedError();
@@ -150,6 +160,7 @@ export function usePositionReverseSubmit(target: PositionReverseTarget) {
 	function assertExecutionContext(params: ExchangeParams<"order">): void {
 		const execution = executionContextRef.current;
 		if (!execution || phaseRef.current !== "submitting") throw tradingDataChangedError();
+		assertTradingRegionAllowed();
 		assertLifecycleActive(execution.lifecycleEpoch);
 
 		const currentTarget = targetRef.current;
@@ -211,6 +222,7 @@ export function usePositionReverseSubmit(target: PositionReverseTarget) {
 				},
 				async (assetLockLease) => {
 					assertTargetIsCurrent(lifecycleEpoch, submittedTargetKey, submittedTarget);
+					assertTradingRegionAllowed();
 					const liveBeforeRefresh = liveContextRef.current;
 					assertSessionIdentity(submittedTarget, liveBeforeRefresh.clientKey, liveBeforeRefresh.env);
 					assertLivePositionReady(submittedTarget, liveBeforeRefresh);
@@ -258,6 +270,7 @@ export function usePositionReverseSubmit(target: PositionReverseTarget) {
 						positionReceivedAt: fresh.positionReceivedAt,
 					};
 					assertLifecycleActive(lifecycleEpoch);
+					assertTradingRegionAllowed();
 					setPhase("submitting");
 
 					const outcome = await trackedOrder.submitOrder(

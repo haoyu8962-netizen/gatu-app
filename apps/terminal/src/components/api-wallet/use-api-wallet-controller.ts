@@ -328,7 +328,7 @@ export function useApiWalletController({
 			if (!executionIsCurrent(lease) || lease.abortController.signal.aborted) return;
 			const latest = activeActionRef.current;
 			if (!latest) return;
-			if (isWalletRejectionError(error)) {
+			if (!isDeterministicApprovalError(error) && isWalletRejectionError(error)) {
 				updateAction({
 					...latest,
 					state: transitionApiWalletAction(latest.state, { type: "resolve", result: "rejected" }),

@@ -2,6 +2,7 @@ import { useLingui } from "@lingui/react/macro";
 import { Button, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@sairn/ui";
 import { Link } from "@tanstack/react-router";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { getToolbarAbsoluteSize, getToolbarFundingTotal } from "@/domain/trade/trading-toolbar-metrics";
 import { useFundingHistoryCsvExport } from "@/hooks/trade/use-history-csv-export";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
@@ -9,8 +10,10 @@ import { useUserFunding } from "@/hooks/trade/use-user-funding";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { buildCsvRows } from "@/lib/csv";
-import { formatDateTimeShort, useNumberFormat } from "@/lib/format";
+import { formatDateTime, useNumberFormat } from "@/lib/format";
 import { useMarkets } from "@/lib/hyperliquid";
+import { getFundingCollateralSymbol } from "@/lib/trade/collateral-amount";
+import { getFundingPositionPresentation, getFundingSideLabel } from "@/lib/trade/funding-position";
 import { toBig } from "@/lib/trade/numbers";
 import { getMarketCloseValueColorClass } from "@/lib/ui/value-color";
 import { AssetBadge } from "../components/asset-badge";
@@ -66,24 +69,25 @@ export function FundingTab({ toolbarTarget }: Props = {}) {
 		filename: "funding_history.csv",
 		buildRows: (fundings) =>
 			buildCsvRows(fundings, [
-				{ header: t`Time`, getValue: (update) => formatDateTimeShort(update.time, { locale: i18n.locale }) },
+				{
+					header: t`Time`,
+					getValue: (update) =>
+						formatDateTime(update.time, { locale: i18n.locale, dateStyle: "short", timeStyle: "short" }),
+				},
 				{ header: t`Asset`, getValue: (update) => update.coin },
 				{
-					header: t`Position`,
-					getValue: (update) => {
-						const market = markets.getMarket(update.coin);
-						return formatToken(getToolbarAbsoluteSize(update.szi), {
-							decimals: market?.szDecimals,
-							symbol: market?.shortName,
-						});
-					},
-				},
-				{
-					header: t`Rate`,
+					header: t`Side`,
 					getValue: (update) =>
-						formatPercent(update.fundingRate, { minimumFractionDigits: 4, maximumFractionDigits: 4 }),
+						getFundingSideLabel(update.szi, (descriptor) => t(descriptor)) ?? FALLBACK_VALUE_PLACEHOLDER,
 				},
-				{ header: t`Payment`, getValue: (update) => formatToken(update.usdc, { symbol: "USDC" }) },
+				{ header: t`Size`, getValue: (update) => getToolbarAbsoluteSize(update.szi) ?? update.szi },
+				{ header: t`Rate`, getValue: (update) => update.fundingRate },
+				{ header: t`Payment`, getValue: (update) => update.usdc },
+				{
+					header: t`Payment Token`,
+					getValue: (update) =>
+						getFundingCollateralSymbol(update.coin, markets.getMarket(update.coin)) ?? FALLBACK_VALUE_PLACEHOLDER,
+				},
 			]),
 	});
 
@@ -145,7 +149,9 @@ export function FundingTab({ toolbarTarget }: Props = {}) {
 							<TableBody className={cn(positionsPanelTableBodyClass, "[&_tr]:border-market-close-stroke-card/60")}>
 								{updates.map((update, index) => {
 									const market = markets.getMarket(update.coin);
-									const positionSize = getToolbarAbsoluteSize(update.szi);
+									const position = getFundingPositionPresentation(update.szi, market, formatToken, (descriptor) =>
+										t(descriptor),
+									);
 									const paymentClass = toBig(update.usdc)
 										? getMarketCloseValueColorClass(update.usdc)
 										: "text-market-close-subtle";
@@ -176,7 +182,17 @@ export function FundingTab({ toolbarTarget }: Props = {}) {
 													"text-right text-market-close-fg",
 												)}
 											>
-												{formatToken(positionSize, { decimals: market?.szDecimals, symbol: market?.shortName })}
+												{position.sideLabel ? (
+													<span
+														className={cn(
+															"me-1 font-semibold",
+															position.side === "long" ? "text-market-close-success" : "text-market-close-danger",
+														)}
+													>
+														{position.sideLabel}
+													</span>
+												) : null}
+												<bdi dir="ltr">{position.size}</bdi>
 											</TableCell>
 											<TableCell
 												size="dense"
@@ -190,7 +206,11 @@ export function FundingTab({ toolbarTarget }: Props = {}) {
 												size="dense"
 												className={cn(positionsPanelTableCellClass, fundingTableCellClass, "text-right font-semibold")}
 											>
-												<span className={paymentClass}>{formatToken(update.usdc, { symbol: "USDC" })}</span>
+												<span className={paymentClass}>
+													{formatToken(update.usdc, {
+														symbol: getFundingCollateralSymbol(update.coin, market) ?? undefined,
+													})}
+												</span>
 											</TableCell>
 
 											<TableCell
@@ -202,7 +222,7 @@ export function FundingTab({ toolbarTarget }: Props = {}) {
 												)}
 											>
 												<div className="flex flex-col items-end">
-													<span>{formatDateTimeShort(update.time, { locale })}</span>
+													<span>{formatDateTime(update.time, { locale, dateStyle: "short", timeStyle: "short" })}</span>
 												</div>
 											</TableCell>
 										</TableRow>

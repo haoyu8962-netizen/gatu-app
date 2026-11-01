@@ -29,9 +29,28 @@ describe("referral UI governance contract", () => {
 		expect(dashboard).toContain("min-[1001px]:grid-cols-[minmax(0,560px)_minmax(0,1fr)]");
 		expect(dashboard).toContain("min-[1001px]:gap-4");
 		expect(dashboard).toContain("} else if (!readyData) {");
-		expect(dashboard).toContain(
-			"The response could not be verified. No referral action is available until fresh data loads.",
-		);
+	});
+
+	it("keeps referral reads silent: a neutral retry, no refresh text and no failure banner", () => {
+		// docs/mobile-data-presentation.md (staking, referral and Vault pages, 2026-11-01): the read failure
+		// banner and the "Refreshing referral data…" line were passive data notices and are gone; a failed or
+		// retained read offers only the neutral retry, and its actions wait for a current snapshot.
+		const dashboard = readReferralComponent("referral-dashboard.tsx");
+		const activity = readReferralComponent("referral-activity.tsx");
+
+		for (const source of [dashboard, activity]) {
+			expect(source).not.toContain('role="alert"');
+			expect(source).not.toContain("WarningCircleIcon");
+			expect(source).not.toContain("SpinnerGapIcon");
+			expect(source).not.toContain("The response could not be verified.");
+			expect(source).not.toContain("Recent reward claims could not be verified.");
+		}
+		expect(dashboard).not.toContain("Referral data unavailable");
+		expect(dashboard).not.toContain("Refreshing referral data");
+		expect(dashboard.match(/onClick=\{referrals\.retry\}/g)).toHaveLength(2);
+		expect(dashboard).toContain("const actionsDisabled = actionBusy || agentOnlySession || !referrals.isCurrent;");
+		expect(activity).toContain('<span className="sr-only">');
+		expect(activity).toContain("if (!claimHistoryCanConfirmEmpty) return renderRetry(onRetryClaimHistory);");
 	});
 
 	it("keeps the mobile hierarchy summary, referral, traders, then reward details", () => {
@@ -78,7 +97,10 @@ describe("referral UI governance contract", () => {
 		expect(dashboard).toContain("backdrop-blur min-[1001px]:hidden");
 		expect(dashboard).toContain("No unclaimed rewards are currently available.");
 		expect(dashboard).toContain(
-			"aria-describedby={agentOnlySession || !referrals.hasUnclaimedRewards ? claimStatusId : undefined}",
+			"aria-describedby={agentOnlySession || confirmedNoUnclaimedRewards ? claimStatusId : undefined}",
+		);
+		expect(dashboard).toContain(
+			"const confirmedNoUnclaimedRewards = referrals.isCurrent && !referrals.hasUnclaimedRewards;",
 		);
 		expect(dashboard).toContain("useMasterWalletActionReason()");
 		expect(dashboard).not.toContain("Claim all available rewards");

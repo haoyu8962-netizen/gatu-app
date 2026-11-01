@@ -1,10 +1,12 @@
 import { useLingui } from "@lingui/react/macro";
 import { toast } from "sonner";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
+import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { buildCsvRows, downloadCsv } from "@/lib/csv";
-import { formatDateTimeShort } from "@/lib/format";
+import { formatDateTime } from "@/lib/format";
 import { getInfoClient } from "@/lib/hyperliquid";
 import { getNetwork } from "@/lib/network";
+import { getFillDirectionPresentation } from "@/lib/trade/fill-direction";
 import {
 	fetchUserTwapSliceFillHistory,
 	getTwapSliceFillsExportPacer,
@@ -28,23 +30,25 @@ interface TwapSliceFillsCsvExportOptions {
 export function useTwapFillHistoryCsv(): TwapFillHistoryCsvResult {
 	const { i18n, t } = useLingui();
 
-	function getDirectionLabel(direction: string) {
-		if (direction === "Open Long") return t`Open Long`;
-		if (direction === "Close Long") return t`Close Long`;
-		if (direction === "Open Short") return t`Open Short`;
-		if (direction === "Close Short") return t`Close Short`;
-		return direction;
+	const { address } = useWalletSession();
+
+	function getDirection(fill: UserTwapSliceFillHistoryResult["items"][number]) {
+		return getFillDirectionPresentation(fill, address, (descriptor) => t(descriptor));
 	}
 
 	return useTwapSliceFillsCsvExport({
 		filename: TWAP_FILL_HISTORY_CSV_FILENAME,
 		buildRows: (fills) =>
 			buildCsvRows(fills, [
-				{ header: t`Time`, getValue: (fill) => formatDateTimeShort(fill.time, { locale: i18n.locale }) },
+				{
+					header: t`Time`,
+					getValue: (fill) =>
+						formatDateTime(fill.time, { locale: i18n.locale, dateStyle: "short", timeStyle: "short" }),
+				},
 				{ header: t`Asset`, getValue: (fill) => fill.coin },
 				{
 					header: t`Direction`,
-					getValue: (fill) => (fill.liquidation ? t`Liquidated` : getDirectionLabel(fill.dir)),
+					getValue: (fill) => getDirection(fill).label,
 				},
 				{ header: t`Type`, getValue: () => t`TWAP` },
 				{ header: t`Price`, getValue: (fill) => fill.px },

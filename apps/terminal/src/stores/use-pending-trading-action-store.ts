@@ -16,8 +16,10 @@ export interface PendingOrderModification extends TradingActionIdentity {
 	oid: number;
 	originalSize: string;
 	originalTriggerPx: string;
+	originalLimitPx: string;
 	expectedSize: string | null;
 	expectedTriggerPx: string | null;
+	expectedLimitPx: string | null;
 	phase: PendingTradingActionPhase;
 	createdAt: number;
 	requestStartedAt: number | null;
@@ -32,13 +34,27 @@ interface ClaimOrderModificationInput extends TradingActionIdentity {
 	oid: number;
 	originalSize: string;
 	originalTriggerPx: string;
+	originalLimitPx: string;
 	expectedSize?: string;
 	expectedTriggerPx?: string;
+	expectedLimitPx?: string;
+}
+
+/**
+ * What the exchange answered for a cancel batch it accepted only in part: the counts and each
+ * rejection, kept with the action so its notification can be restored from the action rather than
+ * from whatever notification is still on screen.
+ */
+export interface PendingOrderCancellationPartialResult {
+	acceptedCount: number;
+	totalCount: number;
+	errors: Array<{ index?: number; text: string }>;
 }
 
 export interface PendingOrderCancellation extends TradingActionIdentity {
 	id: string;
 	oids: number[];
+	partialResult?: PendingOrderCancellationPartialResult;
 	phase: PendingTradingActionPhase;
 	createdAt: number;
 	requestStartedAt: number | null;
@@ -89,6 +105,11 @@ interface PendingTradingActionStore {
 		markOrderCancellationUnconfirmed: (id: string, now?: number, monotonicNow?: number) => void;
 		expireOrderCancellationAwaiting: (id: string, now?: number, monotonicNow?: number) => boolean;
 		releaseOrderCancellation: (id: string) => void;
+		narrowOrderCancellation: (
+			id: string,
+			oids: readonly number[],
+			partialResult: PendingOrderCancellationPartialResult,
+		) => void;
 		confirmOrderCancellation: (id: string) => void;
 		claimTwapCancellation: (input: ClaimTwapCancellationInput) => PendingTwapCancellation | null;
 		markTwapCancellationRequestStarted: (id: string, now?: number, monotonicNow?: number) => void;
@@ -248,6 +269,7 @@ const usePendingTradingActionStore = create<PendingTradingActionStore>()((set, g
 				owner,
 				expectedSize: input.expectedSize ?? null,
 				expectedTriggerPx: input.expectedTriggerPx ?? null,
+				expectedLimitPx: input.expectedLimitPx ?? null,
 				phase: "submitting",
 				createdAt: now,
 				requestStartedAt: null,
@@ -338,6 +360,16 @@ const usePendingTradingActionStore = create<PendingTradingActionStore>()((set, g
 		},
 		releaseOrderCancellation: (id) => {
 			set((state) => ({ orderCancellations: state.orderCancellations.filter((action) => action.id !== id) }));
+		},
+		narrowOrderCancellation: (id, oids, partialResult) => {
+			const kept = new Set(oids);
+			set((state) => ({
+				orderCancellations: state.orderCancellations.flatMap((action) => {
+					if (action.id !== id) return [action];
+					const narrowed = action.oids.filter((oid) => kept.has(oid));
+					return narrowed.length > 0 ? [{ ...action, oids: narrowed, partialResult }] : [];
+				}),
+			}));
 		},
 		confirmOrderCancellation: (id) => {
 			set((state) => {

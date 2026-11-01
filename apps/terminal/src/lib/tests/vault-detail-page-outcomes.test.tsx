@@ -24,6 +24,9 @@ const testState = vi.hoisted(() => ({
 	retry: vi.fn(),
 	modalProps: null as Record<string, unknown> | null,
 	rerenderController: null as null | (() => void),
+	canConfirm: false,
+	needsRetry: false,
+	retryData: vi.fn(),
 }));
 const toastMocks = vi.hoisted(() => ({ error: vi.fn(), success: vi.fn(), warning: vi.fn() }));
 
@@ -45,7 +48,7 @@ function createController() {
 		availableAmount: "10",
 		actionAvailability: {},
 		canReview: false,
-		canConfirm: false,
+		canConfirm: testState.canConfirm,
 		requestAction: vi.fn(),
 		setAmount: vi.fn(),
 		review: vi.fn(),
@@ -62,7 +65,8 @@ vi.mock("@/components/vaults/use-vaults-controller", () => ({
 		detail: null,
 		owner: null,
 		isRefreshing: false,
-		onRetry: vi.fn(),
+		needsRetry: testState.needsRetry,
+		onRetry: testState.retryData,
 	}),
 	useVaultsController: () => ({}),
 }));
@@ -125,6 +129,8 @@ describe("VaultDetailPage settled outcomes", () => {
 		testState.action = null;
 		testState.modalProps = null;
 		testState.rerenderController = null;
+		testState.canConfirm = false;
+		testState.needsRetry = false;
 		container = document.createElement("div");
 		document.body.appendChild(container);
 		root = createI18nRoot(container);
@@ -257,6 +263,26 @@ describe("VaultDetailPage settled outcomes", () => {
 		);
 
 		expect(testState.modalProps).toMatchObject({ stage: "review", errorMessage: WITHDRAWAL_LOCKED_ZH });
+	});
+
+	it("passes the action controller's Confirm gate to the dialog", () => {
+		testState.action = { ...settledAction("apiError"), state: { stage: "review", result: null } };
+		render();
+		expect(testState.modalProps).toMatchObject({ stage: "review", canConfirm: false });
+
+		testState.canConfirm = true;
+		render();
+		expect(testState.modalProps).toMatchObject({ stage: "review", canConfirm: true });
+	});
+
+	it("gives the dialog the page's data Retry only while a source needs one", () => {
+		testState.action = { ...settledAction("apiError"), state: { stage: "review", result: null } };
+		render();
+		expect(testState.modalProps?.onRetry).toBeUndefined();
+
+		testState.needsRetry = true;
+		render();
+		expect(testState.modalProps?.onRetry).toBe(testState.retryData);
 	});
 
 	it("leaves an unknown result to the in-dialog verification path", () => {

@@ -1,6 +1,6 @@
 import type { TradesWsEvent } from "@nktkas/hyperliquid";
 import { formatTime, szDecimalsToPriceDecimals } from "@/lib/format";
-import { toBig, toNumber } from "@/lib/trade/numbers";
+import { toNumber } from "@/lib/trade/numbers";
 import { getPriceGroupingOptions } from "@/lib/trade/orderbook";
 
 export type RawTrade = TradesWsEvent[number];
@@ -26,12 +26,6 @@ export function getTradePriceDecimals(
 	const markPrice = toNumber(markPx);
 	const maxPriceDecimals = szDecimalsToPriceDecimals(szDecimals, marketType);
 	return getPriceGroupingOptions(markPrice ?? undefined, maxPriceDecimals)[0]?.decimals ?? maxPriceDecimals;
-}
-
-export function getTradeQuoteSize(price: string, size: string): string | null {
-	const priceValue = toBig(price);
-	const sizeValue = toBig(size);
-	return priceValue && sizeValue ? priceValue.times(sizeValue).toString() : null;
 }
 
 export function processTrades(trades: RawTrade[], locale?: string): ProcessedTrade[] {

@@ -29,12 +29,25 @@ function createTriggerOrder(overrides: Partial<HistoricalOrder> = {}): Historica
 	};
 }
 
-function renderPrice(order: HistoricalOrder): string {
+function renderPrice(order: HistoricalOrder, market?: { kind?: string; szDecimals?: number }): string {
 	return renderToStaticMarkup(
 		<I18nProvider i18n={i18n}>
-			<HistoricalOrderPrice order={order} />
+			<HistoricalOrderPrice market={market} order={order} />
 		</I18nProvider>,
 	);
+}
+
+function createLimitOrder(limitPx: string): HistoricalOrder {
+	return createTriggerOrder({
+		isPositionTpsl: false,
+		isTrigger: false,
+		limitPx,
+		orderType: "Limit",
+		reduceOnly: false,
+		tif: "Gtc",
+		triggerCondition: "N/A",
+		triggerPx: "0.0",
+	});
 }
 
 describe("HistoricalOrderPrice", () => {
@@ -75,7 +88,7 @@ describe("HistoricalOrderPrice", () => {
 	it("renders an active trigger and market execution without exposing the protection price", () => {
 		const markup = renderPrice(createTriggerOrder());
 
-		expect(markup).toContain("7.40");
+		expect(markup).toContain("$7.4<");
 		expect(markup).toContain("Execution");
 		expect(markup).toContain("Market");
 		expect(markup).not.toContain("6.66");
@@ -84,9 +97,14 @@ describe("HistoricalOrderPrice", () => {
 	it("renders the trigger and execution prices for a trigger-limit order", () => {
 		const markup = renderPrice(createTriggerOrder({ orderType: "Stop Limit" }));
 
-		expect(markup).toContain("7.40");
 		expect(markup).toContain("6.66");
-		expect(markup).toMatch(/<bdi dir="ltr">[^<]*7\.40<\/bdi>/u);
+		expect(markup).toMatch(/<bdi dir="ltr">[^<]*7\.4<\/bdi>/u);
 		expect(markup).toMatch(/<bdi dir="ltr">[^<]*6\.66<\/bdi>/u);
+	});
+
+	it("keeps every protocol price digit the market allows instead of cutting to cents", () => {
+		expect(renderPrice(createLimitOrder("0.18342"), { kind: "perp", szDecimals: 0 })).toContain(">$0.18342<");
+		expect(renderPrice(createLimitOrder("0.000123"), { kind: "spot", szDecimals: 2 })).toContain(">$0.000123<");
+		expect(renderPrice(createLimitOrder("95001.5"), { kind: "perp", szDecimals: 5 })).toContain(">$95,001.5<");
 	});
 });

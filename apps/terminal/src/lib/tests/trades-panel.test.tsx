@@ -7,9 +7,9 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { OrderbookPanel } from "@/components/trade/orderbook/orderbook-panel";
 import { TradesPanel } from "@/components/trade/orderbook/trades-panel";
+import { useOrderEntryActions } from "@/stores/use-order-entry-store";
 
 const mocks = vi.hoisted(() => ({
-	sizeMode: "base" as "base" | "quote",
 	subscriptionMethods: [] as string[],
 	result: {
 		data: undefined as
@@ -65,7 +65,6 @@ describe("TradesPanel", () => {
 	let root: Root;
 
 	beforeEach(() => {
-		mocks.sizeMode = "base";
 		mocks.subscriptionMethods.length = 0;
 		mocks.result.data = undefined;
 		mocks.result.error = null;
@@ -167,7 +166,7 @@ describe("TradesPanel", () => {
 		expect(mocks.subscriptionMethods.filter((method) => method === "trades")).toHaveLength(1);
 	});
 
-	it("derives its static asset heading and values from the shared order size mode", () => {
+	it("shows trade sizes in the base asset whatever unit the order size uses", () => {
 		mocks.result.data = [
 			{
 				coin: "HYPE",
@@ -181,22 +180,31 @@ describe("TradesPanel", () => {
 			},
 		];
 		mocks.result.status = "active";
+		let actions: ReturnType<typeof useOrderEntryActions> | null = null;
+		function SizeModeProbe() {
+			actions = useOrderEntryActions();
+			return null;
+		}
 
-		renderPanel();
+		act(() =>
+			root.render(
+				<I18nProvider i18n={i18n}>
+					<SizeModeProbe />
+					<OrderbookPanel />
+				</I18nProvider>,
+			),
+		);
+		act(() => actions?.setSizeMode("quote"));
 
-		const heading = container.querySelector(".trades-asset-heading");
-		const trade = container.querySelector<HTMLAnchorElement>('a[href="https://example.test/tx/0xabc"]');
-		expect(heading?.textContent).toBe("(HYPE)");
-		expect(heading?.closest("button")).toBeNull();
-		expect(trade?.children[1]?.textContent).toBe("1.25");
-
-		mocks.sizeMode = "quote";
-		renderPanel();
-
-		expect(container.querySelector(".trades-asset-heading")?.textContent).toBe("(USDC)");
-		expect(
-			container.querySelector<HTMLAnchorElement>('a[href="https://example.test/tx/0xabc"]')?.children[1]?.textContent,
-		).toBe("80.63");
+		try {
+			const heading = container.querySelector(".trades-asset-heading");
+			const trade = container.querySelector<HTMLAnchorElement>('a[href="https://example.test/tx/0xabc"]');
+			expect(heading?.textContent).toBe("(HYPE)");
+			expect(heading?.closest("button")).toBeNull();
+			expect(trade?.children[1]?.textContent).toBe("1.25");
+		} finally {
+			act(() => actions?.setSizeMode("base"));
+		}
 	});
 
 	it("keeps desktop subscription errors quiet without exposing transport details", () => {
@@ -265,7 +273,7 @@ describe("TradesPanel", () => {
 		act(() =>
 			root.render(
 				<I18nProvider i18n={i18n}>
-					<TradesPanel compact={compact} showInQuote={mocks.sizeMode === "quote"} />
+					<TradesPanel compact={compact} />
 				</I18nProvider>,
 			),
 		);

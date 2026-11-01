@@ -50,11 +50,15 @@ vi.mock("@/components/trade/mobile/mobile-trade-view", async () => {
 	};
 });
 
-vi.mock("@/components/trade/mobile/mobile-book-view", () => ({
-	MobileBookView: ({ showOrderbookInQuote, view }: { showOrderbookInQuote?: boolean; view?: string }) => (
-		<div data-mobile-book data-show-in-quote={String(showOrderbookInQuote)} data-view={view} />
-	),
-}));
+vi.mock("@/components/trade/mobile/mobile-book-view", async () => {
+	const { useSizeMode } = await import("@/stores/use-order-entry-store");
+	return {
+		MobileBookView: ({ view }: { view?: string }) => {
+			const sizeMode = useSizeMode();
+			return <div data-mobile-book data-show-in-quote={String(sizeMode === "quote")} data-view={view} />;
+		},
+	};
+});
 
 vi.mock("@/components/trade/mobile/mobile-chart-view", () => ({
 	MobileChartView: () => <div data-mobile-chart />,

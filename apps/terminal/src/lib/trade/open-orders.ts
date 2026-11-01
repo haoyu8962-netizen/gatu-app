@@ -50,6 +50,14 @@ export function areTpSlOrderInfosEqual(left: TpSlOrderInfo | undefined, right: T
 	);
 }
 
+/** The official terminal's trailing stop: a market trigger that follows the best mark, never a position TP/SL. */
+export const TRAILING_STOP_ORDER_TYPE = "Trailing Stop Market";
+
+export function isTrailingStopOrder(order: Pick<OpenOrder, "orderType">): boolean {
+	const orderType: string = order.orderType;
+	return orderType === TRAILING_STOP_ORDER_TYPE;
+}
+
 export function isTakeProfitOrder(order: OpenOrder): boolean {
 	return order.orderType.startsWith(OPEN_ORDER_TYPE_PREFIXES.takeProfit);
 }
@@ -93,7 +101,7 @@ export function buildTpSlOrdersByCoin(orders: readonly OpenOrder[]): Map<string,
 	const map = new Map<string, TpSlOrderInfo>();
 	const sidesByCoin = new Map<string, Partial<Record<"tp" | "sl", OrderSide>>>();
 	for (const order of orders) {
-		if (!order.isTrigger || !order.isPositionTpsl) continue;
+		if (!order.isTrigger || !order.isPositionTpsl || isTrailingStopOrder(order)) continue;
 
 		const existing = map.get(order.coin) ?? { ambiguous: false, incompatible: false };
 		const sides = sidesByCoin.get(order.coin) ?? {};

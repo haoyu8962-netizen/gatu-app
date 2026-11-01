@@ -7,6 +7,7 @@ import { useMarkets } from "@/lib/hyperliquid/markets/use-markets";
 
 interface Props {
 	coin: string;
+	isToken?: boolean;
 	iconUrl?: string;
 	variant?: "short" | "full";
 	subtitle?: ReactNode;
@@ -63,6 +64,7 @@ function getFallbackText(name: string): string {
 
 export function AssetDisplay({
 	coin,
+	isToken = false,
 	iconUrl: iconUrlOverride,
 	variant,
 	subtitle,
@@ -74,7 +76,7 @@ export function AssetDisplay({
 	subtitleClassName,
 }: Props) {
 	const markets = useMarkets();
-	const market = markets.getMarket(coin);
+	const market = isToken ? undefined : markets.getMarket(coin);
 	const token = !market ? markets.getToken(coin) : undefined;
 
 	const showIcon = !hideIcon;

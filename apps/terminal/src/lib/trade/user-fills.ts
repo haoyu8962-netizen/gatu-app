@@ -1,5 +1,8 @@
 import type { UserFillsResponse, UserTwapSliceFillsResponse } from "@nktkas/hyperliquid";
 import Big from "big.js";
+import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
+import { getToolbarNonZeroPnl } from "@/domain/trade/trading-toolbar-metrics";
+import type { UnifiedMarket } from "@/lib/hyperliquid";
 import type { Network } from "@/lib/network";
 import { fetchHistoryPageWithRetry, fetchTimeRangeHistory } from "@/lib/trade/history-pagination";
 import {
@@ -194,6 +197,38 @@ export function getUserFillNotional(fill: UserFillsResponse[number]): string | n
 	} catch {
 		return null;
 	}
+}
+
+/**
+ * A fill's closed PnL as the official terminal shows it (`l4`), net of the fee: the exchange's
+ * `closedPnl` leaves the fee out, so a fee paid in the market's quote or collateral token is
+ * subtracted as is and any other fee (a spot buy pays in the base token) at the fill price. An
+ * opening fill therefore shows its fee as a loss. Null when the result is zero, when a value is not
+ * a number, or when the catalog cannot tell the market's quote token while a fee was paid.
+ */
+export function getUserFillNetClosedPnl(
+	fill: Pick<UserFillsResponse[number], "closedPnl" | "coin" | "fee" | "feeToken" | "px">,
+	market: UnifiedMarket | undefined,
+): string | null {
+	try {
+		const closedPnl = new Big(fill.closedPnl);
+		const fee = new Big(fill.fee);
+		if (fee.eq(0)) return getToolbarNonZeroPnl(closedPnl.toString());
+		const quoteToken = getUserFillQuoteToken(fill.coin, fill.feeToken, market);
+		if (quoteToken === null) return null;
+		const feeInQuote = fill.feeToken === quoteToken ? fee : fee.times(fill.px);
+		return getToolbarNonZeroPnl(closedPnl.minus(feeInQuote).toString());
+	} catch {
+		return null;
+	}
+}
+
+function getUserFillQuoteToken(coin: string, feeToken: string, market: UnifiedMarket | undefined): string | null {
+	if (coin.startsWith("#")) return feeToken;
+	if (market?.kind === "spot") return market.tokensInfo[1]?.name ?? null;
+	if (market?.kind === "builderPerp") return market.quoteToken?.name ?? null;
+	if (market?.kind === "perp") return DEFAULT_QUOTE_TOKEN;
+	return coin.includes(":") || coin.includes("/") || coin.startsWith("@") ? null : DEFAULT_QUOTE_TOKEN;
 }
 
 export function hasUserFillExplorerTransaction(fill: UserFillsResponse[number]): boolean {

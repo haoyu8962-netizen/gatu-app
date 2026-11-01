@@ -94,14 +94,18 @@ describe("Vault views", () => {
 	it("renders distinct loading, feed-error, and definitive-empty states", () => {
 		for (const [state, expected] of [
 			["loading", "Loading Vaults"],
-			["error", "Vault data is unavailable"],
+			["error", "Retry"],
 			["empty", "No Vaults were returned"],
 		] as const) {
 			render(<VaultsList state={state} rows={[]} account={{ status: "disconnected" }} onRetry={vi.fn()} />);
 			if (state === "loading") expect(container.querySelector(`[aria-label="${expected}"]`)).not.toBeNull();
 			else expect(container.textContent).toContain(expected);
+			if (state === "error") {
+				expect(container.querySelector('[role="alert"]')).toBeNull();
+				expect(container.textContent).not.toContain("Vault data is unavailable");
+			}
 			const totalValue = container.querySelector("header [class*='tabular-nums']")?.textContent;
-			expect(totalValue).toBe(state === "empty" ? "$0.00" : "—");
+			expect(totalValue).toBe(state === "empty" ? "$0.00" : "--");
 		}
 	});
 
@@ -130,23 +134,33 @@ describe("Vault views", () => {
 		expect(leaderLink?.rel).toBe("noopener");
 	});
 
-	it("lets an account-specific detail error retry its authoritative snapshots", () => {
-		const onRetryOwner = vi.fn();
+	it("lets an account-specific detail error retry its authoritative snapshots with only a neutral control", () => {
+		const onRetry = vi.fn();
 		render(
 			<VaultDetailView
 				detail={createDetail()}
 				owner={{ status: "error" }}
-				actionAvailability={AVAILABLE_ACTIONS}
+				actionAvailability={{
+					deposit: { available: true, reason: null },
+					withdraw: { available: false, reason: "owner-error" },
+				}}
 				isTestnet={false}
-				onRetryOwner={onRetryOwner}
+				onRetry={onRetry}
+				onRequestAction={vi.fn()}
 			/>,
 		);
-		const retry = [...container.querySelectorAll("button")].find(
-			(button) => button.textContent === "Retry account data",
-		);
+		const retry = [...container.querySelectorAll("button")].find((button) => button.textContent === "Retry");
 		expect(retry).toBeDefined();
+		expect(container.querySelector('[role="alert"]')).toBeNull();
+		expect(container.textContent).not.toContain("could not be verified");
+		expect(container.textContent).not.toContain("until the owner balance is verified");
+		const withdraw = [...container.querySelectorAll<HTMLButtonElement>("button")].find(
+			(button) => button.textContent === "Withdraw",
+		);
+		expect(withdraw?.disabled).toBe(true);
+		expect(withdraw?.hasAttribute("aria-describedby")).toBe(false);
 		act(() => retry?.click());
-		expect(onRetryOwner).toHaveBeenCalledOnce();
+		expect(onRetry).toHaveBeenCalledOnce();
 	});
 
 	it("uses Vault-specific deposit status copy and visibly explains disabled actions", () => {

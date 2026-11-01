@@ -36,6 +36,7 @@ const QUERY_DATA = {
 };
 
 vi.mock("@sairn/hl-react", () => ({
+	useHyperliquidTransport: () => ({ env: "Mainnet" }),
 	useInfo: (method: keyof typeof QUERY_DATA, params: undefined, options: unknown) => {
 		mocks.useInfo(method, params, options);
 		return {

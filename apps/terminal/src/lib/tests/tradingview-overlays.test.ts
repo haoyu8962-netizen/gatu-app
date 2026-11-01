@@ -8,14 +8,24 @@ import {
 } from "@/lib/chart/tradingview-overlays";
 import { getNumberFormatters } from "@/lib/format";
 import type { Position } from "@/lib/hyperliquid";
+import { notifyNumberFormatChange } from "@/lib/number-format-reactivity";
 import type { OpenOrder } from "@/lib/trade/open-orders";
 import type { EntityId } from "@/types/charting_library";
+
+const formatSettings = vi.hoisted(() => ({
+	numberFormatLocale: "en-US" as "en-US" | "de-DE",
+}));
+
+vi.mock("@/stores/use-global-settings-store", () => ({
+	getResolvedFormatLocale: () => formatSettings.numberFormatLocale,
+}));
 
 const numberFormat = getNumberFormatters();
 
 const labels = {
 	limitBuy: "Limit Buy",
 	limitSell: "Limit Sell",
+	liquidation: "Liq. Price",
 	long: "Long",
 	pnl: "PNL",
 	roe: "ROE",
@@ -93,7 +103,7 @@ describe("buildTradingViewOverlayLines", () => {
 				tone: -1,
 				side: "sell",
 			},
-			{ key: "liquidation::BTC", kind: "liquidation", price: 140, label: "Liq.", side: "sell" },
+			{ key: "liquidation::BTC", kind: "liquidation", price: 140, label: "Liq. Price", side: "sell" },
 		]);
 	});
 
@@ -158,6 +168,45 @@ describe("buildTradingViewOverlayLines", () => {
 		});
 
 		expect(lines[0]).toMatchObject({ label: "Short · Return -1.5% · 0.0043", tone: -1 });
+	});
+
+	it("writes the liquidation label it is given and the size in the number format setting", () => {
+		formatSettings.numberFormatLocale = "de-DE";
+		notifyNumberFormatChange();
+		try {
+			const lines = buildTradingViewOverlayLines({
+				coin: "BTC",
+				positionDex: "",
+				quoteSymbol: "USDC",
+				orders: [],
+				positions: [
+					createPosition({
+						szi: "-1234.00000005",
+						liquidationPx: "140",
+						unrealizedPnl: "invalid",
+						returnOnEquity: "x",
+					}),
+				],
+				labels: { ...labels, liquidation: "强平价格" },
+				numberFormat: getNumberFormatters(),
+			});
+
+			expect(lines.map((line) => line.label)).toEqual(["Short · 1.234,00000005", "强平价格"]);
+
+			const tiny = buildTradingViewOverlayLines({
+				coin: "BTC",
+				positionDex: "",
+				quoteSymbol: "USDC",
+				orders: [],
+				positions: [createPosition({ szi: "-0.00000001", unrealizedPnl: "invalid", returnOnEquity: "x" })],
+				labels,
+				numberFormat: getNumberFormatters(),
+			});
+			expect(tiny[0]?.label).toBe("Short · 0,00000001");
+		} finally {
+			formatSettings.numberFormatLocale = "en-US";
+			notifyNumberFormatChange();
+		}
 	});
 
 	it("does not create position lines for spot markets", () => {

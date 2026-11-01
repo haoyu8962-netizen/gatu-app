@@ -12,6 +12,7 @@ import {
 	getVaultMark,
 	getVaultRequestAvailability,
 	groupVaultRows,
+	isPassiveVaultActionReason,
 	parseVaultDetailsSnapshot,
 	parseVaultEquitiesSnapshot,
 	selectVaultDiscoveryRows,
@@ -159,7 +160,7 @@ describe("Vault list domain", () => {
 		expect(formatVaultCompactUsd("1500", numberFormat)).toBe("$1.5K");
 		expect(formatVaultRatio("0.098", numberFormat, 1, true)).toBe("+9.8%");
 		expect(formatVaultRatio("-0.12345", numberFormat)).toBe("-12.35%");
-		expect(formatVaultUsd("not-a-number", numberFormat)).toBe("—");
+		expect(formatVaultUsd("not-a-number", numberFormat)).toBe("--");
 	});
 
 	it("marks a Vault with its first two letters or digits, skipping punctuation and emoji", () => {
@@ -244,6 +245,50 @@ describe("Vault detail runtime validation", () => {
 			deposit: { available: false, reason: "agent-only-session" },
 			withdraw: { available: false, reason: "agent-only-session" },
 		});
+	});
+
+	it("disables both actions while the shown detail is the one kept after a failed refresh", () => {
+		const parsed = parseVaultDetailsSnapshot(createRawDetail());
+		if (parsed.status !== "valid") throw new Error("Expected a valid Vault detail fixture");
+		const request = { available: true, reason: null } as const;
+		const owner = deriveVaultOwnerView({
+			detail: parsed.detail,
+			account: {
+				status: "ready",
+				equities: [{ vaultAddress: parsed.detail.vaultAddress, equity: "5", lockedUntilTimestamp: 1 }],
+			},
+			now: NOW,
+		});
+		expect(
+			deriveVaultActionsAvailability({ detail: parsed.detail, detailCurrent: true, owner, request }).deposit,
+		).toEqual({ available: true, reason: null });
+		expect(deriveVaultActionsAvailability({ detail: parsed.detail, detailCurrent: false, owner, request })).toEqual({
+			deposit: { available: false, reason: "detail-unavailable" },
+			withdraw: { available: false, reason: "detail-unavailable" },
+		});
+	});
+
+	it("names only data-state reasons as passive", () => {
+		for (const reason of [
+			"geo-checking",
+			"geo-unavailable",
+			"detail-unavailable",
+			"owner-loading",
+			"owner-error",
+		] as const) {
+			expect(isPassiveVaultActionReason(reason)).toBe(true);
+		}
+		for (const reason of [
+			"geo-restricted",
+			"agent-only-session",
+			"deposits-disabled",
+			"owner-disconnected",
+			"vault-closed",
+			"withdrawal-locked",
+			"withdrawal-unavailable",
+		] as const) {
+			expect(isPassiveVaultActionReason(reason)).toBe(false);
+		}
 	});
 
 	it("distinguishes valid, not-found, and malformed responses", () => {

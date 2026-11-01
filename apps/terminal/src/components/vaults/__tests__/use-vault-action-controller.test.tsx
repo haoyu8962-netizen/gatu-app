@@ -27,6 +27,7 @@ const HASH = `0x${"ab".repeat(32)}`;
 
 interface QueryState {
 	data: unknown;
+	isSuccess: boolean;
 	refetch: ReturnType<typeof vi.fn>;
 }
 
@@ -117,8 +118,18 @@ vi.mock("@/lib/hyperliquid", () => ({
 
 let controller: ReturnType<typeof useVaultActionController> | null = null;
 
-function Probe({ vaultAddress = VAULT, detail = DETAIL }: { vaultAddress?: string; detail?: VaultDetail | null }) {
-	controller = useVaultActionController({ vaultAddress, detail, owner: OWNER_VIEW });
+function Probe({
+	vaultAddress = VAULT,
+	detail = DETAIL,
+	detailCurrent = true,
+	owner = OWNER_VIEW,
+}: {
+	vaultAddress?: string;
+	detail?: VaultDetail | null;
+	detailCurrent?: boolean;
+	owner?: VaultOwnerViewState;
+}) {
+	controller = useVaultActionController({ vaultAddress, detail, detailCurrent, owner });
 	return null;
 }
 
@@ -200,6 +211,8 @@ describe("useVaultActionController", () => {
 			["vaultDetails", query(RAW_DETAIL)],
 			["userVaultEquities", query(mocks.preflightData.equities)],
 			["clearinghouseState", query(mocks.preflightData.clearinghouse)],
+			["spotClearinghouseState", query({ balances: [] })],
+			["userAbstraction", query("disabled")],
 		]);
 		controller = null;
 		container = document.createElement("div");
@@ -233,14 +246,98 @@ describe("useVaultActionController", () => {
 		expect(current().action).toBeNull();
 	});
 
+	it("offers a Unified account its spot USDC for a Vault deposit and signs it after the same fresh check", async () => {
+		mocks.queries.set("clearinghouseState", query({ withdrawable: "0.0" }));
+		mocks.queries.set(
+			"spotClearinghouseState",
+			query({ balances: [{ coin: "USDC", token: 0, total: "10.1", hold: "0.0", entryNtl: "0.0" }] }),
+		);
+		mocks.queries.set("userAbstraction", query("unifiedAccount"));
+		act(() => root.render(<Probe />));
+
+		await act(async () => current().requestAction("deposit"));
+		expect(current().availableAmount).toBe("10.1");
+		expect(current().maxAmount).toBe("10.1");
+		act(() => current().setAmount("4"));
+		expect(current().canReview).toBe(false);
+		expect(current().belowMinimum).toBe(true);
+		act(() => current().setAmount("10.1"));
+		expect(current().canReview).toBe(true);
+		act(() => current().review());
+		await act(async () => current().confirm());
+
+		expect(mocks.exchangeMutate).toHaveBeenCalledWith({ vaultAddress: VAULT, isDeposit: true, usd: 10_100_000 });
+	});
+
+	it("holds the review step and both actions while the shown detail is the one kept after a failed refresh", async () => {
+		mocks.queries.set("clearinghouseState", query({ withdrawable: "0.0" }));
+		mocks.queries.set(
+			"spotClearinghouseState",
+			query({ balances: [{ coin: "USDC", token: 0, total: "10.1", hold: "0.0", entryNtl: "0.0" }] }),
+		);
+		mocks.queries.set("userAbstraction", query("unifiedAccount"));
+		act(() => root.render(<Probe />));
+		await act(async () => current().requestAction("deposit"));
+		act(() => current().setAmount("10.1"));
+		expect(current().canReview).toBe(true);
+
+		act(() => root.render(<Probe detailCurrent={false} />));
+		expect(current().action).not.toBeNull();
+		expect(current().canReview).toBe(false);
+		expect(current().actionAvailability).toEqual({
+			deposit: { available: false, reason: "detail-unavailable" },
+			withdraw: { available: false, reason: "detail-unavailable" },
+		});
+
+		act(() => root.render(<Probe />));
+		expect(current().canReview).toBe(true);
+	});
+
+	it("pauses Confirm at the review step while the shown detail is the one kept after a failed refresh", async () => {
+		await openAndReview();
+		expect(current().canConfirm).toBe(true);
+
+		act(() => root.render(<Probe detailCurrent={false} />));
+		expect(current().action?.state.stage).toBe("review");
+		expect(current().canConfirm).toBe(false);
+		await act(async () => current().confirm());
+		expect(mocks.exchangeMutate).not.toHaveBeenCalled();
+		expect(current().action?.state.stage).toBe("review");
+
+		act(() => root.render(<Probe />));
+		expect(current().canConfirm).toBe(true);
+	});
+
+	it("pauses a withdrawal's Confirm at the review step while the owner balance is unverified", async () => {
+		await openAndReview("withdraw");
+		expect(current().canConfirm).toBe(true);
+
+		act(() => root.render(<Probe owner={{ status: "error" }} />));
+		expect(current().action?.state.stage).toBe("review");
+		expect(current().canConfirm).toBe(false);
+		await act(async () => current().confirm());
+		expect(mocks.exchangeMutate).not.toHaveBeenCalled();
+
+		act(() => root.render(<Probe />));
+		expect(current().canConfirm).toBe(true);
+	});
+
+	it("lets the Vault leader deposit after deposits from others are disabled", () => {
+		act(() => root.render(<Probe detail={{ ...DETAIL, allowDeposits: false }} />));
+		expect(current().actionAvailability.deposit).toEqual({ available: false, reason: "deposits-disabled" });
+
+		act(() => root.render(<Probe detail={{ ...DETAIL, allowDeposits: false, leader: OWNER }} />));
+		expect(current().actionAvailability.deposit).toEqual({ available: true, reason: null });
+	});
+
 	it("persists a public marker before the Agent-signed SDK call and succeeds only after exact ledger reconciliation", async () => {
 		await openAndReview();
 		await act(async () => current().confirm());
 
-		expect(mocks.exchangeMutate).toHaveBeenCalledWith({ vaultAddress: VAULT, isDeposit: true, usd: 1_000_000 });
+		expect(mocks.exchangeMutate).toHaveBeenCalledWith({ vaultAddress: VAULT, isDeposit: true, usd: 5_000_000 });
 		expect(current().action).toMatchObject({
 			state: { stage: "done", result: "success" },
-			receipt: { hash: HASH, finalAmount: "1" },
+			receipt: { hash: HASH, finalAmount: "5" },
 		});
 		expect(current().action?.receipt?.operationReference).toContain("vaultTransfer");
 		const historyStartTimes = mocks.history.mock.calls.map(([params]) => params.startTime);
@@ -384,6 +481,100 @@ describe("useVaultActionController", () => {
 		expect(getFundsActionMarkers()).toHaveLength(0);
 	});
 
+	function refetching(cached: unknown, fresh: { data: unknown; error: unknown }): QueryState {
+		return { data: cached, isSuccess: true, refetch: vi.fn().mockResolvedValue(fresh) };
+	}
+
+	function setUnifiedSpot(total: string) {
+		mocks.queries.set(
+			"spotClearinghouseState",
+			query({ balances: [{ coin: "USDC", token: 0, total, hold: "0.0", entryNtl: "0.0" }] }),
+		);
+		mocks.queries.set("userAbstraction", query("unifiedAccount"));
+	}
+
+	function vaultErrorText() {
+		const error = current().action?.error;
+		return error ? describeActionFailure(error, (descriptor) => i18n._(descriptor)) : null;
+	}
+
+	it("signs nothing when the balance re-read before signing no longer covers the reviewed deposit", async () => {
+		setUnifiedSpot("100");
+		mocks.queries.set(
+			"spotClearinghouseState",
+			refetching(
+				{ balances: [{ coin: "USDC", token: 0, total: "100", hold: "0.0", entryNtl: "0.0" }] },
+				{ data: { balances: [{ coin: "USDC", token: 0, total: "2", hold: "0.0", entryNtl: "0.0" }] }, error: null },
+			),
+		);
+		act(() => root.render(<Probe />));
+		await openAndReview();
+		await act(async () => current().confirm());
+
+		expect(current().action).toMatchObject({ state: { stage: "review", result: null } });
+		expect(mocks.exchangeMutate).not.toHaveBeenCalled();
+		expect(getFundsActionMarkers()).toHaveLength(0);
+	});
+
+	it("signs nothing when a failed re-read still carries the earlier balance or the mode became default", async () => {
+		const balance = { balances: [{ coin: "USDC", token: 0, total: "100", hold: "0.0", entryNtl: "0.0" }] };
+		setUnifiedSpot("100");
+		mocks.queries.set("spotClearinghouseState", refetching(balance, { data: balance, error: new Error("timeout") }));
+		act(() => root.render(<Probe />));
+		await openAndReview();
+		await act(async () => current().confirm());
+
+		expect(vaultErrorText()).not.toBeNull();
+		expect(mocks.exchangeMutate).not.toHaveBeenCalled();
+
+		mocks.queries.set("spotClearinghouseState", query(balance));
+		mocks.queries.set("userAbstraction", refetching("unifiedAccount", { data: "default", error: null }));
+		act(() => root.render(<Probe />));
+		await act(async () => current().confirm());
+
+		expect(mocks.exchangeMutate).not.toHaveBeenCalled();
+		expect(getFundsActionMarkers()).toHaveLength(0);
+	});
+
+	it("does not offer Max from a balance whose last refresh failed", async () => {
+		setUnifiedSpot("100");
+		mocks.queries.set("spotClearinghouseState", {
+			...query({ balances: [{ coin: "USDC", token: 0, total: "100", hold: "0.0", entryNtl: "0.0" }] }),
+			isSuccess: false,
+		});
+		act(() => root.render(<Probe />));
+		await act(async () => current().requestAction("deposit"));
+		act(() => current().setAmount("5"));
+
+		expect(current().availableAmount).toBeNull();
+		expect(current().maxAmount).toBeNull();
+		expect(current().canReview).toBe(false);
+	});
+
+	it.each(["disabled", "dexAbstraction"])(
+		"deposits from the perp balance in %s mode even when the unused spot re-read fails",
+		async (mode) => {
+			mocks.queries.set("userAbstraction", query(mode));
+			mocks.queries.set(
+				"spotClearinghouseState",
+				refetching({ balances: [] }, { data: undefined, error: new Error("down") }),
+			);
+			act(() => root.render(<Probe />));
+			await openAndReview();
+			await act(async () => current().confirm());
+
+			expect(mocks.exchangeMutate).toHaveBeenCalledWith({ vaultAddress: VAULT, isDeposit: true, usd: 5_000_000 });
+		},
+	);
+
+	it("rounds Max down to micro-USDC", async () => {
+		mocks.queries.set("clearinghouseState", query({ withdrawable: "12.3456789" }));
+		act(() => root.render(<Probe />));
+		await act(async () => current().requestAction("deposit"));
+
+		expect(current().maxAmount).toBe("12.345678");
+	});
+
 	it("fails a fresh closed-Vault preflight before persisting or calling the SDK", async () => {
 		mocks.queries.set("vaultDetails", query({ ...RAW_DETAIL, isClosed: true }));
 		await openAndReview();
@@ -413,6 +604,17 @@ describe("useVaultActionController", () => {
 
 	it("shows an unknown exchange rejection of the Vault transfer exactly as the exchange sent it", async () => {
 		const text = "Vault withdrawal limit exceeded: 12.34 USDC";
+		mocks.exchangeMutate.mockRejectedValueOnce(new ApiRequestError({ status: "err", response: text }, text));
+		await openAndReview();
+		await act(async () => current().confirm());
+
+		expect(current().action).toMatchObject({ state: { stage: "done", result: "apiError" } });
+		const error = current().action?.error;
+		expect(error && describeActionFailure(error, (descriptor) => i18n._(descriptor))).toBe(text);
+	});
+
+	it("keeps an exchange rejection that mentions a user rejection as the exchange's reason", async () => {
+		const text = "User rejected the request because the vault is closed";
 		mocks.exchangeMutate.mockRejectedValueOnce(new ApiRequestError({ status: "err", response: text }, text));
 		await openAndReview();
 		await act(async () => current().confirm());
@@ -739,6 +941,7 @@ describe("useVaultActionController", () => {
 		const freshDetail = deferred<{ data: unknown; error: null }>();
 		mocks.queries.set("vaultDetails", {
 			data: RAW_DETAIL,
+			isSuccess: true,
 			refetch: vi.fn().mockReturnValue(freshDetail.promise),
 		});
 		await openAndReview();
@@ -795,6 +998,7 @@ describe("useVaultActionController", () => {
 		const freshDetail = deferred<{ data: unknown; error: null }>();
 		mocks.queries.set("vaultDetails", {
 			data: RAW_DETAIL,
+			isSuccess: true,
 			refetch: vi.fn().mockReturnValue(freshDetail.promise),
 		});
 		await openAndReview();
@@ -1045,7 +1249,7 @@ describe("useVaultActionController", () => {
 
 	async function openAndReview(action: "deposit" | "withdraw" = "deposit") {
 		await act(async () => current().requestAction(action));
-		act(() => current().setAmount("1"));
+		act(() => current().setAmount(action === "deposit" ? "5" : "1"));
 		expect(current().canReview).toBe(true);
 		act(() => current().review());
 		expect(current().action?.state.stage).toBe("review");
@@ -1053,7 +1257,7 @@ describe("useVaultActionController", () => {
 });
 
 function query(data: unknown): QueryState {
-	return { data, refetch: vi.fn().mockResolvedValue({ data, error: null }) };
+	return { data, isSuccess: true, refetch: vi.fn().mockResolvedValue({ data, error: null }) };
 }
 
 function messageId(message: string): string {

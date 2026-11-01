@@ -335,6 +335,42 @@ describe("MobileOrdersTab disclosure card", () => {
 		expect(container.textContent).not.toContain("Original Size");
 	});
 
+	it("shows a trailing stop's trigger, retracement and watermark, as the official terminal does", () => {
+		mocks.orders = [
+			{
+				...order,
+				orderType: "Trailing Stop Market",
+				side: "A",
+				triggerCondition: "retracement 2, best 170",
+				triggerPx: "168",
+			} as unknown as OpenOrder,
+		];
+		renderOrders();
+
+		expect(container.textContent).toContain("Trigger: $168 / Retracement: 2 · Watermark: $170");
+		expect(container.textContent).not.toContain("retracement 2, best 170");
+	});
+
+	it("shows the attached TP/SL trigger prices, as the desktop table and the official card do", () => {
+		mocks.orders = [
+			{
+				...order,
+				orderType: "Limit",
+				isTrigger: false,
+				children: [
+					{ ...order, oid: 50, orderType: "Take Profit Market", triggerPx: "160" },
+					{ ...order, oid: 51, orderType: "Stop Market", triggerPx: "140" },
+				],
+			} as unknown as OpenOrder,
+		];
+		renderOrders();
+
+		const label = [...container.querySelectorAll<HTMLElement>("div")].find(
+			(element) => element.textContent?.trim() === "TP/SL",
+		);
+		expect(label?.nextElementSibling?.textContent).toBe("$160 / $140");
+	});
+
 	it("shows the SDK-derived mark distance and warns below ten percent", () => {
 		renderOrders();
 
@@ -793,6 +829,43 @@ describe("MobileOrdersTab disclosure card", () => {
 			},
 			expect.objectContaining({ onSuccess: expect.any(Function), onSettled: expect.any(Function) }),
 		);
+	});
+
+	it("settles a partly accepted cancel all item by item, as the official terminal does", async () => {
+		mocks.orders = [order, outcomeOrder];
+		renderOrders();
+		const requestButton = [...container.querySelectorAll<HTMLButtonElement>("button")].find(
+			(button) => button.textContent?.trim() === "Cancel all",
+		);
+		act(() => requestButton?.click());
+		const confirmButton = [...document.body.querySelectorAll<HTMLButtonElement>("button")].find(
+			(button) => button !== requestButton && button.textContent?.trim() === "Cancel All",
+		);
+		act(() => confirmButton?.click());
+		const feedbackId = queueItems.at(-1)?.id;
+		const callbacks = mocks.cancelOrders.mock.calls[0]?.[1] as { onError: (cause: Error) => void } | undefined;
+		const rejection = "Order was never placed, already canceled, or filled.";
+
+		await act(async () => {
+			callbacks?.onError(
+				new ApiRequestError(
+					{ status: "ok", response: { type: "cancel", data: { statuses: [{ error: rejection }, "success"] } } },
+					`cancel 0: ${rejection}`,
+				),
+			);
+			await Promise.resolve();
+		});
+
+		expect(getOrderQueueItem(feedbackId)).toMatchObject({
+			status: "partial",
+			acceptedCount: 1,
+			totalCount: 2,
+			countMode: "canceled",
+			error: { kind: "exchange-error", entries: [{ index: 0, text: rejection }] },
+		});
+		expect(getPendingTradingActionSnapshot().orderCancellations).toEqual([
+			expect.objectContaining({ oids: [43], phase: "awaiting" }),
+		]);
 	});
 
 	it("rejects cancel all when the confirmed order set changes", () => {

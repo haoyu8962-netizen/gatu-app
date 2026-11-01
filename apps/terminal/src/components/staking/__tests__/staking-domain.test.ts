@@ -218,9 +218,15 @@ describe("staking domain", () => {
 		expect(
 			deriveStakingPageState({ publicState: "loading", accountState: "disconnected", hasExactMasterSigner: false }),
 		).toBe("loading");
-		expect(deriveStakingPageState({ publicState: "error", accountState: "ready", hasExactMasterSigner: true })).toBe(
+		expect(deriveStakingPageState({ publicState: "failed", accountState: "ready", hasExactMasterSigner: true })).toBe(
 			"error",
 		);
+		expect(deriveStakingPageState({ publicState: "ready", accountState: "failed", hasExactMasterSigner: true })).toBe(
+			"error",
+		);
+		expect(
+			deriveStakingPageState({ publicState: "retained", accountState: "retained", hasExactMasterSigner: true }),
+		).toBe("normal");
 		expect(
 			deriveStakingPageState({ publicState: "ready", accountState: "disconnected", hasExactMasterSigner: false }),
 		).toBe("disconnected");

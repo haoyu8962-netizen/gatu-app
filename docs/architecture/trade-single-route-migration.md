@@ -25,8 +25,11 @@ Supported trade routes:
 
 - `/trade/BTC` -> native perp `BTC`
 - `/trade/xyz:SILVER` -> HIP-3 builder perp `xyz:SILVER`, dex `xyz`
-- `/trade/ETH/USDC` -> spot pair `ETH/USDC`
-- `/trade/%40107` -> spot internal name `@107`
+- `/trade/ETH/USDC` -> spot pair named `ETH/USDC` (the `UETH` pair); spot names follow the official terminal's display table
+- `/trade/%40107` -> spot internal name `@107`; the address is then replaced with the pair's display path
+- `/trade/0x<tokenId>` and `/trade/0x<base>/0x<quote>` -> spot pair by token ID, then replaced with its display path
+
+Since 2026-11-01 ([ADR 0048](../adr/0048-official-spot-display-names-and-addresses.md)) an address that names no market is replaced with the default market once the catalog can conclude, instead of showing the not-found page. [Spot market names and addresses](../spot-market-names.md) owns spot names and every address rule, with the official terminal's behaviour beside this one.
 
 Legacy routes remain compatible for now:
 

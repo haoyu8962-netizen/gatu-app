@@ -1,6 +1,8 @@
+import { useDataReceivedSinceMount } from "@/hooks/portfolio/use-data-received-since-mount";
 import { type AccountLedgerStatus, useAccountLedger } from "@/hooks/trade/use-account-ledger";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
-import { useInfo } from "@/lib/hyperliquid";
+import { useHyperliquid, useInfo } from "@/lib/hyperliquid";
+import { getPassiveQueryState, isPassiveQueryShown } from "@/lib/passive-query-state";
 import {
 	buildReferralRewardRows,
 	getDisplayedReferralDiscountPercent,
@@ -32,12 +34,20 @@ export interface ReferralClaimHistoryRow {
 
 export interface ReferralsResult {
 	claimHistory: ReferralClaimHistoryRow[];
+	/** The last claim-history snapshot succeeded and no refresh is running, so an empty list is a fact. */
+	claimHistoryCanConfirmEmpty: boolean;
+	claimHistoryRefreshing: boolean;
 	claimHistoryStatus: AccountLedgerStatus;
 	unclaimedRewardRows: ReferralRewardRow[];
 	data: ReferralData | null;
 	discountPercent: string | null;
 	error: unknown;
 	hasUnclaimedRewards: boolean;
+	/**
+	 * The latest referral request succeeded. While it is false, `data` is the snapshot this page received
+	 * before a failed refresh: shown, but not a basis for actions or empty conclusions.
+	 */
+	isCurrent: boolean;
 	isRefreshing: boolean;
 	refetchReferral: () => Promise<ReferralData>;
 	refreshAfterAction: (includeLedger: boolean) => Promise<void>;
@@ -55,6 +65,7 @@ interface UseReferralsOptions {
 
 export function useReferrals({ claimHistoryEnabled = false }: UseReferralsOptions = {}): ReferralsResult {
 	const { address, isConnected } = useWalletSession();
+	const { env } = useHyperliquid();
 	const user = address ?? EMPTY_ADDRESS;
 	const referralQuery = useInfo(
 		"referral",
@@ -86,15 +97,24 @@ export function useReferrals({ claimHistoryEnabled = false }: UseReferralsOption
 		retry: 1,
 	});
 	const accountLedger = useAccountLedger({ enabled: claimHistoryEnabled });
+	const receivedSinceMount = useDataReceivedSinceMount(
+		JSON.stringify([env, "referral", user.toLowerCase()]),
+		referralQuery.dataUpdatedAt,
+	);
 
 	const malformedReferral = referralQuery.isSuccess && referralQuery.data === null;
+	const snapshotState = getPassiveQueryState({
+		hasData: Boolean(referralQuery.data),
+		failed: referralQuery.isError || malformedReferral,
+		receivedSinceMount,
+	});
 	let status: ReferralQueryStatus = "unavailable";
 	if (!isConnected) status = "idle";
-	else if (referralQuery.data) status = "ready";
-	else if (referralQuery.isError || malformedReferral) status = "error";
+	else if (isPassiveQueryShown(snapshotState)) status = "ready";
+	else if (snapshotState === "failed") status = "error";
 	else if (referralQuery.fetchStatus === "fetching") status = "loading";
 
-	const data = referralQuery.data ?? null;
+	const data = status === "ready" ? (referralQuery.data ?? null) : null;
 	const tokenMetadata = spotMetaQuery.data ?? null;
 	const rewardRows = data ? buildReferralRewardRows(data, tokenMetadata) : [];
 	const tokenMetadataByName = new Map(
@@ -124,12 +144,15 @@ export function useReferrals({ claimHistoryEnabled = false }: UseReferralsOption
 
 	return {
 		claimHistory,
+		claimHistoryCanConfirmEmpty: accountLedger.canConfirmEmpty,
+		claimHistoryRefreshing: accountLedger.isRefreshing,
 		claimHistoryStatus: accountLedger.status,
 		unclaimedRewardRows: getUnclaimedReferralRewardRows(rewardRows),
 		data,
 		discountPercent: data ? getDisplayedReferralDiscountPercent(data, userFeesQuery.data ?? null) : null,
 		error: referralQuery.error ?? (malformedReferral ? new Error("Referral response was invalid") : null),
 		hasUnclaimedRewards: data ? hasUnclaimedReferralRewards(data) : false,
+		isCurrent: status === "ready" && snapshotState === "ready",
 		isRefreshing: Boolean(data) && referralQuery.fetchStatus === "fetching",
 		refetchReferral,
 		refreshAfterAction,

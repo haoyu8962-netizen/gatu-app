@@ -172,6 +172,20 @@ describe("buildOrderPlan entry trigger guard", () => {
 	});
 });
 
+describe("limit price rounding at submission", () => {
+	it("never rounds a buy limit up or a sell limit down", () => {
+		const buy = buildOrderPlan(entry({ price: 100.129, limitPriceInput: "100.129" }));
+		const sell = buildOrderPlan(entry({ side: "sell", price: 100.121, limitPriceInput: "100.121" }));
+		const stopLimit = buildOrderPlan(
+			entry({ orderType: "stopLimit", side: "buy", triggerPriceInput: "105", limitPriceInput: "106.009" }),
+		);
+
+		expect(buy.orders[0]?.p).toBe("100.12");
+		expect(sell.orders[0]?.p).toBe("100.13");
+		expect(stopLimit.orders[0]?.p).toBe("106");
+	});
+});
+
 describe("buildOrders low-level trigger guard", () => {
 	it("throws instead of formatting an empty trigger price to 0", () => {
 		expect(() => buildOrders(buildParams({ triggerPriceInput: "" }))).toThrow();

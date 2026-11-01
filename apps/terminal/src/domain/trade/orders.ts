@@ -67,7 +67,13 @@ export function isValidSizeDecimalsForAsset(assetId: number, szDecimals: number)
 	return szDecimals <= maxDecimals;
 }
 
-export function buildFrontendMarketOrder(params: FrontendMarketOrderParams): ExchangeOrder {
+/**
+ * The price a FrontendMarket order is sent at: the reference price moved by the slippage limit,
+ * rounded back toward the reference so the limit the user confirmed is never exceeded.
+ */
+export function getFrontendMarketOrderPrice(
+	params: Pick<FrontendMarketOrderParams, "assetId" | "side" | "szDecimals" | "markPx" | "slippageBps">,
+): string {
 	const markPx = toBig(params.markPx);
 	const slippageBps = toBig(params.slippageBps);
 	let orderPrice = Big(0);
@@ -78,11 +84,14 @@ export function buildFrontendMarketOrder(params: FrontendMarketOrderParams): Exc
 		orderPrice = markPx.times(multiplier);
 	}
 	const roundingMode = params.side === "buy" ? Big.roundDown : Big.roundUp;
+	return formatPriceForOrderWithRounding(orderPrice, params, roundingMode);
+}
 
+export function buildFrontendMarketOrder(params: FrontendMarketOrderParams): ExchangeOrder {
 	return {
 		a: params.assetId,
 		b: params.side === "buy",
-		p: formatPriceForOrderWithRounding(orderPrice, params, roundingMode),
+		p: getFrontendMarketOrderPrice(params),
 		s: formatSizeForOrder(params.size, params.szDecimals),
 		r: params.reduceOnly,
 		t: { limit: { tif: "FrontendMarket" } },
@@ -291,6 +300,65 @@ export function resolveScaleSkewNumber(input: string): number | null {
 	return toNumber(resolveScaleSkew(input));
 }
 
+function getScaleLevelWeights(levels: number, skew: Big): Big[] {
+	const span = Math.max(levels - 1, 1);
+	return Array.from({ length: levels }, (_, index) => skew.minus(1).times(index).plus(span));
+}
+
+/**
+ * Size-weighted average price of the scale levels, which the official terminal uses as a scale
+ * order's price for its quote-size conversion, order value and fees. It uses the exact level
+ * weights, so it does not depend on the total size; null while the range is incomplete.
+ */
+export function getScaleAveragePrice(params: Omit<ScaleOrderPlanParams, "sizeValue">): number | null {
+	if (!isValidSizeDecimalsForAsset(params.assetId, params.szDecimals)) return null;
+	const levels = params.scaleLevelsNum;
+	if (levels === null || !Number.isSafeInteger(levels) || levels < SCALE_LEVELS_MIN || levels > SCALE_LEVELS_MAX) {
+		return null;
+	}
+	const start = toBig(params.scaleStartPriceInput);
+	const end = toBig(params.scaleEndPriceInput);
+	const skew = resolveScaleSkew(params.scaleSkew);
+	if (!start?.gt(0) || !end?.gt(0) || start.eq(end) || !skew) return null;
+
+	const priceStep = end.minus(start).div(levels - 1);
+	const weights = getScaleLevelWeights(levels, skew);
+	let weightedPrice = Big(0);
+	let weightSum = Big(0);
+	for (const [index, weight] of weights.entries()) {
+		const price = toBig(formatPriceForOrder(start.plus(priceStep.times(index)), params));
+		if (!price?.gt(0)) return null;
+		weightedPrice = weightedPrice.plus(price.times(weight));
+		weightSum = weightSum.plus(weight);
+	}
+	return weightedPrice.div(weightSum).toNumber();
+}
+
+/**
+ * What the levels of a scale order cost once its total size is split into lots: the sum of each
+ * level's price times its size, which is what the exchange receives. It can differ from the total
+ * size times the average price, because whole lots land on unevenly priced levels. Null while the
+ * plan has no levels.
+ */
+export function getScaleOrderNotional(params: ScaleOrderPlanParams): Big | null {
+	const plan = createScaleOrderLevelPlan(params);
+	if (plan.levels.length === 0) return null;
+	return plan.levels.reduce((sum, level) => sum.plus(level.notional), Big(0));
+}
+
+/**
+ * The margin a perp scale order reserves once its total size is split into lots: each level's size
+ * at the price that level rests at (`marginPriceForLevel`). Null while the plan has no levels.
+ */
+export function getScaleOrderMarginNotional(
+	params: ScaleOrderPlanParams,
+	marginPriceForLevel: (price: Big) => Big,
+): Big | null {
+	const plan = createScaleOrderLevelPlan(params);
+	if (plan.levels.length === 0) return null;
+	return plan.levels.reduce((sum, level) => sum.plus(marginPriceForLevel(Big(level.price)).times(level.size)), Big(0));
+}
+
 /**
  * Split integer size units across levels so sizes ramp linearly from the first level to the last
  * with last/first === skew. Weights are kept as exact decimals ((n-1) + (skew-1)*i) and the split
@@ -298,8 +366,7 @@ export function resolveScaleSkewNumber(input: string): number | null {
  * skew === 1 reproduces the plain equal split.
  */
 function allocateScaleSizeUnits(totalUnits: Big, levels: number, skew: Big): Big[] {
-	const span = Math.max(levels - 1, 1);
-	const weights = Array.from({ length: levels }, (_, index) => skew.minus(1).times(index).plus(span));
+	const weights = getScaleLevelWeights(levels, skew);
 	const weightSum = weights.reduce((sum, weight) => sum.plus(weight), Big(0));
 	const remainders = weights.map((weight) => totalUnits.times(weight).mod(weightSum));
 	const unitsByLevel = weights.map((weight, index) => totalUnits.times(weight).minus(remainders[index]).div(weightSum));
@@ -388,7 +455,7 @@ function buildTriggerOrder(orders: ExchangeOrder[], params: TriggerOrderParams):
 		if (!limitBig || limitBig.lte(0)) {
 			throw new Error("Limit price must be greater than zero");
 		}
-		orderPx = formatPriceForOrder(limitBig, params);
+		orderPx = formatLimitPriceForOrder(limitBig, params, params.isBuy ? "buy" : "sell");
 	}
 
 	orders.push({
@@ -439,7 +506,7 @@ function buildStandardOrder(orders: ExchangeOrder[], params: StandardOrderParams
 	orders.push({
 		a: params.assetId,
 		b: params.isBuy,
-		p: formatPriceForOrder(params.price, params),
+		p: formatLimitPriceForOrder(params.price, params, params.isBuy ? "buy" : "sell"),
 		s: params.formattedSize,
 		r: params.reduceOnly,
 		t: { limit: { tif: params.tif } },
@@ -529,6 +596,27 @@ interface PriceFormatOptions {
 
 export function formatPriceForOrder(value: Numeric, options?: PriceFormatOptions): string {
 	return formatPriceForOrderWithRounding(value, options, Big.roundHalfUp);
+}
+
+/**
+ * A limit price is the user's bound, so any rounding goes toward the side that keeps it: down for
+ * a buy, up for a sell. The form already rejects a limit price that is not on the tick.
+ */
+export function formatLimitPriceForOrder(value: Numeric, options: PriceFormatOptions | undefined, side: Side): string {
+	return formatPriceForOrderWithRounding(value, options, side === "buy" ? Big.roundDown : Big.roundUp);
+}
+
+/**
+ * Returns a valid order price next to `value` when `value` itself is not on the market's tick, or
+ * null when it is (or cannot be checked). The example is rounded toward the bound of `side`, or
+ * down without a side, as the official terminal does.
+ */
+export function getOffTickPriceExample(value: Numeric, options: PriceFormatOptions, side?: Side): string | null {
+	const price = toBig(value);
+	if (!price?.gt(0) || !isValidSizeDecimalsForAsset(options.assetId, options.szDecimals)) return null;
+	const example = formatPriceForOrderWithRounding(price, options, side === "sell" ? Big.roundUp : Big.roundDown);
+	if (toBig(example)?.eq(price)) return null;
+	return example === "0" ? formatPriceForOrderWithRounding(price, options, Big.roundUp) : example;
 }
 
 function formatPriceForOrderWithRounding(

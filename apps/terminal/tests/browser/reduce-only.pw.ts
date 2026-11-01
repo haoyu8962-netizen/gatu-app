@@ -148,7 +148,7 @@ for (const width of [1440, 1108, 375]) {
 	});
 }
 
-test("review regression: ordinary mobile margin keeps its original price basis", async ({ page }) => {
+test("review regression: ordinary mobile margin follows each order type's price basis", async ({ page }) => {
 	await page.setViewportSize({ width: 375, height: 1000 });
 	await page.goto("/mobile-trade-all-orders.html?quiet-audit&position=7.15");
 	const form = page.locator("[data-fixture-form]");
@@ -173,10 +173,16 @@ test("review regression: ordinary mobile margin keeps its original price basis",
 			await form.getByRole("textbox", { name: "End Price", exact: true }).fill("90");
 		}
 		const margin = form.getByText("Margin Req.", { exact: true }).locator("..");
-		await expect(margin).toContainText(type.includes("Limit") ? "$9.00" : "$10.00");
+		await expect(margin).toContainText(getExpectedMargin(type));
 		await form.getByRole("checkbox", { name: "Reduce Only", exact: true }).check();
 		await expect(margin.locator("span").last()).toHaveText("-");
 	}
 	await chooseOrder(page, 375, "TWAP");
 	await expect(form.getByText("Margin Req.", { exact: true })).toHaveCount(0);
 });
+
+function getExpectedMargin(type: string): string {
+	if (type.includes("Limit")) return "$9.00";
+	if (type === "Scale") return "$8.00";
+	return "$10.00";
+}

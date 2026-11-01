@@ -354,6 +354,7 @@ async function renderDesktop(root: Root) {
 					visibleValidationErrors={visibleValidationErrors}
 					orderEntryData={{
 						availableBalance: 100,
+						requiresAvailableBalance: true,
 						baseToken: "BTC",
 						capabilities: {
 							allowsCrossMargin: true,

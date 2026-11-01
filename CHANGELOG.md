@@ -64,6 +64,32 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Changed
 
+- The order book and the order form share one size unit, as on the official terminal. The unit menu
+  in the order book (on desktop in a new control row above the columns, opposite the price grouping;
+  on mobile in the order book's chip row) switches the order form's size unit and converts the size
+  already entered, and the separate "Order book in quote asset" setting is gone. Recent trades always
+  show sizes in the base asset.
+- Order book sizes and totals are shown in full (`11,780,616` instead of `11.8M`) and are no longer
+  cut off, and the price grouping no longer gets truncated inside the desktop Price column header.
+  Amounts in the quote asset are rounded to whole units like the official book; values below one keep
+  their decimals. The compact book beside the mobile order form abbreviates a size only when the
+  phone is too narrow to show it in full beside its price.
+- The market selector (desktop and phone) prices markets like the trade header and the official
+  terminal: price, 24h change and their sorts use the live mid price, falling back to the mark price
+  only when a market has no mid, while open interest and market cap stay on the mark price. Prices
+  show five significant figures within the market's decimal limit with trailing zeros, an unchanged
+  price reads `+0.00%`, and a stale price shows the placeholder instead of an old value.
+- Market statistics are no longer restored from a copy saved in the browser tab. Before the first live
+  update the selector, favorites bar and other lists show their placeholders instead of values up to
+  five minutes old, and returning from Referrals, Join or Leaderboard no longer mixes live prices with
+  an old 24h reference price.
+- Spot tokens and pairs use the official terminal's names (for example FARTCOIN, PENGU, 2Z, PEAR,
+  PUMP-26, MONPRO), in the selector and in balances, fee columns, deposits and withdrawals and the
+  Send dialog; CSV exports keep the exchange's names. PUMP, ANSEM, MON, MOG and SPYX against USDC now
+  open instead of the not-found page, and `/trade/PEAR/USDC` opens the pair the official terminal
+  calls PEAR. `/trade/0x<token ID>` addresses open their pair, a pair address with an unknown quote
+  opens the pair against USDC, `@N` addresses switch to the pair's name, and an address that names no
+  market opens the default market instead of the not-found page.
 - The HIP-3 deployer notice for EntropyIO markets (the `io` deployer, such as the OpenAI and
   Anthropic pre-IPO markets) now links to EntropyIO's documentation, as it already did for the
   other listed deployers.
@@ -579,6 +605,159 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Fixed
 
+- Phone trade history filters search older fills too, up to the latest 2,000, instead of only the 30
+  most recent, and a matching fill that arrives while a filter is on stays listed. "No fills match
+  these filters." appears only after that search has finished and covers every fill since it, and
+  names the 2,000 limit when it was reached; while the search loads, matches already received keep
+  showing and an otherwise empty list stays blank, and a failed search, or one that no longer reaches
+  the live fills, offers Retry.
+- Staking, Referrals and Vaults no longer show "Refreshing…" lines, red error boxes or warning icons
+  for data they load in the background. A failed first load offers Retry, unknown values read `--`
+  instead of 0, and a failed refresh keeps the values on screen and holds the actions that depend on
+  them, with Retry, until a refresh succeeds. Vault Deposit and Withdraw stay available during a
+  background refresh.
+- Clicking a price in the order book no longer turns every order into a limit order. As on the official
+  terminal, a market order becomes a limit order and a stop market a stop limit at that price, limit-priced
+  orders take the price, and take-profit market, Scale and TWAP orders stay untouched.
+- A spot balance without a market price is now worth $0 in the balances table, as on the official
+  terminal, instead of showing what it cost as its value; with Hide small balances on, such a token is
+  hidden like any other balance under $5, except HYPE, which always stays.
+- Trade history dates now include the year, like the order history, on the desktop tab, the full page
+  and in CSV exports, and the market order summary shows the maximum slippage in the accent colour instead
+  of the error red. Funding history, TWAP history and fill history, and deposits and withdrawals show the
+  year on desktop, on the funding history page and in their exports too; the Trade page's phone cards keep
+  the short date.
+- Returning to a Portfolio browser tab after a while no longer flashes "Something went wrong" and $0
+  while its statistics and history reload: the last figures stay until the refresh answers, as on the
+  official terminal.
+- When Hyperliquid rejects a staking action, the notification now shows the exchange's reason (translated
+  when it is a known one) instead of only "No changes were made."
+- A Vault transfer or API wallet change that Hyperliquid rejects is no longer reported as declined in
+  the wallet when the exchange's reason happens to mention a user rejection; the notification shows that
+  reason.
+- The ⌘K market search now follows the interface language (title, field, empty result and market
+  type) and shows spot prices with the spot price precision instead of the perp one.
+- In Arabic, a plus or minus sign now stays in front of its number, as in the 24h change, PnL and
+  funding rates, instead of appearing after the digits.
+- Spanish, French, Hindi and Arabic now translate the Link mobile device, phone import and API
+  wallet email-signing messages (31 per language) that still showed in English.
+- Unified and portfolio-margin accounts holding an outcome token or a token without a market price now
+  show their portfolio value, as the official terminal does: an outcome token is valued at its outcome
+  market's price and a token without a price counts as zero instead of hiding the whole value.
+- Send's Max and balance check now use the exact balance, so Max on a large balance no longer fills an
+  amount above it that the final check refuses on every retry.
+- Switching between mainnet and testnet no longer briefly shows the other network's last mark price
+  (for a spot pair, possibly another token's) before the live price arrives: the cached marks are kept
+  per network.
+- Explorer links on testnet now open the testnet explorer at `app.hyperliquid-testnet.xyz` (the old host
+  did not resolve), and the token links in the market header and the phone's market bar follow the
+  active network instead of always opening mainnet.
+- On a phone, Settings no longer opens with the slippage field focused (which raised the keyboard), and
+  it no longer offers the desktop layout reset, which the phone does not use; the official terminal
+  shows layout options only on desktop.
+- The trade, order and funding history pages no longer show warning banners or large warning icons
+  when a refresh fails or the connection drops: loaded rows stay, a neutral Retry replaces the error
+  page, and an empty cached result that failed to refresh, or is still refreshing, no longer claims
+  there are no records. The deposits and withdrawals tabs follow the same rule.
+- The position TP/SL dialog no longer shows a Loading... warning while the mark price is not live;
+  Confirm stays disabled until it is, as before.
+- The desktop Deposits and Withdrawals tab no longer shows a red load error: it keeps a neutral Retry
+  (or the display-limit note), as the phone and the passive data rules already do.
+- Orders, cancels and other trading actions now expire if the exchange has not accepted them within
+  15 seconds, as with the official terminal's default Transaction Delay Protection, so a delayed
+  request is rejected instead of executing late. The 15 seconds follow the exchange's clock, not the
+  device's: once it has been read, changing the device's clock cannot stretch them. Transfers,
+  withdrawals and approvals are unaffected (ADR 0045). As on the official
+  terminal, Settings › Trading › Transaction delay protection turns it off.
+- A limit or trigger price that is not a multiple of the market's tick (at most 5 significant figures
+  and the market's decimal limit) is no longer rounded silently when the order is sent: the order
+  form explains the rule, suggests a valid price and keeps the order button disabled. The same applies
+  to a TWAP's trigger price and price limit under Advanced Settings.
+- Scale orders entered in USD are sized at the size-weighted average price of their levels instead of
+  the mark price, so their value, fees and margin match the orders that are placed. Where whole lots
+  would make the levels cost more than the amount typed, the size is lowered by lots until they do
+  not, so a USD amount is never exceeded, as with the other order types.
+- Send checks the destination before anything is signed, as the official terminal does: a
+  sanctioned address is refused, and sending to a new account (which costs a one-time activation
+  fee of 1 USD stablecoin) or to an address that has never sent a transaction on Hyperliquid shows
+  the fee and a loss warning and needs an explicit confirmation first.
+- Email withdrawals no longer accept your own wallet address, which the automatic deposit would put
+  straight back, or the USDC token contract address, where the funds would be lost.
+- Send, Swap and Reverse Position follow the regional restriction like order entry and withdrawals:
+  they are unavailable where trading or funds actions are restricted, and Send and Reverse check the
+  region again just before submitting.
+- Vault deposits work for Unified accounts and Portfolio Margin: the available amount is the spot
+  USDC that is not on hold, as on the official terminal, instead of the perp balance, which is zero
+  in those modes. A Vault leader can add to its own Vault after closing it to other depositors, the
+  official minimum deposit (5 USDC, or 10 USDC above $100M of TVL) is explained before review, and a
+  Max control fills the verified amount.
+- The Portfolio 14-day volume no longer counts the current, unfinished day and drops the oldest
+  completed one; it sums the fourteen completed days, as the official terminal does.
+- The Referrals page no longer becomes unavailable when the exchange adds a field to its referral
+  data. Referral codes are typed and applied in upper case and accept only letters and digits, as on
+  the official terminal, so a code from a link is confirmed after it is applied.
+- Trade history no longer marks a fill as liquidated because someone else was liquidated against
+  your order: like the official terminal, only your own liquidation reads "Market Order
+  Liquidation", a fill against another account's liquidation reads "(Price Improved)" in its normal
+  colour, and backstop, borrow and auto-deleveraging fills keep their own names. Spot Buy/Sell and
+  position flips are now translated.
+- History prices keep the digits the market allows: trade history no longer compacts `29780.5` to
+  `$29.78K`, and order history no longer cuts `0.18342` to `$0.18`.
+- Funding history shows whether each payment was on a long or a short position and states payments
+  of HIP-3 markets in that market's collateral. HIP-3 positions show their PNL, margin and funding in
+  the collateral token, like their position value.
+- Funding and order history CSV exports write the exchange's values unformatted (funding now has
+  Side, Size and Payment Token columns), like the trade-history export.
+- Deposits and withdrawals list USDC moved over CCTP as Deposit or Withdrawal instead of Send, and
+  transfers between HyperCore and HyperEVM as Transfer, with HyperEVM as their source or destination.
+  The chain beyond HyperEVM is not shown yet: the official terminal reads it from Across's transfer
+  records, which this terminal does not use.
+- As on the official terminal, Deposits and withdrawals labels transfers with your sub-accounts as
+  Sub-account Transfer and open interest reward payments as Open Interest Reward instead of Send.
+- Weekly (1W) and monthly (1M) charts show bars and live updates. They used to stay empty, and the
+  daily chart opened after them stayed empty too.
+- The chart's liquidation line is labelled "Liq. Price" in the interface language, and the position
+  line writes its size in the number format you chose.
+- Orders placed in this terminal can be modified again: their size, and for limit orders their
+  price, can be changed from the open-orders table on desktop and from Modify Order on mobile. They
+  used to be refused because this terminal tags its orders with a client order id. A price change
+  that is partly filled before the open-orders list confirms it is still reported as modified.
+  Reduce-only Stop and Take Profit orders can change their size and trigger price, as on the official
+  terminal; a trigger order that can open a position still has to be cancelled and placed again.
+- A limit order resting below mark (a buy) or above mark (a sell) has a maximum size based on the
+  margin its own price reserves, as on the official terminal: a passive buy may be larger than the
+  maximum of a market order, and a passive sell is held to the margin its higher price needs. Scale
+  orders count each level at the price it rests at, and the order is checked the same way when it is
+  sent.
+- Stop and Take Profit orders are no longer limited by the free balance or the maximum size when they
+  are placed, as on the official terminal; the exchange checks their margin when they trigger, and an
+  account that holds nothing is still asked to deposit.
+- A TWAP's Max or Min Price is checked against its trigger price when one is set, instead of the mark
+  price, as on the official terminal.
+- The TWAP summary shows the approximate size of each suborder (one every 30 seconds of the runtime,
+  each at least the $10 minimum) instead of a fixed "Every 30 seconds", which a small order does not
+  follow.
+- A market order's TP/SL is checked against the same reference price when it is sent as when it was
+  built, so a TP/SL between the mid and the mark price is no longer rejected at submission.
+- A spot market buy is checked in the form against what it locks at the slippage limit, the price it is
+  sent at, instead of failing only at submission; "Insufficient USDC balance at max slippage" says
+  when only the slippage does not fit.
+- The phone's open order card now shows the attached TP/SL trigger prices, as the desktop table does.
+- Hide small balances now hides balances under $5 instead of $1 and always keeps HYPE, as the official
+  terminal does.
+- Trade history now shows each fill's closed PNL net of its fee, as the official terminal does, so an
+  opening fill shows its fee and a closing fill matches the official figure; the CSV export still
+  carries the exchange's PNL and fee as sent.
+- Order history now explains why an order was canceled or rejected, as the official terminal does: a
+  tooltip on desktop and a line on the phone card. A margin cancellation reads Margin Canceled and a
+  filled order with size still open reads Partially filled.
+- Canceling several orders when only some of them can be canceled now reports Canceled n/total with
+  the exchange's reason for each failure, as the official terminal does, instead of reporting the whole
+  batch as failed; the canceled orders leave the selection and the others can be retried at once.
+- Order history no longer turns blank, and its CSV export no longer fails, when it holds a Trailing
+  Stop order placed on the official terminal: the type reads Trailing Stop, its trigger condition shows
+  the activation or trigger price with the retracement as the official terminal does, any other new
+  order type is shown as the exchange sends it, and a trailing stop no longer counts as a position TP/SL.
 - The Market order-type tab and menu entry in the order form use the order-type wording instead of
   the market-list wording: 市价 in Chinese, 成行 in Japanese, मार्केट in Hindi, Au marché in French
   and سعر السوق in Arabic (English and Spanish are unchanged). The compact account-mode placeholder

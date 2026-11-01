@@ -9,6 +9,9 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const testState = vi.hoisted(() => ({
+	twapAdvancedEnabled: false,
+	twapTriggerPrice: "",
+	twapStopPrice: "",
 	authorize: vi.fn(async () => {}),
 	availableBalance: 100,
 	accountModeBlocked: false,
@@ -21,7 +24,20 @@ const testState = vi.hoisted(() => ({
 	limitPrice: "100",
 	openInterestCapped: false,
 	orderType: "limit",
+	selectedPrice: null as { marketName: string; price: string } | null,
+	sizeModeRequest: null as { marketName: string; mode: "base" | "quote" } | null,
+	toggleSizeDenomination: vi.fn(),
 	triggerPrice: "",
+	scaleStart: "",
+	scaleEnd: "",
+	scaleLevels: null as number | null,
+	scaleSkew: "",
+	orderEntryInput: undefined as unknown,
+	scaleSummaryProps: undefined as { orderValue?: number; marginRequired?: number | null } | undefined,
+	sizeForOrder: "1",
+	kind: "perp" as "perp" | "spot",
+	quoteAvailable: 0,
+	spotBuyQuoteCost: undefined as number | undefined,
 	requestSubmit: vi.fn(),
 	submitOrder: vi.fn(),
 	executionGuard: undefined as ((params: OrderParameters) => void) | undefined,
@@ -66,7 +82,12 @@ vi.mock("wagmi", () => ({
 vi.mock("@/components/trade/tradebox/trade-form-fields", () => ({ TradeFormFields: () => null }));
 vi.mock("@/components/trade/tradebox/trade-header", () => ({ TradeHeader: () => null }));
 vi.mock("@/components/trade/tradebox/order-summary", () => ({ OrderSummary: () => null }));
-vi.mock("@/components/trade/tradebox/scale-order-summary", () => ({ ScaleOrderSummary: () => null }));
+vi.mock("@/components/trade/tradebox/scale-order-summary", () => ({
+	ScaleOrderSummary: (props: { orderValue?: number; marginRequired?: number | null }) => {
+		testState.scaleSummaryProps = props;
+		return null;
+	},
+}));
 vi.mock("@/components/trade/tradebox/twap-order-summary", () => ({ TwapOrderSummary: () => null }));
 vi.mock("@/components/trade/tradebox/order-confirmation-modal", () => ({ OrderConfirmationModal: () => null }));
 vi.mock("@/components/trade/tradebox/lazy-trade-settings-modals", () => ({
@@ -107,50 +128,54 @@ vi.mock("@/hooks/trade/use-order-confirmation", () => ({
 	}),
 }));
 vi.mock("@/hooks/trade/use-order-entry-data", () => ({
-	useOrderEntryData: () => ({
-		accountAbstraction: "disabled",
-		allowsIsolatedMarginRemoval: false,
-		applyMarginAndLeverage: vi.fn(),
-		applySizePercent: vi.fn(),
-		beginSizePercentGesture: vi.fn(),
-		endSizePercentGesture: vi.fn(),
-		availabilityMaxAgeMs: 20_000,
-		availabilityReceivedAt: Date.now(),
-		availabilityStatus: testState.accountModeBlocked ? "error" : "success",
-		availableBalance: testState.availableBalance,
-		baseToken: "BTC",
-		committedLeverage: null,
-		conversionPrice: 100,
-		currentLeverage: 10,
-		executionAvailability: { kind: "perp", maxBaseBySide: { buy: "10", sell: "10" } },
-		hasAvailabilityError: testState.accountModeBlocked,
-		hasPosition: false,
-		isAvailabilityBlocked: testState.accountModeBlocked,
-		isAwaitingFirstDeposit: testState.isAwaitingFirstDeposit,
-		isAvailabilityLoading: false,
-		isAvailabilityStale: false,
-		isLeverageUpdating: false,
-		isOpenInterestCapped: testState.openInterestCapped,
-		isSpotMarket: false,
-		isSwitchingMode: false,
-		leverage: 10,
-		leverageInteractionIdentity: "Mainnet:BTC",
-		marginMode: "cross",
-		maxLeverage: 50,
-		maxSize: 10,
-		orderValue: 100,
-		pendingLeverage: null,
-		positionStateReady: true,
-		quoteToken: "USDC",
-		resetPendingLeverage: vi.fn(),
-		setPendingLeverage: vi.fn(),
-		sideLabels: { buy: "Buy", sell: "Sell", buyAria: "Buy", sellAria: "Sell" },
-		sizeForOrder: "1",
-		sizeValue: 1,
-		spotBalance: { baseAvailable: 0, quoteAvailable: 0 },
-		szDecimals: 3,
-		toggleSizeDenomination: vi.fn(),
-	}),
+	useOrderEntryData: (input: { orderValueForSize?: (size: string) => number | undefined }) => {
+		testState.orderEntryInput = input;
+		return {
+			accountAbstraction: "disabled",
+			allowsIsolatedMarginRemoval: false,
+			applyMarginAndLeverage: vi.fn(),
+			applySizePercent: vi.fn(),
+			beginSizePercentGesture: vi.fn(),
+			endSizePercentGesture: vi.fn(),
+			availabilityMaxAgeMs: 20_000,
+			availabilityReceivedAt: Date.now(),
+			availabilityStatus: testState.accountModeBlocked ? "error" : "success",
+			availableBalance: testState.availableBalance,
+			baseToken: "BTC",
+			committedLeverage: null,
+			conversionPrice: 100,
+			currentLeverage: 10,
+			executionAvailability: { kind: "perp", maxBaseBySide: { buy: "10", sell: "10" } },
+			hasAvailabilityError: testState.accountModeBlocked,
+			hasPosition: false,
+			isAvailabilityBlocked: testState.accountModeBlocked,
+			isAwaitingFirstDeposit: testState.isAwaitingFirstDeposit,
+			isAvailabilityLoading: false,
+			isAvailabilityStale: false,
+			isLeverageUpdating: false,
+			isOpenInterestCapped: testState.openInterestCapped,
+			isSpotMarket: testState.kind === "spot",
+			isSwitchingMode: false,
+			leverage: 10,
+			leverageInteractionIdentity: "Mainnet:BTC",
+			marginMode: "cross",
+			maxLeverage: 50,
+			maxSize: 10,
+			orderValue: input.orderValueForSize?.(testState.sizeForOrder) ?? 100,
+			pendingLeverage: null,
+			positionStateReady: true,
+			quoteToken: "USDC",
+			resetPendingLeverage: vi.fn(),
+			setPendingLeverage: vi.fn(),
+			sideLabels: { buy: "Buy", sell: "Sell", buyAria: "Buy", sellAria: "Sell" },
+			sizeForOrder: testState.sizeForOrder,
+			sizeValue: Number(testState.sizeForOrder),
+			spotBalance: { baseAvailable: 0, quoteAvailable: testState.quoteAvailable },
+			spotBuyQuoteCost: testState.spotBuyQuoteCost ?? input.orderValueForSize?.(testState.sizeForOrder) ?? 100,
+			szDecimals: 3,
+			toggleSizeDenomination: testState.toggleSizeDenomination,
+		};
+	},
 }));
 vi.mock("@/hooks/trade/use-order-submit", () => ({
 	useOrderSubmit: (options: { executionGuard?: (params: OrderParameters) => void }) => {
@@ -241,10 +266,10 @@ vi.mock("@/stores/use-order-entry-store", () => ({
 	useOrderSize: () => "1",
 	useOrderType: () => testState.orderType,
 	useReduceOnly: () => false,
-	useScaleEnd: () => "",
-	useScaleLevels: () => null,
-	useScaleSkew: () => "",
-	useScaleStart: () => "",
+	useScaleEnd: () => testState.scaleEnd,
+	useScaleLevels: () => testState.scaleLevels,
+	useScaleSkew: () => testState.scaleSkew,
+	useScaleStart: () => testState.scaleStart,
 	useSizeMode: () => "base",
 	useSlPrice: () => "",
 	useTif: () => "Gtc",
@@ -252,20 +277,25 @@ vi.mock("@/stores/use-order-entry-store", () => ({
 	useTpSlEnabled: () => false,
 	useTpSlReturnInvalid: () => false,
 	useTriggerPrice: () => testState.triggerPrice,
-	useTwapAdvancedEnabled: () => false,
+	useTwapAdvancedEnabled: () => testState.twapAdvancedEnabled,
 	useTwapMinutes: () => 30,
 	useTwapRandomize: () => false,
-	useTwapStopPrice: () => "",
-	useTwapTriggerPrice: () => "",
+	useTwapStopPrice: () => testState.twapStopPrice,
+	useTwapTriggerPrice: () => testState.twapTriggerPrice,
 }));
 vi.mock("@/stores/use-orderbook-actions-store", () => ({
-	getOrderbookActionsStore: () => ({ actions: { clearSelectedPrice: vi.fn() } }),
-	getSelectedPriceForMarket: () => null,
-	useSelectedPrice: () => null,
+	getOrderbookActionsStore: () => ({
+		actions: { clearSelectedPrice: vi.fn(), clearSizeModeRequest: vi.fn(), takeSizeModeRequest: () => true },
+	}),
+	getSelectedPriceForMarket: (selection: { marketName: string; price: string } | null, marketName?: string) =>
+		selection && selection.marketName === marketName ? selection.price : null,
+	useSelectedPrice: () => testState.selectedPrice,
+	useSizeModeRequest: () => testState.sizeModeRequest,
 }));
 
 import { TradePanel } from "@/components/trade/tradebox/trade-panel";
 import { EntryExecutionError } from "@/domain/trade/order/entry-execution-guard";
+import { getScaleOrderNotional } from "@/domain/trade/orders";
 
 const OPEN_INTEREST_CAP_COPY =
 	"The limit order would be canceled after resting because open interest is capped. Use market orders to close positions.";
@@ -335,6 +365,8 @@ describe("desktop TradePanel open-interest cap restriction", () => {
 		testState.limitPrice = "100";
 		testState.openInterestCapped = false;
 		testState.orderType = "limit";
+		testState.selectedPrice = null;
+		testState.sizeModeRequest = null;
 		testState.triggerPrice = "";
 		container = document.createElement("div");
 		document.body.appendChild(container);
@@ -364,6 +396,50 @@ describe("desktop TradePanel open-interest cap restriction", () => {
 		expect(getOrderButton(container).textContent?.trim()).toBe("Place Buy Order");
 		expect(getOrderButton(container).getAttribute("aria-label")).toBe("Place Buy Order");
 		await expectSubmissionBlocked(container);
+	});
+
+	it.each([
+		["market", "limit"],
+		["limit", "limit"],
+		["stopMarket", "stopLimit"],
+		["stopLimit", "stopLimit"],
+		["takeProfitLimit", "takeProfitLimit"],
+	] as const)("prices a %s order at a clicked book level as a %s order, like the official terminal", async (orderType, expected) => {
+		testState.orderType = orderType;
+		testState.selectedPrice = { marketName: "BTC", price: "98.5" };
+		await renderPanel(root);
+
+		expect(testState.actions.setOrderType.mock.calls).toEqual(expected === orderType ? [] : [[expected]]);
+		expect(testState.actions.setLimitPriceFromUser).toHaveBeenCalledWith(`BTC|${expected}`, "98.5");
+	});
+
+	it.each(["takeProfitMarket", "twap", "scale"] as const)(
+		"leaves a %s order unchanged when a book level is clicked",
+		async (orderType) => {
+			testState.orderType = orderType;
+			testState.selectedPrice = { marketName: "BTC", price: "98.5" };
+			await renderPanel(root);
+
+			expect(testState.actions.setOrderType).not.toHaveBeenCalled();
+			expect(testState.actions.setLimitPriceFromUser).not.toHaveBeenCalled();
+		},
+	);
+
+	it("converts the entered size once through the form's own unit toggle when the book picks the other unit", async () => {
+		testState.sizeModeRequest = { marketName: "BTC", mode: "quote" };
+		await renderPanel(root);
+
+		expect(testState.toggleSizeDenomination).toHaveBeenCalledTimes(1);
+	});
+
+	it.each([
+		["the unit already in use", { marketName: "BTC", mode: "base" as const }],
+		["another market's book", { marketName: "ETH", mode: "quote" as const }],
+	])("ignores a unit request from %s", async (_name, request) => {
+		testState.sizeModeRequest = request;
+		await renderPanel(root);
+
+		expect(testState.toggleSizeDenomination).not.toHaveBeenCalled();
 	});
 
 	it("shows the restriction before a limit price is typed", async () => {
@@ -606,5 +682,145 @@ describe("desktop TradePanel trading approval errors", () => {
 		await act(async () => activateLocale("zh"));
 
 		expect(getRestriction(container)?.textContent).toBe(chinese);
+	});
+});
+
+describe("desktop TradePanel price precision and scale sizing", () => {
+	let container: HTMLDivElement;
+	let root: Root;
+
+	beforeEach(() => {
+		activateLocale("en");
+		testState.availableBalance = 100;
+		testState.kind = "perp";
+		testState.quoteAvailable = 0;
+		testState.spotBuyQuoteCost = undefined;
+		testState.limitPrice = "100";
+		testState.openInterestCapped = false;
+		testState.orderType = "limit";
+		testState.triggerPrice = "";
+		testState.scaleStart = "";
+		testState.scaleEnd = "";
+		testState.scaleLevels = null;
+		testState.scaleSkew = "";
+		testState.twapAdvancedEnabled = false;
+		testState.twapTriggerPrice = "";
+		testState.twapStopPrice = "";
+		testState.orderEntryInput = undefined;
+		testState.scaleSummaryProps = undefined;
+		testState.sizeForOrder = "1";
+		container = document.createElement("div");
+		document.body.appendChild(container);
+		root = createRoot(container);
+	});
+
+	afterEach(async () => {
+		await act(async () => root.unmount());
+		container.remove();
+		vi.clearAllMocks();
+	});
+
+	it("marks an off-tick limit price, names a valid one and blocks the order", async () => {
+		testState.limitPrice = "100.1234";
+		await renderPanel(root);
+
+		expect(getRestriction(container)?.textContent).toBe(
+			"Price must be a multiple of the tick size, with at most 5 significant figures. E.g., 100.12",
+		);
+		await expectSubmissionBlocked(container);
+	});
+
+	it("blocks a TWAP price limit off the market tick on its own", async () => {
+		testState.orderType = "twap";
+		testState.twapStopPrice = "101.1234";
+		testState.twapAdvancedEnabled = true;
+		await renderPanel(root);
+
+		expect(getRestriction(container)?.textContent).toContain("E.g., 101.12");
+		await expectSubmissionBlocked(container);
+	});
+
+	it("blocks a TWAP trigger price off the market tick while the advanced settings are on", async () => {
+		testState.orderType = "twap";
+		testState.twapTriggerPrice = "100.1234";
+		testState.twapAdvancedEnabled = true;
+		await renderPanel(root);
+
+		expect(getRestriction(container)?.textContent).toContain("E.g., 100.12");
+		await expectSubmissionBlocked(container);
+	});
+
+	it("marks an off-tick trigger price and blocks the order", async () => {
+		testState.orderType = "stopMarket";
+		testState.triggerPrice = "110.0009";
+		await renderPanel(root);
+
+		expect(getRestriction(container)?.textContent).toContain("E.g., 110");
+		await expectSubmissionBlocked(container);
+	});
+
+	it("estimates a scale order's margin from the value of its lot-rounded levels", async () => {
+		testState.orderType = "scale";
+		testState.scaleStart = "100000";
+		testState.scaleEnd = "20000";
+		testState.scaleLevels = 2;
+		testState.scaleSkew = "1";
+		testState.sizeForOrder = "0.003";
+		await renderPanel(root);
+
+		expect(testState.scaleSummaryProps?.orderValue).toBe(220);
+		expect(testState.scaleSummaryProps?.marginRequired).toBe(22);
+	});
+
+	it("checks a spot market buy against what it locks at the slippage limit before it is sent", async () => {
+		testState.kind = "spot";
+		testState.orderType = "market";
+		testState.quoteAvailable = 100;
+		testState.spotBuyQuoteCost = 102.5;
+		await renderPanel(root);
+		await expectSubmissionBlocked(container);
+
+		testState.spotBuyQuoteCost = 100;
+		await renderPanel(root);
+		expect(getOrderButton(container).disabled).toBe(false);
+	});
+
+	it("hands order entry the margin a resting limit order reserves at the official terminal's price", async () => {
+		testState.orderType = "limit";
+		testState.limitPrice = "80";
+		await renderPanel(root);
+
+		const marginForSize = (testState.orderEntryInput as { marginNotionalForSize?: (size: string) => number | undefined })
+			.marginNotionalForSize;
+		expect(marginForSize?.("2")).toBe(160);
+
+		testState.limitPrice = "120";
+		await renderPanel(root);
+		const aggressive = (testState.orderEntryInput as { marginNotionalForSize?: (size: string) => number | undefined })
+			.marginNotionalForSize;
+		expect(aggressive?.("2")).toBe(200);
+	});
+
+	it("sizes a scale order at the size-weighted average of its levels", async () => {
+		testState.orderType = "scale";
+		testState.scaleStart = "80";
+		testState.scaleEnd = "60";
+		testState.scaleLevels = 4;
+		testState.scaleSkew = "1";
+		await renderPanel(root);
+
+		expect((testState.orderEntryInput as { limitPx?: number } | undefined)?.limitPx).toBe(70);
+		const valueForSize = (testState.orderEntryInput as { orderValueForSize?: (size: string) => number | undefined })
+			.orderValueForSize;
+		const levels = {
+			assetId: 0,
+			szDecimals: 3,
+			scaleStartPriceInput: "80",
+			scaleEndPriceInput: "60",
+			scaleLevelsNum: 4,
+			scaleSkew: "1",
+		};
+		expect(valueForSize?.("1.003")).toBe(getScaleOrderNotional({ ...levels, sizeValue: "1.003" })?.toNumber());
+		expect(valueForSize?.("1.003")).not.toBeUndefined();
 	});
 });

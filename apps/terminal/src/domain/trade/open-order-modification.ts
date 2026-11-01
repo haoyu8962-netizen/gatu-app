@@ -11,13 +11,12 @@ import type { ExchangeParams } from "@/lib/hyperliquid";
 import { toBig } from "@/lib/trade/numbers";
 import type { OpenOrder } from "@/lib/trade/open-orders";
 
-export type OpenOrderModifyField = "size" | "triggerPrice";
+export type OpenOrderModifyField = "size" | "triggerPrice" | "limitPrice";
 export type OpenOrderModifyEnvironment = "Mainnet" | "Testnet";
 export type OpenOrderModifyMarketKind = "perp" | "spot" | "builderPerp";
 
 export type OpenOrderModifyBlockReason =
 	| "ambiguous-order"
-	| "client-order-id"
 	| "grouped-order"
 	| "invalid-market-binding"
 	| "invalid-order-shape"
@@ -48,6 +47,7 @@ export interface OpenOrderModifyCapability {
 export interface OpenOrderModifyCapabilities {
 	size: OpenOrderModifyCapability;
 	triggerPrice: OpenOrderModifyCapability;
+	limitPrice: OpenOrderModifyCapability;
 }
 
 export interface OpenOrderModifyMarketBinding {
@@ -127,6 +127,7 @@ export interface ReadyOpenOrderModifyPlan {
 export type OpenOrderModifyPlan = ReadyOpenOrderModifyPlan | { status: "blocked"; reason: OpenOrderModifyBlockReason };
 
 const EVM_ADDRESS_PATTERN = /^0x[a-fA-F0-9]{40}$/;
+const CLIENT_ORDER_ID_PATTERN = /^0x[a-fA-F0-9]{32}$/;
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 const LIMIT_TIFS = new Set<OpenOrder["tif"]>(["Gtc", "Alo"]);
 const TRIGGER_ORDER_TYPES = new Set<OpenOrder["orderType"]>([
@@ -169,14 +170,12 @@ function getOrderShapeBlockReason(order: OpenOrder): OpenOrderModifyBlockReason 
 	if (order.coin.startsWith("#")) return "invalid-market-binding";
 	if (!Array.isArray(order.children) || order.children.length > 0) return "grouped-order";
 	if (order.isPositionTpsl || (order.isTrigger && toBig(order.sz)?.eq(0))) return "position-tpsl";
-	if (order.cloid !== null) return order.cloid === undefined ? "invalid-order-shape" : "client-order-id";
+	if (order.cloid !== null && (typeof order.cloid !== "string" || !CLIENT_ORDER_ID_PATTERN.test(order.cloid))) {
+		return "invalid-order-shape";
+	}
 	if (order.orderType === "Market") return "unsupported-market-order";
 	if (SYSTEM_ORDER_TYPES.has(order.orderType)) return "unsupported-system-order";
 	if (order.orderType !== "Limit" && !isSupportedTriggerOrder(order)) return "unsupported-order-type";
-	// Hyperliquid requires batchModify.a=true for trigger replacements, which can
-	// place the replacement even when canceling the original order failed. Keep
-	// trigger edits fail-closed until they use an explicit cancel-then-place flow.
-	if (isSupportedTriggerOrder(order)) return "unsupported-order-type";
 	if (
 		!Number.isSafeInteger(order.oid) ||
 		order.oid < 0 ||
@@ -213,7 +212,12 @@ function getOrderShapeBlockReason(order: OpenOrder): OpenOrderModifyBlockReason 
 		return null;
 	}
 
-	if (!order.isTrigger || !triggerPx.gt(0) || !order.reduceOnly) return "invalid-order-shape";
+	if (!order.isTrigger || !triggerPx.gt(0)) return "invalid-order-shape";
+	// A trigger replacement needs batchModify.a=true, which places the replacement even when canceling
+	// the original failed (it may have just triggered). Only reduce-only triggers are offered, as the
+	// official terminal's always-place modify cannot then open a second position; others are cancelled
+	// and placed again.
+	if (!order.reduceOnly) return "unsupported-order-type";
 	if (order.tif !== null) return "unsupported-tif";
 	return null;
 }
@@ -221,11 +225,12 @@ function getOrderShapeBlockReason(order: OpenOrder): OpenOrderModifyBlockReason 
 export function getOpenOrderModifyCapabilities(order: OpenOrder): OpenOrderModifyCapabilities {
 	const shapeReason = getOrderShapeBlockReason(order);
 	if (shapeReason) {
-		return { size: supported(shapeReason), triggerPrice: supported(shapeReason) };
+		return { size: supported(shapeReason), triggerPrice: supported(shapeReason), limitPrice: supported(shapeReason) };
 	}
 	return {
 		size: supported(),
 		triggerPrice: order.isTrigger ? supported() : supported("trigger-price-not-applicable"),
+		limitPrice: order.orderType === "Limit" ? supported() : supported("unsupported-order-type"),
 	};
 }
 
@@ -396,6 +401,13 @@ function buildExchangeOrder(
 		if (requested.eq(remaining)) return blocked("no-change");
 		size = requestedSize;
 		normalizedValue = requestedSize;
+	} else if (target.field === "limitPrice") {
+		if (latest.orderType !== "Limit") return blocked("unsupported-order-type");
+		const requestedPrice = normalizePriceExactly(value, market);
+		if (!requestedPrice) return blocked("invalid-price");
+		if (numericValuesEqual(requestedPrice, latestPrice)) return blocked("no-change");
+		orderPrice = requestedPrice;
+		normalizedValue = requestedPrice;
 	} else {
 		if (!latest.isTrigger || !triggerPx) return blocked("trigger-price-not-applicable");
 		const requestedTrigger = normalizePriceExactly(value, market);
@@ -441,10 +453,11 @@ function buildExchangeOrder(
 		t: orderType,
 	};
 
+	const modifies = [{ oid: latest.oid, order }];
 	return {
 		status: "ready",
 		normalizedValue,
-		params: { modifies: [{ oid: latest.oid, order }] },
+		params: latest.isTrigger ? { modifies, a: true } : { modifies },
 	};
 }
 

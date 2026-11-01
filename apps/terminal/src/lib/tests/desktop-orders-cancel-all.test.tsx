@@ -37,6 +37,7 @@ function cancelRejection(text: string) {
 }
 
 const mocks = vi.hoisted(() => ({
+	markPriceLive: false,
 	address: "0x1111111111111111111111111111111111111111",
 	assetId: 120_001 as number | undefined,
 	batchModifyGuard: undefined as ((params: unknown) => void) | undefined,
@@ -190,7 +191,13 @@ vi.mock("@/lib/hyperliquid", () => ({
 		getSzDecimals: () => 3,
 		isLoading: false,
 	}),
-	useMarketsInfo: () => ({ getMarketInfo: () => ({ markPx: mocks.markPx }) }),
+	useMarketsInfo: () => ({
+		getMarketInfo: () => ({
+			markPx: mocks.markPx,
+			markPriceStatus: mocks.markPriceLive ? "success" : undefined,
+			markPriceReceivedAt: mocks.markPriceLive ? Date.now() : undefined,
+		}),
+	}),
 	useSubscription: () => ({
 		data: mocks.hasSnapshot ? { orders: mocks.orders } : undefined,
 		error: null,
@@ -278,6 +285,7 @@ describe("desktop cancel all orders confirmation", () => {
 		mocks.clientKey = "0x1111111111111111111111111111111111111111";
 		mocks.env = "Mainnet";
 		mocks.markPx = "160";
+		mocks.markPriceLive = false;
 		mocks.modifyError = null;
 		mocks.orders = [order];
 		mocks.quoteSymbol = "USDC";
@@ -396,12 +404,122 @@ describe("desktop cancel all orders confirmation", () => {
 		expect(container.querySelector('button[aria-label="Edit xyz:ORCL trigger price"]')).toBeNull();
 	});
 
+	it("lets this terminal's own orders change price and sends the new price without a client order id", async () => {
+		mocks.orders = [{ ...order, cloid: "0x0000000000000000000000000000abcd" } as OpenOrder];
+		act(() => root.render(<ReviewedOrders />));
+		expect(container.querySelector('button[aria-label="Edit xyz:ORCL order size"]')).not.toBeNull();
+		const edit = container.querySelector<HTMLButtonElement>('button[aria-label="Edit xyz:ORCL order price"]');
+		act(() => edit?.click());
+		const input = container.querySelector<HTMLInputElement>('input[aria-label="Edit xyz:ORCL order price"]');
+		expect(input?.value).toBe("149.00");
+
+		await act(async () => {
+			if (!input) return;
+			changeInput(input, "150.5");
+			pressKey(input, "Enter");
+			await Promise.resolve();
+		});
+
+		expect(mocks.modifyOrders).toHaveBeenCalledOnce();
+		const params = mocks.modifyOrders.mock.calls[0]?.[0] as {
+			modifies: { oid: number; order: { a: number; p: string; s: string; c?: string } }[];
+		};
+		expect(params.modifies).toEqual([{ oid: 42, order: expect.objectContaining({ a: 120_001, p: "150.5", s: "2" }) }]);
+		expect(params.modifies[0]?.order).not.toHaveProperty("c");
+		expect(getPendingTradingActionSnapshot().modifications[0]).toMatchObject({
+			originalLimitPx: "149.00",
+			expectedLimitPx: "150.5",
+			expectedSize: null,
+		});
+	});
+
+	it("changes the trigger price of a reduce-only stop with the always-place flag", async () => {
+		mocks.markPriceLive = true;
+		mocks.orders = [triggerOrder];
+		act(() => root.render(<ReviewedOrders />));
+		const edit = container.querySelector<HTMLButtonElement>('button[aria-label="Edit xyz:ORCL trigger price"]');
+		act(() => edit?.click());
+		const input = container.querySelector<HTMLInputElement>('input[aria-label="Edit xyz:ORCL trigger price"]');
+
+		await act(async () => {
+			if (!input) return;
+			changeInput(input, "165");
+			pressKey(input, "Enter");
+			await Promise.resolve();
+		});
+
+		expect(mocks.modifyOrders).toHaveBeenCalledOnce();
+		const params = mocks.modifyOrders.mock.calls[0]?.[0] as {
+			a?: boolean;
+			modifies: { oid: number; order: { r: boolean; t: unknown } }[];
+		};
+		expect(params.a).toBe(true);
+		expect(params.modifies[0]?.order).toMatchObject({ r: true, t: { trigger: { triggerPx: "165", tpsl: "sl" } } });
+		expect(getPendingTradingActionSnapshot().modifications[0]).toMatchObject({
+			expectedTriggerPx: "165",
+			expectedSize: null,
+		});
+	});
+
+	it("refuses a trigger edit at the SDK boundary once the mark price is no longer live", async () => {
+		mocks.markPriceLive = true;
+		mocks.orders = [triggerOrder];
+		const broadcast = vi.fn();
+		mocks.modifyOrders.mockImplementation(async (params: unknown) => {
+			mocks.markPriceLive = false;
+			mocks.batchModifyGuard?.(params);
+			broadcast(params);
+			return { response: { data: { statuses: [{ resting: { oid: 42 } }] } } };
+		});
+		act(() => root.render(<ReviewedOrders />));
+		act(() => container.querySelector<HTMLButtonElement>('button[aria-label="Edit xyz:ORCL trigger price"]')?.click());
+		const input = container.querySelector<HTMLInputElement>('input[aria-label="Edit xyz:ORCL trigger price"]');
+
+		await act(async () => {
+			if (!input) return;
+			changeInput(input, "165");
+			pressKey(input, "Enter");
+			await Promise.resolve();
+		});
+
+		expect(mocks.modifyOrders).toHaveBeenCalledOnce();
+		expect(broadcast).not.toHaveBeenCalled();
+	});
+
 	it("formats HIP-3 order notional in its verified non-USDC quote token", () => {
 		mocks.quoteSymbol = "USDT0";
 		act(() => root.render(<ReviewedOrders />));
 
 		const cells = [...container.querySelectorAll("tbody tr td")].map((cell) => cell.textContent?.trim() ?? "");
 		expect(cells[6]).toBe("298.00 USDT0");
+	});
+
+	it("shows a trailing stop's activation, then its trigger and retracement, as the official terminal does", () => {
+		mocks.orders = [
+			{
+				...triggerOrder,
+				orderType: "Trailing Stop Market",
+				side: "A",
+				triggerCondition: "retracement 1%, activation above 160, best waiting",
+				triggerPx: "0.0",
+			} as unknown as OpenOrder,
+		];
+		act(() => root.render(<ReviewedOrders />));
+		let cells = [...container.querySelectorAll("tbody tr td")].map((cell) => cell.textContent?.trim() ?? "");
+		expect(cells[9]).toBe("Activation: $160 / Retracement: 1%");
+
+		mocks.orders = [
+			{
+				...triggerOrder,
+				orderType: "Trailing Stop Market",
+				side: "A",
+				triggerCondition: "retracement 1%, activation above 160, best 170",
+				triggerPx: "168.3",
+			} as unknown as OpenOrder,
+		];
+		act(() => root.render(<ReviewedOrders />));
+		cells = [...container.querySelectorAll("tbody tr td")].map((cell) => cell.textContent?.trim() ?? "");
+		expect(cells[9]).toMatch(/^Trigger: \$168\.30* \/ Retracement: 1%$/);
 	});
 
 	it("hides destructive bulk actions when the open-orders snapshot is empty", () => {
@@ -934,6 +1052,48 @@ describe("desktop cancel all orders confirmation", () => {
 			},
 			expect.objectContaining({ onSettled: expect.any(Function) }),
 		);
+	});
+
+	it("settles a partly accepted cancel batch item by item, as the official terminal does", async () => {
+		mocks.orders = [order, outcomeOrder];
+		act(() => root.render(<ReviewedOrders />));
+		act(() => {
+			container.querySelector<HTMLButtonElement>('tbody [aria-label="Select order xyz:ORCL"]')?.click();
+			container.querySelector<HTMLButtonElement>('tbody [aria-label="Select order #10"]')?.click();
+		});
+		act(() => container.querySelector<HTMLButtonElement>('button[aria-label="Cancel selected orders"]')?.click());
+		const feedbackId = queueItems.at(-1)?.id;
+		const callbacks = mocks.cancelOrders.mock.calls[0]?.[1] as { onError: (cause: Error) => void } | undefined;
+		const rejection = "Order was never placed, already canceled, or filled.";
+
+		await act(async () => {
+			callbacks?.onError(
+				new ApiRequestError(
+					{ status: "ok", response: { type: "cancel", data: { statuses: ["success", { error: rejection }] } } },
+					`cancel 1: ${rejection}`,
+				),
+			);
+			await Promise.resolve();
+		});
+
+		expect(getOrderQueueItem(feedbackId)).toMatchObject({
+			status: "partial",
+			acceptedCount: 1,
+			totalCount: 2,
+			countMode: "canceled",
+			error: { kind: "exchange-error", entries: [{ index: 1, text: rejection }] },
+		});
+		expect(getPendingTradingActionSnapshot().orderCancellations).toEqual([
+			expect.objectContaining({ oids: [42], phase: "awaiting" }),
+		]);
+		expect(
+			container
+				.querySelector<HTMLButtonElement>('tbody [aria-label="Select order xyz:ORCL"]')
+				?.getAttribute("aria-checked"),
+		).toBe("false");
+		expect(
+			container.querySelector<HTMLButtonElement>('tbody [aria-label="Select order #10"]')?.getAttribute("aria-checked"),
+		).toBe("true");
 	});
 
 	it("cancels all standard and outcome orders in one confirmed batch", () => {

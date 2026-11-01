@@ -11,6 +11,8 @@ export interface OrderInputContext {
 	sizeValue: number;
 	orderValue: number;
 	maxSize: number;
+	/** Set when the size was checked against the margin it reserves (`exceedsPerpEntryMaxSize`). */
+	exceedsMaxSize?: boolean;
 }
 
 export const enterLimitPriceValidator: Validator<OrderInputContext> = createValidator({
@@ -55,7 +57,8 @@ export const exceedsMaxSizeValidator: Validator<OrderInputContext> = createValid
 	category: "input",
 	priority: 104,
 	getMessage: () => t`Exceeds max size`,
-	validate: (ctx) => ctx.maxSize <= 0 || ctx.sizeValue <= ctx.maxSize,
+	validate: (ctx) =>
+		ctx.exceedsMaxSize === undefined ? ctx.maxSize <= 0 || ctx.sizeValue <= ctx.maxSize : !ctx.exceedsMaxSize,
 });
 
 export const orderInputValidators: Validator<OrderInputContext>[] = [

@@ -12,6 +12,8 @@ const TRADE_HISTORY_STALE_TIME_MS = 30_000;
 export interface TradeHistorySnapshot {
 	fills: UserFillsResponse;
 	reachedLimit: boolean;
+	/** Time of the newest fill the endpoint returned, TWAP fills included; null when it returned none. */
+	newestFillTime: number | null;
 }
 
 export type TradeHistoryStatus = "disabled" | "error" | "loading" | "offline" | "ready";
@@ -19,11 +21,20 @@ export type TradeHistoryStatus = "disabled" | "error" | "loading" | "offline" | 
 interface TradeHistoryResult {
 	error: unknown;
 	fills: UserFillsResponse;
+	/** The latest request failed; an earlier snapshot may still be in `fills`. */
+	hasFailed: boolean;
+	isFetching: boolean;
 	isOffline: boolean;
 	isRefreshing: boolean;
+	/** `TradeHistorySnapshot.newestFillTime` of the snapshot in `fills`. */
+	newestFillTime: number | null;
 	reachedLimit: boolean;
 	refresh: () => void;
 	status: TradeHistoryStatus;
+}
+
+interface TradeHistoryOptions {
+	enabled?: boolean;
 }
 
 export async function fetchTradeHistorySnapshot(
@@ -43,16 +54,21 @@ export async function fetchTradeHistorySnapshot(
 		throw new MalformedHistoryPageError();
 	}
 
+	const fills = response as UserFillsResponse;
 	return {
-		fills: mergeUserFillSources(filterNonTwapUserFills(response as UserFillsResponse)),
+		fills: mergeUserFillSources(filterNonTwapUserFills(fills)),
 		reachedLimit: response.length === TRADE_HISTORY_SNAPSHOT_LIMIT,
+		newestFillTime: fills.length ? Math.max(...fills.map((fill) => fill.time)) : null,
 	};
 }
 
-export function useTradeHistory(address: string): TradeHistoryResult {
+export function useTradeHistory(
+	address: string,
+	{ enabled: requested = true }: TradeHistoryOptions = {},
+): TradeHistoryResult {
 	const { env, info } = useHyperliquid();
 	const isOnline = useOnlineStatus();
-	const enabled = isAccountHistoryAddress(address);
+	const enabled = requested && isAccountHistoryAddress(address);
 	const normalizedAddress = address.toLowerCase();
 	const query = useQuery({
 		enabled,
@@ -76,10 +92,13 @@ export function useTradeHistory(address: string): TradeHistoryResult {
 	return {
 		error: query.error,
 		fills: query.data?.fills ?? [],
+		hasFailed: query.isError,
+		isFetching: query.isFetching,
 		isOffline: !isOnline || query.fetchStatus === "paused",
 		isRefreshing: query.isFetching && query.data !== undefined,
+		newestFillTime: query.data?.newestFillTime ?? null,
 		reachedLimit: query.data?.reachedLimit ?? false,
-		refresh: () => void query.refetch(),
+		refresh: () => void query.refetch({ cancelRefetch: false }),
 		status,
 	};
 }

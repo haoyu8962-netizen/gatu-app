@@ -23,6 +23,17 @@ export const RESOLUTIONS: Record<string, ResolutionConfig> = {
 	"1D": { label: "1D", candleInterval: "1d", barMs: 86_400_000 },
 };
 
+const DAILY_SOURCE_RESOLUTIONS = new Set(["D", "1D", "W", "1W", "M", "1M"]);
+
+/**
+ * The resolution TradingView requests from the datafeed while a chart shows `resolution`. The
+ * datafeed declares `has_weekly_and_monthly: false`, so the library loads daily bars for weekly and
+ * monthly charts and builds those bars itself.
+ */
+export function getDatafeedRequestResolution(resolution: string): string {
+	return DAILY_SOURCE_RESOLUTIONS.has(resolution) ? "1D" : resolution;
+}
+
 export function resolutionToInterval(resolution: ResolutionString): CandleInterval | undefined {
 	return RESOLUTIONS[resolution as string]?.candleInterval;
 }

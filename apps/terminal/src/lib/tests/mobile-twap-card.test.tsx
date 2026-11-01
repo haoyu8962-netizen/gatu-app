@@ -152,6 +152,7 @@ vi.mock("@/lib/hyperliquid", () => ({
 			tokensInfo: [{ name: "GOOGL" }, { name: "USDH" }],
 		}),
 		getSzDecimals: () => 3,
+		getTokenDisplayName: (name: string) => (name === "USDT0" ? "USDT" : name),
 	}),
 	useSubscription: vi.fn(() => ({
 		data: mocks.hasSnapshot
@@ -383,6 +384,24 @@ describe("MobileTwapTab card", () => {
 		expect(container.textContent).toContain("1,875.00 USDH");
 		expect(container.textContent).toContain("0.01000 USDC");
 		expect(container.textContent).toContain("+1.25 USDC");
+	});
+
+	it("shows a slice fill's fee token by its display name", () => {
+		const fills = mocks.twapFills;
+		mocks.twapFills = fills.map((fill) => ({ ...fill, feeToken: "USDT0" })) as UserFillsResponse;
+		try {
+			render();
+			const fillHistoryTab = Array.from(container.querySelectorAll<HTMLButtonElement>('[role="tab"]')).find(
+				(tab) => tab.textContent === "Fill History",
+			);
+			act(() => fillHistoryTab?.click());
+
+			expect(container.textContent).toContain("0.01000 USDT");
+			expect(container.textContent).toContain("+1.25 USDT");
+			expect(container.textContent).not.toContain("USDT0");
+		} finally {
+			mocks.twapFills = fills;
+		}
 	});
 
 	it("keeps history and touch-sized pagination without passive degradation notices", () => {

@@ -1,6 +1,7 @@
 # ADR 0008：全市场行情改用公开 WebSocket 的紧凑频道 `pac`/`sac`
 
-- 状态：已采用（2026-09-14），随 p16 发布到 `*.cloudfront.net`；对抗审查与线上复测后改为快照 + 增量累积，随 p18 发布
+- 状态：会话统计缓存部分已被 [ADR 0047](0047-no-local-market-stats-snapshot.md) 取代（2026-11-01）：决策 2 末句（会话级统计缓存与键 `hl-mkt-stats-v2`）和决策 3 中「会话缓存存的是合并后的视图……损坏即丢弃」一句不再成立，`useMarketsInfo` 不再读写本地快照；其余决策保留。下文为原决策与历史验证。
+- 原状态：已采用（2026-09-14），随 p16 发布到 `*.cloudfront.net`；对抗审查与线上复测后改为快照 + 增量累积，随 p18 发布
 - 前置：[ADR 0003](0003-orderbook-transport-isolation.md)（订单簿传输隔离）、[ADR 0005](0005-spa-static-shell.md)（静态壳）
 - 证据：[任务记录](../work-memory/sessions/2026-09-13-spa-shell-spike.md)第二十三、二十七检查点
 

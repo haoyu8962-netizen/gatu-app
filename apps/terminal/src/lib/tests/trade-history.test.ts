@@ -97,6 +97,15 @@ describe("trade history", () => {
 		expect(userFills).toHaveBeenCalledWith({ aggregateByTime: true, user: ADDRESS }, signal);
 		expect(result.fills).toEqual([newer, older]);
 		expect(result.reachedLimit).toBe(false);
+		expect(result.newestFillTime).toBe(twap.time);
+	});
+
+	it("reports no newest fill time when the account has no fills", async () => {
+		const info = { userFills: vi.fn().mockResolvedValue([]) } as unknown as InfoClient;
+
+		const result = await fetchTradeHistorySnapshot(info, ADDRESS, new AbortController().signal);
+
+		expect(result).toEqual({ fills: [], reachedLimit: false, newestFillTime: null });
 	});
 
 	it("marks a snapshot that reaches the public 2000-fill boundary", async () => {

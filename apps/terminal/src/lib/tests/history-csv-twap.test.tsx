@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useHistoricalOrdersCsvExport, useUserFillsCsvExport } from "@/hooks/trade/use-history-csv-export";
 import { useTwapFillHistoryCsv } from "@/hooks/trade/use-twap-fill-history-csv";
-import { formatDateTimeShort } from "@/lib/format";
+import { formatDateTime } from "@/lib/format";
 import { clearTwapSliceFillsExportPacersForTests } from "@/lib/trade/user-fills";
 import { createI18nRoot } from "./harness/react";
 
@@ -378,9 +378,11 @@ describe("TWAP fill history CSV export", () => {
 
 		const [, rows] = mocks.downloadCsv.mock.calls[0] as [string, string[][]];
 		expect(rows[0]?.slice(0, 4)).toEqual(["时间", "资产", "方向", "类型"]);
-		expect(rows[1]?.[0]).toBe(formatDateTimeShort(1_000, { locale: "zh" }));
+		expect(rows[1]?.[0]).toBe(formatDateTime(1_000, { locale: "zh", dateStyle: "short", timeStyle: "short" }));
 		expect(rows[1]?.slice(1, 4)).toEqual(["BTC", "开多", "TWAP"]);
-		expect(formatDateTimeShort(1_000, { locale: "zh" })).not.toBe(formatDateTimeShort(1_000, { locale: "en" }));
+		expect(formatDateTime(1_000, { locale: "zh", dateStyle: "short", timeStyle: "short" })).not.toBe(
+			formatDateTime(1_000, { locale: "en", dateStyle: "short", timeStyle: "short" }),
+		);
 	});
 
 	it("downloads every slice fill in ascending order with the trade history columns", async () => {
@@ -417,9 +419,20 @@ describe("TWAP fill history CSV export", () => {
 		expect(filename).toBe("twap_fill_history.csv");
 		expect(rows).toEqual([
 			["Time", "Asset", "Direction", "Type", "Price", "Size", "Fee", "Fee Token", "PNL", "Transaction"],
-			[formatDateTimeShort(1_000), "BTC", "Open Long", "TWAP", "63000", "0.01", "0.01", "USDC", "0", "-"],
 			[
-				formatDateTimeShort(2_000),
+				formatDateTime(1_000, { dateStyle: "short", timeStyle: "short" }),
+				"BTC",
+				"Open Long",
+				"TWAP",
+				"63000",
+				"0.01",
+				"0.01",
+				"USDC",
+				"0",
+				"-",
+			],
+			[
+				formatDateTime(2_000, { dateStyle: "short", timeStyle: "short" }),
 				"ETH",
 				"Close Long",
 				"TWAP",
@@ -431,9 +444,9 @@ describe("TWAP fill history CSV export", () => {
 				`0x${"a".repeat(64)}`,
 			],
 			[
-				formatDateTimeShort(3_000),
+				formatDateTime(3_000, { dateStyle: "short", timeStyle: "short" }),
 				"BTC",
-				"Liquidated",
+				"Market Order Liquidation: Open Long",
 				"TWAP",
 				"63000",
 				"0.01",
@@ -470,8 +483,8 @@ describe("TWAP fill history CSV export", () => {
 		expect(mocks.userTwapSliceFillsByTime).toHaveBeenCalledTimes(8);
 		const rows = mocks.downloadCsv.mock.calls[0]?.[1] as string[][];
 		expect(rows).toHaveLength(10_001);
-		expect(rows[1]?.[0]).toBe(formatDateTimeShort(2_002));
-		expect(rows.at(-1)?.[0]).toBe(formatDateTimeShort(12_001));
+		expect(rows[1]?.[0]).toBe(formatDateTime(2_002, { dateStyle: "short", timeStyle: "short" }));
+		expect(rows.at(-1)?.[0]).toBe(formatDateTime(12_001, { dateStyle: "short", timeStyle: "short" }));
 		expect(toast.warning).toHaveBeenCalledWith(
 			"CSV export reached the history limit. Some records were not included.",
 			{

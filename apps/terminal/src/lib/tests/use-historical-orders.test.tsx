@@ -192,6 +192,27 @@ describe("useHistoricalOrders", () => {
 		expect(result.orders).toEqual([]);
 	});
 
+	it("keeps the history when it holds a trailing stop, as the official terminal does", () => {
+		const trailingStop = createOrderEntry();
+		mocks.subscription.data = {
+			isSnapshot: true,
+			orderHistory: [
+				createOrderEntry({ statusTimestamp: 2000 }),
+				{
+					...trailingStop,
+					order: { ...trailingStop.order, oid: 43, orderType: "Trailing Stop Market" as never, isTrigger: true },
+				},
+			],
+			user: mocks.address as `0x${string}`,
+		};
+		mocks.subscription.status = "active";
+
+		const result = renderHook();
+
+		expect(result.status).toBe("ready");
+		expect(result.orders).toHaveLength(2);
+	});
+
 	it("keeps a valid snapshot visible when realtime updates later fail", () => {
 		const error = new Error("WebSocket unavailable");
 		mocks.subscription.data = {

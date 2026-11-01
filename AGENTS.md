@@ -40,6 +40,7 @@ This file contains durable project instructions for coding agents. Read `agent.m
 - Treat the active wallet account as the signing identity. Before creating a user-signed Hyperliquid client, require its address to match the selected Hyperliquid user address exactly, case-insensitively; fail closed on missing or mismatched accounts.
 - A desktop-approved key imported on a phone (an env-matching Agent-only owner) takes precedence over any wallet session, as on the official terminal: while it is active the Privy identity is masked (no owner signer, no wallet intent, no user-signed client), a wallet login cannot hide or delete it, and Disconnect removes only that key (`docs/adr/0039-link-mobile-device-builder-fee-and-session-priority.md`).
 - For Privy email sessions, activate only the exact embedded wallet belonging to that user. Never fall back to the first connected or first embedded wallet when the expected address is unavailable.
+- Every L1 action carries `expiresAfter`, 15 seconds after the estimated exchange clock, so a delayed order or cancel is rejected instead of executing late ([ADR 0045](docs/adr/0045-l1-action-expiry.md)); user-signed actions do not support the field. L1 actions are signed only by signers that need no confirmation (Agent or embedded owner), so wallet prompts never consume that window.
 - Hyperliquid Agent/API Wallet keys may be stored locally, but Agent approval must always be signed by the matching master wallet. Missing local Agent state may trigger re-registration; it must never trigger a different browser wallet.
 - Card funding pays out only to the exact Hyperliquid owner: pass the destination resolved by `resolvePrivyFiatFundingDestination` to Privy's `useFiatOnramp`, never a Privy funding hook without an explicit destination (it defaults to the first embedded wallet). Each network keeps its own fail-closed flag, and a Mainnet release needs `--allow-mainnet-card-funding` (`docs/adr/0034-privy-card-funding.md`).
 - Email-wallet funding follows [ADR 0040](docs/adr/0040-automatic-email-wallet-deposits.md): the page-level host automatically deposits eligible native USDC for the exact active embedded owner on either network under its own sponsored flag, including after session restoration. This funds flow is separate from trading onboarding; preserve fresh route/geo/legal/fee checks, locks and pending/unknown recovery, and never require a second Deposit click or promise initiation while the app is closed. The automatic path treats the submitted full balance as the locked value and re-reads it inside the funds-action lock before signing and before broadcasting, and it verifies the exact owner's fresh legal status before the authorization is signed (and again before broadcasting). Its EIP-3009 authorization is the one signature that login or session restoration may trigger without a click, and only for this flow. An automatic submission without a source hash, or a submitted one whose outcome is not a definitive source failure, is reported as a persistent unknown status, never as a failure. The host attempts nothing until the legal status is known to allow actions, binds the execution-boundary legal check to the account that signs, and starts no attempt while an earlier sponsored authorization is unresolved.
@@ -114,6 +115,7 @@ This file contains durable project instructions for coding agents. Read `agent.m
 - Typed decimal input stays a `.` protocol string; when the setting displays `,` as the decimal sign, a typed `,` is normalized to `.` before validation (`normalizeDecimalInput` / `normalizeDecimalInputEvent`), and every bare `<input inputMode="decimal">` must use that helper; `locale-format-contract` scans both rules.
 - A decimal string that is already rounded or truncated for display (a Big.js `toFixed` result, a protocol price or size shown as is, a viem amount) goes through `formatDecimalString` from `useNumberFormat()`, which keeps the caller's digits and swaps the separators; values that still need rounding keep the rounding formatters. Never build display text from `toFixed`/`toPrecision` or group thousands by hand (`docs/number-format-setting.md` rule 10, `docs/adr/0037-exact-decimal-display-separators.md`); `decimal-display-contract` requires every other `toFixed`/`toPrecision` call to be registered by file with its use and count.
 - The chart receives `numeric_formatting` at creation and follows a setting change through the same state-preserving rebuild as a locale change; a number-format change never reloads the page.
+- History tables and their CSV exports follow `docs/trading-toolbar-redesign.md` (History values): prices at the market's protocol decimals, a liquidation label only for the account's own or a protocol liquidation, HIP-3 amounts in their collateral, ledger rows classified by HyperCore system address, and exported numbers exactly as the exchange sent them.
 
 ## Desktop trading layout contract
 
@@ -132,6 +134,8 @@ This file contains durable project instructions for coding agents. Read `agent.m
 - Keep quantity, denomination and Reduce Only in the shared draft across responsive remounts, and reuse the TWAP and compact Scale summaries on both surfaces.
 - TWAP trigger and side-aware Max/Min Price fields stay behind the default-off Advanced Settings checkbox. Retain hidden price drafts but exclude them from validation, summaries, confirmation and submission while advanced settings are off; the toggle is transient draft state under the existing revision/reset guards.
 - Default desktop geometry fits all eight ordinary order-entry types without internal scrolling; keep the order-type header outside the overflow region and validate real forms, not only synthetic tall content.
+- A limit or trigger price that is not on the market's tick is rejected in the form with a valid example, never rounded silently; at submission a limit price may only round toward the user's bound (down for a buy, up for a sell). A scale order is sized, valued and charged at the size-weighted average of its levels (`docs/order-entry-surface-parity.md`).
+- A perp entry's maximum size follows the margin its resting price reserves, in the form and in the execution guard alike; stop and take-profit orders on a funded account need neither free balance nor size headroom, as on the official terminal (`docs/order-entry-surface-parity.md`, 2026-10-31).
 - Order-entry content must not resize the desktop grid: Market/Limit, advanced-order fields and feedback adapt within the trading panel while chart, order-book and account boundaries, internal scrolling and user-selected grid geometry stay intact. The embedded mobile form must not own its own vertical scroll viewport, and market data must never drive measured height state.
 
 ## Confirmation surface contract
@@ -189,6 +193,9 @@ pnpm --filter @sairn/terminal typecheck
 # Wallet signing, onboarding and connection UI
 pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/trading-onboarding-domain.test.ts \
+  src/lib/tests/exchange-action-expiry.test.ts \
+  src/lib/tests/global-settings-store.test.ts \
+  src/lib/tests/global-settings-modal.test.tsx \
   src/lib/tests/trading-onboarding-gate.test.tsx \
   src/lib/tests/account-mode-setup.test.ts \
   src/lib/tests/account-mode-setup-attempts.test.ts \
@@ -250,7 +257,25 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/funds-action-availability.test.ts \
   src/lib/tests/user-positions-readiness.test.tsx \
   src/lib/tests/deposit-empty-balances-entry.test.tsx \
-  src/lib/tests/mobile-account-view.test.tsx
+  src/lib/tests/mobile-account-view.test.tsx \
+  src/lib/tests/portfolio-overview.test.tsx \
+  src/lib/tests/portfolio-refresh-since-mount.test.tsx \
+  src/lib/tests/portfolio.test.ts \
+  src/lib/tests/balances.test.ts \
+  src/lib/tests/market-selector-quote.test.ts \
+  src/lib/tests/token-selector-row.test.tsx \
+  src/lib/tests/token-selector-wiring.test.tsx \
+  src/lib/tests/use-markets-info-subscriptions.test.tsx \
+  src/lib/tests/passive-query-state.test.ts \
+  src/components/staking/__tests__/staking-passive-data.test.tsx \
+  src/lib/tests/referral-passive-data.test.tsx \
+  src/lib/tests/vault-passive-data.test.tsx \
+  src/components/vaults/__tests__/use-vaults-controller.test.tsx \
+  src/lib/tests/use-referrals.test.tsx \
+  src/lib/tests/vaults-domain.test.ts \
+  src/lib/tests/mobile-fill-filter-backfill.test.tsx \
+  src/lib/tests/trade-history.test.ts \
+  src/lib/tests/fill-filter-presentation.test.ts
 
 # Trading terminal visual contract
 pnpm --dir apps/terminal exec vitest run \
@@ -261,6 +286,7 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/tradingview-chart.test.tsx \
   src/lib/tests/chart-price-format.test.ts \
   src/lib/tests/chart-datafeed.test.ts \
+  src/lib/tests/tradingview-overlays.test.ts \
   src/lib/tests/modal-surface-contract.test.ts \
   src/lib/tests/earn-page-surface-contract.test.ts \
   src/lib/tests/dashboard-surface-radius-contract.test.ts \
@@ -282,13 +308,19 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/orderbook-l2-feature-gate.test.ts \
   src/lib/tests/l2-book-transport-pool.test.ts \
   src/lib/tests/mobile-orderbook-subscription.test.tsx \
-  src/lib/tests/use-l2-book-subscription.test.tsx
+  src/lib/tests/use-l2-book-subscription.test.tsx \
+  src/lib/tests/orderbook-panel-safety.test.tsx \
+  src/lib/tests/orderbook-price-selection.test.tsx \
+  src/lib/tests/mobile-orderbook-mode.test.tsx \
+  src/lib/tests/mobile-book-header-contract.test.ts
 
 # Recent trades
 pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/trades.test.ts \
   src/lib/tests/trades-panel.test.tsx \
-  src/lib/tests/trade-row.test.tsx
+  src/lib/tests/trade-row.test.tsx \
+  src/lib/tests/explorer-urls.test.ts \
+  src/lib/tests/last-mark-cache.test.ts
 
 # Number and date formatting
 pnpm --dir apps/terminal exec vitest run \
@@ -296,10 +328,30 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/number-format-settings.test.ts \
   src/lib/tests/number-format-reactivity-contract.test.ts \
   src/lib/tests/date-locale-reactivity-contract.test.ts \
+  src/lib/tests/number-format-direction.test.tsx \
   src/lib/tests/locale-format-contract.test.ts \
   src/lib/tests/decimal-display-contract.test.ts \
   src/lib/tests/decimal-input-normalization.test.tsx \
-  src/lib/tests/tradingview-chart.test.tsx
+  src/lib/tests/tradingview-chart.test.tsx \
+  src/lib/tests/fill-direction.test.ts \
+  src/lib/tests/collateral-amount.test.ts \
+  src/lib/tests/historical-order-price.test.tsx \
+  src/lib/tests/historical-orders.test.ts \
+  src/lib/tests/use-historical-orders.test.tsx \
+  src/lib/tests/open-orders-tpsl.test.ts \
+  src/lib/tests/order-type-labels.test.tsx \
+  src/lib/tests/trailing-stop-condition.test.ts \
+  src/lib/tests/historical-order-status.test.tsx \
+  src/lib/tests/user-fills.test.ts \
+  src/lib/tests/desktop-history-exports.test.tsx \
+  src/lib/tests/trade-history-page.test.tsx \
+  src/lib/tests/funding-history-page.test.tsx \
+  src/lib/tests/desktop-twap-tab.test.tsx \
+  src/lib/tests/history-csv-twap.test.tsx \
+  src/lib/tests/mobile-history-cards.test.tsx \
+  src/lib/tests/account-ledger-number-format.test.tsx \
+  src/lib/tests/mobile-market-bar.test.tsx \
+  src/lib/tests/account-ledger.test.ts
 
 # Desktop trading layout and order entry
 pnpm --dir apps/terminal exec vitest run \
@@ -307,9 +359,21 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/grid-content-height.test.tsx \
   src/lib/tests/order-entry.test.ts \
   src/lib/tests/order-entry-store.test.tsx \
+  src/lib/tests/order-validation.test.ts \
+  src/lib/tests/order-intent.test.ts \
+  src/lib/tests/order-size.test.ts \
+  src/lib/tests/order-entry-trigger-funds.test.tsx \
+  src/lib/tests/entry-order-execution-guard.test.ts \
+  src/lib/tests/reduce-only.test.ts \
+  src/lib/tests/twap-details.test.ts \
+  src/lib/tests/scale-conversion-price.test.ts \
   src/lib/tests/trade-form-twap-advanced.test.tsx \
   src/lib/tests/trade-form-compact-fields.test.tsx \
-  src/lib/tests/trade-form-tp-sl.test.tsx
+  src/lib/tests/trade-form-tp-sl.test.tsx \
+  src/lib/tests/limit-price-prefill-contract.test.ts \
+  src/lib/tests/book-price-selection.test.tsx \
+  src/lib/tests/book-size-mode-request.test.tsx \
+  tests/trade-panel-open-interest-cap.test.tsx
 
 # Confirmation surfaces (see docs/confirmation-surfaces.md)
 pnpm --dir apps/terminal exec vitest run \
@@ -339,16 +403,23 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/desktop-orders-cancel-all.test.tsx \
   src/lib/tests/mobile-orders-card.test.tsx \
   src/lib/tests/mobile-order-modification.test.tsx \
+  src/lib/tests/open-order-modification.test.ts \
+  src/lib/tests/open-order-modification-form.test.ts \
+  src/lib/tests/order-reconciliation.test.tsx \
+  src/lib/tests/open-order-cancel.test.ts \
+  src/lib/tests/pending-trading-action-store.test.ts \
   src/lib/tests/spot-swap-modal.test.tsx \
   src/lib/tests/account-mode-modal.test.tsx \
   src/lib/tests/use-asset-leverage.test.tsx \
   src/lib/tests/funds-action-balances.test.tsx \
+  src/lib/tests/funds-destination-rules.test.ts \
   src/lib/tests/deposit-modal-withdrawal-routing-guard.test.tsx \
   src/lib/tests/use-deposit-routing-guard.test.tsx \
   src/lib/tests/cctp-deposit-tracking-notifier.test.tsx \
   src/lib/tests/referral-action-modal.test.tsx \
   src/lib/tests/api-wallet-action-modal.test.tsx \
   src/lib/tests/vault-action-modal.test.tsx \
+  src/lib/tests/vault-action-domain.test.ts \
   src/lib/tests/vault-detail-page-outcomes.test.tsx \
   src/lib/tests/earn-action-modal.test.tsx \
   src/lib/tests/earn-domain.test.ts \
@@ -404,7 +475,25 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/link-locale.test.ts \
   src/lib/tests/action-error.test.ts \
   src/lib/tests/errors.test.ts \
-  src/lib/tests/lingui-helper-translator-contract.test.ts
+  src/lib/tests/lingui-helper-translator-contract.test.ts \
+  src/lib/tests/catalog-completeness-contract.test.ts \
+  src/lib/tests/command-menu.test.tsx \
+  src/components/staking/__tests__/use-staking-actions.test.tsx \
+  src/lib/tests/use-api-wallet-controller.test.tsx
+
+# Spot market names and addresses (see docs/spot-market-names.md and ADR 0048)
+pnpm --dir apps/terminal exec vitest run \
+  src/lib/tests/spot-token-display-names-contract.test.ts \
+  src/lib/tests/market-catalog.test.ts \
+  src/lib/tests/market-catalog-query-policy.test.tsx \
+  src/lib/tests/market-route.test.ts \
+  src/lib/tests/market-route-canonical.test.ts \
+  src/lib/tests/orderbook-boot.test.ts \
+  src/lib/tests/trade-terminal-page-boot.test.tsx \
+  src/lib/tests/asset-display-token-name.test.tsx \
+  src/lib/tests/mobile-twap-card.test.tsx \
+  src/lib/tests/account-ledger-export-availability.test.tsx \
+  src/lib/tests/rtl-financial-ui-contract.test.ts
 
 # Brand identity (brand/, names, logo, icons, status motion, domains, legal text; see docs/brand-assets.md and ADR 0027)
 pnpm test:brand
