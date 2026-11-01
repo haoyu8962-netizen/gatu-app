@@ -1,6 +1,13 @@
 import { useMemo, useSyncExternalStore } from "react";
+import { useDataReceivedSinceMount } from "@/hooks/portfolio/use-data-received-since-mount";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { useActiveAgentOwner, useHyperliquid, useInfo, usePublicVaults } from "@/lib/hyperliquid";
+import {
+	combinePassiveQueryStates,
+	getPassiveQueryState,
+	isPassiveQueryShown,
+	type PassiveQueryState,
+} from "@/lib/passive-query-state";
 import {
 	createVaultAccountFacts,
 	createVaultListItem,
@@ -25,6 +32,8 @@ export interface VaultsController {
 	state: VaultsFeedState;
 	rows: readonly VaultListItem[];
 	account: VaultAccountFactsState;
+	/** False while `account` holds the snapshots kept after a failed refresh: shown, but no basis for an empty result. */
+	accountCurrent: boolean;
 	isRefreshing: boolean;
 	fetchedAt: number | null;
 	onRetry: () => void;
@@ -35,13 +44,20 @@ export type VaultDetailState = "normal" | "loading" | "error" | "notFound";
 export interface VaultDetailController {
 	state: VaultDetailState;
 	detail: VaultDetail | null;
+	/** The latest detail request succeeded; while false the page shows the detail it already received. */
+	detailCurrent: boolean;
 	owner: VaultOwnerViewState;
-	isRefreshing: boolean;
+	/** What the action controller sees: an owner kept after a failed refresh counts as unverified. */
+	actionOwner: VaultOwnerViewState;
+	/** A source failed: the page offers a neutral retry next to the actions. */
+	needsRetry: boolean;
 	onRetry: () => void;
 }
 
 export function useVaultsController(): VaultsController {
 	const accountAddress = useVaultReadOwner();
+	const { env } = useHyperliquid();
+	const owner = accountAddress?.toLowerCase() ?? null;
 	const publicVaults = usePublicVaults({
 		gcTime: 0,
 		staleTime: Number.POSITIVE_INFINITY,
@@ -68,34 +84,44 @@ export function useVaultsController(): VaultsController {
 			staleTime: ACCOUNT_STALE_TIME_MS,
 		},
 	);
+	const publicReceived = useDataReceivedSinceMount(JSON.stringify([env, "vaults"]), publicVaults.dataUpdatedAt);
+	const equitiesReceived = useDataReceivedSinceMount(
+		JSON.stringify([env, "userVaultEquities", owner]),
+		equities.dataUpdatedAt,
+	);
+	const leadingReceived = useDataReceivedSinceMount(
+		JSON.stringify([env, "leadingVaults", owner]),
+		leading.dataUpdatedAt,
+	);
 
 	const rows = useMemo(
 		() => selectVaultDiscoveryRows(publicVaults.data?.map(createVaultListItem) ?? []),
 		[publicVaults.data],
 	);
-	const account = deriveAccountFactsState({
-		accountAddress,
-		equitiesData: equities.data,
-		leadingData: leading.data,
-		isLoading:
-			(equities.data === undefined && (equities.isLoading || equities.isFetching)) ||
-			(leading.data === undefined && (leading.isLoading || leading.isFetching)),
-		isError: equities.isError || leading.isError,
+	const facts = createVaultAccountFacts(equities.data, leading.data);
+	const accountSource = combinePassiveQueryStates([
+		getPassiveQueryState({
+			hasData: equities.data !== undefined,
+			failed: equities.isError,
+			receivedSinceMount: equitiesReceived,
+		}),
+		getPassiveQueryState({
+			hasData: leading.data !== undefined,
+			failed: leading.isError,
+			receivedSinceMount: leadingReceived,
+		}),
+	]);
+	const publicSource = getPassiveQueryState({
+		hasData: publicVaults.data !== undefined,
+		failed: publicVaults.isError,
+		receivedSinceMount: publicReceived,
 	});
-	const state: VaultsFeedState = publicVaults.isError
-		? "error"
-		: publicVaults.data
-			? rows.length
-				? "normal"
-				: "empty"
-			: publicVaults.isLoading || publicVaults.isFetching
-				? "loading"
-				: "error";
 
 	return {
-		state,
-		rows,
-		account,
+		state: getVaultsFeedState(publicSource, rows.length),
+		rows: isPassiveQueryShown(publicSource) ? rows : [],
+		account: getAccountFactsState(accountAddress, accountSource, facts),
+		accountCurrent: accountSource === "ready" && facts !== null,
 		isRefreshing: publicVaults.isFetching && publicVaults.data !== undefined,
 		fetchedAt: publicVaults.dataUpdatedAt || null,
 		onRetry: () => {
@@ -110,6 +136,8 @@ export function useVaultsController(): VaultsController {
 
 export function useVaultDetailController(vaultAddress: string): VaultDetailController {
 	const accountAddress = useVaultReadOwner();
+	const { env } = useHyperliquid();
+	const owner = accountAddress?.toLowerCase() ?? null;
 	const validAddress = isVaultAddress(vaultAddress);
 	const detailQuery = useInfo(
 		"vaultDetails",
@@ -133,13 +161,31 @@ export function useVaultDetailController(vaultAddress: string): VaultDetailContr
 			staleTime: ACCOUNT_STALE_TIME_MS,
 		},
 	);
+	const detailReceived = useDataReceivedSinceMount(
+		JSON.stringify([env, "vaultDetails", vaultAddress.toLowerCase(), owner]),
+		detailQuery.dataUpdatedAt,
+	);
+	const equitiesReceived = useDataReceivedSinceMount(
+		JSON.stringify([env, "userVaultEquities", owner]),
+		equitiesQuery.dataUpdatedAt,
+	);
 
 	const parsed = validAddress
 		? parseVaultDetailsSnapshot(detailQuery.data as unknown)
 		: { status: "notFound" as const };
 	const detail = parsed.status === "valid" ? parsed.detail : null;
+	const detailSource = getPassiveQueryState({
+		hasData: detail !== null,
+		failed: detailQuery.isError || (detailQuery.data !== undefined && parsed.status === "malformed"),
+		receivedSinceMount: detailReceived,
+	});
 	const parsedEquities =
 		accountAddress && equitiesQuery.data !== undefined ? parseVaultEquitiesSnapshot(equitiesQuery.data) : null;
+	const equitiesSource = getPassiveQueryState({
+		hasData: parsedEquities?.status === "valid",
+		failed: equitiesQuery.isError || parsedEquities?.status === "malformed",
+		receivedSinceMount: equitiesReceived,
+	});
 	const lockBoundary =
 		detail && parsedEquities?.status === "valid"
 			? (parsedEquities.equities.find((item) => item.vaultAddress.toLowerCase() === detail.vaultAddress.toLowerCase())
@@ -147,41 +193,59 @@ export function useVaultDetailController(vaultAddress: string): VaultDetailContr
 			: detail?.followerState?.lockupUntil;
 	const now = useNowAtBoundary(lockBoundary);
 	let state: VaultDetailState;
-	if (!validAddress || parsed.status === "notFound") state = "notFound";
-	else if (detailQuery.data === undefined && (detailQuery.isLoading || detailQuery.isFetching)) state = "loading";
-	else if (detailQuery.isError || parsed.status === "malformed") state = "error";
+	if (!validAddress || (parsed.status === "notFound" && !detailQuery.isError)) state = "notFound";
+	else if (detailSource === "loading") state = "loading";
+	else if (detailSource === "failed") state = "error";
 	else state = "normal";
 
-	let owner: VaultOwnerViewState = { status: "disconnected" };
+	let ownerView: VaultOwnerViewState = { status: "disconnected" };
 	if (detail && accountAddress) {
-		if (equitiesQuery.data === undefined && (equitiesQuery.isLoading || equitiesQuery.isFetching)) {
-			owner = { status: "loading" };
-		} else if (equitiesQuery.isError) {
-			owner = { status: "error" };
-		} else {
-			owner =
-				parsedEquities?.status === "valid"
-					? deriveVaultOwnerView({
-							detail,
-							account: { status: "ready", equities: parsedEquities.equities },
-							now,
-						})
-					: { status: "error" };
+		if (equitiesSource === "loading") ownerView = { status: "loading" };
+		else if (equitiesSource === "failed" || parsedEquities?.status !== "valid") ownerView = { status: "error" };
+		else {
+			ownerView = deriveVaultOwnerView({
+				detail,
+				account: { status: "ready", equities: parsedEquities.equities },
+				now,
+			});
 		}
 	}
+	const ownerRetained = ownerView.status === "ready" && equitiesSource === "retained";
 
 	return {
 		state,
 		detail,
-		owner,
-		isRefreshing:
-			(detailQuery.isFetching && detailQuery.data !== undefined) ||
-			(equitiesQuery.isFetching && equitiesQuery.data !== undefined),
+		detailCurrent: detailSource === "ready",
+		owner: ownerView,
+		actionOwner: ownerRetained ? { status: "error" } : ownerView,
+		needsRetry: detailSource === "retained" || (accountAddress !== undefined && isFailedOrRetained(equitiesSource)),
 		onRetry: () => {
 			void detailQuery.refetch();
 			if (accountAddress) void equitiesQuery.refetch();
 		},
 	};
+}
+
+function isFailedOrRetained(state: PassiveQueryState): boolean {
+	return state === "failed" || state === "retained";
+}
+
+function getVaultsFeedState(source: PassiveQueryState, rowCount: number): VaultsFeedState {
+	if (source === "loading") return "loading";
+	if (source === "failed") return "error";
+	if (rowCount) return "normal";
+	return source === "ready" ? "empty" : "error";
+}
+
+function getAccountFactsState(
+	accountAddress: `0x${string}` | undefined,
+	source: PassiveQueryState,
+	facts: ReturnType<typeof createVaultAccountFacts>,
+): VaultAccountFactsState {
+	if (!accountAddress) return { status: "disconnected" };
+	if (source === "loading") return { status: "loading" };
+	if (source === "failed" || !facts) return { status: "error" };
+	return { status: "ready", facts };
 }
 
 function useNowAtBoundary(boundary: number | null | undefined): number {
@@ -221,24 +285,4 @@ function useVaultReadOwner(): `0x${string}` | undefined {
 		return activeAgentOwner?.env === env ? activeAgentOwner.address : undefined;
 	}
 	return wallet.address;
-}
-
-function deriveAccountFactsState({
-	accountAddress,
-	equitiesData,
-	leadingData,
-	isLoading,
-	isError,
-}: {
-	accountAddress: `0x${string}` | undefined;
-	equitiesData: unknown;
-	leadingData: unknown;
-	isLoading: boolean;
-	isError: boolean;
-}): VaultAccountFactsState {
-	if (!accountAddress) return { status: "disconnected" };
-	if (isLoading) return { status: "loading" };
-	if (isError) return { status: "error" };
-	const facts = createVaultAccountFacts(equitiesData, leadingData);
-	return facts ? { status: "ready", facts } : { status: "error" };
 }

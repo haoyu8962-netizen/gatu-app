@@ -47,7 +47,7 @@ export function ReferralSummaryCards({ data, discountPercent, usdcRewardsEarned 
 					<Trans>Active referral discount</Trans>
 				</p>
 				<p className="mt-1 text-base leading-5 font-bold tabular-nums text-fg min-[1001px]:mt-1.5 min-[1001px]:text-lg">
-					{discountPercent === null ? "—" : `${formatNumber(discountPercent, { decimals: 2 })}%`}
+					{discountPercent === null ? "--" : `${formatNumber(discountPercent, { decimals: 2 })}%`}
 				</p>
 			</article>
 		</section>

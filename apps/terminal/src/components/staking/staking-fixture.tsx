@@ -45,8 +45,8 @@ export function StakingFixture({ fixture, env }: { fixture: StakingFixtureState;
 	const controller: StakingController = {
 		env,
 		pageState: fixture,
-		publicState: fixture === "loading" ? "loading" : fixture === "error" ? "error" : "ready",
-		accountState: fixture === "loading" ? "loading" : fixture === "error" ? "error" : "ready",
+		publicState: fixture === "loading" ? "loading" : fixture === "error" ? "failed" : "ready",
+		accountState: fixture === "loading" ? "loading" : fixture === "error" ? "failed" : "ready",
 		ownerAddress: OWNER,
 		hasExactMasterSigner: true,
 		agentOnlySession: false,
@@ -57,7 +57,6 @@ export function StakingFixture({ fixture, env }: { fixture: StakingFixtureState;
 		networkStakeApproximate: validators.length ? sumApproximateNetworkStake(validators) : null,
 		weightedApr: account ? calculateDelegationWeightedApr(validators, account.delegations, period) : null,
 		account,
-		isRefreshing: false,
 		isReconnecting: false,
 		retryPublic: () => undefined,
 		retryAccount: () => undefined,

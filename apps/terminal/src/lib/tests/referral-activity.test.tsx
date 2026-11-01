@@ -66,10 +66,14 @@ describe("ReferralActivity", () => {
 			root.render(
 				<ReferralActivity
 					claimHistory={[]}
+					claimHistoryCanConfirmEmpty={false}
+					claimHistoryRefreshing={false}
 					claimHistoryStatus="idle"
 					data={REFERRAL_DATA}
 					onClaimHistoryRequested={onClaimHistoryRequested}
 					onRetryClaimHistory={vi.fn()}
+					onRetrySnapshot={vi.fn()}
+					snapshotCurrent
 					tokenMetadata={null}
 				/>,
 			);

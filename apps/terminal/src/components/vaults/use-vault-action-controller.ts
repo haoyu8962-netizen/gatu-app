@@ -148,6 +148,8 @@ export interface VaultActionController {
 export interface UseVaultActionControllerInput {
 	vaultAddress: string;
 	detail: VaultDetail | null;
+	/** False while `detail` is the snapshot kept after a failed refresh: actions wait for a current one. */
+	detailCurrent?: boolean;
 	owner: VaultOwnerViewState;
 }
 
@@ -156,6 +158,7 @@ let actionEpoch = 0;
 export function useVaultActionController({
 	vaultAddress,
 	detail,
+	detailCurrent = true,
 	owner,
 }: UseVaultActionControllerInput): VaultActionController {
 	const { t } = useLingui();
@@ -363,7 +366,8 @@ export function useVaultActionController({
 		minimumAmount === null ||
 		(amount?.valid === true && compareFundsAmounts(amount.displayAmount, minimumAmount) !== -1);
 	const canReview = Boolean(
-		visibleAction?.state.stage === "input" &&
+		detailCurrent &&
+			visibleAction?.state.stage === "input" &&
 			amount?.valid &&
 			availableAmount !== null &&
 			(visibleAction.action === "withdraw" || minimumAmount !== null) &&
@@ -375,6 +379,7 @@ export function useVaultActionController({
 	const canConfirm = Boolean(visibleAction?.state.stage === "review" && !visibleAction.isPreflighting);
 	const actionAvailability = deriveVaultActionsAvailability({
 		detail,
+		detailCurrent,
 		owner,
 		ownerAddress: exactOwner,
 		request: getVaultRequestAvailability(geo),

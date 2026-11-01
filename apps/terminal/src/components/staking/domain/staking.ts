@@ -1,5 +1,6 @@
 import Big from "big.js";
 import type { NumberFormatters } from "@/lib/format";
+import type { PassiveQueryState } from "@/lib/passive-query-state";
 
 const ADDRESS_PATTERN = /^0x[0-9a-fA-F]{40}$/u;
 const HASH_PATTERN = /^0x[0-9a-fA-F]{64}$/u;
@@ -10,7 +11,7 @@ const HYPE_WEI_SCALE = Big(10).pow(8);
 export type StakingPeriod = "day" | "week" | "month";
 export type StakingValidatorStatus = "active" | "jailed" | "inactive";
 export type StakingPageState = "normal" | "loading" | "error" | "empty" | "disconnected" | "nonSigning";
-export type StakingAccountDataState = "ready" | "loading" | "error" | "disconnected";
+export type StakingAccountDataState = PassiveQueryState | "disconnected";
 export type StakingActionKind = "cDeposit" | "cWithdraw" | "delegate" | "undelegate";
 
 export interface StakingValidatorStats {
@@ -100,7 +101,7 @@ export type HypeAmountValidation =
 	| { valid: false; reason: "required" | "format" | "positive" | "maximum" | "unsafe" };
 
 export interface DeriveStakingPageStateInput {
-	publicState: "ready" | "loading" | "error";
+	publicState: PassiveQueryState;
 	accountState: StakingAccountDataState;
 	hasExactMasterSigner: boolean;
 }
@@ -336,10 +337,10 @@ export function deriveStakingPageState({
 	accountState,
 	hasExactMasterSigner,
 }: DeriveStakingPageStateInput): StakingPageState {
-	if (publicState === "error") return "error";
+	if (publicState === "failed") return "error";
 	if (publicState === "loading") return "loading";
 	if (accountState === "disconnected") return "disconnected";
-	if (accountState === "error") return "error";
+	if (accountState === "failed") return "error";
 	if (accountState === "loading") return "loading";
 	return hasExactMasterSigner ? "normal" : "nonSigning";
 }

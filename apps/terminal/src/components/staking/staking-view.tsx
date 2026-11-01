@@ -1,12 +1,5 @@
 import { Trans, useLingui } from "@lingui/react/macro";
-import {
-	ArrowClockwiseIcon,
-	ArrowRightIcon,
-	LinkIcon,
-	LockKeyIcon,
-	SpinnerGapIcon,
-	WarningCircleIcon,
-} from "@phosphor-icons/react";
+import { ArrowClockwiseIcon, ArrowRightIcon, LinkIcon, LockKeyIcon } from "@phosphor-icons/react";
 import {
 	Alert,
 	Badge,
@@ -50,6 +43,8 @@ import type { StakingController } from "./use-staking-controller";
 
 type StakingTab = "validators" | "rewards" | "actions";
 type ValidatorFilter = "all" | StakingValidatorStatus;
+
+const UNKNOWN_VALUE = "--";
 
 export interface StakingViewProps extends StakingController {
 	onActionSubmit?: (submission: StakingActionSubmission) => void;
@@ -114,6 +109,7 @@ export function StakingView(props: StakingViewProps) {
 	const account = props.account;
 	const canOpenActions = Boolean(
 		account &&
+			props.accountState === "ready" &&
 			props.hasExactMasterSigner &&
 			!props.agentOnlySession &&
 			props.onActionSubmit &&
@@ -143,9 +139,16 @@ export function StakingView(props: StakingViewProps) {
 		{ value: "inactive", label: t`Inactive` },
 	];
 
+	const hasRetainedData = props.accountState === "retained" || props.publicState === "retained";
+
 	function openAction(action: StakingActionRequest) {
 		if (!canOpenActions) return;
 		setActiveAction(action);
+	}
+
+	function retryRetainedData() {
+		if (props.accountState === "retained") props.retryAccount();
+		if (props.publicState === "retained") props.retryPublic();
 	}
 
 	return (
@@ -209,14 +212,9 @@ export function StakingView(props: StakingViewProps) {
 						>
 							<Trans>Staking to Spot</Trans>
 						</Button>
+						{hasRetainedData ? <RetryButton onRetry={retryRetainedData} /> : null}
 					</div>
 				</div>
-				{props.isRefreshing ? (
-					<output className="mt-3 flex items-center gap-1.5 text-2xs text-fg-muted" aria-live="polite">
-						<SpinnerGapIcon aria-hidden="true" className="size-3 animate-spin motion-reduce:animate-none" />
-						<Trans>Refreshing staking data…</Trans>
-					</output>
-				) : null}
 			</section>
 
 			<div className="grid gap-3 min-[1001px]:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
@@ -226,40 +224,41 @@ export function StakingView(props: StakingViewProps) {
 							label={<Trans>Network stake</Trans>}
 							value={
 								props.networkStakeApproximate === null
-									? "0 HYPE"
+									? UNKNOWN_VALUE
 									: `≈ ${formatStakingAmount(props.networkStakeApproximate, numberFormat, 0)} HYPE`
 							}
 							description={<Trans>Approximate: the SDK parses the raw total as a JavaScript number.</Trans>}
 						/>
 						<MetricCard
 							label={<Trans>Your delegated stake</Trans>}
-							value={account ? `${formatStakingAmount(account.summary.delegated, numberFormat)} HYPE` : "0 HYPE"}
+							value={account ? `${formatStakingAmount(account.summary.delegated, numberFormat)} HYPE` : UNKNOWN_VALUE}
 							description={
-								props.weightedApr === null ? (
-									<Trans>Estimated APR unavailable</Trans>
-								) : (
-									<Trans>Estimated APR {formatStakingRatio(props.weightedApr, numberFormat)}</Trans>
-								)
+								<Trans>
+									Estimated APR{" "}
+									{props.weightedApr === null ? UNKNOWN_VALUE : formatStakingRatio(props.weightedApr, numberFormat)}
+								</Trans>
 							}
 						/>
 					</div>
 					<div className="mt-3 divide-y divide-stroke-weak">
 						<BalanceRow
 							label={<Trans>Available in Spot</Trans>}
-							value={account ? `${formatStakingAmount(account.spotHypeAvailable, numberFormat)} HYPE` : "0 HYPE"}
+							value={account ? `${formatStakingAmount(account.spotHypeAvailable, numberFormat)} HYPE` : UNKNOWN_VALUE}
 						/>
 						<BalanceRow
 							label={<Trans>Available for delegation</Trans>}
-							value={account ? `${formatStakingAmount(account.summary.undelegated, numberFormat)} HYPE` : "0 HYPE"}
+							value={account ? `${formatStakingAmount(account.summary.undelegated, numberFormat)} HYPE` : UNKNOWN_VALUE}
 						/>
 						<BalanceRow
 							label={<Trans>Delegated</Trans>}
-							value={account ? `${formatStakingAmount(account.summary.delegated, numberFormat)} HYPE` : "0 HYPE"}
+							value={account ? `${formatStakingAmount(account.summary.delegated, numberFormat)} HYPE` : UNKNOWN_VALUE}
 						/>
 						<BalanceRow
 							label={<Trans>Pending transfer to Spot</Trans>}
 							value={
-								account ? `${formatStakingAmount(account.summary.totalPendingWithdrawal, numberFormat)} HYPE` : "0 HYPE"
+								account
+									? `${formatStakingAmount(account.summary.totalPendingWithdrawal, numberFormat)} HYPE`
+									: UNKNOWN_VALUE
 							}
 						/>
 					</div>
@@ -344,7 +343,8 @@ export function StakingView(props: StakingViewProps) {
 						<ValidatorContent
 							publicState={props.publicState}
 							validators={visibleValidators}
-							canOpenActions={canOpenActions}
+							accountKnown={account !== null}
+							canOpenActions={canOpenActions && props.publicState === "ready"}
 							actionReasonId={actionReasonId}
 							availableToDelegate={account?.summary.undelegated ?? "0"}
 							onRetry={props.retryPublic}
@@ -440,20 +440,10 @@ function AccountStatePanel(props: StakingViewProps & { masterWalletReasonId: str
 			</output>
 		);
 	}
-	if (props.accountState === "error") {
+	if (props.accountState === "failed") {
 		return (
-			<div role="alert" className="py-3 text-center">
-				<WarningCircleIcon aria-hidden="true" className="mx-auto size-8 text-icon-error" />
-				<h2 className="mt-2 text-sm font-semibold text-fg">
-					<Trans>Account staking data unavailable</Trans>
-				</h2>
-				<p className="mt-1 text-xs text-fg-muted">
-					<Trans>Balances remain unknown and every staking action is disabled until fresh data is verified.</Trans>
-				</p>
-				<Button className="mt-3" variant="outline" intent="neutral" onClick={props.retryAccount}>
-					<ArrowClockwiseIcon aria-hidden="true" />
-					<Trans>Retry</Trans>
-				</Button>
+			<div className="py-3 text-center">
+				<RetryButton onRetry={props.retryAccount} />
 			</div>
 		);
 	}
@@ -495,6 +485,7 @@ function AccountStatePanel(props: StakingViewProps & { masterWalletReasonId: str
 function ValidatorContent({
 	publicState,
 	validators,
+	accountKnown,
 	canOpenActions,
 	actionReasonId,
 	availableToDelegate,
@@ -503,6 +494,7 @@ function ValidatorContent({
 }: {
 	publicState: StakingController["publicState"];
 	validators: StakingController["validatorViews"];
+	accountKnown: boolean;
 	canOpenActions: boolean;
 	actionReasonId: string | undefined;
 	availableToDelegate: string;
@@ -513,17 +505,9 @@ function ValidatorContent({
 	const locale = i18n.locale;
 	const numberFormat = useNumberFormat();
 	if (publicState === "loading") return <TableSkeleton />;
-	if (publicState === "error") {
-		return (
-			<EmptyState
-				error
-				title={<Trans>Validator data unavailable</Trans>}
-				description={<Trans>The response could not be verified. No validator action is available.</Trans>}
-				onRetry={onRetry}
-			/>
-		);
-	}
+	if (publicState === "failed") return <PassiveRetry onRetry={onRetry} />;
 	if (validators.length === 0) {
+		if (publicState !== "ready") return <PassiveRetry onRetry={onRetry} />;
 		return (
 			<EmptyState
 				title={<Trans>No validators found</Trans>}
@@ -588,7 +572,11 @@ function ValidatorContent({
 								<bdi dir="ltr">≈ {formatStakingAmount(validator.stakeApproximateHype, numberFormat, 0)} HYPE</bdi>
 							</TableCell>
 							<TableCell size="dense" className="text-right text-fg tabular-nums">
-								<bdi dir="ltr">{formatStakingAmount(validator.delegatedAmount, numberFormat)} HYPE</bdi>
+								<bdi dir="ltr">
+									{accountKnown
+										? `${formatStakingAmount(validator.delegatedAmount, numberFormat)} HYPE`
+										: UNKNOWN_VALUE}
+								</bdi>
 								{validator.lockedUntilTimestamp && validator.lockedUntilTimestamp > Date.now() ? (
 									<span className="mt-0.5 block text-2xs text-warning">
 										<Trans>Locked until {formatDateTime(validator.lockedUntilTimestamp, { locale })}</Trans>
@@ -674,17 +662,9 @@ function RewardsContent({
 		);
 	}
 	if (accountState === "loading") return <TableSkeleton />;
-	if (accountState === "error" || !rewards) {
-		return (
-			<EmptyState
-				error
-				title={<Trans>Reward history unavailable</Trans>}
-				description={<Trans>The reward response could not be verified.</Trans>}
-				onRetry={onRetry}
-			/>
-		);
-	}
+	if (accountState === "failed" || !rewards) return <PassiveRetry onRetry={onRetry} />;
 	if (rewards.length === 0) {
+		if (accountState !== "ready") return <PassiveRetry onRetry={onRetry} />;
 		return (
 			<EmptyState
 				title={<Trans>No staking rewards</Trans>}
@@ -751,17 +731,9 @@ function HistoryContent({
 		);
 	}
 	if (accountState === "loading") return <TableSkeleton />;
-	if (accountState === "error" || !history) {
-		return (
-			<EmptyState
-				error
-				title={<Trans>Staking action history unavailable</Trans>}
-				description={<Trans>The history response could not be verified.</Trans>}
-				onRetry={onRetry}
-			/>
-		);
-	}
+	if (accountState === "failed" || !history) return <PassiveRetry onRetry={onRetry} />;
 	if (history.length === 0) {
+		if (accountState !== "ready") return <PassiveRetry onRetry={onRetry} />;
 		return (
 			<EmptyState
 				title={<Trans>No staking actions</Trans>}
@@ -922,29 +894,29 @@ function BalanceRow({ label, value }: { label: ReactNode; value: string }) {
 	);
 }
 
-function EmptyState({
-	error,
-	title,
-	description,
-	onRetry,
-}: {
-	error?: boolean;
-	title: ReactNode;
-	description: ReactNode;
-	onRetry?: () => void;
-}) {
+function EmptyState({ title, description }: { title: ReactNode; description: ReactNode }) {
 	return (
-		<div role={error ? "alert" : undefined} className="px-4 py-12 text-center">
-			{error ? <WarningCircleIcon aria-hidden="true" className="mx-auto size-8 text-icon-error" /> : null}
+		<div className="px-4 py-12 text-center">
 			<h3 className="mt-2 text-sm font-semibold text-fg">{title}</h3>
 			<p className="mt-1 text-xs text-fg-muted">{description}</p>
-			{onRetry ? (
-				<Button className="mt-3" variant="outline" intent="neutral" onClick={onRetry}>
-					<ArrowClockwiseIcon aria-hidden="true" />
-					<Trans>Retry</Trans>
-				</Button>
-			) : null}
 		</div>
+	);
+}
+
+function PassiveRetry({ onRetry }: { onRetry: () => void }) {
+	return (
+		<div className="px-4 py-12 text-center">
+			<RetryButton onRetry={onRetry} />
+		</div>
+	);
+}
+
+function RetryButton({ onRetry }: { onRetry: () => void }) {
+	return (
+		<Button variant="outline" intent="neutral" onClick={onRetry}>
+			<ArrowClockwiseIcon aria-hidden="true" />
+			<Trans>Retry</Trans>
+		</Button>
 	);
 }
 

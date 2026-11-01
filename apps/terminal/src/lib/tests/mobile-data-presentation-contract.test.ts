@@ -110,4 +110,100 @@ describe("mobile passive data presentation contract", () => {
 	it("requires the presentation policy in project guidance", () => {
 		expect(readFileSync(resolve(root, "AGENTS.md"), "utf8")).toContain("docs/mobile-data-presentation.md");
 	});
+
+	describe("staking, referral and Vault pages (desktop and phone)", () => {
+		const components = resolve(root, "apps/terminal/src/components");
+		const directories = ["staking", "referrals", "vaults"];
+		const sources = directories.flatMap((directory) =>
+			readdirSync(resolve(components, directory))
+				.filter((file) => file.endsWith(".tsx") || file.endsWith(".ts"))
+				.map((file) => ({
+					file: `${directory}/${file}`,
+					source: readFileSync(resolve(components, directory, file), "utf8"),
+				})),
+		);
+
+		function count(source: string, marker: string): number {
+			return source.split(marker).length - 1;
+		}
+
+		it("scans every component directory of these pages", () => {
+			for (const directory of directories) {
+				expect(
+					sources.some(({ file }) => file.startsWith(`${directory}/`)),
+					directory,
+				).toBe(true);
+			}
+		});
+
+		it("does not bring back the passive refresh, failure and unknown-value copy", () => {
+			const retired = [
+				"Refreshing staking data",
+				"Refreshing referral data",
+				"Refreshing Vault data",
+				"Account staking data unavailable",
+				"Balances remain unknown",
+				"Validator data unavailable",
+				"Reward history unavailable",
+				"Staking action history unavailable",
+				"Estimated APR unavailable",
+				"Referral data unavailable",
+				"Recent reward claims could not be verified",
+				"Vault details are unavailable",
+				"Vault data is unavailable",
+				"Account Vault data could not be verified",
+				"Your Vault balance could not be verified",
+				"Retry account data",
+				"Verifying the owner Vault balance",
+				"until the owner balance is verified",
+				"Checking regional availability",
+				"Unable to verify regional availability",
+				"Verified Vault details are unavailable",
+				'"0 HYPE"',
+			];
+			for (const { file, source } of sources) {
+				for (const text of retired) expect(source, `${file}: ${text}`).not.toContain(text);
+			}
+		});
+
+		it("keeps failure banners and warning icons to the reviewed confirmed states", () => {
+			// Each remaining use, with its reason and count. A passive read shows only a neutral Retry.
+			const reviewed: Record<string, Record<string, { count: number; reason: string }>> = {
+				'role="alert"': {
+					"vaults/vaults-page.tsx": { count: 1, reason: "confirmed Vault not found answer, not a read failure" },
+					"vaults/vault-action-modal.tsx": {
+						count: 2,
+						reason: "failure and unknown outcome of a requested Vault transfer (action feedback)",
+					},
+				},
+				WarningCircleIcon: {
+					"vaults/vaults-page.tsx": { count: 2, reason: "import and the confirmed Vault not found answer" },
+					"vaults/vault-detail-view.tsx": { count: 2, reason: "import and the static Vault risk disclosure" },
+					"vaults/vaults-list.tsx": { count: 2, reason: "import and the warning tone of unavailable classification" },
+					"vaults/vault-action-modal.tsx": { count: 2, reason: "import and the transfer risk in the action dialog" },
+					"referrals/referral-action-modal.tsx": {
+						count: 2,
+						reason: "import and the signing notice in the action dialog",
+					},
+				},
+			};
+			for (const [marker, allowed] of Object.entries(reviewed)) {
+				const actual = Object.fromEntries(
+					sources
+						.filter(({ source }) => count(source, marker) > 0)
+						.map(({ file, source }) => [file, count(source, marker)]),
+				);
+				const expected = Object.fromEntries(Object.entries(allowed).map(([file, entry]) => [file, entry.count]));
+				expect(actual, marker).toEqual(expected);
+			}
+		});
+
+		it("disables Vault actions from availability booleans, not from a displayed explanation", () => {
+			const view = sources.find(({ file }) => file === "vaults/vault-detail-view.tsx")?.source ?? "";
+			expect(view).not.toMatch(/disabled=\{\w*UnavailableReason\s*!==\s*null\}/);
+			expect(view).toContain("const depositDisabled = !actionAvailability.deposit.available || !onRequestAction;");
+			expect(view).toContain("const withdrawDisabled = !actionAvailability.withdraw.available || !onRequestAction;");
+			expect(view).toContain("isPassiveVaultActionReason(availability.reason)");
+		});
+	});
 });

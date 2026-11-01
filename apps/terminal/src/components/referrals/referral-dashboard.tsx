@@ -1,5 +1,5 @@
 import { Trans, useLingui } from "@lingui/react/macro";
-import { ArrowClockwiseIcon, GiftIcon, SpinnerGapIcon, WarningCircleIcon } from "@phosphor-icons/react";
+import { ArrowClockwiseIcon, GiftIcon } from "@phosphor-icons/react";
 import { Button } from "@sairn/ui";
 import { type ReactNode, useId, useState } from "react";
 import { toast } from "sonner";
@@ -103,7 +103,8 @@ export function ReferralDashboard({ initialReferralCode }: Props) {
 	}
 
 	const actionBusy = referralActions.isPending || isPreparingAction || isReconnecting;
-	const actionsDisabled = actionBusy || agentOnlySession;
+	const actionsDisabled = actionBusy || agentOnlySession || !referrals.isCurrent;
+	const confirmedNoUnclaimedRewards = referrals.isCurrent && !referrals.hasUnclaimedRewards;
 	const actionIdentityKey = getActionIdentityKey(referralActions.identity);
 	const visibleAction = activeAction?.identityKey === actionIdentityKey ? activeAction.action : null;
 	const readyData =
@@ -129,7 +130,7 @@ export function ReferralDashboard({ initialReferralCode }: Props) {
 						size="sm"
 						className="text-2sm"
 						data-referral-claim-surface="desktop"
-						aria-describedby={agentOnlySession || !referrals.hasUnclaimedRewards ? claimStatusId : undefined}
+						aria-describedby={agentOnlySession || confirmedNoUnclaimedRewards ? claimStatusId : undefined}
 						disabled={actionsDisabled || !referrals.hasUnclaimedRewards}
 						focusableWhenDisabled={agentOnlySession}
 						onClick={() => void requestAction("claim")}
@@ -138,7 +139,7 @@ export function ReferralDashboard({ initialReferralCode }: Props) {
 					</Button>
 					<p id={claimStatusId} className="min-h-4 max-w-xs text-end text-2xs text-fg-muted">
 						{agentOnlySession ? masterWalletReason : null}
-						{!agentOnlySession && !referrals.hasUnclaimedRewards ? (
+						{!agentOnlySession && confirmedNoUnclaimedRewards ? (
 							<Trans>No unclaimed rewards are currently available.</Trans>
 						) : null}
 					</p>
@@ -178,21 +179,8 @@ export function ReferralDashboard({ initialReferralCode }: Props) {
 		);
 	} else if (!readyData) {
 		content = (
-			<div role="alert" className="border-t border-stroke-weak px-4 py-14 text-center min-[1001px]:px-5">
-				<WarningCircleIcon aria-hidden="true" className="mx-auto size-10 text-error" weight="fill" />
-				<h2 className="mt-4 text-lg font-bold text-fg">
-					<Trans>Referral data unavailable</Trans>
-				</h2>
-				<p className="mx-auto mt-2 max-w-md text-sm leading-5 text-fg-muted">
-					<Trans>The response could not be verified. No referral action is available until fresh data loads.</Trans>
-				</p>
-				<Button
-					variant="outline"
-					intent="neutral"
-					className="mt-5"
-					iconLeft={<ArrowClockwiseIcon />}
-					onClick={referrals.retry}
-				>
+			<div className="border-t border-stroke-weak px-4 py-14 text-center min-[1001px]:px-5">
+				<Button variant="outline" intent="neutral" iconLeft={<ArrowClockwiseIcon />} onClick={referrals.retry}>
 					<Trans>Retry</Trans>
 				</Button>
 			</div>
@@ -200,15 +188,19 @@ export function ReferralDashboard({ initialReferralCode }: Props) {
 	} else {
 		content = (
 			<>
-				{referrals.isRefreshing ? (
-					<output
-						aria-live="polite"
-						className="flex items-center gap-1.5 px-4 pb-2 text-2xs text-fg-muted min-[1001px]:px-5"
-					>
-						<SpinnerGapIcon className="size-3 animate-spin motion-reduce:animate-none" />
-						<Trans>Refreshing referral data…</Trans>
-					</output>
-				) : null}
+				{referrals.isCurrent ? null : (
+					<div className="px-4 pb-2 min-[1001px]:px-5">
+						<Button
+							variant="outline"
+							intent="neutral"
+							size="sm"
+							iconLeft={<ArrowClockwiseIcon />}
+							onClick={referrals.retry}
+						>
+							<Trans>Retry</Trans>
+						</Button>
+					</div>
+				)}
 				<div className="px-4 pb-3 min-[1001px]:px-5 min-[1001px]:pb-3.5">
 					<ReferralSummaryCards
 						data={readyData}
@@ -228,15 +220,23 @@ export function ReferralDashboard({ initialReferralCode }: Props) {
 						/>
 					</div>
 					<div className="order-3 min-[1001px]:order-2">
-						<ReferralRewardsCard rewards={referrals.rewardRows} />
+						<ReferralRewardsCard
+							rewards={referrals.rewardRows}
+							snapshotCurrent={referrals.isCurrent}
+							onRetry={referrals.retry}
+						/>
 					</div>
 					<div className="order-2 -mx-4 min-[1001px]:order-3 min-[1001px]:col-span-2 min-[1001px]:-mx-5">
 						<ReferralActivity
 							claimHistory={referrals.claimHistory}
+							claimHistoryCanConfirmEmpty={referrals.claimHistoryCanConfirmEmpty}
+							claimHistoryRefreshing={referrals.claimHistoryRefreshing}
 							claimHistoryStatus={referrals.claimHistoryStatus}
 							data={readyData}
 							onClaimHistoryRequested={() => setClaimHistoryEnabled(true)}
 							onRetryClaimHistory={referrals.retryClaimHistory}
+							onRetrySnapshot={referrals.retry}
+							snapshotCurrent={referrals.isCurrent}
 							tokenMetadata={referrals.tokenMetadata}
 						/>
 					</div>

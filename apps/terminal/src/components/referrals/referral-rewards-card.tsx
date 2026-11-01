@@ -1,13 +1,16 @@
 import { Trans } from "@lingui/react/macro";
 import { ArrowSquareOutIcon, CaretDownIcon, InfoIcon } from "@phosphor-icons/react";
+import { Button } from "@sairn/ui";
 import { useNumberFormat } from "@/lib/format";
 import type { ReferralRewardRow } from "@/lib/trade/referral";
 
 interface Props {
 	rewards: ReferralRewardRow[];
+	snapshotCurrent: boolean;
+	onRetry: () => void;
 }
 
-export function ReferralRewardsCard({ rewards }: Props) {
+export function ReferralRewardsCard({ rewards, snapshotCurrent, onRetry }: Props) {
 	const { formatToken } = useNumberFormat();
 	return (
 		<article className="h-full rounded-16 border border-stroke-weak bg-surface px-3 py-3 min-[1001px]:px-4 min-[1001px]:py-3.5">
@@ -71,9 +74,7 @@ export function ReferralRewardsCard({ rewards }: Props) {
 						);
 					})
 				) : (
-					<p className="px-4 py-8 text-center text-xs text-fg-muted">
-						<Trans>No reward assets are currently reported for this account.</Trans>
-					</p>
+					<EmptyRewards snapshotCurrent={snapshotCurrent} onRetry={onRetry} />
 				)}
 			</div>
 			<p className="mt-2 text-2xs leading-4 text-fg-muted">
@@ -123,5 +124,22 @@ export function ReferralRewardsCard({ rewards }: Props) {
 				</div>
 			</details>
 		</article>
+	);
+}
+
+function EmptyRewards({ snapshotCurrent, onRetry }: { snapshotCurrent: boolean; onRetry: () => void }) {
+	if (!snapshotCurrent) {
+		return (
+			<div className="px-4 py-8 text-center">
+				<Button variant="outline" intent="neutral" size="sm" onClick={onRetry}>
+					<Trans>Retry</Trans>
+				</Button>
+			</div>
+		);
+	}
+	return (
+		<p className="px-4 py-8 text-center text-xs text-fg-muted">
+			<Trans>No reward assets are currently reported for this account.</Trans>
+		</p>
 	);
 }

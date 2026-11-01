@@ -17,6 +17,7 @@ import {
 	isLeadingVault,
 	selectVaultRows,
 	sumVaultTvl,
+	VAULT_UNKNOWN_VALUE,
 	type VaultAccountFactsState,
 	type VaultFilter,
 	type VaultListGroup,
@@ -33,12 +34,21 @@ export interface VaultsListProps {
 	state: "normal" | "loading" | "error" | "empty";
 	rows: readonly VaultListItem[];
 	account: VaultAccountFactsState;
+	accountCurrent?: boolean;
 	isRefreshing?: boolean;
 	fetchedAt?: number | null;
 	onRetry: () => void;
 }
 
-export function VaultsList({ state, rows, account, isRefreshing = false, fetchedAt = null, onRetry }: VaultsListProps) {
+export function VaultsList({
+	state,
+	rows,
+	account,
+	accountCurrent = true,
+	isRefreshing = false,
+	fetchedAt = null,
+	onRetry,
+}: VaultsListProps) {
 	const { t, i18n } = useLingui();
 	const numberFormat = useNumberFormat();
 	const [filter, setFilter] = useState<VaultFilter>("all");
@@ -54,6 +64,7 @@ export function VaultsList({ state, rows, account, isRefreshing = false, fetched
 	const pageRows = selectedRows.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 	const groups = getVisibleGroups(pageRows, filter, selection.status === "ready" && selection.classificationAvailable);
 	const ageReferenceTime = fetchedAt ?? Date.now();
+	const accountFilter = filter === "deposited" || filter === "leading";
 	const locale = i18n.locale;
 	const fetchedLabel =
 		fetchedAt === null ? null : formatTime(fetchedAt, { locale, hour: "2-digit", minute: "2-digit" });
@@ -106,7 +117,7 @@ export function VaultsList({ state, rows, account, isRefreshing = false, fetched
 							<Trans>Total value locked</Trans>
 						</p>
 						<p className="mt-0.5 text-lg font-bold tabular-nums text-fg">
-							{totalTvl === null ? "—" : formatVaultCompactUsd(totalTvl, numberFormat)}
+							{totalTvl === null ? VAULT_UNKNOWN_VALUE : formatVaultCompactUsd(totalTvl, numberFormat)}
 						</p>
 					</div>
 					<Select
@@ -158,13 +169,7 @@ export function VaultsList({ state, rows, account, isRefreshing = false, fetched
 			</header>
 
 			{state === "loading" ? <VaultListSkeleton /> : null}
-			{state === "error" ? (
-				<VaultListMessage tone="error" title={t`Vault data is unavailable`} onRetry={onRetry}>
-					<Trans>
-						The public Vault feed could not be verified. No cached or cross-network rows are shown in its place.
-					</Trans>
-				</VaultListMessage>
-			) : null}
+			{state === "error" ? <VaultListRetry onRetry={onRetry} /> : null}
 			{state === "empty" ? (
 				<VaultListMessage title={t`No Vaults were returned`} onRetry={onRetry}>
 					<Trans>The selected Hyperliquid environment returned a definitive empty Vault list.</Trans>
@@ -177,13 +182,11 @@ export function VaultsList({ state, rows, account, isRefreshing = false, fetched
 
 			{state === "normal" && selection.status === "ready" ? (
 				selectedRows.length === 0 ? (
-					<VaultListMessage title={selection.isSearchNoResults ? t`No matching Vaults` : t`No Vaults in this filter`}>
-						{selection.isSearchNoResults ? (
-							<Trans>Try another vault name, address, or leader address.</Trans>
-						) : (
-							<Trans>This is a definitive empty result for the selected filter.</Trans>
-						)}
-					</VaultListMessage>
+					<VaultListEmptyResult
+						isSearchNoResults={selection.isSearchNoResults}
+						confirmed={!accountFilter || accountCurrent}
+						onRetry={onRetry}
+					/>
 				) : (
 					<div className="py-3">
 						{groups.map((group) => (
@@ -336,7 +339,7 @@ function VaultDesktopRow({
 				<VaultPerformanceChart snapshot={performance} kind="pnl" period={period} compact />
 			</td>
 			<td className="px-5 py-2.5 text-right text-xs tabular-nums text-fg-muted">
-				{age === null ? "—" : <Trans>{age} days</Trans>}
+				{age === null ? VAULT_UNKNOWN_VALUE : <Trans>{age} days</Trans>}
 			</td>
 		</tr>
 	);
@@ -395,7 +398,7 @@ function VaultMobileCard({
 				<MobileMetric label={<Trans>Leader</Trans>} value={<bdi dir="ltr">{shortenAddress(row.leader)}</bdi>} mono />
 				<MobileMetric
 					label={<Trans>Age</Trans>}
-					value={age === null ? "—" : <bdi dir="ltr">{age}</bdi>}
+					value={age === null ? VAULT_UNKNOWN_VALUE : <bdi dir="ltr">{age}</bdi>}
 					suffix={age === null ? undefined : <Trans>days</Trans>}
 				/>
 			</dl>
@@ -513,10 +516,41 @@ function VaultFilterUnavailable({ reason, onRetry }: { reason: VaultListUnavaila
 	if (reason === "accountLoading") {
 		return <VaultListSkeleton />;
 	}
+	return <VaultListRetry onRetry={onRetry} />;
+}
+
+function VaultListEmptyResult({
+	isSearchNoResults,
+	confirmed,
+	onRetry,
+}: {
+	isSearchNoResults: boolean;
+	confirmed: boolean;
+	onRetry: () => void;
+}) {
+	const { t } = useLingui();
+	if (isSearchNoResults) {
+		return (
+			<VaultListMessage title={t`No matching Vaults`}>
+				<Trans>Try another vault name, address, or leader address.</Trans>
+			</VaultListMessage>
+		);
+	}
+	if (!confirmed) return <VaultListRetry onRetry={onRetry} />;
 	return (
-		<VaultListMessage tone="error" title={t`Account Vault data could not be verified`} onRetry={onRetry}>
-			<Trans>Deposited and Leading filters fail closed until both account snapshots are available.</Trans>
+		<VaultListMessage title={t`No Vaults in this filter`}>
+			<Trans>This is a definitive empty result for the selected filter.</Trans>
 		</VaultListMessage>
+	);
+}
+
+function VaultListRetry({ onRetry }: { onRetry: () => void }) {
+	return (
+		<div className="flex justify-center px-6 py-14">
+			<Button size="sm" variant="outline" intent="neutral" onClick={onRetry}>
+				<Trans>Retry</Trans>
+			</Button>
+		</div>
 	);
 }
 
@@ -527,19 +561,18 @@ function VaultListMessage({
 	onRetry,
 }: {
 	title: string;
-	tone?: "neutral" | "warning" | "error";
+	tone?: "neutral" | "warning";
 	children: React.ReactNode;
 	onRetry?: () => void;
 }) {
 	return (
-		<div
-			role={tone === "error" ? "alert" : "status"}
+		<output
 			className={cn(
 				"mx-auto flex max-w-xl flex-col items-center px-6 py-14 text-center",
-				tone === "error" ? "text-error" : tone === "warning" ? "text-warning" : "text-fg",
+				tone === "warning" ? "text-warning" : "text-fg",
 			)}
 		>
-			<WarningCircleIcon className="size-8" weight="fill" />
+			{tone === "warning" ? <WarningCircleIcon className="size-8" weight="fill" /> : null}
 			<h2 className="mt-3 text-base font-bold">{title}</h2>
 			<p className="mt-1 text-xs leading-5 text-fg-muted">{children}</p>
 			{onRetry ? (
@@ -547,7 +580,7 @@ function VaultListMessage({
 					<Trans>Retry</Trans>
 				</Button>
 			) : null}
-		</div>
+		</output>
 	);
 }
 

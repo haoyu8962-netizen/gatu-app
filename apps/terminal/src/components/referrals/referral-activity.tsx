@@ -11,19 +11,27 @@ import { ReferredTraders } from "./referred-traders";
 
 interface Props {
 	claimHistory: ReferralClaimHistoryRow[];
+	claimHistoryCanConfirmEmpty: boolean;
+	claimHistoryRefreshing: boolean;
 	claimHistoryStatus: AccountLedgerStatus;
 	data: ReferralData;
 	onClaimHistoryRequested: () => void;
 	onRetryClaimHistory: () => void;
+	onRetrySnapshot: () => void;
+	snapshotCurrent: boolean;
 	tokenMetadata: ReadonlyMap<number, ReferralTokenMetadata> | null;
 }
 
 export function ReferralActivity({
 	claimHistory,
+	claimHistoryCanConfirmEmpty,
+	claimHistoryRefreshing,
 	claimHistoryStatus,
 	data,
 	onClaimHistoryRequested,
 	onRetryClaimHistory,
+	onRetrySnapshot,
+	snapshotCurrent,
 	tokenMetadata,
 }: Props) {
 	const { t } = useLingui();
@@ -34,6 +42,45 @@ export function ReferralActivity({
 		hasRequestedClaimHistory.current = true;
 		onClaimHistoryRequested();
 	};
+
+	function renderRetry(onRetry: () => void) {
+		return (
+			<div className="px-4 py-10 text-center">
+				<Button variant="outline" intent="neutral" size="sm" onClick={onRetry}>
+					<Trans>Retry</Trans>
+				</Button>
+			</div>
+		);
+	}
+
+	function renderReferredTraders() {
+		if (referredTraders.length) return <ReferredTraders traders={referredTraders} tokenMetadata={tokenMetadata} />;
+		if (!snapshotCurrent) return renderRetry(onRetrySnapshot);
+		return <ReferralEmptyState text={t`No referred traders yet.`} />;
+	}
+
+	function renderLegacyHistory() {
+		if (data.rewardHistory.length) return <ReferralLegacyHistory rows={data.rewardHistory} />;
+		if (!snapshotCurrent) return renderRetry(onRetrySnapshot);
+		return <ReferralEmptyState text={t`No legacy reward history.`} />;
+	}
+
+	function renderClaimHistory() {
+		const loading = claimHistoryStatus === "loading" || claimHistoryStatus === "idle";
+		if (loading || (claimHistoryStatus === "ready" && !claimHistory.length && claimHistoryRefreshing)) {
+			return (
+				<div aria-busy="true" className="min-h-28">
+					<span className="sr-only">
+						<Trans>Loading recent reward claims…</Trans>
+					</span>
+				</div>
+			);
+		}
+		if (claimHistoryStatus !== "ready") return renderRetry(onRetryClaimHistory);
+		if (claimHistory.length) return <ReferralClaimHistory rows={claimHistory} />;
+		if (!claimHistoryCanConfirmEmpty) return renderRetry(onRetryClaimHistory);
+		return <ReferralEmptyState text={t`No recent reward claims.`} />;
+	}
 
 	return (
 		<section className="overflow-hidden border-y border-stroke-weak bg-surface" aria-label={t`Referral activity`}>
@@ -78,11 +125,7 @@ export function ReferralActivity({
 				</TabsList>
 
 				<TabsContent value="traders" className="mt-0">
-					{referredTraders.length ? (
-						<ReferredTraders traders={referredTraders} tokenMetadata={tokenMetadata} />
-					) : (
-						<ReferralEmptyState text={t`No referred traders yet.`} />
-					)}
+					{renderReferredTraders()}
 				</TabsContent>
 				<TabsContent value="claims" className="mt-0">
 					<div className="border-b border-stroke-weak px-4 py-3 text-2xs leading-4 text-fg-muted min-[1001px]:px-6">
@@ -90,34 +133,13 @@ export function ReferralActivity({
 							Shows reward claims reported in the last 30 days. Claims can include referral and builder rewards.
 						</Trans>
 					</div>
-					{claimHistoryStatus === "loading" || claimHistoryStatus === "idle" ? (
-						<output aria-live="polite" className="block px-4 py-12 text-center text-xs text-fg-muted">
-							<Trans>Loading recent reward claims…</Trans>
-						</output>
-					) : claimHistoryStatus === "error" || claimHistoryStatus === "unavailable" ? (
-						<div role="alert" className="px-4 py-10 text-center">
-							<p className="text-xs text-fg-muted">
-								<Trans>Recent reward claims could not be verified.</Trans>
-							</p>
-							<Button variant="outline" intent="neutral" size="sm" className="mt-3" onClick={onRetryClaimHistory}>
-								<Trans>Retry</Trans>
-							</Button>
-						</div>
-					) : claimHistory.length ? (
-						<ReferralClaimHistory rows={claimHistory} />
-					) : (
-						<ReferralEmptyState text={t`No recent reward claims.`} />
-					)}
+					{renderClaimHistory()}
 				</TabsContent>
 				<TabsContent value="legacy" className="mt-0">
 					<div className="border-b border-stroke-weak px-4 py-3 text-2xs leading-4 text-fg-muted min-[1001px]:px-6">
 						<Trans>This is the legacy earned-reward history. Current claims are shown in the previous tab.</Trans>
 					</div>
-					{data.rewardHistory.length ? (
-						<ReferralLegacyHistory rows={data.rewardHistory} />
-					) : (
-						<ReferralEmptyState text={t`No legacy reward history.`} />
-					)}
+					{renderLegacyHistory()}
 				</TabsContent>
 			</Tabs>
 		</section>
