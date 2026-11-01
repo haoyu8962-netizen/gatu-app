@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { act, createElement } from "react";
+import { act, createElement, StrictMode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { useBookSizeModeRequest } from "@/hooks/trade/use-book-size-mode-request";
@@ -82,6 +82,16 @@ describe("order book size unit requests with the real stores", () => {
 		act(() => actions().setSize("3"));
 		act(() => root.render(createElement(OrderForm, { marketName: "BTC" })));
 		expect(form).toMatchObject({ request: null, size: "3", sizeMode: "base", toggles: 1 });
+	});
+
+	it("applies a pick made before the form mounts once, even when StrictMode runs the effect twice", () => {
+		start("base", "2");
+		act(() => root.unmount());
+		pick("BTC", "quote");
+		root = createRoot(document.createElement("div"));
+		act(() => root.render(createElement(StrictMode, null, createElement(OrderForm, { marketName: "BTC" }))));
+
+		expect(form).toMatchObject({ request: null, size: "200", sizeMode: "quote", toggles: 1 });
 	});
 
 	it("clears a pick of the unit already in use without converting the size", () => {

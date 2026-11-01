@@ -2,13 +2,8 @@ import { useLingui } from "@lingui/react/macro";
 import { memo } from "react";
 import { cn } from "@/lib/cn";
 import { useNumberFormat } from "@/lib/format";
-import {
-	type BookLevel,
-	formatCompactOrderbookSize,
-	getDepthPercentage,
-	getOrderbookQuoteDecimals,
-} from "@/lib/trade/orderbook";
-import { COMPACT_ORDERBOOK_ROW_GRID_CLASS, fitsCompactOrderbookRow } from "@/lib/ui/orderbook-layout";
+import { type BookLevel, getDepthPercentage, getOrderbookQuoteDecimals } from "@/lib/trade/orderbook";
+import { COMPACT_ORDERBOOK_ROW_GRID_CLASS, getCompactOrderbookSizeText } from "@/lib/ui/orderbook-layout";
 import type { OrderbookLevelPulseEvent } from "@/lib/ui/orderbook-level-pulses";
 import { useOrderbookActions } from "@/stores/use-orderbook-actions-store";
 import { OrderbookLevelPulse } from "./orderbook-level-pulse";
@@ -65,8 +60,15 @@ function OrderbookRowComponent({
 	const priceText = formatNumber(level.price, priceDecimals);
 	const fullSizeText = formatNumber(sizeValue, sizeDecimals);
 	const sizeText =
-		compact && ladderWidthPx && !fitsCompactOrderbookRow(priceText, fullSizeText, ladderWidthPx)
-			? formatCompactOrderbookSize(sizeValue, fullSizeText, formatNumber)
+		compact && ladderWidthPx
+			? getCompactOrderbookSizeText({
+					value: sizeValue,
+					fullText: fullSizeText,
+					decimals: sizeDecimals,
+					priceText,
+					ladderWidthPx,
+					formatNumber,
+				})
 			: fullSizeText;
 	const totalText = formatNumber(totalValue, totalDecimals);
 	const sideText = isAsk ? t`Ask` : t`Bid`;

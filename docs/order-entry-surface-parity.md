@@ -151,8 +151,8 @@ pnpm --dir apps/terminal exec playwright test \
 
 依据[第二组审查记录](work-memory/sessions/2026-11-01-audit-group2.md) M9 与 [ADR 0046](adr/0046-one-size-unit-for-order-entry-and-order-book.md)：官方只有一个单位状态，订单簿里的单位下拉就是下单数量的单位。本终端同样只保留下单草稿的 `sizeMode`，删除了设置里的「Order book in quote asset」开关。
 
-- 桌面订单簿控制行与手机分栏簿芯片行的单位下拉，选项依次为计价币、基础币。选择后写一次请求（`requestSizeMode`），桌面 `TradePanel` 与手机 `MobileTradeView` 用 `useBookSizeModeRequest` 消费：读到就清除，别的市场的请求丢弃，单位相同不处理，否则调用表单自己的 `toggleSizeDenomination`。已填数量的换算、只减仓的数量来源与表单单位切换完全相同。
+- 桌面订单簿控制行与手机分栏簿芯片行的单位下拉，选项依次为计价币、基础币。选择后写一次请求（`requestSizeMode`），桌面 `TradePanel` 与手机 `MobileTradeView` 用 `useBookSizeModeRequest` 消费：先按对象身份领取请求（`takeSizeModeRequest`，所以 StrictMode 重复执行效果或请求早于表单挂载时也只处理一次），别的市场的请求丢弃，单位相同不处理，否则调用表单自己的 `toggleSizeDenomination`。已填数量的换算、只减仓的数量来源与表单单位切换完全相同。
 - 手机下单表单在「行情」页签显示分栏簿时仍挂载（只是不可见），所以分栏簿里选的单位立即作用到下单数量。
 - 与官方的差异：表单既有换算优先用标记价（`getConversionPrice`），官方有限价时用限价。这是表单原有行为，本次未改。
 
-回归：`src/lib/tests/book-size-mode-request.test.tsx` 用真实的下单与订单簿两个 store 核对：只换算一次、之后改单位或重新渲染不重放、单位相同不换算、别的市场的请求丢弃；`tests/trade-panel-open-interest-cap.test.tsx`（桌面）与 `tests/mobile-trade-size-validation-a11y.test.tsx`（手机）核对两端都接上了这条路径；`orderbook-panel-safety.test.tsx` 与 `mobile-orderbook-subscription.test.tsx` 核对两处单位下拉写出的请求。
+回归：`src/lib/tests/book-size-mode-request.test.tsx` 用真实的下单与订单簿两个 store 核对：只换算一次、之后改单位或重新渲染不重放、请求早于表单挂载时在 StrictMode 下也只换算一次、单位相同不换算、别的市场的请求丢弃；`tests/trade-panel-open-interest-cap.test.tsx`（桌面）与 `tests/mobile-trade-size-validation-a11y.test.tsx`（手机）核对两端都接上了这条路径；`orderbook-panel-safety.test.tsx` 与 `mobile-orderbook-subscription.test.tsx` 核对两处单位下拉写出的请求。

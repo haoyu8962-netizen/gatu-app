@@ -1,6 +1,4 @@
 import Big from "big.js";
-import { FORMAT_COMPACT_THRESHOLD } from "@/config/app";
-import type { NumberFormatters } from "@/lib/format";
 import { toBig } from "@/lib/trade/numbers";
 
 export type RawBookLevel = { px: string; sz: string; n?: number };
@@ -126,21 +124,6 @@ export function compareOrderbookValues(previous: string, current: string): -1 | 
 	const currentValue = toBig(current);
 	if (!previousValue || !currentValue) return null;
 	return currentValue.cmp(previousValue) as -1 | 0 | 1;
-}
-
-/**
- * A size that cannot sit beside its price in a compact ladder: two-decimal compact notation from 10,000 up, kept
- * only when it is shorter than the full number (from one million up), so smaller sizes never lose digits.
- */
-export function formatCompactOrderbookSize(
-	value: string,
-	fullText: string,
-	formatNumber: NumberFormatters["formatNumber"],
-): string {
-	const amount = toBig(value);
-	if (!amount?.abs().gte(FORMAT_COMPACT_THRESHOLD)) return fullText;
-	const compactText = formatNumber(value, { decimals: 2, compact: true });
-	return compactText.length < fullText.length ? compactText : fullText;
 }
 
 export function getOrderbookQuoteDecimals(value: string): number {

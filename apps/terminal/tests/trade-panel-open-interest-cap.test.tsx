@@ -284,7 +284,9 @@ vi.mock("@/stores/use-order-entry-store", () => ({
 	useTwapTriggerPrice: () => testState.twapTriggerPrice,
 }));
 vi.mock("@/stores/use-orderbook-actions-store", () => ({
-	getOrderbookActionsStore: () => ({ actions: { clearSelectedPrice: vi.fn(), clearSizeModeRequest: vi.fn() } }),
+	getOrderbookActionsStore: () => ({
+		actions: { clearSelectedPrice: vi.fn(), clearSizeModeRequest: vi.fn(), takeSizeModeRequest: () => true },
+	}),
 	getSelectedPriceForMarket: (selection: { marketName: string; price: string } | null, marketName?: string) =>
 		selection && selection.marketName === marketName ? selection.price : null,
 	useSelectedPrice: () => testState.selectedPrice,

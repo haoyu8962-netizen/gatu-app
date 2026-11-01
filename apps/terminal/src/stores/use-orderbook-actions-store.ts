@@ -20,6 +20,7 @@ interface OrderbookActions {
 	setSelectedPrice: (marketName: string, price: string) => void;
 	clearSelectedPrice: () => void;
 	requestSizeMode: (marketName: string, mode: SizeMode) => void;
+	takeSizeModeRequest: (request: RequestedOrderbookSizeMode) => boolean;
 	clearSizeModeRequest: () => void;
 }
 
@@ -27,13 +28,18 @@ interface OrderbookActionsStore extends OrderbookActionsState {
 	actions: OrderbookActions;
 }
 
-const useOrderbookActionsStore = create<OrderbookActionsStore>((set) => ({
+const useOrderbookActionsStore = create<OrderbookActionsStore>((set, get) => ({
 	selectedPrice: null,
 	sizeModeRequest: null,
 	actions: {
 		setSelectedPrice: (marketName, price) => set({ selectedPrice: { marketName, price } }),
 		clearSelectedPrice: () => set({ selectedPrice: null }),
 		requestSizeMode: (marketName, mode) => set({ sizeModeRequest: { marketName, mode } }),
+		takeSizeModeRequest: (request) => {
+			if (get().sizeModeRequest !== request) return false;
+			set({ sizeModeRequest: null });
+			return true;
+		},
 		clearSizeModeRequest: () => set({ sizeModeRequest: null }),
 	},
 }));

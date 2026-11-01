@@ -124,7 +124,8 @@ describe("orderbook price selection", () => {
 	it.each([
 		[153.75, "4472287", "4,472,287"],
 		[124, "4472287", "4.47M"],
-		[124, "698254", "698,254"],
+		[140, "698254", "698,254"],
+		[124, "698254", "698.3K"],
 		[124, "1250", "1,250"],
 	])("on a %s px compact ladder shows the size %s as %s", (ladderWidthPx, size, shown) => {
 		act(() => {
