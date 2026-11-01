@@ -10,7 +10,7 @@
   "summary": "运营方要求 #104 的 CI 通过后合入 dev、晋升 main 并发布。#104 合入 dev（2b3a85ea），晋升 PR #105 八项 CI 全绿（含配对开启构建）后以 merge commit 合入 main（74e69f77）。在仓库外工作树 gatu-release-p31 用 Node 22.15.0 构建 cloudfront-2026-10-12-p31（三个闸门全开，总量 3,309,099），按 functions → lambda（版本 15）→ sync（1,644 个文件，发布标记一致）→ 两次失效 → verify 主网 15/15、测试网 16/16 → csp-coverage 33 步 0 违规。线上自 p30 升到 p31。真实邮箱钱包自动存款、真实拖动滑杆、外部钱包建立连接与真机配对清单均未做。",
   "thread": null,
   "baseCommit": "2b3a85ea",
-  "commits": ["b2c8a4bd", "b98f2fe8", "4c0da2b8", "2b3a85ea", "74e69f77"],
+  "commits": ["b2c8a4bd", "b98f2fe8", "4c0da2b8", "2b3a85ea", "74e69f77", "a2c9e209"],
   "sources": [
     {"path": "deploy/cloudfront/README.md"},
     {"path": "docs/agent-handbook.md"},

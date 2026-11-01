@@ -7,10 +7,10 @@
   "kind": "task",
   "status": "verified",
   "topics": ["pr-review", "order-entry", "account-funding", "wallet-onboarding", "static-hosting"],
-  "summary": "运营方要求审查当前代码、按模块与风险找出不符合生产要求之处并按功能测试。基线 dev 6525fd04。五路只读审查（签名与注册、下单执行、资金流转、数据层、平台与安全）共报告 26 项，经本人逐项核对并实测 CSV 格式化输出。按功能测试：28 个路由 × 桌面与手机的冒烟无错误，全量单测与两套浏览器回归通过。本记录的第一批修复：成交/TWAP CSV 导出改写协议原值并修正负数前缀；TP/SL 改单在撤单后被明确拒绝时报已知失败而不是占位 2 分钟；自动存款签名前失败按退避重试；质押/金库/API 钱包共用遍历 cause 的拒签判定，金库守卫只在 SDK 边界置位并把本地中止归为确定失败；邮箱签名会话不再绑定 Privy 的函数身份；推荐地区接口按 IP 限流并限制请求体；订阅上限条目在释放时删除；跳过确认时的双击锁。每项修复都有会失败的测试并做了还原核对。未修复项见后续。",
+  "summary": "生产审查的两批修复已分别经 PR #108/#109 合入并随 p32 发布，包含 CSV、TP/SL、自动存款重试、签名方队列隔离、外部存款未知结果、精确 Max 和平台限制。包体基线已由 PR #113 接续；分支保护、现货缺价估值、iframe 与 SW 问题及真实验收仍保留，OI 未知放行按 ADR 0023 维持。",
   "thread": null,
   "baseCommit": "6525fd04",
-  "commits": [],
+  "commits": ["bd5e3fe0", "70973bb5", "db7690cb", "c08865d8"],
   "sources": [
     {"path": "apps/terminal/src/lib/csv.ts"},
     {"path": "apps/terminal/src/components/trade/positions/history-tab.tsx"},
@@ -126,3 +126,11 @@ Codex CLI（`gpt-6-astra`、只读、`low`）第一轮 7/6/6 不通过，两项�
 
 - 仍未修：分支保护（运营方在 GitHub 设置）、包体基线（桌面运行时余量约 460 字节）、现货余额无价格时用入场成本冒充市值（改余额消费方类型）、图表 iframe 同源 `unsafe-inline`、SW 缓存 opaque 图标；OI 未知放行按 ADR 0023 维持。
 - 本记录不替代任何早先记录。
+
+## 周整理补注（2026-10-19）
+
+本记录包含两批修复，原正文标题只写第一批，不应漏看后半部分。末尾“包体基线未修”由 PR #113/p32 更新，其余列出的未修项和 directSubmissionStarted 缺少 Hook 级异常路径测试仍保留。自动存款的安全重试边界是授权尚未交给 bundler，不能简化成“签名前失败”：无哈希、无未决意向、非未知结果同时成立才可退避；存储读取抛错按可能有未决授权处理。OI 未知放行已经 ADR 0023 决定，不把审查列表中的早期提议改成待修缺陷。
+
+后续来源：[2026-10-13-p32-rebaseline](2026-10-13-p32-rebaseline.md)；[2026-10-14-cloudfront-release-p32](2026-10-14-cloudfront-release-p32.md)。
+
+本补注为事后整理，只核对当前规范、代码、Git 和来源记录；来源测试及发布结果不作为本轮执行。查询时间和实际 head 见[本周整理](2026-10-19-weekly-memory-review.md)。

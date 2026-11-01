@@ -10,13 +10,10 @@
     "docs-governance",
     "static-hosting"
   ],
-  "summary": "依据 PR #101、69038bb6 与 1539a009 补记缺失任务记录：设置 About 显示并复制构建版本，默认页脚移除版本号，行情加载模式保留简写。已合入所查 dev，不在 p30 的 main；只核对源码与 PR 检查，原对话、局部测试输出和真机验收未取得。",
+  "summary": "PR #101 的设置版本入口已随 p31 发布；后续 b2ab32c7 删除设置行下方 Release 提示并随 PR #107/p32 交付，版本简写与复制完整版本的行为保留。仅凭共享组件代码不能认定双端剪贴板交互验收完成。",
   "thread": null,
   "baseCommit": "2eeec75d",
-  "commits": [
-    "69038bb67b892d0f1e2be18a34d69c6622b290e6",
-    "1539a00970c9bcfa23c34b28c6edee69a8b44049"
-  ],
+  "commits": ["69038bb67b892d0f1e2be18a34d69c6622b290e6", "1539a00970c9bcfa23c34b28c6edee69a8b44049", "b2ab32c7"],
   "sources": [
     {
       "path": "apps/terminal/src/config/app.ts"
@@ -72,3 +69,11 @@ Git 祖先核对：两个提交都在所查 dev b98f2fe8，不在所查 main ff1
 - 双端实际显示、复制行为和发布后的版本标签仍需在对应版本验收。
 - 将来主分支或发布状态变化时追加来源，不把本次的 CI 成功当成发布授权。
 - 不替代早先页脚时钟、启动渲染或布局记录。
+
+## 周整理补注（2026-10-19）
+
+本记录建立时的“不在 main/p30 不含”是 10-12 查询快照；PR #101 后来随 p31 发布。b2ab32c7 删除 About / Version 下方的 Release 提示，未改变复制 APP_VERSION、APP_RELEASE_ID 与完整提交号的路径；它随 PR #107 进入 p32。当前源码差异已静态核对，未补造原始需求对话、本地测试输出或双端剪贴板验收。
+
+后续来源：[2026-10-12-automatic-unified-account](2026-10-12-automatic-unified-account.md)；[2026-10-12-cloudfront-release-p31](2026-10-12-cloudfront-release-p31.md)；[2026-10-14-cloudfront-release-p32](2026-10-14-cloudfront-release-p32.md)。
+
+本补注为事后整理，只核对当前规范、代码、Git 和来源记录；来源测试及发布结果不作为本轮执行。查询时间和实际 head 见[本周整理](2026-10-19-weekly-memory-review.md)。

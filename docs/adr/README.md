@@ -7,7 +7,7 @@ ADR 记录采用某个方案的理由、备选方案和后果，完整实现契�
 | [0001](0001-account-overview-cross-shell-model.md) | 已采用；展示规则随后修订 | 桌面与移动端共享账户数据契约，独立渲染；Portfolio 保持独立语义 |
 | [0002](0002-exact-owner-trading-signers.md) | 已实现决策的回溯记录 | 精确 owner 签名身份与邮箱/外部钱包/Agent-only 的 signer 分工 |
 | [0003](0003-orderbook-transport-isolation.md) | 已实现决策的回溯记录 | 通过有界共享 transport 池隔离公共 l2Book 流身份 |
-| [0004](0004-across-deposit-addresses.md) | 拟议，尚未实施；2026-09-20 实现分支未合并，归档为远端标签 `archive/across-deposit-addresses-20260920`（另有含周整理修订的 `…-weekly-revisions`），其服务端持久化设计基于已退役的 EC2 宿主 | 邮箱充值新增 Across 持久地址，保留 CCTP 与恢复；服务端身份、两张地址表及按需转账查询 |
+| [0004](0004-across-deposit-addresses.md) | 拟议，尚未实施；2026-09-20 实现分支未合并，归档为远端标签 `archive/across-deposit-addresses-20260920`（另有含周整理修订的 `…-weekly-revisions`），其服务端持久化设计基于已退役的 EC2 宿主；2026-10-31 运营方决定搁置，保持现行 CCTP 方案（见正文补记） | 邮箱充值新增 Across 持久地址，保留 CCTP 与恢复；服务端身份、两张地址表及按需转账查询 |
 | [0005](0005-spa-static-shell.md) | 已采用；2026-09-15 起生产由 CloudFront + S3 + Lambda 提供（2026-10-02 起域名为 sairn.ai）；静态文档页部分被 ADR 0020 取代 | 以预渲染 SPA 壳与静态文档页交付客户端产物，运行时不再 SSR；`/api/*` 处理器跑在 Lambda 函数 URL 上，Nitro 退为过渡宿主 |
 | [0007](0007-csp-report-only-hardening.md) | 已采用；2026-09-14 report-only 上线，同日内联脚本哈希与 `img-src` 收窄改为强制（[CSP 计划](../csp-inline-script-hashes-plan.md) C、D 阶段） | 候选 CSP 先以 report-only 下发，报告进独立的公开 Lambda 接收器；内联脚本哈希留到第二步 |
 | [0006](0006-startup-preloads-and-edge-caching.md) | 已采用；阶段 1、2 已发布；文档页缓存与地区预取例外被 ADR 0020 取代 | 壳内预加载交易页启动闭包，壳与文档页边缘缓存并后台刷新，图表哈希 bundle immutable，地区判定从引导入口预取，Lambda 保温；不做边缘初判 |
@@ -19,7 +19,7 @@ ADR 记录采用某个方案的理由、备选方案和后果，完整实现契�
 | [0013](0013-desktop-navigation-collapse.md) | 已接受（2026-09-17）；2026-10-01 补充 | 桌面导航断点命名为常量并以 `nav-compact` 变体钉住；Earn（Soon）在紧凑宽度进 More，低优先级入口仅在“已连接且紧凑”或“窄屏”时收纳；入口与 More 由同一配置派生。补充：已连接页头实测后紧凑宽度 1181 → 1379，不可存款时存款按钮只显示图标 |
 | [0014](0014-market-close-submit-and-dismiss.md) | 已接受（2026-09-17） | 市价平仓点击确认后立即关闭弹窗，会话进入 `dismissed` 但组件保持挂载以保留执行守卫；结果只用通知，会话不再携带错误；对账走通用通知并在任何结局关闭会话 |
 | [0015](0015-link-device-alignment.md) | D1–D6 已接受并实施（2026-09-18）；D7 方案 B 随 p22 上线、D8（2026-09-24）随 p24 上线，配对开关仍关闭，真机验收未执行 | 链接移动设备对齐官方：顶栏二维码入口、单步审批、官方文案与屏幕共享警告、圆环按住显示、可见倒计时、手机端 Agent-only 资金动作原因与扫描器相机选择；凭证传输选定去票据的纯客户端传输（规划见 docs/mobile-sync-ticketless-transfer-plan.md） |
-| [0016](0016-dev-first-pull-requests-and-ci-tiers.md) | D1、D2′、D3、D4、D6、D7 已接受并实施（2026-09-19，D2 同日被 D2′ 取代）；D5 `main` 保护规则未执行 | 工作分支只向 `dev` 开 PR，`main` 只接受 `dev`；每个 PR 构建生产默认的配对组合并跑两片浏览器回归，其余三组只在进 `main` 的 PR、发版标签与手动运行时构建；测试移出矩阵只跑一次，小 job 合并，网站工作流按输入过滤，同一 PR 的新推送取消旧运行；必选检查推迟到全量单测稳定之后 |
+| [0016](0016-dev-first-pull-requests-and-ci-tiers.md) | D1、D2′、D3、D4、D6、D7 已接受并实施（2026-09-19，D2 同日被 D2′ 取代）；D8 已实施（2026-10-31）；D5 `main` 保护规则未执行 | 工作分支只向 `dev` 开 PR，`main` 只接受 `dev`；每个 PR 构建生产默认的配对组合并跑两片浏览器回归，其余三组只在进 `main` 的 PR、发版标签与手动运行时构建；测试移出矩阵只跑一次，小 job 合并，网站工作流按输入过滤，同一 PR 的新推送取消旧运行；必选检查推迟到全量单测稳定之后；晋升 PR 由各工作流的判定作业核对 `dev` 是否已测过同一棵树，已测过就只跑静态检查与配对开启构建 |
 | [0017](0017-market-close-confirmed-size-ceiling.md) | 已接受并实施（2026-09-20） | 市价平仓确认按钮改为静态动词，保留实时联动；点击时展示的数量作为执行上限，重算结果超出即失败关闭；弹窗期间仓位数量与开窗时不同要明示；确立「展示值必须约束执行」的确认面契约 |
 | [0018](0018-slider-gestures-end-on-release.md) | 已接受并实施（2026-09-20）；兼作缺陷复盘 | 滑杆手势只在 `pointerup`、`pointercancel` 或编辑上下文结束时结束，`lostpointercapture` 不是取消；移动与松手由文档级监听处理；每条结束路径写入 `data-gesture-end`；新增取消路径须有真实输入证据；手势改动以物理输入验证，报告的缺陷以报告人的场景确认 |
 | [0019](0019-global-trading-notifications.md) | 已接受并实施（2026-09-21）；随 p23 发布（2026-09-24） | 订单、平仓与普通提示共用全局 Sonner 堆叠；任务绑定 owner/env，同 ID 更新并从现有 pending 恢复，成功到最前台才计时；保留资金核验与密钥保存面板 |

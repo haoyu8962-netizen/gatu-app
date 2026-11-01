@@ -10,7 +10,7 @@
   "summary": "运营方要求把 dev 晋升到 main 并发布。晋升 PR #112 的配对开启构建因总量 +10,160 超允许量失败，经 PR #113 重定总量与桌面运行时基线后八项 CI 全绿，以 merge commit 合入 main（9ccb88c0）。在仓库外工作树 gatu-release-p32 用 Node 22.15.0 构建 cloudfront-2026-10-14-p32（三个闸门全开，总量 3,314,565），按 functions → lambda（版本 16）→ sync（1,645 个文件，发布标记一致）→ 两次失效 → verify 主网 15/15、测试网 16/16 → csp-coverage 33 步 0 违规。线上自 p31 升到 p32。新账号自动统一账户、外部钱包存款未知结果、现货兑换 Max 等真实验收与真机配对清单均未做。",
   "thread": null,
   "baseCommit": "ab8896ef",
-  "commits": ["f63def71", "f50e21a8", "43f3e5fa", "8c3e5eae", "ab8896ef", "9ccb88c0"],
+  "commits": ["f63def71", "f50e21a8", "43f3e5fa", "8c3e5eae", "ab8896ef", "9ccb88c0", "c08865d8"],
   "sources": [
     {"path": "deploy/cloudfront/README.md"},
     {"path": "docs/agent-handbook.md"},

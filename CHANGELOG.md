@@ -64,6 +64,15 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Changed
 
+- A `dev` → `main` promotion no longer repeats the checks that `dev` already passed on the same tree
+  ([ADR 0016](docs/adr/0016-dev-first-pull-requests-and-ci-tiers.md) D8). `Terminal Tests`, the
+  browser regressions, `Production Builds` and `Website and Brand` each start with a
+  `Promotion coverage` job. When the last pull request merged into `dev` that changed the workflow's
+  inputs (its diff matches the workflow's `paths` filter, or the workflow ran for it) passed it on a
+  merge that no later change to those inputs followed, the workflow's jobs are skipped and
+  `Production Builds` builds only the pairing-on terminal; any doubt runs everything as before, and
+  `Static Checks` always runs. A covered promotion is expected to take about 14 billed minutes
+  instead of about 70; the coverage jobs' own cost has not been measured on GitHub yet.
 - The order book and the order form share one size unit, as on the official terminal. The unit menu
   in the order book (on desktop in a new control row above the columns, opposite the price grouping;
   on mobile in the order book's chip row) switches the order form's size unit and converts the size
