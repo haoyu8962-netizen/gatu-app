@@ -98,3 +98,11 @@
 后续来源：[2026-10-11-cloudfront-release-p30](2026-10-11-cloudfront-release-p30.md)。
 
 本补注为事后核对，原正文、失败与验证版本保留。本轮只核对 Git、任务记录和相关当前规范；来源执行结果不视为本次重跑。查询时间与实际 head 见[本周整理](2026-10-12-weekly-memory-review.md)。
+
+## 周整理补注（2026-10-19）
+
+p30 之后的 CLI 补审发现精确签名账户绑定仍需补足：法律核验原来只读当前选中 owner，PR #104 将其与 ready.address 绑定，连同宿主法律资格、未决授权和到期恢复修正随 p31 发布；p32 再接续安全退避重试。本记录的旧测试通过仅证明当时范围，不能当作上述后续缺陷不存在的证据。
+
+后续来源：[2026-10-12-codex-cli-review-followups](2026-10-12-codex-cli-review-followups.md)；[2026-10-13-production-readiness-audit](2026-10-13-production-readiness-audit.md)；[2026-10-14-cloudfront-release-p32](2026-10-14-cloudfront-release-p32.md)。
+
+本补注为事后整理，只核对当前规范、代码、Git 和来源记录；来源测试及发布结果不作为本轮执行。查询时间和实际 head 见[本周整理](2026-10-19-weekly-memory-review.md)。
