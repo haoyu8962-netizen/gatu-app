@@ -2,6 +2,7 @@
 
 import { i18n } from "@lingui/core";
 import { I18nProvider } from "@lingui/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, type ReactElement, type ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -24,6 +25,7 @@ const mocks = vi.hoisted(() => ({
 	ordersOffline: false,
 	ordersStale: false,
 	setActiveTab: vi.fn(),
+	snapshotFills: vi.fn(async () => []),
 }));
 
 const OWNER_A = "0x1111111111111111111111111111111111111111";
@@ -243,7 +245,7 @@ vi.mock("@/hooks/wallet/use-wallet-session", () => ({
 
 vi.mock("@/lib/hyperliquid", () => ({
 	getExplorerTxUrl: (hash: string) => `https://explorer.test/${hash}`,
-	useHyperliquid: () => ({ env: "Mainnet" }),
+	useHyperliquid: () => ({ env: "Mainnet", info: { userFills: mocks.snapshotFills } }),
 	useMarkets: () => ({
 		getMarket: (coin: string) => ({ kind: "perp", shortName: coin, szDecimals: coin === "BTC" ? 4 : 3 }),
 		getSzDecimals: (coin: string) => (coin === "BTC" ? 4 : 3),
@@ -278,10 +280,12 @@ import { MOBILE_PROGRESSIVE_LIST_BATCH_SIZE } from "@/components/trade/mobile/mo
 import { formatDateTime } from "@/lib/format";
 
 describe("mobile history disclosure cards", () => {
+	let client: QueryClient;
 	let container: HTMLDivElement;
 	let root: Root;
 
 	beforeEach(() => {
+		client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 		mocks.address = OWNER_A;
 		mocks.fills = createFills();
 		mocks.fillsError = undefined;
@@ -304,6 +308,7 @@ describe("mobile history disclosure cards", () => {
 	afterEach(() => {
 		act(() => root.unmount());
 		container.remove();
+		client.clear();
 		vi.clearAllMocks();
 		vi.unstubAllGlobals();
 		vi.useRealTimers();
@@ -311,7 +316,11 @@ describe("mobile history disclosure cards", () => {
 
 	function render(component: ReactElement) {
 		act(() => {
-			root.render(<I18nProvider i18n={i18n}>{component}</I18nProvider>);
+			root.render(
+				<QueryClientProvider client={client}>
+					<I18nProvider i18n={i18n}>{component}</I18nProvider>
+				</QueryClientProvider>,
+			);
 		});
 	}
 

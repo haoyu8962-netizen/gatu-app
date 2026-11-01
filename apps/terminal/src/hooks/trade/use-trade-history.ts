@@ -19,11 +19,18 @@ export type TradeHistoryStatus = "disabled" | "error" | "loading" | "offline" | 
 interface TradeHistoryResult {
 	error: unknown;
 	fills: UserFillsResponse;
+	/** The latest request failed; an earlier snapshot may still be in `fills`. */
+	hasFailed: boolean;
+	isFetching: boolean;
 	isOffline: boolean;
 	isRefreshing: boolean;
 	reachedLimit: boolean;
 	refresh: () => void;
 	status: TradeHistoryStatus;
+}
+
+interface TradeHistoryOptions {
+	enabled?: boolean;
 }
 
 export async function fetchTradeHistorySnapshot(
@@ -49,10 +56,13 @@ export async function fetchTradeHistorySnapshot(
 	};
 }
 
-export function useTradeHistory(address: string): TradeHistoryResult {
+export function useTradeHistory(
+	address: string,
+	{ enabled: requested = true }: TradeHistoryOptions = {},
+): TradeHistoryResult {
 	const { env, info } = useHyperliquid();
 	const isOnline = useOnlineStatus();
-	const enabled = isAccountHistoryAddress(address);
+	const enabled = requested && isAccountHistoryAddress(address);
 	const normalizedAddress = address.toLowerCase();
 	const query = useQuery({
 		enabled,
@@ -76,6 +86,8 @@ export function useTradeHistory(address: string): TradeHistoryResult {
 	return {
 		error: query.error,
 		fills: query.data?.fills ?? [],
+		hasFailed: query.isError,
+		isFetching: query.isFetching,
 		isOffline: !isOnline || query.fetchStatus === "paused",
 		isRefreshing: query.isFetching && query.data !== undefined,
 		reachedLimit: query.data?.reachedLimit ?? false,

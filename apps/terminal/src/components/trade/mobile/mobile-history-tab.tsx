@@ -1,7 +1,7 @@
 import { Plural, useLingui } from "@lingui/react/macro";
 import type { UserFillsResponse } from "@nktkas/hyperliquid";
 import { ArrowSquareOutIcon } from "@phosphor-icons/react";
-import { Select } from "@sairn/ui";
+import { Button, Select } from "@sairn/ui";
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { MOBILE_FILTER_CHIP_CLASS } from "@/components/trade/mobile/mobile-filter-chip";
@@ -10,6 +10,7 @@ import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { RECENT_ACCOUNT_HISTORY_ROWS } from "@/config/trade";
 import { useUserFillsCsvExport } from "@/hooks/trade/use-history-csv-export";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
+import { useTradeHistory } from "@/hooks/trade/use-trade-history";
 import { useUserFills } from "@/hooks/trade/use-user-fills";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
@@ -17,8 +18,15 @@ import { buildCsvRows } from "@/lib/csv";
 import { formatDateTime, formatDateTimeShort, useNumberFormat } from "@/lib/format";
 import { getExplorerTxUrl, useMarkets } from "@/lib/hyperliquid";
 import { getFillDirectionPresentation, getFillDirectionTone } from "@/lib/trade/fill-direction";
+import { getFilteredFillsEmptyPresentation } from "@/lib/trade/fill-filter-presentation";
 import { getMarketPriceFormatOptions } from "@/lib/trade/market-price-format";
-import { getUserFillKey, getUserFillNetClosedPnl, hasUserFillExplorerTransaction } from "@/lib/trade/user-fills";
+import { TRADE_HISTORY_SNAPSHOT_LIMIT } from "@/lib/trade/trade-history";
+import {
+	getUserFillKey,
+	getUserFillNetClosedPnl,
+	hasUserFillExplorerTransaction,
+	mergeUserFillSources,
+} from "@/lib/trade/user-fills";
 import { getMarketCloseValueColorClass } from "@/lib/ui/value-color";
 import { useIsTestnet } from "@/stores/use-global-settings-store";
 import { MobileBulkDisclosureActions } from "./mobile-bulk-disclosure-actions";
@@ -89,8 +97,11 @@ function MobileHistoryTabContent({
 	const [typeFilter, setTypeFilter] = useState<TradeHistoryTypeFilter>("all");
 	const [directionFilter, setDirectionFilter] = useState<TradeHistoryDirectionFilter>("all");
 	const [roleFilter, setRoleFilter] = useState<TradeHistoryRoleFilter>("all");
+	const filtersActive = typeFilter !== "all" || directionFilter !== "all" || roleFilter !== "all";
+	const fillSnapshot = useTradeHistory(address ?? "", { enabled: filtersActive });
+	const searchedFills = filtersActive ? mergeUserFillSources(fillSnapshot.fills, fills) : fills;
 
-	const filteredFills = fills
+	const filteredFills = searchedFills
 		.filter(
 			(fill) =>
 				(typeFilter === "all" || getTradeHistoryType(fill, address) === typeFilter) &&
@@ -98,6 +109,17 @@ function MobileHistoryTabContent({
 				(roleFilter === "all" || (roleFilter === "taker") === fill.crossed),
 		)
 		.slice(0, RECENT_ACCOUNT_HISTORY_ROWS);
+	const emptyPresentation = getFilteredFillsEmptyPresentation({
+		liveCurrent: status === "ready" && !error && !isOffline && !isStale,
+		snapshot: {
+			hasData: fillSnapshot.status === "ready",
+			failed: fillSnapshot.hasFailed,
+			fetching: fillSnapshot.isFetching,
+			offline: fillSnapshot.isOffline,
+			reachedLimit: fillSnapshot.reachedLimit,
+		},
+	});
+	const snapshotLimit = formatNumber(TRADE_HISTORY_SNAPSHOT_LIMIT, 0);
 	const filteredFillKeys = filteredFills.map(getUserFillKey);
 	const disclosure = useMobileDisclosureSet(
 		`${isTestnet ? "Testnet" : "Mainnet"}:${ownerKey}`,
@@ -187,6 +209,33 @@ function MobileHistoryTabContent({
 			</button>
 		</div>
 	);
+
+	function renderFilteredEmpty() {
+		if (emptyPresentation === "offline") return <div className="min-h-28" />;
+		if (emptyPresentation === "loading") {
+			return (
+				<div aria-busy="true" className="min-h-28">
+					<span className="sr-only">{t`Loading trade history`}</span>
+				</div>
+			);
+		}
+		if (emptyPresentation === "retry") {
+			return (
+				<div className="flex min-h-28 items-center justify-center">
+					<Button variant="outline" intent="neutral" size="sm" onClick={fillSnapshot.refresh}>
+						{t`Retry`}
+					</Button>
+				</div>
+			);
+		}
+		return (
+			<div className="flex min-h-28 items-center justify-center text-center text-sm text-market-close-muted">
+				{emptyPresentation === "noMatchWithinLimit"
+					? t`No fills match these filters among the latest ${snapshotLimit}.`
+					: t`No fills match these filters.`}
+			</div>
+		);
+	}
 
 	function renderFilterRow(disabled: boolean) {
 		return (
@@ -281,11 +330,7 @@ function MobileHistoryTabContent({
 				className={cn("min-h-0", !isPageScroll && "flex-1 overflow-y-auto overscroll-y-contain")}
 			>
 				<div className="flex flex-col gap-2.5 px-3.5 pt-3">
-					{filteredFills.length === 0 ? (
-						<div className="flex min-h-28 items-center justify-center text-center text-sm text-market-close-muted">
-							{t`No fills match these filters.`}
-						</div>
-					) : null}
+					{filteredFills.length === 0 ? renderFilteredEmpty() : null}
 					<MobileProgressiveList key={`${typeFilter}:${directionFilter}:${roleFilter}`} items={filteredFills}>
 						{(visibleFills) =>
 							visibleFills.map((fill) => {

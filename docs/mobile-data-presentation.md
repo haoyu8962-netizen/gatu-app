@@ -24,6 +24,7 @@
 | 用户实际提交的操作失败或结果待确认 | 保留与该操作有关的错误、重试与追踪反馈 | 静默吞掉提交失败，或把待确认交易当作失败后允许重复提交 |
 | 由市场静态元数据推导的说明值（目前仅杠杆编辑器的「最大仓位」行，桌面弹窗与移动抽屉共用） | 是否出现只取决于该市场的保证金分档表：有效且多于一档才显示，数值随编辑器显示的杠杆变化；「无档位上限」只能由有效分档表得出；杠杆超出分档范围、缺少计价币符号或截断后的下界超出 JavaScript 安全整数范围（合成情形）时用稳定占位符（[杠杆仓位上限](leverage-position-limit.md)） | 分档表缺失、无效或单档时显示「加载中」「不可用」等文字；让该行随预览杠杆出现或消失；用该行是否存在或其数值决定确认按钮能否点击 |
 | 确认弹窗打开期间，待确认对象与开窗时不同（目前仅市价平仓的仓位数量） | 在需要重新核对的内容旁明示一条 `aria-live="polite"` 提示，说明哪一项与开窗时不同；只在可见、可编辑的确认阶段显示；执行仍以点击时展示的数量为上限（[确认面契约](confirmation-surfaces.md)） | 静默改写待确认数值；把变化写进确认按钮名称；用提示是否存在决定能否提交；弹窗关闭后的后台执行期继续播报 |
+| 手机成交历史开启任一筛选（类型、方向、角色）：WebSocket 只有最近 30 条成交，页签同时补拉 `userFills` 快照（最多 2,000 条），与实时成交按 `(time, coin, tid)` 去重合并（[筛选映射](trading-toolbar-redesign.md#mobile-filter-mappings)） | 有匹配就显示匹配的成交（最多 30 张卡片）。只有补拉属于当前 owner 与网络、最近一次请求成功、没有请求在进行、未离线，且实时成交快照当前（就绪、未过期、未离线、无错误）时，无匹配才显示「No fills match these filters.」；补拉恰好返回 2,000 条上限时改为「No fills match these filters among the latest 2,000.」，不声称检查过更早的成交。补拉加载、重新请求、离线或实时快照不当前时为空白列表加 `aria-busy` 与读屏说明；补拉失败（包括已有快照后的刷新失败）时只给中性「Retry」 | 补拉未完成、失败、刷新中或实时快照不当前时得出「无匹配」结论；在不到上限或达到上限的检查范围外声称没有匹配；显示补拉的错误文字或警告图标 |
 | 仓位 TP/SL 弹窗：`maxMarketOrderNtls` 成功返回、整表格式有效，且仓位价值严格大于按仓位当前杠杆选出的分档上限 | 在说明段落之后显示一条语义 warning 提示，说明市价 TP/SL 可能因仓位规模产生较大滑点，建议改用限价执行或配置更小的数量；不含数值、不设 `aria-live`、不参与提交判断（[TP/SL 大额滑点提示](position-tpsl-slippage-warning.md)） | 分档表加载中、失败、格式异常、没有适用分档时显示任何文字（如「无法判断滑点」）、图标或占位；把提示写进确认按钮名称；用提示是否存在决定能否提交，或因提示改变提交负载 |
 
 屏幕阅读器专用的简短加载说明与 `aria-busy` 可以保留。禁用按钮可关联准确的无障碍说明，但不得把首次加载描述成连接故障。全局真实离线/恢复提示、已确认地区限制、签名确认、法律条款、交易提交结果、确认对象与开窗时不同的提示，以及仓位 TP/SL 大额滑点提示，均不属于普通数据加载文案。
@@ -120,11 +121,15 @@
 
 新增被动数据提示必须先明确修改本规范并取得产品需求依据；不得仅为了调试或展示内部状态而添加用户可见提示。市价平仓的「仓位数量与开窗时不同」提示的产品依据与取舍见 [ADR 0017](adr/0017-market-close-confirmed-size-ceiling.md)；它由开窗快照与当前有效仓位纯推导，数量回到开窗值时提示消失，不记录「期间曾变化」。仓位 TP/SL 大额滑点提示的产品依据是与官方终端对齐：官方持仓 TP/SL 弹窗读取同一接口，在仓位价值超过分档上限时显示滑点警告，读取失败时不显示任何内容；条件、与协议规格的差异和取舍见 [TP/SL 大额滑点提示](position-tpsl-slippage-warning.md)。它由成功的分档表与弹窗正在使用的实时仓位（价值与当前杠杆）纯推导，加载、失败和格式异常都保持静默；例外只在展示层面，共两处：数量滑杆手势期间保持手势开始时的有无，手势结束后再按推导结果显示，以免滑杆行在指针下移动（[滑杆手势](slider-interactions.md)）；弹窗外壳关闭（会话结束后的退出动画，或点击确认后外壳关闭、提交仍在后台进行）时保持关闭那一刻的有无，退出期间才到达的成功结果或刷新失败都不再改变它。
 
+手机成交历史筛选的补拉对齐官方终端：官方 2026-10-31 生产包（`config-BhZylSmU.js`）的筛选行在任一筛选开启时调用 `ensureCompleteHistory`，请求完整的 `userFills`，与 WebSocket 数据按 `` `${time}-${coin}-${tid}` `` 去重合并（实时数据优先），列表同样只截取 30 条。官方在补拉加载中和失败时也直接显示「No results match your filters.」；本终端按上表更严：无匹配结论要求补拉成功且当前，失败只给中性「Retry」，达到 2,000 条上限时写明检查范围。手机委托历史与资金费的筛选仍只在各自最近 30 条里查找（官方同样分别补拉 `historicalOrders` 与 `userFunding`），这一差距尚未处理。
+
 未平仓量上限说明属于「已确认的市场限制」，不是被动数据提示。产品依据是官方终端对等（2026-09-27 对 `app.hyperliquid.xyz` 生产包的静态阅读：提交限价类订单时若当前市场在 `perpsAtOpenInterestCap` 集合中则拦截并提示同一句话）。它只在当前、成功、同一账户的快照明确列出该市场时出现；未知状态放行且不显示任何文字，交易所仍是最终裁决，取舍见 [ADR 0023](adr/0023-open-interest-cap-advisory-check.md)。HIP-3 资产信息弹窗里的「未平仓量上限」一行是用户打开弹窗后的只读元数据，加载、失败、空值或畸形响应时整行不出现，也不显示加载或错误文字。
 
 ## 回归入口
 
 `apps/terminal/src/lib/tests/mobile-data-presentation-contract.test.ts` 检查已移除的移动文案、共享弹窗被动警告和规范入口；`user-positions-readiness.test.tsx` 验证订阅确认与首份数据的区别。余额、委托、TWAP、历史和仓位弹窗的组件测试同时验证静默展示、恢复和操作保护。
+
+`mobile-fill-filter-backfill.test.tsx` 用真实的手机成交页签、`useUserFills`、`useTradeHistory` 与 QueryClient 验证：只在筛选开启时补拉、按 `(time, coin, tid)` 合并且保留实时副本、加载与重新请求时安静、失败只给中性重试、实时快照过期时不下结论、2,000 条上限的说明，以及清除筛选后回到实时列表；`fill-filter-presentation.test.ts` 覆盖其判定函数。
 
 `open-interest-cap.test.ts` 验证上限集合只在活跃、有数据、未过期、同一账户的快照上得出，其余状态为未知；`mobile-trade-size-validation-a11y.test.tsx` 与 `trade-panel-open-interest-cap.test.tsx` 在真实移动与桌面下单面板上验证已确认上限时的限制说明、禁用与未提交，以及未知或未上限时保持安静；`market-asset-info.test.tsx` 验证 HIP-3 上限行在加载、失败、空值和畸形响应时不出现。
 
@@ -146,6 +151,8 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/mobile-orders-card.test.tsx \
   src/lib/tests/mobile-twap-card.test.tsx \
   src/lib/tests/mobile-history-cards.test.tsx \
+  src/lib/tests/mobile-fill-filter-backfill.test.tsx \
+  src/lib/tests/fill-filter-presentation.test.ts \
   src/lib/tests/open-interest-cap.test.ts \
   src/lib/tests/market-asset-info.test.tsx \
   tests/mobile-trade-size-validation-a11y.test.tsx \
