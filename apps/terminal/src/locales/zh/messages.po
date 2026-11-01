@@ -467,8 +467,8 @@ msgstr "提交请求前账户模式已更改。请核对余额后重试。"
 #~ msgstr "账户模式已更新"
 
 #: src/components/staking/staking-view.tsx
-msgid "Account staking data unavailable"
-msgstr "账户质押数据不可用"
+#~ msgid "Account staking data unavailable"
+#~ msgstr "账户质押数据不可用"
 
 #: src/components/staking/staking-view.tsx
 msgid "Account staking status"
@@ -508,8 +508,8 @@ msgid "Account Value weighted by LTV / Borrowed Amount. If this number is below 
 msgstr "按 LTV 加权的账户价值 / 借入金额。低于 100% 时，账户无法继续借入。"
 
 #: src/components/vaults/vaults-list.tsx
-msgid "Account Vault data could not be verified"
-msgstr "无法验证账户金库数据"
+#~ msgid "Account Vault data could not be verified"
+#~ msgstr "无法验证账户金库数据"
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Account-level agent approval"
@@ -1184,6 +1184,7 @@ msgid "Back to trade"
 msgstr "返回交易"
 
 #: src/components/vaults/vaults-page.tsx
+#: src/components/vaults/vaults-page.tsx
 msgid "Back to Vaults"
 msgstr "返回金库列表"
 
@@ -1224,8 +1225,8 @@ msgid "Balances"
 msgstr "余额"
 
 #: src/components/staking/staking-view.tsx
-msgid "Balances remain unknown and every staking action is disabled until fresh data is verified."
-msgstr "在验证最新数据前，余额保持未知，所有质押操作均被禁用。"
+#~ msgid "Balances remain unknown and every staking action is disabled until fresh data is verified."
+#~ msgstr "在验证最新数据前，余额保持未知，所有质押操作均被禁用。"
 
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/orderbook/orderbook-row.tsx
@@ -1618,8 +1619,8 @@ msgstr "正在检查地区可用性，资金操作暂时不可用。"
 #~ msgstr "正在检查地区可用性，交易暂时不可用。"
 
 #: src/components/vaults/vault-detail-view.tsx
-msgid "Checking regional availability. Vault actions are temporarily unavailable."
-msgstr "正在核验地区可用性，金库操作暂不可用。"
+#~ msgid "Checking regional availability. Vault actions are temporarily unavailable."
+#~ msgstr "正在核验地区可用性，金库操作暂不可用。"
 
 #: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
 msgid "Checking the current Hyperliquid deposit route..."
@@ -2749,8 +2750,8 @@ msgid "Deposited"
 msgstr "已存入"
 
 #: src/components/vaults/vaults-list.tsx
-msgid "Deposited and Leading filters fail closed until both account snapshots are available."
-msgstr "在两个账户快照均可用前，“已存入”和“管理中”筛选会保持关闭。"
+#~ msgid "Deposited and Leading filters fail closed until both account snapshots are available."
+#~ msgstr "在两个账户快照均可用前，“已存入”和“管理中”筛选会保持关闭。"
 
 #: src/components/trade/tradebox/deposit/deposit-method-chooser.tsx
 #: src/lib/trade/privy-fiat-funding-feedback.ts
@@ -2934,8 +2935,8 @@ msgid "Display and language"
 msgstr "显示与语言"
 
 #: src/components/trade/mobile/mobile-book-view.tsx
-msgid "Display units"
-msgstr "显示单位"
+#~ msgid "Display units"
+#~ msgstr "显示单位"
 
 #: src/components/trade/orderbook/orderbook-hover-tooltip.tsx
 msgid "Distance from mid"
@@ -3271,14 +3272,14 @@ msgstr "预估滑点"
 msgid "Establish Connection"
 msgstr "建立连接"
 
-#. placeholder {0}: formatStakingRatio(props.weightedApr, numberFormat)
+#. placeholder {0}: props.weightedApr === null ? UNKNOWN_VALUE : formatStakingRatio(props.weightedApr, numberFormat)
 #: src/components/staking/staking-view.tsx
 msgid "Estimated APR {0}"
 msgstr "预计 APR {0}"
 
 #: src/components/staking/staking-view.tsx
-msgid "Estimated APR unavailable"
-msgstr "预计 APR 不可用"
+#~ msgid "Estimated APR unavailable"
+#~ msgstr "预计 APR 不可用"
 
 #: src/components/trade/components/spot-swap-modal.tsx
 msgid "Estimated fee"
@@ -4745,6 +4746,7 @@ msgstr "正在加载代币元数据..."
 
 #: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade-history/trade-history-page.tsx
+#: src/components/trade/mobile/mobile-history-tab.tsx
 msgid "Loading trade history"
 msgstr "正在加载成交历史"
 
@@ -5513,6 +5515,10 @@ msgid "No fills match the selected filters."
 msgstr "没有成交记录符合所选筛选条件。"
 
 #: src/components/trade/mobile/mobile-history-tab.tsx
+msgid "No fills match these filters among the latest {snapshotLimit}."
+msgstr "在最近 {snapshotLimit} 条成交中，没有符合筛选条件的记录。"
+
+#: src/components/trade/mobile/mobile-history-tab.tsx
 msgid "No fills match these filters."
 msgstr "没有符合筛选条件的成交记录。"
 
@@ -6004,8 +6010,8 @@ msgstr "订单簿动画"
 
 #: src/components/trade/components/global-settings-modal.tsx
 #: src/components/trade/components/global-settings-modal.tsx
-msgid "Order book in quote asset"
-msgstr "以计价资产显示订单簿"
+#~ msgid "Order book in quote asset"
+#~ msgstr "以计价资产显示订单簿"
 
 #: src/config/orderbook-labels.ts
 msgid "Order book view"
@@ -6909,8 +6915,8 @@ msgid "Recent reward claims"
 msgstr "最近领取记录"
 
 #: src/components/referrals/referral-activity.tsx
-msgid "Recent reward claims could not be verified."
-msgstr "无法验证最近的奖励领取记录。"
+#~ msgid "Recent reward claims could not be verified."
+#~ msgstr "无法验证最近的奖励领取记录。"
 
 #: src/config/orderbook-labels.ts
 msgid "Recent Trades"
@@ -7038,8 +7044,8 @@ msgid "Referral codes must be between 1 and 20 characters."
 msgstr "推荐码长度必须为 1–20 个字符。"
 
 #: src/components/referrals/referral-dashboard.tsx
-msgid "Referral data unavailable"
-msgstr "推荐数据不可用"
+#~ msgid "Referral data unavailable"
+#~ msgstr "推荐数据不可用"
 
 #: src/components/referrals/referral-rewards-card.tsx
 msgid "Referral discounts do not apply to vaults or subaccounts."
@@ -7132,16 +7138,16 @@ msgid "Refresh referral data before submitting another signed request."
 msgstr "提交另一个已签名请求前，请先刷新推荐数据。"
 
 #: src/components/referrals/referral-dashboard.tsx
-msgid "Refreshing referral data…"
-msgstr "正在刷新推荐数据…"
+#~ msgid "Refreshing referral data…"
+#~ msgstr "正在刷新推荐数据…"
 
 #: src/components/staking/staking-view.tsx
-msgid "Refreshing staking data…"
-msgstr "正在刷新质押数据…"
+#~ msgid "Refreshing staking data…"
+#~ msgstr "正在刷新质押数据…"
 
 #: src/components/vaults/vault-detail-view.tsx
-msgid "Refreshing Vault data. Actions are temporarily unavailable."
-msgstr "正在刷新金库数据，操作暂不可用。"
+#~ msgid "Refreshing Vault data. Actions are temporarily unavailable."
+#~ msgstr "正在刷新金库数据，操作暂不可用。"
 
 #: src/components/api-wallet/api-wallet-list.tsx
 #: src/components/leaderboard/leaderboard-view.tsx
@@ -7389,7 +7395,8 @@ msgstr "继续跟踪"
 #: src/components/portfolio/portfolio-performance-chart.tsx
 #: src/components/referrals/referral-activity.tsx
 #: src/components/referrals/referral-dashboard.tsx
-#: src/components/staking/staking-view.tsx
+#: src/components/referrals/referral-dashboard.tsx
+#: src/components/referrals/referral-rewards-card.tsx
 #: src/components/staking/staking-view.tsx
 #: src/components/trade/chart/funding-history-load-boundary.tsx
 #: src/components/trade/chart/funding-history-panel.tsx
@@ -7400,6 +7407,7 @@ msgstr "继续跟踪"
 #: src/components/trade/components/market-asset-info.tsx
 #: src/components/trade/components/market-asset-info.tsx
 #: src/components/trade/layout/terminal-boot-error.tsx
+#: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/offline-banner.tsx
 #: src/components/trade/positions/account-transfers-tab.tsx
 #: src/components/trade/positions/account-transfers-tab.tsx
@@ -7414,14 +7422,17 @@ msgstr "继续跟踪"
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #: src/components/trade/twap-history-feedback.tsx
 #: src/components/ui/history-page-unavailable.tsx
+#: src/components/vaults/vault-action-modal.tsx
+#: src/components/vaults/vault-detail-view.tsx
+#: src/components/vaults/vaults-list.tsx
 #: src/components/vaults/vaults-list.tsx
 #: src/components/vaults/vaults-page.tsx
 msgid "Retry"
 msgstr "重试"
 
 #: src/components/vaults/vault-detail-view.tsx
-msgid "Retry account data"
-msgstr "重试账户数据"
+#~ msgid "Retry account data"
+#~ msgstr "重试账户数据"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Retry check"
@@ -7592,8 +7603,8 @@ msgid "Reward history is scoped to the verified owner."
 msgstr "奖励历史仅显示已验证所有者的数据。"
 
 #: src/components/staking/staking-view.tsx
-msgid "Reward history unavailable"
-msgstr "奖励历史不可用"
+#~ msgid "Reward history unavailable"
+#~ msgstr "奖励历史不可用"
 
 #: src/components/staking/staking-view.tsx
 msgid "Reward source"
@@ -8189,6 +8200,10 @@ msgstr "数量偏斜"
 msgid "Size skew is too aggressive for the total size"
 msgstr "数量偏斜相对总数量过大"
 
+#: src/config/orderbook-labels.ts
+msgid "Size unit"
+msgstr "数量单位"
+
 #: src/components/trade/tradebox/trade-form-tp-sl.tsx
 #: src/lib/errors/definitions/tpsl.ts
 msgid "SL must be above entry"
@@ -8355,8 +8370,8 @@ msgid "Staking action history table"
 msgstr "质押操作历史表格"
 
 #: src/components/staking/staking-view.tsx
-msgid "Staking action history unavailable"
-msgstr "质押操作历史不可用"
+#~ msgid "Staking action history unavailable"
+#~ msgstr "质押操作历史不可用"
 
 #: src/components/staking/staking-view.tsx
 msgid "Staking actions"
@@ -9138,8 +9153,8 @@ msgstr "Gas 赞助钱包配置到了另一个 Arbitrum 网络。"
 #~ msgstr "生成的密钥仅保留在此标签页中。请勿授权其他密钥或重新加载页面。"
 
 #: src/components/staking/staking-view.tsx
-msgid "The history response could not be verified."
-msgstr "无法验证历史响应。"
+#~ msgid "The history response could not be verified."
+#~ msgstr "无法验证历史响应。"
 
 #: src/lib/trade/funds-action-feedback.ts
 msgid "The Hyperliquid deposit route changed before signing. Review the updated route and retry."
@@ -9296,8 +9311,8 @@ msgstr "私钥在此浏览器中创建，绝不会上传或由 {BRAND_NAME} 存�
 #~ msgstr "私钥在此桌面设备上创建，并嵌入二维码中。"
 
 #: src/components/vaults/vaults-list.tsx
-msgid "The public Vault feed could not be verified. No cached or cross-network rows are shown in its place."
-msgstr "无法验证公开金库数据源。不会改为显示缓存数据或其他网络的数据行。"
+#~ msgid "The public Vault feed could not be verified. No cached or cross-network rows are shown in its place."
+#~ msgstr "无法验证公开金库数据源。不会改为显示缓存数据或其他网络的数据行。"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "The QR can trade but not withdraw. Approving replaces the key on a phone that is already linked. Do not share it, screenshot it or show it while sharing your screen."
@@ -9383,20 +9398,20 @@ msgid "The response could not be verified. No partial order history is shown."
 msgstr "无法验证响应，因此不显示部分委托历史。"
 
 #: src/components/referrals/referral-dashboard.tsx
-msgid "The response could not be verified. No referral action is available until fresh data loads."
-msgstr "无法验证响应。在加载最新数据前，所有推荐操作均不可用。"
+#~ msgid "The response could not be verified. No referral action is available until fresh data loads."
+#~ msgstr "无法验证响应。在加载最新数据前，所有推荐操作均不可用。"
 
 #: src/components/staking/staking-view.tsx
-msgid "The response could not be verified. No validator action is available."
-msgstr "无法验证响应，因此无法执行验证者操作。"
+#~ msgid "The response could not be verified. No validator action is available."
+#~ msgstr "无法验证响应，因此无法执行验证者操作。"
 
 #: src/components/vaults/vaults-page.tsx
-msgid "The response was missing, malformed, or could not be verified. No placeholder financial data is shown."
-msgstr "响应缺失、格式错误或无法验证。不会显示占位财务数据。"
+#~ msgid "The response was missing, malformed, or could not be verified. No placeholder financial data is shown."
+#~ msgstr "响应缺失、格式错误或无法验证。不会显示占位财务数据。"
 
 #: src/components/staking/staking-view.tsx
-msgid "The reward response could not be verified."
-msgstr "无法验证奖励响应。"
+#~ msgid "The reward response could not be verified."
+#~ msgstr "无法验证奖励响应。"
 
 #: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
@@ -10613,8 +10628,8 @@ msgid "Unable to verify regional availability. Trading is temporarily unavailabl
 msgstr "无法验证地区可用性，交易暂时不可用。"
 
 #: src/components/vaults/vault-detail-view.tsx
-msgid "Unable to verify regional availability. Vault actions are temporarily unavailable."
-msgstr "无法核验地区可用性，金库操作暂不可用。"
+#~ msgid "Unable to verify regional availability. Vault actions are temporarily unavailable."
+#~ msgstr "无法核验地区可用性，金库操作暂不可用。"
 
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
@@ -10951,8 +10966,8 @@ msgid "Validator commission"
 msgstr "验证者佣金"
 
 #: src/components/staking/staking-view.tsx
-msgid "Validator data unavailable"
-msgstr "验证者数据不可用"
+#~ msgid "Validator data unavailable"
+#~ msgstr "验证者数据不可用"
 
 #: src/components/staking/staking-view.tsx
 msgid "Validator performance"
@@ -11002,8 +11017,8 @@ msgid "Vault Commission"
 msgstr "金库佣金"
 
 #: src/components/vaults/vaults-list.tsx
-msgid "Vault data is unavailable"
-msgstr "金库数据不可用"
+#~ msgid "Vault data is unavailable"
+#~ msgstr "金库数据不可用"
 
 #: src/components/funds-action/funds-action-recovery-host.tsx
 msgid "Vault deposit"
@@ -11022,8 +11037,8 @@ msgid "Vault depositors"
 msgstr "金库存款人"
 
 #: src/components/vaults/vaults-page.tsx
-msgid "Vault details are unavailable"
-msgstr "金库详情不可用"
+#~ msgid "Vault details are unavailable"
+#~ msgstr "金库详情不可用"
 
 #: src/config/account-ledger.ts
 msgid "Vault Distribution"
@@ -11098,8 +11113,8 @@ msgid "Verification reference"
 msgstr "验证参考"
 
 #: src/components/vaults/vault-detail-view.tsx
-msgid "Verified Vault details are unavailable."
-msgstr "无法获取已验证的金库详情。"
+#~ msgid "Verified Vault details are unavailable."
+#~ msgstr "无法获取已验证的金库详情。"
 
 #. placeholder {0}: formatVaultUsd(availableAmount, numberFormat)
 #: src/components/vaults/vault-action-modal.tsx
@@ -11139,8 +11154,8 @@ msgid "Verifying from history"
 msgstr "正在通过历史记录验证"
 
 #: src/components/vaults/vault-detail-view.tsx
-msgid "Verifying the owner Vault balance before enabling withdrawals."
-msgstr "正在核验所有者的金库余额，核验完成后才能提款。"
+#~ msgid "Verifying the owner Vault balance before enabling withdrawals."
+#~ msgstr "正在核验所有者的金库余额，核验完成后才能提款。"
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Verifying the result"
@@ -11421,8 +11436,8 @@ msgid "Withdrawal remains locked until the server-reported unlock time."
 msgstr "提款仍处于锁定状态，需等待服务器返回的解锁时间。"
 
 #: src/components/vaults/vault-detail-view.tsx
-msgid "Withdrawal remains unavailable until the owner balance is verified."
-msgstr "在所有者余额完成核验前，提款不可用。"
+#~ msgid "Withdrawal remains unavailable until the owner balance is verified."
+#~ msgstr "在所有者余额完成核验前，提款不可用。"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Withdrawal status unknown"
@@ -11703,8 +11718,8 @@ msgid "Your transaction is being processed"
 msgstr "您的交易正在处理中"
 
 #: src/components/vaults/vault-detail-view.tsx
-msgid "Your Vault balance could not be verified. Account values and withdrawal remain unavailable."
-msgstr "无法验证您的金库余额。账户价值和提款功能仍不可用。"
+#~ msgid "Your Vault balance could not be verified. Account values and withdrawal remain unavailable."
+#~ msgstr "无法验证您的金库余额。账户价值和提款功能仍不可用。"
 
 #: src/lib/trade/privy-fiat-funding-feedback.ts
 msgid "Your wallet session changed, so the card purchase did not open. Reconnect your wallet and try again."

@@ -104,7 +104,6 @@ function props(overrides: Partial<StakingViewProps> = {}): StakingViewProps {
 			spotHypeAvailable: "8",
 			stakingLink: null,
 		},
-		isRefreshing: false,
 		isReconnecting: false,
 		retryPublic: vi.fn(),
 		retryAccount: vi.fn(),
@@ -479,15 +478,16 @@ describe("StakingView", () => {
 		expect(connectMasterWallet).not.toHaveBeenCalled();
 	});
 
-	it("fails closed on account errors while preserving verified public validators", () => {
+	it("fails closed on account errors with only a neutral retry while preserving verified public validators", () => {
 		const retryAccount = vi.fn();
 		act(() =>
 			root.render(
 				<StakingView
 					{...props({
 						pageState: "error",
-						accountState: "error",
+						accountState: "failed",
 						account: null,
+						weightedApr: null,
 						retryAccount,
 					})}
 				/>,
@@ -495,8 +495,16 @@ describe("StakingView", () => {
 		);
 
 		expect(container.textContent).toContain("Active Validator");
-		expect(container.textContent).toContain("Balances remain unknown");
+		expect(container.textContent).not.toContain("Balances remain unknown");
+		expect(container.textContent).not.toContain("unavailable");
+		expect(container.textContent).not.toContain("0 HYPE");
+		expect(container.textContent).toContain("Estimated APR --");
 		expect(button(container, "Spot to staking").disabled).toBe(true);
+		expect(
+			[...container.querySelectorAll("button")]
+				.filter((candidate) => candidate.textContent?.trim() === "Delegate")
+				.every((candidate) => candidate.disabled),
+		).toBe(true);
 		const retry = [...container.querySelectorAll("button")].find((candidate) =>
 			candidate.textContent?.includes("Retry"),
 		);

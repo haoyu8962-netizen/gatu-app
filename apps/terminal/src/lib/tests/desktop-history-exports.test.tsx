@@ -154,6 +154,7 @@ vi.mock("@/lib/hyperliquid", () => ({
 	useMarkets: () => ({
 		getMarket: (coin: string) => ({ kind: "perp", shortName: coin, szDecimals: 4 }),
 		getSzDecimals: () => 4,
+		getTokenDisplayName: (name: string) => (name === "UBTC" ? "BTC" : name),
 	}),
 	useSubscription: () => ({
 		data: {
@@ -288,6 +289,18 @@ describe("desktop history exports", () => {
 		clickExport();
 		const rows = mocks.downloadCsv.mock.calls.at(-1)?.[1] as string[][] | undefined;
 		expect(rows?.[1]?.[(rows?.[0] ?? []).indexOf("PNL")]).toBe("12.5");
+	});
+
+	it("shows a fee token by its display name while the export keeps the protocol name", () => {
+		mocks.fills = [{ ...mocks.fills[0], coin: "@142", feeToken: "UBTC", fee: "0.00001" }];
+		act(() => root.render(<HistoryTab />));
+
+		const headers = Array.from(container.querySelectorAll("th"), (cell) => cell.textContent);
+		const cells = Array.from(container.querySelectorAll("tbody tr:first-child td"), (cell) => cell.textContent);
+		expect(cells[headers.indexOf("Fee")]).toBe("0.00001 BTC");
+		const rows = mocks.fillsBuildRows?.([mocks.fills[0]]) ?? [];
+		expect(rows[1]?.[(rows[0] ?? []).indexOf("Fee Token")]).toBe("UBTC");
+		expect(rows[1]?.[(rows[0] ?? []).indexOf("Asset")]).toBe("@142");
 	});
 
 	it("exports fill numbers as the exchange sent them, never compacted, rounded or localized", () => {

@@ -82,16 +82,7 @@ function TradeOrderView({
 			{showMarketBar && <MobileMarketBar key={marketKey} className="min-h-[61px]" />}
 
 			<MobileTradeOrderSplit
-				orderbook={
-					<MobileBookView
-						active={active}
-						compact
-						inTabLayout
-						showOrderbookInQuote={sizeMode === "quote"}
-						view="book"
-						className="absolute inset-0"
-					/>
-				}
+				orderbook={<MobileBookView active={active} compact inTabLayout view="book" className="absolute inset-0" />}
 			>
 				{orderEntryDraftReady ? (
 					<MobileTradeView

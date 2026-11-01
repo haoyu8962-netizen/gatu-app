@@ -81,6 +81,7 @@ export function TwapFillHistoryTable() {
 									const isBuy = fill.side === "B";
 									const notional = getUserFillNotional(fill);
 									const quoteToken = getMarketQuoteToken(market);
+									const feeToken = markets.getTokenDisplayName(fill.feeToken);
 
 									return (
 										<tr
@@ -124,7 +125,7 @@ export function TwapFillHistoryTable() {
 												{formatToken(notional, { compact: false, decimals: 2, symbol: quoteToken })}
 											</td>
 											<td className="p-0 text-right text-market-close-fg tabular-nums">
-												{formatToken(fill.fee, { compact: false, symbol: fill.feeToken })}
+												{formatToken(fill.fee, { compact: false, symbol: feeToken })}
 											</td>
 											<td
 												className={cn(
@@ -136,7 +137,7 @@ export function TwapFillHistoryTable() {
 													compact: false,
 													decimals: 2,
 													signDisplay: "exceptZero",
-													symbol: fill.feeToken,
+													symbol: feeToken,
 												})}
 											</td>
 										</tr>

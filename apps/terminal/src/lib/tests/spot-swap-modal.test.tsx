@@ -67,7 +67,8 @@ vi.mock("@/components/ui/number-input", () => ({
 }));
 
 vi.mock("@/components/trade/components/asset-display", () => ({
-	AssetDisplay: ({ coin }: { coin: string }) => createElement("span", null, coin),
+	AssetDisplay: ({ coin, isToken }: { coin: string; isToken?: boolean }) =>
+		createElement("span", { "data-asset-display": coin, "data-token-name": isToken ? coin : undefined }, coin),
 }));
 
 vi.mock("@/components/trade/components/token-selector-dropdown", () => ({
@@ -235,6 +236,17 @@ describe("SpotSwapModal submission", () => {
 		act(() => confirm().click());
 		expect(mocks.submitOrder).not.toHaveBeenCalled();
 		expect(container.textContent?.includes("Trading is not available in your region")).toBe(geo.tradeRestricted);
+	});
+
+	it("names the swapped tokens as tokens, never by a market with the same coin", () => {
+		act(() => root.render(createElement(SpotSwapModal)));
+		const amount = container.querySelector<HTMLInputElement>('input[aria-label="Swap amount"]');
+		if (!amount) throw new Error("Expected the swap amount input");
+		act(() => setInputValue(amount, "100"));
+
+		const labels = [...container.querySelectorAll("[data-asset-display]")];
+		expect(labels.length).toBeGreaterThan(0);
+		expect(labels.filter((label) => !label.hasAttribute("data-token-name"))).toEqual([]);
 	});
 
 	it("fills Max from the exact protocol balance instead of a JavaScript number", () => {

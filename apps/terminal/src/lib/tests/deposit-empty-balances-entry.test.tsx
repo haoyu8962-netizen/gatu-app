@@ -9,7 +9,9 @@ import { MobileBalancesTab } from "@/components/trade/mobile/mobile-balances-tab
 import { BalancesTab } from "@/components/trade/positions/balances-tab";
 
 vi.mock("@/components/trade/components/asset-display", () => ({
-	AssetDisplay: ({ coin }: { coin: string }) => <span>{coin}</span>,
+	AssetDisplay: ({ coin, isToken }: { coin: string; isToken?: boolean }) => (
+		<span data-token-name={isToken ? coin : undefined}>{coin}</span>
+	),
 }));
 
 vi.mock("@/components/ui/scroll-area", () => ({
@@ -188,6 +190,15 @@ describe("empty balance Deposit entries", () => {
 			);
 		});
 	}
+
+	it("names each balance as a token on both surfaces, never by a market with the same coin", () => {
+		testState.hasBalance = true;
+		renderEntries();
+
+		expect(
+			Array.from(container.querySelectorAll("[data-token-name]"), (node) => node.getAttribute("data-token-name")),
+		).toEqual(["USDC", "USDC"]);
+	});
 
 	it.each([{ isLoading: true }, { hasError: true }, { isDataStale: true }, { accountDataReady: false }])(
 		"keeps an incomplete desktop snapshot quiet without a deposit suggestion: %o",

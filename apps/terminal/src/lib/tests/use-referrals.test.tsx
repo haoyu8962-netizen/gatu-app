@@ -14,6 +14,7 @@ const testState = vi.hoisted(() => ({
 	isConnected: true,
 	referralQuery: {
 		data: undefined as ReferralData | null | undefined,
+		dataUpdatedAt: 0,
 		error: null as unknown,
 		fetchStatus: "idle" as "fetching" | "idle" | "paused",
 		isError: false,
@@ -46,6 +47,7 @@ vi.mock("@/hooks/trade/use-account-ledger", () => ({
 }));
 
 vi.mock("@/lib/hyperliquid", () => ({
+	useHyperliquid: () => ({ env: "Mainnet" }),
 	useInfo: (method: string, ...args: unknown[]) => {
 		testState.useInfo(method, ...args);
 		if (method === "referral") return testState.referralQuery;
@@ -92,6 +94,7 @@ describe("useReferrals query state", () => {
 		testState.referralQuery.fetchStatus = "idle";
 		testState.referralQuery.isError = false;
 		testState.referralQuery.isSuccess = false;
+		testState.referralQuery.dataUpdatedAt = 0;
 		testState.referralQuery.refetch.mockResolvedValue({ data: createReferralData(), error: null });
 		testState.userFeesQuery.refetch.mockResolvedValue({ data: undefined, error: null });
 		container = document.createElement("div");
@@ -179,6 +182,33 @@ describe("useReferrals query state", () => {
 		testState.referralQuery.isSuccess = true;
 		testState.referralQuery.data = null;
 		expect(renderHook().status).toBe("error");
+	});
+
+	it("keeps a snapshot received on this page through a failed refresh, but not as current data", () => {
+		testState.referralQuery.data = createReferralData();
+		testState.referralQuery.dataUpdatedAt = 1_000;
+		testState.referralQuery.isSuccess = true;
+		expect(renderHook()).toMatchObject({ status: "ready", isCurrent: true });
+
+		testState.referralQuery.dataUpdatedAt = 2_000;
+		expect(renderHook()).toMatchObject({ status: "ready", isCurrent: true });
+
+		testState.referralQuery.error = new Error("refresh failed");
+		testState.referralQuery.isError = true;
+		testState.referralQuery.isSuccess = false;
+		const retained = renderHook();
+		expect(retained).toMatchObject({ status: "ready", isCurrent: false });
+		expect(retained.data).not.toBeNull();
+	});
+
+	it("withholds a snapshot cached before the page read it once a refresh fails", () => {
+		testState.referralQuery.data = createReferralData();
+		testState.referralQuery.dataUpdatedAt = 1_000;
+		testState.referralQuery.error = new Error("refresh failed");
+		testState.referralQuery.isError = true;
+
+		const result = renderHook();
+		expect(result).toMatchObject({ status: "error", isCurrent: false, data: null, hasUnclaimedRewards: false });
 	});
 
 	it("uses one bounded primary request and reuses persisted supporting queries", () => {

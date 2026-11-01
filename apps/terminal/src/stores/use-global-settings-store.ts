@@ -29,7 +29,6 @@ let themeTransitionReleaseFrame: number | undefined;
 const globalSettingsSchema = z.object({
 	state: z.object({
 		hideSmallBalances: z.boolean().optional(),
-		showOrderbookInQuote: z.boolean().optional(),
 		animateOrderbook: z.boolean().optional(),
 		showChartScanlines: z.boolean().optional(),
 		skipOrderConfirmation: z.boolean().optional(),
@@ -48,7 +47,6 @@ const validatedStorage = createValidatedStorage(globalSettingsSchema, "global se
 
 const DEFAULT_GLOBAL_SETTINGS = {
 	hideSmallBalances: true,
-	showOrderbookInQuote: false,
 	animateOrderbook: true,
 	showChartScanlines: false,
 	skipOrderConfirmation: false,
@@ -64,7 +62,6 @@ const DEFAULT_GLOBAL_SETTINGS = {
 
 interface GlobalSettingsStore {
 	hideSmallBalances: boolean;
-	showOrderbookInQuote: boolean;
 	animateOrderbook: boolean;
 	showChartScanlines: boolean;
 	skipOrderConfirmation: boolean;
@@ -78,7 +75,6 @@ interface GlobalSettingsStore {
 	network: Network;
 	actions: {
 		setHideSmallBalances: (next: boolean) => void;
-		setShowOrderbookInQuote: (next: boolean) => void;
 		setAnimateOrderbook: (next: boolean) => void;
 		setShowChartScanlines: (next: boolean) => void;
 		setSkipOrderConfirmation: (next: boolean) => void;
@@ -99,7 +95,6 @@ const useGlobalSettingsStore = create<GlobalSettingsStore>()(
 			...DEFAULT_GLOBAL_SETTINGS,
 			actions: {
 				setHideSmallBalances: (next) => set({ hideSmallBalances: next }),
-				setShowOrderbookInQuote: (next) => set({ showOrderbookInQuote: next }),
 				setAnimateOrderbook: (next) => set({ animateOrderbook: next }),
 				setShowChartScanlines: (next) => set({ showChartScanlines: next }),
 				setSkipOrderConfirmation: (next) => set({ skipOrderConfirmation: next }),
@@ -134,7 +129,6 @@ const useGlobalSettingsStore = create<GlobalSettingsStore>()(
 			storage: createJSONStorage(() => validatedStorage),
 			partialize: (state) => ({
 				hideSmallBalances: state.hideSmallBalances,
-				showOrderbookInQuote: state.showOrderbookInQuote,
 				animateOrderbook: state.animateOrderbook,
 				showChartScanlines: state.showChartScanlines,
 				skipOrderConfirmation: state.skipOrderConfirmation,
@@ -157,10 +151,6 @@ const useGlobalSettingsStore = create<GlobalSettingsStore>()(
 			},
 			merge: (persisted, current) => {
 				const p = (persisted ?? {}) as Partial<GlobalSettingsStore>;
-				const showOrderbookInQuote =
-					typeof p.showOrderbookInQuote === "boolean"
-						? p.showOrderbookInQuote
-						: DEFAULT_GLOBAL_SETTINGS.showOrderbookInQuote;
 				const skipOrderConfirmation =
 					typeof p.skipOrderConfirmation === "boolean"
 						? p.skipOrderConfirmation
@@ -177,7 +167,6 @@ const useGlobalSettingsStore = create<GlobalSettingsStore>()(
 					...DEFAULT_GLOBAL_SETTINGS,
 					...p,
 					numberFormatLocale: normalizeNumberFormatLocale(p.numberFormatLocale),
-					showOrderbookInQuote,
 					animateOrderbook:
 						typeof p.animateOrderbook === "boolean" ? p.animateOrderbook : DEFAULT_GLOBAL_SETTINGS.animateOrderbook,
 					skipOrderConfirmation,
@@ -273,7 +262,6 @@ export function useGlobalSettings() {
 	return useGlobalSettingsStore(
 		useShallow((state) => ({
 			hideSmallBalances: state.hideSmallBalances,
-			showOrderbookInQuote: state.showOrderbookInQuote,
 			showChartScanlines: state.showChartScanlines,
 			numberFormatLocale: state.numberFormatLocale,
 		})),

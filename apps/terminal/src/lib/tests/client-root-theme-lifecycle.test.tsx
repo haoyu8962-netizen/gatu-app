@@ -211,3 +211,20 @@ describe("ClientRootProvider theme lifecycle", () => {
 		expect(runtime.childUnmounts).toBe(0);
 	});
 });
+
+describe("client runtime retired storage", () => {
+	afterEach(() => {
+		window.sessionStorage.clear();
+	});
+
+	it("removes the retired market statistics snapshot when the client runtime loads", async () => {
+		window.sessionStorage.setItem("hl-mkt-stats-v2", JSON.stringify({ env: "Mainnet", savedAt: Date.now() }));
+		window.sessionStorage.setItem("unrelated-session-key", "kept");
+
+		vi.resetModules();
+		await import("@/providers/client-root");
+
+		expect(window.sessionStorage.getItem("hl-mkt-stats-v2")).toBeNull();
+		expect(window.sessionStorage.getItem("unrelated-session-key")).toBe("kept");
+	});
+});

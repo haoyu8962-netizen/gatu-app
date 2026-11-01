@@ -11,7 +11,7 @@ ADR 记录采用某个方案的理由、备选方案和后果，完整实现契�
 | [0005](0005-spa-static-shell.md) | 已采用；2026-09-15 起生产由 CloudFront + S3 + Lambda 提供（2026-10-02 起域名为 sairn.ai）；静态文档页部分被 ADR 0020 取代 | 以预渲染 SPA 壳与静态文档页交付客户端产物，运行时不再 SSR；`/api/*` 处理器跑在 Lambda 函数 URL 上，Nitro 退为过渡宿主 |
 | [0007](0007-csp-report-only-hardening.md) | 已采用；2026-09-14 report-only 上线，同日内联脚本哈希与 `img-src` 收窄改为强制（[CSP 计划](../csp-inline-script-hashes-plan.md) C、D 阶段） | 候选 CSP 先以 report-only 下发，报告进独立的公开 Lambda 接收器；内联脚本哈希留到第二步 |
 | [0006](0006-startup-preloads-and-edge-caching.md) | 已采用；阶段 1、2 已发布；文档页缓存与地区预取例外被 ADR 0020 取代 | 壳内预加载交易页启动闭包，壳与文档页边缘缓存并后台刷新，图表哈希 bundle immutable，地区判定从引导入口预取，Lambda 保温；不做边缘初判 |
-| [0008](0008-compact-market-context-channels.md) | 已采用；p16 首发，p18 改为快照 + 增量累积 | 全市场行情改订公开 WebSocket 的紧凑压缩频道 `pac`/`sac`，现货按市场名索引，解码失败回退原频道并上报一次 |
+| [0008](0008-compact-market-context-channels.md) | 已采用；p16 首发，p18 改为快照 + 增量累积；会话统计缓存部分被 ADR 0047 取代 | 全市场行情改订公开 WebSocket 的紧凑压缩频道 `pac`/`sac`，现货按市场名索引，解码失败回退原频道并上报一次 |
 | [0009](0009-startup-placeholder-single-source.md) | 已被 ADR 0010 部分取代 | 决策 2–5、7 被取代；保留真实组件的纯 view 单一标记来源及市场头布局 |
 | [0010](0010-blank-until-ready-startup.md) | 已接受（2026-09-16）；决策 2 的文档路由部分被 ADR 0020 取代 | 统一空播报，持久语言/主题的真实 chrome 优先，市场就绪后内容；删除启动骨架 |
 | [0011](0011-desktop-md-stacked-right-column.md) | 已接受并实施（2026-09-17） | 桌面 md 断点右列改为下单面板在上、订单簿在下、账户信息再下，图表列 10/14，账户表在图表列下方；存储键升到 v12 |
@@ -49,5 +49,8 @@ ADR 记录采用某个方案的理由、备选方案和后果，完整实现契�
 | [0043](0043-website-marketing-accent.md) | 已接受并实施（2026-10-26，运营方选定方案 B）；与未提交的首页改版一起提交，未合入 `dev`、未发布 | 官网营销强调改用 Logo 的选择琥珀：`brand.json` 新增 `websiteColors.*.marketingAccent`（必须等于 `logo.*.choice`），官网 `--marketing-accent` / `text-marketing-accent` 用于首屏轮播词、市场与 FAQ 结尾强调、宣传图标、Fig. 1 连线与氛围光；薄荷只留焦点、选中、正文链接、实时指示与 Logo；琥珀不得用于警告、风险与状态；共享 `--signal` 与终端不变（ADR 0028 照旧） |
 | [0044](0044-website-light-default-theme.md) | 已接受并实施（2026-10-26，运营方确认采用浅色版）；未合入 `dev`、未发布 | 官网改为浅色默认：Logo 套件纸色画布、字标墨色标题、中性墨色正文、浅色琥珀强调；原深色令牌保留在 `:root[data-theme="dark"]`，`?theme=dark`（带 CSP 哈希的首帧前脚本）用于对比；首屏预览与功能截图等产品窗口用 `.surface-dark` 保持终端深色；涨跌色随表面取终端同主题值 |
 | [0045](0045-l1-action-expiry.md) | 已接受并实施（2026-10-30；2026-10-31 修订决策第 3、4 条）；未合入 `dev`、未发布 | 每个 L1 动作带 `expiresAfter`＝估计的交易所时间加 15 秒，对齐官方默认的「交易延迟保护」，设置里可关闭；交易所时间由 `exchangeStatus` 取样、经过时间只按单调时钟计，两个时钟不一致时先重新取样，没有样本时回落本机时间；用户签名动作不带该字段 |
+| [0046](0046-one-size-unit-for-order-entry-and-order-book.md) | 已接受并实施（2026-11-01，运营方要求按官方实践处理审查待决项）；未合入 `dev`、未发布 | 订单簿与下单数量共用一个单位：删除设置里的订单簿单位开关，订单簿单位下拉经表单换算已填数量，最近成交恒用基础币；桌面订单簿加控制行（分组左、单位右）；盘口数字完整显示、计价取整，手机紧凑簿放不下时才缩写 |
+| [0047](0047-no-local-market-stats-snapshot.md) | 已接受并实施（2026-11-01）；未合入 `dev`、未发布；取代 ADR 0008 的会话统计缓存部分 | 对齐官方，删除全市场行情统计的会话快照 `hl-mkt-stats-v2`：首帧前各处用已有占位，不再把实时价格与旧 `prevDayPx` 拼成涨跌；旧键在客户端运行时加载时删除一次；只为恢复快照存在的 hl-react 视图解析器一并删除 |
+| [0048](0048-official-spot-display-names-and-addresses.md) | 已接受并实施（2026-11-01）；分支 `claude/audit-g2-spot-names`，未合入 `dev`、未发布 | 现货显示名改用官方终端按网络、代币 index 的显示名表（主网 28 项照搬，测试网 16 项收 13 项），删除去 U 规则；表项只在 index 上的代币为记录名时生效，与表名冲突的表外代币加 `-index`；余额、手续费、充值提现与 Send 显示同一名字，CSV 仍写协议值；`/trade/PEAR/USDC` 改指 `@1118`，未知计价币按 USDC，支持 `0x<代币 ID>`，`@N` 保留并换成显示名路径，解析不出的地址换到默认市场，重定向一律 replace |
 
 新 ADR 至少包含：状态与日期、上下文、目标/约束、决策、备选方案及利弊、后果与边界、代码/测试/Reference 证据。验证命令与本次执行结果分别标明。文档维护要求见[文档体系](../documentation-system.md)。

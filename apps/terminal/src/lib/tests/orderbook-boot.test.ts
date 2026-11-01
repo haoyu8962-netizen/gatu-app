@@ -35,6 +35,7 @@ describe("getBootOrderbookCoin", () => {
 	it("leaves spot pair names, malformed paths and other routes to the panel", async () => {
 		const { getBootOrderbookCoin } = await import("@/lib/trade/orderbook-boot");
 		expect(getBootOrderbookCoin("/trade/PURR/USDC")).toBeUndefined();
+		expect(getBootOrderbookCoin("/trade/0x0d01dc56dcaaca66ad901c959b4011ec")).toBeUndefined();
 		expect(getBootOrderbookCoin("/trade/../HYPE")).toBeUndefined();
 		expect(getBootOrderbookCoin("/spot")).toBeUndefined();
 		expect(getBootOrderbookCoin("/portfolio")).toBeUndefined();

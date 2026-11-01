@@ -129,3 +129,30 @@ pnpm --dir apps/terminal exec playwright test \
 - **现货市价买单按发送价核对报价余额（A12）。** 市价买单以「参照价 ×（1 + 滑点上限）」发出，交易所按这个价格锁定报价币，入口守卫也按它核对。表单原先按「数量 × 标记价」核对，手输数量能过表单、却在守卫处被拒。现在表单用同一预算（`spotBuyQuoteCost`）：发送价由下单构建共用的 `getFrontendMarketOrderPrice` 算出（买单向下取整），预算就是发送价 × 数量；只因滑点不够时提示 `Insufficient {quoteToken} balance at max slippage`。官方不在表单里检查这一项，交给交易所拒绝；本终端已有守卫，表单与之对齐。
 
 回归：`order-entry.test.ts`（被动买单最大数量、保证金判定、现货市价买入预算）、`order-size.test.ts`（保证金价格、最大数量、Scale 逐手下调）、`scale-conversion-price.test.ts`（限价与 Scale 的保证金）、`order-validation.test.ts`（TWAP 参照价、触发单豁免、余额豁免、现货滑点提示）、`reduce-only.test.ts`（存款阶段、豁免条件、`hasAccountFunds`）、`entry-order-execution-guard.test.ts`（守卫的保证金口径、触发单豁免、TP/SL 参照价、TWAP 参照价）、`twap-details.test.ts` 与 `twap-order-summary.test.tsx`（约每笔数量）、`tests/trade-panel-open-interest-cap.test.tsx` 与 `tests/mobile-trade-size-validation-a11y.test.tsx`（双端保证金接线）。未做：真实下单、真机。
+
+## 点击订单簿价格（2026-11-01，审查 C7）
+
+依据[全功能审查](work-memory/sessions/2026-10-30-full-feature-audit.md) C7：此前点击订单簿任一档位，桌面与手机的下单表单都无条件切成限价单，Stop Market、Take Profit Limit、Scale、TWAP 的设置随之丢失。现在按官方终端（2026-10-31 生产包 `gf`／`dw`，并在官方页面只读实测）处理，桌面订单簿、手机紧凑簿与分栏簿三处点击走同一条路径：桌面与手机下单表单都调用 `useBookPriceSelection`（`hooks/trade/use-book-price-selection.ts`），类型映射是 `getOrderTypeForBookPrice`（`lib/trade/order-types.ts`）。一次点击只应用一次：读到选价就清除，无论订单类型是否因此改变，别的市场的点击直接丢弃，所以之后切换订单类型不会重放旧点击。
+
+| 点击前 | 点击后 | 价格 |
+| --- | --- | --- |
+| Market | Limit | 限价设为点击价 |
+| Limit、Stop Limit、Take Profit Limit | 类型不变 | 限价设为点击价，触发价不动 |
+| Stop Market | Stop Limit | 限价设为点击价，触发价不动 |
+| Take Profit Market、Scale、TWAP | 类型不变 | 不改任何字段 |
+
+- 官方在 Take Profit Market、Scale、TWAP 下也把点击价写进共享的限价状态，之后切到限价类才显示出来。本终端不写：限价预填只填空值，写入会在用户看不见的表单里留下价格，`setLimitPriceFromUser` 还会清掉只减仓的数量来源（`sizeSource`）。点击当时的可见结果与官方相同。
+- 限价的预填身份用切换后的类型（`<市场>|stopLimit` 等），与表单自身的预填身份一致。
+- 官方「点击数量或累计格同时填数量」（默认开）与分栏簿行不可点击，本次未做，需另行决定。
+
+回归：`src/lib/tests/book-price-selection.test.tsx` 用真实的下单与订单簿两个 store 核对八类订单的结果、点击只应用一次（之后切类型、改价或重新渲染都不重放）、被忽略的类型与别的市场的点击都会被清除；`tests/trade-panel-open-interest-cap.test.tsx`（桌面）与 `tests/mobile-trade-size-validation-a11y.test.tsx`（手机）核对两端都接上了这条路径与预填身份。变异（一律切限价、Stop Market 切 Limit、给 TWAP/Scale 写价、预填身份写死 `limit`、不清除点击、只在本市场或可处理的类型时才清除、任一端不调用）都会失败。
+
+## 在订单簿里选数量单位（2026-11-01，审查 M9）
+
+依据[第二组审查记录](work-memory/sessions/2026-11-01-audit-group2.md) M9 与 [ADR 0046](adr/0046-one-size-unit-for-order-entry-and-order-book.md)：官方只有一个单位状态，订单簿里的单位下拉就是下单数量的单位。本终端同样只保留下单草稿的 `sizeMode`，删除了设置里的「Order book in quote asset」开关。
+
+- 桌面订单簿控制行与手机分栏簿芯片行的单位下拉，选项依次为计价币、基础币。选择后写一次请求（`requestSizeMode`），桌面 `TradePanel` 与手机 `MobileTradeView` 用 `useBookSizeModeRequest` 消费：先按对象身份领取请求（`takeSizeModeRequest`，所以 StrictMode 重复执行效果或请求早于表单挂载时也只处理一次），别的市场的请求丢弃，单位相同不处理，否则调用表单自己的 `toggleSizeDenomination`。已填数量的换算、只减仓的数量来源与表单单位切换完全相同。
+- 手机下单表单在「行情」页签显示分栏簿时仍挂载（只是不可见），所以分栏簿里选的单位立即作用到下单数量。
+- 与官方的差异：表单既有换算优先用标记价（`getConversionPrice`），官方有限价时用限价。这是表单原有行为，本次未改。
+
+回归：`src/lib/tests/book-size-mode-request.test.tsx` 用真实的下单与订单簿两个 store 核对：只换算一次、之后改单位或重新渲染不重放、请求早于表单挂载时在 StrictMode 下也只换算一次、单位相同不换算、别的市场的请求丢弃；`tests/trade-panel-open-interest-cap.test.tsx`（桌面）与 `tests/mobile-trade-size-validation-a11y.test.tsx`（手机）核对两端都接上了这条路径；`orderbook-panel-safety.test.tsx` 与 `mobile-orderbook-subscription.test.tsx` 核对两处单位下拉写出的请求。

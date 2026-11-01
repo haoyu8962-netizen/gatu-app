@@ -267,7 +267,12 @@ vi.mock("@/lib/hyperliquid", () => ({
 
 vi.mock("@/lib/hyperliquid/markets/use-spot-tokens", () => ({
 	useSpotTokens: () => ({
-		getToken: (coin: string) => ({ name: coin, tokenId: 0, transferDecimals: 6 }),
+		getToken: (coin: string) => ({
+			name: coin,
+			displayName: coin === "UBTC" ? "BTC" : coin,
+			tokenId: 0,
+			transferDecimals: 6,
+		}),
 	}),
 }));
 
@@ -754,6 +759,32 @@ describe("funds action balance wiring", () => {
 
 		await vi.waitFor(() => expect(toastMocks.success).toHaveBeenCalledWith("Sent 1 USDC"));
 		expect(onOpenChange).toHaveBeenCalledExactlyOnceWith(false);
+	});
+
+	it("shows a renamed spot token by its display name and sends it by its protocol name", async () => {
+		const spotBalances = testState.balances.spotBalances;
+		spotBalances.push({ coin: "UBTC", entryNtl: "0", hold: "0", token: 197, total: "2" });
+		try {
+			act(() => root.render(createElement(SendModal, { initialAsset: "UBTC", onOpenChange: vi.fn(), open: true })));
+			const assetOption = container.querySelector<HTMLOptionElement>('select[aria-label="Asset"] option[value="UBTC"]');
+			expect(assetOption?.textContent).toBe("BTC");
+			expect(container.querySelector('[data-testid="available-balance"] span')?.textContent).toBe("2.000000 BTC");
+
+			const destinationInput = container.querySelector<HTMLInputElement>('input[placeholder="Destination address"]');
+			if (!destinationInput) throw new Error("Destination input not found");
+			act(() => {
+				setInputValue(destinationInput, "0x2222222222222222222222222222222222222222");
+				setInputValue(getAmountInput(container), "1");
+			});
+			await clickAndFlush(getGuardedSubmitButton("spotSend"));
+
+			expect(testState.exchangeMutations.spotSend).toHaveBeenCalledExactlyOnceWith(
+				expect.objectContaining({ amount: "1", token: "UBTC:0" }),
+			);
+			await vi.waitFor(() => expect(toastMocks.success).toHaveBeenCalledWith("Sent 1 BTC"));
+		} finally {
+			spotBalances.pop();
+		}
 	});
 
 	it("restores the destination and amount of a failed send for the same account only", async () => {

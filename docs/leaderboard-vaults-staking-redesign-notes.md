@@ -277,6 +277,8 @@ Ledger/history reconciliation accepts exactly one new matching event that was ab
 
 Fixtures may drive acceptance screenshots only behind `import.meta.env.DEV`. They must be runtime-schema-valid, use placeholder addresses and amounts, never contradict the surrounding wallet shell, and never enter production or replace a real error with demo data.
 
+Update 2026-11-01 (audit item E5): the Vault, Vault detail and Staking states above keep their names, but their presentation now follows [mobile data presentation](mobile-data-presentation.md) on desktop and phone. A feed, detail or account error shows only a neutral Retry, with no error text, warning icon or alert; a refresh that fails after this page received the data keeps that data on screen, holds the actions that need it and offers a neutral Retry; unknown values read `--`; and no passive refresh text is shown. The `error` fixtures and the earlier acceptance screenshots of these error states predate this rule. Referrals follow the same rule.
+
 ## 5. Token mapping
 
 The handoff token source is `designs/Gatu标志加载动画/docs/hl-ui-spec/tokens.json`; project tokens are defined in `apps/terminal/src/styles.css` and shared UI styles. No page component may contain color literals or repeated magic geometry.

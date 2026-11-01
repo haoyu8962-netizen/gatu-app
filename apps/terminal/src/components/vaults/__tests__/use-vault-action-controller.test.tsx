@@ -118,8 +118,18 @@ vi.mock("@/lib/hyperliquid", () => ({
 
 let controller: ReturnType<typeof useVaultActionController> | null = null;
 
-function Probe({ vaultAddress = VAULT, detail = DETAIL }: { vaultAddress?: string; detail?: VaultDetail | null }) {
-	controller = useVaultActionController({ vaultAddress, detail, owner: OWNER_VIEW });
+function Probe({
+	vaultAddress = VAULT,
+	detail = DETAIL,
+	detailCurrent = true,
+	owner = OWNER_VIEW,
+}: {
+	vaultAddress?: string;
+	detail?: VaultDetail | null;
+	detailCurrent?: boolean;
+	owner?: VaultOwnerViewState;
+}) {
+	controller = useVaultActionController({ vaultAddress, detail, detailCurrent, owner });
 	return null;
 }
 
@@ -257,6 +267,59 @@ describe("useVaultActionController", () => {
 		await act(async () => current().confirm());
 
 		expect(mocks.exchangeMutate).toHaveBeenCalledWith({ vaultAddress: VAULT, isDeposit: true, usd: 10_100_000 });
+	});
+
+	it("holds the review step and both actions while the shown detail is the one kept after a failed refresh", async () => {
+		mocks.queries.set("clearinghouseState", query({ withdrawable: "0.0" }));
+		mocks.queries.set(
+			"spotClearinghouseState",
+			query({ balances: [{ coin: "USDC", token: 0, total: "10.1", hold: "0.0", entryNtl: "0.0" }] }),
+		);
+		mocks.queries.set("userAbstraction", query("unifiedAccount"));
+		act(() => root.render(<Probe />));
+		await act(async () => current().requestAction("deposit"));
+		act(() => current().setAmount("10.1"));
+		expect(current().canReview).toBe(true);
+
+		act(() => root.render(<Probe detailCurrent={false} />));
+		expect(current().action).not.toBeNull();
+		expect(current().canReview).toBe(false);
+		expect(current().actionAvailability).toEqual({
+			deposit: { available: false, reason: "detail-unavailable" },
+			withdraw: { available: false, reason: "detail-unavailable" },
+		});
+
+		act(() => root.render(<Probe />));
+		expect(current().canReview).toBe(true);
+	});
+
+	it("pauses Confirm at the review step while the shown detail is the one kept after a failed refresh", async () => {
+		await openAndReview();
+		expect(current().canConfirm).toBe(true);
+
+		act(() => root.render(<Probe detailCurrent={false} />));
+		expect(current().action?.state.stage).toBe("review");
+		expect(current().canConfirm).toBe(false);
+		await act(async () => current().confirm());
+		expect(mocks.exchangeMutate).not.toHaveBeenCalled();
+		expect(current().action?.state.stage).toBe("review");
+
+		act(() => root.render(<Probe />));
+		expect(current().canConfirm).toBe(true);
+	});
+
+	it("pauses a withdrawal's Confirm at the review step while the owner balance is unverified", async () => {
+		await openAndReview("withdraw");
+		expect(current().canConfirm).toBe(true);
+
+		act(() => root.render(<Probe owner={{ status: "error" }} />));
+		expect(current().action?.state.stage).toBe("review");
+		expect(current().canConfirm).toBe(false);
+		await act(async () => current().confirm());
+		expect(mocks.exchangeMutate).not.toHaveBeenCalled();
+
+		act(() => root.render(<Probe />));
+		expect(current().canConfirm).toBe(true);
 	});
 
 	it("lets the Vault leader deposit after deposits from others are disabled", () => {

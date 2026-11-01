@@ -361,6 +361,48 @@ describe("mobile orderbook subscription lifecycle", () => {
 		expect(container.querySelector('[role="tooltip"]')).toBeNull();
 	});
 
+	it("shows full split totals without abbreviating or truncating them", () => {
+		vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue({
+			bottom: 304,
+			height: 304,
+			left: 0,
+			right: 400,
+			top: 0,
+			width: 400,
+			x: 0,
+			y: 0,
+			toJSON: () => ({}),
+		});
+		vi.stubGlobal(
+			"ResizeObserver",
+			class implements ResizeObserver {
+				disconnect() {}
+				observe() {}
+				unobserve() {}
+			},
+		);
+		setSubscriptionState({
+			data: {
+				coin: mocks.market.name,
+				levels: [[{ n: 3, px: "0.004812", sz: "11780616" }], [{ n: 2, px: "0.004813", sz: "205000" }]],
+				time: Date.now(),
+			},
+			isStale: false,
+			status: "active",
+		});
+		render({ compact: false });
+
+		const totals = [...container.querySelectorAll('[data-slot="orderbook-total-value"]')].map(
+			(node) => node.textContent,
+		);
+		expect(totals).toEqual(["11,780,616.00", "205,000.00"]);
+		expect(
+			[...container.querySelectorAll('[data-slot="orderbook-total-value"]')].every(
+				(node) => !node.parentElement?.className.includes("truncate"),
+			),
+		).toBe(true);
+	});
+
 	it("insets each split heading half to match the mobile data rows", () => {
 		render({ compact: false });
 
@@ -374,6 +416,23 @@ describe("mobile orderbook subscription lifecycle", () => {
 		expect(askHeadings?.className).toContain("px-2");
 		expect(container.querySelector('[data-slot="split-orderbook-bid-price-heading"]')?.textContent).toBe("Price");
 		expect(container.querySelector('[data-slot="split-orderbook-ask-price-heading"]')?.textContent).toBe("Price");
+	});
+
+	it("asks the order form to switch the size unit from the split book menu, quote first like the official book", async () => {
+		render({ compact: false });
+		const trigger = container.querySelector<HTMLButtonElement>('button[aria-label="Size unit"]');
+		expect(trigger?.textContent).toBe(mocks.market.name);
+
+		await act(async () => trigger?.click());
+		const items = [...document.querySelectorAll<HTMLElement>('[role="menuitem"]')];
+		expect(items.map((item) => item.textContent)).toEqual(["USDC", mocks.market.name]);
+
+		try {
+			await act(async () => items[0]?.click());
+			expect(getOrderbookActionsStore().sizeModeRequest).toEqual({ marketName: mocks.market.name, mode: "quote" });
+		} finally {
+			act(() => getOrderbookActionsStore().actions.clearSizeModeRequest());
+		}
 	});
 
 	it("uses one shared compact observer to derive the two-sided slot budget", () => {
@@ -421,6 +480,50 @@ describe("mobile orderbook subscription lifecycle", () => {
 		}
 		expect(resizeObserverCount).toBe(1);
 		expect(observedElement?.tagName).toBe("FIELDSET");
+	});
+
+	it("passes the measured ladder width to compact rows, so a long size shortens only while the ladder is narrow", () => {
+		let remeasure: (() => void) | undefined;
+		vi.stubGlobal(
+			"ResizeObserver",
+			class implements ResizeObserver {
+				constructor(callback: ResizeObserverCallback) {
+					remeasure = () => callback([], this);
+				}
+
+				disconnect() {}
+				observe() {}
+				unobserve() {}
+			},
+		);
+		const rect = { bottom: 304, height: 304, left: 0, right: 124, top: 0, width: 124, x: 0, y: 0 };
+		vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(() => ({
+			...rect,
+			toJSON: () => ({}),
+		}));
+		const book = createBook(mocks.market.name, Date.now(), true, 1);
+		book.levels = [[{ n: 1, px: "99", sz: "98765432.12" }], [{ n: 1, px: "101", sz: "98765432.12" }]];
+		setSubscriptionState({ data: book, isStale: false, status: "active" });
+		render({ compact: true });
+
+		function sizeTexts() {
+			return ["Ask, Price 101", "Bid, Price 99"].map((label) => {
+				const row = container.querySelector<HTMLButtonElement>(`button[aria-label^="${label}"]`);
+				expect(row?.getAttribute("aria-label")).toContain("Size 98,765,432.12");
+				return row?.textContent ?? "";
+			});
+		}
+		function resizeTo(width: number) {
+			rect.width = width;
+			rect.right = width;
+			act(() => remeasure?.());
+		}
+
+		for (const text of sizeTexts()) expect(text).not.toContain("98,765,432.12");
+		resizeTo(400);
+		for (const text of sizeTexts()) expect(text).toContain("98,765,432.12");
+		resizeTo(124);
+		for (const text of sizeTexts()) expect(text).not.toContain("98,765,432.12");
 	});
 
 	it("attaches the compact observer during an initial error and keeps it through recovery", () => {

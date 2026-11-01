@@ -12,7 +12,8 @@ describe("mobile order book header contract", () => {
 			'"flex min-h-9 shrink-0 items-center justify-between gap-2 border-b border-stroke-weak/60 bg-surface px-3"',
 		);
 		expect(SOURCE).toContain("triggerAriaLabel={t`Price grouping`}");
-		expect(SOURCE).toContain("triggerAriaLabel={t`Display units`}");
+		expect(SOURCE).toContain("triggerAriaLabel={t(ORDERBOOK_LABELS.sizeUnit)}");
+		expect(SOURCE).not.toContain("setShowOrderbookInQuote");
 		expect(SOURCE.match(/triggerClassName=\{(?:cn\()?MOBILE_FILTER_CHIP_CLASS/g)).toHaveLength(2);
 		expect(SOURCE).toContain('data-slot="mobile-orderbook-spread"');
 		expect(SOURCE).not.toContain("Toggle display units");

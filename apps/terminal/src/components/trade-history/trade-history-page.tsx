@@ -439,6 +439,7 @@ export function TradeHistoryPage({ address }: Props) {
 									{pagination.rows.map((fill) => {
 										const closedPnl = getUserFillNetClosedPnl(fill, markets.getMarket(fill.coin));
 										const hasExplorerTransaction = hasUserFillExplorerTransaction(fill);
+										const feeToken = markets.getTokenDisplayName(fill.feeToken);
 										return (
 											<TableRow key={getUserFillKey(fill)} className="h-12 border-stroke-weak hover:bg-fill-hover">
 												<TableCell className="px-5 py-0 font-semibold">
@@ -465,7 +466,7 @@ export function TradeHistoryPage({ address }: Props) {
 													<bdi dir="ltr">{formatNumber(fill.sz, markets.getSzDecimals(fill.coin))}</bdi>
 												</TableCell>
 												<TableCell className="px-3 py-0 text-right text-fg-muted">
-													<bdi dir="ltr">{formatToken(fill.fee, { symbol: fill.feeToken })}</bdi>
+													<bdi dir="ltr">{formatToken(fill.fee, { symbol: feeToken })}</bdi>
 												</TableCell>
 												<TableCell
 													className={cn(

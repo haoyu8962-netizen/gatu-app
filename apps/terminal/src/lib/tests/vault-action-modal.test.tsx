@@ -88,6 +88,32 @@ describe("Vault action modal", () => {
 		expect(onVerifyAgain).toHaveBeenCalledOnce();
 	});
 
+	it("enables Confirm at the review step only while the controller allows it", () => {
+		act(() => root.render(<VaultActionModal {...props({ stage: "review", result: undefined, canConfirm: false })} />));
+		expect(button("Confirm")?.disabled).toBe(true);
+
+		act(() => root.render(<VaultActionModal {...props({ stage: "review", result: undefined, canConfirm: true })} />));
+		expect(button("Confirm")?.disabled).toBe(false);
+	});
+
+	it.each(["input", "review"] as const)(
+		"offers a neutral data Retry at the %s step only when the page passes one",
+		(stage) => {
+			act(() => root.render(<VaultActionModal {...props({ stage, result: undefined })} />));
+			expect(button("Retry")).toBeUndefined();
+
+			const onRetry = vi.fn();
+			act(() => root.render(<VaultActionModal {...props({ stage, result: undefined, onRetry })} />));
+			act(() => button("Retry")?.click());
+			expect(onRetry).toHaveBeenCalledOnce();
+			expect(container.querySelector('[role="alert"]')).toBeNull();
+		},
+	);
+
+	function button(label: string): HTMLButtonElement | undefined {
+		return [...container.querySelectorAll("button")].find((candidate) => candidate.textContent === label);
+	}
+
 	it("shows exact owner and Vault addresses plus the documented lock context before signing", () => {
 		act(() => root.render(<VaultActionModal {...props({ stage: "review", result: undefined })} />));
 

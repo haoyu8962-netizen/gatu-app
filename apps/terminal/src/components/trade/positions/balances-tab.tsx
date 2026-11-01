@@ -177,6 +177,7 @@ export function BalancesTab({ toolbarTarget }: Props) {
 					<div className="flex min-w-0 items-center gap-2">
 						<AssetDisplay
 							coin={row.asset}
+							isToken
 							iconClassName="size-6"
 							nameClassName="text-[13px] font-bold text-market-close-fg"
 						/>

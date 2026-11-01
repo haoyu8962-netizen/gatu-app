@@ -64,6 +64,32 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Changed
 
+- The order book and the order form share one size unit, as on the official terminal. The unit menu
+  in the order book (on desktop in a new control row above the columns, opposite the price grouping;
+  on mobile in the order book's chip row) switches the order form's size unit and converts the size
+  already entered, and the separate "Order book in quote asset" setting is gone. Recent trades always
+  show sizes in the base asset.
+- Order book sizes and totals are shown in full (`11,780,616` instead of `11.8M`) and are no longer
+  cut off, and the price grouping no longer gets truncated inside the desktop Price column header.
+  Amounts in the quote asset are rounded to whole units like the official book; values below one keep
+  their decimals. The compact book beside the mobile order form abbreviates a size only when the
+  phone is too narrow to show it in full beside its price.
+- The market selector (desktop and phone) prices markets like the trade header and the official
+  terminal: price, 24h change and their sorts use the live mid price, falling back to the mark price
+  only when a market has no mid, while open interest and market cap stay on the mark price. Prices
+  show five significant figures within the market's decimal limit with trailing zeros, an unchanged
+  price reads `+0.00%`, and a stale price shows the placeholder instead of an old value.
+- Market statistics are no longer restored from a copy saved in the browser tab. Before the first live
+  update the selector, favorites bar and other lists show their placeholders instead of values up to
+  five minutes old, and returning from Referrals, Join or Leaderboard no longer mixes live prices with
+  an old 24h reference price.
+- Spot tokens and pairs use the official terminal's names (for example FARTCOIN, PENGU, 2Z, PEAR,
+  PUMP-26, MONPRO), in the selector and in balances, fee columns, deposits and withdrawals and the
+  Send dialog; CSV exports keep the exchange's names. PUMP, ANSEM, MON, MOG and SPYX against USDC now
+  open instead of the not-found page, and `/trade/PEAR/USDC` opens the pair the official terminal
+  calls PEAR. `/trade/0x<token ID>` addresses open their pair, a pair address with an unknown quote
+  opens the pair against USDC, `@N` addresses switch to the pair's name, and an address that names no
+  market opens the default market instead of the not-found page.
 - The HIP-3 deployer notice for EntropyIO markets (the `io` deployer, such as the OpenAI and
   Anthropic pre-IPO markets) now links to EntropyIO's documentation, as it already did for the
   other listed deployers.
@@ -579,6 +605,23 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Fixed
 
+- Phone trade history filters search older fills too, up to the latest 2,000, instead of only the 30
+  most recent, and a matching fill that arrives while a filter is on stays listed. "No fills match
+  these filters." appears only after that search has finished and covers every fill since it, and
+  names the 2,000 limit when it was reached; while the search loads, matches already received keep
+  showing and an otherwise empty list stays blank, and a failed search, or one that no longer reaches
+  the live fills, offers Retry.
+- Staking, Referrals and Vaults no longer show "Refreshing…" lines, red error boxes or warning icons
+  for data they load in the background. A failed first load offers Retry, unknown values read `--`
+  instead of 0, and a failed refresh keeps the values on screen and holds the actions that depend on
+  them, with Retry, until a refresh succeeds. Vault Deposit and Withdraw stay available during a
+  background refresh.
+- Clicking a price in the order book no longer turns every order into a limit order. As on the official
+  terminal, a market order becomes a limit order and a stop market a stop limit at that price, limit-priced
+  orders take the price, and take-profit market, Scale and TWAP orders stay untouched.
+- A spot balance without a market price is now worth $0 in the balances table, as on the official
+  terminal, instead of showing what it cost as its value; with Hide small balances on, such a token is
+  hidden like any other balance under $5, except HYPE, which always stays.
 - Trade history dates now include the year, like the order history, on the desktop tab, the full page
   and in CSV exports, and the market order summary shows the maximum slippage in the accent colour instead
   of the error red. Funding history, TWAP history and fill history, and deposits and withdrawals show the

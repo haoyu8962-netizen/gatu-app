@@ -419,8 +419,8 @@ msgid "Account mode changed before the request was submitted. Review balances an
 msgstr "送信前にアカウントモードが変更されました。残高を確認して再試行してください。"
 
 #: src/components/staking/staking-view.tsx
-msgid "Account staking data unavailable"
-msgstr "アカウントのステーキングデータを利用できません"
+#~ msgid "Account staking data unavailable"
+#~ msgstr "アカウントのステーキングデータを利用できません"
 
 #: src/components/staking/staking-view.tsx
 msgid "Account staking status"
@@ -460,8 +460,8 @@ msgid "Account Value weighted by LTV / Borrowed Amount. If this number is below 
 msgstr "LTV で加重したアカウント評価額 / 借入額。この値が100%未満の場合、追加の借入はできません。"
 
 #: src/components/vaults/vaults-list.tsx
-msgid "Account Vault data could not be verified"
-msgstr "アカウントのボールトデータを確認できませんでした"
+#~ msgid "Account Vault data could not be verified"
+#~ msgstr "アカウントのボールトデータを確認できませんでした"
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Account-level agent approval"
@@ -1066,6 +1066,7 @@ msgid "Back to trade"
 msgstr "取引に戻る"
 
 #: src/components/vaults/vaults-page.tsx
+#: src/components/vaults/vaults-page.tsx
 msgid "Back to Vaults"
 msgstr "ボールトに戻る"
 
@@ -1097,8 +1098,8 @@ msgid "Balances"
 msgstr "残高"
 
 #: src/components/staking/staking-view.tsx
-msgid "Balances remain unknown and every staking action is disabled until fresh data is verified."
-msgstr "最新データを確認できるまで残高は不明のままで、すべてのステーキング操作が無効になります。"
+#~ msgid "Balances remain unknown and every staking action is disabled until fresh data is verified."
+#~ msgstr "最新データを確認できるまで残高は不明のままで、すべてのステーキング操作が無効になります。"
 
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/orderbook/orderbook-row.tsx
@@ -1455,8 +1456,8 @@ msgid "Checking regional availability. Funds actions are temporarily unavailable
 msgstr "地域別の利用可否を確認中です。資金操作は一時的に利用できません。"
 
 #: src/components/vaults/vault-detail-view.tsx
-msgid "Checking regional availability. Vault actions are temporarily unavailable."
-msgstr "地域別の利用可否を確認中です。ボールト操作は一時的に利用できません。"
+#~ msgid "Checking regional availability. Vault actions are temporarily unavailable."
+#~ msgstr "地域別の利用可否を確認中です。ボールト操作は一時的に利用できません。"
 
 #: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
 msgid "Checking the current Hyperliquid deposit route..."
@@ -2468,8 +2469,8 @@ msgid "Deposited"
 msgstr "入金済み"
 
 #: src/components/vaults/vaults-list.tsx
-msgid "Deposited and Leading filters fail closed until both account snapshots are available."
-msgstr "両方のアカウントのスナップショットが利用可能になるまで、「入金済み」と「運用中」のフィルターは安全のため無効になります。"
+#~ msgid "Deposited and Leading filters fail closed until both account snapshots are available."
+#~ msgstr "両方のアカウントのスナップショットが利用可能になるまで、「入金済み」と「運用中」のフィルターは安全のため無効になります。"
 
 #: src/components/trade/tradebox/deposit/deposit-method-chooser.tsx
 #: src/lib/trade/privy-fiat-funding-feedback.ts
@@ -2645,8 +2646,8 @@ msgid "Display and language"
 msgstr "表示と言語"
 
 #: src/components/trade/mobile/mobile-book-view.tsx
-msgid "Display units"
-msgstr "表示単位"
+#~ msgid "Display units"
+#~ msgstr "表示単位"
 
 #: src/components/trade/orderbook/orderbook-hover-tooltip.tsx
 msgid "Distance from mid"
@@ -2958,14 +2959,14 @@ msgstr "推定スリッページ"
 msgid "Establish Connection"
 msgstr "接続を確立"
 
-#. placeholder {0}: formatStakingRatio(props.weightedApr, numberFormat)
+#. placeholder {0}: props.weightedApr === null ? UNKNOWN_VALUE : formatStakingRatio(props.weightedApr, numberFormat)
 #: src/components/staking/staking-view.tsx
 msgid "Estimated APR {0}"
 msgstr "推定 APR {0}"
 
 #: src/components/staking/staking-view.tsx
-msgid "Estimated APR unavailable"
-msgstr "推定 APR を利用できません"
+#~ msgid "Estimated APR unavailable"
+#~ msgstr "推定 APR を利用できません"
 
 #: src/components/trade/components/spot-swap-modal.tsx
 msgid "Estimated fee"
@@ -4238,6 +4239,7 @@ msgstr "トークンのメタデータを読み込み中..."
 
 #: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade-history/trade-history-page.tsx
+#: src/components/trade/mobile/mobile-history-tab.tsx
 msgid "Loading trade history"
 msgstr "約定履歴を読み込み中"
 
@@ -4927,6 +4929,10 @@ msgid "No fills match the selected filters."
 msgstr "選択したフィルターに一致する約定はありません。"
 
 #: src/components/trade/mobile/mobile-history-tab.tsx
+msgid "No fills match these filters among the latest {snapshotLimit}."
+msgstr "直近 {snapshotLimit} 件の約定に、このフィルターに一致するものはありません。"
+
+#: src/components/trade/mobile/mobile-history-tab.tsx
 msgid "No fills match these filters."
 msgstr "このフィルターに一致する約定はありません。"
 
@@ -5396,8 +5402,8 @@ msgstr "板のアニメーション"
 
 #: src/components/trade/components/global-settings-modal.tsx
 #: src/components/trade/components/global-settings-modal.tsx
-msgid "Order book in quote asset"
-msgstr "板を決済通貨で表示"
+#~ msgid "Order book in quote asset"
+#~ msgstr "板を決済通貨で表示"
 
 #: src/config/orderbook-labels.ts
 msgid "Order book view"
@@ -6200,8 +6206,8 @@ msgid "Recent reward claims"
 msgstr "最近の報酬請求"
 
 #: src/components/referrals/referral-activity.tsx
-msgid "Recent reward claims could not be verified."
-msgstr "最近の報酬請求を確認できませんでした。"
+#~ msgid "Recent reward claims could not be verified."
+#~ msgstr "最近の報酬請求を確認できませんでした。"
 
 #: src/config/orderbook-labels.ts
 msgid "Recent Trades"
@@ -6321,8 +6327,8 @@ msgid "Referral codes must be between 1 and 20 characters."
 msgstr "紹介コードは1～20文字にしてください。"
 
 #: src/components/referrals/referral-dashboard.tsx
-msgid "Referral data unavailable"
-msgstr "紹介データを利用できません"
+#~ msgid "Referral data unavailable"
+#~ msgstr "紹介データを利用できません"
 
 #: src/components/referrals/referral-rewards-card.tsx
 msgid "Referral discounts do not apply to vaults or subaccounts."
@@ -6415,16 +6421,16 @@ msgid "Refresh referral data before submitting another signed request."
 msgstr "別の署名付きリクエストを送信する前に、紹介データを更新してください。"
 
 #: src/components/referrals/referral-dashboard.tsx
-msgid "Refreshing referral data…"
-msgstr "紹介データを更新中…"
+#~ msgid "Refreshing referral data…"
+#~ msgstr "紹介データを更新中…"
 
 #: src/components/staking/staking-view.tsx
-msgid "Refreshing staking data…"
-msgstr "ステーキングデータを更新中…"
+#~ msgid "Refreshing staking data…"
+#~ msgstr "ステーキングデータを更新中…"
 
 #: src/components/vaults/vault-detail-view.tsx
-msgid "Refreshing Vault data. Actions are temporarily unavailable."
-msgstr "ボールトデータを更新中です。操作は一時的に利用できません。"
+#~ msgid "Refreshing Vault data. Actions are temporarily unavailable."
+#~ msgstr "ボールトデータを更新中です。操作は一時的に利用できません。"
 
 #: src/components/api-wallet/api-wallet-list.tsx
 #: src/components/leaderboard/leaderboard-view.tsx
@@ -6648,7 +6654,8 @@ msgstr "追跡を再開"
 #: src/components/portfolio/portfolio-performance-chart.tsx
 #: src/components/referrals/referral-activity.tsx
 #: src/components/referrals/referral-dashboard.tsx
-#: src/components/staking/staking-view.tsx
+#: src/components/referrals/referral-dashboard.tsx
+#: src/components/referrals/referral-rewards-card.tsx
 #: src/components/staking/staking-view.tsx
 #: src/components/trade/chart/funding-history-load-boundary.tsx
 #: src/components/trade/chart/funding-history-panel.tsx
@@ -6659,6 +6666,7 @@ msgstr "追跡を再開"
 #: src/components/trade/components/market-asset-info.tsx
 #: src/components/trade/components/market-asset-info.tsx
 #: src/components/trade/layout/terminal-boot-error.tsx
+#: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/offline-banner.tsx
 #: src/components/trade/positions/account-transfers-tab.tsx
 #: src/components/trade/positions/account-transfers-tab.tsx
@@ -6673,14 +6681,17 @@ msgstr "追跡を再開"
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #: src/components/trade/twap-history-feedback.tsx
 #: src/components/ui/history-page-unavailable.tsx
+#: src/components/vaults/vault-action-modal.tsx
+#: src/components/vaults/vault-detail-view.tsx
+#: src/components/vaults/vaults-list.tsx
 #: src/components/vaults/vaults-list.tsx
 #: src/components/vaults/vaults-page.tsx
 msgid "Retry"
 msgstr "再試行"
 
 #: src/components/vaults/vault-detail-view.tsx
-msgid "Retry account data"
-msgstr "アカウントデータを再取得"
+#~ msgid "Retry account data"
+#~ msgstr "アカウントデータを再取得"
 
 #: src/components/trade/positions/position-pnl-share-modal.tsx
 msgid "Return on equity (ROE)"
@@ -6789,8 +6800,8 @@ msgid "Reward history is scoped to the verified owner."
 msgstr "報酬履歴は確認済みの所有者に限定されます。"
 
 #: src/components/staking/staking-view.tsx
-msgid "Reward history unavailable"
-msgstr "報酬履歴を利用できません"
+#~ msgid "Reward history unavailable"
+#~ msgstr "報酬履歴を利用できません"
 
 #: src/components/staking/staking-view.tsx
 msgid "Reward source"
@@ -7337,6 +7348,10 @@ msgstr "数量の偏り"
 msgid "Size skew is too aggressive for the total size"
 msgstr "合計数量に対して数量の偏りが大きすぎます"
 
+#: src/config/orderbook-labels.ts
+msgid "Size unit"
+msgstr "数量の単位"
+
 #: src/components/trade/tradebox/trade-form-tp-sl.tsx
 #: src/lib/errors/definitions/tpsl.ts
 msgid "SL must be above entry"
@@ -7499,8 +7514,8 @@ msgid "Staking action history table"
 msgstr "ステーキング操作履歴一覧"
 
 #: src/components/staking/staking-view.tsx
-msgid "Staking action history unavailable"
-msgstr "ステーキング操作履歴を利用できません"
+#~ msgid "Staking action history unavailable"
+#~ msgstr "ステーキング操作履歴を利用できません"
 
 #: src/components/staking/staking-view.tsx
 msgid "Staking actions"
@@ -8197,8 +8212,8 @@ msgid "The gas-sponsored wallet is configured for a different Arbitrum network."
 msgstr "ガス代補助付きウォレットが別の Arbitrum ネットワークに設定されています。"
 
 #: src/components/staking/staking-view.tsx
-msgid "The history response could not be verified."
-msgstr "履歴の応答を確認できませんでした。"
+#~ msgid "The history response could not be verified."
+#~ msgstr "履歴の応答を確認できませんでした。"
 
 #: src/lib/trade/funds-action-feedback.ts
 msgid "The Hyperliquid deposit route changed before signing. Review the updated route and retry."
@@ -8331,8 +8346,8 @@ msgid "The private key is created in this browser and is never uploaded or store
 msgstr "秘密鍵はこのブラウザー内で生成され、{BRAND_NAME} にアップロードまたは保存されることはありません。"
 
 #: src/components/vaults/vaults-list.tsx
-msgid "The public Vault feed could not be verified. No cached or cross-network rows are shown in its place."
-msgstr "公開ボールトフィードを確認できませんでした。代わりにキャッシュや他ネットワークの行を表示することはありません。"
+#~ msgid "The public Vault feed could not be verified. No cached or cross-network rows are shown in its place."
+#~ msgstr "公開ボールトフィードを確認できませんでした。代わりにキャッシュや他ネットワークの行を表示することはありません。"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "The QR can trade but not withdraw. Approving replaces the mobile key of a phone that is already linked, including one linked in the Hyperliquid app. Do not share it, screenshot it or show it while sharing your screen."
@@ -8394,20 +8409,20 @@ msgid "The response could not be verified. No partial order history is shown."
 msgstr "応答を確認できませんでした。不完全な注文履歴は表示しません。"
 
 #: src/components/referrals/referral-dashboard.tsx
-msgid "The response could not be verified. No referral action is available until fresh data loads."
-msgstr "応答を確認できませんでした。最新データが読み込まれるまで紹介操作は利用できません。"
+#~ msgid "The response could not be verified. No referral action is available until fresh data loads."
+#~ msgstr "応答を確認できませんでした。最新データが読み込まれるまで紹介操作は利用できません。"
 
 #: src/components/staking/staking-view.tsx
-msgid "The response could not be verified. No validator action is available."
-msgstr "応答を確認できませんでした。バリデーター操作は利用できません。"
+#~ msgid "The response could not be verified. No validator action is available."
+#~ msgstr "応答を確認できませんでした。バリデーター操作は利用できません。"
 
 #: src/components/vaults/vaults-page.tsx
-msgid "The response was missing, malformed, or could not be verified. No placeholder financial data is shown."
-msgstr "応答が欠落、不正、または確認不能でした。仮の金融データは表示しません。"
+#~ msgid "The response was missing, malformed, or could not be verified. No placeholder financial data is shown."
+#~ msgstr "応答が欠落、不正、または確認不能でした。仮の金融データは表示しません。"
 
 #: src/components/staking/staking-view.tsx
-msgid "The reward response could not be verified."
-msgstr "報酬の応答を確認できませんでした。"
+#~ msgid "The reward response could not be verified."
+#~ msgstr "報酬の応答を確認できませんでした。"
 
 #: src/components/funds-action/funds-action-recovery-host.tsx
 msgid "The saved record is malformed or browser storage is unavailable. It may represent a request that reached Hyperliquid, so the application will not overwrite it or enable another funds action."
@@ -9443,8 +9458,8 @@ msgid "Unable to verify regional availability. Trading is temporarily unavailabl
 msgstr "地域別の利用可否を確認できません。取引は一時的に利用できません。"
 
 #: src/components/vaults/vault-detail-view.tsx
-msgid "Unable to verify regional availability. Vault actions are temporarily unavailable."
-msgstr "地域別の利用可否を確認できません。ボールト操作は一時的に利用できません。"
+#~ msgid "Unable to verify regional availability. Vault actions are temporarily unavailable."
+#~ msgstr "地域別の利用可否を確認できません。ボールト操作は一時的に利用できません。"
 
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
@@ -9740,8 +9755,8 @@ msgid "Validator commission"
 msgstr "バリデーター手数料"
 
 #: src/components/staking/staking-view.tsx
-msgid "Validator data unavailable"
-msgstr "バリデーターデータを利用できません"
+#~ msgid "Validator data unavailable"
+#~ msgstr "バリデーターデータを利用できません"
 
 #: src/components/staking/staking-view.tsx
 msgid "Validator performance"
@@ -9791,8 +9806,8 @@ msgid "Vault Commission"
 msgstr "ボールト手数料"
 
 #: src/components/vaults/vaults-list.tsx
-msgid "Vault data is unavailable"
-msgstr "ボールトデータを利用できません"
+#~ msgid "Vault data is unavailable"
+#~ msgstr "ボールトデータを利用できません"
 
 #: src/components/funds-action/funds-action-recovery-host.tsx
 msgid "Vault deposit"
@@ -9811,8 +9826,8 @@ msgid "Vault depositors"
 msgstr "ボールト入金者"
 
 #: src/components/vaults/vaults-page.tsx
-msgid "Vault details are unavailable"
-msgstr "ボールトの詳細を利用できません"
+#~ msgid "Vault details are unavailable"
+#~ msgstr "ボールトの詳細を利用できません"
 
 #: src/config/account-ledger.ts
 msgid "Vault Distribution"
@@ -9879,8 +9894,8 @@ msgid "Verification reference"
 msgstr "検証用参照情報"
 
 #: src/components/vaults/vault-detail-view.tsx
-msgid "Verified Vault details are unavailable."
-msgstr "確認済みのボールト詳細を利用できません。"
+#~ msgid "Verified Vault details are unavailable."
+#~ msgstr "確認済みのボールト詳細を利用できません。"
 
 #. placeholder {0}: formatVaultUsd(availableAmount, numberFormat)
 #: src/components/vaults/vault-action-modal.tsx
@@ -9911,8 +9926,8 @@ msgid "Verifying from history"
 msgstr "履歴から検証中"
 
 #: src/components/vaults/vault-detail-view.tsx
-msgid "Verifying the owner Vault balance before enabling withdrawals."
-msgstr "出金を有効にする前に、所有者のボールト残高を確認中です。"
+#~ msgid "Verifying the owner Vault balance before enabling withdrawals."
+#~ msgstr "出金を有効にする前に、所有者のボールト残高を確認中です。"
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Verifying the result"
@@ -10169,8 +10184,8 @@ msgid "Withdrawal remains locked until the server-reported unlock time."
 msgstr "サーバーが報告する解除時刻まで出金はロックされます。"
 
 #: src/components/vaults/vault-detail-view.tsx
-msgid "Withdrawal remains unavailable until the owner balance is verified."
-msgstr "所有者の残高を確認できるまで出金は利用できません。"
+#~ msgid "Withdrawal remains unavailable until the owner balance is verified."
+#~ msgstr "所有者の残高を確認できるまで出金は利用できません。"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Withdrawal status unknown"
@@ -10429,8 +10444,8 @@ msgid "Your transaction is being processed"
 msgstr "トランザクションを処理中です"
 
 #: src/components/vaults/vault-detail-view.tsx
-msgid "Your Vault balance could not be verified. Account values and withdrawal remain unavailable."
-msgstr "ボールト残高を確認できませんでした。アカウントの値と出金は引き続き利用できません。"
+#~ msgid "Your Vault balance could not be verified. Account values and withdrawal remain unavailable."
+#~ msgstr "ボールト残高を確認できませんでした。アカウントの値と出金は引き続き利用できません。"
 
 #: src/lib/trade/privy-fiat-funding-feedback.ts
 msgid "Your wallet session changed, so the card purchase did not open. Reconnect your wallet and try again."
