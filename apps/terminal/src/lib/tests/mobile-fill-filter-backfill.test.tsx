@@ -394,6 +394,16 @@ describe("phone fills filter backfill", () => {
 		expect(container.querySelector('[aria-label="Switch to SOL market"]')).not.toBeNull();
 	});
 
+	it("bridges the snapshot's newest fill, TWAP included, and the oldest live fill before it concludes", async () => {
+		mocks.userFills.mockResolvedValue([fill(300, { twapId: 5 }), fill(100)]);
+		setLiveFills([fill(500), fill(250)]);
+		await render();
+		await selectOption("Direction", "Sell");
+
+		expect(container.textContent).toContain("No fills match these filters.");
+		expect(retryButton()).toBeUndefined();
+	});
+
 	it("drops the snapshot from the list again once every filter is cleared", async () => {
 		const liveFills = recentBuys().slice(0, 5);
 		const olderSell = fill(1, { coin: "SOL", crossed: true, side: "A" });

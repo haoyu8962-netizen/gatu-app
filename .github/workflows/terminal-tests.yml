@@ -398,6 +398,7 @@ jobs:
           src/lib/tests/desktop-orders-history-direction.test.tsx
           src/lib/tests/mobile-history-cards.test.tsx
           src/lib/tests/mobile-fill-filter-backfill.test.tsx
+          src/lib/tests/trade-history.test.ts
           src/lib/tests/fill-filter-presentation.test.ts
           src/lib/tests/user-fills.test.ts
           src/lib/tests/trade-history-page.test.tsx

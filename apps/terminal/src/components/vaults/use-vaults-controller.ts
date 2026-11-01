@@ -51,7 +51,7 @@ export interface VaultDetailController {
 	owner: VaultOwnerViewState;
 	/** What the action controller sees: an owner kept after a failed refresh counts as unverified. */
 	actionOwner: VaultOwnerViewState;
-	/** A source failed: the page offers a neutral retry next to the actions. */
+	/** A source failed or is kept after a failed refresh: the page and an open action dialog offer a neutral retry. */
 	needsRetry: boolean;
 	onRetry: () => void;
 }
@@ -221,7 +221,8 @@ export function useVaultDetailController(vaultAddress: string): VaultDetailContr
 		detailCurrent: detailSource === "ready",
 		owner: ownerView,
 		actionOwner: ownerRetained ? { status: "error" } : ownerView,
-		needsRetry: detailSource === "retained" || (accountAddress !== undefined && isFailedOrRetained(equitiesSource)),
+		needsRetry:
+			isFailedOrRetained(detailSource) || (accountAddress !== undefined && isFailedOrRetained(equitiesSource)),
 		onRetry: () => {
 			void detailQuery.refetch();
 			if (accountAddress) void equitiesQuery.refetch();

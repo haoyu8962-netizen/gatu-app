@@ -273,6 +273,7 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/use-referrals.test.tsx \
   src/lib/tests/vaults-domain.test.ts \
   src/lib/tests/mobile-fill-filter-backfill.test.tsx \
+  src/lib/tests/trade-history.test.ts \
   src/lib/tests/fill-filter-presentation.test.ts
 
 # Trading terminal visual contract
