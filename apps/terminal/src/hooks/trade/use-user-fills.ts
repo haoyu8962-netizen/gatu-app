@@ -11,6 +11,8 @@ const EMPTY_ADDRESS = "0x0000000000000000000000000000000000000000";
 type UserFillsStatus = "error" | "idle" | "loading" | "offline" | "ready";
 
 interface UserFillsResult {
+	/** Every fill the subscription holds, newest first; `fills` is the start of it. */
+	bufferedFills: UserFillsResponse;
 	error: unknown;
 	fills: UserFillsResponse;
 	isConnected: boolean;
@@ -37,10 +39,8 @@ export function useUserFills(): UserFillsResult {
 			realtimeFills.some((fill) => !isValidUserFillHistoryItem(fill)));
 	const hasValidRealtime = payload !== undefined && !hasMalformedRealtime && Array.isArray(realtimeFills);
 	const isStale = enabled && hasValidRealtime && (fillsSubscription.isStale || fillsSubscription.status !== "active");
-	const fills = filterNonTwapUserFills(mergeUserFillSources(hasValidRealtime ? realtimeFills : undefined)).slice(
-		0,
-		RECENT_ACCOUNT_HISTORY_ROWS,
-	);
+	const bufferedFills = filterNonTwapUserFills(mergeUserFillSources(hasValidRealtime ? realtimeFills : undefined));
+	const fills = bufferedFills.slice(0, RECENT_ACCOUNT_HISTORY_ROWS);
 
 	let status: UserFillsStatus = "loading";
 	if (!enabled) {
@@ -56,6 +56,7 @@ export function useUserFills(): UserFillsResult {
 	}
 
 	return {
+		bufferedFills,
 		error: fillsSubscription.error ?? (hasMalformedRealtime ? new MalformedHistoryPageError() : undefined),
 		fills,
 		isConnected: enabled,

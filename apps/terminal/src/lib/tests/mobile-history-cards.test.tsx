@@ -148,6 +148,7 @@ vi.mock("@tanstack/react-router", () => ({
 
 vi.mock("@/hooks/trade/use-user-fills", () => ({
 	useUserFills: () => ({
+		bufferedFills: mocks.fills,
 		error: mocks.fillsError,
 		isConnected: true,
 		isOffline: mocks.fillsOffline,

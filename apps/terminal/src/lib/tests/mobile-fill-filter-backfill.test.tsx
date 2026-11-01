@@ -302,6 +302,67 @@ describe("phone fills filter backfill", () => {
 		expect(listRegion().querySelector('[aria-busy="true"]')).not.toBeNull();
 	});
 
+	it("searches the snapshot when only the Type filter is on", async () => {
+		const olderLiquidation = fill(1, {
+			coin: "SOL",
+			dir: "Close Long",
+			side: "A",
+			liquidation: { liquidatedUser: OWNER, markPx: "90", method: "market" },
+		});
+		const pending = deferUserFills();
+		await render();
+		await selectOption("Type", "Liquidated");
+
+		expect(mocks.userFills).toHaveBeenCalledOnce();
+		expect(container.textContent).not.toContain("No fills match these filters");
+		expect(listRegion().querySelector('[aria-busy="true"]')).not.toBeNull();
+
+		await act(async () => pending.shift()?.resolve([...recentBuys(), olderLiquidation]));
+		await flush();
+		expect(container.querySelectorAll("article")).toHaveLength(1);
+		expect(container.querySelector('[aria-label="Switch to SOL market"]')).not.toBeNull();
+	});
+
+	it("keeps a matching fill that later live fills push out of the latest 30", async () => {
+		mocks.userFills.mockResolvedValue(recentBuys());
+		await render();
+		await selectOption("Role", "Taker");
+		expect(container.textContent).toContain("No fills match these filters.");
+
+		const taker = fill(2_000, { coin: "ETH", crossed: true });
+		setLiveFills([taker, ...recentBuys()]);
+		await flush();
+		expect(container.querySelectorAll("article")).toHaveLength(1);
+
+		const laterMakers = Array.from({ length: 30 }, (_, index) => fill(2_001 + index));
+		setLiveFills([...laterMakers.reverse(), taker, ...recentBuys()]);
+		await flush();
+		expect(container.querySelectorAll("article")).toHaveLength(1);
+		expect(container.querySelector('[aria-label="Switch to ETH market"]')).not.toBeNull();
+		expect(container.textContent).not.toContain("No fills match these filters");
+	});
+
+	it("offers a neutral Retry instead of a conclusion while the live fills no longer reach the snapshot", async () => {
+		mocks.userFills.mockResolvedValue(recentBuys());
+		await render();
+		await selectOption("Direction", "Sell");
+		expect(container.textContent).toContain("No fills match these filters.");
+
+		const newerBuys = Array.from({ length: 30 }, (_, index) => fill(3_000 + index)).reverse();
+		setLiveFills(newerBuys);
+		await flush();
+		expect(container.textContent).not.toContain("No fills match these filters");
+		const retry = retryButton();
+		expect(retry).toBeDefined();
+
+		mocks.userFills.mockResolvedValue([...newerBuys, ...recentBuys()]);
+		await act(async () => retry?.click());
+		await flush();
+		expect(mocks.userFills).toHaveBeenCalledTimes(2);
+		expect(container.textContent).toContain("No fills match these filters.");
+		expect(retryButton()).toBeUndefined();
+	});
+
 	it("drops the snapshot from the list again once every filter is cleared", async () => {
 		const liveFills = recentBuys().slice(0, 5);
 		const olderSell = fill(1, { coin: "SOL", crossed: true, side: "A" });

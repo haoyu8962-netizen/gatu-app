@@ -606,9 +606,10 @@ changes, not evidence that a build has been deployed or accepted on real devices
 ### Fixed
 
 - Phone trade history filters search older fills too, up to the latest 2,000, instead of only the 30
-  most recent. "No fills match these filters." appears only after that search has finished, and names
-  the 2,000 limit when it was reached; while the search loads the list stays blank, and a failed
-  search offers Retry.
+  most recent, and a matching fill that arrives while a filter is on stays listed. "No fills match
+  these filters." appears only after that search has finished and covers every fill since it, and
+  names the 2,000 limit when it was reached; while the search loads the list stays blank, and a failed
+  search, or one that no longer reaches the live fills, offers Retry.
 - Staking, Referrals and Vaults no longer show "Refreshing…" lines, red error boxes or warning icons
   for data they load in the background. A failed first load offers Retry, unknown values read `--`
   instead of 0, and a failed refresh keeps the values on screen and holds the actions that depend on

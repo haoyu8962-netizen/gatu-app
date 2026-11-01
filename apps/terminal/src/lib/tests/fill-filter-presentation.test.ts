@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { type FillSnapshotState, getFilteredFillsEmptyPresentation } from "@/lib/trade/fill-filter-presentation";
+import {
+	type FillSnapshotState,
+	fillSnapshotReachesLiveFills,
+	getFilteredFillsEmptyPresentation,
+} from "@/lib/trade/fill-filter-presentation";
 
 const loaded: FillSnapshotState = {
 	hasData: true,
@@ -7,6 +11,7 @@ const loaded: FillSnapshotState = {
 	fetching: false,
 	offline: false,
 	reachedLimit: false,
+	reachesLive: true,
 };
 
 describe("filtered fills empty presentation", () => {
@@ -45,6 +50,24 @@ describe("filtered fills empty presentation", () => {
 		).toBe("retry");
 	});
 
+	it("offers a retry instead of a conclusion while fills could fall between the snapshot and the live fills", () => {
+		expect(getFilteredFillsEmptyPresentation({ liveCurrent: true, snapshot: { ...loaded, reachesLive: false } })).toBe(
+			"retry",
+		);
+		expect(
+			getFilteredFillsEmptyPresentation({
+				liveCurrent: true,
+				snapshot: { ...loaded, reachesLive: false, reachedLimit: true },
+			}),
+		).toBe("retry");
+		expect(
+			getFilteredFillsEmptyPresentation({
+				liveCurrent: true,
+				snapshot: { ...loaded, reachesLive: false, fetching: true },
+			}),
+		).toBe("loading");
+	});
+
 	it("stays blank while offline", () => {
 		expect(getFilteredFillsEmptyPresentation({ liveCurrent: true, snapshot: { ...loaded, offline: true } })).toBe(
 			"offline",
@@ -52,5 +75,23 @@ describe("filtered fills empty presentation", () => {
 		expect(
 			getFilteredFillsEmptyPresentation({ liveCurrent: true, snapshot: { ...loaded, offline: true, failed: true } }),
 		).toBe("offline");
+	});
+});
+
+describe("whether a fills snapshot reaches the live fills", () => {
+	const fills = (...times: number[]) => times.map((time) => ({ time }));
+
+	it("reaches them when the oldest live fill is not newer than the newest snapshot fill", () => {
+		expect(fillSnapshotReachesLiveFills(fills(300, 200, 100), fills(500, 400, 300))).toBe(true);
+		expect(fillSnapshotReachesLiveFills(fills(300, 200, 100), fills(500, 250))).toBe(true);
+	});
+
+	it("leaves a gap when every live fill is newer than the newest snapshot fill", () => {
+		expect(fillSnapshotReachesLiveFills(fills(300, 200, 100), fills(500, 400, 301))).toBe(false);
+	});
+
+	it("has nothing to bridge when either side is empty", () => {
+		expect(fillSnapshotReachesLiveFills([], fills(500, 400))).toBe(true);
+		expect(fillSnapshotReachesLiveFills(fills(300), [])).toBe(true);
 	});
 });

@@ -18,7 +18,7 @@ import { buildCsvRows } from "@/lib/csv";
 import { formatDateTime, formatDateTimeShort, useNumberFormat } from "@/lib/format";
 import { getExplorerTxUrl, useMarkets } from "@/lib/hyperliquid";
 import { getFillDirectionPresentation, getFillDirectionTone } from "@/lib/trade/fill-direction";
-import { getFilteredFillsEmptyPresentation } from "@/lib/trade/fill-filter-presentation";
+import { fillSnapshotReachesLiveFills, getFilteredFillsEmptyPresentation } from "@/lib/trade/fill-filter-presentation";
 import { getMarketPriceFormatOptions } from "@/lib/trade/market-price-format";
 import { TRADE_HISTORY_SNAPSHOT_LIMIT } from "@/lib/trade/trade-history";
 import {
@@ -89,7 +89,7 @@ function MobileHistoryTabContent({
 	const { formatNumber, formatPrice, formatToken, formatUSD } = useNumberFormat();
 	const { i18n, t } = useLingui();
 	const locale = i18n.locale;
-	const { error, fills, isConnected, isOffline, isStale, status } = useUserFills();
+	const { bufferedFills, error, fills, isConnected, isOffline, isStale, status } = useUserFills();
 	const navigateToMarket = useMarketNavigation();
 	const { setActiveTab } = useMobileTerminalTab();
 	const markets = useMarkets();
@@ -99,7 +99,7 @@ function MobileHistoryTabContent({
 	const [roleFilter, setRoleFilter] = useState<TradeHistoryRoleFilter>("all");
 	const filtersActive = typeFilter !== "all" || directionFilter !== "all" || roleFilter !== "all";
 	const fillSnapshot = useTradeHistory(address ?? "", { enabled: filtersActive });
-	const searchedFills = filtersActive ? mergeUserFillSources(fillSnapshot.fills, fills) : fills;
+	const searchedFills = filtersActive ? mergeUserFillSources(fillSnapshot.fills, bufferedFills) : fills;
 
 	const filteredFills = searchedFills
 		.filter(
@@ -117,6 +117,7 @@ function MobileHistoryTabContent({
 			fetching: fillSnapshot.isFetching,
 			offline: fillSnapshot.isOffline,
 			reachedLimit: fillSnapshot.reachedLimit,
+			reachesLive: fillSnapshotReachesLiveFills(fillSnapshot.fills, bufferedFills),
 		},
 	});
 	const snapshotLimit = formatNumber(TRADE_HISTORY_SNAPSHOT_LIMIT, 0);
