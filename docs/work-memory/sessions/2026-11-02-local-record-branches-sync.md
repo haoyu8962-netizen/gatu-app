@@ -93,3 +93,4 @@
 - 10-26 周整理指出的两份 10-24 记录（日本、官网）的过期摘要与空 `commits` 仍待补。ADR 0041 的状态行，以及 ADR 目录里 0041–0048 写「未合入 `dev`」「未发布」的几行，需按 `dev`、`main` 与发布记录逐条核对（例如 0042–0044 的提交已在 `main`）。
 - Across 重新启动时，先用自助表单新发的 Key 探测一次（见 Across 记录的补注），再决定是否经共享渠道申请权限。
 - 本记录不替代任何记录，只补充四条分支的合入经过。
+- 2026-11-02 补记：运营方说「推送并开 PR」后，本分支以头 `3cecb6aa` 推送，并开 [PR #135](https://github.com/zora4523-bot/gatu-app/pull/135) → `dev`。推送前 `origin/dev` 仍是 `26c06d02`；开 PR 时发现 PR #130 已于 01:20（UTC+8）先合入 `dev`（`e9d20e48`），本分支随后合并 `dev`（`74f4f6e5`），只在 `INDEX.md` 冲突，用 `pnpm memory:index` 重建，`docs/adr/README.md` 自动合并。合并后相对 `dev` 仍只有 23 个 `docs/` 文件；232 份记录共 776 个引用，768 个是 HEAD 的祖先，其余仍是上述 8 个；`memory:check`、`memory:test`（8/8）、`git diff --check` 通过。这次合并与本补记在运营方另行同意后推送。
