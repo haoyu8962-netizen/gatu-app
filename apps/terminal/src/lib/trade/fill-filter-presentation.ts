@@ -18,14 +18,15 @@ export interface FillSnapshotState {
  * Whether a `userFills` snapshot and the live fills the subscription still holds leave no gap: the
  * subscription keeps a bounded number of fills, TWAP fills included, so after enough new fills its oldest
  * one can be newer than anything the snapshot saw, and fills in between are in neither. Both times count
- * TWAP fills, which the lists leave out. A snapshot without fills means the account had none when it was
- * taken, so every live fill is newer.
+ * TWAP fills, which the lists leave out. A snapshot without fills reaches only a subscription that holds
+ * none: every live fill is newer than such a snapshot, and the subscription may already have dropped some.
  */
 export function fillSnapshotReachesLiveFills(
 	newestSnapshotFillTime: number | null,
 	oldestLiveFillTime: number | null,
 ): boolean {
-	return newestSnapshotFillTime === null || oldestLiveFillTime === null || oldestLiveFillTime <= newestSnapshotFillTime;
+	if (oldestLiveFillTime === null) return true;
+	return newestSnapshotFillTime !== null && oldestLiveFillTime <= newestSnapshotFillTime;
 }
 
 /**

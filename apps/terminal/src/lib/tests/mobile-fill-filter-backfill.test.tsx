@@ -404,6 +404,32 @@ describe("phone fills filter backfill", () => {
 		expect(retryButton()).toBeUndefined();
 	});
 
+	it("offers a neutral Retry once a snapshot without fills can no longer vouch for the live fills", async () => {
+		const pending = deferUserFills();
+		const maker = fill(1, { coin: "SOL" });
+		setLiveFills([maker]);
+		await render();
+		await selectOption("Role", "Maker");
+		await act(async () => pending[0]?.resolve([]));
+		await flush();
+		expect(container.querySelector('[aria-label="Switch to SOL market"]')).not.toBeNull();
+
+		const takers = Array.from({ length: 200 }, (_, index) => fill(400 - index, { crossed: true }));
+		setLiveFills(takers);
+		await flush();
+		expect(container.querySelector('[aria-label="Switch to SOL market"]')).toBeNull();
+		expect(container.textContent).not.toContain("No fills match these filters");
+		const retry = retryButton();
+		expect(retry).toBeDefined();
+
+		mocks.userFills.mockResolvedValue([...takers, maker]);
+		await act(async () => retry?.click());
+		await flush();
+		expect(mocks.userFills).toHaveBeenCalledTimes(2);
+		expect(container.querySelector('[aria-label="Switch to SOL market"]')).not.toBeNull();
+		expect(retryButton()).toBeUndefined();
+	});
+
 	it("drops the snapshot from the list again once every filter is cleared", async () => {
 		const liveFills = recentBuys().slice(0, 5);
 		const olderSell = fill(1, { coin: "SOL", crossed: true, side: "A" });

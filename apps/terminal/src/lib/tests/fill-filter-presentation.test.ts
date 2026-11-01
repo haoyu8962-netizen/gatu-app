@@ -88,8 +88,12 @@ describe("whether a fills snapshot reaches the live fills", () => {
 		expect(fillSnapshotReachesLiveFills(300, 301)).toBe(false);
 	});
 
-	it("has nothing to bridge when either side holds no fill", () => {
-		expect(fillSnapshotReachesLiveFills(null, 500)).toBe(true);
+	it("has nothing to bridge when the subscription holds no fill", () => {
 		expect(fillSnapshotReachesLiveFills(300, null)).toBe(true);
+		expect(fillSnapshotReachesLiveFills(null, null)).toBe(true);
+	});
+
+	it("does not let a snapshot without fills vouch for live fills the subscription may have dropped", () => {
+		expect(fillSnapshotReachesLiveFills(null, 500)).toBe(false);
 	});
 });
