@@ -467,8 +467,8 @@ msgstr "अनुरोध भेजे जाने से पहले खा�
 #~ msgstr "खाता मोड अपडेट किया गया"
 
 #: src/components/staking/staking-view.tsx
-msgid "Account staking data unavailable"
-msgstr "खाते का स्टेकिंग डेटा उपलब्ध नहीं है"
+#~ msgid "Account staking data unavailable"
+#~ msgstr "खाते का स्टेकिंग डेटा उपलब्ध नहीं है"
 
 #: src/components/staking/staking-view.tsx
 msgid "Account staking status"
@@ -508,8 +508,8 @@ msgid "Account Value weighted by LTV / Borrowed Amount. If this number is below 
 msgstr "LTV से भारित खाता मूल्य / उधार राशि। यह 100% से कम होने पर खाता और उधार नहीं ले सकता।"
 
 #: src/components/vaults/vaults-list.tsx
-msgid "Account Vault data could not be verified"
-msgstr "खाते का वॉल्ट डेटा सत्यापित नहीं किया जा सका"
+#~ msgid "Account Vault data could not be verified"
+#~ msgstr "खाते का वॉल्ट डेटा सत्यापित नहीं किया जा सका"
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Account-level agent approval"
@@ -1184,6 +1184,7 @@ msgid "Back to trade"
 msgstr "ट्रेड पर वापस जाएँ"
 
 #: src/components/vaults/vaults-page.tsx
+#: src/components/vaults/vaults-page.tsx
 msgid "Back to Vaults"
 msgstr "वॉल्ट पर वापस जाएँ"
 
@@ -1224,8 +1225,8 @@ msgid "Balances"
 msgstr "बैलेंस"
 
 #: src/components/staking/staking-view.tsx
-msgid "Balances remain unknown and every staking action is disabled until fresh data is verified."
-msgstr "नया डेटा सत्यापित होने तक बैलेंस अज्ञात रहेगा और हर स्टेकिंग कार्रवाई अक्षम रहेगी।"
+#~ msgid "Balances remain unknown and every staking action is disabled until fresh data is verified."
+#~ msgstr "नया डेटा सत्यापित होने तक बैलेंस अज्ञात रहेगा और हर स्टेकिंग कार्रवाई अक्षम रहेगी।"
 
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/orderbook/orderbook-row.tsx
@@ -1618,8 +1619,8 @@ msgstr "आपके क्षेत्र में उपलब्धता �
 #~ msgstr "क्षेत्रीय उपलब्धता जाँची जा रही है। ट्रेडिंग अस्थायी रूप से उपलब्ध नहीं है।"
 
 #: src/components/vaults/vault-detail-view.tsx
-msgid "Checking regional availability. Vault actions are temporarily unavailable."
-msgstr "क्षेत्रीय उपलब्धता जाँची जा रही है। वॉल्ट कार्रवाइयाँ अस्थायी रूप से उपलब्ध नहीं हैं।"
+#~ msgid "Checking regional availability. Vault actions are temporarily unavailable."
+#~ msgstr "क्षेत्रीय उपलब्धता जाँची जा रही है। वॉल्ट कार्रवाइयाँ अस्थायी रूप से उपलब्ध नहीं हैं।"
 
 #: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
 msgid "Checking the current Hyperliquid deposit route..."
@@ -2749,8 +2750,8 @@ msgid "Deposited"
 msgstr "जमा किया गया"
 
 #: src/components/vaults/vaults-list.tsx
-msgid "Deposited and Leading filters fail closed until both account snapshots are available."
-msgstr "दोनों खाता स्नैपशॉट उपलब्ध होने तक जमा और लीडिंग फ़िल्टर सुरक्षित रूप से अक्षम रहते हैं।"
+#~ msgid "Deposited and Leading filters fail closed until both account snapshots are available."
+#~ msgstr "दोनों खाता स्नैपशॉट उपलब्ध होने तक जमा और लीडिंग फ़िल्टर सुरक्षित रूप से अक्षम रहते हैं।"
 
 #: src/components/trade/tradebox/deposit/deposit-method-chooser.tsx
 #: src/lib/trade/privy-fiat-funding-feedback.ts
@@ -3271,14 +3272,14 @@ msgstr "अनु. स्लिपेज"
 msgid "Establish Connection"
 msgstr "कनेक्शन स्थापित करें"
 
-#. placeholder {0}: formatStakingRatio(props.weightedApr, numberFormat)
+#. placeholder {0}: props.weightedApr === null ? UNKNOWN_VALUE : formatStakingRatio(props.weightedApr, numberFormat)
 #: src/components/staking/staking-view.tsx
 msgid "Estimated APR {0}"
 msgstr "अनुमानित APR {0}"
 
 #: src/components/staking/staking-view.tsx
-msgid "Estimated APR unavailable"
-msgstr "अनुमानित APR उपलब्ध नहीं है"
+#~ msgid "Estimated APR unavailable"
+#~ msgstr "अनुमानित APR उपलब्ध नहीं है"
 
 #: src/components/trade/components/spot-swap-modal.tsx
 msgid "Estimated fee"
@@ -4745,6 +4746,7 @@ msgstr "टोकन मेटाडेटा लोड हो रहा है.
 
 #: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade-history/trade-history-page.tsx
+#: src/components/trade/mobile/mobile-history-tab.tsx
 msgid "Loading trade history"
 msgstr "ट्रेड इतिहास लोड हो रहा है"
 
@@ -5511,6 +5513,10 @@ msgstr "कोई निष्पादन नहीं मिला।"
 #: src/components/trade-history/trade-history-page.tsx
 msgid "No fills match the selected filters."
 msgstr "चुने गए फ़िल्टर से कोई फ़िल मेल नहीं खाता।"
+
+#: src/components/trade/mobile/mobile-history-tab.tsx
+msgid "No fills match these filters among the latest {snapshotLimit}."
+msgstr "नवीनतम {snapshotLimit} फिल में से कोई भी इन फ़िल्टरों से मेल नहीं खाती।"
 
 #: src/components/trade/mobile/mobile-history-tab.tsx
 msgid "No fills match these filters."
@@ -6909,8 +6915,8 @@ msgid "Recent reward claims"
 msgstr "हाल के पुरस्कार प्राप्ति रिकॉर्ड"
 
 #: src/components/referrals/referral-activity.tsx
-msgid "Recent reward claims could not be verified."
-msgstr "हाल के पुरस्कार प्राप्ति रिकॉर्ड सत्यापित नहीं किए जा सके।"
+#~ msgid "Recent reward claims could not be verified."
+#~ msgstr "हाल के पुरस्कार प्राप्ति रिकॉर्ड सत्यापित नहीं किए जा सके।"
 
 #: src/config/orderbook-labels.ts
 msgid "Recent Trades"
@@ -7038,8 +7044,8 @@ msgid "Referral codes must be between 1 and 20 characters."
 msgstr "रेफ़रल कोड 1 से 20 वर्णों के बीच होना चाहिए।"
 
 #: src/components/referrals/referral-dashboard.tsx
-msgid "Referral data unavailable"
-msgstr "रेफ़रल डेटा उपलब्ध नहीं है"
+#~ msgid "Referral data unavailable"
+#~ msgstr "रेफ़रल डेटा उपलब्ध नहीं है"
 
 #: src/components/referrals/referral-rewards-card.tsx
 msgid "Referral discounts do not apply to vaults or subaccounts."
@@ -7132,16 +7138,16 @@ msgid "Refresh referral data before submitting another signed request."
 msgstr "कोई दूसरा हस्ताक्षरित अनुरोध सबमिट करने से पहले रेफ़रल डेटा रीफ़्रेश करें।"
 
 #: src/components/referrals/referral-dashboard.tsx
-msgid "Refreshing referral data…"
-msgstr "रेफ़रल डेटा रीफ़्रेश हो रहा है…"
+#~ msgid "Refreshing referral data…"
+#~ msgstr "रेफ़रल डेटा रीफ़्रेश हो रहा है…"
 
 #: src/components/staking/staking-view.tsx
-msgid "Refreshing staking data…"
-msgstr "स्टेकिंग डेटा रीफ़्रेश हो रहा है…"
+#~ msgid "Refreshing staking data…"
+#~ msgstr "स्टेकिंग डेटा रीफ़्रेश हो रहा है…"
 
 #: src/components/vaults/vault-detail-view.tsx
-msgid "Refreshing Vault data. Actions are temporarily unavailable."
-msgstr "वॉल्ट डेटा रीफ़्रेश हो रहा है। कार्रवाइयाँ अस्थायी रूप से उपलब्ध नहीं हैं।"
+#~ msgid "Refreshing Vault data. Actions are temporarily unavailable."
+#~ msgstr "वॉल्ट डेटा रीफ़्रेश हो रहा है। कार्रवाइयाँ अस्थायी रूप से उपलब्ध नहीं हैं।"
 
 #: src/components/api-wallet/api-wallet-list.tsx
 #: src/components/leaderboard/leaderboard-view.tsx
@@ -7389,7 +7395,8 @@ msgstr "ट्रैकिंग फिर से शुरू करें"
 #: src/components/portfolio/portfolio-performance-chart.tsx
 #: src/components/referrals/referral-activity.tsx
 #: src/components/referrals/referral-dashboard.tsx
-#: src/components/staking/staking-view.tsx
+#: src/components/referrals/referral-dashboard.tsx
+#: src/components/referrals/referral-rewards-card.tsx
 #: src/components/staking/staking-view.tsx
 #: src/components/trade/chart/funding-history-load-boundary.tsx
 #: src/components/trade/chart/funding-history-panel.tsx
@@ -7400,6 +7407,7 @@ msgstr "ट्रैकिंग फिर से शुरू करें"
 #: src/components/trade/components/market-asset-info.tsx
 #: src/components/trade/components/market-asset-info.tsx
 #: src/components/trade/layout/terminal-boot-error.tsx
+#: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/offline-banner.tsx
 #: src/components/trade/positions/account-transfers-tab.tsx
 #: src/components/trade/positions/account-transfers-tab.tsx
@@ -7414,14 +7422,16 @@ msgstr "ट्रैकिंग फिर से शुरू करें"
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #: src/components/trade/twap-history-feedback.tsx
 #: src/components/ui/history-page-unavailable.tsx
+#: src/components/vaults/vault-detail-view.tsx
+#: src/components/vaults/vaults-list.tsx
 #: src/components/vaults/vaults-list.tsx
 #: src/components/vaults/vaults-page.tsx
 msgid "Retry"
 msgstr "फिर से प्रयास करें"
 
 #: src/components/vaults/vault-detail-view.tsx
-msgid "Retry account data"
-msgstr "खाता डेटा फिर लोड करें"
+#~ msgid "Retry account data"
+#~ msgstr "खाता डेटा फिर लोड करें"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Retry check"
@@ -7592,8 +7602,8 @@ msgid "Reward history is scoped to the verified owner."
 msgstr "पुरस्कार इतिहास सत्यापित मालिक तक सीमित है।"
 
 #: src/components/staking/staking-view.tsx
-msgid "Reward history unavailable"
-msgstr "पुरस्कार इतिहास उपलब्ध नहीं है"
+#~ msgid "Reward history unavailable"
+#~ msgstr "पुरस्कार इतिहास उपलब्ध नहीं है"
 
 #: src/components/staking/staking-view.tsx
 msgid "Reward source"
@@ -8359,8 +8369,8 @@ msgid "Staking action history table"
 msgstr "स्टेकिंग कार्रवाई इतिहास तालिका"
 
 #: src/components/staking/staking-view.tsx
-msgid "Staking action history unavailable"
-msgstr "स्टेकिंग कार्रवाई इतिहास उपलब्ध नहीं है"
+#~ msgid "Staking action history unavailable"
+#~ msgstr "स्टेकिंग कार्रवाई इतिहास उपलब्ध नहीं है"
 
 #: src/components/staking/staking-view.tsx
 msgid "Staking actions"
@@ -9142,8 +9152,8 @@ msgstr "गैस-स्पॉन्सर्ड वॉलेट किसी �
 #~ msgstr "बनाई गई कुंजी केवल इसी टैब में रहती है। कोई अन्य कुंजी स्वीकृत न करें और न ही पेज रीलोड करें।"
 
 #: src/components/staking/staking-view.tsx
-msgid "The history response could not be verified."
-msgstr "इतिहास प्रतिक्रिया सत्यापित नहीं की जा सकी।"
+#~ msgid "The history response could not be verified."
+#~ msgstr "इतिहास प्रतिक्रिया सत्यापित नहीं की जा सकी।"
 
 #: src/lib/trade/funds-action-feedback.ts
 msgid "The Hyperliquid deposit route changed before signing. Review the updated route and retry."
@@ -9300,8 +9310,8 @@ msgstr "निजी कुंजी इसी ब्राउज़र मे�
 #~ msgstr "निजी कुंजी इसी डेस्कटॉप पर बनाई जाती है और QR कोड में एम्बेड की जाती है।"
 
 #: src/components/vaults/vaults-list.tsx
-msgid "The public Vault feed could not be verified. No cached or cross-network rows are shown in its place."
-msgstr "सार्वजनिक वॉल्ट फ़ीड सत्यापित नहीं की जा सकी। उसकी जगह कोई कैश की गई या दूसरे नेटवर्क की पंक्ति नहीं दिखाई जाती।"
+#~ msgid "The public Vault feed could not be verified. No cached or cross-network rows are shown in its place."
+#~ msgstr "सार्वजनिक वॉल्ट फ़ीड सत्यापित नहीं की जा सकी। उसकी जगह कोई कैश की गई या दूसरे नेटवर्क की पंक्ति नहीं दिखाई जाती।"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "The QR can trade but not withdraw. Approving replaces the key on a phone that is already linked. Do not share it, screenshot it or show it while sharing your screen."
@@ -9387,20 +9397,20 @@ msgid "The response could not be verified. No partial order history is shown."
 msgstr "प्रतिक्रिया सत्यापित नहीं की जा सकी। कोई आंशिक ऑर्डर इतिहास नहीं दिखाया जाता।"
 
 #: src/components/referrals/referral-dashboard.tsx
-msgid "The response could not be verified. No referral action is available until fresh data loads."
-msgstr "जवाब सत्यापित नहीं किया जा सका। नया डेटा लोड होने तक कोई रेफ़रल कार्रवाई उपलब्ध नहीं है।"
+#~ msgid "The response could not be verified. No referral action is available until fresh data loads."
+#~ msgstr "जवाब सत्यापित नहीं किया जा सका। नया डेटा लोड होने तक कोई रेफ़रल कार्रवाई उपलब्ध नहीं है।"
 
 #: src/components/staking/staking-view.tsx
-msgid "The response could not be verified. No validator action is available."
-msgstr "प्रतिक्रिया सत्यापित नहीं की जा सकी। कोई वैलिडेटर कार्रवाई उपलब्ध नहीं है।"
+#~ msgid "The response could not be verified. No validator action is available."
+#~ msgstr "प्रतिक्रिया सत्यापित नहीं की जा सकी। कोई वैलिडेटर कार्रवाई उपलब्ध नहीं है।"
 
 #: src/components/vaults/vaults-page.tsx
-msgid "The response was missing, malformed, or could not be verified. No placeholder financial data is shown."
-msgstr "प्रतिक्रिया अनुपलब्ध, विकृत या असत्यापित थी। कोई प्लेसहोल्डर वित्तीय डेटा नहीं दिखाया जाता।"
+#~ msgid "The response was missing, malformed, or could not be verified. No placeholder financial data is shown."
+#~ msgstr "प्रतिक्रिया अनुपलब्ध, विकृत या असत्यापित थी। कोई प्लेसहोल्डर वित्तीय डेटा नहीं दिखाया जाता।"
 
 #: src/components/staking/staking-view.tsx
-msgid "The reward response could not be verified."
-msgstr "पुरस्कार प्रतिक्रिया सत्यापित नहीं की जा सकी।"
+#~ msgid "The reward response could not be verified."
+#~ msgstr "पुरस्कार प्रतिक्रिया सत्यापित नहीं की जा सकी।"
 
 #: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
@@ -10617,8 +10627,8 @@ msgid "Unable to verify regional availability. Trading is temporarily unavailabl
 msgstr "क्षेत्रीय उपलब्धता सत्यापित नहीं की जा सकी। ट्रेडिंग अस्थायी रूप से उपलब्ध नहीं है।"
 
 #: src/components/vaults/vault-detail-view.tsx
-msgid "Unable to verify regional availability. Vault actions are temporarily unavailable."
-msgstr "क्षेत्रीय उपलब्धता सत्यापित नहीं की जा सकी। वॉल्ट कार्रवाइयाँ अस्थायी रूप से उपलब्ध नहीं हैं।"
+#~ msgid "Unable to verify regional availability. Vault actions are temporarily unavailable."
+#~ msgstr "क्षेत्रीय उपलब्धता सत्यापित नहीं की जा सकी। वॉल्ट कार्रवाइयाँ अस्थायी रूप से उपलब्ध नहीं हैं।"
 
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
@@ -10955,8 +10965,8 @@ msgid "Validator commission"
 msgstr "वैलिडेटर कमीशन"
 
 #: src/components/staking/staking-view.tsx
-msgid "Validator data unavailable"
-msgstr "वैलिडेटर डेटा उपलब्ध नहीं है"
+#~ msgid "Validator data unavailable"
+#~ msgstr "वैलिडेटर डेटा उपलब्ध नहीं है"
 
 #: src/components/staking/staking-view.tsx
 msgid "Validator performance"
@@ -11006,8 +11016,8 @@ msgid "Vault Commission"
 msgstr "वॉल्ट कमीशन"
 
 #: src/components/vaults/vaults-list.tsx
-msgid "Vault data is unavailable"
-msgstr "वॉल्ट डेटा उपलब्ध नहीं है"
+#~ msgid "Vault data is unavailable"
+#~ msgstr "वॉल्ट डेटा उपलब्ध नहीं है"
 
 #: src/components/funds-action/funds-action-recovery-host.tsx
 msgid "Vault deposit"
@@ -11026,8 +11036,8 @@ msgid "Vault depositors"
 msgstr "वॉल्ट जमाकर्ता"
 
 #: src/components/vaults/vaults-page.tsx
-msgid "Vault details are unavailable"
-msgstr "वॉल्ट विवरण उपलब्ध नहीं है"
+#~ msgid "Vault details are unavailable"
+#~ msgstr "वॉल्ट विवरण उपलब्ध नहीं है"
 
 #: src/config/account-ledger.ts
 msgid "Vault Distribution"
@@ -11102,8 +11112,8 @@ msgid "Verification reference"
 msgstr "सत्यापन संदर्भ"
 
 #: src/components/vaults/vault-detail-view.tsx
-msgid "Verified Vault details are unavailable."
-msgstr "सत्यापित वॉल्ट विवरण उपलब्ध नहीं हैं।"
+#~ msgid "Verified Vault details are unavailable."
+#~ msgstr "सत्यापित वॉल्ट विवरण उपलब्ध नहीं हैं।"
 
 #. placeholder {0}: formatVaultUsd(availableAmount, numberFormat)
 #: src/components/vaults/vault-action-modal.tsx
@@ -11143,8 +11153,8 @@ msgid "Verifying from history"
 msgstr "इतिहास से सत्यापित किया जा रहा है"
 
 #: src/components/vaults/vault-detail-view.tsx
-msgid "Verifying the owner Vault balance before enabling withdrawals."
-msgstr "निकासी सक्षम करने से पहले मालिक का वॉल्ट बैलेंस सत्यापित किया जा रहा है।"
+#~ msgid "Verifying the owner Vault balance before enabling withdrawals."
+#~ msgstr "निकासी सक्षम करने से पहले मालिक का वॉल्ट बैलेंस सत्यापित किया जा रहा है।"
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Verifying the result"
@@ -11425,8 +11435,8 @@ msgid "Withdrawal remains locked until the server-reported unlock time."
 msgstr "सर्वर द्वारा बताए गए अनलॉक समय तक निकासी लॉक रहेगी।"
 
 #: src/components/vaults/vault-detail-view.tsx
-msgid "Withdrawal remains unavailable until the owner balance is verified."
-msgstr "मालिक का बैलेंस सत्यापित होने तक निकासी उपलब्ध नहीं रहेगी।"
+#~ msgid "Withdrawal remains unavailable until the owner balance is verified."
+#~ msgstr "मालिक का बैलेंस सत्यापित होने तक निकासी उपलब्ध नहीं रहेगी।"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Withdrawal status unknown"
@@ -11707,8 +11717,8 @@ msgid "Your transaction is being processed"
 msgstr "आपका लेन-देन प्रोसेस हो रहा है"
 
 #: src/components/vaults/vault-detail-view.tsx
-msgid "Your Vault balance could not be verified. Account values and withdrawal remain unavailable."
-msgstr "आपका वॉल्ट बैलेंस सत्यापित नहीं किया जा सका। खाता मूल्य और निकासी उपलब्ध नहीं रहेंगे।"
+#~ msgid "Your Vault balance could not be verified. Account values and withdrawal remain unavailable."
+#~ msgstr "आपका वॉल्ट बैलेंस सत्यापित नहीं किया जा सका। खाता मूल्य और निकासी उपलब्ध नहीं रहेंगे।"
 
 #: src/lib/trade/privy-fiat-funding-feedback.ts
 msgid "Your wallet session changed, so the card purchase did not open. Reconnect your wallet and try again."

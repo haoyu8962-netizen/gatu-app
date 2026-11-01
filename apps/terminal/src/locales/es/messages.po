@@ -467,8 +467,8 @@ msgstr "El modo de cuenta cambió antes de enviar la solicitud. Revisa los saldo
 #~ msgstr "Modo de cuenta actualizado"
 
 #: src/components/staking/staking-view.tsx
-msgid "Account staking data unavailable"
-msgstr "Datos de staking de la cuenta no disponibles"
+#~ msgid "Account staking data unavailable"
+#~ msgstr "Datos de staking de la cuenta no disponibles"
 
 #: src/components/staking/staking-view.tsx
 msgid "Account staking status"
@@ -508,8 +508,8 @@ msgid "Account Value weighted by LTV / Borrowed Amount. If this number is below 
 msgstr "Valor de la cuenta ponderado por LTV / importe prestado. Si este valor es inferior al 100 %, la cuenta no puede pedir más prestado."
 
 #: src/components/vaults/vaults-list.tsx
-msgid "Account Vault data could not be verified"
-msgstr "No se pudieron verificar los datos de la bóveda de la cuenta"
+#~ msgid "Account Vault data could not be verified"
+#~ msgstr "No se pudieron verificar los datos de la bóveda de la cuenta"
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Account-level agent approval"
@@ -1184,6 +1184,7 @@ msgid "Back to trade"
 msgstr "Volver a operar"
 
 #: src/components/vaults/vaults-page.tsx
+#: src/components/vaults/vaults-page.tsx
 msgid "Back to Vaults"
 msgstr "Volver a bóvedas"
 
@@ -1224,8 +1225,8 @@ msgid "Balances"
 msgstr "Saldos"
 
 #: src/components/staking/staking-view.tsx
-msgid "Balances remain unknown and every staking action is disabled until fresh data is verified."
-msgstr "Los saldos no están disponibles y todas las acciones de staking permanecen deshabilitadas hasta que se verifiquen datos actualizados."
+#~ msgid "Balances remain unknown and every staking action is disabled until fresh data is verified."
+#~ msgstr "Los saldos no están disponibles y todas las acciones de staking permanecen deshabilitadas hasta que se verifiquen datos actualizados."
 
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/orderbook/orderbook-row.tsx
@@ -1618,8 +1619,8 @@ msgstr "Comprobando la disponibilidad en tu región. Las operaciones con fondos 
 #~ msgstr "Comprobando la disponibilidad regional. El trading no está disponible temporalmente."
 
 #: src/components/vaults/vault-detail-view.tsx
-msgid "Checking regional availability. Vault actions are temporarily unavailable."
-msgstr "Comprobando la disponibilidad regional. Las acciones de bóveda no están disponibles temporalmente."
+#~ msgid "Checking regional availability. Vault actions are temporarily unavailable."
+#~ msgstr "Comprobando la disponibilidad regional. Las acciones de bóveda no están disponibles temporalmente."
 
 #: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
 msgid "Checking the current Hyperliquid deposit route..."
@@ -2749,8 +2750,8 @@ msgid "Deposited"
 msgstr "Con depósito"
 
 #: src/components/vaults/vaults-list.tsx
-msgid "Deposited and Leading filters fail closed until both account snapshots are available."
-msgstr "Los filtros Con depósito y Líder permanecen deshabilitados de forma segura hasta que ambas instantáneas de la cuenta estén disponibles."
+#~ msgid "Deposited and Leading filters fail closed until both account snapshots are available."
+#~ msgstr "Los filtros Con depósito y Líder permanecen deshabilitados de forma segura hasta que ambas instantáneas de la cuenta estén disponibles."
 
 #: src/components/trade/tradebox/deposit/deposit-method-chooser.tsx
 #: src/lib/trade/privy-fiat-funding-feedback.ts
@@ -3271,14 +3272,14 @@ msgstr "Deslizamiento est."
 msgid "Establish Connection"
 msgstr "Establecer conexión"
 
-#. placeholder {0}: formatStakingRatio(props.weightedApr, numberFormat)
+#. placeholder {0}: props.weightedApr === null ? UNKNOWN_VALUE : formatStakingRatio(props.weightedApr, numberFormat)
 #: src/components/staking/staking-view.tsx
 msgid "Estimated APR {0}"
 msgstr "APR estimado: {0}"
 
 #: src/components/staking/staking-view.tsx
-msgid "Estimated APR unavailable"
-msgstr "APR estimado no disponible"
+#~ msgid "Estimated APR unavailable"
+#~ msgstr "APR estimado no disponible"
 
 #: src/components/trade/components/spot-swap-modal.tsx
 msgid "Estimated fee"
@@ -4745,6 +4746,7 @@ msgstr "Cargando metadatos del token..."
 
 #: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade-history/trade-history-page.tsx
+#: src/components/trade/mobile/mobile-history-tab.tsx
 msgid "Loading trade history"
 msgstr "Cargando el historial de operaciones"
 
@@ -5511,6 +5513,10 @@ msgstr "No se encontraron ejecuciones."
 #: src/components/trade-history/trade-history-page.tsx
 msgid "No fills match the selected filters."
 msgstr "Ninguna ejecución coincide con los filtros seleccionados."
+
+#: src/components/trade/mobile/mobile-history-tab.tsx
+msgid "No fills match these filters among the latest {snapshotLimit}."
+msgstr "Ninguna de las últimas {snapshotLimit} ejecuciones coincide con estos filtros."
 
 #: src/components/trade/mobile/mobile-history-tab.tsx
 msgid "No fills match these filters."
@@ -6909,8 +6915,8 @@ msgid "Recent reward claims"
 msgstr "Reclamaciones recientes de recompensas"
 
 #: src/components/referrals/referral-activity.tsx
-msgid "Recent reward claims could not be verified."
-msgstr "No se pudieron verificar las reclamaciones recientes de recompensas."
+#~ msgid "Recent reward claims could not be verified."
+#~ msgstr "No se pudieron verificar las reclamaciones recientes de recompensas."
 
 #: src/config/orderbook-labels.ts
 msgid "Recent Trades"
@@ -7038,8 +7044,8 @@ msgid "Referral codes must be between 1 and 20 characters."
 msgstr "Los códigos de referido deben tener entre 1 y 20 caracteres."
 
 #: src/components/referrals/referral-dashboard.tsx
-msgid "Referral data unavailable"
-msgstr "Datos de referidos no disponibles"
+#~ msgid "Referral data unavailable"
+#~ msgstr "Datos de referidos no disponibles"
 
 #: src/components/referrals/referral-rewards-card.tsx
 msgid "Referral discounts do not apply to vaults or subaccounts."
@@ -7132,16 +7138,16 @@ msgid "Refresh referral data before submitting another signed request."
 msgstr "Actualiza los datos de referidos antes de enviar otra solicitud firmada."
 
 #: src/components/referrals/referral-dashboard.tsx
-msgid "Refreshing referral data…"
-msgstr "Actualizando los datos de referidos…"
+#~ msgid "Refreshing referral data…"
+#~ msgstr "Actualizando los datos de referidos…"
 
 #: src/components/staking/staking-view.tsx
-msgid "Refreshing staking data…"
-msgstr "Actualizando datos de staking…"
+#~ msgid "Refreshing staking data…"
+#~ msgstr "Actualizando datos de staking…"
 
 #: src/components/vaults/vault-detail-view.tsx
-msgid "Refreshing Vault data. Actions are temporarily unavailable."
-msgstr "Actualizando los datos de las bóvedas. Las acciones no están disponibles temporalmente."
+#~ msgid "Refreshing Vault data. Actions are temporarily unavailable."
+#~ msgstr "Actualizando los datos de las bóvedas. Las acciones no están disponibles temporalmente."
 
 #: src/components/api-wallet/api-wallet-list.tsx
 #: src/components/leaderboard/leaderboard-view.tsx
@@ -7389,7 +7395,8 @@ msgstr "Reanudar seguimiento"
 #: src/components/portfolio/portfolio-performance-chart.tsx
 #: src/components/referrals/referral-activity.tsx
 #: src/components/referrals/referral-dashboard.tsx
-#: src/components/staking/staking-view.tsx
+#: src/components/referrals/referral-dashboard.tsx
+#: src/components/referrals/referral-rewards-card.tsx
 #: src/components/staking/staking-view.tsx
 #: src/components/trade/chart/funding-history-load-boundary.tsx
 #: src/components/trade/chart/funding-history-panel.tsx
@@ -7400,6 +7407,7 @@ msgstr "Reanudar seguimiento"
 #: src/components/trade/components/market-asset-info.tsx
 #: src/components/trade/components/market-asset-info.tsx
 #: src/components/trade/layout/terminal-boot-error.tsx
+#: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/offline-banner.tsx
 #: src/components/trade/positions/account-transfers-tab.tsx
 #: src/components/trade/positions/account-transfers-tab.tsx
@@ -7414,14 +7422,16 @@ msgstr "Reanudar seguimiento"
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #: src/components/trade/twap-history-feedback.tsx
 #: src/components/ui/history-page-unavailable.tsx
+#: src/components/vaults/vault-detail-view.tsx
+#: src/components/vaults/vaults-list.tsx
 #: src/components/vaults/vaults-list.tsx
 #: src/components/vaults/vaults-page.tsx
 msgid "Retry"
 msgstr "Reintentar"
 
 #: src/components/vaults/vault-detail-view.tsx
-msgid "Retry account data"
-msgstr "Reintentar datos de cuenta"
+#~ msgid "Retry account data"
+#~ msgstr "Reintentar datos de cuenta"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Retry check"
@@ -7592,8 +7602,8 @@ msgid "Reward history is scoped to the verified owner."
 msgstr "El historial de recompensas se limita al propietario verificado."
 
 #: src/components/staking/staking-view.tsx
-msgid "Reward history unavailable"
-msgstr "Historial de recompensas no disponible"
+#~ msgid "Reward history unavailable"
+#~ msgstr "Historial de recompensas no disponible"
 
 #: src/components/staking/staking-view.tsx
 msgid "Reward source"
@@ -8359,8 +8369,8 @@ msgid "Staking action history table"
 msgstr "Tabla del historial de acciones de staking"
 
 #: src/components/staking/staking-view.tsx
-msgid "Staking action history unavailable"
-msgstr "El historial de acciones de staking no está disponible"
+#~ msgid "Staking action history unavailable"
+#~ msgstr "El historial de acciones de staking no está disponible"
 
 #: src/components/staking/staking-view.tsx
 msgid "Staking actions"
@@ -9142,8 +9152,8 @@ msgstr "El monedero con gas patrocinado está configurado para otra red de Arbit
 #~ msgstr "La clave generada permanece solo en esta pestaña. No apruebes otra clave ni recargues la página."
 
 #: src/components/staking/staking-view.tsx
-msgid "The history response could not be verified."
-msgstr "No se pudo verificar la respuesta del historial."
+#~ msgid "The history response could not be verified."
+#~ msgstr "No se pudo verificar la respuesta del historial."
 
 #: src/lib/trade/funds-action-feedback.ts
 msgid "The Hyperliquid deposit route changed before signing. Review the updated route and retry."
@@ -9300,8 +9310,8 @@ msgstr "La clave privada se crea en este navegador y {BRAND_NAME} nunca la carga
 #~ msgstr "La clave privada se crea en este escritorio y se incrusta en el código QR."
 
 #: src/components/vaults/vaults-list.tsx
-msgid "The public Vault feed could not be verified. No cached or cross-network rows are shown in its place."
-msgstr "No se pudo verificar el feed público de bóvedas. No se muestran en su lugar filas en caché ni procedentes de otra red."
+#~ msgid "The public Vault feed could not be verified. No cached or cross-network rows are shown in its place."
+#~ msgstr "No se pudo verificar el feed público de bóvedas. No se muestran en su lugar filas en caché ni procedentes de otra red."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "The QR can trade but not withdraw. Approving replaces the key on a phone that is already linked. Do not share it, screenshot it or show it while sharing your screen."
@@ -9387,20 +9397,20 @@ msgid "The response could not be verified. No partial order history is shown."
 msgstr "No se pudo verificar la respuesta. No se muestra un historial parcial de órdenes."
 
 #: src/components/referrals/referral-dashboard.tsx
-msgid "The response could not be verified. No referral action is available until fresh data loads."
-msgstr "No se pudo verificar la respuesta. No hay acciones de referido disponibles hasta que se carguen datos nuevos."
+#~ msgid "The response could not be verified. No referral action is available until fresh data loads."
+#~ msgstr "No se pudo verificar la respuesta. No hay acciones de referido disponibles hasta que se carguen datos nuevos."
 
 #: src/components/staking/staking-view.tsx
-msgid "The response could not be verified. No validator action is available."
-msgstr "No se pudo verificar la respuesta. No hay disponible ninguna acción del validador."
+#~ msgid "The response could not be verified. No validator action is available."
+#~ msgstr "No se pudo verificar la respuesta. No hay disponible ninguna acción del validador."
 
 #: src/components/vaults/vaults-page.tsx
-msgid "The response was missing, malformed, or could not be verified. No placeholder financial data is shown."
-msgstr "La respuesta no llegó, tenía un formato incorrecto o no pudo verificarse. No se muestran datos financieros de ejemplo."
+#~ msgid "The response was missing, malformed, or could not be verified. No placeholder financial data is shown."
+#~ msgstr "La respuesta no llegó, tenía un formato incorrecto o no pudo verificarse. No se muestran datos financieros de ejemplo."
 
 #: src/components/staking/staking-view.tsx
-msgid "The reward response could not be verified."
-msgstr "No se pudo verificar la respuesta de recompensa."
+#~ msgid "The reward response could not be verified."
+#~ msgstr "No se pudo verificar la respuesta de recompensa."
 
 #: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
@@ -10617,8 +10627,8 @@ msgid "Unable to verify regional availability. Trading is temporarily unavailabl
 msgstr "No se pudo verificar la disponibilidad regional. El trading no está disponible temporalmente."
 
 #: src/components/vaults/vault-detail-view.tsx
-msgid "Unable to verify regional availability. Vault actions are temporarily unavailable."
-msgstr "No se pudo verificar la disponibilidad regional. Las acciones de bóveda no están disponibles temporalmente."
+#~ msgid "Unable to verify regional availability. Vault actions are temporarily unavailable."
+#~ msgstr "No se pudo verificar la disponibilidad regional. Las acciones de bóveda no están disponibles temporalmente."
 
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
@@ -10955,8 +10965,8 @@ msgid "Validator commission"
 msgstr "Comisión del validador"
 
 #: src/components/staking/staking-view.tsx
-msgid "Validator data unavailable"
-msgstr "Datos del validador no disponibles"
+#~ msgid "Validator data unavailable"
+#~ msgstr "Datos del validador no disponibles"
 
 #: src/components/staking/staking-view.tsx
 msgid "Validator performance"
@@ -11006,8 +11016,8 @@ msgid "Vault Commission"
 msgstr "Comisión de la bóveda"
 
 #: src/components/vaults/vaults-list.tsx
-msgid "Vault data is unavailable"
-msgstr "Los datos de la bóveda no están disponibles"
+#~ msgid "Vault data is unavailable"
+#~ msgstr "Los datos de la bóveda no están disponibles"
 
 #: src/components/funds-action/funds-action-recovery-host.tsx
 msgid "Vault deposit"
@@ -11026,8 +11036,8 @@ msgid "Vault depositors"
 msgstr "Depositantes de la bóveda"
 
 #: src/components/vaults/vaults-page.tsx
-msgid "Vault details are unavailable"
-msgstr "Los detalles de la bóveda no están disponibles"
+#~ msgid "Vault details are unavailable"
+#~ msgstr "Los detalles de la bóveda no están disponibles"
 
 #: src/config/account-ledger.ts
 msgid "Vault Distribution"
@@ -11102,8 +11112,8 @@ msgid "Verification reference"
 msgstr "Referencia de verificación"
 
 #: src/components/vaults/vault-detail-view.tsx
-msgid "Verified Vault details are unavailable."
-msgstr "Los detalles verificados de la bóveda no están disponibles."
+#~ msgid "Verified Vault details are unavailable."
+#~ msgstr "Los detalles verificados de la bóveda no están disponibles."
 
 #. placeholder {0}: formatVaultUsd(availableAmount, numberFormat)
 #: src/components/vaults/vault-action-modal.tsx
@@ -11143,8 +11153,8 @@ msgid "Verifying from history"
 msgstr "Verificando desde el historial"
 
 #: src/components/vaults/vault-detail-view.tsx
-msgid "Verifying the owner Vault balance before enabling withdrawals."
-msgstr "Verificando el saldo de la bóveda del propietario antes de habilitar los retiros."
+#~ msgid "Verifying the owner Vault balance before enabling withdrawals."
+#~ msgstr "Verificando el saldo de la bóveda del propietario antes de habilitar los retiros."
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Verifying the result"
@@ -11425,8 +11435,8 @@ msgid "Withdrawal remains locked until the server-reported unlock time."
 msgstr "El retiro permanece bloqueado hasta el momento de desbloqueo informado por el servidor."
 
 #: src/components/vaults/vault-detail-view.tsx
-msgid "Withdrawal remains unavailable until the owner balance is verified."
-msgstr "El retiro no está disponible hasta que se verifique el saldo del propietario."
+#~ msgid "Withdrawal remains unavailable until the owner balance is verified."
+#~ msgstr "El retiro no está disponible hasta que se verifique el saldo del propietario."
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Withdrawal status unknown"
@@ -11707,8 +11717,8 @@ msgid "Your transaction is being processed"
 msgstr "Tu transacción se está procesando"
 
 #: src/components/vaults/vault-detail-view.tsx
-msgid "Your Vault balance could not be verified. Account values and withdrawal remain unavailable."
-msgstr "No se pudo verificar el saldo de tu bóveda. Los valores de la cuenta y el retiro siguen sin estar disponibles."
+#~ msgid "Your Vault balance could not be verified. Account values and withdrawal remain unavailable."
+#~ msgstr "No se pudo verificar el saldo de tu bóveda. Los valores de la cuenta y el retiro siguen sin estar disponibles."
 
 #: src/lib/trade/privy-fiat-funding-feedback.ts
 msgid "Your wallet session changed, so the card purchase did not open. Reconnect your wallet and try again."

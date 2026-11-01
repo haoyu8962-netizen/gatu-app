@@ -467,8 +467,8 @@ msgstr "تغيّر وضع الحساب قبل إرسال الطلب. راجع ا
 #~ msgstr "تم تحديث وضع الحساب"
 
 #: src/components/staking/staking-view.tsx
-msgid "Account staking data unavailable"
-msgstr "بيانات تخزين الحساب غير متاحة"
+#~ msgid "Account staking data unavailable"
+#~ msgstr "بيانات تخزين الحساب غير متاحة"
 
 #: src/components/staking/staking-view.tsx
 msgid "Account staking status"
@@ -508,8 +508,8 @@ msgid "Account Value weighted by LTV / Borrowed Amount. If this number is below 
 msgstr "قيمة الحساب المرجّحة بنسبة LTV / المبلغ المقترض. إذا كانت أقل من 100% فلا يمكن للحساب اقتراض المزيد."
 
 #: src/components/vaults/vaults-list.tsx
-msgid "Account Vault data could not be verified"
-msgstr "تعذّر التحقق من بيانات خزائن الحساب"
+#~ msgid "Account Vault data could not be verified"
+#~ msgstr "تعذّر التحقق من بيانات خزائن الحساب"
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Account-level agent approval"
@@ -1184,6 +1184,7 @@ msgid "Back to trade"
 msgstr "العودة إلى التداول"
 
 #: src/components/vaults/vaults-page.tsx
+#: src/components/vaults/vaults-page.tsx
 msgid "Back to Vaults"
 msgstr "العودة إلى الخزائن"
 
@@ -1224,8 +1225,8 @@ msgid "Balances"
 msgstr "الأرصدة"
 
 #: src/components/staking/staking-view.tsx
-msgid "Balances remain unknown and every staking action is disabled until fresh data is verified."
-msgstr "تظل الأرصدة غير معروفة وتُعطّل جميع إجراءات التخزين حتى يتم التحقق من بيانات حديثة."
+#~ msgid "Balances remain unknown and every staking action is disabled until fresh data is verified."
+#~ msgstr "تظل الأرصدة غير معروفة وتُعطّل جميع إجراءات التخزين حتى يتم التحقق من بيانات حديثة."
 
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/orderbook/orderbook-row.tsx
@@ -1618,8 +1619,8 @@ msgstr "جارٍ التحقق من التوفر في منطقتك. عمليات 
 #~ msgstr "جارٍ التحقق من التوفر الإقليمي. التداول غير متاح مؤقتًا."
 
 #: src/components/vaults/vault-detail-view.tsx
-msgid "Checking regional availability. Vault actions are temporarily unavailable."
-msgstr "جارٍ التحقق من التوفر الإقليمي. إجراءات الخزائن غير متاحة مؤقتًا."
+#~ msgid "Checking regional availability. Vault actions are temporarily unavailable."
+#~ msgstr "جارٍ التحقق من التوفر الإقليمي. إجراءات الخزائن غير متاحة مؤقتًا."
 
 #: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
 msgid "Checking the current Hyperliquid deposit route..."
@@ -2749,8 +2750,8 @@ msgid "Deposited"
 msgstr "تم الإيداع"
 
 #: src/components/vaults/vaults-list.tsx
-msgid "Deposited and Leading filters fail closed until both account snapshots are available."
-msgstr "تظل عوامل تصفية «تم الإيداع» و«القيادة» غير متاحة احترازيًا حتى تتوفر لقطتا الحساب."
+#~ msgid "Deposited and Leading filters fail closed until both account snapshots are available."
+#~ msgstr "تظل عوامل تصفية «تم الإيداع» و«القيادة» غير متاحة احترازيًا حتى تتوفر لقطتا الحساب."
 
 #: src/components/trade/tradebox/deposit/deposit-method-chooser.tsx
 #: src/lib/trade/privy-fiat-funding-feedback.ts
@@ -3271,14 +3272,14 @@ msgstr "الانزلاق المقدر"
 msgid "Establish Connection"
 msgstr "إنشاء اتصال"
 
-#. placeholder {0}: formatStakingRatio(props.weightedApr, numberFormat)
+#. placeholder {0}: props.weightedApr === null ? UNKNOWN_VALUE : formatStakingRatio(props.weightedApr, numberFormat)
 #: src/components/staking/staking-view.tsx
 msgid "Estimated APR {0}"
 msgstr "معدل العائد السنوي التقديري {0}"
 
 #: src/components/staking/staking-view.tsx
-msgid "Estimated APR unavailable"
-msgstr "معدل العائد السنوي التقديري غير متاح"
+#~ msgid "Estimated APR unavailable"
+#~ msgstr "معدل العائد السنوي التقديري غير متاح"
 
 #: src/components/trade/components/spot-swap-modal.tsx
 msgid "Estimated fee"
@@ -4745,6 +4746,7 @@ msgstr "جارٍ تحميل البيانات الوصفية للرمز..."
 
 #: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade-history/trade-history-page.tsx
+#: src/components/trade/mobile/mobile-history-tab.tsx
 msgid "Loading trade history"
 msgstr "جارٍ تحميل سجل الصفقات"
 
@@ -5511,6 +5513,10 @@ msgstr "لم يتم العثور على تنفيذات."
 #: src/components/trade-history/trade-history-page.tsx
 msgid "No fills match the selected filters."
 msgstr "لا توجد عمليات تنفيذ تطابق عوامل التصفية المحددة."
+
+#: src/components/trade/mobile/mobile-history-tab.tsx
+msgid "No fills match these filters among the latest {snapshotLimit}."
+msgstr "لا يطابق أيٌّ من آخر {snapshotLimit} تنفيذ عوامل التصفية هذه."
 
 #: src/components/trade/mobile/mobile-history-tab.tsx
 msgid "No fills match these filters."
@@ -6909,8 +6915,8 @@ msgid "Recent reward claims"
 msgstr "المطالبات الحديثة بالمكافآت"
 
 #: src/components/referrals/referral-activity.tsx
-msgid "Recent reward claims could not be verified."
-msgstr "تعذّر التحقق من المطالبات الحديثة بالمكافآت."
+#~ msgid "Recent reward claims could not be verified."
+#~ msgstr "تعذّر التحقق من المطالبات الحديثة بالمكافآت."
 
 #: src/config/orderbook-labels.ts
 msgid "Recent Trades"
@@ -7038,8 +7044,8 @@ msgid "Referral codes must be between 1 and 20 characters."
 msgstr "يجب أن تتكون رموز الإحالة من 1 إلى 20 حرفًا."
 
 #: src/components/referrals/referral-dashboard.tsx
-msgid "Referral data unavailable"
-msgstr "بيانات الإحالة غير متاحة"
+#~ msgid "Referral data unavailable"
+#~ msgstr "بيانات الإحالة غير متاحة"
 
 #: src/components/referrals/referral-rewards-card.tsx
 msgid "Referral discounts do not apply to vaults or subaccounts."
@@ -7132,16 +7138,16 @@ msgid "Refresh referral data before submitting another signed request."
 msgstr "حدّث بيانات الإحالة قبل إرسال طلب موقّع آخر."
 
 #: src/components/referrals/referral-dashboard.tsx
-msgid "Refreshing referral data…"
-msgstr "جارٍ تحديث بيانات الإحالة…"
+#~ msgid "Refreshing referral data…"
+#~ msgstr "جارٍ تحديث بيانات الإحالة…"
 
 #: src/components/staking/staking-view.tsx
-msgid "Refreshing staking data…"
-msgstr "جارٍ تحديث بيانات التخزين…"
+#~ msgid "Refreshing staking data…"
+#~ msgstr "جارٍ تحديث بيانات التخزين…"
 
 #: src/components/vaults/vault-detail-view.tsx
-msgid "Refreshing Vault data. Actions are temporarily unavailable."
-msgstr "جارٍ تحديث بيانات الخزنة. الإجراءات غير متاحة مؤقتًا."
+#~ msgid "Refreshing Vault data. Actions are temporarily unavailable."
+#~ msgstr "جارٍ تحديث بيانات الخزنة. الإجراءات غير متاحة مؤقتًا."
 
 #: src/components/api-wallet/api-wallet-list.tsx
 #: src/components/leaderboard/leaderboard-view.tsx
@@ -7389,7 +7395,8 @@ msgstr "استئناف التتبع"
 #: src/components/portfolio/portfolio-performance-chart.tsx
 #: src/components/referrals/referral-activity.tsx
 #: src/components/referrals/referral-dashboard.tsx
-#: src/components/staking/staking-view.tsx
+#: src/components/referrals/referral-dashboard.tsx
+#: src/components/referrals/referral-rewards-card.tsx
 #: src/components/staking/staking-view.tsx
 #: src/components/trade/chart/funding-history-load-boundary.tsx
 #: src/components/trade/chart/funding-history-panel.tsx
@@ -7400,6 +7407,7 @@ msgstr "استئناف التتبع"
 #: src/components/trade/components/market-asset-info.tsx
 #: src/components/trade/components/market-asset-info.tsx
 #: src/components/trade/layout/terminal-boot-error.tsx
+#: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/offline-banner.tsx
 #: src/components/trade/positions/account-transfers-tab.tsx
 #: src/components/trade/positions/account-transfers-tab.tsx
@@ -7414,14 +7422,16 @@ msgstr "استئناف التتبع"
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #: src/components/trade/twap-history-feedback.tsx
 #: src/components/ui/history-page-unavailable.tsx
+#: src/components/vaults/vault-detail-view.tsx
+#: src/components/vaults/vaults-list.tsx
 #: src/components/vaults/vaults-list.tsx
 #: src/components/vaults/vaults-page.tsx
 msgid "Retry"
 msgstr "إعادة المحاولة"
 
 #: src/components/vaults/vault-detail-view.tsx
-msgid "Retry account data"
-msgstr "إعادة محاولة تحميل بيانات الحساب"
+#~ msgid "Retry account data"
+#~ msgstr "إعادة محاولة تحميل بيانات الحساب"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Retry check"
@@ -7592,8 +7602,8 @@ msgid "Reward history is scoped to the verified owner."
 msgstr "يقتصر سجل المكافآت على المالك الذي تم التحقق منه."
 
 #: src/components/staking/staking-view.tsx
-msgid "Reward history unavailable"
-msgstr "سجل المكافآت غير متاح"
+#~ msgid "Reward history unavailable"
+#~ msgstr "سجل المكافآت غير متاح"
 
 #: src/components/staking/staking-view.tsx
 msgid "Reward source"
@@ -8359,8 +8369,8 @@ msgid "Staking action history table"
 msgstr "جدول سجل إجراءات التخزين"
 
 #: src/components/staking/staking-view.tsx
-msgid "Staking action history unavailable"
-msgstr "سجل إجراءات التخزين غير متاح"
+#~ msgid "Staking action history unavailable"
+#~ msgstr "سجل إجراءات التخزين غير متاح"
 
 #: src/components/staking/staking-view.tsx
 msgid "Staking actions"
@@ -9142,8 +9152,8 @@ msgstr "محفظة الرسوم المموّلة مهيأة لشبكة Arbitrum 
 #~ msgstr "يبقى المفتاح المُنشأ في علامة التبويب هذه فقط. لا توافق على مفتاح آخر ولا تُعِد تحميل الصفحة."
 
 #: src/components/staking/staking-view.tsx
-msgid "The history response could not be verified."
-msgstr "تعذر التحقق من استجابة السجل."
+#~ msgid "The history response could not be verified."
+#~ msgstr "تعذر التحقق من استجابة السجل."
 
 #: src/lib/trade/funds-action-feedback.ts
 msgid "The Hyperliquid deposit route changed before signing. Review the updated route and retry."
@@ -9300,8 +9310,8 @@ msgstr "يُنشأ المفتاح الخاص في هذا المتصفح ولا �
 #~ msgstr "يُنشأ المفتاح الخاص على جهاز سطح المكتب هذا ويُضمَّن في رمز QR."
 
 #: src/components/vaults/vaults-list.tsx
-msgid "The public Vault feed could not be verified. No cached or cross-network rows are shown in its place."
-msgstr "تعذر التحقق من موجز الخزائن العام. لا تُعرض بدلًا منه صفوف مخزنة مؤقتًا أو من شبكة أخرى."
+#~ msgid "The public Vault feed could not be verified. No cached or cross-network rows are shown in its place."
+#~ msgstr "تعذر التحقق من موجز الخزائن العام. لا تُعرض بدلًا منه صفوف مخزنة مؤقتًا أو من شبكة أخرى."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "The QR can trade but not withdraw. Approving replaces the key on a phone that is already linked. Do not share it, screenshot it or show it while sharing your screen."
@@ -9387,20 +9397,20 @@ msgid "The response could not be verified. No partial order history is shown."
 msgstr "تعذر التحقق من الاستجابة. لا يُعرض سجل أوامر جزئي."
 
 #: src/components/referrals/referral-dashboard.tsx
-msgid "The response could not be verified. No referral action is available until fresh data loads."
-msgstr "تعذّر التحقق من الاستجابة. لن يتوفر أي إجراء إحالة حتى يتم تحميل بيانات حديثة."
+#~ msgid "The response could not be verified. No referral action is available until fresh data loads."
+#~ msgstr "تعذّر التحقق من الاستجابة. لن يتوفر أي إجراء إحالة حتى يتم تحميل بيانات حديثة."
 
 #: src/components/staking/staking-view.tsx
-msgid "The response could not be verified. No validator action is available."
-msgstr "تعذر التحقق من الاستجابة. لا يتوفر أي إجراء لجهة التحقق."
+#~ msgid "The response could not be verified. No validator action is available."
+#~ msgstr "تعذر التحقق من الاستجابة. لا يتوفر أي إجراء لجهة التحقق."
 
 #: src/components/vaults/vaults-page.tsx
-msgid "The response was missing, malformed, or could not be verified. No placeholder financial data is shown."
-msgstr "كانت الاستجابة مفقودة أو مشوهة أو تعذر التحقق منها. لا تُعرض بيانات مالية مؤقتة."
+#~ msgid "The response was missing, malformed, or could not be verified. No placeholder financial data is shown."
+#~ msgstr "كانت الاستجابة مفقودة أو مشوهة أو تعذر التحقق منها. لا تُعرض بيانات مالية مؤقتة."
 
 #: src/components/staking/staking-view.tsx
-msgid "The reward response could not be verified."
-msgstr "تعذر التحقق من استجابة المكافآت."
+#~ msgid "The reward response could not be verified."
+#~ msgstr "تعذر التحقق من استجابة المكافآت."
 
 #: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
@@ -10617,8 +10627,8 @@ msgid "Unable to verify regional availability. Trading is temporarily unavailabl
 msgstr "تعذر التحقق من التوفر الإقليمي. التداول غير متاح مؤقتًا."
 
 #: src/components/vaults/vault-detail-view.tsx
-msgid "Unable to verify regional availability. Vault actions are temporarily unavailable."
-msgstr "تعذر التحقق من التوفر الإقليمي. إجراءات الخزنة غير متاحة مؤقتًا."
+#~ msgid "Unable to verify regional availability. Vault actions are temporarily unavailable."
+#~ msgstr "تعذر التحقق من التوفر الإقليمي. إجراءات الخزنة غير متاحة مؤقتًا."
 
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
@@ -10955,8 +10965,8 @@ msgid "Validator commission"
 msgstr "عمولة جهة التحقق"
 
 #: src/components/staking/staking-view.tsx
-msgid "Validator data unavailable"
-msgstr "بيانات جهة التحقق غير متاحة"
+#~ msgid "Validator data unavailable"
+#~ msgstr "بيانات جهة التحقق غير متاحة"
 
 #: src/components/staking/staking-view.tsx
 msgid "Validator performance"
@@ -11006,8 +11016,8 @@ msgid "Vault Commission"
 msgstr "عمولة الخزنة"
 
 #: src/components/vaults/vaults-list.tsx
-msgid "Vault data is unavailable"
-msgstr "بيانات الخزنة غير متاحة"
+#~ msgid "Vault data is unavailable"
+#~ msgstr "بيانات الخزنة غير متاحة"
 
 #: src/components/funds-action/funds-action-recovery-host.tsx
 msgid "Vault deposit"
@@ -11026,8 +11036,8 @@ msgid "Vault depositors"
 msgstr "مودعو الخزنة"
 
 #: src/components/vaults/vaults-page.tsx
-msgid "Vault details are unavailable"
-msgstr "تفاصيل الخزنة غير متاحة"
+#~ msgid "Vault details are unavailable"
+#~ msgstr "تفاصيل الخزنة غير متاحة"
 
 #: src/config/account-ledger.ts
 msgid "Vault Distribution"
@@ -11102,8 +11112,8 @@ msgid "Verification reference"
 msgstr "مرجع التحقق"
 
 #: src/components/vaults/vault-detail-view.tsx
-msgid "Verified Vault details are unavailable."
-msgstr "تفاصيل الخزنة المتحقق منها غير متاحة."
+#~ msgid "Verified Vault details are unavailable."
+#~ msgstr "تفاصيل الخزنة المتحقق منها غير متاحة."
 
 #. placeholder {0}: formatVaultUsd(availableAmount, numberFormat)
 #: src/components/vaults/vault-action-modal.tsx
@@ -11143,8 +11153,8 @@ msgid "Verifying from history"
 msgstr "جارٍ التحقق من السجل"
 
 #: src/components/vaults/vault-detail-view.tsx
-msgid "Verifying the owner Vault balance before enabling withdrawals."
-msgstr "جارٍ التحقق من رصيد المالك في الخزنة قبل إتاحة عمليات السحب."
+#~ msgid "Verifying the owner Vault balance before enabling withdrawals."
+#~ msgstr "جارٍ التحقق من رصيد المالك في الخزنة قبل إتاحة عمليات السحب."
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Verifying the result"
@@ -11425,8 +11435,8 @@ msgid "Withdrawal remains locked until the server-reported unlock time."
 msgstr "يظل السحب مقفلًا حتى وقت إلغاء القفل الذي أبلغ عنه الخادم."
 
 #: src/components/vaults/vault-detail-view.tsx
-msgid "Withdrawal remains unavailable until the owner balance is verified."
-msgstr "يظل السحب غير متاح حتى التحقق من رصيد المالك."
+#~ msgid "Withdrawal remains unavailable until the owner balance is verified."
+#~ msgstr "يظل السحب غير متاح حتى التحقق من رصيد المالك."
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Withdrawal status unknown"
@@ -11707,8 +11717,8 @@ msgid "Your transaction is being processed"
 msgstr "جارٍ معالجة معاملتك"
 
 #: src/components/vaults/vault-detail-view.tsx
-msgid "Your Vault balance could not be verified. Account values and withdrawal remain unavailable."
-msgstr "تعذر التحقق من رصيدك في الخزنة. تظل قيم الحساب والسحب غير متاحة."
+#~ msgid "Your Vault balance could not be verified. Account values and withdrawal remain unavailable."
+#~ msgstr "تعذر التحقق من رصيدك في الخزنة. تظل قيم الحساب والسحب غير متاحة."
 
 #: src/lib/trade/privy-fiat-funding-feedback.ts
 msgid "Your wallet session changed, so the card purchase did not open. Reconnect your wallet and try again."
