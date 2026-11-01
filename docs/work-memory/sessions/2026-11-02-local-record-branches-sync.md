@@ -7,7 +7,7 @@
   "kind": "task",
   "status": "recorded",
   "topics": ["work-memory", "docs-governance", "account-funding"],
-  "summary": "运营方问所有修复是否都已合入 dev，起头会话找出四条只改文档、从未推送的本地分支，交本任务审阅并合成一个进 dev 的文档 PR。逐条对照 dev 26c06d02：codex/work-memory-2026-10-12（95e12620）的内容 10-13 已由 c9169980 经 PR #111 移植进 dev，合并只为让 10-19 周整理补的 95e12620 引用可达，重建索引后树与 dev 相同；10-19（43b78f96）、10-26（ad408e8c）两份周整理与 claude/across-shelved-record（680c93e1、5d2e72c6）的 Across 搁置决定都没有被后来的记录取代，四次合并只冲突在 INDEX.md。在 claude/local-records-sync 依次 --no-ff 合并，给三份合入记录追加 11-02 补注，ADR 目录与文档地图补记搁置。复核 Across 官方页面：补记引用的两条事实成立，但持久地址指南把取得 Key 指向自助表单，自助表单拿不到权限仍是推断。另发现 10-05 周整理 42f2bd23 已无分支指向，按原名重建本地分支防止被回收。应起头会话的请求，在 audit-group2 记录补记 PR #132 以 26c06d02 合入 dev。memory 三项检查与 git diff --check 通过；未推送、未开 PR。",
+  "summary": "运营方问所有修复是否都已合入 dev，起头会话找出四条只改文档、从未推送的本地分支，交本任务审阅并合成一个进 dev 的文档 PR。逐条对照 dev 26c06d02：codex/work-memory-2026-10-12（95e12620）的内容 10-13 已由 c9169980 经 PR #111 移植进 dev，合并只为让 10-19 周整理补的 95e12620 引用可达，重建索引后树与 dev 相同；10-19（43b78f96）、10-26（ad408e8c）两份周整理与 claude/across-shelved-record（680c93e1、5d2e72c6）的 Across 搁置决定都没有被后来的记录取代，四次合并只冲突在 INDEX.md。在 claude/local-records-sync 依次 --no-ff 合并，给三份合入记录追加 11-02 补注，ADR 目录与文档地图补记搁置。复核 Across 官方页面：补记引用的两条事实成立，但持久地址指南把取得 Key 指向自助表单，自助表单拿不到权限仍是推断。另发现 10-05 周整理 42f2bd23 已无分支指向，按原名重建本地分支防止被回收。应起头会话的请求，在 audit-group2 记录补记 PR #132 以 26c06d02 合入 dev。memory 三项检查与 git diff --check 通过；经 PR #135 于 2026-11-02 合入 dev（1262bf5d）。补记里「#132 未晋升 main、未发布」的核对早于 PR #133 的晋升，已另行更正。",
   "thread": null,
   "baseCommit": "26c06d02",
   "commits": ["95e12620", "43b78f96", "ad408e8c", "680c93e1", "5d2e72c6", "e646ec56", "ebadc349", "9554cd20", "cfd3e0fd"],
@@ -94,3 +94,5 @@
 - Across 重新启动时，先用自助表单新发的 Key 探测一次（见 Across 记录的补注），再决定是否经共享渠道申请权限。
 - 本记录不替代任何记录，只补充四条分支的合入经过。
 - 2026-11-02 补记：运营方说「推送并开 PR」后，本分支以头 `3cecb6aa` 推送，并开 [PR #135](https://github.com/zora4523-bot/gatu-app/pull/135) → `dev`。推送前 `origin/dev` 仍是 `26c06d02`；开 PR 时发现 PR #130 已于 01:20（UTC+8）先合入 `dev`（`e9d20e48`），本分支随后合并 `dev`（`74f4f6e5`），只在 `INDEX.md` 冲突，用 `pnpm memory:index` 重建，`docs/adr/README.md` 自动合并。合并后相对 `dev` 仍只有 23 个 `docs/` 文件；232 份记录共 776 个引用，768 个是 HEAD 的祖先，其余仍是上述 8 个；`memory:check`、`memory:test`（8/8）、`git diff --check` 通过。这次合并与本补记在运营方另行同意后推送。
+- 2026-11-02 补记：运营方说「推送」后，`74f4f6e5`、`8cdc427e` 推送到 PR #135，PR 变为可合并。运营方说「合并」后，合并前再读了一遍机器人评论（只有对 `3cecb6aa` 的无发现摘要），PR #135 于 01:26（UTC+8）以合并提交 `1262bf5d` 合入 `dev`，树与 `8cdc427e` 相同，远端分支保留。
+- 2026-11-02 更正：「PR #132 补记的核对」一条里，`26c06d02` 不在 `origin/main`、线上为 p35 这两项读数，取于 PR #133 在 01:15 把 `dev` 晋升为 `main`（`047b4bb3`）之前；01:29 读线上已是 `cloudfront-2026-11-02-p36` / `047b4bb3`。[第二组审查记录](2026-11-01-audit-group2.md)的摘要与补记已追加同样的更正，随后续文档 PR 进入 `dev`。
