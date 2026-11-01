@@ -114,6 +114,15 @@ jobs:
           src/lib/tests/use-markets-info-subscriptions.test.tsx
           src/lib/tests/compact-asset-ctxs.test.ts
           src/lib/tests/market-stats-subscription.test.ts
+          src/lib/tests/spot-token-display-names-contract.test.ts
+          src/lib/tests/market-catalog.test.ts
+          src/lib/tests/market-catalog-query-policy.test.tsx
+          src/lib/tests/market-route.test.ts
+          src/lib/tests/market-route-canonical.test.ts
+          src/lib/tests/orderbook-boot.test.ts
+          src/lib/tests/asset-display-token-name.test.tsx
+          src/lib/tests/mobile-twap-card.test.tsx
+          src/lib/tests/passive-query-state.test.ts
           src/lib/tests/mobile-bottom-nav.test.tsx
           src/lib/tests/mobile-terminal-market-bar-lifecycle.test.tsx
           src/lib/tests/mobile-terminal-disclosure-state.test.tsx
@@ -294,6 +303,10 @@ jobs:
           src/lib/tests/earn-fresh-state.test.ts
           src/components/staking/__tests__/staking-view.test.tsx
           src/components/staking/__tests__/use-staking-controller.test.tsx
+          src/components/staking/__tests__/staking-passive-data.test.tsx
+          src/lib/tests/referral-passive-data.test.tsx
+          src/lib/tests/vault-passive-data.test.tsx
+          src/lib/tests/use-referrals.test.tsx
           src/components/staking/__tests__/use-staking-actions.test.tsx
           src/components/vaults/__tests__/use-vault-action-controller.test.tsx
           src/lib/tests/action-progress-label-contract.test.ts
@@ -384,6 +397,8 @@ jobs:
           src/lib/tests/historical-order-status.test.tsx
           src/lib/tests/desktop-orders-history-direction.test.tsx
           src/lib/tests/mobile-history-cards.test.tsx
+          src/lib/tests/mobile-fill-filter-backfill.test.tsx
+          src/lib/tests/fill-filter-presentation.test.ts
           src/lib/tests/user-fills.test.ts
           src/lib/tests/trade-history-page.test.tsx
           src/lib/tests/position-close-all-submit.test.tsx

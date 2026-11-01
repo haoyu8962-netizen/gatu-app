@@ -265,7 +265,15 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/market-selector-quote.test.ts \
   src/lib/tests/token-selector-row.test.tsx \
   src/lib/tests/token-selector-wiring.test.tsx \
-  src/lib/tests/use-markets-info-subscriptions.test.tsx
+  src/lib/tests/use-markets-info-subscriptions.test.tsx \
+  src/lib/tests/passive-query-state.test.ts \
+  src/components/staking/__tests__/staking-passive-data.test.tsx \
+  src/lib/tests/referral-passive-data.test.tsx \
+  src/lib/tests/vault-passive-data.test.tsx \
+  src/lib/tests/use-referrals.test.tsx \
+  src/lib/tests/vaults-domain.test.ts \
+  src/lib/tests/mobile-fill-filter-backfill.test.tsx \
+  src/lib/tests/fill-filter-presentation.test.ts
 
 # Trading terminal visual contract
 pnpm --dir apps/terminal exec vitest run \
@@ -467,6 +475,20 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/command-menu.test.tsx \
   src/components/staking/__tests__/use-staking-actions.test.tsx \
   src/lib/tests/use-api-wallet-controller.test.tsx
+
+# Spot market names and addresses (see docs/spot-market-names.md and ADR 0048)
+pnpm --dir apps/terminal exec vitest run \
+  src/lib/tests/spot-token-display-names-contract.test.ts \
+  src/lib/tests/market-catalog.test.ts \
+  src/lib/tests/market-catalog-query-policy.test.tsx \
+  src/lib/tests/market-route.test.ts \
+  src/lib/tests/market-route-canonical.test.ts \
+  src/lib/tests/orderbook-boot.test.ts \
+  src/lib/tests/trade-terminal-page-boot.test.tsx \
+  src/lib/tests/asset-display-token-name.test.tsx \
+  src/lib/tests/mobile-twap-card.test.tsx \
+  src/lib/tests/account-ledger-export-availability.test.tsx \
+  src/lib/tests/rtl-financial-ui-contract.test.ts
 
 # Brand identity (brand/, names, logo, icons, status motion, domains, legal text; see docs/brand-assets.md and ADR 0027)
 pnpm test:brand

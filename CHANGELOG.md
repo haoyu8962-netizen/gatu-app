@@ -83,6 +83,13 @@ changes, not evidence that a build has been deployed or accepted on real devices
   update the selector, favorites bar and other lists show their placeholders instead of values up to
   five minutes old, and returning from Referrals, Join or Leaderboard no longer mixes live prices with
   an old 24h reference price.
+- Spot tokens and pairs use the official terminal's names (for example FARTCOIN, PENGU, 2Z, PEAR,
+  PUMP-26, MONPRO), in the selector and in balances, fee columns, deposits and withdrawals and the
+  Send dialog; CSV exports keep the exchange's names. PUMP, ANSEM, MON, MOG and SPYX against USDC now
+  open instead of the not-found page, and `/trade/PEAR/USDC` opens the pair the official terminal
+  calls PEAR. `/trade/0x<token ID>` addresses open their pair, a pair address with an unknown quote
+  opens the pair against USDC, `@N` addresses switch to the pair's name, and an address that names no
+  market opens the default market instead of the not-found page.
 - The HIP-3 deployer notice for EntropyIO markets (the `io` deployer, such as the OpenAI and
   Anthropic pre-IPO markets) now links to EntropyIO's documentation, as it already did for the
   other listed deployers.
@@ -598,6 +605,15 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Fixed
 
+- Phone trade history filters search older fills too, up to the latest 2,000, instead of only the 30
+  most recent. "No fills match these filters." appears only after that search has finished, and names
+  the 2,000 limit when it was reached; while the search loads the list stays blank, and a failed
+  search offers Retry.
+- Staking, Referrals and Vaults no longer show "Refreshing…" lines, red error boxes or warning icons
+  for data they load in the background. A failed first load offers Retry, unknown values read `--`
+  instead of 0, and a failed refresh keeps the values on screen and holds the actions that depend on
+  them, with Retry, until a refresh succeeds. Vault Deposit and Withdraw stay available during a
+  background refresh.
 - Clicking a price in the order book no longer turns every order into a limit order. As on the official
   terminal, a market order becomes a limit order and a stop market a stop limit at that price, limit-priced
   orders take the price, and take-profit market, Scale and TWAP orders stay untouched.
