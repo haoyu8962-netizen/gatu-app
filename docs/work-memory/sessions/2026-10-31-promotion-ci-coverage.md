@@ -7,10 +7,10 @@
   "kind": "task",
   "status": "verified",
   "topics": ["pr-review", "docs-governance"],
-  "summary": "dev→main 的晋升 PR 每次 66–75 计费分钟，对同一棵树重跑 dev 已通过的检查。运营方在两种方案中选了乙：Terminal Tests、浏览器回归、Production Builds 与 Website and Brand 各加一个只在晋升 PR 上运行的 Promotion coverage 作业，scripts/promotion-coverage.mjs 逐个工作流核对三点：合并树等于 dev 的树；上次晋升以来最后一个改过该工作流输入的 PR，其最后一次运行成功（改过输入指差异匹配该工作流的 paths 过滤，或该工作流为它运行过）；该运行的检出日志写明的合并基点在 dev 主线上，且之后没有别的合入改过这些输入。三点都满足才跳过（Production Builds 只构建 pairing true），否则全跑；Static Checks 照常运行。三轮推送前 Codex 审查（4/10、5/10、9/10）共指出 2 项 P0，都已修复：初版把没有运行记录当作没改输入，现在改为按 paths 过滤核对差异；`**` 漏掉含换行的文件名。回放 10 月 11 次晋升，10 次全部覆盖。68 项单测通过，51 处变异全部失败。未推送，未在 GitHub 上运行。",
+  "summary": "dev→main 的晋升 PR 每次 66–75 计费分钟，对同一棵树重跑 dev 已通过的检查。运营方在两种方案中选了乙：Terminal Tests、浏览器回归、Production Builds 与 Website and Brand 各加一个只在晋升 PR 上运行的 Promotion coverage 作业，scripts/promotion-coverage.mjs 逐个工作流核对三点：合并树等于 dev 的树；上次晋升以来最后一个改过该工作流输入的 PR，其最后一次运行成功（改过输入指差异匹配该工作流的 paths 过滤，或该工作流为它运行过）；该运行的检出日志写明的合并基点在 dev 主线上，且之后没有别的合入改过这些输入。三点都满足才跳过（Production Builds 只构建 pairing true），否则全跑；Static Checks 照常运行。三轮推送前 Codex 审查（4/10、5/10、9/10）共指出 2 项 P0，都已修复：初版把没有运行记录当作没改输入，现在改为按 paths 过滤核对差异；`**` 漏掉含换行的文件名。回放 10 月 11 次晋升，10 次全部覆盖。68 项单测通过，51 处变异全部失败。2026-11-01 经 PR #130 以 merge commit 合入 dev（e9d20e48）：进 dev 的 PR 在 GitHub 上跑了两轮全绿，判定作业照设计跳过、下游照跑；判定作业还没在晋升 PR 上运行过，下一次晋升是第一次。",
   "thread": null,
   "baseCommit": "90658436",
-  "commits": ["18cee104", "285d7c8d", "daee6fa0"],
+  "commits": ["18cee104", "285d7c8d", "daee6fa0", "f2e900ed", "15cc87d3", "e9d20e48"],
   "sources": [
     { "path": ".github/workflows/terminal-tests.yml" },
     { "path": ".github/workflows/slider-browser.yml" },
@@ -24,7 +24,9 @@
     { "path": ".claude/rules/git.md" },
     { "path": "docs/agent-handbook.md" },
     { "url": "https://github.com/zora4523-bot/gatu-app/pull/122" },
-    { "url": "https://github.com/zora4523-bot/gatu-app/pull/129" }
+    { "url": "https://github.com/zora4523-bot/gatu-app/pull/129" },
+    { "url": "https://github.com/zora4523-bot/gatu-app/pull/130" },
+    { "url": "https://github.com/zora4523-bot/gatu-app/pull/133" }
   ],
   "supersedes": []
 }
@@ -38,6 +40,8 @@
 派出会话给的问题：所有工作流只由 `pull_request`、发布标签、`workflow_dispatch` 或定时触发，合并进 `dev` 或 `main` 本身不跑 CI，但 `dev → main` 的晋升 PR 会把进 `dev` 时已经跑过的检查对同一棵树再跑一遍。要求：晋升 PR 只保留新增覆盖（配对开启的生产构建）和便宜的静态检查；在组合没被完整测过的两种情况下仍要全跑。两种情况指：`dev` 先后合入了几个各自只对较旧 `dev` 测过的 PR；`main` 有 `dev` 没有的提交（紧急修复路径）。
 
 本会话先比较了两种做法，交运营方选择。甲：晋升 PR 一律跳过，发布前人工核对，不满足时手动补跑。乙：判定作业用 GitHub API 自动核对。运营方在本会话中回复「选乙」，之后才改文件。推送与开 PR 不在本次范围内，需另行征得同意。
+
+之后运营方在本会话中先后回复「推送并开 PR」「打开 Auto-fix」「通过后合并」与「开文档 PR」。本会话据此推送并开 PR #130，在 Auto-fix 授权下处理了一次与 `dev` 的冲突，CI 通过后合并。合入前后的结果由同一会话在 2026-11-02 补记（同步记录，分支 `claude/promotion-coverage-records`），见「验证与限制」末节。
 
 ## 结论与依据
 
@@ -125,9 +129,25 @@ ADR 0016 新增 D8，同时补了状态行、未采用方案、2026-10-31 补记
   - 运行器自带的 Node 版本没有核对，脚本只用内置模块。
   - 全量终端单测与浏览器回归（本次没有改终端代码）。
 
+### 合入 dev 前后（2026-11-02 补记）
+
+上面「未做」里的推送与开 PR 已完成；「在 GitHub 上运行」只完成了进 `dev` 的 PR 这一侧。时间为 UTC。
+
+- 2026-10-31 推送 `claude/lucid-boyd-efe166`（头 `f2e900ed`），开 PR #130 → `dev`，随后开启 Auto-fix。GitHub 上 `chatgpt-codex-connector` 对 `f2e900ed` 的审查摘要没有发现问题，没有行内意见。
+- 第一轮 CI（头 `f2e900ed`，合在 `90658436` 上，2026-10-31T15:27Z）：5 个工作流的 7 个作业全部通过：静态检查 2m43s，单测两片 10m40s / 8m11s，浏览器两片 12m5s / 15m14s，`Build terminal (pairing false)` 8m35s，`Build website` 2m18s。四个 `Promotion coverage` 显示为 skipped，没有分到运行器；下游作业照常运行，`!cancelled()` 在判定作业被跳过时按设计放行；`Production Builds` 只有 `pairing false`。按作业向上取整约 64 计费分钟；`actions/runs/{id}/timing` 的 `billable` 返回 0，拿不到官方计费数。
+- 用脚本自己的 `githubClient` 读这四次运行，都解析为 `f2e900ed onto 90658436`，即合入后晋升读得到。第一次读时本机两次网络错误（`terminated`、`fetch failed`），重读正常。`terminated` 出在读响应体时；`send()` 只在请求本身失败时重试，读响应体失败不重试，这种情况下该工作流会带警告全跑。
+- `dev` 随后合入 #131、#132（到 `26c06d02`），两边都在 `CHANGELOG.md` 的 `### Changed` 顶部加了条目。Auto-fix 在工作树里开始合并；两条都保留（本 PR 的在前），合并提交 `15cc87d3`。核对：相对 `dev` 只多本 PR 原有的 15 个文件，增删（+1430 / −21）与合并前相同；提交钩子没有改动翻译目录。本机 `node --test scripts/promotion-coverage.test.mjs scripts/ci-workflows.test.mjs scripts/check-client-bundle-budget.test.mjs scripts/work-memory.test.mjs` 76 项通过，`memory:index` 重新生成无变化，`memory:check` 通过，`memory:test` 8 项通过。提交钩子在桌面应用的命令沙盒里报 `operation not permitted`，提交在沙盒外完成。
+- 第二轮 CI（头 `15cc87d3`，合在 `26c06d02` 上）：7 个作业全部通过：静态检查 2m25s，单测 11m16s / 8m57s，浏览器 16m57s / 15m3s，构建 7m42s，网站 2m23s；判定作业同样 skipped。按作业向上取整约 68 计费分钟。
+- 运营方回复「通过后合并」后，`gh pr merge 130 --merge --match-head-commit 15cc87d3…` 合并为 `e9d20e48`（2026-11-01T17:20:01Z）：标题是 GitHub 默认的 `Merge pull request #130 from zora4523-bot/claude/lucid-boyd-efe166`，提交者 `noreply@github.com`。没有开自动合并，没有删分支。
+- #133（`release: promote dev to main for p36`）的头是 `26c06d02`，在 #130 合入前约 4 分钟（17:15:42Z）合入 `main`，按旧工作流全跑：8 个作业全部通过，含 `Build terminal (pairing true)`。它不是带判定作业的晋升。
+- 本地模式预判下一次晋升（`main` `047b4bb3`，`dev` `1262bf5d`，其间合入的 #135 只改文档）：四个工作流都由 #130 第二轮的运行覆盖（`terminal-tests` 41327182596、`slider-browser` 41327182491、`production-build` 41327182558、`website-build` 41327182534），理由均为 `none of the 1 other merges into dev since then changed its inputs`。#135 没有触发任何工作流，也不匹配任何 `paths` 过滤，所以不算改过输入。
+- 仍未做：判定作业在晋升 PR 上的运行（权限、无 blob 克隆与稀疏检出、日志重定向、`covered=true` 时的跳过与矩阵、判定作业的耗时与计费）；运行器自带的 Node 版本。
+
 ## 后续与替代关系
 
-- 本改动进 `dev` 后，下一次晋升 PR 要核对：四个 `Promotion coverage` 的摘要；被跳过作业的显示；`Production Builds` 是否只建 `pairing true`；判定作业的实际耗时与计费；`the check failed` 警告是否出现。结果写进那次的发布记录，并在 ADR 0016 补记。
+- 本改动进 `dev` 后，下一次晋升 PR 要核对：四个 `Promotion coverage` 的摘要；被跳过作业的显示；`Production Builds` 是否只建 `pairing true`；判定作业的实际耗时与计费；`the check failed` 警告是否出现。结果写进那次的发布记录，并在 ADR 0016 补记。（2026-11-02 补记：#133 的头早于 #130，仍按旧工作流全跑，所以下一次晋升才是第一次。）
+- 判定只认 GitHub 生成的 PR 合并提交，进 `dev` 的 PR 因此也要用 merge commit 合并；squash、rebase 或直接推送 `dev` 会让下一次晋升全跑。2026-11-02 写进了 `.claude/rules/git.md`、手册第 3 节与 ADR 0016 补记。同日手册第 3 节的单次推送成本从约 33 更正为约 64–68 计费分钟。
+- 可选改进：让 `githubClient` 在读响应体失败时也重试一次（见上）。现在的做法偏向全跑，不会误跳过；改它会触发 `Terminal Tests`，值不值得由运营方决定。
 - 如果按 D5 给 `main` 设必选检查，skipped 会被算作通过，到时要把判定结论纳入考虑。
 - 依赖的外部格式：检出日志的 `HEAD is now at … Merge <头> into <基>`、GitHub 合并提交的提交者与标题、日志保留期。任何一项变化都会让判定落到全跑；如果晋升总是全跑，先查这几项。
 - 不替代任何记录。相关记录：[分支流向与首版分层](2026-09-19-ci-tiers-dev-first-flow.md)、[按四条方案的改造](2026-09-19-ci-restructure.md)。
