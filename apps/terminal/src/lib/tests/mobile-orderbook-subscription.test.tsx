@@ -482,6 +482,50 @@ describe("mobile orderbook subscription lifecycle", () => {
 		expect(observedElement?.tagName).toBe("FIELDSET");
 	});
 
+	it("passes the measured ladder width to compact rows, so a long size shortens only while the ladder is narrow", () => {
+		let remeasure: (() => void) | undefined;
+		vi.stubGlobal(
+			"ResizeObserver",
+			class implements ResizeObserver {
+				constructor(callback: ResizeObserverCallback) {
+					remeasure = () => callback([], this);
+				}
+
+				disconnect() {}
+				observe() {}
+				unobserve() {}
+			},
+		);
+		const rect = { bottom: 304, height: 304, left: 0, right: 124, top: 0, width: 124, x: 0, y: 0 };
+		vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(() => ({
+			...rect,
+			toJSON: () => ({}),
+		}));
+		const book = createBook(mocks.market.name, Date.now(), true, 1);
+		book.levels = [[{ n: 1, px: "99", sz: "98765432.12" }], [{ n: 1, px: "101", sz: "98765432.12" }]];
+		setSubscriptionState({ data: book, isStale: false, status: "active" });
+		render({ compact: true });
+
+		function sizeTexts() {
+			return ["Ask, Price 101", "Bid, Price 99"].map((label) => {
+				const row = container.querySelector<HTMLButtonElement>(`button[aria-label^="${label}"]`);
+				expect(row?.getAttribute("aria-label")).toContain("Size 98,765,432.12");
+				return row?.textContent ?? "";
+			});
+		}
+		function resizeTo(width: number) {
+			rect.width = width;
+			rect.right = width;
+			act(() => remeasure?.());
+		}
+
+		for (const text of sizeTexts()) expect(text).not.toContain("98,765,432.12");
+		resizeTo(400);
+		for (const text of sizeTexts()) expect(text).toContain("98,765,432.12");
+		resizeTo(124);
+		for (const text of sizeTexts()) expect(text).not.toContain("98,765,432.12");
+	});
+
 	it("attaches the compact observer during an initial error and keeps it through recovery", () => {
 		let resizeObserverCount = 0;
 		let observedElement: Element | undefined;
