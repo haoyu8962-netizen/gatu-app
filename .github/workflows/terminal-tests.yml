@@ -306,6 +306,7 @@ jobs:
           src/components/staking/__tests__/staking-passive-data.test.tsx
           src/lib/tests/referral-passive-data.test.tsx
           src/lib/tests/vault-passive-data.test.tsx
+          src/components/vaults/__tests__/use-vaults-controller.test.tsx
           src/lib/tests/use-referrals.test.tsx
           src/components/staking/__tests__/use-staking-actions.test.tsx
           src/components/vaults/__tests__/use-vault-action-controller.test.tsx

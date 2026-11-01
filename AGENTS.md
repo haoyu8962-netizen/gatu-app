@@ -270,6 +270,7 @@ pnpm --dir apps/terminal exec vitest run \
   src/components/staking/__tests__/staking-passive-data.test.tsx \
   src/lib/tests/referral-passive-data.test.tsx \
   src/lib/tests/vault-passive-data.test.tsx \
+  src/components/vaults/__tests__/use-vaults-controller.test.tsx \
   src/lib/tests/use-referrals.test.tsx \
   src/lib/tests/vaults-domain.test.ts \
   src/lib/tests/mobile-fill-filter-backfill.test.tsx \
