@@ -1,10 +1,5 @@
 export type MarketCategory = "all" | "trending" | "new" | "defi" | "layer1" | "layer2" | "meme";
 
-export const ASSET_REPLACEMENTS: Record<string, string> = {
-	USDT0: "USDT",
-	XAUT0: "XAUT",
-};
-
 export const NO_SPOT_PREFIX_ASSETS: Record<string, string> = {
 	USDC: "USDC",
 };

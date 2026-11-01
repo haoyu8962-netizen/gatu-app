@@ -1,17 +1,19 @@
 import type { MetaResponse, PerpDexsResponse, SpotMetaResponse } from "@nktkas/hyperliquid";
 import {
 	type BuilderPerpMarket,
+	type HyperliquidEnv,
 	type Markets,
 	type PerpMarket,
 	type SpotMarket,
 	type MarketSpotToken as SpotToken,
 	type UnifiedMarket,
+	useHyperliquidTransport,
 	useInfo,
 } from "@sairn/hl-react";
 import { useIsRestoring } from "@tanstack/react-query";
 import { createContext, type ReactNode, useCallback, useContext, useMemo } from "react";
 import { RQ_CACHE_MAX_AGE_MS } from "@/config/time";
-import { getIconUrlFromMarketName, getTokenDisplayName, getUnderlyingAsset } from "@/domain/market/tokens";
+import { getIconUrlFromMarketName, getSpotTokenDisplayNames } from "@/domain/market/tokens";
 import { resolveMarketMarginTiers } from "@/domain/trade/order/liquidation";
 import {
 	getBuilderPerpAssetId,
@@ -48,6 +50,7 @@ export interface MarketsContextValue extends MarketsWithExactLookup {
 }
 
 export interface CreateMarketsParams {
+	env: HyperliquidEnv;
 	perpMeta: MetaResponse | undefined;
 	spotMeta: SpotMetaResponse | undefined;
 	allPerpMetas: MetaResponse[] | undefined;
@@ -57,7 +60,7 @@ export interface CreateMarketsParams {
 }
 
 export function createMarkets(params: CreateMarketsParams): MarketsWithExactLookup {
-	const { perpMeta, spotMeta, allPerpMetas, perpDexs, isLoading, error } = params;
+	const { env, perpMeta, spotMeta, allPerpMetas, perpDexs, isLoading, error } = params;
 
 	const perpMarkets: PerpMarket[] = [];
 	if (perpMeta?.universe) {
@@ -84,12 +87,13 @@ export function createMarkets(params: CreateMarketsParams): MarketsWithExactLook
 	}
 
 	const spotMarkets: SpotMarket[] = [];
+	const spotTokenDisplayNames = getSpotTokenDisplayNames(spotMeta?.tokens ?? [], env);
 	const spotTokens: SpotToken[] = (spotMeta?.tokens ?? []).map((token) => {
-		const displayName = getTokenDisplayName(token);
+		const displayName = spotTokenDisplayNames.get(token.index) ?? token.name;
 		return {
 			...token,
 			displayName,
-			iconUrl: getIconUrlFromMarketName(getUnderlyingAsset(token) ?? token.name, "spot"),
+			iconUrl: getIconUrlFromMarketName(displayName, "spot"),
 			transferDecimals: token.weiDecimals,
 			isWrapped: displayName !== token.name,
 		};
@@ -118,7 +122,7 @@ export function createMarkets(params: CreateMarketsParams): MarketsWithExactLook
 				tokensInfo,
 				szDecimals: baseToken.szDecimals,
 				isStablePair: quoteTokenIndexes.has(pair.tokens[0]),
-				iconUrl: getIconUrlFromMarketName(getUnderlyingAsset(baseToken) ?? baseToken.name, "spot"),
+				iconUrl: baseToken.iconUrl,
 			});
 		}
 	}
@@ -229,6 +233,7 @@ export function createMarkets(params: CreateMarketsParams): MarketsWithExactLook
 
 function createEmptyMarkets(): MarketsWithExactLookup {
 	return createMarkets({
+		env: "Mainnet",
 		perpMeta: undefined,
 		spotMeta: undefined,
 		allPerpMetas: undefined,
@@ -246,6 +251,7 @@ interface Props {
 
 export function MarketsProvider({ children }: Props) {
 	const isRestoring = useIsRestoring();
+	const { env } = useHyperliquidTransport();
 	const spotMetaQuery = useInfo("spotMeta", undefined, {
 		refetchInterval: Infinity,
 		staleTime: MARKET_CATALOG_META_STALE_TIME_MS,
@@ -289,6 +295,7 @@ export function MarketsProvider({ children }: Props) {
 	const baseMarkets = useMemo(
 		() =>
 			createMarkets({
+				env,
 				perpMeta,
 				spotMeta,
 				allPerpMetas,
@@ -296,7 +303,7 @@ export function MarketsProvider({ children }: Props) {
 				isLoading,
 				error,
 			}),
-		[perpMeta, spotMeta, allPerpMetas, perpDexs, isLoading, error],
+		[env, perpMeta, spotMeta, allPerpMetas, perpDexs, isLoading, error],
 	);
 	const catalogQueries = useMemo<MarketCatalogQueries>(
 		() => ({

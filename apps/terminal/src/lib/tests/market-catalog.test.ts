@@ -19,8 +19,14 @@ function spotToken(name: string, index: number, fullName: string | null = name) 
 	};
 }
 
-function createTestMarkets(spotMeta: SpotMetaResponse, allPerpMetas?: MetaResponse[], perpDexs?: PerpDexsResponse) {
+function createTestMarkets(
+	spotMeta: SpotMetaResponse,
+	allPerpMetas?: MetaResponse[],
+	perpDexs?: PerpDexsResponse,
+	env: "Mainnet" | "Testnet" = "Mainnet",
+) {
 	return createMarkets({
+		env,
 		perpMeta: allPerpMetas?.[0],
 		spotMeta,
 		allPerpMetas,
@@ -28,6 +34,10 @@ function createTestMarkets(spotMeta: SpotMetaResponse, allPerpMetas?: MetaRespon
 		isLoading: false,
 		error: null,
 	});
+}
+
+function usdcPair(index: number, baseIndex: number): SpotMetaResponse["universe"][number] {
+	return { name: `@${index}`, tokens: [baseIndex, 0], index, isCanonical: false };
 }
 
 describe("market catalog identity", () => {
@@ -130,36 +140,31 @@ describe("market catalog identity", () => {
 		expect(stableByName.get("@301")).toBe(false);
 	});
 
-	it("uses canonical @index routes and rejects ambiguous display-name lookup", () => {
+	it("falls back to canonical @index routes if two pairs ever share a display name", () => {
 		const spotMeta = {
-			tokens: [spotToken("USDC", 0), spotToken("MOG", 43), spotToken("UMOG", 200, "Unit Mog")],
-			universe: [
-				{ name: "@43", tokens: [43, 0], index: 43, isCanonical: true },
-				{ name: "@200", tokens: [200, 0], index: 200, isCanonical: true },
-			],
+			tokens: [spotToken("USDC", 0), spotToken("MOG", 43), spotToken("MOG", 44)],
+			universe: [usdcPair(43, 43), usdcPair(44, 44)],
 		} as SpotMetaResponse;
 
 		const markets = createTestMarkets(spotMeta);
 		const lookup = createMarketLookup(markets.spot as UnifiedMarketInfo[]);
 
-		expect(markets.spot.map((market) => market.routeName)).toEqual(["@43", "@200"]);
+		expect(markets.spot.map((market) => market.routeName)).toEqual(["@43", "@44"]);
 		expect(markets.getMarketByName("@43")?.assetId).toBe(10043);
 		expect(markets.getMarketByName("MOG/USDC")).toBeUndefined();
 		expect(lookup.byPairName.has("MOG/USDC")).toBe(false);
-		expect(lookup.byName.get("@43")?.assetId).toBe(10043);
-		expect(lookup.byName.get("@200")?.assetId).toBe(10200);
-		expect(markets.getToken("MOG")?.name).toBe("MOG");
-		expect(markets.getToken("UMOG")?.name).toBe("UMOG");
+		expect(lookup.byName.get("@44")?.assetId).toBe(10044);
 	});
 
-	it("keeps canonical slash spot coins and handles Unit display edge cases", () => {
+	it("keeps canonical slash spot coins and names tokens outside the table by their protocol name", () => {
 		const spotMeta = {
 			tokens: [
 				spotToken("USDC", 0),
 				spotToken("PURR", 1),
-				spotToken("UUUSPX", 2, "Unit SPX6900"),
+				spotToken("UUUSPX", 319, "Unit SPX6900"),
 				spotToken("UNIT", 3, "Unit"),
-				spotToken("XAUT0", 4, "Tether Gold"),
+				spotToken("XAUT0", 297, "Tether Gold"),
+				spotToken("UWLD", 358, "Unit Worldcoin"),
 			],
 			universe: [{ name: "PURR/USDC", tokens: [1, 0], index: 0, isCanonical: true }],
 		} as SpotMetaResponse;
@@ -170,5 +175,114 @@ describe("market catalog identity", () => {
 		expect(markets.getToken("UUUSPX")?.displayName).toBe("SPX");
 		expect(markets.getToken("UNIT")?.displayName).toBe("UNIT");
 		expect(markets.getToken("XAUT0")?.displayName).toBe("XAUT");
+		expect(markets.getToken("UWLD")?.displayName).toBe("UWLD");
+	});
+});
+
+describe("official spot display names", () => {
+	const mainnetSpotMeta = {
+		tokens: [
+			spotToken("USDC", 0),
+			spotToken("PUMP", 26),
+			spotToken("MOG", 43),
+			spotToken("PEAR", 71),
+			spotToken("MON", 164),
+			spotToken("UFART", 269, "Unit Fartcoin"),
+			spotToken("PAIR", 293),
+			spotToken("UPUMP", 299, "Unit Pump Fun"),
+			spotToken("UMOG", 326, "Unit Mog"),
+			spotToken("UMON", 383, "Unit Monad"),
+		],
+		universe: [
+			usdcPair(20, 26),
+			usdcPair(43, 43),
+			usdcPair(114, 71),
+			usdcPair(129, 164),
+			usdcPair(162, 269),
+			usdcPair(1118, 293),
+			usdcPair(188, 299),
+			usdcPair(200, 326),
+			usdcPair(243, 383),
+		],
+	} as SpotMetaResponse;
+
+	it("names mainnet pairs as the official terminal does and keeps every pair route unique", () => {
+		const markets = createTestMarkets(mainnetSpotMeta);
+		const pairNameByCoin = Object.fromEntries(markets.spot.map((market) => [market.name, market.pairName]));
+
+		expect(pairNameByCoin).toEqual({
+			"@20": "PUMP-26/USDC",
+			"@43": "MOG/USDC",
+			"@114": "PEAR-71/USDC",
+			"@129": "MONPRO/USDC",
+			"@162": "FARTCOIN/USDC",
+			"@1118": "PEAR/USDC",
+			"@188": "PUMP/USDC",
+			"@200": "UMOG/USDC",
+			"@243": "MON/USDC",
+		});
+		expect(markets.spot.every((market) => market.routeName === market.pairName)).toBe(true);
+		expect(markets.spot.find((market) => market.name === "@188")?.shortName).toBe("PUMP");
+		expect(markets.spot.find((market) => market.name === "@162")?.iconUrl).toMatch(/\/FARTCOIN_spot\.svg$/);
+	});
+
+	it("keeps protocol token names as the lookup key when a display name equals another token's name", () => {
+		const markets = createTestMarkets(mainnetSpotMeta);
+
+		expect(markets.getToken("PEAR")?.index).toBe(71);
+		expect(markets.getToken("PEAR")?.displayName).toBe("PEAR-71");
+		expect(markets.getToken("PAIR")?.displayName).toBe("PEAR");
+		expect(markets.getToken("PUMP")?.displayName).toBe("PUMP-26");
+		expect(markets.getToken("UPUMP")?.displayName).toBe("PUMP");
+		expect(markets.getToken("FARTCOIN")?.name).toBe("UFART");
+		expect(markets.getToken("PAIR")?.isWrapped).toBe(true);
+		expect(markets.getToken("MOG")?.isWrapped).toBe(false);
+	});
+
+	it("applies a table entry only to the token that carries the recorded name at that index", () => {
+		const spotMeta = {
+			tokens: [spotToken("USDC", 0), spotToken("NEWCOIN", 299), spotToken("UPUMP", 300, "Unit Pump Fun")],
+			universe: [usdcPair(188, 299), usdcPair(189, 300)],
+		} as SpotMetaResponse;
+
+		const markets = createTestMarkets(spotMeta);
+
+		expect(markets.getToken("NEWCOIN")?.displayName).toBe("NEWCOIN");
+		expect(markets.getToken("UPUMP")?.displayName).toBe("UPUMP");
+	});
+
+	it("gives a token outside the table whose name a table entry displays its index as a suffix", () => {
+		const spotMeta = {
+			tokens: [spotToken("USDC", 0), spotToken("UFART", 269, "Unit Fartcoin"), spotToken("FARTCOIN", 900)],
+			universe: [usdcPair(162, 269), usdcPair(800, 900)],
+		} as SpotMetaResponse;
+
+		const markets = createTestMarkets(spotMeta);
+
+		expect(markets.spot.map((market) => market.pairName)).toEqual(["FARTCOIN/USDC", "FARTCOIN-900/USDC"]);
+		expect(markets.getToken("FARTCOIN")?.displayName).toBe("FARTCOIN-900");
+	});
+
+	it("uses the testnet table on testnet and never the mainnet one", () => {
+		const spotMeta = {
+			tokens: [
+				spotToken("USDC", 0),
+				spotToken("BTC", 69),
+				spotToken("AG", 100),
+				spotToken("UBTC", 197, "Unit Bitcoin"),
+				spotToken("UNIT", 1129, "Test Unit"),
+			],
+			universe: [usdcPair(50, 69), usdcPair(80, 100), usdcPair(81, 197), usdcPair(1054, 1129)],
+		} as SpotMetaResponse;
+
+		const markets = createTestMarkets(spotMeta, undefined, undefined, "Testnet");
+		const pairNameByCoin = Object.fromEntries(markets.spot.map((market) => [market.name, market.pairName]));
+
+		expect(pairNameByCoin).toEqual({
+			"@50": "BTC-69/USDC",
+			"@80": "AG/USDC",
+			"@81": "UBTC/USDC",
+			"@1054": "BTC/USDC",
+		});
 	});
 });

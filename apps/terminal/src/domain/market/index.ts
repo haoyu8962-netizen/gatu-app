@@ -24,8 +24,8 @@ export type { ExchangeScope } from "./scope";
 export {
 	getIconUrlFromMarketName,
 	getIconUrlFromPair,
+	getSpotTokenDisplayNames,
 	getTokenTransferDecimals,
-	getUnderlyingAsset,
 	isTokenInCategory,
 	type MarketCategory,
 } from "./tokens";
