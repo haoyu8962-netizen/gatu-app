@@ -7,7 +7,7 @@
   "kind": "task",
   "status": "recorded",
   "topics": ["work-memory", "docs-governance", "account-funding"],
-  "summary": "运营方问所有修复是否都已合入 dev，起头会话找出四条只改文档、从未推送的本地分支，交本任务审阅并合成一个进 dev 的文档 PR。逐条对照 dev 26c06d02：codex/work-memory-2026-10-12（95e12620）的内容 10-13 已由 c9169980 经 PR #111 移植进 dev，合并只为让 10-19 周整理补的 95e12620 引用可达，重建索引后树与 dev 相同；10-19（43b78f96）、10-26（ad408e8c）两份周整理与 claude/across-shelved-record（680c93e1、5d2e72c6）的 Across 搁置决定都没有被后来的记录取代，四次合并只冲突在 INDEX.md。在 claude/local-records-sync 依次 --no-ff 合并，给三份合入记录追加 11-02 补注，ADR 目录与文档地图补记搁置。复核 Across 官方页面：补记引用的两条事实成立，但持久地址指南把取得 Key 指向自助表单，自助表单拿不到权限仍是推断。另发现 10-05 周整理 42f2bd23 已无分支指向，按原名重建本地分支防止被回收。memory 三项检查与 git diff --check 通过；未推送、未开 PR。",
+  "summary": "运营方问所有修复是否都已合入 dev，起头会话找出四条只改文档、从未推送的本地分支，交本任务审阅并合成一个进 dev 的文档 PR。逐条对照 dev 26c06d02：codex/work-memory-2026-10-12（95e12620）的内容 10-13 已由 c9169980 经 PR #111 移植进 dev，合并只为让 10-19 周整理补的 95e12620 引用可达，重建索引后树与 dev 相同；10-19（43b78f96）、10-26（ad408e8c）两份周整理与 claude/across-shelved-record（680c93e1、5d2e72c6）的 Across 搁置决定都没有被后来的记录取代，四次合并只冲突在 INDEX.md。在 claude/local-records-sync 依次 --no-ff 合并，给三份合入记录追加 11-02 补注，ADR 目录与文档地图补记搁置。复核 Across 官方页面：补记引用的两条事实成立，但持久地址指南把取得 Key 指向自助表单，自助表单拿不到权限仍是推断。另发现 10-05 周整理 42f2bd23 已无分支指向，按原名重建本地分支防止被回收。应起头会话的请求，在 audit-group2 记录补记 PR #132 以 26c06d02 合入 dev。memory 三项检查与 git diff --check 通过；未推送、未开 PR。",
   "thread": null,
   "baseCommit": "26c06d02",
   "commits": ["95e12620", "43b78f96", "ad408e8c", "680c93e1", "5d2e72c6", "e646ec56", "ebadc349", "9554cd20", "cfd3e0fd"],
@@ -22,13 +22,16 @@
     {"path": "docs/work-memory/sessions/2026-10-19-weekly-memory-review.md"},
     {"path": "docs/work-memory/sessions/2026-10-26-weekly-memory-review.md"},
     {"path": "docs/work-memory/sessions/2026-10-31-across-shelved-and-open-issues.md"},
+    {"path": "docs/work-memory/sessions/2026-11-01-audit-group2.md"},
     {"path": "scripts/work-memory.mjs"},
     {"path": "apps/terminal/src/components/trade/tradebox/deposit-modal.tsx"},
     {"url": "https://docs.across.to/llms.txt"},
     {"url": "https://docs.across.to/introduction/persistent-deposit-addresses"},
     {"url": "https://docs.across.to/introduction/api-keys"},
     {"url": "https://docs.across.to/introduction/faq"},
-    {"url": "https://docs.across.to/tools/integrator-id"}
+    {"url": "https://docs.across.to/tools/integrator-id"},
+    {"url": "https://github.com/zora4523-bot/gatu-app/pull/132"},
+    {"url": "https://app.sairn.ai/build-meta.json"}
   ],
   "supersedes": []
 }
@@ -58,10 +61,11 @@
 - 官方页面（2026-11-02 只读下载 `llms.txt` 与各页 `.mdx`）：`llms.txt` 列有自助申请页 `/tools/integrator-id`，持久地址接口的条目写明需要带 `deposit-address` 权限的 Key；API Keys 页仍写 Integrator ID 经共享渠道（Telegram、Slack）申请；FAQ 仍写 `GET /swap/counterfactual` 已弃用、地址 24 小时有效。ADR 补记引用的这两条事实成立。
 - 新的观察：持久地址指南把取得 Key 的链接指向自助申请页，而自助申请页的 `.mdx` 只有标题和一个表单组件，读不出它发放的 Key 带什么权限。所以 10-31 记录里「自助表单拿不到权限」仍是推断。这一条写进该记录的补注，ADR 正文没有改。
 
-**本任务自己的提交**只做两件事：
+**本任务自己的提交**做三件事：
 
 - 三份合入记录（[10-19](2026-10-19-weekly-memory-review.md)、[10-26](2026-10-26-weekly-memory-review.md)、[Across](2026-10-31-across-shelved-and-open-issues.md)）末尾各加「合入补注（2026-11-02）」，写合入经过、已被后续事件取代的阶段说法及出处，原文不改。
 - [ADR 目录](../../adr/README.md)的 0004 行与[文档地图](../../README.md)的 Across 行补记 2026-10-31 搁置，与 ADR 0004 正文的补记一致。
+- 起头会话随后请求在本 PR 里顺带补记 PR #132 的合并（手册：纯文档补记随下一个 PR 带上）。[第二组审查记录](2026-11-01-audit-group2.md)的摘要补上已合入 `dev`，后续清单里「合并 PR #132」一项标注已合并，并追加一条补记。合并时间、父提交、`01e1e5b5` 上的检查结果、与 `26c06d02` 的树差异、`main` 与线上版本、远端分支，都用 git、`gh` 与线上 `build-meta.json` 逐项核对；「运营方同意」一事无法独立核对，注明据执行合并的会话转述。
 
 **范围外的发现**：
 
@@ -74,8 +78,9 @@
 - 合并前：`git merge-tree --write-tree --name-only origin/dev <分支>` 对四条分支都只报 `INDEX.md` 冲突；`git range-diff` 与逐文件 patch-id 比较了 `95e12620` 与 `c9169980`。
 - 每次合并后：`pnpm memory:index`、`pnpm memory:check` 通过。
 - 引用可达性：用 `scripts/work-memory.mjs` 的 `loadMemory` 读出全部记录的 `baseCommit` 与 `commits`，逐个检查是否是 HEAD 的祖先。四次合并之后，230 份记录共 764 个不同引用，756 个是 HEAD 的祖先；其余 8 个都在远端：6 个在 `archive/across-deposit-addresses-20260920` 标签里，2 个是只在 `main` 的晋升合并 `2dcfd3e0`、`2047ee8d`。加上本记录后是 231 份记录、773 个引用、765 个是 HEAD 的祖先，其余仍是这 8 个。
-- 链接：本分支相对 `dev` 改动或新增的 21 份 Markdown（不含 `INDEX.md`）共 336 个相对链接，目标都存在；HTTPS 链接只核对了 Across 的五个页面。
-- 最终检查（本记录所在提交，Node 22.15.0）：`pnpm memory:index` 后 `pnpm memory:check` 通过，`pnpm memory:test` 8 项全部通过（0 失败、0 跳过），`git diff --check` 无输出。
+- 链接：本分支相对 `dev` 改动或新增的 22 份 Markdown（不含 `INDEX.md`）共 338 个相对链接，目标都存在；HTTPS 链接只核对了 Across 的五个页面。
+- PR #132 补记的核对：`gh pr view 132` 给出头提交 `01e1e5b5`、`mergedAt` 2026-11-01T16:25:40Z、合并提交 `26c06d02`；`01e1e5b5` 的 check-runs 为 7 项成功、2 项 `claude` 跳过；`git diff 01e1e5b5 26c06d02` 为 0 行；`26c06d02` 不是 `origin/main` 的祖先；线上 `build-meta.json` 的 `commit` 为 `cdb47637`、`release` 为 `cloudfront-2026-10-28-p35`；`git ls-remote` 显示远端 `claude/audit-group2` 仍指向 `01e1e5b5`。
+- 最终检查（分支头，Node 22.15.0）：`pnpm memory:index` 后 `pnpm memory:check` 通过，`pnpm memory:test` 8 项全部通过（0 失败、0 跳过），`git diff --check` 无输出。
 - 提交钩子：工作树没有 `node_modules`，提交时设 `LEFTHOOK=0` 跳过钩子。本任务只改 Markdown，Biome 与 lingui 的 glob 本来就不匹配。每条提交信息先用主检出的 `node_modules/.bin/commitlint` 校验，两边的 `commitlint.config.js` 经 `cmp` 比较相同。
 - `gh pr list` 在命令沙盒里证书校验失败，改在沙盒外只读运行。2026-11-01T16:39Z 查询时，开放 PR 只有 #130。
 - 只改文档：没有运行应用测试、类型检查、构建或浏览器。官方页面只读，没有调用 Across 接口，也没有申请 Key。
