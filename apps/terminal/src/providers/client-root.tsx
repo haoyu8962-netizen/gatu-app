@@ -55,6 +55,10 @@ try {
 	localStorage.removeItem(STORAGE_KEYS.LEGACY_RECENT_WALLETS);
 } catch {}
 
+try {
+	sessionStorage.removeItem(STORAGE_KEYS.LEGACY_MARKETS_STATS);
+} catch {}
+
 interface Props {
 	children: ReactNode;
 	queryClient: QueryClient;
