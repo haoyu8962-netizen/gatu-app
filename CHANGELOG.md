@@ -74,6 +74,15 @@ changes, not evidence that a build has been deployed or accepted on real devices
   Amounts in the quote asset are rounded to whole units like the official book; values below one keep
   their decimals. The compact book beside the mobile order form abbreviates a size only when the
   phone is too narrow to show it in full beside its price.
+- The market selector (desktop and phone) prices markets like the trade header and the official
+  terminal: price, 24h change and their sorts use the live mid price, falling back to the mark price
+  only when a market has no mid, while open interest and market cap stay on the mark price. Prices
+  show five significant figures within the market's decimal limit with trailing zeros, an unchanged
+  price reads `+0.00%`, and a stale price shows the placeholder instead of an old value.
+- Market statistics are no longer restored from a copy saved in the browser tab. Before the first live
+  update the selector, favorites bar and other lists show their placeholders instead of values up to
+  five minutes old, and returning from Referrals, Join or Leaderboard no longer mixes live prices with
+  an old 24h reference price.
 - The HIP-3 deployer notice for EntropyIO markets (the `io` deployer, such as the OpenAI and
   Anthropic pre-IPO markets) now links to EntropyIO's documentation, as it already did for the
   other listed deployers.

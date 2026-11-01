@@ -108,6 +108,12 @@ jobs:
           src/lib/tests/orderbook-price-selection.test.tsx
           src/lib/tests/mobile-orderbook-subscription.test.tsx
           src/lib/tests/mobile-book-header-contract.test.ts
+          src/lib/tests/market-selector-quote.test.ts
+          src/lib/tests/token-selector-row.test.tsx
+          src/lib/tests/token-selector-wiring.test.tsx
+          src/lib/tests/use-markets-info-subscriptions.test.tsx
+          src/lib/tests/compact-asset-ctxs.test.ts
+          src/lib/tests/market-stats-subscription.test.ts
           src/lib/tests/mobile-bottom-nav.test.tsx
           src/lib/tests/mobile-terminal-market-bar-lifecycle.test.tsx
           src/lib/tests/mobile-terminal-disclosure-state.test.tsx

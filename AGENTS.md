@@ -261,7 +261,11 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/portfolio-overview.test.tsx \
   src/lib/tests/portfolio-refresh-since-mount.test.tsx \
   src/lib/tests/portfolio.test.ts \
-  src/lib/tests/balances.test.ts
+  src/lib/tests/balances.test.ts \
+  src/lib/tests/market-selector-quote.test.ts \
+  src/lib/tests/token-selector-row.test.tsx \
+  src/lib/tests/token-selector-wiring.test.tsx \
+  src/lib/tests/use-markets-info-subscriptions.test.tsx
 
 # Trading terminal visual contract
 pnpm --dir apps/terminal exec vitest run \
