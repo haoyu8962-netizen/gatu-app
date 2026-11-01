@@ -67,6 +67,7 @@ vi.mock("@/lib/hyperliquid", () => ({
 	useMarkets: () => ({
 		getMarket: (coin: string) => ({ kind: "perp", shortName: coin, szDecimals: 3 }),
 		getSzDecimals: () => 3,
+		getTokenDisplayName: (name: string) => name,
 	}),
 	useSubscription: (_method: string, _params: unknown, options: { enabled?: boolean }) => {
 		const snapshot = useSyncExternalStore(live.subscribe, live.get, live.get);
