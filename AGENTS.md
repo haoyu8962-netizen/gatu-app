@@ -294,7 +294,11 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/orderbook-l2-feature-gate.test.ts \
   src/lib/tests/l2-book-transport-pool.test.ts \
   src/lib/tests/mobile-orderbook-subscription.test.tsx \
-  src/lib/tests/use-l2-book-subscription.test.tsx
+  src/lib/tests/use-l2-book-subscription.test.tsx \
+  src/lib/tests/orderbook-panel-safety.test.tsx \
+  src/lib/tests/orderbook-price-selection.test.tsx \
+  src/lib/tests/mobile-orderbook-mode.test.tsx \
+  src/lib/tests/mobile-book-header-contract.test.ts
 
 # Recent trades
 pnpm --dir apps/terminal exec vitest run \
@@ -354,6 +358,7 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/trade-form-tp-sl.test.tsx \
   src/lib/tests/limit-price-prefill-contract.test.ts \
   src/lib/tests/book-price-selection.test.tsx \
+  src/lib/tests/book-size-mode-request.test.tsx \
   tests/trade-panel-open-interest-cap.test.tsx
 
 # Confirmation surfaces (see docs/confirmation-surfaces.md)

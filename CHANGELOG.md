@@ -64,6 +64,16 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Changed
 
+- The order book and the order form share one size unit, as on the official terminal. The unit menu
+  in the order book (on desktop in a new control row above the columns, opposite the price grouping;
+  on mobile in the order book's chip row) switches the order form's size unit and converts the size
+  already entered, and the separate "Order book in quote asset" setting is gone. Recent trades always
+  show sizes in the base asset.
+- Order book sizes and totals are shown in full (`11,780,616` instead of `11.8M`) and are no longer
+  cut off, and the price grouping no longer gets truncated inside the desktop Price column header.
+  Amounts in the quote asset are rounded to whole units like the official book; values below one keep
+  their decimals. The compact book beside the mobile order form abbreviates a size only when the
+  phone is too narrow to show it in full beside its price.
 - The HIP-3 deployer notice for EntropyIO markets (the `io` deployer, such as the OpenAI and
   Anthropic pre-IPO markets) now links to EntropyIO's documentation, as it already did for the
   other listed deployers.

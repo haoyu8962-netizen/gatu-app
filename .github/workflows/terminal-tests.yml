@@ -103,6 +103,11 @@ jobs:
           src/lib/tests/deposit-modal-warm.test.ts
           src/lib/tests/trades.test.ts
           src/lib/tests/orderbook-panel-safety.test.tsx
+          src/lib/tests/orderbook.test.ts
+          src/lib/tests/orderbook-rows.test.ts
+          src/lib/tests/orderbook-price-selection.test.tsx
+          src/lib/tests/mobile-orderbook-subscription.test.tsx
+          src/lib/tests/mobile-book-header-contract.test.ts
           src/lib/tests/mobile-bottom-nav.test.tsx
           src/lib/tests/mobile-terminal-market-bar-lifecycle.test.tsx
           src/lib/tests/mobile-terminal-disclosure-state.test.tsx
@@ -203,6 +208,7 @@ jobs:
           src/lib/tests/fast-asset-ctxs-subscription.test.tsx
           src/lib/tests/limit-price-prefill-contract.test.ts
           src/lib/tests/book-price-selection.test.tsx
+          src/lib/tests/book-size-mode-request.test.tsx
           src/lib/tests/mobile-order-safety-contract.test.ts
           src/lib/tests/order-confirmation-gate.test.tsx
           src/lib/tests/order-entry-store.test.tsx
