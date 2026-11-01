@@ -47,6 +47,7 @@ export interface VaultActionModalProps {
 	onConfirm: () => void;
 	onVerifyAgain: () => void;
 	onClose: () => void;
+	onRetry?: () => void;
 }
 
 export function VaultActionModal({
@@ -71,6 +72,7 @@ export function VaultActionModal({
 	onConfirm,
 	onVerifyAgain,
 	onClose,
+	onRetry,
 }: VaultActionModalProps) {
 	const { t } = useLingui();
 	const numberFormat = useNumberFormat();
@@ -162,6 +164,12 @@ export function VaultActionModal({
 							</p>
 						) : null}
 					</div>
+				) : null}
+
+				{onRetry && (stage === "input" || stage === "review") ? (
+					<Button size="xs" variant="outline" intent="neutral" onClick={onRetry}>
+						<Trans>Retry</Trans>
+					</Button>
 				) : null}
 
 				{locked ? <VaultPendingStage stage={stage === "done" ? "reconciling" : stage} action={action} /> : null}

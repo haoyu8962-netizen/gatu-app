@@ -241,6 +241,17 @@ describe("Vault pages passive data", () => {
 		);
 	}
 
+	async function search(text: string) {
+		const input = container.querySelector<HTMLInputElement>('input[aria-label="Search vaults"]');
+		if (!input) throw new Error("Missing the Vault search");
+		const setValue = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
+		await act(async () => {
+			setValue?.call(input, text);
+			input.dispatchEvent(new Event("input", { bubbles: true }));
+		});
+		await flush();
+	}
+
 	function expectNoFailureCopy() {
 		expect(container.querySelector('[role="alert"]')).toBeNull();
 		expect(container.textContent).not.toContain("unavailable");
@@ -456,6 +467,34 @@ describe("Vault pages passive data", () => {
 			await act(async () => button("Refresh")?.click());
 			await flush();
 			expect(container.textContent).not.toContain("No Vaults in this filter");
+			expectNoFailureCopy();
+			expect(retryButtons()).toHaveLength(1);
+		});
+
+		it("draws no search conclusion from account snapshots kept after a failed refresh", async () => {
+			answerAll({ userVaultEquities: async () => [] });
+			await render(<VaultsPage />);
+			await act(async () => button("Deposited")?.click());
+			await flush();
+			await search("Alpha");
+			expect(container.textContent).toContain("No matching Vaults");
+
+			answerAll({ userVaultEquities: fail() });
+			await refetch("userVaultEquities");
+			expect(container.textContent).not.toContain("No matching Vaults");
+			expectNoFailureCopy();
+			expect(retryButtons()).toHaveLength(1);
+		});
+
+		it("draws no search conclusion from a public list kept after a failed refresh", async () => {
+			await render(<VaultsPage />);
+			await search("Zeta");
+			expect(container.textContent).toContain("No matching Vaults");
+
+			answerAll({ publicVaults: fail() });
+			await act(async () => button("Refresh")?.click());
+			await flush();
+			expect(container.textContent).not.toContain("No matching Vaults");
 			expectNoFailureCopy();
 			expect(retryButtons()).toHaveLength(1);
 		});

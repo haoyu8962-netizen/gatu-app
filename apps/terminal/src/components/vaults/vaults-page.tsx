@@ -194,6 +194,7 @@ function VaultDetailLive({ vaultAddress, onRequestAction }: VaultDetailPageProps
 					onConfirm={() => void vaultAction.confirm()}
 					onVerifyAgain={() => void vaultAction.verifyAgain()}
 					onClose={vaultAction.close}
+					onRetry={controller.needsRetry ? controller.onRetry : undefined}
 				/>
 			) : null}
 		</VaultPageFrame>

@@ -531,6 +531,7 @@ function VaultListEmptyResult({
 	onRetry: () => void;
 }) {
 	const { t } = useLingui();
+	if (!confirmed) return <VaultListRetry onRetry={onRetry} />;
 	if (isSearchNoResults) {
 		return (
 			<VaultListMessage title={t`No matching Vaults`}>
@@ -538,7 +539,6 @@ function VaultListEmptyResult({
 			</VaultListMessage>
 		);
 	}
-	if (!confirmed) return <VaultListRetry onRetry={onRetry} />;
 	return (
 		<VaultListMessage title={t`No Vaults in this filter`}>
 			<Trans>This is a definitive empty result for the selected filter.</Trans>
