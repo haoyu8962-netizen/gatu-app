@@ -11,7 +11,7 @@
 | TWAP 字段顺序 | 数量、比例、时间、随机/只减仓、高级设置 | 双端已调整主要顺序，但摘要仍分叉 | 复用同一时间表单和摘要；选项同组，窄容器换行 |
 | TWAP 高级设置 | 默认收起；展开触发价与最高/最低价 | 已有开关和有效值过滤 | 保留草稿；关闭后校验、摘要、确认及提交不使用隐藏价格 |
 | TWAP 时间输入 | 天、时、分 | 时、分，可输入至 168 小时 | 保留现有时/分模型及 5 分钟至 7 天限制 |
-| TWAP 摘要 | 桌面运行时间、约每笔数量、费用；手机运行时间、约每笔数量 | 手机额外显示订单价值、保证金；与桌面内容不同 | 双端统一频率、运行时间、启用的价格条件、费用；本次不新增近似子单数量算法 |
+| TWAP 摘要 | 桌面运行时间、约每笔数量、费用；手机运行时间、约每笔数量 | 手机额外显示订单价值、保证金；与桌面内容不同 | 双端统一运行时间、约每笔数量、启用的价格条件、费用；2026-10-31 起按官方算法估算每笔数量，不再显示固定的「每 30 秒」（见下文 P2 一节） |
 | Scale 顺序 | 数量在价格区间前；数量/偏斜参数相邻 | 桌面和手机顺序、参数排列不同 | 双端数量在前；起止价格之后，订单数/数量偏斜同一行 |
 | Scale 摘要 | 价格、价值、保证金、费用；参数不重复 | 手机重复订单数、偏斜 | 共用紧凑摘要，参数保留在输入区和确认信息 |
 | TIF / 只减仓 / TP/SL | 按订单能力显示，TIF 位于选项区 | 桌面 TIF 另列 chips，手机 TIF 窄屏隐藏标签 | 共用下拉菜单；只减仓/TIF 一行，TP/SL 在下一行 |
@@ -32,7 +32,7 @@
 | 止损限价 | 触发价、限价及 Mid、数量、比例 | 只减仓 | 普通杠杆订单摘要（清算价保留占位符） |
 | 止盈市价 | 触发价、数量、比例 | 只减仓 | 普通杠杆订单摘要（清算价保留占位符） |
 | 止盈限价 | 触发价、限价及 Mid、数量、比例 | 只减仓 | 普通杠杆订单摘要（清算价保留占位符） |
-| TWAP | 数量、比例、小时/分钟、随机化与只减仓、高级设置 | 高级设置展开触发价、最高价（多）/最低价（空） | 频率、时长、有效价格条件、费用 |
+| TWAP | 数量、比例、小时/分钟、随机化与只减仓、高级设置 | 高级设置展开触发价、最高价（多）/最低价（空） | 时长、约每笔数量、有效价格条件、费用 |
 | 分段订单 | 数量、比例、起始价、结束价、订单数/数量偏斜 | 起止价 Mid、只减仓/TIF | 起止价、价值、保证金、费用 |
 
 现货按原有能力隐藏保证金、杠杆、只减仓、清算价等不适用功能，不为了视觉一致添加不可执行选项。允许的 TIF 集合、定价精度、订单数量限制与执行协议不变。
@@ -89,7 +89,7 @@ pnpm --dir apps/terminal exec playwright test \
 
 开关与方向改变保留手输数量，超额不裁剪；提交仍保留签名、账户模式、地区和数据可用性守卫。不可判定状态只显示原占位并阻止动作；已知无仓、错方向和超额使用订阅语言的字段反馈。只减仓保证金为 `—`，费用、价值、滑点仍展示；强平价模型不扩展。
 
-普通手机订单保证金保留原有价格口径：共享 Hook 的 `conversionPrice`（限价类的有效限价，其余为标记价）进入 Big.js 域计算，触发价和 Scale 区间中点不改变该估算。只减仓返回不适用；TWAP 摘要继续不展示保证金行。此修复不改变桌面现有估算模型或交易所保证金规则。
+普通手机订单保证金保留原有价格口径：共享 Hook 的 `conversionPrice`（限价类的有效限价，其余为标记价）进入 Big.js 域计算，触发价不改变该估算。Scale 订单例外：双端都按实际拆档的订单价值估算保证金（见下文 2026-10-30 一节）。只减仓返回不适用；TWAP 摘要继续不展示保证金行。此修复不改变桌面其他订单类型的现有估算模型或交易所保证金规则。
 
 入口执行守卫对市价、限价、四类条件单、TWAP 和 Scale 的主单复核最新持仓，Scale 合计检查；`normalTpsl` 子单不重复占用当前仓位。减仓主单不比较普通开仓容量，但仍要求原可用性上下文成功且新鲜；普通主单继续检查原方向容量。`r=true` 保持协议保护，不代表保证成交。TWAP 时间/最低价值规则继续生效，不新增小额平仓豁免。
 
@@ -104,3 +104,55 @@ pnpm --dir apps/terminal exec playwright test \
 只有当前、成功、同账户的快照列出该永续或 HIP-3 市场时，限价、止损限价、止盈限价（只减仓与所有 TIF 都不豁免）才显示限制说明并禁用提交；市价、止损市价、止盈市价、TWAP、分段与现货不受影响；未知快照与改动前完全相同。提示位置沿用各端已有的校验行：桌面在底部动作区 CTA 之上的错误行，手机在动作按钮上方的 `role="alert"` 行。CTA 名称保持 `Place … Order` / 方向标签，由 `canSubmit` 禁用。提示只取决于订单类型与快照，不影响数量控件的 `aria-invalid`，也不在滑杆手势中移动滑杆。切换市场重新判定，不重置草稿与订单类型。
 
 真实组件回归：`tests/trade-panel-open-interest-cap.test.tsx`（桌面）与 `tests/mobile-trade-size-validation-a11y.test.tsx`（移动）覆盖上限时的说明、禁用与未提交，市价单保持可用，未上限保持原状，执行守卫读取最新快照，以及语言热切换时同一节点更新。约 130 字符的说明在 1001px 与 320px 下可能折成三行，尚未用浏览器布局套件核对。设计与取舍见 [OI 上限说明](open-interest-cap.md) 与 [ADR 0023](adr/0023-open-interest-cap-advisory-check.md)。
+
+## 价格最小变动单位与 Scale 换算价（2026-10-30）
+
+依据[全功能审查](work-memory/sessions/2026-10-30-full-feature-audit.md) A8、A1 与官方前端包（`preSubmitValidation` 的 `price.must.be.divisible.explanation`、Scale 的加权均价 `Gq`）。
+
+- **限价与触发价不在最小变动单位上时拦截。** 限价类订单（限价、止损限价、止盈限价、现货限价）的价格，以及条件单的触发价，不符合 Hyperliquid 的价格规则（最多 5 位有效数字、小数位不超过永续 `6 - szDecimals` / 现货 `8 - szDecimals`，整数不限）时，校验器 `limit-price-tick` / `trigger-price-tick` 报 `Price must be a multiple of the tick size, with at most 5 significant figures. E.g., …` 并禁用提交，不再提交时静默四舍五入。示例价按数字格式设置显示：限价买单向下、卖单向上取（不越过用户设的边界），触发价向下取（与官方相同）。双端共用 `perpInput` / `spotInput` 的必填字段 `limitPriceInput`、`triggerPriceInput`、`formatDecimalString`；桌面在底部错误行显示并标红对应输入框，手机在动作按钮上方的 `role="alert"` 行显示。
+- **提交时限价只向用户边界一侧取整。** 校验之外的兜底：`buildStandardOrder` 与条件限价单的限价用 `formatLimitPriceForOrder`（买单向下、卖单向上）；确认弹窗的「价格」行与下单通知用同一取整，显示值与签名值一致。触发价、附带 TP/SL、持仓弹窗（限价平仓、TP/SL）的取整方式本次没有改。
+- **Scale 的换算价是各档按数量加权的均价。** `getOrderEntryLimitPx` 对 Scale 返回 `getScaleAveragePrice`：各档按最小变动单位取整后的价格，以数量偏斜的精确权重加权平均（与总数量无关），区间、订单数或偏斜不完整时回落标记价。订单价值按实际拆档计算：总数量按手数拆到各档后逐档价格乘数量再求和（`getOrderEntryValueForSize` → `getScaleOrderNotional`），与发送的订单一致。手续费、最小名义价值与现货余额校验由这个订单价值得出；双端保证金也按它除以杠杆（`getOrderMetrics` 的 `scaleOrderValue`），不再用均价或区间中点乘数量。手数较粗时，按均价从 USD 换算出的数量拆档后可能超过输入金额（例如 `szDecimals` 为 0、100 到 20 两档、输入 $180：数量 3 拆成 100×2 与 20×1，共 $220）。这时按整手往下调数量，直到各档合计不超过输入金额（`capSizeToQuoteAmount`；上例调为 2，拆成 100×1 与 20×1，共 $120），与其他订单类型「USD 换算向下取整、总额不超过输入」一致，也与官方结果相同（官方每档各自向下取整，上例同样是 $120，但官方发出的总数量可能小于界面显示的数量；本终端显示的数量就是发出的数量）。数量框里的 USD 金额都这样封顶，包括 USD 模式下百分比滑条写进去的金额：滑条写入的就是一个 USD 金额，与手输一视同仁，官方在同一例子里同样只下 2 手；拖动时滑块不动，松手后回到实际数量对应的位置。按基础币输入的数量、只减仓滑条选出的数量不调整。算不出拆档价值（区间、订单数或偏斜不完整、数量太小不够偏斜）或 200 手内找不到合适数量时保持原数量，摘要照常显示实际金额。均价作为 `useOrderEntryData` 的 `limitPx`，进入 USD 数量换算、现货买入最大数量与百分比基数；区间、订单数和偏斜完整时，订单价值、费用与保证金改用上面的实际拆档价值。修改前按标记价换算：买入 80→60、标记价 100 时输入 $1000，各档名义合计约 $700；修改后约 $999.6（数量按 `szDecimals` 向下取整）。
+
+- **TWAP 的价格条件同样校验（2026-10-30 按官方实践处理待定事项时补上）。** 高级设置打开时，TWAP 的触发价与最高/最低价也走同一规则：`twap-trigger-price-tick`（`INP_008`）的示例向下取，`twap-stop-price-tick`（`INP_009`）的示例朝下单方向更保守的一侧取（买单的最高价向下、卖单的最低价向上）；永续与现货都检查，桌面把对应输入框标红，手机在动作按钮上方显示。高级设置关闭时这两个字段照旧不参与校验。附带 TP/SL 与持仓弹窗（限价平仓、TP/SL）的价格框在失焦时改写为合法价格并显示，提交的就是框里的值，与官方「价格框按价格量级限制可输小数位」的效果相同，不改。
+
+回归：`order-validation.test.ts`（拦截、示例取整方向、整数与现货小数位、数字格式、TWAP 价格条件）、`order-intent.test.ts`（提交时的取整方向）、`scale-conversion-price.test.ts`（加权均价、USD 换算、按档价值与两档偏斜）、`order-metrics.test.ts`（Scale 保证金取按档价值）、`trade-form-fields-order-entry-data.test.tsx`（输入框标红，含 TWAP 价格条件）、`tests/trade-panel-open-interest-cap.test.tsx`（桌面拦截、Scale 换算价与保证金接线）、`tests/mobile-trade-size-validation-a11y.test.tsx`（手机拦截、Scale 换算价与保证金接线）。未做：浏览器布局套件核对错误行在 320px 的换行，真实下单验收。
+
+## 最大数量、条件单、TWAP 与参照价（2026-10-31，P2 下单校验）
+
+依据[全功能审查](work-memory/sessions/2026-10-30-full-feature-audit.md) A2、A3、A4、A5、A11、A12，对照 2026-10-31 下载的官方前端包 `config-BhZylSmU.js` 与官方文档 [Order types](https://hyperliquid.gitbook.io/hyperliquid-docs/trading/order-types)。
+
+- **限价单的最大数量按挂单价占用的保证金折算（A2）。** 官方 `zle(markPx, userLimitPx, side)`：买单限价低于标记价、卖单限价高于标记价时，最大数量乘以「标记价 ÷ 限价」，否则不变（`d8` 的 `maxTradeSz: d*h`）。本终端写成同一口径：一笔永续委托按 `getRestingMarginPrice` 占用保证金（被动一侧按自身价格，越过标记价的按标记价），与交易所给的「`maxTradeSzs` × 标记价」比较。单笔限价单的结果与官方完全相同；止损限价、止盈限价也用限价。Scale 逐档累加各档的保证金（`getOrderEntryMarginNotionalForSize` → `getScaleOrderMarginNotional`）。最大数量按整手搜索（`getPerpEntryMaxSize`：手数先加倍、再二分，每个候选都用实际拆档核对预算），因为 Scale 按手拆档后，保证金不是按均价的一条直线。这一点有意不同于官方：官方给 Scale 传的是表单「限价」字段，而 Scale 表单不显示这个字段。表单的「超过最大数量」由 `exceedsPerpEntryMaxSize` 判定；该方向容量缺失或为 0 时任何正数量都算超出（与官方 `size > maxTradeSz` 一致，只减仓与触发单另有豁免）。入口执行守卫按发出的各档价格与新鲜的标记价做同样的比较。标记价不新鲜时退回改动前的做法，按数量与原始最大数量比较：对低于标记价的买单这更严格；对高于标记价的卖单则不比交易所自己的保证金检查更严，交易所仍会拒绝放不下的订单。限价单按原有设计不要求实时标记价（`entry-order-execution-guard.test.ts` 钉住），所以这里不失败关闭。现货不变（买入仍按报价余额 ÷ 限价或执行价）。
+- **止损、止盈触发单不受最大数量与可用余额限制（A3）。** 官方下单按钮只对非只减仓、非触发单（`!xJ(P)`，`xJ` 即止损/止盈四类）和非移动止损检查最大仓位，并且只在账户完全没有资金时（`needToDeposit`：主账户价值、金库权益为 0，无子账户与划转记录，现货为空）要求存款。本终端：永续的止损/止盈订单不检查最大数量（表单 `exceeds-max-size` 与守卫都豁免）；账户有资金（当前、成功的全部 DEX 永续快照里任一 DEX 有权益，或现货快照里有任何余额，`hasAccountFunds`；快照未到、过期或出错都不算有资金）时也不要求该方向有可用余额，按钮不再变成「存款」，数量输入不被禁用（`entryOrderRequiresAvailableBalance` 由 `useOrderEntryData` 统一给出）。完全没有资金的账户仍显示存款。交易所会在触发时检查保证金，不足则拒绝触发后的订单。
+- **TWAP 设了触发价时，最高/最低价只和触发价比较（A4）。** 官方 `UJ`：参照价有触发价时取触发价，否则取标记价；买单最高价须高于参照价，卖单最低价须低于参照价。本终端表单（`twap-stop-direction` 在有触发价时让位给 `twap-stop-beyond-trigger`）与守卫（`assertTwapDetailsStillValid`）都改为同样的规则。文档原文：Max/Min Price 在标记价到达时终止 TWAP，Trigger Price 在标记价到达时启动。
+- **TWAP 摘要显示约每笔数量，不再写「每 30 秒」（A5）。** 官方文档：子单间隔由订单大小与运行时间决定，最短 30 秒。官方摘要（`BJ`/`MJ`）显示运行时间与约每笔数量：子单数为「运行秒数 ÷ 30 取整 + 1」，每笔 = max(总数量 ÷ 子单数, $10 ÷ 中间价)，且不超过总数量。本终端 `getTwapSuborderSize` 按同一公式计算，参照价取中间价（没有时用标记价），按 `szDecimals` 显示并加「~」。进行中 TWAP 表格的「频率」列仍是固定文案，属于 P3 的 B14，留待表格整理时处理。
+- **市价单附带的止盈止损按同一参照价核对（A11）。** 官方提交前用 `g6(..., yJ(P) ? 限价 : 中间价)` 核对附带 TP/SL 的方向；本终端表单与下单构建都用中间价（没有时用标记价），守卫原先却按标记价核对，中间价与标记价之间的 TP/SL 会被守卫拒绝。守卫改为对市价主单使用 `executionReferencePx`（表单同一来源）。单独的止损/止盈触发单仍按标记价核对方向：交易所按标记价触发，按标记价核对能避免一挂上就触发；官方与文档用中间价，这是有意保留的差异。
+- **现货市价买单按发送价核对报价余额（A12）。** 市价买单以「参照价 ×（1 + 滑点上限）」发出，交易所按这个价格锁定报价币，入口守卫也按它核对。表单原先按「数量 × 标记价」核对，手输数量能过表单、却在守卫处被拒。现在表单用同一预算（`spotBuyQuoteCost`）：发送价由下单构建共用的 `getFrontendMarketOrderPrice` 算出（买单向下取整），预算就是发送价 × 数量；只因滑点不够时提示 `Insufficient {quoteToken} balance at max slippage`。官方不在表单里检查这一项，交给交易所拒绝；本终端已有守卫，表单与之对齐。
+
+回归：`order-entry.test.ts`（被动买单最大数量、保证金判定、现货市价买入预算）、`order-size.test.ts`（保证金价格、最大数量、Scale 逐手下调）、`scale-conversion-price.test.ts`（限价与 Scale 的保证金）、`order-validation.test.ts`（TWAP 参照价、触发单豁免、余额豁免、现货滑点提示）、`reduce-only.test.ts`（存款阶段、豁免条件、`hasAccountFunds`）、`entry-order-execution-guard.test.ts`（守卫的保证金口径、触发单豁免、TP/SL 参照价、TWAP 参照价）、`twap-details.test.ts` 与 `twap-order-summary.test.tsx`（约每笔数量）、`tests/trade-panel-open-interest-cap.test.tsx` 与 `tests/mobile-trade-size-validation-a11y.test.tsx`（双端保证金接线）。未做：真实下单、真机。
+
+## 点击订单簿价格（2026-11-01，审查 C7）
+
+依据[全功能审查](work-memory/sessions/2026-10-30-full-feature-audit.md) C7：此前点击订单簿任一档位，桌面与手机的下单表单都无条件切成限价单，Stop Market、Take Profit Limit、Scale、TWAP 的设置随之丢失。现在按官方终端（2026-10-31 生产包 `gf`／`dw`，并在官方页面只读实测）处理，桌面订单簿、手机紧凑簿与分栏簿三处点击走同一条路径：桌面与手机下单表单都调用 `useBookPriceSelection`（`hooks/trade/use-book-price-selection.ts`），类型映射是 `getOrderTypeForBookPrice`（`lib/trade/order-types.ts`）。一次点击只应用一次：读到选价就清除，无论订单类型是否因此改变，别的市场的点击直接丢弃，所以之后切换订单类型不会重放旧点击。
+
+| 点击前 | 点击后 | 价格 |
+| --- | --- | --- |
+| Market | Limit | 限价设为点击价 |
+| Limit、Stop Limit、Take Profit Limit | 类型不变 | 限价设为点击价，触发价不动 |
+| Stop Market | Stop Limit | 限价设为点击价，触发价不动 |
+| Take Profit Market、Scale、TWAP | 类型不变 | 不改任何字段 |
+
+- 官方在 Take Profit Market、Scale、TWAP 下也把点击价写进共享的限价状态，之后切到限价类才显示出来。本终端不写：限价预填只填空值，写入会在用户看不见的表单里留下价格，`setLimitPriceFromUser` 还会清掉只减仓的数量来源（`sizeSource`）。点击当时的可见结果与官方相同。
+- 限价的预填身份用切换后的类型（`<市场>|stopLimit` 等），与表单自身的预填身份一致。
+- 官方「点击数量或累计格同时填数量」（默认开）与分栏簿行不可点击，本次未做，需另行决定。
+
+回归：`src/lib/tests/book-price-selection.test.tsx` 用真实的下单与订单簿两个 store 核对八类订单的结果、点击只应用一次（之后切类型、改价或重新渲染都不重放）、被忽略的类型与别的市场的点击都会被清除；`tests/trade-panel-open-interest-cap.test.tsx`（桌面）与 `tests/mobile-trade-size-validation-a11y.test.tsx`（手机）核对两端都接上了这条路径与预填身份。变异（一律切限价、Stop Market 切 Limit、给 TWAP/Scale 写价、预填身份写死 `limit`、不清除点击、只在本市场或可处理的类型时才清除、任一端不调用）都会失败。
+
+## 在订单簿里选数量单位（2026-11-01，审查 M9）
+
+依据[第二组审查记录](work-memory/sessions/2026-11-01-audit-group2.md) M9 与 [ADR 0046](adr/0046-one-size-unit-for-order-entry-and-order-book.md)：官方只有一个单位状态，订单簿里的单位下拉就是下单数量的单位。本终端同样只保留下单草稿的 `sizeMode`，删除了设置里的「Order book in quote asset」开关。
+
+- 桌面订单簿控制行与手机分栏簿芯片行的单位下拉，选项依次为计价币、基础币。选择后写一次请求（`requestSizeMode`），桌面 `TradePanel` 与手机 `MobileTradeView` 用 `useBookSizeModeRequest` 消费：先按对象身份领取请求（`takeSizeModeRequest`，所以 StrictMode 重复执行效果或请求早于表单挂载时也只处理一次），别的市场的请求丢弃，单位相同不处理，否则调用表单自己的 `toggleSizeDenomination`。已填数量的换算、只减仓的数量来源与表单单位切换完全相同。
+- 手机下单表单在「行情」页签显示分栏簿时仍挂载（只是不可见），所以分栏簿里选的单位立即作用到下单数量。
+- 与官方的差异：表单既有换算优先用标记价（`getConversionPrice`），官方有限价时用限价。这是表单原有行为，本次未改。
+
+回归：`src/lib/tests/book-size-mode-request.test.tsx` 用真实的下单与订单簿两个 store 核对：只换算一次、之后改单位或重新渲染不重放、请求早于表单挂载时在 StrictMode 下也只换算一次、单位相同不换算、别的市场的请求丢弃；`tests/trade-panel-open-interest-cap.test.tsx`（桌面）与 `tests/mobile-trade-size-validation-a11y.test.tsx`（手机）核对两端都接上了这条路径；`orderbook-panel-safety.test.tsx` 与 `mobile-orderbook-subscription.test.tsx` 核对两处单位下拉写出的请求。

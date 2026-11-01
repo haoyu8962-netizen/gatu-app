@@ -1,3 +1,5 @@
+import Big from "big.js";
+import { ORDER_MIN_NOTIONAL_USD, TWAP_SUBORDER_INTERVAL_SECONDS } from "@/config/trade";
 import { formatPriceForOrder } from "@/domain/trade/orders";
 import { type Numeric, toBig } from "@/lib/trade/numbers";
 
@@ -46,6 +48,24 @@ export function resolveTwapPriceInputs(
 
 export function getTwapRuntimeMinutes(minutes: number | null): number {
 	return Math.max(0, Math.round(minutes ?? 0));
+}
+
+/**
+ * The size of each TWAP suborder as the official terminal estimates it: one suborder every 30 seconds
+ * of the runtime plus the first, each at least the minimum order value at the reference price and
+ * never more than the whole order. The exchange spaces suborders by size and runtime, with intervals of
+ * at least 30 seconds, so a small order runs fewer, larger suborders; null while an input is missing.
+ */
+export function getTwapSuborderSize(totalSize: Numeric, minutes: number | null, referencePx: Numeric): Big | null {
+	const size = toBig(totalSize);
+	const runtime = getTwapRuntimeMinutes(minutes);
+	if (!size?.gt(0) || runtime <= 0) return null;
+	const suborders = Math.floor((runtime * 60) / TWAP_SUBORDER_INTERVAL_SECONDS) + 1;
+	const evenSplit = size.div(suborders);
+	const price = toBig(referencePx);
+	const minimumSize = price?.gt(0) ? Big(ORDER_MIN_NOTIONAL_USD).div(price) : Big(0);
+	const suborderSize = evenSplit.gt(minimumSize) ? evenSplit : minimumSize;
+	return suborderSize.gt(size) ? size : suborderSize;
 }
 
 export function getTwapTriggerDirection(triggerPx: Numeric, markPx: Numeric): TwapTriggerDirection | null {

@@ -3,7 +3,7 @@ import Big from "big.js";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { isAddress, zeroAddress } from "viem";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
-import { isWalletRejectionError } from "@/lib/errors/action-error";
+import { type ActionFailure, classifyActionErrorOr, isWalletRejectionError } from "@/lib/errors/action-error";
 import { getReferralActionGeo, type ReferralActionGeoDecision } from "@/lib/geo/get-referral-action-geo";
 import { useExchange, useHyperliquid, useLegalStatus } from "@/lib/hyperliquid";
 import { hasSameWalletAddress } from "@/lib/wallet/privy-wagmi";
@@ -41,6 +41,7 @@ import {
 	type StakingActionSubmission,
 	validateHypeActionAmount,
 } from "./domain/staking";
+import { STAKING_REQUEST_REJECTED } from "./domain/staking-action-feedback";
 
 const RECONCILIATION_ATTEMPTS = 6;
 const RECONCILIATION_INTERVAL_MS = 800;
@@ -50,6 +51,7 @@ export interface StakingActionSession {
 	identityKey: string;
 	state: FundsActionState;
 	errorMessage: string | null;
+	failure: ActionFailure | null;
 	match: FundsActionMatch | null;
 	reference: FundsActionReference | null;
 	recoveredFromMarker: boolean;
@@ -118,10 +120,10 @@ export interface StakingActionErrorDecision {
 export function classifyStakingActionError(error: unknown, sdkBoundaryPassed: boolean): StakingActionErrorKind {
 	if (error instanceof StakingActionPreflightError) return "preflight";
 	if (!sdkBoundaryPassed) return "preflight";
-	if (isWalletRejectionError(error)) return "rejected";
 	if (error instanceof Error && (error.name === "ApiRequestError" || error.name === "ValidationError")) {
 		return "apiError";
 	}
+	if (isWalletRejectionError(error)) return "rejected";
 	return "unknown";
 }
 
@@ -403,6 +405,7 @@ export function useStakingActions(ownerAddress: `0x${string}` | undefined): Stak
 			identityKey,
 			state: transitionFundsAction(createFundsActionState(), { type: "review" }),
 			errorMessage: null,
+			failure: null,
 			match: null,
 			reference: null,
 			recoveredFromMarker: false,
@@ -412,7 +415,12 @@ export function useStakingActions(ownerAddress: `0x${string}` | undefined): Stak
 	function back() {
 		const current = activeRef.current;
 		if (!current || isFundsActionLocked(current.state)) return;
-		updateActive({ ...current, state: transitionFundsAction(current.state, { type: "back" }), errorMessage: null });
+		updateActive({
+			...current,
+			state: transitionFundsAction(current.state, { type: "back" }),
+			errorMessage: null,
+			failure: null,
+		});
 	}
 
 	async function submit() {
@@ -436,6 +444,7 @@ export function useStakingActions(ownerAddress: `0x${string}` | undefined): Stak
 			...current,
 			state: transitionFundsAction(current.state, { type: "requestAuthorization" }),
 			errorMessage: null,
+			failure: null,
 			match: null,
 		});
 
@@ -489,6 +498,7 @@ export function useStakingActions(ownerAddress: `0x${string}` | undefined): Stak
 
 	async function handleExecutionError(lease: ExecutionLease, error: unknown) {
 		const decision = decideStakingActionError(error, lease.sdkBoundaryPassed);
+		const kind = classifyStakingActionError(error, lease.sdkBoundaryPassed);
 		if (lease.reference && decision.clearMarker) await removeFundsActionMarkerSafely(lease.reference.id);
 		if (!executionIsCurrent(lease)) return;
 		const current = activeRef.current;
@@ -507,12 +517,8 @@ export function useStakingActions(ownerAddress: `0x${string}` | undefined): Stak
 		updateActive({
 			...current,
 			state: transitionFundsAction(current.state, { type: "resolve", result: decision.result }),
-			errorMessage:
-				decision.result === "rejected"
-					? "rejected"
-					: classifyStakingActionError(error, lease.sdkBoundaryPassed) === "apiError"
-						? "apiError"
-						: "preflightFailed",
+			errorMessage: decision.result === "rejected" ? "rejected" : kind === "apiError" ? "apiError" : "preflightFailed",
+			failure: kind === "apiError" ? classifyActionErrorOr(error, STAKING_REQUEST_REJECTED) : null,
 		});
 		finishExecution(lease);
 	}
@@ -571,6 +577,7 @@ export function useStakingActions(ownerAddress: `0x${string}` | undefined): Stak
 				...current,
 				state: transitionFundsAction(current.state, { type: "resolve", result: "unknown" }),
 				errorMessage: "statusUnknown",
+				failure: null,
 			});
 		}
 		finishExecution(lease);
@@ -581,7 +588,7 @@ export function useStakingActions(ownerAddress: `0x${string}` | undefined): Stak
 		if (!current || current.state.stage !== "done") return;
 		const next = transitionFundsAction(current.state, { type: "retry" });
 		if (next === current.state) return;
-		updateActive({ ...current, state: next, errorMessage: null, match: null, reference: null });
+		updateActive({ ...current, state: next, errorMessage: null, failure: null, match: null, reference: null });
 	}
 
 	async function verify() {
@@ -609,6 +616,7 @@ export function useStakingActions(ownerAddress: `0x${string}` | undefined): Stak
 			...current,
 			state: transitionFundsAction(current.state, { type: "verify" }),
 			errorMessage: null,
+			failure: null,
 		});
 		await reconcile(lease);
 	}
@@ -685,6 +693,7 @@ function buildStakingRecoveredSession(
 		identityKey,
 		state: { stage: "done", result: "unknown" },
 		errorMessage: "statusUnknown",
+		failure: null,
 		match: null,
 		reference,
 		recoveredFromMarker: true,

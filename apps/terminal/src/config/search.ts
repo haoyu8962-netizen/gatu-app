@@ -1,12 +1,6 @@
 import type { UnifiedMarketInfo } from "@/lib/hyperliquid";
 import type { SearchConfig } from "@/lib/search/types";
 
-export const KIND_LABELS: Record<UnifiedMarketInfo["kind"], string> = {
-	perp: "Perp",
-	spot: "Spot",
-	builderPerp: "Builder",
-};
-
 export const marketSearchConfig: SearchConfig<UnifiedMarketInfo> = {
 	fields: {
 		baseCoin: {

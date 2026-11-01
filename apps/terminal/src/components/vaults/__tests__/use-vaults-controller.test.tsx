@@ -128,6 +128,19 @@ describe("useVaultsController", () => {
 		});
 	});
 
+	it("asks for a retry when a detail refresh answers malformed data, so an open action dialog can recover", () => {
+		mocks.info = new Map<string, QueryState<unknown>>([
+			["vaultDetails", query(vaultDetail(), { dataUpdatedAt: 1 })],
+			["userVaultEquities", query(undefined)],
+		]);
+		act(() => root.render(<DetailProbe />));
+		expect(detailCurrent()).toMatchObject({ state: "normal", detailCurrent: true, needsRetry: false });
+
+		mocks.info.set("vaultDetails", query({ ...vaultDetail(), name: 7 }, { dataUpdatedAt: 2 }));
+		act(() => root.render(<DetailProbe />));
+		expect(detailCurrent()).toMatchObject({ state: "error", detailCurrent: false, needsRetry: true });
+	});
+
 	it("recomputes the owner withdrawal gate when the server lock timestamp passes", async () => {
 		const now = Date.now();
 		mocks.wallet = { address: "0x0000000000000000000000000000000000000004", sessionMode: "wallet" };

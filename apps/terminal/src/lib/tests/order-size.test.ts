@@ -1,6 +1,10 @@
+import Big from "big.js";
 import { describe, expect, it } from "vitest";
 import {
+	exceedsPerpEntryMaxSize,
 	formatSliderPercent,
+	getPerpEntryMaxSize,
+	getRestingMarginPrice,
 	getSizeForPercent,
 	getSizeInputMaxDecimals,
 	getSizeValueForModeToggle,
@@ -122,3 +126,63 @@ function percentInput(
 		...overrides,
 	};
 }
+
+describe("perp maximum for a resting order (official terminal margin price)", () => {
+	const limitNotional = (price: string) => (size: string) => Big(size).times(price).toNumber();
+
+	it("raises the maximum of a buy below mark and lowers that of a sell above mark", () => {
+		expect(getRestingMarginPrice("buy", Big(100), Big(80)).toString()).toBe("80");
+		expect(getRestingMarginPrice("buy", Big(100), Big(120)).toString()).toBe("100");
+		expect(getRestingMarginPrice("sell", Big(100), Big(125)).toString()).toBe("125");
+		expect(getRestingMarginPrice("sell", Big(100), Big(90)).toString()).toBe("100");
+
+		expect(
+			getPerpEntryMaxSize({ maxTradeSize: 10, markPx: 100, szDecimals: 2, marginNotionalForSize: limitNotional("80") }),
+		).toBe(12.5);
+		expect(
+			getPerpEntryMaxSize({
+				maxTradeSize: 10,
+				markPx: 100,
+				szDecimals: 2,
+				marginNotionalForSize: limitNotional("125"),
+			}),
+		).toBe(8);
+		expect(getPerpEntryMaxSize({ maxTradeSize: 10, markPx: 100, szDecimals: 2 })).toBe(10);
+	});
+
+	it("flags a size by the margin it reserves, not by the size at mark", () => {
+		const input = { maxTradeSize: 10, markPx: 100, szDecimals: 2, marginNotionalForSize: limitNotional("80") };
+		expect(exceedsPerpEntryMaxSize({ ...input, size: "12.5" })).toBe(false);
+		expect(exceedsPerpEntryMaxSize({ ...input, size: "12.51" })).toBe(true);
+		expect(exceedsPerpEntryMaxSize({ maxTradeSize: 10, markPx: 100, szDecimals: 2, size: "10.01" })).toBe(true);
+		expect(exceedsPerpEntryMaxSize({ maxTradeSize: 0, markPx: 100, szDecimals: 2, size: "1" })).toBe(true);
+		expect(exceedsPerpEntryMaxSize({ maxTradeSize: undefined, markPx: 100, szDecimals: 2, size: "1" })).toBe(true);
+		expect(exceedsPerpEntryMaxSize({ maxTradeSize: 0, markPx: 100, szDecimals: 2, size: "0" })).toBe(false);
+	});
+
+	it("finds a maximum below one exchange lot of the raw maximum when the margin price is far below mark", () => {
+		const input = { maxTradeSize: 0.5, markPx: 100, szDecimals: 0, marginNotionalForSize: limitNotional("20") };
+		expect(getPerpEntryMaxSize(input)).toBe(2);
+		expect(exceedsPerpEntryMaxSize({ ...input, size: "2" })).toBe(false);
+		expect(exceedsPerpEntryMaxSize({ ...input, size: "3" })).toBe(true);
+	});
+
+	it("lowers a scale order's maximum lot by lot until its actual levels fit", () => {
+		const uneven = (size: string) =>
+			Big(size)
+				.times(90)
+				.plus(Big(size).gt(5.3) ? 30 : 0)
+				.toNumber();
+		const max = getPerpEntryMaxSize({ maxTradeSize: 5, markPx: 100, szDecimals: 1, marginNotionalForSize: uneven });
+		expect(
+			exceedsPerpEntryMaxSize({
+				maxTradeSize: 5,
+				markPx: 100,
+				szDecimals: 1,
+				marginNotionalForSize: uneven,
+				size: String(max),
+			}),
+		).toBe(false);
+		expect(max).toBe(5.3);
+	});
+});

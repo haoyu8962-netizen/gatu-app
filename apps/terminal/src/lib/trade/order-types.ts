@@ -28,6 +28,18 @@ export function usesLimitPrice(orderType: OrderType): boolean {
 	return orderType === "limit" || orderType === "stopLimit" || orderType === "takeProfitLimit";
 }
 
+/**
+ * The order type a click on an order-book level leaves the form in, as on the official terminal: a market
+ * order becomes a limit order and a stop market a stop limit at the clicked price, and a type that already
+ * has a limit price keeps it. TWAP, scale and take-profit market orders have no limit price and stay as
+ * they are (`null`): the click changes nothing in them.
+ */
+export function getOrderTypeForBookPrice(orderType: OrderType): OrderType | null {
+	if (orderType === "market") return "limit";
+	if (orderType === "stopMarket") return "stopLimit";
+	return usesLimitPrice(orderType) ? orderType : null;
+}
+
 export function usesTriggerPrice(orderType: OrderType): boolean {
 	return isTriggerOrderType(orderType);
 }

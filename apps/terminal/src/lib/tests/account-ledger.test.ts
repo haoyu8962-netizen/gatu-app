@@ -4,13 +4,56 @@ import {
 	type AccountLedgerUpdate,
 	buildAccountLedgerRow,
 	fetchAccountLedgerHistory,
+	getAccountLedgerSubAccounts,
 	getAccountLedgerUpdateKey,
+	getAccountLedgerUsdcBridge,
 	mergeAccountLedgerUpdates,
 } from "@/lib/trade/account-ledger";
 
 const USER = "0x1111111111111111111111111111111111111111";
-const OTHER = "0x2222222222222222222222222222222222222222";
+const OTHER = "0x3333333333333333333333333333333333333333";
 const HASH = `0x${"a".repeat(64)}` as `0x${string}`;
+const BRIDGE = getAccountLedgerUsdcBridge(false);
+const USDC_SYSTEM_ADDRESS = "0x2000000000000000000000000000000000000000";
+const MAINNET_CORE_DEPOSIT_WALLET = "0x6b9e773128f453f5c2c60935ee2de2cbc5390a24";
+const TESTNET_CORE_DEPOSIT_WALLET = "0x0b80659a4076e9e93c7dbe0f10675a16a3e5c206";
+
+type SendDelta = Extract<UserNonFundingLedgerUpdatesResponse[number]["delta"], { type: "send" }>;
+type SpotTransferDelta = Extract<UserNonFundingLedgerUpdatesResponse[number]["delta"], { type: "spotTransfer" }>;
+
+function createSend(overrides: Partial<SendDelta>): SendDelta {
+	return {
+		type: "send",
+		amount: "5",
+		destination: OTHER,
+		destinationDex: "spot",
+		fee: "0",
+		feeToken: "USDC",
+		nativeTokenFee: "0",
+		nonce: 1,
+		sourceDex: "spot",
+		token: "USDC",
+		usdcValue: "5",
+		user: USER,
+		...overrides,
+	};
+}
+
+function createSpotTransfer(overrides: Partial<SpotTransferDelta>): SpotTransferDelta {
+	return {
+		type: "spotTransfer",
+		amount: "2",
+		destination: OTHER,
+		fee: "0",
+		feeToken: "",
+		nativeTokenFee: "0",
+		nonce: 1,
+		token: "HYPE",
+		usdcValue: "60",
+		user: USER,
+		...overrides,
+	};
+}
 
 function createUpdate(
 	delta: AccountLedgerUpdate["delta"],
@@ -26,10 +69,11 @@ function createUpdate(
 
 describe("account ledger", () => {
 	it("maps documented bridge deposits and withdrawals", () => {
-		const deposit = buildAccountLedgerRow(createUpdate({ type: "deposit", usdc: "25.5" }), USER);
+		const deposit = buildAccountLedgerRow(createUpdate({ type: "deposit", usdc: "25.5" }), USER, BRIDGE);
 		const withdrawal = buildAccountLedgerRow(
 			createUpdate({ type: "withdraw", usdc: "20", fee: "1", nonce: 999 }),
 			USER,
+			BRIDGE,
 		);
 
 		expect(deposit).toMatchObject({
@@ -52,10 +96,11 @@ describe("account ledger", () => {
 	});
 
 	it("keeps amounts below 1e-7 as plain decimal strings", () => {
-		const deposit = buildAccountLedgerRow(createUpdate({ type: "deposit", usdc: "0.00000001" }), USER);
+		const deposit = buildAccountLedgerRow(createUpdate({ type: "deposit", usdc: "0.00000001" }), USER, BRIDGE);
 		const withdrawal = buildAccountLedgerRow(
 			createUpdate({ type: "withdraw", usdc: "0.00000002", fee: "0.00000001", nonce: 1 }),
 			USER,
+			BRIDGE,
 		);
 
 		expect(deposit?.amount).toBe("0.00000001");
@@ -89,14 +134,14 @@ describe("account ledger", () => {
 			{ time: 2_000 },
 		);
 
-		expect(buildAccountLedgerRow(outgoing, USER)).toMatchObject({
+		expect(buildAccountLedgerRow(outgoing, USER, BRIDGE)).toMatchObject({
 			action: "send",
 			amount: "-5",
 			destination: { kind: "spot" },
 			fee: { amount: "0.1", token: "USDC" },
 			source: { kind: "perps" },
 		});
-		expect(buildAccountLedgerRow(incoming, USER)).toMatchObject({ amount: "5" });
+		expect(buildAccountLedgerRow(incoming, USER, BRIDGE)).toMatchObject({ amount: "5" });
 	});
 
 	it("prefers native fees and preserves builder dex locations", () => {
@@ -116,6 +161,7 @@ describe("account ledger", () => {
 				user: USER,
 			}),
 			USER,
+			BRIDGE,
 		);
 
 		expect(row).toMatchObject({
@@ -125,18 +171,214 @@ describe("account ledger", () => {
 		});
 	});
 
+	it("labels a CCTP withdrawal sent to the USDC system address as a withdrawal to HyperEVM", () => {
+		const row = buildAccountLedgerRow(
+			createUpdate(createSend({ amount: "10.49", destination: USDC_SYSTEM_ADDRESS, fee: "0.001734" })),
+			USER,
+			BRIDGE,
+		);
+
+		expect(row).toMatchObject({
+			action: "withdrawal",
+			amount: "-10.49",
+			destination: { kind: "hyperevm" },
+			explorer: "hyperliquid",
+			fee: { amount: "0.001734", token: "USDC" },
+			source: { kind: "spot" },
+			token: "USDC",
+		});
+	});
+
+	it.each([
+		["", { kind: "perps" }],
+		["xyz", { dex: "xyz", kind: "perpDex" }],
+	] as const)(
+		"treats a send to the USDC system address on DEX %j as a transfer, not a withdrawal",
+		(destinationDex, destination) => {
+			const row = buildAccountLedgerRow(
+				createUpdate(createSend({ destination: USDC_SYSTEM_ADDRESS, destinationDex })),
+				USER,
+				BRIDGE,
+			);
+
+			expect(row).toMatchObject({ action: "transfer", destination });
+		},
+	);
+
+	it("labels open interest rewards and transfers with the owner's sub-accounts as the official terminal does", () => {
+		const SUB_ACCOUNT = "0x4444444444444444444444444444444444444444";
+		const subAccounts = getAccountLedgerSubAccounts([
+			{ name: "alpha", subAccountUser: SUB_ACCOUNT.toUpperCase().replace("0X", "0x"), master: USER },
+		]);
+		const internal = (user: string, destination: string) =>
+			createUpdate({ type: "internalTransfer", usdc: "3", user, destination, fee: "0" });
+		const reward = internal("0x995E92D4BB508276F839F1F191DF0FBDDB8582BA", USER);
+
+		expect(buildAccountLedgerRow(reward, USER, BRIDGE, subAccounts)).toMatchObject({
+			action: "openInterestReward",
+			amount: "3",
+		});
+		expect(
+			buildAccountLedgerRow(internal("0x4e8b59f6f39fde9e908dff6554c31f232f8a9d0f", USER), USER, BRIDGE),
+		).toMatchObject({ action: "openInterestReward" });
+		expect(buildAccountLedgerRow(internal(USER, SUB_ACCOUNT), USER, BRIDGE, subAccounts)).toMatchObject({
+			action: "subAccountTransfer",
+			amount: "-3",
+		});
+		expect(buildAccountLedgerRow(internal(USER, OTHER), USER, BRIDGE, subAccounts)).toMatchObject({ action: "send" });
+		expect(buildAccountLedgerRow(internal(USER, SUB_ACCOUNT), USER, BRIDGE)).toMatchObject({ action: "send" });
+		expect(
+			buildAccountLedgerRow(createUpdate(createSpotTransfer({ destination: SUB_ACCOUNT })), USER, BRIDGE, subAccounts),
+		).toMatchObject({ action: "subAccountTransfer", token: "HYPE" });
+		expect(
+			buildAccountLedgerRow(
+				createUpdate(createSend({ user: SUB_ACCOUNT, destination: USER, destinationDex: "" })),
+				USER,
+				BRIDGE,
+				subAccounts,
+			),
+		).toMatchObject({ action: "subAccountTransfer", amount: "5" });
+		expect(getAccountLedgerSubAccounts(null).size).toBe(0);
+		expect(getAccountLedgerSubAccounts([{ subAccountUser: 1 }, "bad"]).size).toBe(0);
+	});
+
+	it("matches sub-accounts without regard to case and keeps the official order of the checks", () => {
+		const subAccount = "0xabcdefabcdefabcdefabcdefabcdefabcdefabcd";
+		const upperSet = getAccountLedgerSubAccounts([{ subAccountUser: "0xABCDEFABCDEFABCDEFABCDEFABCDEFABCDEFABCD" }]);
+		const lowerSet = getAccountLedgerSubAccounts([{ subAccountUser: subAccount }]);
+		const mixed = "0xAbCdEfAbCdEfAbCdEfAbCdEfAbCdEfAbCdEfAbCd";
+		const internal = (user: string, destination: string) =>
+			createUpdate({ type: "internalTransfer", usdc: "3", user, destination, fee: "0" });
+
+		expect(buildAccountLedgerRow(internal(USER, subAccount), USER, BRIDGE, upperSet)).toMatchObject({
+			action: "subAccountTransfer",
+		});
+		expect(buildAccountLedgerRow(internal(mixed, USER), USER, BRIDGE, lowerSet)).toMatchObject({
+			action: "subAccountTransfer",
+		});
+		expect(buildAccountLedgerRow(internal(USER, mixed), USER, BRIDGE, lowerSet)).toMatchObject({
+			action: "subAccountTransfer",
+		});
+		expect(
+			buildAccountLedgerRow(internal("0x995e92d4bb508276f839f1f191df0fbddb8582ba", mixed), USER, BRIDGE, lowerSet),
+		).toMatchObject({ action: "openInterestReward" });
+		expect(
+			buildAccountLedgerRow(
+				createUpdate(createSpotTransfer({ user: mixed, destination: USER, token: "HYPE" })),
+				USER,
+				BRIDGE,
+				lowerSet,
+			),
+		).toMatchObject({ action: "subAccountTransfer" });
+		const systemSubAccounts = getAccountLedgerSubAccounts([{ subAccountUser: USDC_SYSTEM_ADDRESS }]);
+		expect(
+			buildAccountLedgerRow(
+				createUpdate(createSend({ destination: USDC_SYSTEM_ADDRESS, destinationDex: "spot" })),
+				USER,
+				BRIDGE,
+				systemSubAccounts,
+			),
+		).toMatchObject({ action: "subAccountTransfer" });
+		expect(
+			buildAccountLedgerRow(
+				createUpdate(createSpotTransfer({ destination: "0x2222222222222222222222222222222222222222" })),
+				USER,
+				BRIDGE,
+				getAccountLedgerSubAccounts([{ subAccountUser: "0x2222222222222222222222222222222222222222" }]),
+			),
+		).toMatchObject({ action: "subAccountTransfer" });
+	});
+
+	it("labels USDC arriving from the network's CoreDepositWallet as a deposit from HyperEVM", () => {
+		const delta = createSend({ destination: USER, destinationDex: "", user: MAINNET_CORE_DEPOSIT_WALLET });
+		const testnetDelta = { ...delta, user: TESTNET_CORE_DEPOSIT_WALLET };
+
+		expect(buildAccountLedgerRow(createUpdate(delta), USER, BRIDGE)).toMatchObject({
+			action: "deposit",
+			amount: "5",
+			destination: { kind: "perps" },
+			explorer: "hyperliquid",
+			source: { kind: "hyperevm" },
+		});
+		expect(buildAccountLedgerRow(createUpdate(testnetDelta), USER, getAccountLedgerUsdcBridge(true))).toMatchObject({
+			action: "deposit",
+		});
+		expect(buildAccountLedgerRow(createUpdate(testnetDelta), USER, BRIDGE)).toMatchObject({
+			action: "send",
+			source: { kind: "spot" },
+		});
+	});
+
+	it("labels moves through other HyperCore system addresses and between own balances as transfers", () => {
+		const toEvm = buildAccountLedgerRow(
+			createUpdate(createSend({ destination: "0x20000000000000000000000000000000000000c8", token: "PURR" })),
+			USER,
+			BRIDGE,
+		);
+		const betweenOwnDexes = buildAccountLedgerRow(
+			createUpdate(createSend({ destination: USER, destinationDex: "xyz", sourceDex: "" })),
+			USER,
+			BRIDGE,
+		);
+		const hypeFromEvm = buildAccountLedgerRow(
+			createUpdate(createSpotTransfer({ destination: USER, user: "0x2222222222222222222222222222222222222222" })),
+			USER,
+			BRIDGE,
+		);
+		const usdcToEvm = buildAccountLedgerRow(
+			createUpdate(createSpotTransfer({ destination: USDC_SYSTEM_ADDRESS, token: "USDC" })),
+			USER,
+			BRIDGE,
+		);
+
+		expect(toEvm).toMatchObject({ action: "transfer", destination: { kind: "hyperevm" }, source: { kind: "spot" } });
+		expect(betweenOwnDexes).toMatchObject({
+			action: "transfer",
+			destination: { dex: "xyz", kind: "perpDex" },
+			source: { kind: "perps" },
+		});
+		expect(hypeFromEvm).toMatchObject({
+			action: "transfer",
+			amount: "2",
+			destination: { kind: "spot" },
+			source: { kind: "hyperevm" },
+		});
+		expect(usdcToEvm).toMatchObject({
+			action: "transfer",
+			amount: "-2",
+			destination: { kind: "hyperevm" },
+			source: { kind: "spot" },
+		});
+	});
+
+	it("keeps transfers to other accounts as sends", () => {
+		expect(buildAccountLedgerRow(createUpdate(createSend({})), USER, BRIDGE)).toMatchObject({
+			action: "send",
+			destination: { kind: "spot" },
+			source: { kind: "spot" },
+		});
+		expect(buildAccountLedgerRow(createUpdate(createSpotTransfer({})), USER, BRIDGE)).toMatchObject({
+			action: "send",
+			destination: { kind: "spot" },
+			source: { kind: "spot" },
+		});
+	});
+
 	it("maps account, staking, and earn transfers with signed values", () => {
 		const toPerps = buildAccountLedgerRow(
 			createUpdate({ type: "accountClassTransfer", toPerp: true, usdc: "10" }),
 			USER,
+			BRIDGE,
 		);
 		const stake = buildAccountLedgerRow(
 			createUpdate({ type: "cStakingTransfer", amount: "2", isDeposit: true, token: "HYPE" }),
 			USER,
+			BRIDGE,
 		);
 		const borrow = buildAccountLedgerRow(
 			createUpdate({ type: "borrowLend", amount: "4", interestAmount: "0", operation: "borrow", token: "USDC" }),
 			USER,
+			BRIDGE,
 		);
 
 		expect(toPerps).toMatchObject({
@@ -172,6 +414,7 @@ describe("account ledger", () => {
 				vault: OTHER,
 			}),
 			USER,
+			BRIDGE,
 		);
 
 		expect(row?.amount).toBe("1.00000000000000001");
@@ -188,6 +431,7 @@ describe("account ledger", () => {
 				liquidatedPositions: [],
 			}),
 			USER,
+			BRIDGE,
 		);
 
 		expect(row).toBeNull();
@@ -197,10 +441,12 @@ describe("account ledger", () => {
 		const activation = buildAccountLedgerRow(
 			createUpdate({ type: "accountActivationGas", amount: "0.025", token: "HYPE" }),
 			USER,
+			BRIDGE,
 		);
 		const hip3Withdrawal = buildAccountLedgerRow(
 			createUpdate({ type: "hip3LiquidatorWithdraw", amount: "12.5", dex: "xyz", token: "USDC" }),
 			USER,
+			BRIDGE,
 		);
 
 		expect(activation).toMatchObject({ action: "accountActivationFee", amount: "-0.025", token: "HYPE" });
@@ -212,13 +458,13 @@ describe("account ledger", () => {
 	});
 
 	it("keeps unknown production deltas visible with their raw type", () => {
-		const row = buildAccountLedgerRow(createUpdate({ type: "futureLedgerDelta", requestedUsd: "4.2" }), USER);
+		const row = buildAccountLedgerRow(createUpdate({ type: "futureLedgerDelta", requestedUsd: "4.2" }), USER, BRIDGE);
 
 		expect(row).toMatchObject({ action: "other", amount: "4.2", rawType: "futureLedgerDelta" });
 	});
 
 	it("degrades malformed known deltas instead of throwing during toolbar render", () => {
-		const row = buildAccountLedgerRow(createUpdate({ type: "deposit" }), USER);
+		const row = buildAccountLedgerRow(createUpdate({ type: "deposit" }), USER, BRIDGE);
 
 		expect(row).toMatchObject({ action: "other", amount: null, rawType: "deposit" });
 	});

@@ -10,6 +10,7 @@ import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { useCopyToClipboard } from "@/hooks/ui/use-copy-to-clipboard";
 import { formatClockDuration, type NumberFormatters, shortenAddress, useNumberFormat } from "@/lib/format";
 import { getExplorerTokenUrl, type UnifiedMarketInfo } from "@/lib/hyperliquid";
+import { isTestnet } from "@/lib/network";
 import { toBig } from "@/lib/trade/numbers";
 import { getTradePriceDecimals } from "@/lib/trade/trades";
 import { TokenSelector } from "../chart/token-selector";
@@ -241,7 +242,7 @@ function createSpotTokenInfo(
 				{address ? (
 					<>
 						<a
-							href={getExplorerTokenUrl(address)}
+							href={getExplorerTokenUrl(address, isTestnet())}
 							target="_blank"
 							rel="noopener noreferrer"
 							aria-label={labels.open}
@@ -447,14 +448,14 @@ function formatSignedFixed(
 	if (!value) return FALLBACK_VALUE_PLACEHOLDER;
 	const rounded = value.round(decimals);
 	const sign = rounded.gt(0) ? "+" : "";
-	return `${sign}${numberFormat.formatDecimalString(rounded.toFixed(decimals))}`;
+	return numberFormat.markLeadingSign(`${sign}${numberFormat.formatDecimalString(rounded.toFixed(decimals))}`);
 }
 
 function formatSignedPercent(value: number | null, numberFormat: NumberFormatters): string {
 	if (typeof value !== "number" || !Number.isFinite(value)) return FALLBACK_VALUE_PLACEHOLDER;
 	if (Math.abs(value) < 0.005) return `${numberFormat.formatDecimalString("0.00")}%`;
 	const sign = value > 0 ? "+" : "";
-	return `${sign}${numberFormat.formatDecimalString(value.toFixed(2))}%`;
+	return numberFormat.markLeadingSign(`${sign}${numberFormat.formatDecimalString(value.toFixed(2))}%`);
 }
 
 function getPriceChangeColorClass(value: number | null): string {

@@ -132,6 +132,9 @@ describe("TWAP price label locale dependencies", () => {
 							twapStopPriceNum={110}
 							feeQuote={feeQuote}
 							szDecimals={2}
+							totalSize="10"
+							referencePx={100}
+							baseToken="BTC"
 						/>
 					</div>
 				</>,

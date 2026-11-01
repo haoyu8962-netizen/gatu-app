@@ -15,6 +15,7 @@ const REVIEWED_PROGRESS_LABELS: Record<string, { labels: string[]; reason: strin
 		reason: "passive loading and an input placeholder",
 	},
 	"chart/tradingview-chart.tsx": { labels: ["Loading..."], reason: "passive chart loading" },
+	"components/command-menu.tsx": { labels: ["Search markets..."], reason: "an input placeholder" },
 	"components/deposit-modal-loading-fallback.tsx": { labels: ["Loading..."], reason: "lazy chunk fallback" },
 	"components/establish-connection-modal.tsx": {
 		labels: ["Connecting...", "Verifying..."],
@@ -38,7 +39,6 @@ const REVIEWED_PROGRESS_LABELS: Record<string, { labels: string[]; reason: strin
 		reason: "Enable Trading signature, prerequisite of the order button",
 	},
 	"positions/position-pnl-share-modal.tsx": { labels: ["Saving..."], reason: "image export" },
-	"positions/position-tpsl-modal.tsx": { labels: ["Loading..."], reason: "passive mark price loading" },
 	"tradebox/bridge/asset-selection-screen.tsx": {
 		labels: ["Loading balances across all chains..."],
 		reason: "passive loading",

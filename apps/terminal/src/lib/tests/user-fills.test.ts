@@ -1,5 +1,6 @@
 import type { UserFillsResponse, UserTwapSliceFillsResponse } from "@nktkas/hyperliquid";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import type { UnifiedMarket } from "@/lib/hyperliquid";
 import { MalformedHistoryPageError, waitForHistoryRetry } from "@/lib/trade/history-pagination";
 import { getItemWeightedInfoRequestWeight, INFO_REST_WEIGHT_LIMIT_PER_MINUTE } from "@/lib/trade/info-weight-pacer";
 import {
@@ -8,6 +9,7 @@ import {
 	fetchUserTwapSliceFillHistory,
 	filterNonTwapUserFills,
 	getTwapSliceFillsExportPacer,
+	getUserFillNetClosedPnl,
 	getUserFillNotional,
 	hasUserFillExplorerTransaction,
 	isValidUserFillHistoryItem,
@@ -459,5 +461,45 @@ describe("getTwapSliceFillsExportPacer", () => {
 
 		expect(getTwapSliceFillsExportPacer("mainnet")).toBe(mainnetPacer);
 		expect(getTwapSliceFillsExportPacer("testnet")).not.toBe(mainnetPacer);
+	});
+});
+
+describe("getUserFillNetClosedPnl", () => {
+	const perp = { kind: "perp" } as UnifiedMarket;
+	const spot = { kind: "spot", tokensInfo: [{ name: "HYPE" }, { name: "USDC" }] } as unknown as UnifiedMarket;
+	const hip3 = { kind: "builderPerp", quoteToken: { name: "USDT0" } } as unknown as UnifiedMarket;
+	function fill(overrides: Partial<Record<"closedPnl" | "coin" | "fee" | "feeToken" | "px", string>> = {}) {
+		return { closedPnl: "0", coin: "BTC", fee: "0", feeToken: "USDC", px: "100", ...overrides };
+	}
+
+	it("subtracts the fee in the quote token, and a base-token fee at the fill price, as the official terminal does", () => {
+		expect(getUserFillNetClosedPnl(fill({ closedPnl: "10", fee: "0.5" }), perp)).toBe("9.5");
+		expect(getUserFillNetClosedPnl(fill({ closedPnl: "0", fee: "0.01" }), perp)).toBe("-0.01");
+		expect(getUserFillNetClosedPnl(fill({ coin: "@107", fee: "0.1", feeToken: "HYPE", px: "30" }), spot)).toBe("-3");
+		expect(getUserFillNetClosedPnl(fill({ coin: "@107", closedPnl: "5", fee: "0.2", px: "30" }), spot)).toBe("4.8");
+		expect(getUserFillNetClosedPnl(fill({ coin: "xyz:ORCL", closedPnl: "3", fee: "1", feeToken: "USDT0" }), hip3)).toBe(
+			"2",
+		);
+		expect(
+			getUserFillNetClosedPnl(fill({ coin: "#10", closedPnl: "1", fee: "0.25", feeToken: "+10" }), undefined),
+		).toBe("0.75");
+	});
+
+	it("keeps a fee-free result, treats an unlisted main-DEX perpetual as USDC and leaves the rest empty", () => {
+		expect(getUserFillNetClosedPnl(fill({ coin: "xyz:ORCL", closedPnl: "7" }), undefined)).toBe("7");
+		expect(getUserFillNetClosedPnl(fill({ closedPnl: "3", fee: "1" }), undefined)).toBe("2");
+		expect(getUserFillNetClosedPnl(fill({ closedPnl: "0.5", fee: "0.5" }), perp)).toBeNull();
+		expect(getUserFillNetClosedPnl(fill({ coin: "xyz:ORCL", closedPnl: "3", fee: "1" }), undefined)).toBeNull();
+		expect(getUserFillNetClosedPnl(fill({ coin: "@107", closedPnl: "3", fee: "1" }), undefined)).toBeNull();
+		expect(getUserFillNetClosedPnl(fill({ coin: "PURR/USDC", closedPnl: "3", fee: "1" }), undefined)).toBeNull();
+		expect(getUserFillNetClosedPnl(fill({ closedPnl: "x", fee: "1" }), perp)).toBeNull();
+	});
+
+	it("adds a rebate, converts a base-token rebate at the fill price and keeps every digit", () => {
+		expect(getUserFillNetClosedPnl(fill({ closedPnl: "0", fee: "-0.01" }), perp)).toBe("0.01");
+		expect(getUserFillNetClosedPnl(fill({ coin: "@107", fee: "-0.1", feeToken: "HYPE", px: "30" }), spot)).toBe("3");
+		expect(getUserFillNetClosedPnl(fill({ closedPnl: "123456789012.123456", fee: "0.000001" }), perp)).toBe(
+			"123456789012.123455",
+		);
 	});
 });

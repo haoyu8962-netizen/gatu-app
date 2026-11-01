@@ -21,6 +21,7 @@ const mocks = vi.hoisted(() => ({
 		error: undefined as unknown,
 		status: "idle" as "active" | "error" | "idle" | "subscribing",
 	},
+	subAccounts: vi.fn(),
 	userNonFundingLedgerUpdates: vi.fn(),
 	useSubscription: vi.fn(),
 }));
@@ -32,7 +33,7 @@ vi.mock("@/hooks/wallet/use-wallet-session", () => ({
 vi.mock("@/lib/hyperliquid", () => ({
 	useHyperliquid: () => ({
 		env: mocks.env,
-		info: { userNonFundingLedgerUpdates: mocks.userNonFundingLedgerUpdates },
+		info: { subAccounts: mocks.subAccounts, userNonFundingLedgerUpdates: mocks.userNonFundingLedgerUpdates },
 	}),
 	useSubscription: (...args: unknown[]) => {
 		mocks.useSubscription(...args);
@@ -78,6 +79,7 @@ describe("useAccountLedger", () => {
 		mocks.subscription.error = undefined;
 		mocks.subscription.status = "idle";
 		mocks.userNonFundingLedgerUpdates.mockReset().mockResolvedValue([]);
+		mocks.subAccounts.mockReset().mockResolvedValue(null);
 		mocks.useSubscription.mockReset();
 	});
 
@@ -129,6 +131,25 @@ describe("useAccountLedger", () => {
 			"Mainnet",
 			ADDRESS_A,
 		]);
+	});
+
+	it("labels transfers with the owner's sub-accounts from the sub-account list", async () => {
+		const subAccount = "0x5555555555555555555555555555555555555555";
+		mocks.subAccounts.mockResolvedValue([{ name: "alpha", subAccountUser: subAccount, master: ADDRESS_A }]);
+		mocks.userNonFundingLedgerUpdates.mockResolvedValue([
+			{
+				delta: { type: "internalTransfer", usdc: "2", user: ADDRESS_A, destination: subAccount, fee: "0" },
+				hash: `0x${"b".repeat(64)}`,
+				time: NOW - 1_000,
+			},
+		]);
+
+		renderHook();
+		await act(async () => {
+			await vi.waitFor(() => expect(hookValue?.rows[0]?.action).toBe("subAccountTransfer"));
+		});
+
+		expect(mocks.subAccounts).toHaveBeenCalledWith({ user: ADDRESS_A }, expect.any(AbortSignal));
 	});
 
 	it("walks multiple busy Info pages and keeps the latest display window", async () => {
@@ -322,6 +343,22 @@ describe("useAccountLedger", () => {
 				expect(mocks.userNonFundingLedgerUpdates.mock.calls.length).toBeGreaterThan(callsBeforeRetry),
 			);
 		});
+	});
+
+	it("confirms an empty history only from a successful snapshot with no refresh running or failed", async () => {
+		renderHook();
+		const ready = await waitUntilReady();
+		expect(ready.rows).toEqual([]);
+		expect(ready.canConfirmEmpty).toBe(true);
+
+		mocks.userNonFundingLedgerUpdates.mockRejectedValue(new Error("Info unavailable"));
+		await act(async () => {
+			hookValue?.retry();
+			await vi.waitFor(() => expect(hookValue?.isRefreshing).toBe(false));
+			await vi.waitFor(() => expect(queryClient.getQueryCache().getAll()[0]?.state.status).toBe("error"));
+		});
+		expect(hookValue?.status).toBe("ready");
+		expect(hookValue?.canConfirmEmpty).toBe(false);
 	});
 
 	it("disables both data paths while disconnected", () => {

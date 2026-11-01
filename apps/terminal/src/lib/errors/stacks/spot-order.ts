@@ -7,6 +7,12 @@ import {
 } from "../definitions/connection";
 import { liveMarkPriceValidator, marketNotReadyValidator, noMarketValidator } from "../definitions/market";
 import {
+	limitPriceTickValidator,
+	type PriceTickContext,
+	twapStopPriceTickValidator,
+	twapTriggerPriceTickValidator,
+} from "../definitions/price-tick";
+import {
 	enterPriceRangeValidator,
 	type ScaleContext,
 	scaleLevelMinNotionalValidator,
@@ -40,7 +46,12 @@ import {
 } from "../definitions/twap";
 import { runValidators, type ValidationError, type Validator } from "../types";
 
-export interface SpotOrderContext extends SpotInputContext, SpotBalanceContext, ScaleContext, TwapContext {
+export interface SpotOrderContext
+	extends SpotInputContext,
+		SpotBalanceContext,
+		ScaleContext,
+		TwapContext,
+		PriceTickContext {
 	isConnected: boolean;
 	isWalletLoading: boolean;
 	isReadyToTrade: boolean;
@@ -68,6 +79,9 @@ const spotOrderValidators: Validator<SpotOrderContext>[] = [
 	signerNotReadyValidator,
 	liveMarkPriceValidator,
 	spotEnterLimitPriceValidator,
+	limitPriceTickValidator,
+	twapTriggerPriceTickValidator,
+	twapStopPriceTickValidator,
 	spotEnterSizeValidator,
 	spotMinOrderNotionalValidator,
 	enterPriceRangeValidator,

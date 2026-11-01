@@ -160,7 +160,7 @@ function getEntryExecutionFeedback(cause: EntryExecutionError): OrderSubmissionF
 	}
 }
 
-function getSpotSwapExecutionFeedback(cause: SpotSwapExecutionError): OrderSubmissionFeedback {
+function getSpotSwapExecutionFeedback(cause: SpotSwapExecutionError): OrderSubmissionFeedback | null {
 	switch (cause.reason) {
 		case "balance-changed":
 			return orderSubmissionFeedback("balance-changed");
@@ -169,6 +169,9 @@ function getSpotSwapExecutionFeedback(cause: SpotSwapExecutionError): OrderSubmi
 			return orderSubmissionFeedback("live-trading-data-unavailable");
 		case "quote-changed":
 			return orderSubmissionFeedback("order-conditions-changed");
+		case "region-restricted":
+		case "region-unverified":
+			return null;
 	}
 }
 

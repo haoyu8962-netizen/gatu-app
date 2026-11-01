@@ -3,10 +3,10 @@ import { Suspense, useEffect, useLayoutEffect } from "react";
 import { NotFoundPage } from "@/components/pages/not-found-page";
 import { TabTitleSync } from "@/hooks/use-document-title";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useMarketsInfo, useSelectedMarketInfo } from "@/lib/hyperliquid";
+import { useMarkets, useMarketsInfo, useSelectedMarketInfo } from "@/lib/hyperliquid";
 import {
 	findCanonicalMarketForRoute,
-	getTradePathForMarket,
+	getTradeRouteRedirectPath,
 	isMalformedTradeMarketPath,
 } from "@/lib/hyperliquid/market-route";
 import { getExchangeDexForMarket, getExchangeScopeForMarket } from "@/lib/hyperliquid/market-scope";
@@ -35,11 +35,12 @@ export function TradeTerminalPage() {
 	const { pathname } = useLocation();
 	const { routeMarketName, routeScope } = useExchangeScope();
 	const { getMarketByName, getMarketInfo, markets, catalogState, retryMarketCatalog } = useMarketsInfo();
+	const { tokens } = useMarkets();
 	const exactMarket = routeMarketName ? getMarketByName(routeMarketName) : undefined;
 	const routeMarket = exactMarket ?? (routeMarketName ? getMarketInfo(routeMarketName) : undefined);
 	const canonicalMarket =
 		routeMarketName && !routeMarket && markets.length > 0
-			? findCanonicalMarketForRoute(markets, routeMarketName)
+			? findCanonicalMarketForRoute(markets, routeMarketName, tokens)
 			: undefined;
 	const bootStatus = getTradeTerminalBootStatus({
 		hasRouteMarketName: Boolean(routeMarketName),
@@ -48,19 +49,24 @@ export function TradeTerminalPage() {
 		hasMalformedRouteMarket: isMalformedTradeMarketPath(pathname),
 		catalogState,
 	});
+	const redirectPath = getTradeRouteRedirectPath(
+		routeMarketName,
+		canonicalMarket ?? (routeMarket?.kind === "spot" ? routeMarket : undefined),
+		bootStatus === "notFound",
+	);
 
 	useEffect(() => {
-		if (!canonicalMarket) return;
+		if (!redirectPath) return;
 		void navigate({
-			to: getTradePathForMarket(canonicalMarket),
+			to: redirectPath,
 			search: (previous) => ({ ...previous, scope: routeScope === "all" ? "all" : undefined }),
 			replace: true,
 			resetScroll: false,
 		});
-	}, [canonicalMarket, navigate, routeScope]);
+	}, [redirectPath, navigate, routeScope]);
 
-	if (bootStatus !== "ready" && bootStatus !== "loading" && bootStatus !== "redirecting") {
-		if (bootStatus === "notFound") return <NotFoundPage />;
+	if (bootStatus === "notFound" && !redirectPath) return <NotFoundPage />;
+	if (bootStatus === "paused" || bootStatus === "error") {
 		return <TerminalBootError isPaused={bootStatus === "paused"} onRetry={() => void retryMarketCatalog()} />;
 	}
 

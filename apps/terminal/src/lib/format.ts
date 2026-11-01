@@ -4,6 +4,7 @@ import { FALLBACK_VALUE_PLACEHOLDER, FORMAT_COMPACT_DEFAULT, FORMAT_COMPACT_THRE
 import {
 	defaultLocale,
 	defaultNumberFormatLocale,
+	isRtlLocale,
 	isValidLocale,
 	type LocaleCode,
 	languageToIntlLocale,
@@ -552,6 +553,8 @@ export interface NumberFormatters {
 	formatSlippageBps: typeof formatSlippageBps;
 	formatToken: typeof formatToken;
 	formatUSD: typeof formatUSD;
+	/** For a signed number a helper composes itself, such as `-$12.50`: unchanged left to right. */
+	markLeadingSign: (text: string) => string;
 }
 
 function createNumberFormatters(): NumberFormatters {
@@ -565,6 +568,34 @@ function createNumberFormatters(): NumberFormatters {
 		formatSlippageBps: (...args) => formatSlippageBps(...args),
 		formatToken: (...args) => formatToken(...args),
 		formatUSD: (...args) => formatUSD(...args),
+		markLeadingSign: (text) => text,
+	};
+}
+
+const LEFT_TO_RIGHT_MARK = "\u200E";
+const SIGNED_NUMBER_PATTERN = /^[+\-\u2212]\D{0,4}\d/u;
+
+/**
+ * A plus or minus sign that starts a number has no direction of its own, so a right-to-left line
+ * draws it after the digits ("18.50%+"). CLDR writes Arabic numbers with Latin digits behind a
+ * left-to-right mark for this reason; a placeholder such as "-" has no digit and stays unmarked.
+ */
+function markSignedNumber<Text extends string | null>(text: Text): Text {
+	return typeof text === "string" && SIGNED_NUMBER_PATTERN.test(text) ? (`${LEFT_TO_RIGHT_MARK}${text}` as Text) : text;
+}
+
+function createRightToLeftNumberFormatters(formatters: NumberFormatters): NumberFormatters {
+	return {
+		formatDecimalString: (...args) => markSignedNumber(formatters.formatDecimalString(...args)),
+		formatLiquidationPrice: (...args) => markSignedNumber(formatters.formatLiquidationPrice(...args)),
+		formatNumber: (...args) => markSignedNumber(formatters.formatNumber(...args)),
+		formatPercent: (...args) => markSignedNumber(formatters.formatPercent(...args)),
+		formatPrice: (...args) => markSignedNumber(formatters.formatPrice(...args)),
+		formatQuoteAmount: (...args) => markSignedNumber(formatters.formatQuoteAmount(...args)),
+		formatSlippageBps: (...args) => markSignedNumber(formatters.formatSlippageBps(...args)),
+		formatToken: (...args) => markSignedNumber(formatters.formatToken(...args)),
+		formatUSD: (...args) => markSignedNumber(formatters.formatUSD(...args)),
+		markLeadingSign: (text) => markSignedNumber(text),
 	};
 }
 
@@ -581,9 +612,32 @@ export function getNumberFormatters(): NumberFormatters {
 	return numberFormatters;
 }
 
-/** Subscribes the caller to the number-format setting and returns the formatters for this render. */
+let rightToLeftNumberFormatters: { source: NumberFormatters; formatters: NumberFormatters } | null = null;
+
+function getRightToLeftNumberFormatters(source: NumberFormatters): NumberFormatters {
+	if (rightToLeftNumberFormatters?.source !== source) {
+		rightToLeftNumberFormatters = { source, formatters: createRightToLeftNumberFormatters(source) };
+	}
+	return rightToLeftNumberFormatters.formatters;
+}
+
+function subscribeInterfaceLocale(listener: () => void): () => void {
+	return i18n.on("change", listener);
+}
+
+function isRightToLeftInterface(): boolean {
+	return isRtlLocale(i18n.locale);
+}
+
+/**
+ * Subscribes the caller to the number-format setting and to the interface direction, and returns the
+ * formatters for this render. A right-to-left interface gets its own set, with new function
+ * identities, whose signed results start with a left-to-right mark.
+ */
 export function useNumberFormat(): NumberFormatters {
-	return useSyncExternalStore(subscribeNumberFormatChange, getNumberFormatters, getNumberFormatters);
+	const formatters = useSyncExternalStore(subscribeNumberFormatChange, getNumberFormatters, getNumberFormatters);
+	const rightToLeft = useSyncExternalStore(subscribeInterfaceLocale, isRightToLeftInterface, isRightToLeftInterface);
+	return rightToLeft ? getRightToLeftNumberFormatters(formatters) : formatters;
 }
 
 /**

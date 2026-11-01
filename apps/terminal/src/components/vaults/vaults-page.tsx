@@ -75,7 +75,8 @@ function VaultDetailLive({ vaultAddress, onRequestAction }: VaultDetailPageProps
 	const vaultAction = useVaultActionController({
 		vaultAddress,
 		detail: controller.detail,
-		owner: controller.owner,
+		detailCurrent: controller.detailCurrent,
+		owner: controller.actionOwner,
 	});
 	const activeAction = vaultAction.action;
 	const reportedOutcomeRef = useRef<string | null>(null);
@@ -157,21 +158,14 @@ function VaultDetailLive({ vaultAddress, onRequestAction }: VaultDetailPageProps
 					<Trans>The address is invalid or Hyperliquid returned no Vault details for it.</Trans>
 				</VaultDetailMessage>
 			) : null}
-			{controller.state === "error" ? (
-				<VaultDetailMessage state="error" title={t`Vault details are unavailable`} onRetry={controller.onRetry}>
-					<Trans>
-						The response was missing, malformed, or could not be verified. No placeholder financial data is shown.
-					</Trans>
-				</VaultDetailMessage>
-			) : null}
+			{controller.state === "error" ? <VaultDetailRetry onRetry={controller.onRetry} /> : null}
 			{controller.state === "normal" && controller.detail ? (
 				<VaultDetailView
 					detail={controller.detail}
 					owner={controller.owner}
 					actionAvailability={vaultAction.actionAvailability}
 					isTestnet={isTestnet}
-					isRefreshing={controller.isRefreshing}
-					onRetryOwner={controller.onRetry}
+					onRetry={controller.needsRetry ? controller.onRetry : undefined}
 					onRequestAction={onRequestAction ?? ((action) => void vaultAction.requestAction(action))}
 				/>
 			) : null}
@@ -185,6 +179,9 @@ function VaultDetailLive({ vaultAddress, onRequestAction }: VaultDetailPageProps
 					ownerAddress={activeAction.ownerAddress}
 					amount={activeAction.amount}
 					availableAmount={vaultAction.availableAmount}
+					maxAmount={vaultAction.maxAmount}
+					minimumAmount={vaultAction.minimumAmount}
+					belowMinimum={vaultAction.belowMinimum}
 					errorMessage={
 						activeAction.error ? describeActionFailure(activeAction.error, (descriptor) => t(descriptor)) : undefined
 					}
@@ -197,6 +194,7 @@ function VaultDetailLive({ vaultAddress, onRequestAction }: VaultDetailPageProps
 					onConfirm={() => void vaultAction.confirm()}
 					onVerifyAgain={() => void vaultAction.verifyAgain()}
 					onClose={vaultAction.close}
+					onRetry={controller.needsRetry ? controller.onRetry : undefined}
 				/>
 			) : null}
 		</VaultPageFrame>
@@ -246,17 +244,7 @@ function VaultDetailSkeleton() {
 	);
 }
 
-function VaultDetailMessage({
-	state,
-	title,
-	children,
-	onRetry,
-}: {
-	state: "error" | "notFound";
-	title: string;
-	children: ReactNode;
-	onRetry?: () => void;
-}) {
+function VaultDetailMessage({ state, title, children }: { state: "notFound"; title: string; children: ReactNode }) {
 	return (
 		<div
 			data-state={state}
@@ -267,15 +255,26 @@ function VaultDetailMessage({
 			<h1 className="mt-3 text-lg font-bold text-fg">{title}</h1>
 			<p className="mt-1 max-w-lg text-xs leading-5 text-fg-muted">{children}</p>
 			<div className="mt-4 flex gap-2">
-				{onRetry ? (
-					<Button onClick={onRetry}>
-						<Trans>Retry</Trans>
-					</Button>
-				) : null}
 				<Button nativeButton={false} variant="outline" intent="neutral" render={<Link to="/vaults" />}>
 					<Trans>Back to Vaults</Trans>
 				</Button>
 			</div>
+		</div>
+	);
+}
+
+function VaultDetailRetry({ onRetry }: { onRetry: () => void }) {
+	return (
+		<div
+			data-state="error"
+			className="flex min-h-80 items-center justify-center gap-2 rounded-24 bg-surface px-6 shadow-raised"
+		>
+			<Button variant="outline" intent="neutral" onClick={onRetry}>
+				<Trans>Retry</Trans>
+			</Button>
+			<Button nativeButton={false} variant="outline" intent="neutral" render={<Link to="/vaults" />}>
+				<Trans>Back to Vaults</Trans>
+			</Button>
 		</div>
 	);
 }

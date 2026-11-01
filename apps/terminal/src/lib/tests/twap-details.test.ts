@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
 	buildTwapOrderDetails,
 	formatTwapPriceInput,
+	getTwapSuborderSize,
 	getTwapTriggerDirection,
 	resolveTwapPriceInputs,
 } from "@/domain/trade/twap-details";
@@ -126,5 +127,22 @@ describe("resolveTwapPriceInputs", () => {
 		});
 		expect(resolveTwapPriceInputs(true, "", "118000.1", format)).toEqual({ triggerPx: null, stopPx: "118000" });
 		expect(resolveTwapPriceInputs(true, "0", "", format)).toEqual({ triggerPx: "0", stopPx: null });
+	});
+});
+
+describe("getTwapSuborderSize", () => {
+	it("splits the size over one suborder per 30 seconds of runtime plus the first", () => {
+		expect(getTwapSuborderSize("61", 30, 100)?.toString()).toBe("1");
+	});
+
+	it("raises each suborder to the $10 minimum at the reference price and caps it at the whole order", () => {
+		expect(getTwapSuborderSize("3", 30, 100)?.toString()).toBe("0.1");
+		expect(getTwapSuborderSize("0.05", 30, 100)?.toString()).toBe("0.05");
+	});
+
+	it("is null until a size and runtime are entered", () => {
+		expect(getTwapSuborderSize("", 30, 100)).toBeNull();
+		expect(getTwapSuborderSize("1", null, 100)).toBeNull();
+		expect(getTwapSuborderSize("1", 0, 100)).toBeNull();
 	});
 });

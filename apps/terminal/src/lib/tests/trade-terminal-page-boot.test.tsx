@@ -9,10 +9,17 @@ import type { MarketCatalogState } from "@/lib/hyperliquid/markets/market-catalo
 import { useOrderEntryActions, useOrderSize } from "@/stores/use-order-entry-store";
 import { createI18nRoot } from "./harness/react";
 
+interface TestToken {
+	displayName: string;
+	tokenId: string;
+}
+
 interface TestMarket {
 	name: string;
 	pairName: string;
 	kind: "perp" | "spot";
+	routeName?: string;
+	tokensInfo?: TestToken[];
 }
 
 const testState = vi.hoisted(() => ({
@@ -33,6 +40,7 @@ const testState = vi.hoisted(() => ({
 	setScope: vi.fn(),
 	setSelectedMarket: vi.fn(),
 	tabTitleRenders: 0,
+	tokens: [] as TestToken[],
 	topNavMounts: 0,
 	topNavUnmounts: 0,
 	userMenuMounts: 0,
@@ -41,6 +49,15 @@ const testState = vi.hoisted(() => ({
 
 const BTC_MARKET: TestMarket = { name: "BTC", pairName: "BTC-USDC", kind: "perp" };
 const CXMT_MARKET: TestMarket = { name: "xyz:CXMT", pairName: "CXMT-USDC", kind: "perp" };
+const USDC_TOKEN: TestToken = { displayName: "USDC", tokenId: "0x6d1e7cde53ba9467b783cb7c530ce054" };
+const HYPE_TOKEN: TestToken = { displayName: "HYPE", tokenId: "0x0d01dc56dcaaca66ad901c959b4011ec" };
+const HYPE_SPOT_MARKET: TestMarket = {
+	name: "@107",
+	pairName: "HYPE/USDC",
+	routeName: "HYPE/USDC",
+	kind: "spot",
+	tokensInfo: [HYPE_TOKEN, USDC_TOKEN],
+};
 let draftActions: ReturnType<typeof useOrderEntryActions>;
 
 vi.mock("@tanstack/react-router", () => ({
@@ -66,6 +83,7 @@ vi.mock("@/lib/hyperliquid", () => ({
 		catalogState: testState.catalogState,
 		retryMarketCatalog: testState.retry,
 	}),
+	useMarkets: () => ({ tokens: testState.tokens }),
 	useSelectedMarketInfo: () => {
 		testState.selectedMarketInfoReads += 1;
 		return { data: testState.selectedMarket };
@@ -248,6 +266,7 @@ describe("trade terminal page boot", () => {
 		testState.setScope.mockClear();
 		testState.setSelectedMarket.mockClear();
 		testState.tabTitleRenders = 0;
+		testState.tokens = [];
 		testState.topNavMounts = 0;
 		testState.topNavUnmounts = 0;
 		testState.userMenuMounts = 0;
@@ -484,17 +503,101 @@ describe("trade terminal page boot", () => {
 		expect(testState.retry).toHaveBeenCalledTimes(1);
 	});
 
-	it("uses a fresh catalog for not-found and rejects malformed trade paths immediately", () => {
+	function lastNavigation() {
+		return testState.navigate.mock.calls.at(-1)?.[0] as
+			| {
+					to: string;
+					search: (previous: Record<string, unknown>) => Record<string, unknown>;
+					replace: boolean;
+					resetScroll: boolean;
+			  }
+			| undefined;
+	}
+
+	it("keeps the not-found page when the default market itself cannot be resolved", () => {
 		testState.catalogState = catalogState({ canResolveNotFound: true });
 		renderPage();
-		expect(container.querySelector('[data-testid="not-found"]')).not.toBeNull();
 
-		testState.pathname = "/trade/BTC/USDC/extra";
-		testState.routeMarketName = undefined;
-		testState.catalogState = catalogState({ status: "loading" });
-		renderPage();
 		expect(container.querySelector('[data-testid="not-found"]')).not.toBeNull();
-		expect(container.querySelector('[data-testid="desktop-terminal-surface"]')).toBeNull();
+		expect(testState.navigate).not.toHaveBeenCalled();
+	});
+
+	it("replaces an unresolvable address with the default market once the catalog is authoritative", () => {
+		testState.pathname = "/trade/FOO/USDC";
+		testState.routeMarketName = "FOO/USDC";
+		testState.routeScope = "spot";
+		testState.markets = [BTC_MARKET, HYPE_SPOT_MARKET];
+		testState.tokens = [HYPE_TOKEN, USDC_TOKEN];
+		renderPage();
+
+		expectDesktopLoadingSurface();
+		expect(testState.navigate).not.toHaveBeenCalled();
+
+		testState.catalogState = catalogState({ canResolveNotFound: true });
+		renderPage();
+
+		expect(container.querySelector('[data-testid="not-found"]')).toBeNull();
+		expectDesktopLoadingSurface();
+		expect(lastNavigation()).toMatchObject({ to: "/trade/BTC", replace: true, resetScroll: false });
+		expect(lastNavigation()?.search({ retained: true })).toEqual({ retained: true, scope: undefined });
+	});
+
+	it("replaces a malformed trade path with the default market without waiting for the catalog", () => {
+		testState.pathname = "/trade/@107/USDC";
+		testState.routeMarketName = undefined;
+		renderPage();
+
+		expect(container.querySelector('[data-testid="not-found"]')).toBeNull();
+		expectDesktopLoadingSurface();
+		expect(lastNavigation()).toMatchObject({ to: "/trade/BTC", replace: true });
+	});
+
+	it("shows an @index address and replaces it with the pair's display path", () => {
+		testState.catalogState = catalogState();
+		testState.pathname = "/trade/@107";
+		testState.routeMarketName = "@107";
+		testState.routeScope = "spot";
+		testState.markets = [BTC_MARKET, HYPE_SPOT_MARKET];
+		testState.selectedMarket = HYPE_SPOT_MARKET;
+		renderPage();
+
+		expect(container.querySelector('[data-testid="main-workspace"]')).not.toBeNull();
+		expect(testState.navigate).toHaveBeenCalledOnce();
+		expect(lastNavigation()).toMatchObject({ to: "/trade/HYPE/USDC", replace: true, resetScroll: false });
+	});
+
+	it("leaves a pair already on its display path in place", () => {
+		testState.catalogState = catalogState();
+		testState.pathname = "/trade/HYPE/USDC";
+		testState.routeMarketName = "HYPE/USDC";
+		testState.routeScope = "spot";
+		testState.markets = [BTC_MARKET, HYPE_SPOT_MARKET];
+		testState.selectedMarket = HYPE_SPOT_MARKET;
+		renderPage();
+
+		expect(container.querySelector('[data-testid="main-workspace"]')).not.toBeNull();
+		expect(testState.navigate).not.toHaveBeenCalled();
+	});
+
+	it.each([
+		["/trade/0x0d01dc56dcaaca66ad901c959b4011ec", "0x0d01dc56dcaaca66ad901c959b4011ec"],
+		[
+			"/trade/0x0d01dc56dcaaca66ad901c959b4011ec/0x6d1e7cde53ba9467b783cb7c530ce054",
+			"0x0d01dc56dcaaca66ad901c959b4011ec/0x6d1e7cde53ba9467b783cb7c530ce054",
+		],
+	])("opens the token-ID address %s on its display path", (pathname, routeMarketName) => {
+		testState.catalogState = catalogState({ canResolveNotFound: true });
+		testState.pathname = pathname;
+		testState.routeMarketName = routeMarketName;
+		testState.routeScope = "spot";
+		testState.markets = [BTC_MARKET, HYPE_SPOT_MARKET];
+		testState.tokens = [HYPE_TOKEN, USDC_TOKEN];
+		renderPage();
+
+		expect(container.querySelector('[data-testid="not-found"]')).toBeNull();
+		expectDesktopLoadingSurface();
+		expect(testState.navigate).toHaveBeenCalledOnce();
+		expect(lastNavigation()).toMatchObject({ to: "/trade/HYPE/USDC", replace: true });
 	});
 
 	it.each([

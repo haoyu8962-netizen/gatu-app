@@ -14,6 +14,8 @@ import { toBig } from "@/lib/trade/numbers";
 import { releaseOrderAssetReservations } from "@/lib/trade/order-asset-lock";
 import { orderReconciliationError } from "@/lib/trade/order-reconciliation-feedback";
 import {
+	confirmPartialCancellationFeedback,
+	getPartialCancellationFeedback,
 	syncPendingTradingActionFeedback,
 	updatePendingTradingActionFeedback,
 } from "@/lib/trade/pending-trading-action-feedback";
@@ -115,6 +117,7 @@ export function OrderReconciliation() {
 				updatePendingTradingActionFeedback(cancellation, "cancel", {
 					status: "unconfirmed",
 					message: msg`The cancellation was not confirmed. Review open orders before retrying.`,
+					...(cancellation.partialResult ? getPartialCancellationFeedback(cancellation.partialResult) : {}),
 				});
 				continue;
 			}
@@ -132,10 +135,14 @@ export function OrderReconciliation() {
 					});
 				}
 			}
-			updatePendingTradingActionFeedback(cancellation, "cancel", {
-				status: "success",
-				message: msg`Canceled`,
-			});
+			if (cancellation.partialResult) {
+				confirmPartialCancellationFeedback({ ...cancellation, partialResult: cancellation.partialResult });
+			} else {
+				updatePendingTradingActionFeedback(cancellation, "cancel", {
+					status: "success",
+					message: msg`Canceled`,
+				});
+			}
 		}
 
 		for (const modification of modifications) {
@@ -314,21 +321,41 @@ function markExpiredTradingActions(actions: AwaitingTradingAction[], now: number
 
 function matchesExpectedModification(
 	modification: ReturnType<typeof usePendingOrderModifications>[number],
-	order: { sz: string; triggerPx: string },
+	order: { sz: string; triggerPx: string; limitPx: string },
 ): boolean {
 	return (
 		(modification.expectedSize === null || decimalsEqual(order.sz, modification.expectedSize)) &&
-		(modification.expectedTriggerPx === null || decimalsEqual(order.triggerPx, modification.expectedTriggerPx))
+		(modification.expectedTriggerPx === null || decimalsEqual(order.triggerPx, modification.expectedTriggerPx)) &&
+		(modification.expectedLimitPx === null || decimalsEqual(order.limitPx, modification.expectedLimitPx))
 	);
 }
 
 function hasModificationTargetChanged(
 	modification: ReturnType<typeof usePendingOrderModifications>[number],
-	order: { sz: string; triggerPx: string },
+	order: { sz: string; triggerPx: string; limitPx: string },
 ): boolean {
+	if (mayBeReplacementReducedByFills(modification, order)) return false;
 	return (
 		(modification.expectedSize !== null && !decimalsEqual(order.sz, modification.originalSize)) ||
-		(modification.expectedTriggerPx !== null && !decimalsEqual(order.triggerPx, modification.originalTriggerPx))
+		(modification.expectedTriggerPx !== null && !decimalsEqual(order.triggerPx, modification.originalTriggerPx)) ||
+		(modification.expectedLimitPx !== null && !decimalsEqual(order.limitPx, modification.originalLimitPx))
+	);
+}
+
+function mayBeReplacementReducedByFills(
+	modification: ReturnType<typeof usePendingOrderModifications>[number],
+	order: { sz: string; triggerPx: string; limitPx: string },
+): boolean {
+	if (modification.expectedSize === null) return false;
+	if (modification.expectedTriggerPx === null && modification.expectedLimitPx === null) return false;
+	const size = toBig(order.sz);
+	const expectedSize = toBig(modification.expectedSize);
+	return (
+		(modification.expectedTriggerPx === null || decimalsEqual(order.triggerPx, modification.expectedTriggerPx)) &&
+		(modification.expectedLimitPx === null || decimalsEqual(order.limitPx, modification.expectedLimitPx)) &&
+		!!size &&
+		!!expectedSize &&
+		size.lt(expectedSize)
 	);
 }
 

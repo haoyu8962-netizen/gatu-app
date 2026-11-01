@@ -21,7 +21,7 @@ export function TokenSelectorDropdown({ tokens, selectedToken, onSelect, getBala
 		const balance = getBalance(token.name);
 		return {
 			label: `${token.displayName}  ${formatToken(balance, 4)}`,
-			icon: <AssetDisplay coin={token.name} hideName iconClassName="size-5" />,
+			icon: <AssetDisplay coin={token.name} isToken hideName iconClassName="size-5" />,
 			active: token.name === selectedToken,
 			onSelect: () => onSelect(token.name),
 		};
@@ -34,7 +34,7 @@ export function TokenSelectorDropdown({ tokens, selectedToken, onSelect, getBala
 			trigger={
 				<span className={cn("inline-flex items-center gap-2", className)}>
 					{selected ? (
-						<AssetDisplay coin={selected.name} iconClassName="size-5" nameClassName="text-sm font-medium" />
+						<AssetDisplay coin={selected.name} isToken iconClassName="size-5" nameClassName="text-sm font-medium" />
 					) : (
 						<span className="text-sm font-medium">{selectedToken}</span>
 					)}

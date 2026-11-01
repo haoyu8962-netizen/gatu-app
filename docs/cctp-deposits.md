@@ -522,6 +522,10 @@ Fast Transfer allowance quotes, and the balance re-read of the locked amount) ca
 deadline (`DEPOSIT_LOCKED_REQUEST_TIMEOUT_MS`), so a hanging provider releases the lock as a
 failure before anything is signed.
 
+A completed CCTP deposit reaches HyperCore as a `send` from the network's
+CoreDepositWallet, which Deposits and Withdrawals lists as Deposit from HyperEVM
+([History values](trading-toolbar-redesign.md#history-values)).
+
 ## Bridge2 Retirement
 
 No new manual or automatic Bridge2 deposit may be signed or submitted. The app

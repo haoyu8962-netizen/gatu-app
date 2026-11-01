@@ -52,10 +52,7 @@ export function OrderbookHoverTooltip({ hover, marketName, baseAsset, quoteAsset
 		[
 			"quote",
 			`${t`Total`} (${quoteAsset})`,
-			formatNumber(summary.quoteTotal, {
-				decimals: quoteAsset === "USDC" ? 0 : getOrderbookQuoteDecimals(summary.quoteTotal),
-				compact: false,
-			}),
+			formatNumber(summary.quoteTotal, { decimals: getOrderbookQuoteDecimals(summary.quoteTotal), compact: false }),
 		],
 	];
 

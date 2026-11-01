@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 
+import { i18n } from "@lingui/core";
 import { ApiRequestError } from "@nktkas/hyperliquid";
 import { act, createElement, type ReactNode } from "react";
 import type { Root } from "react-dom/client";
@@ -23,7 +24,23 @@ const mocks = vi.hoisted(() => ({
 	executionGuard: null as null | ((params: unknown) => void),
 	modalType: "swap" as string | null,
 	submitOrder: vi.fn(),
+	geo: { actionsBlocked: false, tradeRestricted: false },
+	geoListeners: new Set<() => void>(),
 }));
+
+vi.mock("@/hooks/use-geo-restriction", async () => {
+	const { useSyncExternalStore } = await import("react");
+	return {
+		useGeoRestriction: () =>
+			useSyncExternalStore(
+				(listener) => {
+					mocks.geoListeners.add(listener);
+					return () => mocks.geoListeners.delete(listener);
+				},
+				() => mocks.geo,
+			),
+	};
+});
 
 vi.mock("@sairn/ui", () => ({
 	Button: ({ children, ...props }: { children: ReactNode; [key: string]: unknown }) =>
@@ -50,7 +67,8 @@ vi.mock("@/components/ui/number-input", () => ({
 }));
 
 vi.mock("@/components/trade/components/asset-display", () => ({
-	AssetDisplay: ({ coin }: { coin: string }) => createElement("span", null, coin),
+	AssetDisplay: ({ coin, isToken }: { coin: string; isToken?: boolean }) =>
+		createElement("span", { "data-asset-display": coin, "data-token-name": isToken ? coin : undefined }, coin),
 }));
 
 vi.mock("@/components/trade/components/token-selector-dropdown", () => ({
@@ -138,6 +156,8 @@ vi.mock("@/stores/use-global-modal-store", () => ({
 
 import { SpotSwapModal } from "@/components/trade/components/spot-swap-modal";
 import { DEFAULT_SWAP_SLIPPAGE_BPS, getMaxSwapInput } from "@/domain/trade/swap";
+import { type ActionFailure, describeActionFailure } from "@/lib/errors/action-error";
+import { getSpotSwapFeedback } from "@/lib/trade/spot-swap-feedback";
 import { getOrderQueueItem, removeOrderQueueItem } from "@/stores/use-order-queue-store";
 
 function setInputValue(input: HTMLInputElement, value: string) {
@@ -151,6 +171,7 @@ describe("SpotSwapModal submission", () => {
 	let root: Root;
 
 	beforeEach(() => {
+		mocks.geo = { actionsBlocked: false, tradeRestricted: false };
 		mocks.modalType = "swap";
 		mocks.owner = "0x1111111111111111111111111111111111111111";
 		mocks.spotTotal = "1000";
@@ -198,6 +219,35 @@ describe("SpotSwapModal submission", () => {
 			},
 		};
 	}
+
+	it.each([
+		["restricted", { actionsBlocked: true, tradeRestricted: true }],
+		["not yet verified", { actionsBlocked: true, tradeRestricted: false }],
+	])("submits nothing while trading is %s in the region", (_case, geo) => {
+		act(() => root.unmount());
+		mocks.geo = geo;
+		root = createI18nRoot(container);
+		act(() => root.render(createElement(SpotSwapModal)));
+		const amount = container.querySelector<HTMLInputElement>('input[aria-label="Swap amount"]');
+		if (!amount) throw new Error("Expected the swap amount input");
+		act(() => setInputValue(amount, "100"));
+
+		expect(confirm().disabled).toBe(true);
+		act(() => confirm().click());
+		expect(mocks.submitOrder).not.toHaveBeenCalled();
+		expect(container.textContent?.includes("Trading is not available in your region")).toBe(geo.tradeRestricted);
+	});
+
+	it("names the swapped tokens as tokens, never by a market with the same coin", () => {
+		act(() => root.render(createElement(SpotSwapModal)));
+		const amount = container.querySelector<HTMLInputElement>('input[aria-label="Swap amount"]');
+		if (!amount) throw new Error("Expected the swap amount input");
+		act(() => setInputValue(amount, "100"));
+
+		const labels = [...container.querySelectorAll("[data-asset-display]")];
+		expect(labels.length).toBeGreaterThan(0);
+		expect(labels.filter((label) => !label.hasAttribute("data-token-name"))).toEqual([]);
+	});
 
 	it("fills Max from the exact protocol balance instead of a JavaScript number", () => {
 		const exactBalance = "100000000000.123454";
@@ -272,6 +322,46 @@ describe("SpotSwapModal submission", () => {
 			expect(mocks.closeSwap).not.toHaveBeenCalled();
 		},
 	);
+
+	it.each([
+		["restricted", { actionsBlocked: true, tradeRestricted: true }, "Trading is not available in your region"],
+		[
+			"not yet verified",
+			{ actionsBlocked: true, tradeRestricted: false },
+			"Unable to verify regional availability. Trading is temporarily unavailable.",
+		],
+	])("refuses at the SDK boundary when the region becomes %s after the click", async (_case, geo, message) => {
+		let resolveSubmission: ((value: unknown) => void) | undefined;
+		mocks.submitOrder.mockImplementationOnce(
+			() =>
+				new Promise((resolve) => {
+					resolveSubmission = resolve;
+				}),
+		);
+		act(() => confirm().click());
+		const guard = mocks.executionGuard;
+		const params = mocks.submitOrder.mock.calls[0]?.[0];
+		expect(() => guard?.(params)).not.toThrow();
+
+		act(() => {
+			mocks.geo = geo;
+			for (const listener of mocks.geoListeners) listener();
+		});
+		let refusal: unknown;
+		try {
+			guard?.(params);
+		} catch (error) {
+			refusal = error;
+		}
+
+		expect(refusal).toBeInstanceOf(Error);
+		expect(
+			describeActionFailure(getSpotSwapFeedback(refusal) as ActionFailure, (descriptor) => i18n._(descriptor)),
+		).toBe(message);
+		await act(async () => {
+			resolveSubmission?.(filledResponse());
+		});
+	});
 
 	it("records a late error after the original controller has unmounted", async () => {
 		let rejectSubmission: ((value: unknown) => void) | undefined;

@@ -11,6 +11,7 @@ import { getFundsAvailabilityNotice } from "@/domain/trade/data-presentation";
 import { useBalanceRows } from "@/hooks/trade/use-balance-rows";
 import { useDepositAvailability } from "@/hooks/trade/use-deposit-availability";
 import { useFundsActionAvailability } from "@/hooks/trade/use-funds-action-availability";
+import { useGeoRestriction } from "@/hooks/use-geo-restriction";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { useNumberFormat } from "@/lib/format";
@@ -87,6 +88,7 @@ export function BalancesTab({ toolbarTarget }: Props) {
 		showBalanceAccountType,
 		spotBalanceRows,
 	} = useBalanceRows();
+	const tradingActionsBlocked = useGeoRestriction().actionsBlocked;
 	const fundsActionAvailability = useFundsActionAvailability({
 		accountDataReady: accountDataReady && !isDataStale,
 		accountAbstraction,
@@ -141,7 +143,11 @@ export function BalancesTab({ toolbarTarget }: Props) {
 			row.asset === DEFAULT_QUOTE_TOKEN &&
 			hasTransferableBalance;
 		const canSwap =
-			accountDataReady && accountModeReady && row.type === "spot" && isTradingToolbarBalancePositive(row.available);
+			!tradingActionsBlocked &&
+			accountDataReady &&
+			accountModeReady &&
+			row.type === "spot" &&
+			isTradingToolbarBalancePositive(row.available);
 		const canWithdraw =
 			fundsActionAvailability.withdrawal.available &&
 			fundsActionsEnabled &&
@@ -149,6 +155,9 @@ export function BalancesTab({ toolbarTarget }: Props) {
 			hasTransferableBalance;
 		const transferLabel = row.type === "perp" ? t`To Spot` : t`To Perp`;
 		const fundsLocked = agentOnlySession;
+		const canSend = fundsActionAvailability.withdrawal.available && fundsActionsEnabled && hasTransferableBalance;
+		const showsSend =
+			canSend || (fundsLocked && accountDataReady && fundsActionsEnabled && accountModeReady && hasTransferableBalance);
 		const transferEligible =
 			internalTransfersEnabled && fundsActionsEnabled && row.asset === DEFAULT_QUOTE_TOKEN && hasTransferableBalance;
 		const showsTransfer = canTransfer || (fundsLocked && transferEligible);
@@ -168,6 +177,7 @@ export function BalancesTab({ toolbarTarget }: Props) {
 					<div className="flex min-w-0 items-center gap-2">
 						<AssetDisplay
 							coin={row.asset}
+							isToken
 							iconClassName="size-6"
 							nameClassName="text-[13px] font-bold text-market-close-fg"
 						/>
@@ -220,13 +230,13 @@ export function BalancesTab({ toolbarTarget }: Props) {
 								{t`Swap`}
 							</Button>
 						)}
-						{accountDataReady && fundsActionsEnabled && accountModeReady && hasTransferableBalance && (
+						{showsSend && (
 							<Button
 								variant="outline"
 								intent="neutral"
 								size="xxs"
 								{...lockedActionProps}
-								onClick={fundsLocked ? undefined : () => handleSendClick(row)}
+								onClick={canSend ? () => handleSendClick(row) : undefined}
 								className={balancesTableActionClass}
 							>
 								{t`Send`}

@@ -7,10 +7,11 @@ let releaseWarmOrderbook: (() => void) | undefined;
 
 /**
  * Perp, builder-perp and `@index` spot names are the API coin itself; a spot pair name such as
- * `PURR/USDC` needs the market catalog to resolve, so its stream starts with the panel as before.
+ * `PURR/USDC` or a `0x` token-ID address needs the market catalog to resolve, so its stream starts
+ * with the panel as before.
  */
 function isApiCoin(marketName: string): boolean {
-	return !marketName.includes("/");
+	return !marketName.includes("/") && !marketName.startsWith("0x");
 }
 
 export function getBootOrderbookCoin(pathname: string): string | undefined {

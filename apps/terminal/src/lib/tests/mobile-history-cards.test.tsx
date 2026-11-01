@@ -2,6 +2,7 @@
 
 import { i18n } from "@lingui/core";
 import { I18nProvider } from "@lingui/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, type ReactElement, type ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -24,6 +25,7 @@ const mocks = vi.hoisted(() => ({
 	ordersOffline: false,
 	ordersStale: false,
 	setActiveTab: vi.fn(),
+	snapshotFills: vi.fn(async () => []),
 }));
 
 const OWNER_A = "0x1111111111111111111111111111111111111111";
@@ -146,6 +148,7 @@ vi.mock("@tanstack/react-router", () => ({
 
 vi.mock("@/hooks/trade/use-user-fills", () => ({
 	useUserFills: () => ({
+		bufferedFills: mocks.fills,
 		error: mocks.fillsError,
 		isConnected: true,
 		isOffline: mocks.fillsOffline,
@@ -218,6 +221,10 @@ vi.mock("@/hooks/trade/use-market-navigation", () => ({
 vi.mock("@/hooks/trade/use-order-display-labels", () => ({
 	useOrderDisplayLabels: () => ({
 		getHistoricalOrderStatusLabel: (status: string) => (status === "filled" ? "Filled" : "Canceled"),
+		getHistoricalOrderStatusPresentation: (order: { status: string }) => ({
+			label: order.status === "filled" ? "Filled" : "Canceled",
+			reason: order.status === "marginCanceled" ? "Canceled due to insufficient margin" : null,
+		}),
 		getOrderSideLabel: (side: "A" | "B", reduceOnly: boolean) =>
 			reduceOnly ? (side === "B" ? "Close Short" : "Close Long") : side === "B" ? "Buy" : "Sell",
 		getOrderTypeLabel: (type: string) => type,
@@ -239,10 +246,11 @@ vi.mock("@/hooks/wallet/use-wallet-session", () => ({
 
 vi.mock("@/lib/hyperliquid", () => ({
 	getExplorerTxUrl: (hash: string) => `https://explorer.test/${hash}`,
-	useHyperliquid: () => ({ env: "Mainnet" }),
+	useHyperliquid: () => ({ env: "Mainnet", info: { userFills: mocks.snapshotFills } }),
 	useMarkets: () => ({
 		getMarket: (coin: string) => ({ kind: "perp", shortName: coin, szDecimals: coin === "BTC" ? 4 : 3 }),
 		getSzDecimals: (coin: string) => (coin === "BTC" ? 4 : 3),
+		getTokenDisplayName: (name: string) => (name === "UBTC" ? "BTC" : name),
 	}),
 	useSubscription: () => ({
 		data: {
@@ -270,12 +278,15 @@ import { MobileFundingTab } from "@/components/trade/mobile/mobile-funding-tab";
 import { MobileHistoryTab } from "@/components/trade/mobile/mobile-history-tab";
 import { MobileOrdersHistoryTab } from "@/components/trade/mobile/mobile-orders-history-tab";
 import { MOBILE_PROGRESSIVE_LIST_BATCH_SIZE } from "@/components/trade/mobile/mobile-progressive-list";
+import { formatDateTime } from "@/lib/format";
 
 describe("mobile history disclosure cards", () => {
+	let client: QueryClient;
 	let container: HTMLDivElement;
 	let root: Root;
 
 	beforeEach(() => {
+		client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 		mocks.address = OWNER_A;
 		mocks.fills = createFills();
 		mocks.fillsError = undefined;
@@ -298,6 +309,7 @@ describe("mobile history disclosure cards", () => {
 	afterEach(() => {
 		act(() => root.unmount());
 		container.remove();
+		client.clear();
 		vi.clearAllMocks();
 		vi.unstubAllGlobals();
 		vi.useRealTimers();
@@ -305,7 +317,11 @@ describe("mobile history disclosure cards", () => {
 
 	function render(component: ReactElement) {
 		act(() => {
-			root.render(<I18nProvider i18n={i18n}>{component}</I18nProvider>);
+			root.render(
+				<QueryClientProvider client={client}>
+					<I18nProvider i18n={i18n}>{component}</I18nProvider>
+				</QueryClientProvider>,
+			);
 		});
 	}
 
@@ -521,6 +537,63 @@ describe("mobile history disclosure cards", () => {
 		);
 	});
 
+	it("shows each fill's closed PNL net of its fee, opening fills included", () => {
+		render(<MobileHistoryTab scrollMode="page" />);
+		clickButton("Expand all");
+
+		expect(container.textContent).toContain("+$12.38");
+		expect(container.textContent).toContain("-$0.08");
+	});
+
+	it("shows a fill's fee token by its display name", () => {
+		const [fill] = createFills();
+		mocks.fills = [{ ...fill, feeToken: "UBTC", fee: "0.00001" }];
+		render(<MobileHistoryTab scrollMode="page" />);
+		clickButton("Expand all");
+
+		expect(container.textContent).toContain("0.00001 BTC");
+		expect(container.textContent).not.toContain("UBTC");
+	});
+
+	it("separates the owner's liquidation from a fill against another account's liquidation", () => {
+		const [ownFill, counterpartyFill] = createFills();
+		mocks.fills = [
+			{ ...ownFill, liquidation: { liquidatedUser: OWNER_A, markPx: "99000", method: "market" } },
+			{ ...counterpartyFill, liquidation: { liquidatedUser: OWNER_B, markPx: "3400", method: "market" } },
+		];
+		render(<MobileHistoryTab scrollMode="page" />);
+		clickButton("Expand all");
+
+		const text = container.textContent ?? "";
+		expect(text).toContain("Market Order Liquidation: Open Long");
+		expect(text).toContain("Close Long (Price Improved)");
+		expect(text).not.toContain("Liquidated");
+	});
+
+	it("filters and exports only the owner's own and protocol liquidations as liquidations", async () => {
+		const [ownFill, counterpartyFill] = createFills();
+		mocks.fills = [
+			{ ...ownFill, liquidation: { liquidatedUser: OWNER_A, markPx: "99000", method: "market" } },
+			{ ...counterpartyFill, liquidation: { liquidatedUser: OWNER_B, markPx: "3400", method: "market" } },
+			{ ...counterpartyFill, coin: "SOL", dir: "Auto-Deleveraging", hash: "0xadl", tid: 3 },
+		];
+		render(<MobileHistoryTab scrollMode="page" />);
+
+		await selectOption("Type", "Liquidated");
+		expect(container.querySelectorAll("article")).toHaveLength(2);
+		expect(container.querySelector('[aria-label="Switch to BTC market"]')).not.toBeNull();
+		expect(container.querySelector('[aria-label="Switch to SOL market"]')).not.toBeNull();
+		expect(container.querySelector('[aria-label="Switch to ETH market"]')).toBeNull();
+		clickButton("Export CSV");
+		const liquidationRows = mocks.downloadCsv.mock.calls.at(-1)?.[1] as string[][] | undefined;
+		expect(liquidationRows?.slice(1).map((row) => row[1])).toEqual(expect.arrayContaining(["BTC", "SOL"]));
+		expect(liquidationRows?.flat()).not.toContain("ETH");
+
+		await selectOption("Type", "Trade");
+		expect(container.querySelectorAll("article")).toHaveLength(1);
+		expect(container.querySelector('[aria-label="Switch to ETH market"]')).not.toBeNull();
+	});
+
 	it("keeps contained trade history internally scrollable", () => {
 		render(<MobileHistoryTab scrollMode="contained" />);
 
@@ -607,7 +680,18 @@ describe("mobile history disclosure cards", () => {
 		clickButton("Export CSV");
 		expect(mocks.downloadCsv).toHaveBeenCalledWith(
 			"funding_history.csv",
-			expect.arrayContaining([expect.arrayContaining(["Time", "Asset", "Position", "Rate", "Payment"])]),
+			expect.arrayContaining([
+				["Time", "Asset", "Side", "Size", "Rate", "Payment", "Payment Token"],
+				[
+					formatDateTime(1_754_350_500_000, { dateStyle: "short", timeStyle: "short" }),
+					"ETH",
+					"Short",
+					"0.2",
+					"-0.0002",
+					"-0.75",
+					"USDC",
+				],
+			]),
 		);
 	});
 
@@ -695,6 +779,25 @@ describe("mobile history disclosure cards", () => {
 			"order_history.csv",
 			expect.arrayContaining([expect.arrayContaining(["Time", "Asset", "Direction", "Type", "Status"])]),
 		);
+		const exportRows = mocks.downloadCsv.mock.calls.at(-1)?.[1] as string[][] | undefined;
+		const header = exportRows?.[0] ?? [];
+		const priceColumns = ["Price", "Trigger Price", "Size"].map((name) => header.indexOf(name));
+		expect(exportRows?.slice(1).map((row) => priceColumns.map((index) => row[index]))).toEqual(
+			expect.arrayContaining([
+				["100000", "-", "0.02"],
+				["0", "3400", "0.2"],
+			]),
+		);
+	});
+
+	it("writes a canceled order's reason under its status", () => {
+		mocks.orders = createOrders().map((entry, index) => (index === 1 ? { ...entry, status: "marginCanceled" } : entry));
+		render(<MobileOrdersHistoryTab scrollMode="page" />);
+		expect(container.textContent).not.toContain("Canceled due to insufficient margin");
+		clickButton("Expand all");
+
+		expect(container.textContent).toContain("Canceled due to insufficient margin");
+		expect(container.textContent?.match(/Canceled due to insufficient margin/g)).toHaveLength(1);
 	});
 
 	it("keeps full order export available when the recent mobile snapshot is empty", () => {

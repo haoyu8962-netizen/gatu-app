@@ -16,14 +16,24 @@ export function useSpotTokenUsdPriceState(enabled: boolean): SpotTokenUsdPriceSt
 		() => addSpotMarketPriceAliases(allMidsEvent?.mids, markets.spot) ?? {},
 		[allMidsEvent?.mids, markets.spot],
 	);
-	const priceStatus = getStreamAvailabilityStatus({
+	const streamStatus = getStreamAvailabilityStatus({
 		isConnected: enabled,
 		hasData: allMidsEvent !== undefined,
 		subscriptionStatus: status,
 		isStale,
 	});
 
-	return { prices, status: priceStatus };
+	return { prices, status: streamStatus === "success" ? getSpotCatalogStatus(markets) : streamStatus };
+}
+
+/**
+ * A spot token's USD price comes from its market's mid, found through the spot catalog. Until the
+ * catalog has loaded, a token without a price may simply be one whose market is not known yet, so the
+ * prices count as current only once the catalog is ready; a failed catalog leaves them unavailable.
+ */
+function getSpotCatalogStatus(markets: { isLoading: boolean; error: Error | null }): AssetAvailabilityStatus {
+	if (markets.error) return "error";
+	return markets.isLoading ? "loading" : "success";
 }
 
 export function useSpotTokenUsdPrices(enabled: boolean): Record<string, string> {

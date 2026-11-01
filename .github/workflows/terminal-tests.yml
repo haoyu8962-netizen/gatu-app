@@ -103,12 +103,36 @@ jobs:
           src/lib/tests/deposit-modal-warm.test.ts
           src/lib/tests/trades.test.ts
           src/lib/tests/orderbook-panel-safety.test.tsx
+          src/lib/tests/orderbook.test.ts
+          src/lib/tests/orderbook-rows.test.ts
+          src/lib/tests/orderbook-price-selection.test.tsx
+          src/lib/tests/mobile-orderbook-subscription.test.tsx
+          src/lib/tests/mobile-book-header-contract.test.ts
+          src/lib/tests/market-selector-quote.test.ts
+          src/lib/tests/token-selector-row.test.tsx
+          src/lib/tests/token-selector-wiring.test.tsx
+          src/lib/tests/use-markets-info-subscriptions.test.tsx
+          src/lib/tests/compact-asset-ctxs.test.ts
+          src/lib/tests/market-stats-subscription.test.ts
+          src/lib/tests/spot-token-display-names-contract.test.ts
+          src/lib/tests/market-catalog.test.ts
+          src/lib/tests/market-catalog-query-policy.test.tsx
+          src/lib/tests/market-route.test.ts
+          src/lib/tests/market-route-canonical.test.ts
+          src/lib/tests/orderbook-boot.test.ts
+          src/lib/tests/asset-display-token-name.test.tsx
+          src/lib/tests/mobile-twap-card.test.tsx
+          src/lib/tests/passive-query-state.test.ts
           src/lib/tests/mobile-bottom-nav.test.tsx
           src/lib/tests/mobile-terminal-market-bar-lifecycle.test.tsx
           src/lib/tests/mobile-terminal-disclosure-state.test.tsx
           src/lib/tests/mobile-trade-layout-market-reset.test.tsx
           src/lib/tests/market-overview.test.tsx
           src/lib/tests/market-asset-info.test.tsx
+          src/lib/tests/mobile-data-presentation-contract.test.ts
+          src/lib/tests/mobile-input-zoom-contract.test.ts
+          src/lib/tests/positions-table-visual-contract.test.ts
+          src/lib/tests/desktop-positions-readiness.test.tsx
 
       - name: Test Privy theme and wallet identity
         working-directory: apps/terminal
@@ -198,9 +222,21 @@ jobs:
           src/lib/tests/use-exchange-portfolio-margin-policy.test.tsx
           src/lib/tests/fast-asset-ctxs-subscription.test.tsx
           src/lib/tests/limit-price-prefill-contract.test.ts
+          src/lib/tests/book-price-selection.test.tsx
+          src/lib/tests/book-size-mode-request.test.tsx
           src/lib/tests/mobile-order-safety-contract.test.ts
           src/lib/tests/order-confirmation-gate.test.tsx
           src/lib/tests/order-entry-store.test.tsx
+          src/lib/tests/order-entry.test.ts
+          src/lib/tests/order-entry-trigger-funds.test.tsx
+          src/lib/tests/order-intent.test.ts
+          src/lib/tests/order-metrics.test.ts
+          src/lib/tests/order-size.test.ts
+          src/lib/tests/entry-order-execution-guard.test.ts
+          src/lib/tests/reduce-only.test.ts
+          src/lib/tests/scale-conversion-price.test.ts
+          src/lib/tests/spot-market-max-order.test.ts
+          src/lib/tests/twap-i18n.test.tsx
           src/lib/tests/order-slider-sdk-contract.test.tsx
           src/lib/tests/order-submission-wiring.test.ts
           src/lib/tests/order-submit-surface-reset.test.tsx
@@ -216,6 +252,11 @@ jobs:
           tests/mobile-trade-size-validation-a11y.test.tsx
           tests/trade-panel-open-interest-cap.test.tsx
           tests/trade-size-error-a11y.test.tsx
+          src/lib/tests/exchange-action-expiry.test.ts
+          src/lib/tests/open-order-modification.test.ts
+          src/lib/tests/open-order-modification-form.test.ts
+          src/lib/tests/spot-swap-execution-guard.test.ts
+          src/lib/tests/position-reverse-submit.test.tsx
 
       - name: Test confirmation surface contracts
         working-directory: apps/terminal
@@ -242,6 +283,9 @@ jobs:
           src/lib/tests/desktop-orders-cancel-all.test.tsx
           src/lib/tests/mobile-orders-card.test.tsx
           src/lib/tests/mobile-order-modification.test.tsx
+          src/lib/tests/open-order-cancel.test.ts
+          src/lib/tests/pending-trading-action-store.test.ts
+          src/lib/tests/order-reconciliation.test.tsx
           src/lib/tests/spot-swap-modal.test.tsx
           src/lib/tests/account-mode-modal.test.tsx
           src/lib/tests/use-asset-leverage.test.tsx
@@ -259,10 +303,21 @@ jobs:
           src/lib/tests/earn-fresh-state.test.ts
           src/components/staking/__tests__/staking-view.test.tsx
           src/components/staking/__tests__/use-staking-controller.test.tsx
+          src/components/staking/__tests__/staking-passive-data.test.tsx
+          src/lib/tests/referral-passive-data.test.tsx
+          src/lib/tests/vault-passive-data.test.tsx
+          src/components/vaults/__tests__/use-vaults-controller.test.tsx
+          src/lib/tests/use-referrals.test.tsx
+          src/components/staking/__tests__/use-staking-actions.test.tsx
           src/components/vaults/__tests__/use-vault-action-controller.test.tsx
           src/lib/tests/action-progress-label-contract.test.ts
           tests/slider-effective-leverage-regression.test.tsx
           src/lib/tests/dialog-dismiss-control-contract.test.ts
+          src/lib/tests/position-market-close-entry.test.tsx
+          src/lib/tests/mobile-position-isolated-margin-entry.test.tsx
+          src/lib/tests/vault-action-domain.test.ts
+          src/lib/tests/funds-destination-rules.test.ts
+          src/lib/tests/account-ledger-export-availability.test.tsx
 
       - name: Test slider gesture lifecycles
         working-directory: apps/terminal
@@ -297,6 +352,8 @@ jobs:
           src/lib/tests/responsive-panel-layout.test.ts
           src/lib/tests/trade-row.test.tsx
           src/lib/tests/trades-panel.test.tsx
+          src/lib/tests/explorer-urls.test.ts
+          src/lib/tests/last-mark-cache.test.ts
 
       - name: Test number format and runtime locale contracts
         working-directory: apps/terminal
@@ -309,10 +366,13 @@ jobs:
           src/lib/tests/global-settings-store.test.ts
           src/lib/tests/i18n-reactivity-contract.test.ts
           src/lib/tests/date-locale-reactivity-contract.test.ts
+          src/lib/tests/number-format-direction.test.tsx
           src/lib/tests/i18n-hot-switch.test.tsx
           src/lib/tests/action-error.test.ts
           src/lib/tests/errors.test.ts
           src/lib/tests/lingui-helper-translator-contract.test.ts
+          src/lib/tests/catalog-completeness-contract.test.ts
+          src/lib/tests/command-menu.test.tsx
           src/lib/tests/footer-bar.test.tsx
           src/lib/tests/vaults-view.test.tsx
           src/lib/tests/portfolio-performance-chart.test.tsx
@@ -330,10 +390,23 @@ jobs:
           src/lib/tests/use-tradingview-overlay-lines.test.tsx
           src/lib/tests/funds-action-recovery-host.test.tsx
           src/lib/tests/historical-orders-page.test.tsx
+          src/lib/tests/historical-orders.test.ts
+          src/lib/tests/use-historical-orders.test.tsx
+          src/lib/tests/open-orders-tpsl.test.ts
+          src/lib/tests/order-type-labels.test.tsx
+          src/lib/tests/trailing-stop-condition.test.ts
+          src/lib/tests/historical-order-status.test.tsx
+          src/lib/tests/desktop-orders-history-direction.test.tsx
+          src/lib/tests/mobile-history-cards.test.tsx
+          src/lib/tests/mobile-fill-filter-backfill.test.tsx
+          src/lib/tests/trade-history.test.ts
+          src/lib/tests/fill-filter-presentation.test.ts
+          src/lib/tests/user-fills.test.ts
           src/lib/tests/trade-history-page.test.tsx
           src/lib/tests/position-close-all-submit.test.tsx
           src/lib/tests/trade-form-fields-order-entry-data.test.tsx
           src/lib/tests/history-csv-twap.test.tsx
+          src/lib/tests/desktop-twap-tab.test.tsx
           src/lib/tests/bridge-success-screen-locale.test.tsx
           src/components/staking/__tests__/staking-action-modal.test.tsx
           src/lib/tests/react-source-harness.test.ts
@@ -353,6 +426,12 @@ jobs:
           src/lib/tests/trade-form-twap.test.tsx
           src/lib/tests/rtl-financial-ui-contract.test.ts
           src/lib/tests/desktop-history-exports.test.tsx
+          src/lib/tests/account-ledger.test.ts
+          src/lib/tests/account-ledger-csv-sub-accounts.test.tsx
+          src/lib/tests/fill-direction.test.ts
+          src/lib/tests/collateral-amount.test.ts
+          src/lib/tests/historical-order-price.test.tsx
+          src/lib/tests/public-stats-data.test.ts
 
       - name: Test Deposit, CCTP, routing, and geo guards
         working-directory: apps/terminal
@@ -393,6 +472,11 @@ jobs:
           src/lib/tests/referral-dashboard-agent-only.test.tsx
           src/lib/tests/referral-ui-contract.test.ts
           src/lib/tests/balances-table-visual-contract.test.ts
+          src/lib/tests/balances.test.ts
+          src/lib/tests/spot-token-usd-price-state.test.tsx
+          src/lib/tests/portfolio.test.ts
+          src/lib/tests/portfolio-overview.test.tsx
+          src/lib/tests/portfolio-refresh-since-mount.test.tsx
 
       # `pnpm test:brand` in the Website and Brand workflow also runs these, but that workflow
       # only starts when the website or a brand asset changes. Terminal changes are covered here.

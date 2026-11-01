@@ -7,7 +7,7 @@ import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { FundingTab } from "@/components/trade/positions/funding-tab";
 import { HistoryTab } from "@/components/trade/positions/history-tab";
-import { formatDateTimeShort } from "@/lib/format";
+import { formatDateTime } from "@/lib/format";
 import { createI18nRoot } from "./harness/react";
 
 const mocks = vi.hoisted(() => ({
@@ -154,6 +154,7 @@ vi.mock("@/lib/hyperliquid", () => ({
 	useMarkets: () => ({
 		getMarket: (coin: string) => ({ kind: "perp", shortName: coin, szDecimals: 4 }),
 		getSzDecimals: () => 4,
+		getTokenDisplayName: (name: string) => (name === "UBTC" ? "BTC" : name),
 	}),
 	useSubscription: () => ({
 		data: {
@@ -279,6 +280,29 @@ describe("desktop history exports", () => {
 		);
 	});
 
+	it("shows closed PNL net of the fee while the export keeps the exchange's values", () => {
+		act(() => root.render(<HistoryTab />));
+
+		const headers = Array.from(container.querySelectorAll("th"), (cell) => cell.textContent);
+		const cells = Array.from(container.querySelectorAll("tbody tr:first-child td"), (cell) => cell.textContent);
+		expect(cells[headers.indexOf("PNL")]).toBe("+$12.38");
+		clickExport();
+		const rows = mocks.downloadCsv.mock.calls.at(-1)?.[1] as string[][] | undefined;
+		expect(rows?.[1]?.[(rows?.[0] ?? []).indexOf("PNL")]).toBe("12.5");
+	});
+
+	it("shows a fee token by its display name while the export keeps the protocol name", () => {
+		mocks.fills = [{ ...mocks.fills[0], coin: "@142", feeToken: "UBTC", fee: "0.00001" }];
+		act(() => root.render(<HistoryTab />));
+
+		const headers = Array.from(container.querySelectorAll("th"), (cell) => cell.textContent);
+		const cells = Array.from(container.querySelectorAll("tbody tr:first-child td"), (cell) => cell.textContent);
+		expect(cells[headers.indexOf("Fee")]).toBe("0.00001 BTC");
+		const rows = mocks.fillsBuildRows?.([mocks.fills[0]]) ?? [];
+		expect(rows[1]?.[(rows[0] ?? []).indexOf("Fee Token")]).toBe("UBTC");
+		expect(rows[1]?.[(rows[0] ?? []).indexOf("Asset")]).toBe("@142");
+	});
+
 	it("exports fill numbers as the exchange sent them, never compacted, rounded or localized", () => {
 		act(() => root.render(<HistoryTab />));
 		const rows = mocks.fillsBuildRows?.([mocks.fills[0]]) ?? [];
@@ -296,10 +320,13 @@ describe("desktop history exports", () => {
 		const rows = buildRowsFromEnglishRender?.([mocks.fills[0]]) ?? [];
 
 		expect(rows[0]?.slice(0, 4)).toEqual(["时间", "资产", "方向", "类型"]);
-		expect(rows[1]?.[0]).toBe(formatDateTimeShort(1_754_350_400_000, { locale: "zh" }));
+		expect(rows[1]?.[0]).toBe(
+			formatDateTime(1_754_350_400_000, { locale: "zh", dateStyle: "short", timeStyle: "short" }),
+		);
 		expect(rows[1]?.slice(1, 4)).toEqual(["BTC", "平多", "交易"]);
-		expect(formatDateTimeShort(1_754_350_400_000, { locale: "zh" })).not.toBe(
-			formatDateTimeShort(1_754_350_400_000, { locale: "en" }),
+		expect(rows[1]?.[0]).toContain("2025");
+		expect(formatDateTime(1_754_350_400_000, { locale: "zh", dateStyle: "short", timeStyle: "short" })).not.toBe(
+			formatDateTime(1_754_350_400_000, { locale: "en", dateStyle: "short", timeStyle: "short" }),
 		);
 	});
 
@@ -316,11 +343,37 @@ describe("desktop history exports", () => {
 		expect(container.querySelectorAll("tbody tr")).toHaveLength(30);
 	});
 
+	it("dates each fill with its year like the order history", () => {
+		act(() => root.render(<HistoryTab />));
+
+		const filledAt = new Date(1_754_350_400_000);
+		expect(container.textContent).toContain(
+			formatDateTime(filledAt.getTime(), { locale: "en", dateStyle: "short", timeStyle: "short" }),
+		);
+		expect(container.textContent).toContain(`${filledAt.getMonth() + 1}/${filledAt.getDate()}/25`);
+	});
+
 	it("labels ordinary fills as trades", () => {
 		act(() => root.render(<HistoryTab />));
 
 		expect(container.textContent).toContain("Trade");
 		expect(container.textContent).not.toContain("TWAP");
+	});
+
+	it("keeps a fill against another account's liquidation an ordinary fill and labels the owner's own", () => {
+		const [fill] = mocks.fills;
+		mocks.fills = [
+			{
+				...fill,
+				liquidation: { liquidatedUser: "0x9999999999999999999999999999999999999999", markPx: "1", method: "market" },
+			},
+			{ ...fill, hash: "0xbbb", liquidation: { markPx: "1", method: "market" }, tid: 2 },
+		];
+		act(() => root.render(<HistoryTab />));
+
+		expect(container.textContent).toContain("Close Long (Price Improved)");
+		expect(container.textContent).toContain("Market Order Liquidation: Close Long");
+		expect(container.textContent).not.toContain("Liquidated");
 	});
 
 	it("keeps full trade export available when the recent display window is empty", () => {
@@ -359,7 +412,24 @@ describe("desktop history exports", () => {
 		clickExport();
 		expect(mocks.downloadCsv).toHaveBeenCalledWith(
 			"funding_history.csv",
-			expect.arrayContaining([expect.arrayContaining(["Time", "Asset", "Position", "Rate", "Payment"])]),
+			expect.arrayContaining([
+				["Time", "Asset", "Side", "Size", "Rate", "Payment", "Payment Token"],
+				[expect.any(String), "BTC", "Long", "0.01", "0.0001", "1.25", "USDC"],
+			]),
+		);
+	});
+
+	it("dates each funding payment with its year in the table and the export", () => {
+		act(() => root.render(<FundingTab />));
+
+		const paidAt = new Date(1_754_350_400_000);
+		const withYear = formatDateTime(paidAt.getTime(), { locale: "en", dateStyle: "short", timeStyle: "short" });
+		expect(container.querySelector("tbody")?.textContent).toContain(withYear);
+		expect(container.textContent).toContain(`${paidAt.getMonth() + 1}/${paidAt.getDate()}/25`);
+		clickExport();
+		expect(mocks.downloadCsv).toHaveBeenCalledWith(
+			"funding_history.csv",
+			expect.arrayContaining([[withYear, "BTC", "Long", "0.01", "0.0001", "1.25", "USDC"]]),
 		);
 	});
 

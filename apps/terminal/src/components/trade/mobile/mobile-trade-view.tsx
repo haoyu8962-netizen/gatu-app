@@ -17,6 +17,11 @@ import {
 	type EntryOrderExecutionState,
 } from "@/domain/trade/order/entry-execution-guard";
 import {
+	getOrderEntryLimitPx,
+	getOrderEntryMarginNotionalForSize,
+	getOrderEntryValueForSize,
+} from "@/domain/trade/order/entry-limit-price";
+import {
 	canEstimateProspectiveLiquidationDraft,
 	estimateProspectiveLiquidation,
 } from "@/domain/trade/order/liquidation";
@@ -34,6 +39,9 @@ import {
 	type SelectableAccountAbstraction,
 	useAccountAbstractionControl,
 } from "@/hooks/trade/use-account-abstraction-control";
+import { useBookPriceSelection } from "@/hooks/trade/use-book-price-selection";
+import { useBookSizeModeRequest } from "@/hooks/trade/use-book-size-mode-request";
+
 import { useBuilderFeeTenthsBps } from "@/hooks/trade/use-builder-fee-config";
 import { useDepositAvailability } from "@/hooks/trade/use-deposit-availability";
 import { useMarketFeeRates } from "@/hooks/trade/use-fee-rates";
@@ -106,11 +114,6 @@ import {
 	useTwapStopPrice,
 	useTwapTriggerPrice,
 } from "@/stores/use-order-entry-store";
-import {
-	getOrderbookActionsStore,
-	getSelectedPriceForMarket,
-	useSelectedPrice,
-} from "@/stores/use-orderbook-actions-store";
 import { TokenSelector } from "../chart/token-selector";
 import { OrderFeeSummaryValue } from "../components/order-fee-summary-value";
 import { MarginModeModal, warmTradeSettingsModals } from "../tradebox/lazy-trade-settings-modals";
@@ -168,8 +171,6 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 
 	const slippageBps = useMarketOrderSlippageBps();
 	const slippagePercent = useMarketOrderSlippagePercent();
-
-	const selectedPrice = useSelectedPrice();
 
 	const orderType = useOrderType();
 	const twapOrder = isTwapOrderType(orderType);
@@ -274,6 +275,16 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 	const position = market?.name ? userPositions.getPosition(market.name, getPositionDex(market)) : null;
 	const positionSnapshotReady = !userPositions.isLoading && !userPositions.hasError && !userPositions.isStale;
 	const validatedPositionSize = positionSnapshotReady ? (position?.szi ?? "0") : null;
+	const entryPriceInput = {
+		orderType,
+		assetId: typeof market?.assetId === "number" ? market.assetId : null,
+		szDecimals: market?.szDecimals ?? 0,
+		limitPriceInput,
+		scaleStartPriceInput,
+		scaleEndPriceInput,
+		scaleLevelsNum,
+		scaleSkewInput,
+	};
 	const {
 		accountAbstraction,
 		availabilityStatus,
@@ -292,10 +303,13 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 		isAvailabilityStale,
 		hasAvailabilityError,
 		isAwaitingFirstDeposit,
+		requiresAvailableBalance,
 		isOpenInterestCapped,
 		availableBalanceToken,
 		spotBalance,
 		maxSize,
+		exceedsMaxSize,
+		spotBuyQuoteCost,
 		sizeValue,
 		sizeForOrder,
 		orderValue,
@@ -325,7 +339,9 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 		markPx,
 		sizeMode,
 		sizeInput,
-		limitPx: usesLimitPrice ? toNumberOrZero(limitPriceInput) : undefined,
+		limitPx: getOrderEntryLimitPx(entryPriceInput),
+		orderValueForSize: (size: string) => getOrderEntryValueForSize(entryPriceInput, size),
+		marginNotionalForSize: (size: string) => getOrderEntryMarginNotionalForSize(entryPriceInput, size, side, markPx),
 		reduceOnly,
 		positionSnapshot: {
 			ready: positionSnapshotReady,
@@ -414,16 +430,8 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 		if (active && isSpotMarket && isTriggerOrder) setOrderType("market");
 	}, [active, isSpotMarket, isTriggerOrder, setOrderType]);
 
-	useEffect(() => {
-		if (selectedPrice === null) return;
-
-		const price = getSelectedPriceForMarket(selectedPrice, market?.name);
-		getOrderbookActionsStore().actions.clearSelectedPrice();
-		if (price === null) return;
-
-		setOrderType("limit");
-		setLimitPriceFromUser(`${market?.name ?? ""}|limit`, price);
-	}, [market?.name, selectedPrice, setOrderType, setLimitPriceFromUser]);
+	useBookPriceSelection(market?.name);
+	useBookSizeModeRequest(market?.name, sizeMode, toggleSizeDenomination);
 	const price = getOrderPrice(
 		orderType,
 		executionReferencePx,
@@ -448,6 +456,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 		price: conversionPrice,
 		leverage: capabilities.isLeveraged ? leverage : null,
 		reduceOnly,
+		scaleOrderValue: getOrderEntryValueForSize(entryPriceInput, sizeForOrder),
 	});
 	const isolatedExistingPosition = position
 		? {
@@ -499,6 +508,9 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 		side,
 		usesLimitPrice,
 		usesTriggerPrice,
+		limitPriceInput,
+		triggerPriceInput: triggerPrice,
+		formatDecimalString: numberFormat.formatDecimalString,
 		triggerPriceNum: toNumber(triggerPrice),
 		scaleOrder,
 		twapOrder,
@@ -509,6 +521,9 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 		twapMinutesNum,
 		twapTriggerPriceNum,
 		twapStopPriceNum,
+		twapPricesEnabled: twapAdvancedEnabled,
+		twapTriggerPriceInput,
+		twapStopPriceInput,
 	};
 
 	const validation = useOrderValidation(
@@ -519,11 +534,14 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 					quoteAvailable: spotBalance.quoteAvailable,
 					baseToken,
 					quoteToken,
+					quoteCost: spotBuyQuoteCost,
 				})
 			: perpInput(baseInput, {
 					orderType,
 					markPx,
 					maxSize,
+					exceedsMaxSize,
+					requiresAvailableBalance,
 					stopOrder: isStopOrderType(orderType),
 					takeProfitOrder: isTakeProfitOrderType(orderType),
 					positionSize: validatedPositionSize,
@@ -542,7 +560,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 		accountReady:
 			isConnected &&
 			!isWalletLoading &&
-			(reduceOnly || availableBalance > 0) &&
+			(reduceOnly || requiresAvailableBalance === false || availableBalance > 0) &&
 			!validation.needsApproval &&
 			!isAvailabilityBlocked &&
 			!tradeActionsBlocked,
@@ -785,6 +803,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 		isConnected,
 		availableBalance,
 		reduceOnly,
+		requiresAvailableBalance,
 		isBalanceLoading: isAvailabilityLoading || isAvailabilityStale || isAvailabilityBlocked,
 		hasBalanceError: hasAvailabilityError,
 		isAwaitingFirstDeposit,
@@ -818,7 +837,10 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 		buttonContent.action();
 	}
 
-	const isFormDisabled = !isConnected || isAvailabilityBlocked || (!reduceOnly && availableBalance <= 0);
+	const isFormDisabled =
+		!isConnected ||
+		isAvailabilityBlocked ||
+		(!reduceOnly && requiresAvailableBalance !== false && availableBalance <= 0);
 	const maxSizeLabel = reduceOnly ? t`Use max reducible size` : t`Use max available balance`;
 	const sizeModeLabel = sizeMode === "base" ? baseToken || "—" : quoteToken || "—";
 	const priceUnitLabel = quoteToken || "USDC";
@@ -871,8 +893,9 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 						</div>
 						{typeof change24h === "number" && (
 							<div className={cn("truncate whitespace-nowrap text-xs tabular-nums", getValueColorClass(change24h))}>
-								{change24h >= 0 ? "+" : ""}
-								{numberFormat.formatDecimalString(change24h.toFixed(2))}%
+								{numberFormat.markLeadingSign(
+									`${change24h >= 0 ? "+" : ""}${numberFormat.formatDecimalString(change24h.toFixed(2))}%`,
+								)}
 							</div>
 						)}
 					</div>
@@ -1052,6 +1075,9 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 							feeQuote={feeQuote}
 							szDecimals={market?.szDecimals}
 							marketKind={market?.kind}
+							totalSize={sizeForOrder}
+							referencePx={executionReferencePx}
+							baseToken={baseToken}
 						/>
 					) : scaleOrder ? (
 						<ScaleOrderSummary
@@ -1195,6 +1221,7 @@ interface MobileButtonContentInput {
 	isConnected: boolean;
 	availableBalance: number;
 	reduceOnly?: boolean;
+	requiresAvailableBalance?: boolean;
 	isBalanceLoading: boolean;
 	hasBalanceError: boolean;
 	isAwaitingFirstDeposit?: boolean;
@@ -1234,6 +1261,7 @@ export function getMobileOrderButtonContent(input: MobileButtonContentInput): Bu
 		isBalanceLoading: input.isBalanceLoading,
 		availableBalance: input.availableBalance,
 		reduceOnly: input.reduceOnly,
+		requiresAvailableBalance: input.requiresAvailableBalance,
 		isAwaitingFirstDeposit: input.isAwaitingFirstDeposit === true,
 	});
 

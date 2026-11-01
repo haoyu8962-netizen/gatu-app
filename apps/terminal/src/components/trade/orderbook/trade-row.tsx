@@ -3,13 +3,12 @@ import { memo } from "react";
 import { cn } from "@/lib/cn";
 import { useNumberFormat } from "@/lib/format";
 import { getExplorerTxUrl } from "@/lib/hyperliquid";
-import { getTradeQuoteSize, type ProcessedTrade } from "@/lib/trade/trades";
+import type { ProcessedTrade } from "@/lib/trade/trades";
 
 interface Props {
 	trade: ProcessedTrade;
 	priceDecimals: number;
 	szDecimals: number;
-	showInQuote: boolean;
 	isTestnet: boolean;
 	compact?: boolean;
 	initial?: boolean;
@@ -25,27 +24,16 @@ function areTradeRowPropsEqual(previous: Props, next: Props): boolean {
 		previous.trade.side === next.trade.side &&
 		previous.priceDecimals === next.priceDecimals &&
 		previous.szDecimals === next.szDecimals &&
-		previous.showInQuote === next.showInQuote &&
 		previous.isTestnet === next.isTestnet &&
 		previous.compact === next.compact &&
 		previous.initial === next.initial
 	);
 }
 
-function TradeRowComponent({
-	trade,
-	priceDecimals,
-	szDecimals,
-	showInQuote,
-	isTestnet,
-	compact = false,
-	initial = false,
-}: Props) {
+function TradeRowComponent({ trade, priceDecimals, szDecimals, isTestnet, compact = false, initial = false }: Props) {
 	const { formatNumber } = useNumberFormat();
 	const priceDisplay = formatNumber(trade.price, priceDecimals);
-	const sizeDisplay = showInQuote
-		? formatNumber(getTradeQuoteSize(trade.price, trade.size), 2)
-		: formatNumber(trade.size, szDecimals);
+	const sizeDisplay = formatNumber(trade.size, szDecimals);
 
 	return (
 		<a

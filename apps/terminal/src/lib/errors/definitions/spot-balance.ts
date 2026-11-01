@@ -9,6 +9,15 @@ export interface SpotBalanceContext {
 	quoteAvailable: number;
 	baseToken: string;
 	quoteToken: string;
+	/**
+	 * What a buy locks in the quote token at the price it is sent at: for a market buy the size at the
+	 * slippage limit, which the execution guard checks; defaults to the order value.
+	 */
+	quoteCost?: number;
+}
+
+function getQuoteCost(ctx: SpotBalanceContext): number {
+	return ctx.quoteCost ?? ctx.orderValue;
 }
 
 export const insufficientQuoteBalanceValidator: Validator<SpotBalanceContext> = createValidator({
@@ -16,10 +25,15 @@ export const insufficientQuoteBalanceValidator: Validator<SpotBalanceContext> = 
 	code: "SPOT_BAL_001",
 	category: "balance",
 	priority: 110,
-	getMessage: (ctx) => t`Insufficient ${ctx.quoteToken} balance`,
+	getMessage: (ctx) => {
+		const quoteToken = ctx.quoteToken;
+		return ctx.quoteAvailable >= ctx.orderValue
+			? t`Insufficient ${quoteToken} balance at max slippage`
+			: t`Insufficient ${ctx.quoteToken} balance`;
+	},
 	validate: (ctx) => {
 		if (ctx.side !== "buy" || ctx.orderValue <= 0) return true;
-		return ctx.quoteAvailable >= ctx.orderValue;
+		return ctx.quoteAvailable >= getQuoteCost(ctx);
 	},
 });
 

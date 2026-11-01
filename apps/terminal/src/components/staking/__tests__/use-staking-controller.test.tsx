@@ -202,7 +202,7 @@ describe("useStakingController", () => {
 		mocks.queries.set("validatorSummaries", query([validValidator()]));
 		mocks.queries.set("delegatorSummary", query({ delegated: "invalid" }));
 		render();
-		expect(current()).toMatchObject({ pageState: "error", accountState: "error" });
+		expect(current()).toMatchObject({ pageState: "error", accountState: "failed" });
 
 		resetQueries();
 		mocks.wallet = {

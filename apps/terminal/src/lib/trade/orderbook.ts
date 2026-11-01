@@ -128,7 +128,8 @@ export function compareOrderbookValues(previous: string, current: string): -1 | 
 
 export function getOrderbookQuoteDecimals(value: string): number {
 	const quoteValue = toBig(value);
-	if (!quoteValue || quoteValue.eq(0) || quoteValue.abs().gte("0.01")) return 2;
+	if (!quoteValue || quoteValue.eq(0) || quoteValue.abs().gte(1)) return 0;
+	if (quoteValue.abs().gte("0.01")) return 2;
 	const absoluteValue = quoteValue.abs();
 	const significantDigits = Math.min(absoluteValue.c.length, 2);
 	return Math.min(20, Math.max(2, -absoluteValue.e + significantDigits - 1));

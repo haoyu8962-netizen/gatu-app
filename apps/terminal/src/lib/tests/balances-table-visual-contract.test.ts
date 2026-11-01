@@ -62,7 +62,7 @@ describe("balances table visual contract", () => {
 		).toHaveLength(1);
 		expect(BALANCES_TAB_SOURCE.match(/onClick=\{\(\) => openSwapModal\(row\.asset\)\}/g)).toHaveLength(1);
 		expect(
-			BALANCES_TAB_SOURCE.match(/onClick=\{fundsLocked \? undefined : \(\) => handleSendClick\(row\)\}/g),
+			BALANCES_TAB_SOURCE.match(/onClick=\{canSend \? \(\) => handleSendClick\(row\) : undefined\}/g),
 		).toHaveLength(1);
 		expect(BALANCES_TAB_SOURCE).toContain('openDepositModal("withdraw")');
 	});

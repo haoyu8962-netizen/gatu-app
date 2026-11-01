@@ -4,16 +4,12 @@ import {
 	type CompactSpotAssetCtxsEvent,
 	canUseL2Decompression,
 	type PerpMarket,
-	parseCompactPerpAssetCtxsView,
-	parseCompactSpotAssetCtxsView,
 	type SpotMarket,
 	type SubscriptionStatus,
 	useHyperliquidTransport,
 	useSubscription,
 } from "@sairn/hl-react";
 import { useEffect, useMemo, useState } from "react";
-import { STORAGE_KEYS } from "@/config/app";
-import { MARKETS_STATS_TTL_MS } from "@/config/time";
 import {
 	LIVE_MARK_MAX_STALE_MS,
 	type MarkPriceStatus,
@@ -34,6 +30,8 @@ interface LiveMarketPriceFields {
 	markPriceReceivedAt: number | undefined;
 	midPriceReceivedAt: number | undefined;
 	marginMetadataReady?: boolean;
+	/** The row's own context (`prevDayPx`, volume, funding, open interest) came from a live, current frame. */
+	assetContextLive?: boolean;
 }
 
 export type PerpMarketInfo = PerpMarket & Partial<DexAssetCtx> & LiveMarketPriceFields;
@@ -61,13 +59,6 @@ interface MarketsInfoResult {
 	markets: UnifiedMarketInfo[];
 }
 
-interface StatsCache {
-	env: "Mainnet" | "Testnet";
-	allDexsCtxs: CompactPerpAssetCtxsEvent | undefined;
-	spotCtxs: CompactSpotAssetCtxsEvent | undefined;
-	savedAt: number;
-}
-
 const COMPACT_MARKET_CTXS_SUPPORTED = canUseL2Decompression();
 
 export function createMarketLookup(markets: readonly UnifiedMarketInfo[]) {
@@ -89,80 +80,8 @@ export function createMarketLookup(markets: readonly UnifiedMarketInfo[]) {
 	return { byName, byPairName };
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-	return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-function readCachedPerpCtxs(value: unknown): CompactPerpAssetCtxsEvent | undefined {
-	if (value === undefined) return undefined;
-	try {
-		return parseCompactPerpAssetCtxsView(value);
-	} catch {
-		return undefined;
-	}
-}
-
-function readCachedSpotCtxs(value: unknown): CompactSpotAssetCtxsEvent | undefined {
-	if (value === undefined) return undefined;
-	try {
-		return parseCompactSpotAssetCtxsView(value);
-	} catch {
-		return undefined;
-	}
-}
-
 function keySpotCtxsByCoin(spotCtxs: SpotAssetCtxs): CompactSpotAssetCtxsEvent {
 	return Object.fromEntries(spotCtxs.map((ctx) => [ctx.coin, ctx]));
-}
-
-function removeStatsCache() {
-	try {
-		sessionStorage.removeItem(STORAGE_KEYS.MARKETS_STATS);
-	} catch {}
-}
-
-function loadStatsCache(env: "Mainnet" | "Testnet"): StatsCache | null {
-	if (typeof window === "undefined") return null;
-	try {
-		const json = sessionStorage.getItem(STORAGE_KEYS.MARKETS_STATS);
-		if (!json) return null;
-		const data: unknown = JSON.parse(json);
-		const now = Date.now();
-		if (
-			!isRecord(data) ||
-			data.env !== env ||
-			typeof data.savedAt !== "number" ||
-			!Number.isFinite(data.savedAt) ||
-			data.savedAt > now + 60_000 ||
-			now - data.savedAt > MARKETS_STATS_TTL_MS
-		) {
-			removeStatsCache();
-			return null;
-		}
-		const allDexsCtxs = readCachedPerpCtxs(data.allDexsCtxs);
-		const spotCtxs = readCachedSpotCtxs(data.spotCtxs);
-		if ((data.allDexsCtxs !== undefined && !allDexsCtxs) || (data.spotCtxs !== undefined && !spotCtxs)) {
-			removeStatsCache();
-			return null;
-		}
-		return { env, allDexsCtxs, spotCtxs, savedAt: data.savedAt };
-	} catch {
-		removeStatsCache();
-		return null;
-	}
-}
-
-function saveStatsCache(
-	env: "Mainnet" | "Testnet",
-	allDexsCtxs: CompactPerpAssetCtxsEvent | undefined,
-	spotCtxs: CompactSpotAssetCtxsEvent | undefined,
-) {
-	if (typeof window === "undefined") return;
-	if (!allDexsCtxs && !spotCtxs) return;
-	try {
-		const data: StatsCache = { env, allDexsCtxs, spotCtxs, savedAt: Date.now() };
-		sessionStorage.setItem(STORAGE_KEYS.MARKETS_STATS, JSON.stringify(data));
-	} catch {}
 }
 
 function useSubscriptionWarmWindow(enabled: boolean, keepAliveMs: number) {
@@ -206,7 +125,6 @@ export function useMarketsInfoInternal(options: UseMarketsInfoOptions = {}) {
 		alwaysSubscribeAll = false,
 		subscriptionsEnabled = true,
 	} = options;
-	const { env } = useHyperliquidTransport();
 	const { scope } = useExchangeScope();
 
 	const needsPerp = alwaysSubscribeAll || scope === "all" || scope === "perp" || scope === "builders-perp";
@@ -229,7 +147,12 @@ export function useMarketsInfoInternal(options: UseMarketsInfoOptions = {}) {
 		enabled: perpSubscriptionEnabled && useCompactCtxs,
 		throttleMs: updateInterval,
 	});
-	const { data: compactSpotCtxs, error: compactSpotError } = useSubscription("sac", undefined, {
+	const {
+		data: compactSpotCtxs,
+		error: compactSpotError,
+		status: compactSpotStatus,
+		isStale: isCompactSpotStale,
+	} = useSubscription("sac", undefined, {
 		enabled: spotSubscriptionEnabled && useCompactCtxs,
 		throttleMs: updateInterval,
 	});
@@ -241,7 +164,11 @@ export function useMarketsInfoInternal(options: UseMarketsInfoOptions = {}) {
 		enabled: perpSubscriptionEnabled && !useCompactCtxs,
 		throttleMs: updateInterval,
 	});
-	const { data: spotCtxsEvent } = useSubscription("spotAssetCtxs", undefined, {
+	const {
+		data: spotCtxsEvent,
+		status: spotCtxsStatus,
+		isStale: isSpotCtxsStale,
+	} = useSubscription("spotAssetCtxs", undefined, {
 		enabled: spotSubscriptionEnabled && !useCompactCtxs,
 		throttleMs: updateInterval,
 	});
@@ -262,21 +189,17 @@ export function useMarketsInfoInternal(options: UseMarketsInfoOptions = {}) {
 		setCompactCtxsFailed(true);
 	}, [compactPerpError, compactSpotError]);
 
-	const [cachedStats] = useState(() => loadStatsCache(env));
-	const livePerpCtxs = compactPerpCtxs ?? allDexsCtxsEvent?.ctxs;
+	const allDexsCtxs = compactPerpCtxs ?? allDexsCtxsEvent?.ctxs;
 	const perpContextsLive =
 		compactPerpCtxs !== undefined
 			? isLiveContextsSubscription(compactPerpCtxs, compactPerpStatus, isCompactPerpStale)
 			: isLiveContextsSubscription(allDexsCtxsEvent?.ctxs, allDexsCtxsStatus, isAllDexsCtxsStale);
 	const legacySpotCtxs = useMemo(() => (spotCtxsEvent ? keySpotCtxsByCoin(spotCtxsEvent) : undefined), [spotCtxsEvent]);
-	const liveSpotCtxs = compactSpotCtxs ?? legacySpotCtxs;
-
-	useEffect(() => {
-		saveStatsCache(env, livePerpCtxs, liveSpotCtxs);
-	}, [env, livePerpCtxs, liveSpotCtxs]);
-
-	const allDexsCtxs = livePerpCtxs ?? cachedStats?.allDexsCtxs;
-	const spotCtxs = liveSpotCtxs ?? cachedStats?.spotCtxs;
+	const spotCtxs = compactSpotCtxs ?? legacySpotCtxs;
+	const spotContextsLive =
+		compactSpotCtxs !== undefined
+			? isLiveContextsSubscription(compactSpotCtxs, compactSpotStatus, isCompactSpotStale)
+			: isLiveContextsSubscription(spotCtxsEvent, spotCtxsStatus, isSpotCtxsStale);
 
 	const result = useMemo((): MarketsInfoResult => {
 		const perpCtxs = getDexCtxs(allDexsCtxs, "");
@@ -284,6 +207,7 @@ export function useMarketsInfoInternal(options: UseMarketsInfoOptions = {}) {
 		const withLivePrice = <T extends PerpMarket | SpotMarket | BuilderPerpMarket, C extends object | undefined>(
 			market: T,
 			context: C,
+			contextsLive: boolean,
 		): T & C & LiveMarketPriceFields => {
 			const price = resolveFastMarketPrice({
 				coin: market.name,
@@ -302,22 +226,23 @@ export function useMarketsInfoInternal(options: UseMarketsInfoOptions = {}) {
 				markPriceReceivedAt: price.receivedAt,
 				midPriceReceivedAt: price.midReceivedAt,
 				marginMetadataReady: market.kind !== "spot" && catalogMetadataReady && market.marginTiers !== undefined,
+				assetContextLive: contextsLive && context !== undefined,
 			} as T & C & LiveMarketPriceFields;
 		};
 
 		const perpMarketsInfo: PerpMarketInfo[] = markets.perp.map((market) =>
-			withLivePrice(market, perpCtxs?.[market.ctxIndex]),
+			withLivePrice(market, perpCtxs?.[market.ctxIndex], perpContextsLive),
 		);
 
 		const spotMarketsInfo: SpotMarketInfo[] = markets.spot.map((market) =>
-			withLivePrice(market, spotCtxs?.[market.name]),
+			withLivePrice(market, spotCtxs?.[market.name], spotContextsLive),
 		);
 
 		const builderPerpMarketsInfo: BuilderPerpMarketsInfo = { all: [] };
 
 		for (const market of markets.builderPerp) {
 			const dexCtxs = getDexCtxs(allDexsCtxs, market.dex);
-			const marketInfo: BuilderPerpMarketInfo = withLivePrice(market, dexCtxs?.[market.ctxIndex]);
+			const marketInfo: BuilderPerpMarketInfo = withLivePrice(market, dexCtxs?.[market.ctxIndex], perpContextsLive);
 
 			builderPerpMarketsInfo.all.push(marketInfo);
 
@@ -341,6 +266,8 @@ export function useMarketsInfoInternal(options: UseMarketsInfoOptions = {}) {
 		markets.catalogState?.isStale,
 		allDexsCtxs,
 		spotCtxs,
+		perpContextsLive,
+		spotContextsLive,
 		fastPriceSubscriptionEnabled,
 		fastAssetCtxs,
 		fastPriceSubscriptionStatus,
@@ -379,6 +306,7 @@ export function useMarketsInfo(): UseMarketsInfoReturn {
 }
 
 export function useSelectedMarketInfo() {
+	const { env } = useHyperliquidTransport();
 	const { routeMarketName } = useExchangeScope();
 	const selectedMarketName = useSelectedMarket();
 	const { getMarketInfo, isLoading, error } = useMarketsInfo();
@@ -437,16 +365,16 @@ export function useSelectedMarketInfo() {
 	useEffect(() => {
 		if (!cacheMarketName || marketName !== cacheMarketName) return;
 		if (!liveMark) return;
-		saveLastMark(cacheMarketName, liveMark, oraclePrice);
-	}, [cacheMarketName, liveMark, marketName, oraclePrice]);
+		saveLastMark(env, cacheMarketName, liveMark, oraclePrice);
+	}, [env, cacheMarketName, liveMark, marketName, oraclePrice]);
 
 	const data = useMemo(() => {
 		if (!market) return undefined;
 		if (market.markPx) return market;
-		const cached = cacheMarketName ? loadLastMark(cacheMarketName) : null;
+		const cached = cacheMarketName ? loadLastMark(env, cacheMarketName) : null;
 		if (!cached) return market;
 		return { ...market, markPx: cached.markPx, oraclePx: market.oraclePx ?? cached.oraclePx };
-	}, [market, cacheMarketName]);
+	}, [env, market, cacheMarketName]);
 
 	return {
 		data,

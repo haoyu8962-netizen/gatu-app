@@ -4,6 +4,7 @@ import { i18n } from "@lingui/core";
 import { act } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { exchangeActionFailure } from "@/lib/errors/action-error";
 import { formatDateTime, shortenAddress } from "@/lib/format";
 import { notifyNumberFormatChange } from "@/lib/number-format-reactivity";
 import { createI18nRoot } from "@/lib/tests/harness/react";
@@ -103,7 +104,6 @@ function props(overrides: Partial<StakingViewProps> = {}): StakingViewProps {
 			spotHypeAvailable: "8",
 			stakingLink: null,
 		},
-		isRefreshing: false,
 		isReconnecting: false,
 		retryPublic: vi.fn(),
 		retryAccount: vi.fn(),
@@ -168,6 +168,7 @@ describe("StakingView", () => {
 			identityKey: "mainnet:owner",
 			state: { stage: "done", result },
 			errorMessage: result === "success" || result === "unknown" ? null : result,
+			failure: null,
 			match: result === "success" ? { hash: HASH, time: 1 } : null,
 			reference: null,
 			recoveredFromMarker: false,
@@ -209,6 +210,20 @@ describe("StakingView", () => {
 			expect(onActionClose).not.toHaveBeenCalled();
 		},
 	);
+
+	it("shows the exchange's own rejection text in the failure notice", () => {
+		const text = `Staking request rejected: ${"insufficient balance for the requested amount ".repeat(4).trim()}`;
+		const actionSession = {
+			...settledSession("apiError"),
+			failure: exchangeActionFailure(text),
+		} as StakingViewProps["actionSession"];
+		act(() => root.render(<StakingView {...props({ actionSession })} />));
+
+		expect(toastMocks.error).toHaveBeenCalledExactlyOnceWith(
+			"Request rejected",
+			expect.objectContaining({ description: text }),
+		);
+	});
 
 	it("leaves an unconfirmed staking operation to the in-dialog verification path", () => {
 		const onActionClose = vi.fn();
@@ -463,15 +478,16 @@ describe("StakingView", () => {
 		expect(connectMasterWallet).not.toHaveBeenCalled();
 	});
 
-	it("fails closed on account errors while preserving verified public validators", () => {
+	it("fails closed on account errors with only a neutral retry while preserving verified public validators", () => {
 		const retryAccount = vi.fn();
 		act(() =>
 			root.render(
 				<StakingView
 					{...props({
 						pageState: "error",
-						accountState: "error",
+						accountState: "failed",
 						account: null,
+						weightedApr: null,
 						retryAccount,
 					})}
 				/>,
@@ -479,8 +495,16 @@ describe("StakingView", () => {
 		);
 
 		expect(container.textContent).toContain("Active Validator");
-		expect(container.textContent).toContain("Balances remain unknown");
+		expect(container.textContent).not.toContain("Balances remain unknown");
+		expect(container.textContent).not.toContain("unavailable");
+		expect(container.textContent).not.toContain("0 HYPE");
+		expect(container.textContent).toContain("Estimated APR --");
 		expect(button(container, "Spot to staking").disabled).toBe(true);
+		expect(
+			[...container.querySelectorAll("button")]
+				.filter((candidate) => candidate.textContent?.trim() === "Delegate")
+				.every((candidate) => candidate.disabled),
+		).toBe(true);
 		const retry = [...container.querySelectorAll("button")].find((candidate) =>
 			candidate.textContent?.includes("Retry"),
 		);

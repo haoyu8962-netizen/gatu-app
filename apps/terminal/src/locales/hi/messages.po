@@ -95,6 +95,10 @@ msgstr "{days} दिन"
 msgid "{days} days left"
 msgstr "{days} दिन शेष"
 
+#: src/lib/trade/fill-direction.ts
+msgid "{direction} (Price Improved)"
+msgstr "{direction} (बेहतर मूल्य)"
+
 #: src/components/funding-history/funding-history-page.tsx
 msgid "{FUNDING_HISTORY_WINDOW_DAYS}-day API window"
 msgstr "{FUNDING_HISTORY_WINDOW_DAYS}-दिन की API अवधि"
@@ -402,7 +406,7 @@ msgstr "एक्सेस अक्षम है"
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "Access is stored in this browser only. If you use {BRAND_NAME} from your Home Screen, scan the QR from that app instead: Connect, then Link Desktop Wallet."
-msgstr ""
+msgstr "एक्सेस केवल इसी ब्राउज़र में सहेजा जाता है। अगर आप होम स्क्रीन से {BRAND_NAME} इस्तेमाल करते हैं, तो उसी ऐप से QR स्कैन करें: कनेक्ट करें, फिर डेस्कटॉप वॉलेट लिंक करें।"
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
 msgid "Access restricted"
@@ -463,8 +467,8 @@ msgstr "अनुरोध भेजे जाने से पहले खा�
 #~ msgstr "खाता मोड अपडेट किया गया"
 
 #: src/components/staking/staking-view.tsx
-msgid "Account staking data unavailable"
-msgstr "खाते का स्टेकिंग डेटा उपलब्ध नहीं है"
+#~ msgid "Account staking data unavailable"
+#~ msgstr "खाते का स्टेकिंग डेटा उपलब्ध नहीं है"
 
 #: src/components/staking/staking-view.tsx
 msgid "Account staking status"
@@ -504,8 +508,8 @@ msgid "Account Value weighted by LTV / Borrowed Amount. If this number is below 
 msgstr "LTV से भारित खाता मूल्य / उधार राशि। यह 100% से कम होने पर खाता और उधार नहीं ले सकता।"
 
 #: src/components/vaults/vaults-list.tsx
-msgid "Account Vault data could not be verified"
-msgstr "खाते का वॉल्ट डेटा सत्यापित नहीं किया जा सका"
+#~ msgid "Account Vault data could not be verified"
+#~ msgstr "खाते का वॉल्ट डेटा सत्यापित नहीं किया जा सका"
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Account-level agent approval"
@@ -552,6 +556,10 @@ msgstr "मार्क ≤ {triggerPrice} होने पर सक्रि�
 #: src/components/trade/tradebox/trade-form-twap.tsx
 msgid "Activates when mark ≥ {triggerPrice}"
 msgstr "मार्क ≥ {triggerPrice} होने पर सक्रिय होता है"
+
+#: src/lib/trade/trailing-stop-condition.ts
+msgid "Activation: {price} / Retracement: {retracement}"
+msgstr "एक्टिवेशन: {price} / रिट्रेसमेंट: {retracement}"
 
 #: src/components/api-wallet/api-wallet-list.tsx
 #: src/components/staking/staking-view.tsx
@@ -759,6 +767,7 @@ msgstr "ALO (केवल लिक्विडिटी जोड़ें)"
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/staking/staking-view.tsx
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
+#: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
@@ -1069,6 +1078,10 @@ msgstr "अधिकृत API वॉलेट"
 msgid "Authorizing request"
 msgstr "अनुरोध अधिकृत किया जा रहा है"
 
+#: src/lib/trade/fill-direction.ts
+msgid "Auto-Deleveraging"
+msgstr "ऑटो-डीलीवरेजिंग"
+
 #: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
 msgid "Automatic USDC deposit failed"
 msgstr "USDC का स्वचालित जमा विफल रहा"
@@ -1152,6 +1165,7 @@ msgstr "औसत {price}"
 #: src/components/trade/components/mobile-agent-qr-scanner.tsx
 #: src/components/trade/components/wallet-modal.tsx
 #: src/components/trade/positions/cancel-all-orders-modal.tsx
+#: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/tradebox/bridge/amount-entry-screen.tsx
 #: src/components/trade/tradebox/bridge/bridge-error-screen.tsx
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
@@ -1170,8 +1184,13 @@ msgid "Back to trade"
 msgstr "ट्रेड पर वापस जाएँ"
 
 #: src/components/vaults/vaults-page.tsx
+#: src/components/vaults/vaults-page.tsx
 msgid "Back to Vaults"
 msgstr "वॉल्ट पर वापस जाएँ"
+
+#: src/lib/trade/fill-direction.ts
+msgid "Backstop Liquidation: {direction}"
+msgstr "बैकस्टॉप लिक्विडेशन: {direction}"
 
 #: src/config/ui-text.ts
 msgid "Balance"
@@ -1206,8 +1225,8 @@ msgid "Balances"
 msgstr "बैलेंस"
 
 #: src/components/staking/staking-view.tsx
-msgid "Balances remain unknown and every staking action is disabled until fresh data is verified."
-msgstr "नया डेटा सत्यापित होने तक बैलेंस अज्ञात रहेगा और हर स्टेकिंग कार्रवाई अक्षम रहेगी।"
+#~ msgid "Balances remain unknown and every staking action is disabled until fresh data is verified."
+#~ msgstr "नया डेटा सत्यापित होने तक बैलेंस अज्ञात रहेगा और हर स्टेकिंग कार्रवाई अक्षम रहेगी।"
 
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/orderbook/orderbook-row.tsx
@@ -1316,6 +1335,7 @@ msgstr "बिल्डर पुरस्कार स्रोत के अ�
 #: src/config/trade-panel-labels.ts
 #: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-order-display-labels.ts
+#: src/lib/trade/fill-direction.ts
 msgid "Buy"
 msgstr "खरीदें"
 
@@ -1415,6 +1435,10 @@ msgstr "चयनित ऑर्डर रद्द करें"
 msgid "Canceled"
 msgstr "रद्द"
 
+#: src/lib/trade/order-notification-copy.ts
+msgid "Canceled {accepted}/{total} · Review orders"
+msgstr "रद्द {accepted}/{total} · ऑर्डर जाँचें"
+
 #: src/lib/trade/order-status-reasons.ts
 msgid "Canceled because the asset was delisted"
 msgstr "एसेट डीलिस्ट होने के कारण रद्द"
@@ -1480,6 +1504,10 @@ msgstr "खुली पोज़िशन रहते हुए आइसो�
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Cannot switch to Isolated mode with an open position. Close your position first."
 msgstr "खुली पोज़िशन के साथ आइसोलेटेड मोड पर स्विच नहीं कर सकते। पहले अपनी पोज़िशन बंद करें।"
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Cannot withdraw to the USDC contract address."
+msgstr "USDC कॉन्ट्रैक्ट पते पर निकासी नहीं की जा सकती।"
 
 #: src/components/trade/tradebox/deposit/deposit-method-chooser.tsx
 msgid "Card or bank transfer through a third-party payment provider. USDC arrives in your wallet on Arbitrum."
@@ -1591,8 +1619,8 @@ msgstr "आपके क्षेत्र में उपलब्धता �
 #~ msgstr "क्षेत्रीय उपलब्धता जाँची जा रही है। ट्रेडिंग अस्थायी रूप से उपलब्ध नहीं है।"
 
 #: src/components/vaults/vault-detail-view.tsx
-msgid "Checking regional availability. Vault actions are temporarily unavailable."
-msgstr "क्षेत्रीय उपलब्धता जाँची जा रही है। वॉल्ट कार्रवाइयाँ अस्थायी रूप से उपलब्ध नहीं हैं।"
+#~ msgid "Checking regional availability. Vault actions are temporarily unavailable."
+#~ msgstr "क्षेत्रीय उपलब्धता जाँची जा रही है। वॉल्ट कार्रवाइयाँ अस्थायी रूप से उपलब्ध नहीं हैं।"
 
 #: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
 msgid "Checking the current Hyperliquid deposit route..."
@@ -1808,13 +1836,10 @@ msgstr "API वॉलेट कार्रवाई बंद करें"
 msgid "Close close-all confirmation"
 msgstr "सभी बंद करने की पुष्टि बंद करें"
 
-#: src/components/trade-history/trade-history-page.tsx
-#: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
-#: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/twap-fill-history-table.tsx
 #: src/hooks/trade/use-order-display-labels.ts
-#: src/hooks/trade/use-twap-fill-history-csv.ts
+#: src/lib/trade/fill-direction.ts
 msgid "Close Long"
 msgstr "लॉन्ग क्लोज़"
 
@@ -1875,13 +1900,10 @@ msgstr "पोज़िशन बंद करें"
 msgid "Close reverse confirmation"
 msgstr "रिवर्स पुष्टि बंद करें"
 
-#: src/components/trade-history/trade-history-page.tsx
-#: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
-#: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/twap-fill-history-table.tsx
 #: src/hooks/trade/use-order-display-labels.ts
-#: src/hooks/trade/use-twap-fill-history-csv.ts
+#: src/lib/trade/fill-direction.ts
 msgid "Close Short"
 msgstr "शॉर्ट क्लोज़"
 
@@ -2018,6 +2040,7 @@ msgstr "कॉन्फ़िगर की गई TP/SL राशि"
 #: src/components/trade/components/hip3-deployer-disclaimer.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/tradebox/account-mode-modal.tsx
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
@@ -2038,6 +2061,7 @@ msgstr "अपठनीय रिकॉर्ड साफ़ करने क�
 #: src/components/trade/components/establish-connection-modal.tsx
 #: src/components/trade/components/legal-acceptance-modal.tsx
 #: src/components/trade/positions/send-modal.tsx
+#: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Confirm in wallet"
@@ -2046,6 +2070,10 @@ msgstr "वॉलेट में पुष्टि करें"
 #: src/components/trade/tradebox/order-confirmation-modal.tsx
 msgid "Confirm Order"
 msgstr "ऑर्डर की पुष्टि करें"
+
+#: src/components/trade/positions/orders-tab.tsx
+msgid "Confirm order price change"
+msgstr "ऑर्डर मूल्य परिवर्तन की पुष्टि करें"
 
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Confirm order size change"
@@ -2367,11 +2395,11 @@ msgstr "संस्करण कॉपी करें"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Could not check on Hyperliquid whether trading is activated. Nothing was signed. Try again."
-msgstr ""
+msgstr "Hyperliquid पर यह जाँचा नहीं जा सका कि ट्रेडिंग सक्रिय है या नहीं। किसी चीज़ पर हस्ताक्षर नहीं हुआ। फिर से प्रयास करें।"
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "Could not check the approval on Hyperliquid. Nothing was imported. Try again."
-msgstr ""
+msgstr "Hyperliquid पर स्वीकृति जाँची नहीं जा सकी। कुछ भी इम्पोर्ट नहीं हुआ। फिर से प्रयास करें।"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Could not check the builder fee approval on Hyperliquid. Nothing was signed. Try again."
@@ -2722,8 +2750,8 @@ msgid "Deposited"
 msgstr "जमा किया गया"
 
 #: src/components/vaults/vaults-list.tsx
-msgid "Deposited and Leading filters fail closed until both account snapshots are available."
-msgstr "दोनों खाता स्नैपशॉट उपलब्ध होने तक जमा और लीडिंग फ़िल्टर सुरक्षित रूप से अक्षम रहते हैं।"
+#~ msgid "Deposited and Leading filters fail closed until both account snapshots are available."
+#~ msgstr "दोनों खाता स्नैपशॉट उपलब्ध होने तक जमा और लीडिंग फ़िल्टर सुरक्षित रूप से अक्षम रहते हैं।"
 
 #: src/components/trade/tradebox/deposit/deposit-method-chooser.tsx
 #: src/lib/trade/privy-fiat-funding-feedback.ts
@@ -2808,6 +2836,7 @@ msgstr "डेस्कटॉप लेआउट"
 msgid "Destination"
 msgstr "गंतव्य"
 
+#: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
@@ -2906,8 +2935,8 @@ msgid "Display and language"
 msgstr "डिस्प्ले और भाषा"
 
 #: src/components/trade/mobile/mobile-book-view.tsx
-msgid "Display units"
-msgstr "डिस्प्ले इकाइयाँ"
+#~ msgid "Display units"
+#~ msgstr "डिस्प्ले इकाइयाँ"
 
 #: src/components/trade/orderbook/orderbook-hover-tooltip.tsx
 msgid "Distance from mid"
@@ -3031,6 +3060,12 @@ msgstr "अर्जित"
 #. placeholder {0}: order.coin
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
+msgid "Edit {0} order price"
+msgstr "{0} ऑर्डर मूल्य संपादित करें"
+
+#. placeholder {0}: order.coin
+#: src/components/trade/positions/orders-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
 msgid "Edit {0} order size"
 msgstr "{0} ऑर्डर आकार संपादित करें"
 
@@ -3119,6 +3154,11 @@ msgstr "मान्य अधिकतम मूल्य दर्ज कर�
 msgid "Enter a valid min price"
 msgstr "मान्य न्यूनतम मूल्य दर्ज करें"
 
+#: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
+msgid "Enter a valid price using the market's price precision."
+msgstr "बाज़ार की मूल्य परिशुद्धता के अनुसार मान्य मूल्य दर्ज करें।"
+
 #: src/lib/errors/format.ts
 #: src/lib/trade/order-submission-feedback.ts
 msgid "Enter a valid scale skew"
@@ -3141,8 +3181,8 @@ msgstr "मान्य ट्रिगर मूल्य दर्ज कर�
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
-msgid "Enter a valid trigger price using the market's price precision."
-msgstr "बाज़ार की मूल्य परिशुद्धता के अनुसार मान्य ट्रिगर मूल्य दर्ज करें।"
+#~ msgid "Enter a valid trigger price using the market's price precision."
+#~ msgstr "बाज़ार की मूल्य परिशुद्धता के अनुसार मान्य ट्रिगर मूल्य दर्ज करें।"
 
 #: src/components/staking/staking-action-modal.tsx
 msgid "Enter an amount."
@@ -3232,14 +3272,14 @@ msgstr "अनु. स्लिपेज"
 msgid "Establish Connection"
 msgstr "कनेक्शन स्थापित करें"
 
-#. placeholder {0}: formatStakingRatio(props.weightedApr, numberFormat)
+#. placeholder {0}: props.weightedApr === null ? UNKNOWN_VALUE : formatStakingRatio(props.weightedApr, numberFormat)
 #: src/components/staking/staking-view.tsx
 msgid "Estimated APR {0}"
 msgstr "अनुमानित APR {0}"
 
 #: src/components/staking/staking-view.tsx
-msgid "Estimated APR unavailable"
-msgstr "अनुमानित APR उपलब्ध नहीं है"
+#~ msgid "Estimated APR unavailable"
+#~ msgstr "अनुमानित APR उपलब्ध नहीं है"
 
 #: src/components/trade/components/spot-swap-modal.tsx
 msgid "Estimated fee"
@@ -3275,7 +3315,6 @@ msgid "Ethereum is a programmable blockchain for smart contracts and decentraliz
 msgstr "एथेरियम स्मार्ट कॉन्ट्रैक्ट और विकेंद्रीकृत अनुप्रयोगों के लिए एक प्रोग्राम योग्य ब्लॉकचेन है।"
 
 #: src/components/trade/positions/twap-tab.tsx
-#: src/components/trade/tradebox/twap-order-summary.tsx
 msgid "Every {TWAP_SUBORDER_INTERVAL_SECONDS} seconds"
 msgstr "हर {TWAP_SUBORDER_INTERVAL_SECONDS} सेकंड में"
 
@@ -3340,7 +3379,7 @@ msgstr "समाप्त"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Expires {expiresAt}"
-msgstr ""
+msgstr "समाप्ति: {expiresAt}"
 
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "Expires {expiresAtLabel}."
@@ -3483,8 +3522,8 @@ msgstr "बैलेंस लोड करने में विफल"
 #~ msgstr "शेष लोड करने में विफल।"
 
 #: src/components/trade/positions/account-transfers-tab.tsx
-msgid "Failed to load deposits and withdrawals."
-msgstr "जमा और निकासी लोड नहीं हो सके।"
+#~ msgid "Failed to load deposits and withdrawals."
+#~ msgstr "जमा और निकासी लोड नहीं हो सके।"
 
 #: src/components/trade/positions/funding-tab.tsx
 #~ msgid "Failed to load funding payments."
@@ -3741,8 +3780,8 @@ msgid "Forwarding deposit"
 msgstr "जमा फ़ॉरवर्ड किया जा रहा है"
 
 #: src/components/trade/tradebox/twap-order-summary.tsx
-msgid "Frequency"
-msgstr "आवृत्ति"
+#~ msgid "Frequency"
+#~ msgstr "आवृत्ति"
 
 #: src/components/api-wallet/use-api-wallet-controller.ts
 #: src/components/api-wallet/use-api-wallet-controller.ts
@@ -3768,6 +3807,10 @@ msgstr "से"
 #: src/components/trade/chart/funding-history-chart.tsx
 msgid "From {startTime} to {endTime}. Latest funding rate {latestRate}; cumulative funding rate {cumulativeRate}. Highest {maxRate}; lowest {minRate}."
 msgstr "{startTime} से {endTime} तक। नवीनतम फंडिंग दर {latestRate}; संचयी फंडिंग दर {cumulativeRate}। उच्चतम {maxRate}; निम्नतम {minRate}।"
+
+#: src/lib/trade/fill-direction.ts
+msgid "Full Borrow Liquidation"
+msgstr "पूर्ण उधार लिक्विडेशन"
 
 #: src/components/trade/tradebox/order-toast.tsx
 msgid "Fully filled"
@@ -3821,8 +3864,8 @@ msgid "Funding Payments"
 msgstr "फंडिंग भुगतान"
 
 #: src/components/funding-history/funding-history-page.tsx
-msgid "Funding payments are unavailable"
-msgstr "फंडिंग भुगतान उपलब्ध नहीं हैं"
+#~ msgid "Funding payments are unavailable"
+#~ msgstr "फंडिंग भुगतान उपलब्ध नहीं हैं"
 
 #: src/components/funding-history/funding-history-page.tsx
 #~ msgid "Funding payments for {0}"
@@ -3838,8 +3881,8 @@ msgid "Funding payments pagination"
 msgstr "फंडिंग भुगतान पेज नेविगेशन"
 
 #: src/components/funding-history/funding-history-page.tsx
-msgid "Funding payments will load automatically when the connection returns."
-msgstr "कनेक्शन वापस आने पर फंडिंग भुगतान अपने-आप लोड हो जाएँगे।"
+#~ msgid "Funding payments will load automatically when the connection returns."
+#~ msgstr "कनेक्शन वापस आने पर फंडिंग भुगतान अपने-आप लोड हो जाएँगे।"
 
 #: src/components/funding-comparison/funding-comparison-view.tsx
 msgid "Funding period"
@@ -4007,7 +4050,7 @@ msgstr "इतिहास"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Hold for {holdSeconds} seconds to reveal the QR code"
-msgstr ""
+msgstr "QR कोड दिखाने के लिए {holdSeconds} सेकंड तक दबाकर रखें"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Hold for 4 seconds to reveal phone access QR"
@@ -4019,7 +4062,7 @@ msgstr ""
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Hold to reveal"
-msgstr ""
+msgstr "दिखाने के लिए दबाकर रखें"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Hold to reveal QR"
@@ -4127,6 +4170,10 @@ msgstr "Hyperliquid सूचीबद्ध दावा न किए गए �
 msgid "Hyperliquid will unlock code creation when the required volume is confirmed."
 msgstr "आवश्यक वॉल्यूम की पुष्टि होने पर Hyperliquid कोड बनाना अनलॉक कर देगा।"
 
+#: src/components/trade/positions/send-modal.tsx
+msgid "I am sending assets on the Hyperliquid blockchain, not withdrawing to another chain. Assets sent to a platform that does not support Hyperliquid will be lost."
+msgstr "मैं Hyperliquid ब्लॉकचेन पर एसेट भेज रहा/रही हूँ, किसी दूसरी चेन पर निकासी नहीं कर रहा/रही हूँ। Hyperliquid को सपोर्ट न करने वाले प्लेटफ़ॉर्म पर भेजे गए एसेट खो जाएँगे।"
+
 #: src/components/trade/components/legal-acceptance-modal.tsx
 msgid "I have read and agree to the {BRAND_NAME} <0>Terms of Use</0>, <1>Privacy Policy</1>, and the <2>Hyperliquid Terms of Use</2>."
 msgstr "मैंने {BRAND_NAME} की <0>उपयोग की शर्तें</0>, <1>गोपनीयता नीति</1> और <2>Hyperliquid की उपयोग की शर्तें</2> पढ़ ली हैं और उनसे सहमत हूँ।"
@@ -4166,7 +4213,7 @@ msgstr "छवि सहेजी गई"
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "Import"
-msgstr ""
+msgstr "इम्पोर्ट करें"
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "Import phone access"
@@ -4207,6 +4254,10 @@ msgstr "फ़ुल-स्क्रीन, ऐप जैसा ट्रेड�
 #: src/lib/errors/definitions/spot-balance.ts
 msgid "Insufficient {0} balance"
 msgstr "अपर्याप्त {0} बैलेंस"
+
+#: src/lib/errors/definitions/spot-balance.ts
+msgid "Insufficient {quoteToken} balance at max slippage"
+msgstr "अधिकतम स्लिपेज पर अपर्याप्त {quoteToken} बैलेंस"
 
 #: src/components/trade/components/spot-swap-modal.tsx
 msgid "Insufficient <0/> balance"
@@ -4327,7 +4378,7 @@ msgstr "शामिल होने का समय"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Keep holding for {remainingSeconds}s"
-msgstr ""
+msgstr "{remainingSeconds} सेकंड और दबाकर रखें"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Keep holding for 4 seconds. Release, leave, blur, or press Escape to cancel."
@@ -4551,21 +4602,15 @@ msgstr "मोबाइल डिवाइस लिंक करें"
 msgid "Linked staking account: <0>{0}</0>."
 msgstr "लिंक किया गया स्टेकिंग खाता: <0>{0}</0>।"
 
+#: src/components/trade/chart/use-tradingview-overlay-lines.ts
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/config/trade-panel-labels.ts
 #: src/config/ui-text.ts
 msgid "Liq. Price"
 msgstr "लिक्विडेशन प्राइस"
 
-#: src/components/trade-history/trade-history-page.tsx
-#: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
-#: src/components/trade/mobile/mobile-history-tab.tsx
-#: src/components/trade/mobile/mobile-history-tab.tsx
-#: src/components/trade/positions/history-tab.tsx
-#: src/components/trade/positions/history-tab.tsx
 #: src/config/account-ledger.ts
-#: src/hooks/trade/use-twap-fill-history-csv.ts
 msgid "Liquidated"
 msgstr "लिक्विडेट हो गया"
 
@@ -4629,6 +4674,7 @@ msgstr "सभी चेन पर बैलेंस लोड हो रहे
 #~ msgstr "जमा और निकासी लोड हो रही है..."
 
 #: src/components/funding-history/funding-history-page.tsx
+#: src/components/funding-history/funding-history-page.tsx
 msgid "Loading funding payments"
 msgstr "फंडिंग भुगतान लोड हो रहे हैं"
 
@@ -4652,6 +4698,7 @@ msgstr "बाज़ार लोड हो रहे हैं..."
 #~ msgid "Loading open orders..."
 #~ msgstr "खुले ऑर्डर लोड हो रहे हैं..."
 
+#: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/historical-orders/historical-orders-page.tsx
 msgid "Loading order history"
 msgstr "ऑर्डर इतिहास लोड हो रहा है"
@@ -4698,6 +4745,8 @@ msgid "Loading token metadata..."
 msgstr "टोकन मेटाडेटा लोड हो रहा है..."
 
 #: src/components/trade-history/trade-history-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
+#: src/components/trade/mobile/mobile-history-tab.tsx
 msgid "Loading trade history"
 msgstr "ट्रेड इतिहास लोड हो रहा है"
 
@@ -4736,7 +4785,6 @@ msgstr "वॉलेट लोड हो रहा है..."
 #: src/components/trade/chart/tradingview-chart.tsx
 #: src/components/trade/components/deposit-modal-loading-fallback.tsx
 #: src/components/trade/components/global-modals.tsx
-#: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/ui/lazy-dialog-boundary.tsx
 #: src/components/ui/lazy-dialog-boundary.tsx
 #: src/config/ui-text.ts
@@ -4778,8 +4826,13 @@ msgstr "ईमेल से लॉग इन करें"
 #: src/components/trade/positions/position-row.tsx
 #: src/config/trade-panel-labels.ts
 #: src/domain/trade/order-confirmation.ts
+#: src/lib/trade/funding-position.ts
 msgid "Long"
 msgstr "लॉन्ग"
+
+#: src/lib/trade/fill-direction.ts
+msgid "Long > Short"
+msgstr "लॉन्ग > शॉर्ट"
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Long position"
@@ -4841,6 +4894,10 @@ msgstr "मार्जिन राशि"
 #: src/hooks/trade/use-account-overview-labels.ts
 msgid "Margin and account risk at a glance"
 msgstr "मार्जिन और खाता जोखिम एक नज़र में"
+
+#: src/hooks/trade/use-order-display-labels.ts
+msgid "Margin Canceled"
+msgstr "मार्जिन कम होने से रद्द"
 
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
@@ -4996,6 +5053,10 @@ msgstr "बाज़ार मेटाडेटा बदल गया। र�
 msgid "Market not ready"
 msgstr "मार्केट तैयार नहीं"
 
+#: src/lib/trade/fill-direction.ts
+msgid "Market Order Liquidation: {direction}"
+msgstr "मार्केट ऑर्डर लिक्विडेशन: {direction}"
+
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Market orders cannot be modified after submission."
@@ -5037,6 +5098,7 @@ msgstr "मास्टर वॉलेट सत्यापित है"
 #: src/components/trade/tradebox/bridge/amount-entry-screen.tsx
 #: src/components/trade/tradebox/deposit/amount-input.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
+#: src/components/vaults/vault-action-modal.tsx
 #: src/config/trade-panel-labels.ts
 msgid "Max"
 msgstr "अधिकतम"
@@ -5131,7 +5193,9 @@ msgstr "न्यूनतम <0>{0}</0>; अधिकतम <1>{1}</1>।"
 
 #. placeholder {0}: ctx.minDeposit
 #. placeholder {0}: numberFormat.formatDecimalString(formatUnits(cctpDepositBelowMinimumRaw, 6))
+#. placeholder {0}: numberFormat.formatDecimalString(minimumAmount)
 #: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/vaults/vault-action-modal.tsx
 #: src/lib/errors/definitions/deposit.ts
 msgid "Minimum deposit is {0} USDC"
 msgstr "न्यूनतम जमा {0} USDC है"
@@ -5298,7 +5362,7 @@ msgstr "इस रिकॉर्ड का समाधान होने त�
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "New mobile pairing is temporarily unavailable."
-msgstr ""
+msgstr "नया मोबाइल लिंक करना अस्थायी रूप से उपलब्ध नहीं है।"
 
 #: src/components/funding-history/funding-history-page.tsx
 #: src/components/historical-orders/historical-orders-page.tsx
@@ -5427,7 +5491,7 @@ msgstr "कोई पात्र लीडरबोर्ड खाता न�
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "No expiry"
-msgstr ""
+msgstr "कोई समाप्ति नहीं"
 
 #: src/components/api-wallet/api-wallet-list.tsx
 msgid "No expiry reported"
@@ -5449,6 +5513,10 @@ msgstr "कोई निष्पादन नहीं मिला।"
 #: src/components/trade-history/trade-history-page.tsx
 msgid "No fills match the selected filters."
 msgstr "चुने गए फ़िल्टर से कोई फ़िल मेल नहीं खाता।"
+
+#: src/components/trade/mobile/mobile-history-tab.tsx
+msgid "No fills match these filters among the latest {snapshotLimit}."
+msgstr "नवीनतम {snapshotLimit} फिल में से कोई भी इन फ़िल्टरों से मेल नहीं खाती।"
 
 #: src/components/trade/mobile/mobile-history-tab.tsx
 msgid "No fills match these filters."
@@ -5516,6 +5584,7 @@ msgid "No market"
 msgstr "कोई मार्केट नहीं"
 
 #: src/components/trade/chart/token-selector-content.tsx
+#: src/components/trade/components/command-menu.tsx
 #: src/components/trade/positions/position-market-filter.tsx
 msgid "No markets found."
 msgstr "कोई बाज़ार नहीं मिला।"
@@ -5758,13 +5827,13 @@ msgstr "iPhone या iPad पर शेयर मेनू खोलें, ह
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "On your phone, open {BRAND_NAME}, tap Connect, then Link Desktop Wallet and scan this code."
-msgstr ""
+msgstr "अपने फ़ोन पर {BRAND_NAME} खोलें, कनेक्ट करें पर टैप करें, फिर डेस्कटॉप वॉलेट लिंक करें पर टैप करके यह कोड स्कैन करें।"
 
 #. placeholder {0}: payload.env
 #. placeholder {1}: formatDateTime(payload.agentValidUntilMs, { locale })
 #: src/routes/mobile-agent-sync.tsx
 msgid "Once imported, this phone trades on {0} with the desktop-approved key until {1}. It cannot withdraw."
-msgstr ""
+msgstr "इम्पोर्ट होने के बाद यह फ़ोन डेस्कटॉप पर स्वीकृत कुंजी से {1} तक {0} पर ट्रेड करेगा। यह निकासी नहीं कर सकता।"
 
 #: src/components/staking/staking-action-modal.tsx
 msgid "One-day validator lock"
@@ -5809,7 +5878,7 @@ msgstr "खुला"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Open API Wallet"
-msgstr ""
+msgstr "API वॉलेट खोलें"
 
 #: src/config/footer-links.ts
 msgid "Open command menu"
@@ -5836,12 +5905,13 @@ msgstr "ओपन इंटरेस्ट"
 msgid "Open interest cap"
 msgstr "ओपन इंटरेस्ट सीमा"
 
-#: src/components/trade-history/trade-history-page.tsx
-#: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/config/account-ledger.ts
+msgid "Open Interest Reward"
+msgstr "ओपन इंटरेस्ट रिवॉर्ड"
+
 #: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
-#: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/twap-fill-history-table.tsx
-#: src/hooks/trade/use-twap-fill-history-csv.ts
+#: src/lib/trade/fill-direction.ts
 msgid "Open Long"
 msgstr "ओपन लॉन्ग"
 
@@ -5874,12 +5944,9 @@ msgstr "खुले ऑर्डर बदल गए। पुष्टि फ�
 msgid "Open related page"
 msgstr "संबंधित पेज खोलें"
 
-#: src/components/trade-history/trade-history-page.tsx
-#: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
-#: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/twap-fill-history-table.tsx
-#: src/hooks/trade/use-twap-fill-history-csv.ts
+#: src/lib/trade/fill-direction.ts
 msgid "Open Short"
 msgstr "ओपन शॉर्ट"
 
@@ -5943,8 +6010,8 @@ msgstr "ऑर्डर बुक एनिमेशन"
 
 #: src/components/trade/components/global-settings-modal.tsx
 #: src/components/trade/components/global-settings-modal.tsx
-msgid "Order book in quote asset"
-msgstr "क्वोट एसेट में ऑर्डर बुक"
+#~ msgid "Order book in quote asset"
+#~ msgstr "क्वोट एसेट में ऑर्डर बुक"
 
 #: src/config/orderbook-labels.ts
 msgid "Order book view"
@@ -5994,8 +6061,8 @@ msgid "Order History"
 msgstr "ऑर्डर हिस्ट्री"
 
 #: src/components/historical-orders/historical-orders-page.tsx
-msgid "Order history is unavailable"
-msgstr "ऑर्डर इतिहास उपलब्ध नहीं है"
+#~ msgid "Order history is unavailable"
+#~ msgstr "ऑर्डर इतिहास उपलब्ध नहीं है"
 
 #: src/components/historical-orders/historical-orders-page.tsx
 msgid "Order history pagination"
@@ -6006,8 +6073,8 @@ msgstr "ऑर्डर इतिहास पेज नेविगेशन"
 #~ msgstr "ऑर्डर इतिहास अपडेट रुके हुए हैं।"
 
 #: src/components/historical-orders/historical-orders-page.tsx
-msgid "Order history will load automatically when the connection returns."
-msgstr "कनेक्शन वापस आने पर ऑर्डर इतिहास अपने-आप लोड हो जाएगा।"
+#~ msgid "Order history will load automatically when the connection returns."
+#~ msgstr "कनेक्शन वापस आने पर ऑर्डर इतिहास अपने-आप लोड हो जाएगा।"
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/lib/trade/order-submission-feedback.ts
@@ -6094,13 +6161,17 @@ msgstr "ऑर्डर"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
-msgid "Orders with a client order ID cannot be modified here. Cancel and replace the order instead."
-msgstr "क्लाइंट ऑर्डर ID वाले ऑर्डर यहाँ संशोधित नहीं किए जा सकते। इसके बजाय ऑर्डर रद्द करें और नया ऑर्डर लगाएँ।"
+#~ msgid "Orders with a client order ID cannot be modified here. Cancel and replace the order instead."
+#~ msgstr "क्लाइंट ऑर्डर ID वाले ऑर्डर यहाँ संशोधित नहीं किए जा सकते। इसके बजाय ऑर्डर रद्द करें और नया ऑर्डर लगाएँ।"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Orders with linked TP/SL orders cannot be modified here."
 msgstr "लिंक किए गए TP/SL ऑर्डर वाले ऑर्डर यहाँ संशोधित नहीं किए जा सकते।"
+
+#: src/components/trade/components/global-settings-modal.tsx
+msgid "Orders, cancels and other trading actions expire if the exchange has not accepted them within 15 seconds."
+msgstr "ऑर्डर, रद्दीकरण और अन्य ट्रेडिंग कार्रवाइयाँ 15 सेकंड के भीतर एक्सचेंज द्वारा स्वीकार न होने पर समाप्त हो जाती हैं।"
 
 #: src/components/historical-orders/historical-orders-page.tsx
 #~ msgid "Ordinary order history for {0}"
@@ -6165,6 +6236,10 @@ msgstr "बदलने पर पेज रीलोड होता है"
 msgid "Partial amount"
 msgstr "आंशिक राशि"
 
+#: src/lib/trade/fill-direction.ts
+msgid "Partial Borrow Liquidation"
+msgstr "आंशिक उधार लिक्विडेशन"
+
 #: src/components/trade/positions/position-close-all-modal.tsx
 #~ msgid "Partial result — reopen to retry"
 #~ msgstr "आंशिक परिणाम — पुनः प्रयास के लिए फिर से खोलें"
@@ -6174,6 +6249,7 @@ msgid "Partially completed"
 msgstr "आंशिक रूप से पूरा हुआ"
 
 #: src/components/trade/tradebox/order-toast.tsx
+#: src/hooks/trade/use-order-display-labels.ts
 #: src/lib/trade/order-notification-copy.ts
 msgid "Partially filled"
 msgstr "आंशिक रूप से निष्पादित"
@@ -6201,6 +6277,12 @@ msgstr "पॉज़ अनुपलब्ध: Hyperliquid सक्रिय TW
 #: src/components/trade/positions/funding-tab.tsx
 msgid "Payment"
 msgstr "भुगतान"
+
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/positions/funding-tab.tsx
+msgid "Payment Token"
+msgstr "भुगतान टोकन"
 
 #: src/components/trade/tradebox/order-toast.tsx
 #~ msgid "pending"
@@ -6251,6 +6333,7 @@ msgstr "स्थायी स्टेकिंग लिंक"
 #: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/chart/token-selector-trigger.tsx
+#: src/components/trade/components/command-menu.tsx
 #: src/components/trade/components/market-asset-info.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
@@ -6304,7 +6387,7 @@ msgstr "परपेचुअल PNL"
 
 #: src/components/trade/components/mobile-agent-ended-notifier.tsx
 msgid "Phone access ended for {account}"
-msgstr ""
+msgstr "{account} के लिए फ़ोन एक्सेस समाप्त हो गया"
 
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "Phone access is ready, but the temporary QR copy could not be cleared. Close this tab and clear this site's data."
@@ -6444,10 +6527,7 @@ msgstr "पोर्टफोलियो मूल्य"
 
 #: src/components/funding-history/funding-history-page.tsx
 #: src/components/funding-history/funding-history-page.tsx
-#: src/components/funding-history/funding-history-page.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
-#: src/components/trade/mobile/mobile-funding-tab.tsx
-#: src/components/trade/positions/funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
 #: src/config/trade-panel-labels.ts
 msgid "Position"
@@ -6611,6 +6691,8 @@ msgstr "वॉल्ट का पिछला पेज"
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-order-modification-modal.tsx
+#: src/components/trade/mobile/mobile-order-modification-modal.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
@@ -6652,6 +6734,10 @@ msgstr "कीमत {price} से नीचे"
 #: src/config/orderbook-labels.ts
 msgid "Price grouping"
 msgstr "प्राइस ग्रुपिंग"
+
+#: src/lib/errors/definitions/price-tick.ts
+msgid "Price must be a multiple of the tick size, with at most 5 significant figures. E.g., {validPrice}"
+msgstr "मूल्य टिक साइज़ का गुणज होना चाहिए और उसमें अधिकतम 5 सार्थक अंक हों। उदाहरण: {validPrice}"
 
 #: src/lib/errors/exchange-error-text.ts
 msgid "Price must be a multiple of the tick size."
@@ -6829,8 +6915,8 @@ msgid "Recent reward claims"
 msgstr "हाल के पुरस्कार प्राप्ति रिकॉर्ड"
 
 #: src/components/referrals/referral-activity.tsx
-msgid "Recent reward claims could not be verified."
-msgstr "हाल के पुरस्कार प्राप्ति रिकॉर्ड सत्यापित नहीं किए जा सके।"
+#~ msgid "Recent reward claims could not be verified."
+#~ msgstr "हाल के पुरस्कार प्राप्ति रिकॉर्ड सत्यापित नहीं किए जा सके।"
 
 #: src/config/orderbook-labels.ts
 msgid "Recent Trades"
@@ -6958,8 +7044,8 @@ msgid "Referral codes must be between 1 and 20 characters."
 msgstr "रेफ़रल कोड 1 से 20 वर्णों के बीच होना चाहिए।"
 
 #: src/components/referrals/referral-dashboard.tsx
-msgid "Referral data unavailable"
-msgstr "रेफ़रल डेटा उपलब्ध नहीं है"
+#~ msgid "Referral data unavailable"
+#~ msgstr "रेफ़रल डेटा उपलब्ध नहीं है"
 
 #: src/components/referrals/referral-rewards-card.tsx
 msgid "Referral discounts do not apply to vaults or subaccounts."
@@ -7032,16 +7118,16 @@ msgid "Refresh both devices to update phone access, then create a new QR."
 msgstr "फ़ोन ऐक्सेस अपडेट करने के लिए दोनों डिवाइस पर पेज रीफ़्रेश करें, फिर नया QR कोड बनाएँ।"
 
 #: src/components/funding-history/funding-history-page.tsx
-msgid "Refresh failed. Previously loaded funding payments remain visible."
-msgstr "रीफ़्रेश विफल रहा। पहले लोड किए गए फंडिंग भुगतान दिखाई देते रहेंगे।"
+#~ msgid "Refresh failed. Previously loaded funding payments remain visible."
+#~ msgstr "रीफ़्रेश विफल रहा। पहले लोड किए गए फंडिंग भुगतान दिखाई देते रहेंगे।"
 
 #: src/components/historical-orders/historical-orders-page.tsx
-msgid "Refresh failed. Previously loaded order history remains visible."
-msgstr "रीफ़्रेश विफल रहा। पहले लोड किया गया ऑर्डर इतिहास दिखाई देता रहेगा।"
+#~ msgid "Refresh failed. Previously loaded order history remains visible."
+#~ msgstr "रीफ़्रेश विफल रहा। पहले लोड किया गया ऑर्डर इतिहास दिखाई देता रहेगा।"
 
 #: src/components/trade-history/trade-history-page.tsx
-msgid "Refresh failed. Previously loaded trade history remains visible."
-msgstr "रीफ़्रेश विफल रहा। पहले लोड किया गया ट्रेड इतिहास दिखाई देता रहेगा।"
+#~ msgid "Refresh failed. Previously loaded trade history remains visible."
+#~ msgstr "रीफ़्रेश विफल रहा। पहले लोड किया गया ट्रेड इतिहास दिखाई देता रहेगा।"
 
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 msgid "Refresh quote"
@@ -7052,16 +7138,16 @@ msgid "Refresh referral data before submitting another signed request."
 msgstr "कोई दूसरा हस्ताक्षरित अनुरोध सबमिट करने से पहले रेफ़रल डेटा रीफ़्रेश करें।"
 
 #: src/components/referrals/referral-dashboard.tsx
-msgid "Refreshing referral data…"
-msgstr "रेफ़रल डेटा रीफ़्रेश हो रहा है…"
+#~ msgid "Refreshing referral data…"
+#~ msgstr "रेफ़रल डेटा रीफ़्रेश हो रहा है…"
 
 #: src/components/staking/staking-view.tsx
-msgid "Refreshing staking data…"
-msgstr "स्टेकिंग डेटा रीफ़्रेश हो रहा है…"
+#~ msgid "Refreshing staking data…"
+#~ msgstr "स्टेकिंग डेटा रीफ़्रेश हो रहा है…"
 
 #: src/components/vaults/vault-detail-view.tsx
-msgid "Refreshing Vault data. Actions are temporarily unavailable."
-msgstr "वॉल्ट डेटा रीफ़्रेश हो रहा है। कार्रवाइयाँ अस्थायी रूप से उपलब्ध नहीं हैं।"
+#~ msgid "Refreshing Vault data. Actions are temporarily unavailable."
+#~ msgstr "वॉल्ट डेटा रीफ़्रेश हो रहा है। कार्रवाइयाँ अस्थायी रूप से उपलब्ध नहीं हैं।"
 
 #: src/components/api-wallet/api-wallet-list.tsx
 #: src/components/leaderboard/leaderboard-view.tsx
@@ -7305,15 +7391,13 @@ msgstr "ट्रैकिंग फिर से शुरू करें"
 
 #: src/components/api-wallet/api-wallet-list.tsx
 #: src/components/funding-comparison/funding-comparison-view.tsx
-#: src/components/funding-history/funding-history-page.tsx
-#: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/portfolio/portfolio-overview.tsx
 #: src/components/portfolio/portfolio-performance-chart.tsx
 #: src/components/referrals/referral-activity.tsx
 #: src/components/referrals/referral-dashboard.tsx
+#: src/components/referrals/referral-dashboard.tsx
+#: src/components/referrals/referral-rewards-card.tsx
 #: src/components/staking/staking-view.tsx
-#: src/components/staking/staking-view.tsx
-#: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/chart/funding-history-load-boundary.tsx
 #: src/components/trade/chart/funding-history-panel.tsx
 #: src/components/trade/chart/token-selector-content.tsx
@@ -7323,7 +7407,9 @@ msgstr "ट्रैकिंग फिर से शुरू करें"
 #: src/components/trade/components/market-asset-info.tsx
 #: src/components/trade/components/market-asset-info.tsx
 #: src/components/trade/layout/terminal-boot-error.tsx
+#: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/offline-banner.tsx
+#: src/components/trade/positions/account-transfers-tab.tsx
 #: src/components/trade/positions/account-transfers-tab.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
@@ -7335,14 +7421,18 @@ msgstr "ट्रैकिंग फिर से शुरू करें"
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #: src/components/trade/twap-history-feedback.tsx
+#: src/components/ui/history-page-unavailable.tsx
+#: src/components/vaults/vault-action-modal.tsx
+#: src/components/vaults/vault-detail-view.tsx
+#: src/components/vaults/vaults-list.tsx
 #: src/components/vaults/vaults-list.tsx
 #: src/components/vaults/vaults-page.tsx
 msgid "Retry"
 msgstr "फिर से प्रयास करें"
 
 #: src/components/vaults/vault-detail-view.tsx
-msgid "Retry account data"
-msgstr "खाता डेटा फिर लोड करें"
+#~ msgid "Retry account data"
+#~ msgstr "खाता डेटा फिर लोड करें"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Retry check"
@@ -7513,8 +7603,8 @@ msgid "Reward history is scoped to the verified owner."
 msgstr "पुरस्कार इतिहास सत्यापित मालिक तक सीमित है।"
 
 #: src/components/staking/staking-view.tsx
-msgid "Reward history unavailable"
-msgstr "पुरस्कार इतिहास उपलब्ध नहीं है"
+#~ msgid "Reward history unavailable"
+#~ msgstr "पुरस्कार इतिहास उपलब्ध नहीं है"
 
 #: src/components/staking/staking-view.tsx
 msgid "Reward source"
@@ -7678,7 +7768,7 @@ msgstr "स्केल स्क्यू {SCALE_SKEW_MIN}-{SCALE_SKEW_MAX} ह
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "Scan the QR from Link mobile device on your desktop to load a trading key."
-msgstr ""
+msgstr "ट्रेडिंग कुंजी लोड करने के लिए अपने डेस्कटॉप पर मोबाइल डिवाइस लिंक करें वाला QR स्कैन करें।"
 
 #: src/components/trade/components/mobile-agent-qr-scanner.tsx
 msgid "Scan the QR from the QR icon in the top-right of {BRAND_NAME} on desktop (Link mobile device)."
@@ -7705,16 +7795,22 @@ msgstr "वॉल्ट, पते या लीडर से खोजें"
 msgid "Search by wallet address or display name"
 msgstr "वॉलेट पते या डिस्प्ले नाम से खोजें"
 
+#: src/components/trade/components/command-menu.tsx
+msgid "Search for a market to trade"
+msgstr "ट्रेड करने के लिए बाज़ार खोजें"
+
 #: src/components/leaderboard/leaderboard-view.tsx
 msgid "Search leaderboard"
 msgstr "लीडरबोर्ड खोजें"
 
 #: src/components/funding-comparison/funding-comparison-view.tsx
+#: src/components/trade/components/command-menu.tsx
 #: src/components/trade/positions/position-market-filter.tsx
 msgid "Search markets"
 msgstr "बाज़ार खोजें"
 
 #: src/components/trade/chart/token-selector-content.tsx
+#: src/components/trade/components/command-menu.tsx
 #: src/components/trade/positions/position-market-filter.tsx
 msgid "Search markets..."
 msgstr "बाज़ार खोजें..."
@@ -7830,6 +7926,7 @@ msgstr "चुनी गई अवधि का PNL"
 #: src/config/trade-panel-labels.ts
 #: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-order-display-labels.ts
+#: src/lib/trade/fill-direction.ts
 msgid "Sell"
 msgstr "बेचें"
 
@@ -7846,6 +7943,7 @@ msgstr "शॉर्ट बेचें"
 #: src/components/portfolio/portfolio-page.tsx
 #: src/components/portfolio/portfolio-page.tsx
 #: src/components/trade/positions/balances-tab.tsx
+#: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/positions/send-modal.tsx
 #: src/config/account-ledger.ts
 msgid "Send"
@@ -7878,6 +7976,10 @@ msgstr "टोकन भेजें"
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #~ msgid "Send USDC to your wallet address below."
 #~ msgstr "नीचे दिए गए अपने वॉलेट पते पर USDC भेजें।"
+
+#: src/components/trade/positions/send-modal.tsx
+msgid "Send with Fee"
+msgstr "शुल्क के साथ भेजें"
 
 #: src/components/trade/positions/send-modal.tsx
 #~ msgid "Sending..."
@@ -7944,8 +8046,13 @@ msgstr "{displayName} का PNL साझा करें"
 #: src/components/trade/positions/position-row.tsx
 #: src/config/trade-panel-labels.ts
 #: src/domain/trade/order-confirmation.ts
+#: src/lib/trade/funding-position.ts
 msgid "Short"
 msgstr "शॉर्ट"
+
+#: src/lib/trade/fill-direction.ts
+msgid "Short > Long"
+msgstr "शॉर्ट > लॉन्ग"
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Short position"
@@ -7976,6 +8083,9 @@ msgid "Shows reward claims reported in the last 30 days. Claims can include refe
 msgstr "पिछले 30 दिनों में रिपोर्ट किए गए पुरस्कार प्राप्ति रिकॉर्ड दिखाता है। इनमें रेफ़रल और बिल्डर पुरस्कार शामिल हो सकते हैं।"
 
 #: src/components/funding-history/funding-history-page.tsx
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/positions/funding-tab.tsx
 msgid "Side"
 msgstr "साइड"
 
@@ -8009,13 +8119,14 @@ msgstr "हस्ताक्षर के लिए तैयार"
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Signing with your email wallet"
-msgstr ""
+msgstr "आपके ईमेल वॉलेट से हस्ताक्षर हो रहा है"
 
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/config/ui-text.ts
 msgid "Signing..."
 msgstr "साइन हो रहा है..."
 
+#: src/components/funding-history/funding-history-page.tsx
 #: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/historical-orders/historical-orders-page.tsx
@@ -8024,6 +8135,7 @@ msgstr "साइन हो रहा है..."
 #: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
+#: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
@@ -8039,6 +8151,7 @@ msgstr "साइन हो रहा है..."
 #: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
 #: src/components/trade/orderbook/orderbook-row.tsx
 #: src/components/trade/orderbook/trades-panel.tsx
+#: src/components/trade/positions/funding-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
@@ -8066,6 +8179,10 @@ msgstr "आकार (%)"
 msgid "Size cannot exceed the order's remaining size."
 msgstr "साइज़ ऑर्डर के शेष साइज़ से अधिक नहीं हो सकता।"
 
+#: src/components/trade/tradebox/twap-order-summary.tsx
+msgid "Size per Suborder"
+msgstr "प्रति उप-ऑर्डर आकार"
+
 #: src/lib/trade/position-market-close-errors.ts
 #: src/lib/trade/position-submit-feedback.ts
 msgid "Size precision must be a non-negative integer"
@@ -8082,6 +8199,10 @@ msgstr "साइज़ स्क्यू"
 #: src/lib/trade/order-submission-feedback.ts
 msgid "Size skew is too aggressive for the total size"
 msgstr "कुल साइज़ के लिए साइज़ स्क्यू बहुत अधिक है"
+
+#: src/config/orderbook-labels.ts
+msgid "Size unit"
+msgstr "आकार इकाई"
 
 #: src/components/trade/tradebox/trade-form-tp-sl.tsx
 #: src/lib/errors/definitions/tpsl.ts
@@ -8197,6 +8318,7 @@ msgstr "स्रोत"
 #: src/components/trade/chart/token-selector-row.tsx
 #: src/components/trade/chart/token-selector-row.tsx
 #: src/components/trade/chart/token-selector-trigger.tsx
+#: src/components/trade/components/command-menu.tsx
 #: src/components/trade/components/market-asset-info.tsx
 #: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
@@ -8248,8 +8370,8 @@ msgid "Staking action history table"
 msgstr "स्टेकिंग कार्रवाई इतिहास तालिका"
 
 #: src/components/staking/staking-view.tsx
-msgid "Staking action history unavailable"
-msgstr "स्टेकिंग कार्रवाई इतिहास उपलब्ध नहीं है"
+#~ msgid "Staking action history unavailable"
+#~ msgstr "स्टेकिंग कार्रवाई इतिहास उपलब्ध नहीं है"
 
 #: src/components/staking/staking-view.tsx
 msgid "Staking actions"
@@ -8385,7 +8507,7 @@ msgstr "कनेक्टेड रहें"
 #. placeholder {0}: formatDateTime(agentValidUntilMs, { locale: i18n.locale })
 #: src/routes/mobile-agent-sync.tsx
 msgid "Stays on this phone until {0} unless you revoke it from the master wallet on desktop."
-msgstr ""
+msgstr "यह {0} तक इस फ़ोन पर रहेगी, जब तक आप डेस्कटॉप पर मास्टर वॉलेट से इसे रद्द न करें।"
 
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "Stays on this phone until {validUntilLabel} unless you disconnect it here or revoke it from the master wallet on desktop."
@@ -8903,6 +9025,10 @@ msgstr "पता अमान्य है या Hyperliquid ने इसक�
 msgid "The amount exceeds the freshly verified maximum."
 msgstr "राशि हाल ही में सत्यापित अधिकतम सीमा से अधिक है।"
 
+#: src/components/vaults/use-vault-action-controller.ts
+msgid "The amount is below this Vault's minimum deposit."
+msgstr "राशि इस वॉल्ट की न्यूनतम जमा राशि से कम है।"
+
 #: src/components/api-wallet/use-api-wallet-controller.ts
 msgid "The API wallet request was rejected."
 msgstr "API वॉलेट अनुरोध अस्वीकार कर दिया गया।"
@@ -8975,11 +9101,15 @@ msgstr "कनेक्शन पूरा नहीं किया जा स�
 #: src/lib/tests/mobile-agent-sync-route.test.tsx
 #: src/routes/mobile-agent-sync.tsx
 msgid "The desktop has not approved this key. Create a new QR on desktop."
-msgstr ""
+msgstr "डेस्कटॉप ने इस कुंजी को स्वीकृत नहीं किया है। डेस्कटॉप पर नया QR बनाएँ।"
 
 #: src/components/trade/components/mobile-agent-ended-notifier.tsx
 msgid "The desktop-approved key expired or was replaced from desktop. Scan a new QR from Link mobile device."
-msgstr ""
+msgstr "डेस्कटॉप से स्वीकृत कुंजी की समय-सीमा समाप्त हो गई या उसे डेस्कटॉप से बदल दिया गया। मोबाइल डिवाइस लिंक करें से नया QR स्कैन करें।"
+
+#: src/components/trade/positions/send-modal.tsx
+msgid "The destination address has never sent a transaction on Hyperliquid. Do not use Send to transfer to an exchange or another platform that does not support the Hyperliquid blockchain, or your funds will be lost. To move USDC to Arbitrum, use Withdraw instead."
+msgstr "गंतव्य पते ने Hyperliquid पर कभी कोई लेन-देन नहीं भेजा है। किसी एक्सचेंज या Hyperliquid ब्लॉकचेन को सपोर्ट न करने वाले दूसरे प्लेटफ़ॉर्म पर ट्रांसफ़र के लिए भेजें का इस्तेमाल न करें, वरना आपके फ़ंड खो जाएँगे। USDC को Arbitrum पर ले जाने के लिए निकासी का इस्तेमाल करें।"
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "The exact name and public address are now present in fresh extraAgents data."
@@ -9023,8 +9153,8 @@ msgstr "गैस-स्पॉन्सर्ड वॉलेट किसी �
 #~ msgstr "बनाई गई कुंजी केवल इसी टैब में रहती है। कोई अन्य कुंजी स्वीकृत न करें और न ही पेज रीलोड करें।"
 
 #: src/components/staking/staking-view.tsx
-msgid "The history response could not be verified."
-msgstr "इतिहास प्रतिक्रिया सत्यापित नहीं की जा सकी।"
+#~ msgid "The history response could not be verified."
+#~ msgstr "इतिहास प्रतिक्रिया सत्यापित नहीं की जा सकी।"
 
 #: src/lib/trade/funds-action-feedback.ts
 msgid "The Hyperliquid deposit route changed before signing. Review the updated route and retry."
@@ -9181,8 +9311,8 @@ msgstr "निजी कुंजी इसी ब्राउज़र मे�
 #~ msgstr "निजी कुंजी इसी डेस्कटॉप पर बनाई जाती है और QR कोड में एम्बेड की जाती है।"
 
 #: src/components/vaults/vaults-list.tsx
-msgid "The public Vault feed could not be verified. No cached or cross-network rows are shown in its place."
-msgstr "सार्वजनिक वॉल्ट फ़ीड सत्यापित नहीं की जा सकी। उसकी जगह कोई कैश की गई या दूसरे नेटवर्क की पंक्ति नहीं दिखाई जाती।"
+#~ msgid "The public Vault feed could not be verified. No cached or cross-network rows are shown in its place."
+#~ msgstr "सार्वजनिक वॉल्ट फ़ीड सत्यापित नहीं की जा सकी। उसकी जगह कोई कैश की गई या दूसरे नेटवर्क की पंक्ति नहीं दिखाई जाती।"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "The QR can trade but not withdraw. Approving replaces the key on a phone that is already linked. Do not share it, screenshot it or show it while sharing your screen."
@@ -9190,7 +9320,7 @@ msgstr "सार्वजनिक वॉल्ट फ़ीड सत्या
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "The QR can trade but not withdraw. Approving replaces the mobile key of a phone that is already linked, including one linked in the Hyperliquid app. Do not share it, screenshot it or show it while sharing your screen."
-msgstr ""
+msgstr "यह QR ट्रेड कर सकता है, लेकिन निकासी नहीं कर सकता। स्वीकृति देने से पहले से लिंक किए गए फ़ोन की मोबाइल कुंजी बदल जाती है, Hyperliquid ऐप में लिंक किए गए फ़ोन की भी। इसे साझा न करें, इसका स्क्रीनशॉट न लें और स्क्रीन शेयर करते समय इसे न दिखाएँ।"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "The QR can trade but not withdraw. Do not share it, screenshot it or show it while sharing your screen."
@@ -9206,11 +9336,11 @@ msgstr ""
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "The QR could not be drawn. Hold to reveal to try again, or reload the page if it keeps failing."
-msgstr ""
+msgstr "QR बनाया नहीं जा सका। फिर से प्रयास करने के लिए दबाकर रखें, या बार-बार विफल होने पर पेज रीलोड करें।"
 
 #: src/components/trade/components/mobile-agent-qr-scanner.tsx
 msgid "The QR scanner could not load. Check your connection, reload the page and try again."
-msgstr ""
+msgstr "QR स्कैनर लोड नहीं हो सका। अपना कनेक्शन जाँचें, पेज रीलोड करें और फिर से प्रयास करें।"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "The QR stays hidden until you deliberately reveal it."
@@ -9220,6 +9350,7 @@ msgstr ""
 msgid "The QR stays on this device and is never uploaded."
 msgstr "QR इसी डिवाइस पर रहता है और कभी अपलोड नहीं किया जाता।"
 
+#: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade-history/trade-history-page.tsx
 msgid "The recent trade snapshot could not be loaded or validated."
 msgstr "हाल का ट्रेड स्नैपशॉट लोड या सत्यापित नहीं किया जा सका।"
@@ -9257,28 +9388,30 @@ msgid "The request was submitted, but its final status is still updating. Check 
 msgstr "अनुरोध सबमिट हो गया है, लेकिन इसकी अंतिम स्थिति अभी अपडेट हो रही है। दोबारा प्रयास करने से पहले रेफ़रल डेटा और प्राप्ति इतिहास जांचें।"
 
 #: src/components/funding-history/funding-history-page.tsx
+#: src/components/funding-history/funding-history-page.tsx
 msgid "The requested 30-day window could not be verified. No partial history is shown."
 msgstr "अनुरोधित 30-दिन की अवधि सत्यापित नहीं की जा सकी। कोई आंशिक इतिहास नहीं दिखाया जाता।"
 
+#: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/historical-orders/historical-orders-page.tsx
 msgid "The response could not be verified. No partial order history is shown."
 msgstr "प्रतिक्रिया सत्यापित नहीं की जा सकी। कोई आंशिक ऑर्डर इतिहास नहीं दिखाया जाता।"
 
 #: src/components/referrals/referral-dashboard.tsx
-msgid "The response could not be verified. No referral action is available until fresh data loads."
-msgstr "जवाब सत्यापित नहीं किया जा सका। नया डेटा लोड होने तक कोई रेफ़रल कार्रवाई उपलब्ध नहीं है।"
+#~ msgid "The response could not be verified. No referral action is available until fresh data loads."
+#~ msgstr "जवाब सत्यापित नहीं किया जा सका। नया डेटा लोड होने तक कोई रेफ़रल कार्रवाई उपलब्ध नहीं है।"
 
 #: src/components/staking/staking-view.tsx
-msgid "The response could not be verified. No validator action is available."
-msgstr "प्रतिक्रिया सत्यापित नहीं की जा सकी। कोई वैलिडेटर कार्रवाई उपलब्ध नहीं है।"
+#~ msgid "The response could not be verified. No validator action is available."
+#~ msgstr "प्रतिक्रिया सत्यापित नहीं की जा सकी। कोई वैलिडेटर कार्रवाई उपलब्ध नहीं है।"
 
 #: src/components/vaults/vaults-page.tsx
-msgid "The response was missing, malformed, or could not be verified. No placeholder financial data is shown."
-msgstr "प्रतिक्रिया अनुपलब्ध, विकृत या असत्यापित थी। कोई प्लेसहोल्डर वित्तीय डेटा नहीं दिखाया जाता।"
+#~ msgid "The response was missing, malformed, or could not be verified. No placeholder financial data is shown."
+#~ msgstr "प्रतिक्रिया अनुपलब्ध, विकृत या असत्यापित थी। कोई प्लेसहोल्डर वित्तीय डेटा नहीं दिखाया जाता।"
 
 #: src/components/staking/staking-view.tsx
-msgid "The reward response could not be verified."
-msgstr "पुरस्कार प्रतिक्रिया सत्यापित नहीं की जा सकी।"
+#~ msgid "The reward response could not be verified."
+#~ msgstr "पुरस्कार प्रतिक्रिया सत्यापित नहीं की जा सकी।"
 
 #: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
@@ -9421,7 +9554,7 @@ msgstr "दावा करने के लिए कोई दावा न �
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "This account already has {count} named API wallets and none of them is a mobile key. Hyperliquid allows {limit} (more with sub-accounts or higher trading volume), so this approval may be rejected. If it is, remove one you no longer use:"
-msgstr ""
+msgstr "इस खाते में पहले से {count} नामित API वॉलेट हैं और उनमें से कोई भी मोबाइल कुंजी नहीं है। Hyperliquid {limit} की अनुमति देता है (सब-अकाउंट या अधिक ट्रेडिंग वॉल्यूम के साथ ज़्यादा), इसलिए यह स्वीकृति अस्वीकार हो सकती है। ऐसा होने पर, जिसे आप अब इस्तेमाल नहीं करते उसे हटाएँ:"
 
 #: src/lib/errors/action-error.ts
 msgid "This account already has a referral code and cannot apply another one."
@@ -9429,7 +9562,7 @@ msgstr "इस खाते पर पहले से रेफ़रल को
 
 #: src/lib/errors/exchange-error-text.ts
 msgid "This account already has the {limit} named API wallets its trading volume allows. Remove one on the API Wallet page before approving another."
-msgstr ""
+msgstr "इस खाते में पहले से {limit} नामित API वॉलेट हैं, जो इसके ट्रेडिंग वॉल्यूम की सीमा है। दूसरा स्वीकृत करने से पहले API वॉलेट पेज पर एक हटाएँ।"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "This account already uses the {limit} named API wallets Hyperliquid allows, and none of them is a mobile key, so the approval will be rejected unless your trading volume allows more. Remove one you no longer use first:"
@@ -9635,7 +9768,7 @@ msgstr "यह पैनल लोड नहीं हो सका। फिर
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "This phone could not store the trading key. Clear this site's data and scan again."
-msgstr ""
+msgstr "यह फ़ोन ट्रेडिंग कुंजी सहेज नहीं सका। इस साइट का डेटा साफ़ करें और फिर से स्कैन करें।"
 
 #: src/lib/trade/owner-approval-message.ts
 #~ msgid "This phone uses a desktop-approved trading key. Approve trading with the master wallet on desktop first: open Link mobile device there."
@@ -9648,11 +9781,11 @@ msgstr "यह फ़ोन डेस्कटॉप से स्वीकृ�
 
 #: src/lib/trade/owner-approval-message.ts
 msgid "This phone uses a desktop-approved trading key. Finish trading authorization on desktop first by placing a first order there."
-msgstr ""
+msgstr "यह फ़ोन डेस्कटॉप से स्वीकृत ट्रेडिंग कुंजी का उपयोग करता है। पहले डेस्कटॉप पर पहला ऑर्डर देकर ट्रेडिंग प्राधिकरण पूरा करें।"
 
 #: src/hooks/trade/use-master-wallet-action-reason.ts
 msgid "This phone uses a desktop-approved trading key. This action needs the master wallet on desktop."
-msgstr ""
+msgstr "यह फ़ोन डेस्कटॉप से स्वीकृत ट्रेडिंग कुंजी का उपयोग करता है। इस कार्रवाई के लिए डेस्कटॉप पर मास्टर वॉलेट चाहिए।"
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-market-close-modal.tsx
@@ -9684,7 +9817,7 @@ msgstr "यह पोज़िशन अब आइसोलेटेड मा�
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "This QR belongs to a different network. Use the same network on both devices, then scan a new QR from desktop."
-msgstr ""
+msgstr "यह QR किसी दूसरे नेटवर्क का है। दोनों डिवाइस पर एक ही नेटवर्क इस्तेमाल करें, फिर डेस्कटॉप से नया QR स्कैन करें।"
 
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "This QR belongs to a different owner account."
@@ -9697,7 +9830,7 @@ msgstr ""
 #: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
 msgid "This QR expired. Create a new QR on desktop."
-msgstr ""
+msgstr "इस QR की समय-सीमा समाप्त हो गई। डेस्कटॉप पर नया QR बनाएँ।"
 
 #: src/components/trade/components/mobile-agent-qr-scanner.tsx
 #: src/routes/mobile-agent-sync.tsx
@@ -9764,6 +9897,10 @@ msgstr "इस टर्मिनल पर नया पोर्टफोल�
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "This trading key is not the currently approved Mobile Agent. Create a new desktop QR."
 #~ msgstr "यह ट्रेडिंग कुंजी वर्तमान में स्वीकृत Mobile Agent नहीं है। नया डेस्कटॉप QR बनाएँ।"
+
+#: src/components/trade/positions/send-modal.tsx
+msgid "This transfer will incur a one-time fee of {reviewFee} in a USD stablecoin to activate the destination account."
+msgstr "इस ट्रांसफ़र पर गंतव्य खाता सक्रिय करने के लिए USD स्टेबलकॉइन में {reviewFee} का एक बार का शुल्क लगेगा।"
 
 #: src/components/vaults/vault-detail-view.tsx
 msgid "This Vault is closed and no longer accepts deposits."
@@ -9965,6 +10102,7 @@ msgstr "TP एंट्री से नीचे होना चाहिए"
 msgid "TP Price"
 msgstr "TP मूल्य"
 
+#: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/positions-tab.tsx
 #: src/config/trade-panel-labels.ts
@@ -10023,8 +10161,8 @@ msgid "Trade history for <0>{0}</0>"
 msgstr "<0>{0}</0> का ट्रेड इतिहास"
 
 #: src/components/trade-history/trade-history-page.tsx
-msgid "Trade history is unavailable"
-msgstr "ट्रेड इतिहास उपलब्ध नहीं है"
+#~ msgid "Trade history is unavailable"
+#~ msgstr "ट्रेड इतिहास उपलब्ध नहीं है"
 
 #: src/components/trade-history/trade-history-page.tsx
 msgid "Trade history pagination"
@@ -10035,8 +10173,8 @@ msgstr "ट्रेड इतिहास पेज नेविगेशन"
 #~ msgstr "ट्रेड इतिहास अपडेट रुके हुए हैं।"
 
 #: src/components/trade-history/trade-history-page.tsx
-msgid "Trade history will load automatically when the connection returns."
-msgstr "कनेक्शन वापस आने पर ट्रेड इतिहास अपने-आप लोड हो जाएगा।"
+#~ msgid "Trade history will load automatically when the connection returns."
+#~ msgstr "कनेक्शन वापस आने पर ट्रेड इतिहास अपने-आप लोड हो जाएगा।"
 
 #: src/components/referrals/referral-code-card.tsx
 msgid "Trade on Hyperliquid"
@@ -10115,10 +10253,11 @@ msgstr "इन बाज़ारों में ट्रेडिंग म�
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Trading is not activated on this account yet. Deposit and place a first order on this desktop to finish trading authorization, then link your phone."
-msgstr ""
+msgstr "इस खाते पर ट्रेडिंग अभी सक्रिय नहीं है। ट्रेडिंग प्राधिकरण पूरा करने के लिए इसी डेस्कटॉप पर जमा करें और पहला ऑर्डर दें, फिर अपना फ़ोन लिंक करें।"
 
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/config/trade-panel-labels.ts
+#: src/lib/trade/position-submit-feedback.ts
 msgid "Trading is not available in your region"
 msgstr "आपके क्षेत्र में ट्रेडिंग उपलब्ध नहीं है"
 
@@ -10143,6 +10282,10 @@ msgstr "ट्रेडिंग वॉल्यूम प्रगति"
 msgid "Traditional Finance"
 msgstr "पारंपरिक वित्त"
 
+#: src/hooks/trade/use-order-display-labels.ts
+msgid "Trailing Stop"
+msgstr "ट्रेलिंग स्टॉप"
+
 #: src/components/staking/staking-view.tsx
 #: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
@@ -10154,6 +10297,11 @@ msgstr "लेनदेन"
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 msgid "Transaction breakdown"
 msgstr "लेन-देन विवरण"
+
+#: src/components/trade/components/global-settings-modal.tsx
+#: src/components/trade/components/global-settings-modal.tsx
+msgid "Transaction delay protection"
+msgstr "लेनदेन विलंब सुरक्षा"
 
 #: src/lib/errors/action-error.ts
 msgid "Transaction reverted on Arbitrum"
@@ -10252,6 +10400,10 @@ msgstr "ट्रिगर मूल्य"
 #: src/lib/errors/definitions/twap.ts
 msgid "Trigger price must differ from mark"
 msgstr "ट्रिगर मूल्य मार्क से अलग होना चाहिए"
+
+#: src/lib/trade/trailing-stop-condition.ts
+msgid "Trigger: {price} / Retracement: {retracement}"
+msgstr "ट्रिगर: {price} / रिट्रेसमेंट: {retracement}"
 
 #: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
@@ -10409,6 +10561,10 @@ msgstr "दो-तरफ़ा ओपन इंटरेस्ट: इस कॉ
 msgid "Type"
 msgstr "प्रकार"
 
+#: src/components/trade/positions/send-modal.tsx
+msgid "Unable to check the destination address. Nothing was sent."
+msgstr "गंतव्य पता जाँचा नहीं जा सका। कुछ भी नहीं भेजा गया।"
+
 #: src/lib/trade/order-submission-feedback.ts
 msgid "Unable to identify this TWAP market. Refresh market data before retrying."
 msgstr "इस TWAP बाज़ार की पहचान नहीं हो सकी। पुनः प्रयास करने से पहले बाज़ार डेटा रीफ़्रेश करें।"
@@ -10422,6 +10578,10 @@ msgstr "Arbitrum USDC बैलेंस लोड नहीं किया ज
 #: src/lib/trade/funds-action-feedback.ts
 msgid "Unable to load the current CCTP withdrawal fee."
 msgstr "वर्तमान CCTP निकासी शुल्क लोड नहीं हो सका।"
+
+#: src/components/trade/positions/send-modal.tsx
+msgid "Unable to send funds to this address."
+msgstr "इस पते पर फ़ंड नहीं भेजे जा सकते।"
 
 #. placeholder {0}: config.chainName
 #: src/lib/hyperliquid/use-deposit.ts
@@ -10463,12 +10623,13 @@ msgid "Unable to verify regional availability. This referral request was not sub
 msgstr "क्षेत्रीय उपलब्धता सत्यापित नहीं हो सकी। यह रेफ़रल अनुरोध सबमिट नहीं किया गया।"
 
 #: src/lib/errors/action-error.ts
+#: src/lib/trade/position-submit-feedback.ts
 msgid "Unable to verify regional availability. Trading is temporarily unavailable."
 msgstr "क्षेत्रीय उपलब्धता सत्यापित नहीं की जा सकी। ट्रेडिंग अस्थायी रूप से उपलब्ध नहीं है।"
 
 #: src/components/vaults/vault-detail-view.tsx
-msgid "Unable to verify regional availability. Vault actions are temporarily unavailable."
-msgstr "क्षेत्रीय उपलब्धता सत्यापित नहीं की जा सकी। वॉल्ट कार्रवाइयाँ अस्थायी रूप से उपलब्ध नहीं हैं।"
+#~ msgid "Unable to verify regional availability. Vault actions are temporarily unavailable."
+#~ msgstr "क्षेत्रीय उपलब्धता सत्यापित नहीं की जा सकी। वॉल्ट कार्रवाइयाँ अस्थायी रूप से उपलब्ध नहीं हैं।"
 
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
@@ -10805,8 +10966,8 @@ msgid "Validator commission"
 msgstr "वैलिडेटर कमीशन"
 
 #: src/components/staking/staking-view.tsx
-msgid "Validator data unavailable"
-msgstr "वैलिडेटर डेटा उपलब्ध नहीं है"
+#~ msgid "Validator data unavailable"
+#~ msgstr "वैलिडेटर डेटा उपलब्ध नहीं है"
 
 #: src/components/staking/staking-view.tsx
 msgid "Validator performance"
@@ -10856,8 +11017,8 @@ msgid "Vault Commission"
 msgstr "वॉल्ट कमीशन"
 
 #: src/components/vaults/vaults-list.tsx
-msgid "Vault data is unavailable"
-msgstr "वॉल्ट डेटा उपलब्ध नहीं है"
+#~ msgid "Vault data is unavailable"
+#~ msgstr "वॉल्ट डेटा उपलब्ध नहीं है"
 
 #: src/components/funds-action/funds-action-recovery-host.tsx
 msgid "Vault deposit"
@@ -10876,8 +11037,8 @@ msgid "Vault depositors"
 msgstr "वॉल्ट जमाकर्ता"
 
 #: src/components/vaults/vaults-page.tsx
-msgid "Vault details are unavailable"
-msgstr "वॉल्ट विवरण उपलब्ध नहीं है"
+#~ msgid "Vault details are unavailable"
+#~ msgstr "वॉल्ट विवरण उपलब्ध नहीं है"
 
 #: src/config/account-ledger.ts
 msgid "Vault Distribution"
@@ -10952,8 +11113,8 @@ msgid "Verification reference"
 msgstr "सत्यापन संदर्भ"
 
 #: src/components/vaults/vault-detail-view.tsx
-msgid "Verified Vault details are unavailable."
-msgstr "सत्यापित वॉल्ट विवरण उपलब्ध नहीं हैं।"
+#~ msgid "Verified Vault details are unavailable."
+#~ msgstr "सत्यापित वॉल्ट विवरण उपलब्ध नहीं हैं।"
 
 #. placeholder {0}: formatVaultUsd(availableAmount, numberFormat)
 #: src/components/vaults/vault-action-modal.tsx
@@ -10993,8 +11154,8 @@ msgid "Verifying from history"
 msgstr "इतिहास से सत्यापित किया जा रहा है"
 
 #: src/components/vaults/vault-detail-view.tsx
-msgid "Verifying the owner Vault balance before enabling withdrawals."
-msgstr "निकासी सक्षम करने से पहले मालिक का वॉल्ट बैलेंस सत्यापित किया जा रहा है।"
+#~ msgid "Verifying the owner Vault balance before enabling withdrawals."
+#~ msgstr "निकासी सक्षम करने से पहले मालिक का वॉल्ट बैलेंस सत्यापित किया जा रहा है।"
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Verifying the result"
@@ -11150,6 +11311,10 @@ msgstr "रेफ़रल अनुरोध की पुष्टि से �
 msgid "Wallet returned a transaction hash, but it is not visible on Arbitrum yet. Check your wallet activity or Arbiscan before retrying to avoid sending the deposit twice."
 msgstr "वॉलेट ने लेनदेन हैश लौटाया है, लेकिन वह अभी Arbitrum पर दिखाई नहीं दे रहा है। जमा दो बार भेजने से बचने के लिए दोबारा प्रयास करने से पहले वॉलेट गतिविधि या Arbiscan जांचें."
 
+#: src/lib/trade/trailing-stop-condition.ts
+msgid "Watermark: {watermark}"
+msgstr "अब तक का सर्वश्रेष्ठ मूल्य: {watermark}"
+
 #: src/components/trade/components/legal-acceptance-modal.tsx
 msgid "We could not finish setting up your wallet. Check your connection and try again, or disconnect and log in again."
 msgstr "हम आपके वॉलेट का सेटअप पूरा नहीं कर सके। अपना कनेक्शन जाँचें और फिर प्रयास करें, या डिस्कनेक्ट करके दोबारा लॉग इन करें।"
@@ -11271,8 +11436,8 @@ msgid "Withdrawal remains locked until the server-reported unlock time."
 msgstr "सर्वर द्वारा बताए गए अनलॉक समय तक निकासी लॉक रहेगी।"
 
 #: src/components/vaults/vault-detail-view.tsx
-msgid "Withdrawal remains unavailable until the owner balance is verified."
-msgstr "मालिक का बैलेंस सत्यापित होने तक निकासी उपलब्ध नहीं रहेगी।"
+#~ msgid "Withdrawal remains unavailable until the owner balance is verified."
+#~ msgstr "मालिक का बैलेंस सत्यापित होने तक निकासी उपलब्ध नहीं रहेगी।"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Withdrawal status unknown"
@@ -11290,6 +11455,10 @@ msgstr "निकासी अनलॉक है"
 #: src/lib/trade/funds-action-feedback.ts
 msgid "Withdrawals are unavailable for this address."
 msgstr "इस पते के लिए निकासी उपलब्ध नहीं है।"
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Withdrawing to yourself is not allowed because it would automatically trigger a deposit. Enter a different address."
+msgstr "अपने ही पते पर निकासी की अनुमति नहीं है, क्योंकि इससे अपने-आप जमा शुरू हो जाएगा। कोई दूसरा पता डालें।"
 
 #: src/components/earn/earn-action-modal.tsx
 msgid "Withdraws your entire {token} supply at the moment it executes, including accrued interest."
@@ -11333,8 +11502,8 @@ msgstr "आप रेफ़रल कोड बनाने के लिए प
 #: src/components/funding-history/funding-history-page.tsx
 #: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/trade-history/trade-history-page.tsx
-msgid "You are offline"
-msgstr "आप ऑफ़लाइन हैं"
+#~ msgid "You are offline"
+#~ msgstr "आप ऑफ़लाइन हैं"
 
 #: src/components/trade/positions/funding-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
@@ -11343,25 +11512,28 @@ msgstr "आप ऑफ़लाइन हैं"
 #~ msgstr "आप ऑफ़लाइन हैं।"
 
 #: src/components/funding-history/funding-history-page.tsx
+#: src/components/funding-history/funding-history-page.tsx
 msgid "You are offline. Funding payments will load when the connection returns."
 msgstr "आप ऑफ़लाइन हैं। कनेक्शन वापस आने पर फंडिंग भुगतान लोड हो जाएँगे।"
 
+#: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/historical-orders/historical-orders-page.tsx
 msgid "You are offline. Order history will load when the connection returns."
 msgstr "आप ऑफ़लाइन हैं। कनेक्शन वापस आने पर ऑर्डर इतिहास लोड हो जाएगा।"
 
 #: src/components/funding-history/funding-history-page.tsx
-msgid "You are offline. Previously loaded funding payments remain visible."
-msgstr "आप ऑफ़लाइन हैं। पहले लोड किए गए फंडिंग भुगतान दिखाई देते रहेंगे।"
+#~ msgid "You are offline. Previously loaded funding payments remain visible."
+#~ msgstr "आप ऑफ़लाइन हैं। पहले लोड किए गए फंडिंग भुगतान दिखाई देते रहेंगे।"
 
 #: src/components/historical-orders/historical-orders-page.tsx
-msgid "You are offline. Previously loaded order history remains visible."
-msgstr "आप ऑफ़लाइन हैं। पहले लोड किया गया ऑर्डर इतिहास दिखाई देता रहेगा।"
+#~ msgid "You are offline. Previously loaded order history remains visible."
+#~ msgstr "आप ऑफ़लाइन हैं। पहले लोड किया गया ऑर्डर इतिहास दिखाई देता रहेगा।"
 
 #: src/components/trade-history/trade-history-page.tsx
-msgid "You are offline. Previously loaded trade history remains visible."
-msgstr "आप ऑफ़लाइन हैं। पहले लोड किया गया ट्रेड इतिहास दिखाई देता रहेगा।"
+#~ msgid "You are offline. Previously loaded trade history remains visible."
+#~ msgstr "आप ऑफ़लाइन हैं। पहले लोड किया गया ट्रेड इतिहास दिखाई देता रहेगा।"
 
+#: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade-history/trade-history-page.tsx
 msgid "You are offline. Trade history will load when the connection returns."
 msgstr "आप ऑफ़लाइन हैं। कनेक्शन वापस आने पर ट्रेड इतिहास लोड हो जाएगा।"
@@ -11477,7 +11649,7 @@ msgstr "आपका ईमेल वॉलेट उपलब्ध नही�
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Your email wallet signs the reviewed request automatically. Nothing changes before Hyperliquid accepts it."
-msgstr ""
+msgstr "आपका ईमेल वॉलेट समीक्षा किए गए अनुरोध पर अपने-आप हस्ताक्षर करता है। Hyperliquid के स्वीकार करने से पहले कुछ नहीं बदलता।"
 
 #: src/components/vaults/vault-detail-view.tsx
 #: src/components/vaults/vaults-list.tsx
@@ -11546,8 +11718,8 @@ msgid "Your transaction is being processed"
 msgstr "आपका लेन-देन प्रोसेस हो रहा है"
 
 #: src/components/vaults/vault-detail-view.tsx
-msgid "Your Vault balance could not be verified. Account values and withdrawal remain unavailable."
-msgstr "आपका वॉल्ट बैलेंस सत्यापित नहीं किया जा सका। खाता मूल्य और निकासी उपलब्ध नहीं रहेंगे।"
+#~ msgid "Your Vault balance could not be verified. Account values and withdrawal remain unavailable."
+#~ msgstr "आपका वॉल्ट बैलेंस सत्यापित नहीं किया जा सका। खाता मूल्य और निकासी उपलब्ध नहीं रहेंगे।"
 
 #: src/lib/trade/privy-fiat-funding-feedback.ts
 msgid "Your wallet session changed, so the card purchase did not open. Reconnect your wallet and try again."

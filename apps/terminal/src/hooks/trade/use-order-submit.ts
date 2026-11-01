@@ -4,7 +4,7 @@ import { getReduceOnlyMarginHint } from "@/domain/trade/insufficient-margin-hint
 import { getOrderExecutionSummary, type OrderExecutionSummary } from "@/domain/trade/order-execution-summary";
 import { buildOrderPlan } from "@/domain/trade/order-intent";
 import { isOrderBatchResolutionError, type TrackedOrderParams } from "@/domain/trade/order-tracking";
-import { formatPriceForOrder, formatSizeForOrder } from "@/domain/trade/orders";
+import { formatLimitPriceForOrder, formatPriceForOrder, formatSizeForOrder } from "@/domain/trade/orders";
 import { buildTwapOrderDetails } from "@/domain/trade/twap-details";
 import { type ActionFailure, exchangeActionFailure } from "@/lib/errors/action-error";
 import { isInsufficientMarginText } from "@/lib/errors/exchange-error-text";
@@ -17,6 +17,7 @@ import {
 	getOrderSubmissionFeedback,
 	orderSubmissionFeedback,
 } from "@/lib/trade/order-submission-feedback";
+import { usesLimitPrice } from "@/lib/trade/order-types";
 import { classifyTradingActionError } from "@/lib/trade/trading-action-failure";
 import type { Side } from "@/lib/trade/types";
 import {
@@ -192,7 +193,10 @@ export function useOrderSubmit(options: UseOrderSubmitOptions = {}): UseOrderSub
 
 		const szDecimals = market.szDecimals ?? 0;
 		const formattedSize = formatSizeForOrder(input.sizeForOrder ?? sizeValue, szDecimals);
-		const formattedPrice = formatPriceForOrder(price, { assetId: market.assetId, szDecimals });
+		const priceFormat = { assetId: market.assetId, szDecimals };
+		const formattedPrice = usesLimitPrice(orderType)
+			? formatLimitPriceForOrder(price, priceFormat, side)
+			: formatPriceForOrder(price, priceFormat);
 		const riskContext =
 			market.kind === "spot" ? ({ marketKind: "spot" } as const) : ({ marketKind: "perp", marginMode } as const);
 

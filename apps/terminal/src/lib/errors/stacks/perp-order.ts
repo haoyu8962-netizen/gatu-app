@@ -21,6 +21,13 @@ import {
 	type OrderInputContext,
 } from "../definitions/order-input";
 import {
+	limitPriceTickValidator,
+	type PriceTickContext,
+	triggerPriceTickValidator,
+	twapStopPriceTickValidator,
+	twapTriggerPriceTickValidator,
+} from "../definitions/price-tick";
+import {
 	reduceOnlyPositionDirectionValidator,
 	reduceOnlyPositionExistsValidator,
 	reduceOnlyPositionSizeValidator,
@@ -68,12 +75,18 @@ export interface PerpOrderContext
 		TpSlContext,
 		TriggerContext,
 		ScaleContext,
-		TwapContext {
+		TwapContext,
+		PriceTickContext {
 	isConnected: boolean;
 	isWalletLoading: boolean;
 	isReadyToTrade: boolean;
 	needsAgentApproval: boolean;
 	availableBalance: number;
+	/**
+	 * False for a stop or take-profit order on a funded account: like the official terminal, a trigger
+	 * order needs no free balance or size headroom when it is placed.
+	 */
+	requiresAvailableBalance?: boolean;
 	hasMarket: boolean;
 	hasAssetIndex: boolean;
 	markPriceStatus: MarkPriceStatus;
@@ -91,7 +104,10 @@ export interface PerpOrderValidationResult {
 const perpOrderValidators: Validator<PerpOrderContext>[] = [
 	walletNotConnectedValidator,
 	walletLoadingValidator,
-	{ ...noBalanceValidator, validate: (ctx) => ctx.reduceOnly || noBalanceValidator.validate(ctx) },
+	{
+		...noBalanceValidator,
+		validate: (ctx) => ctx.reduceOnly || ctx.requiresAvailableBalance === false || noBalanceValidator.validate(ctx),
+	},
 	noMarketValidator,
 	marketNotReadyValidator,
 	signerNotReadyValidator,
@@ -100,9 +116,16 @@ const perpOrderValidators: Validator<PerpOrderContext>[] = [
 	noMarkPriceValidator,
 	enterLimitPriceValidator,
 	enterTriggerPriceValidator,
+	limitPriceTickValidator,
+	triggerPriceTickValidator,
+	twapTriggerPriceTickValidator,
+	twapStopPriceTickValidator,
 	enterSizeValidator,
 	minOrderNotionalValidator,
-	{ ...exceedsMaxSizeValidator, validate: (ctx) => ctx.reduceOnly || exceedsMaxSizeValidator.validate(ctx) },
+	{
+		...exceedsMaxSizeValidator,
+		validate: (ctx) => ctx.reduceOnly || ctx.usesTriggerPrice || exceedsMaxSizeValidator.validate(ctx),
+	},
 	tpSlReturnValidator,
 	enterTpSlPriceValidator,
 	tpPriceValidator,

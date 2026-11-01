@@ -1210,8 +1210,6 @@ function PositionTpSlForm({
 		guardMessage = t`Trading data changed while this dialog was open. Close and reopen it before submitting.`;
 	} else if (liveDataMessage) {
 		guardMessage = liveDataMessage;
-	} else if ((tpNeedsMark || slNeedsMark) && !markReady) {
-		guardMessage = t`Loading...`;
 	}
 	const returnUnitLabel = returnUnit === "roe" ? "%" : quoteSymbol;
 	const unrealizedPnlDisplay =

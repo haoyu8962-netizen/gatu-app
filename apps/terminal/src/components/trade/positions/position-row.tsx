@@ -1,7 +1,6 @@
 import { useLingui } from "@lingui/react/macro";
 import { ShareIcon } from "@phosphor-icons/react";
 import { TableCell, TableRow, Tooltip } from "@sairn/ui";
-import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import { LIQ_WARNING_PROXIMITY } from "@/config/trade";
 import { getPerpMarginConstraint } from "@/domain/trade/isolated-margin";
 import type { MarkPriceStatus } from "@/domain/trade/market-price";
@@ -11,6 +10,7 @@ import { cn } from "@/lib/cn";
 import { useNumberFormat } from "@/lib/format";
 import type { Position } from "@/lib/hyperliquid";
 import type { Markets } from "@/lib/hyperliquid/markets";
+import { formatCollateralAmount, getMarketCollateralSymbol } from "@/lib/trade/collateral-amount";
 import { toBig } from "@/lib/trade/numbers";
 import type { TpSlOrderInfo } from "@/lib/trade/open-orders";
 import type { Side } from "@/lib/trade/types";
@@ -46,6 +46,7 @@ interface Props {
 	onLimitClose: (data: LimitClosePositionData) => void;
 	onShare: (data: PositionPnlShareData) => void;
 	onReverse: (data: PositionReverseRef) => void;
+	reverseBlocked: boolean;
 	onOpenTpSl: (data: TpSlPositionRef) => void;
 	onAdjustMargin: (data: IsolatedMarginPositionRef) => void;
 	onSelectMarket: (coin: string, side: Side) => void;
@@ -66,12 +67,14 @@ export function PositionRow({
 	onLimitClose,
 	onShare,
 	onReverse,
+	reverseBlocked,
 	onOpenTpSl,
 	onAdjustMargin,
 	onSelectMarket,
 }: Props) {
 	const { formatLiquidationPrice, formatPercent, formatPrice, formatQuoteAmount, formatToken, formatUSD } =
 		useNumberFormat();
+	const collateralFormat = { formatQuoteAmount, formatUSD };
 	const { t } = useLingui();
 	const sizeValue = toBig(p.szi);
 	const isLong = sizeValue?.gt(0) ?? false;
@@ -83,8 +86,7 @@ export function PositionRow({
 	const displayName = market?.pairName ?? p.coin;
 	const sizeSymbol = market?.shortName ?? p.coin.split(":").pop() ?? p.coin;
 	const marginConstraint = market?.kind === "spot" ? undefined : getPerpMarginConstraint(market);
-	const quoteSymbol =
-		market?.kind === "builderPerp" ? (market.quoteToken?.displayName ?? DEFAULT_QUOTE_TOKEN) : DEFAULT_QUOTE_TOKEN;
+	const quoteSymbol = getMarketCollateralSymbol(market);
 
 	const hasFreshMark = markPriceStatus === "success";
 	const liqIsNear =
@@ -100,7 +102,11 @@ export function PositionRow({
 	const canManage = typeof assetId === "number";
 	const canClose = (sizeValue?.abs().gt(0) ?? false) && typeof assetId === "number";
 	const canReverse =
-		(sizeValue?.abs().gt(0) ?? false) && typeof assetId === "number" && market !== undefined && market.kind !== "spot";
+		!reverseBlocked &&
+		(sizeValue?.abs().gt(0) ?? false) &&
+		typeof assetId === "number" &&
+		market !== undefined &&
+		market.kind !== "spot";
 	const canShare =
 		!isDataStale &&
 		hasFreshMark &&
@@ -119,9 +125,7 @@ export function PositionRow({
 	const positionValueDisplay = formatQuoteAmount(p.positionValue, quoteSymbol, { decimals: 2, compact: false });
 	const entryPriceDisplay = formatPrice(p.entryPx, { szDecimals, style: "decimal" });
 	const markPriceDisplay = formatPrice(hasFreshMark ? markPxRaw : undefined, { szDecimals, style: "decimal" });
-	const pnlDisplay = formatUSD(p.unrealizedPnl, {
-		compact: false,
-		currencyDisplay: "narrowSymbol",
+	const pnlDisplay = formatCollateralAmount(p.unrealizedPnl, quoteSymbol, collateralFormat, {
 		signDisplay: "exceptZero",
 	});
 	const roeDisplay = formatPercent(p.returnOnEquity, 1);
@@ -132,10 +136,8 @@ export function PositionRow({
 	});
 	const pnlPercentDisplay = pnlMode === "roe" ? roeDisplay : formatPercent(priceChangeRatio, 1);
 	const liquidationPriceDisplay = formatLiquidationPrice(p.liquidationPx, szDecimals, { style: "decimal" });
-	const marginDisplay = formatUSD(p.marginUsed, { compact: false, currencyDisplay: "narrowSymbol" });
-	const fundingDisplay = formatUSD(fundingPayment, {
-		compact: false,
-		currencyDisplay: "narrowSymbol",
+	const marginDisplay = formatCollateralAmount(p.marginUsed, quoteSymbol, collateralFormat);
+	const fundingDisplay = formatCollateralAmount(fundingPayment, quoteSymbol, collateralFormat, {
 		signDisplay: "exceptZero",
 	});
 	function renderTpSlContent() {

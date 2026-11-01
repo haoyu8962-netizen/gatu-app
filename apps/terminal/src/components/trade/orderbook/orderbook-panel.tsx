@@ -22,6 +22,7 @@ import {
 } from "@/lib/trade/orderbook";
 import { getOrderbookLadderStyle, getOrderbookPlaceholderKeys } from "@/lib/ui/orderbook-layout";
 import { useSizeMode } from "@/stores/use-order-entry-store";
+import { useOrderbookActions } from "@/stores/use-orderbook-actions-store";
 import { OrderbookGroupingTriggerView } from "./orderbook-grouping-trigger-view";
 import { OrderbookHoverTooltip } from "./orderbook-hover-tooltip";
 import { ORDERBOOK_PANEL_CLASS, ORDERBOOK_TAB_CONTENT_CLASS, OrderbookPanelView } from "./orderbook-panel-view";
@@ -38,6 +39,7 @@ export function OrderbookPanel() {
 	const [selectedOptionKey, setSelectedOptionKey] = useState<string | null>(null);
 	const sizeMode = useSizeMode();
 	const showOrderbookInQuote = sizeMode === "quote";
+	const { requestSizeMode } = useOrderbookActions();
 	const [{ rowCount: visibleRows, fullRowCount, rowHeightPx }, orderbookContainerRef] = useOrderbookRows();
 	const [tab, setTab] = useState("book");
 
@@ -148,6 +150,18 @@ export function OrderbookPanel() {
 		active: option.key === selectedOption?.key,
 		onSelect: () => setSelectedOptionKey(getPriceGroupingKey(option)),
 	}));
+	const unitItems = [
+		{
+			label: quoteToken,
+			active: showOrderbookInQuote,
+			onSelect: () => requestSizeMode(subscriptionParams.coin, "quote"),
+		},
+		{
+			label: baseToken,
+			active: !showOrderbookInQuote,
+			onSelect: () => requestSizeMode(subscriptionParams.coin, "base"),
+		},
+	];
 
 	return (
 		<Tabs
@@ -210,7 +224,20 @@ export function OrderbookPanel() {
 							triggerVariant="minimal"
 							triggerAriaLabel={t(ORDERBOOK_LABELS.priceGrouping)}
 							triggerClassName="min-w-0 max-w-full"
-							className="min-w-0 flex-1 overflow-hidden"
+							className="min-w-0"
+							popupClassName="min-w-0 w-max"
+						/>
+					}
+					unit={
+						<Dropdown
+							renderTrigger={<OrderbookGroupingTriggerView label={displayAsset || null} />}
+							items={unitItems}
+							size="xxs"
+							align="end"
+							triggerVariant="minimal"
+							triggerAriaLabel={t(ORDERBOOK_LABELS.sizeUnit)}
+							triggerClassName="min-w-0 max-w-full"
+							className="min-w-0"
 							popupClassName="min-w-0 w-max"
 						/>
 					}
@@ -300,7 +327,7 @@ export function OrderbookPanel() {
 			</TabsContent>
 
 			<TabsContent value="trades" keepMounted className={ORDERBOOK_TAB_CONTENT_CLASS}>
-				<TradesPanel showInQuote={showOrderbookInQuote} />
+				<TradesPanel />
 			</TabsContent>
 		</Tabs>
 	);

@@ -58,10 +58,15 @@ export function getLatestHistoryValue(history: PortfolioSnapshot["accountValueHi
 	return toBig(history?.at(-1)?.[1])?.toString() ?? null;
 }
 
+/**
+ * The exchange's daily volume list ends with the current, unfinished day; like the official
+ * terminal, the 14-day volume leaves it out and sums the 14 completed days before it.
+ */
 export function calculateFourteenDayVolume(dailyVolume: DailyUserVolume | null | undefined): string | null {
 	if (dailyVolume == null) return null;
 	let total = Big(0);
-	for (const day of [...dailyVolume].sort((a, b) => a.date.localeCompare(b.date)).slice(-14)) {
+	const completedDays = [...dailyVolume].sort((a, b) => a.date.localeCompare(b.date)).slice(0, -1);
+	for (const day of completedDays.slice(-14)) {
 		const cross = toBig(day.userCross);
 		const add = toBig(day.userAdd);
 		if (!cross || !add || cross.lt(0) || add.lt(0)) return null;
@@ -181,27 +186,48 @@ export function resolveCurrentTotalEquity({
 
 export const PORTFOLIO_REFRESH_INTERVAL_MS = 60_000;
 export const PORTFOLIO_MAX_AGE_MS = 120_000;
-export type PortfolioSourceStatus = "loading" | "error" | "stale" | "unavailable" | "ready";
+/**
+ * `refreshing`: the data is past the age limit or its last request failed, and a new request is on its
+ * way. Like the official terminal, which keeps its previous portfolio until the next answer arrives,
+ * the last successful data stays on screen until that request settles; a failure then reports `error`.
+ * It covers only data received since the source was first read on this page (`receivedSinceMount`), never
+ * data cached before, and never data stamped in the future by a clock that was set back: those stay
+ * withheld as before.
+ */
+export type PortfolioSourceStatus = "loading" | "error" | "stale" | "unavailable" | "refreshing" | "ready";
 
 export function getPortfolioQueryStatus(
 	query: {
 		data: unknown;
 		dataUpdatedAt: number;
+		fetchStatus: "fetching" | "paused" | "idle";
 		isError: boolean;
 		isPending: boolean;
 		isPlaceholderData: boolean;
 		isFetchedAfterMount: boolean;
+		receivedSinceMount: boolean;
 	},
 	enabled: boolean,
 	now: number,
 ): PortfolioSourceStatus {
 	if (!enabled) return "unavailable";
-	if (query.isError) return "error";
+	const hasSuccessfulData = query.data !== undefined && Number.isFinite(query.dataUpdatedAt) && query.dataUpdatedAt > 0;
+	const refreshing =
+		query.fetchStatus === "fetching" &&
+		hasSuccessfulData &&
+		!query.isPlaceholderData &&
+		query.receivedSinceMount &&
+		query.dataUpdatedAt <= now;
+	if (query.isError) return refreshing ? "refreshing" : "error";
 	if (query.isPending || query.isPlaceholderData || !query.isFetchedAfterMount) return "loading";
-	if (query.data === undefined || !Number.isFinite(query.dataUpdatedAt) || query.dataUpdatedAt <= 0)
-		return "unavailable";
+	if (!hasSuccessfulData) return "unavailable";
 	const age = now - query.dataUpdatedAt;
-	return age < 0 || age >= PORTFOLIO_MAX_AGE_MS ? "stale" : "ready";
+	if (age < 0 || age >= PORTFOLIO_MAX_AGE_MS) return refreshing ? "refreshing" : "stale";
+	return "ready";
+}
+
+export function isPortfolioSourceShown(status: PortfolioSourceStatus): boolean {
+	return status === "ready" || status === "refreshing";
 }
 
 export function derivePortfolioAccountEquity({

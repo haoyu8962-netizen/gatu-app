@@ -35,7 +35,7 @@ function createOrderEntry(overrides: Partial<HistoricalOrderEntry> = {}): Histor
 }
 
 describe("historical order validation", () => {
-	it("accepts every SDK order type and rejects unknown runtime values", () => {
+	it("accepts every SDK order type and any other order type the exchange sends", () => {
 		const entry = createOrderEntry();
 		const supportedTypes = [
 			"Market",
@@ -52,9 +52,12 @@ describe("historical order validation", () => {
 		for (const orderType of supportedTypes) {
 			expect(isValidHistoricalOrderHistoryItem({ ...entry, order: { ...entry.order, orderType } })).toBe(true);
 		}
-		expect(
-			isValidHistoricalOrderHistoryItem({ ...entry, order: { ...entry.order, orderType: "Unexpected Type" } }),
-		).toBe(false);
+		for (const orderType of ["Trailing Stop Market", "Unexpected Type"]) {
+			expect(isValidHistoricalOrderHistoryItem({ ...entry, order: { ...entry.order, orderType } })).toBe(true);
+		}
+		for (const orderType of ["", 7, null]) {
+			expect(isValidHistoricalOrderHistoryItem({ ...entry, order: { ...entry.order, orderType } })).toBe(false);
+		}
 	});
 });
 

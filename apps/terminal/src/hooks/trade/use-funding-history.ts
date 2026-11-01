@@ -98,7 +98,7 @@ export function useFundingHistory(address: string): FundingHistoryResult {
 		isRefreshing: query.isFetching && query.data !== undefined,
 		rangeEndTime: query.data?.endTime ?? null,
 		rangeStartTime: query.data?.startTime ?? null,
-		refresh: () => void query.refetch(),
+		refresh: () => void query.refetch({ cancelRefetch: false }),
 		status,
 	};
 }

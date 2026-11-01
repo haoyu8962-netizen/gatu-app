@@ -104,7 +104,7 @@
   - `window.__hl_debug()` availability
   - no browser page errors or console errors
   - no stale websocket streams or reconnect attempts during normal operation
-  - populated `hl-rq-cache-v1`, `hl-last-mark-v1`, and `hl-mkt-stats-v1`
+  - populated `hl-rq-cache-v1`, `hl-last-mark-v1` (now `hl-last-mark-v2`, keyed by network and coin since 2026-10-31), and `hl-mkt-stats-v1` (renamed `hl-mkt-stats-v2` by ADR 0008; removed on 2026-11-01 by ADR 0047, and the runner no longer checks it)
 - Production builds expose `window.__hl_debug()` and `window.__hl_health()` only when diagnostics are explicitly enabled via `?hl_diagnostics=1` or the persisted `hl-diagnostics-enabled` localStorage flag.
 - Latest passing browser report:
   - `.output/diagnostics/browser-diagnostics-2026-05-02T10-10-24-412Z.json`

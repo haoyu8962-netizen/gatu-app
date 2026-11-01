@@ -28,6 +28,7 @@ function ReviewedOrders() {
 }
 
 const mocks = vi.hoisted(() => ({
+	markPriceLive: false,
 	address: "0x1111111111111111111111111111111111111111",
 	assetId: 120_001 as number | undefined,
 	batchModifyGuard: undefined as ((params: unknown) => void) | undefined,
@@ -64,7 +65,7 @@ const triggerOrder = {
 	triggerPx: "0",
 } as OpenOrder;
 
-const unsafeTriggerOrder = {
+const reduceOnlyStopOrder = {
 	...triggerOrder,
 	isTrigger: true,
 	orderType: "Stop Market",
@@ -72,6 +73,8 @@ const unsafeTriggerOrder = {
 	triggerCondition: "Price above 170",
 	triggerPx: "170",
 } as OpenOrder;
+
+const unsafeTriggerOrder = { ...reduceOnlyStopOrder, reduceOnly: false } as OpenOrder;
 
 const MODIFICATION_UNCONFIRMED_MESSAGE =
 	"The order update was not confirmed by live data. Refresh before retrying; cancellation remains available.";
@@ -135,7 +138,13 @@ vi.mock("@/lib/hyperliquid", () => ({
 		getSzDecimals: () => 3,
 		isLoading: false,
 	}),
-	useMarketsInfo: () => ({ getMarketInfo: () => ({ markPx: mocks.markPx }) }),
+	useMarketsInfo: () => ({
+		getMarketInfo: () => ({
+			markPx: mocks.markPx,
+			markPriceStatus: mocks.markPriceLive ? "success" : undefined,
+			markPriceReceivedAt: mocks.markPriceLive ? Date.now() : undefined,
+		}),
+	}),
 	useSubscription: () => ({ data: { orders: mocks.orders }, error: null, isStale: false, status: "active" }),
 }));
 
@@ -202,6 +211,7 @@ describe("mobile order modification", () => {
 		mocks.clientKey = "0x1111111111111111111111111111111111111111";
 		mocks.env = "Mainnet";
 		mocks.markPx = "160";
+		mocks.markPriceLive = false;
 		mocks.orders = [triggerOrder];
 		mocks.cancelOrders.mockReset();
 		mocks.modifyOrders.mockReset();
@@ -237,6 +247,7 @@ describe("mobile order modification", () => {
 		return {
 			size: document.body.querySelector<HTMLInputElement>('input[aria-label="Size"]'),
 			trigger: document.body.querySelector<HTMLInputElement>('input[aria-label="Trigger Price"]'),
+			price: document.body.querySelector<HTMLInputElement>('input[aria-label="Price"]'),
 		};
 	}
 
@@ -321,6 +332,111 @@ describe("mobile order modification", () => {
 		});
 		expect(mocks.toastSuccess).not.toHaveBeenCalled();
 		expect(document.body.querySelector('input[aria-label="Size"]')).toBeNull();
+	});
+
+	it("changes the price and size of this terminal's own limit order in one replacement", async () => {
+		mocks.orders = [{ ...triggerOrder, cloid: "0x0000000000000000000000000000abcd" }];
+		const { size, price } = openEditor();
+		expect(price?.value).toBe("170");
+		await act(async () => {
+			if (!size || !price) return;
+			changeInput(price, "171.5");
+			changeInput(size, "1.500");
+			pressKey(price, "Enter");
+			await Promise.resolve();
+		});
+
+		expect(mocks.modifyOrders).toHaveBeenCalledOnce();
+		expect(mocks.modifyOrders).toHaveBeenCalledWith({
+			modifies: [
+				{
+					oid: 42,
+					order: { a: 120_001, b: true, p: "171.5", s: "1.5", r: true, t: { limit: { tif: "Gtc" } } },
+				},
+			],
+		});
+		expect(getPendingTradingActionSnapshot().modifications[0]).toMatchObject({
+			originalLimitPx: "170",
+			expectedLimitPx: "171.5",
+			expectedSize: "1.5",
+		});
+	});
+
+	it("changes only the price, closes at once and waits for the new price alone", async () => {
+		let settle!: () => void;
+		mocks.modifyOrders.mockImplementation(async (params: unknown) => {
+			mocks.batchModifyGuard?.(params);
+			await new Promise<void>((resolve) => {
+				settle = resolve;
+			});
+			mocks.batchModifyGuard?.(params);
+			return { response: { data: { statuses: [{ resting: { oid: 42 } }] } } };
+		});
+		const { price } = openEditor();
+		await act(async () => {
+			if (!price) return;
+			changeInput(price, "171.5");
+			pressKey(price, "Enter");
+			await Promise.resolve();
+		});
+
+		expect(mocks.modifyOrders).toHaveBeenCalledOnce();
+		expect(mocks.modifyOrders).toHaveBeenCalledWith({
+			modifies: [
+				{ oid: 42, order: { a: 120_001, b: true, p: "171.5", s: "2", r: true, t: { limit: { tif: "Gtc" } } } },
+			],
+		});
+		expect(getPendingTradingActionSnapshot().modifications[0]).toMatchObject({
+			originalLimitPx: "170",
+			expectedLimitPx: "171.5",
+			expectedSize: null,
+			expectedTriggerPx: null,
+		});
+		expect(document.body.querySelector('input[aria-label="Price"]')).toBeNull();
+		expect(findButton("Modify Order", container)?.disabled).toBe(true);
+		await act(async () => {
+			settle();
+			await Promise.resolve();
+		});
+		expect(mocks.modifyOrders).toHaveBeenCalledOnce();
+	});
+
+	it("refuses at the SDK boundary a payload whose price differs from the confirmed price", async () => {
+		const broadcast = vi.fn();
+		mocks.modifyOrders.mockImplementation(
+			async (params: { modifies: { oid: number; order: Record<string, unknown> }[] }) => {
+				const repriced = {
+					modifies: params.modifies.map((modify) => ({ ...modify, order: { ...modify.order, p: "172" } })),
+				};
+				mocks.batchModifyGuard?.(repriced);
+				broadcast(repriced);
+				return { response: { data: { statuses: [{ resting: { oid: 42 } }] } } };
+			},
+		);
+		const { price } = openEditor();
+		await act(async () => {
+			if (!price) return;
+			changeInput(price, "171.5");
+			pressKey(price, "Enter");
+			await Promise.resolve();
+		});
+
+		expect(mocks.modifyOrders).toHaveBeenCalledOnce();
+		expect(broadcast).not.toHaveBeenCalled();
+	});
+
+	it("marks a price off the market tick as invalid without submitting", () => {
+		const { price } = openEditor();
+		act(() => {
+			if (price) changeInput(price, "170.123456");
+		});
+
+		expect(price?.getAttribute("aria-invalid")).toBe("true");
+		expect(document.body.querySelector('[role="alert"]')?.textContent).toContain(
+			"Enter a valid price using the market's price precision.",
+		);
+		expect(document.body.querySelector<HTMLButtonElement>('form button[type="submit"]')?.disabled).toBe(true);
+		expect(mocks.modifyOrders).not.toHaveBeenCalled();
 	});
 
 	it("closes with Escape without submitting", () => {
@@ -441,6 +557,34 @@ describe("mobile order modification", () => {
 				phase: "awaiting",
 			}),
 		]);
+	});
+
+	it("changes the trigger price of a reduce-only stop with the always-place flag", async () => {
+		mocks.markPriceLive = true;
+		mocks.orders = [reduceOnlyStopOrder];
+		const { trigger } = openEditor();
+		expect(trigger?.closest("label")?.textContent).not.toContain("USDC");
+		await act(async () => {
+			if (!trigger) return;
+			changeInput(trigger, "175");
+			pressKey(trigger, "Enter");
+			await Promise.resolve();
+		});
+
+		expect(mocks.modifyOrders).toHaveBeenCalledOnce();
+		const params = mocks.modifyOrders.mock.calls[0]?.[0] as {
+			a?: boolean;
+			modifies: { order: { r: boolean; t: unknown } }[];
+		};
+		expect(params.a).toBe(true);
+		expect(params.modifies[0]?.order).toMatchObject({
+			r: true,
+			t: { trigger: { isMarket: true, triggerPx: "175", tpsl: "sl" } },
+		});
+		expect(getPendingTradingActionSnapshot().modifications[0]).toMatchObject({
+			expectedTriggerPx: "175",
+			expectedSize: null,
+		});
 	});
 
 	it("explains unsupported modifications on touch without submitting an order", () => {

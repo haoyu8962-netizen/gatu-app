@@ -14,6 +14,7 @@ import {
 	formatVaultUsd,
 	getLatestVaultHistoryValue,
 	getVaultValueTone,
+	isPassiveVaultActionReason,
 	type VaultActionsAvailability,
 	type VaultActionUnavailableReason,
 	type VaultDetail,
@@ -29,8 +30,7 @@ export interface VaultDetailViewProps {
 	owner: VaultOwnerViewState;
 	actionAvailability: VaultActionsAvailability;
 	isTestnet: boolean;
-	isRefreshing?: boolean;
-	onRetryOwner?: () => void;
+	onRetry?: () => void;
 	onRequestAction?: (action: VaultRequestedAction) => void;
 }
 
@@ -39,8 +39,7 @@ export function VaultDetailView({
 	owner,
 	actionAvailability,
 	isTestnet,
-	isRefreshing = false,
-	onRetryOwner,
+	onRetry,
 	onRequestAction,
 }: VaultDetailViewProps) {
 	const { t, i18n } = useLingui();
@@ -62,30 +61,26 @@ export function VaultDetailView({
 	const masterWalletRequiredMessage = useMasterWalletRequiredMessage();
 
 	function getUnavailableReason(reason: VaultActionUnavailableReason): string {
-		if (reason === "geo-checking") return t`Checking regional availability. Vault actions are temporarily unavailable.`;
 		if (reason === "geo-restricted") return t`Vault actions are not available in your region.`;
-		if (reason === "geo-unavailable") {
-			return t`Unable to verify regional availability. Vault actions are temporarily unavailable.`;
-		}
 		if (reason === "agent-only-session") return masterWalletRequiredMessage;
-		if (reason === "detail-unavailable") return t`Verified Vault details are unavailable.`;
 		if (reason === "vault-closed") return t`This Vault is closed and no longer accepts deposits.`;
 		if (reason === "deposits-disabled") return t`This Vault is not accepting deposits.`;
 		if (reason === "owner-disconnected") return t`Connect the verified owner wallet to withdraw Vault equity.`;
-		if (reason === "owner-loading") return t`Verifying the owner Vault balance before enabling withdrawals.`;
-		if (reason === "owner-error") return t`Withdrawal remains unavailable until the owner balance is verified.`;
 		if (reason === "withdrawal-locked") return t`Withdrawal remains locked until the server-reported unlock time.`;
 		return t`No withdrawable Vault equity is available.`;
 	}
 
 	function getActionUnavailableReason(action: VaultRequestedAction): string | null {
-		if (isRefreshing) return t`Refreshing Vault data. Actions are temporarily unavailable.`;
 		const availability = actionAvailability[action];
-		if (!availability.available) return getUnavailableReason(availability.reason);
+		if (!availability.available) {
+			return isPassiveVaultActionReason(availability.reason) ? null : getUnavailableReason(availability.reason);
+		}
 		if (!onRequestAction) return t`Vault actions are temporarily unavailable.`;
 		return null;
 	}
 
+	const depositDisabled = !actionAvailability.deposit.available || !onRequestAction;
+	const withdrawDisabled = !actionAvailability.withdraw.available || !onRequestAction;
 	const depositUnavailableReason = getActionUnavailableReason("deposit");
 	const withdrawUnavailableReason = getActionUnavailableReason("withdraw");
 	const actionsShareReason =
@@ -115,7 +110,7 @@ export function VaultDetailView({
 							aria-describedby={
 								depositUnavailableReason ? (actionsShareReason ? sharedActionReasonId : depositReasonId) : undefined
 							}
-							disabled={depositUnavailableReason !== null}
+							disabled={depositDisabled}
 							onClick={() => onRequestAction?.("deposit")}
 						>
 							<Trans>Deposit</Trans>
@@ -127,7 +122,7 @@ export function VaultDetailView({
 							aria-describedby={
 								withdrawUnavailableReason ? (actionsShareReason ? sharedActionReasonId : withdrawReasonId) : undefined
 							}
-							disabled={withdrawUnavailableReason !== null}
+							disabled={withdrawDisabled}
 							onClick={() => onRequestAction?.("withdraw")}
 						>
 							<Trans>Withdraw</Trans>
@@ -157,6 +152,11 @@ export function VaultDetailView({
 							) : null}
 						</div>
 					)}
+					{onRetry ? (
+						<Button className="mt-1.5" size="xs" variant="outline" intent="neutral" onClick={onRetry}>
+							<Trans>Retry</Trans>
+						</Button>
+					) : null}
 				</div>
 			</header>
 
@@ -213,23 +213,6 @@ export function VaultDetailView({
 						/>
 					)}
 				</section>
-			) : null}
-
-			{owner.status === "error" ? (
-				<div
-					role="alert"
-					className="mx-4 mb-3 flex items-start gap-2 rounded-16 bg-error-soft px-3 py-2.5 text-xs text-error min-[1001px]:mx-5"
-				>
-					<WarningCircleIcon className="mt-0.5 size-4 shrink-0" weight="fill" />
-					<div className="min-w-0 flex-1">
-						<Trans>Your Vault balance could not be verified. Account values and withdrawal remain unavailable.</Trans>
-						{onRetryOwner ? (
-							<Button className="mt-2" size="xs" variant="outline" intent="neutral" onClick={onRetryOwner}>
-								<Trans>Retry account data</Trans>
-							</Button>
-						) : null}
-					</div>
-				</div>
 			) : null}
 
 			<div className="grid gap-3 px-4 pb-4 min-[1001px]:grid-cols-[minmax(0,1.5fr)_minmax(var(--vault-detail-sidebar-min),1fr)] min-[1001px]:px-5">

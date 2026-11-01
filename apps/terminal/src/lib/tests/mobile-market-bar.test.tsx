@@ -13,6 +13,7 @@ import { notifyNumberFormatChange } from "@/lib/number-format-reactivity";
 
 const BASE_TOKEN_ID = "0x11111111111111111111111111111111";
 const mocks = vi.hoisted(() => ({
+	isTestnet: false,
 	formatLocale: "en-US",
 	copy: vi.fn(),
 	copiedValue: null as string | null,
@@ -88,8 +89,14 @@ vi.mock("@/hooks/ui/use-copy-to-clipboard", () => ({
 	}),
 }));
 
+vi.mock("@/lib/network", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/lib/network")>()),
+	isTestnet: () => mocks.isTestnet,
+}));
+
 vi.mock("@/lib/hyperliquid", () => ({
-	getExplorerTokenUrl: (address: string) => `/explorer/token/${address}`,
+	getExplorerTokenUrl: (address: string, isTestnet: boolean) =>
+		`/${isTestnet ? "testnet" : "mainnet"}/explorer/token/${address}`,
 	getMarketApiCoin: (market: { name?: string } | undefined) => market?.name ?? "",
 	getSpotMarketApiCoin: (market: { name?: string } | undefined) => market?.name ?? "",
 	subscribeWsReconnect: () => () => {},
@@ -155,6 +162,7 @@ describe("MobileMarketBar", () => {
 		mocks.formatLocale = "en-US";
 		mocks.copy.mockReset();
 		mocks.copiedValue = null;
+		mocks.isTestnet = false;
 		mocks.midPx = undefined;
 		mocks.midSnapshot = undefined;
 		Object.assign(mocks.selectedMarket, {
@@ -217,6 +225,19 @@ describe("MobileMarketBar", () => {
 		expect(copyButton?.className).toContain("h-11 w-9");
 		expect(copyButton?.className).not.toContain("after:size-11");
 		expect(tokenInfo?.querySelector('[data-slot="mock-social-links"]')?.getAttribute("data-target-size")).toBe("touch");
+	});
+
+	it("opens the token in the explorer of the active network", () => {
+		renderExpandedBar();
+		const link = () =>
+			container.querySelector<HTMLAnchorElement>(
+				'[data-slot="mobile-spot-token-info"] a[aria-label="Open token in explorer"]',
+			);
+		expect(link()?.getAttribute("href")).toBe(`/mainnet/explorer/token/${BASE_TOKEN_ID}`);
+
+		mocks.isTestnet = true;
+		renderBar();
+		expect(link()?.getAttribute("href")).toBe(`/testnet/explorer/token/${BASE_TOKEN_ID}`);
 	});
 
 	it("scopes copied feedback to the current spot address", () => {
@@ -461,5 +482,25 @@ describe("MobileMarketBar", () => {
 		mocks.formatLocale = "fr-FR";
 		act(() => notifyNumberFormatChange());
 		expect(change()?.textContent).toBe("-1 234,6 / -12,35%");
+	});
+
+	it("keeps each change sign before its digits in a right-to-left interface", () => {
+		Object.assign(mocks.selectedMarket, { markPx: "12345", prevDayPx: "10000", dayNtlVlm: "0" });
+
+		renderBar();
+		const change = () => container.querySelector<HTMLElement>("[title$='%']");
+		const section = change();
+		expect(change()?.textContent).toBe("+2,345 / +23.45%");
+
+		act(() => i18n.loadAndActivate({ locale: "ar", messages: {} }));
+		expect(change()).toBe(section);
+		expect(change()?.textContent).toBe("\u200E+2,345 / \u200E+23.45%");
+
+		Object.assign(mocks.selectedMarket, { markPx: "8765.4", prevDayPx: "10000" });
+		renderBar();
+		expect(change()?.textContent).toBe("\u200E-1,234.6 / \u200E-12.35%");
+
+		act(() => i18n.loadAndActivate({ locale: "en", messages: {} }));
+		expect(change()?.textContent).toBe("-1,234.6 / -12.35%");
 	});
 });

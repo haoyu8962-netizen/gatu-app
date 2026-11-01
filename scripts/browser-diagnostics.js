@@ -75,9 +75,6 @@ JSON.stringify((() => {
     "hl-rq-cache-v1": storageSize(localStorage, "hl-rq-cache-v1"),
     "hl-last-mark-v1": storageSize(localStorage, "hl-last-mark-v1"),
   };
-  const knownSessionStorage = {
-    "hl-mkt-stats-v1": storageSize(sessionStorage, "hl-mkt-stats-v1"),
-  };
   const debug = typeof window.__hl_debug === "function" ? window.__hl_debug() : null;
   const health = typeof window.__hl_health === "function" ? window.__hl_health() : null;
   const renderProfile = typeof window.__terminal_render_profile === "function" ? window.__terminal_render_profile() : null;
@@ -110,7 +107,6 @@ JSON.stringify((() => {
       localStorageKeys: Object.keys(localStorage),
       sessionStorageKeys: Object.keys(sessionStorage),
       knownLocalStorage,
-      knownSessionStorage,
     },
     runtime: {
       hasDebug: typeof window.__hl_debug,
@@ -160,12 +156,8 @@ function getProblems(report, consoleOutput, pageErrors) {
 	}
 
 	const knownLocal = report?.storage?.knownLocalStorage ?? {};
-	const knownSession = report?.storage?.knownSessionStorage ?? {};
 	for (const key of ["hl-rq-cache-v1", "hl-last-mark-v1"]) {
 		if (!knownLocal[key]) problems.push(`${key} is missing or empty in localStorage.`);
-	}
-	if (!knownSession["hl-mkt-stats-v1"]) {
-		problems.push("hl-mkt-stats-v1 is missing or empty in sessionStorage.");
 	}
 
 	return problems;

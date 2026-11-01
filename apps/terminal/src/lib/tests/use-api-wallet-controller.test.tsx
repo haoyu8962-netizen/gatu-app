@@ -221,6 +221,7 @@ describe("useApiWalletController", () => {
 	it.each([
 		["ValidationError", "invalid agent payload", "The request could not be prepared. Refresh the page and try again."],
 		["ApiRequestError", "Agent name is already in use", "Agent name is already in use"],
+		["ApiRequestError", "User denied the request: agent limit reached", "User denied the request: agent limit reached"],
 		["ApiRequestError", "", "The API wallet request was rejected."],
 	] as const)("describes a deterministic %s rejection %j", async (errorName, message, expected) => {
 		prepareAuthorization();

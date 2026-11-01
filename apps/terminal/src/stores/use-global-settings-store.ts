@@ -29,10 +29,10 @@ let themeTransitionReleaseFrame: number | undefined;
 const globalSettingsSchema = z.object({
 	state: z.object({
 		hideSmallBalances: z.boolean().optional(),
-		showOrderbookInQuote: z.boolean().optional(),
 		animateOrderbook: z.boolean().optional(),
 		showChartScanlines: z.boolean().optional(),
 		skipOrderConfirmation: z.boolean().optional(),
+		transactionDelayProtection: z.boolean().optional(),
 		numberFormatLocale: z.string().optional(),
 		marketOrderSlippagePercent: z.number().optional(),
 		marginMode: z.enum(["cross", "isolated"]).optional(),
@@ -47,10 +47,10 @@ const validatedStorage = createValidatedStorage(globalSettingsSchema, "global se
 
 const DEFAULT_GLOBAL_SETTINGS = {
 	hideSmallBalances: true,
-	showOrderbookInQuote: false,
 	animateOrderbook: true,
 	showChartScanlines: false,
 	skipOrderConfirmation: false,
+	transactionDelayProtection: true,
 	numberFormatLocale: defaultNumberFormatLocale,
 	marketOrderSlippagePercent: DEFAULT_MARKET_ORDER_SLIPPAGE_PERCENT,
 	marginMode: "cross" as MarginMode,
@@ -62,10 +62,10 @@ const DEFAULT_GLOBAL_SETTINGS = {
 
 interface GlobalSettingsStore {
 	hideSmallBalances: boolean;
-	showOrderbookInQuote: boolean;
 	animateOrderbook: boolean;
 	showChartScanlines: boolean;
 	skipOrderConfirmation: boolean;
+	transactionDelayProtection: boolean;
 	numberFormatLocale: NumberFormatLocale;
 	marketOrderSlippagePercent: number;
 	marginMode: MarginMode;
@@ -75,10 +75,10 @@ interface GlobalSettingsStore {
 	network: Network;
 	actions: {
 		setHideSmallBalances: (next: boolean) => void;
-		setShowOrderbookInQuote: (next: boolean) => void;
 		setAnimateOrderbook: (next: boolean) => void;
 		setShowChartScanlines: (next: boolean) => void;
 		setSkipOrderConfirmation: (next: boolean) => void;
+		setTransactionDelayProtection: (next: boolean) => void;
 		setNumberFormatLocale: (next: NumberFormatLocale) => void;
 		setMarketOrderSlippagePercent: (percent: number) => number;
 		setMarginMode: (mode: MarginMode) => void;
@@ -95,10 +95,10 @@ const useGlobalSettingsStore = create<GlobalSettingsStore>()(
 			...DEFAULT_GLOBAL_SETTINGS,
 			actions: {
 				setHideSmallBalances: (next) => set({ hideSmallBalances: next }),
-				setShowOrderbookInQuote: (next) => set({ showOrderbookInQuote: next }),
 				setAnimateOrderbook: (next) => set({ animateOrderbook: next }),
 				setShowChartScanlines: (next) => set({ showChartScanlines: next }),
 				setSkipOrderConfirmation: (next) => set({ skipOrderConfirmation: next }),
+				setTransactionDelayProtection: (next) => set({ transactionDelayProtection: next }),
 				setNumberFormatLocale: (next) => set({ numberFormatLocale: next }),
 				setMarketOrderSlippagePercent: (percent) => {
 					const current = get().marketOrderSlippagePercent;
@@ -129,10 +129,10 @@ const useGlobalSettingsStore = create<GlobalSettingsStore>()(
 			storage: createJSONStorage(() => validatedStorage),
 			partialize: (state) => ({
 				hideSmallBalances: state.hideSmallBalances,
-				showOrderbookInQuote: state.showOrderbookInQuote,
 				animateOrderbook: state.animateOrderbook,
 				showChartScanlines: state.showChartScanlines,
 				skipOrderConfirmation: state.skipOrderConfirmation,
+				transactionDelayProtection: state.transactionDelayProtection,
 				...(state.numberFormatLocale === defaultNumberFormatLocale
 					? {}
 					: { numberFormatLocale: state.numberFormatLocale }),
@@ -151,10 +151,6 @@ const useGlobalSettingsStore = create<GlobalSettingsStore>()(
 			},
 			merge: (persisted, current) => {
 				const p = (persisted ?? {}) as Partial<GlobalSettingsStore>;
-				const showOrderbookInQuote =
-					typeof p.showOrderbookInQuote === "boolean"
-						? p.showOrderbookInQuote
-						: DEFAULT_GLOBAL_SETTINGS.showOrderbookInQuote;
 				const skipOrderConfirmation =
 					typeof p.skipOrderConfirmation === "boolean"
 						? p.skipOrderConfirmation
@@ -171,10 +167,13 @@ const useGlobalSettingsStore = create<GlobalSettingsStore>()(
 					...DEFAULT_GLOBAL_SETTINGS,
 					...p,
 					numberFormatLocale: normalizeNumberFormatLocale(p.numberFormatLocale),
-					showOrderbookInQuote,
 					animateOrderbook:
 						typeof p.animateOrderbook === "boolean" ? p.animateOrderbook : DEFAULT_GLOBAL_SETTINGS.animateOrderbook,
 					skipOrderConfirmation,
+					transactionDelayProtection:
+						typeof p.transactionDelayProtection === "boolean"
+							? p.transactionDelayProtection
+							: DEFAULT_GLOBAL_SETTINGS.transactionDelayProtection,
 					marketOrderSlippagePercent: slippagePercent,
 					marginMode: p.marginMode === "isolated" ? "isolated" : "cross",
 					theme: p.theme === "light" ? "light" : "dark",
@@ -263,7 +262,6 @@ export function useGlobalSettings() {
 	return useGlobalSettingsStore(
 		useShallow((state) => ({
 			hideSmallBalances: state.hideSmallBalances,
-			showOrderbookInQuote: state.showOrderbookInQuote,
 			showChartScanlines: state.showChartScanlines,
 			numberFormatLocale: state.numberFormatLocale,
 		})),
@@ -300,6 +298,14 @@ export function useSkipOrderConfirmation() {
 
 export function getSkipOrderConfirmation(): boolean {
 	return useGlobalSettingsStore.getState().skipOrderConfirmation;
+}
+
+export function useTransactionDelayProtection() {
+	return useGlobalSettingsStore((state) => state.transactionDelayProtection);
+}
+
+export function getTransactionDelayProtection(): boolean {
+	return useGlobalSettingsStore.getState().transactionDelayProtection;
 }
 
 export function useMarginMode() {
