@@ -7,10 +7,10 @@
   "kind": "task",
   "status": "verified",
   "topics": ["order-entry"],
-  "summary": "用户报告 HYPE 等个别交易对拖动数量滑杆时 Size 数字不稳定、闪烁。审查确认缺陷：每 15ms 预览都用当时的 maxSize（activeAssetData.maxTradeSzs 随标记价 tick）和换算价重算 getSizeForPercent，拇指不动也会在相邻两档间翻（0.23↔0.24）。修复：useOrderEntryData 在 onInteractionStart 捕获 maxSize/换算价/现货余额/szDecimals/sizeMode/Reduce Only 上限并用于手势内全部预览与提交，onInteractionEnd 释放；桌面与手机表单都接上。新增真实 Hook 回归（基准 0.31→0.33 时 77% 仍为 0.23，结束后 0.25），变异检查先红后绿。未做真机拖动验收。",
+  "summary": "手势期间冻结百分比计算基准已随 p31 发布；PR #104 撤回普通报价币订单固定基础币来源的改法，保留显示的报价金额，按实时价格换算基础币；Reduce Only 仍保持持仓约束的基础币来源。PR #106 已把对应测试补入 CI，真人原场景拖动验收仍缺。",
   "thread": null,
   "baseCommit": "2eeec75d",
-  "commits": ["dadaa905", "c5096613"],
+  "commits": ["dadaa905", "c5096613", "2fb0e907"],
   "sources": [
     {"path": "apps/terminal/src/hooks/trade/use-order-entry-data.ts"},
     {"path": "apps/terminal/src/components/trade/mobile/mobile-trade-view.tsx"},
@@ -57,3 +57,11 @@
 PR #102 已合入查询时 dev，head c5096613 包含报价币模式基础币冻结的后续修正；该 head 不在查询时 main ff11eee5，因此 p30 不包含本修复。真实手指/鼠标拖动及报告者原场景验收仍未完成。
 
 本补注为事后核对，原正文、失败与验证版本保留。本轮只核对 Git、任务记录和相关当前规范；来源执行结果不视为本次重跑。查询时间与实际 head 见[本周整理](2026-10-12-weekly-memory-review.md)。
+
+## 周整理补注（2026-10-19）
+
+本记录 10-12 周补注写到的 c5096613 固定普通报价币基础币来源方案，已被同日 2fb0e907 局部撤回；该哈希仍可达不能说明该行为仍采用。现行 docs/slider-interactions.md 与 use-order-entry-data.ts 一致：普通报价币以显示金额为承诺，只有 Reduce Only 保留 selectedBaseSize。p31 来源已交付相关修复，p32 延续；不重做或声称完成物理拖动验收。
+
+后续来源：[2026-10-12-codex-cli-review-followups](2026-10-12-codex-cli-review-followups.md)；[2026-10-12-cloudfront-release-p31](2026-10-12-cloudfront-release-p31.md)。
+
+本补注为事后整理，只核对当前规范、代码、Git 和来源记录；来源测试及发布结果不作为本轮执行。查询时间和实际 head 见[本周整理](2026-10-19-weekly-memory-review.md)。
