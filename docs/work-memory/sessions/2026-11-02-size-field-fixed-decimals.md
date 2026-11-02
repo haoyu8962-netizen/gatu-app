@@ -7,10 +7,10 @@
   "kind": "task",
   "status": "recorded",
   "topics": ["order-entry", "i18n-runtime", "account-funding"],
-  "summary": "运营方反馈手机下单面板拖滑杆时数量在 0.8 与 0.84 之间跳动、右对齐数字随位数伸缩。根因是 domain/trade/order/size.ts 的 formatSizeValue 截断后删掉末尾的零。官方终端只读核对代码（数字输入 _p 经 gp→ele 以 toFixed(nDecimals) 显示外部写入的值）并用运营方已登录账户实测（69/60/43% 得 0.80/0.70/0.50，拖动同样两位），未下单。改为滑杆、百分比框、手机点可用金额、单位切换与只减仓选择写入时保留 szDecimals 位，零仍为 0；手动输入不变，下单字符串仍由 formatSizeForOrder 去零。运营方随后要求审查同类问题并一次修完：市场价格按官方 R3 显示（5 位有效数字、上限 6/8−szDecimals、保留末尾的零），Mid、点订单簿价格、限价平仓 Mid、修改订单起始值与 TP/SL 换算价补到同样位数（TP/SL 四舍五入，官方向下取整），兑换、Earn、金库、质押的 Max 至少两位小数；提交字符串不变。真实设备观感未验收。",
+  "summary": "运营方反馈手机下单面板拖滑杆时数量在 0.8 与 0.84 之间跳动、右对齐数字随位数伸缩。根因是 domain/trade/order/size.ts 的 formatSizeValue 截断后删掉末尾的零。官方终端只读核对代码（数字输入 _p 经 gp→ele 以 toFixed(nDecimals) 显示外部写入的值）并用运营方已登录账户实测（69/60/43% 得 0.80/0.70/0.50，拖动同样两位），未下单。改为滑杆、百分比框、手机点可用金额、单位切换与只减仓选择写入时保留 szDecimals 位，零仍为 0；手动输入不变，下单字符串仍由 formatSizeForOrder 去零。运营方随后要求审查同类问题并一次修完：市场价格按官方 R3 显示（5 位有效数字、上限 6/8−szDecimals、保留末尾的零），Mid、点订单簿价格、限价平仓 Mid、修改订单起始值与 TP/SL 换算价补到同样位数（TP/SL 四舍五入，官方向下取整），兑换、Earn、金库、质押的 Max 至少两位小数；提交字符串不变。运营方同意后经 PR #143 于 2026-11-03 以合并提交 1cf68b39 合入 dev（CI 全部通过），未晋升 main、未发布；真实设备观感未验收。",
   "thread": null,
   "baseCommit": "991796cd",
-  "commits": ["32c75b68"],
+  "commits": ["32c75b68", "ee9b6cca", "5f7a321c", "1cf68b39"],
   "sources": [
     {"path": "apps/terminal/src/domain/trade/order/size.ts"},
     {"path": "apps/terminal/src/hooks/trade/use-order-entry-data.ts"},
@@ -130,6 +130,16 @@
   - 交易启动 +417、总量 +606，两项都含构建身份的噪声，不能全算在这次改动上。
   - 最紧的 `trade-terminal-page` 与 `vaults-page` 改动前就已不足 300 字节。下次发布预检按「其它预算余量不足 200 字节算不通过」的规则，可能踩线。
 - 未做：真实手机与桌面上的观感；官方终端里修改订单弹窗和追踪止损显示的实测（账户没有对应订单）；兑换、Earn、金库、质押的 Max 没有浏览器用例，只有单元测试。
+
+**合入。**
+- 运营方说「推送并开 PR」后，分支 `claude/size-field-fixed-decimals`（`32c75b68`、`ee9b6cca`、`5f7a321c`）推送，并开目标为 dev 的 PR #143。推送前 `origin/dev` 仍是基线 `991796cd`，无需合并。
+- 运营方开启 Auto-fix。Codex 机器人对 `5f7a321c` 的审查完成，没有发现，也没有行内评论。
+- CI 全部通过：类型检查与目录、终端测试两片、浏览器回归两片、配对关的终端构建、官网构建。四个晋升覆盖任务按设计跳过。
+- CI 构建（配对关）的包体读数，没有 `.env.local`，比上面的本地读数低：
+  - `trade-terminal-page` 127,718，余 286 字节；
+  - `vaults-page` 30,536，余 240 字节；
+  - 手机运行时增量余 804 字节，交易启动余 1,974 字节，总量余 9,648 字节。
+- 运营方说「合并 PR」后，PR #143 于 2026-11-03 01:24（UTC+8）以合并提交 `1cf68b39` 合入 dev。合并时锁定头提交 `5f7a321c`，合并后的树与它相同。未晋升 main，未发布。
 
 ## 后续与替代关系
 
