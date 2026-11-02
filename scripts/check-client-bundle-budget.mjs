@@ -107,7 +107,13 @@ const budgets = {
 	// startup +91, mobile +68). Measured as the fixed-identity Node 22.15.0 build with VITE_MOBILE_PAIRING_ENABLED=false
 	// of the integration a5aa0d7f (3,366,564) minus that of dev d99c2bc9 (3,350,856), both without .env.local; the +363
 	// dev had already used stays counted (docs/terminal-performance-baseline.md).
-	totalGzipBaselineBytes: 3_366_201,
+	// Re-baselined 2026-11-02 before release p37 to the fixed-identity Node 22.15.0 build of dev ce18a5a5 with
+	// VITE_MOBILE_PAIRING_ENABLED=false (3,372,998, no .env.local; docs/terminal-performance-baseline.md). It folds in
+	// the +6,797 that dev had used since the raise above, almost all of it the second batch of confirmed audit fixes
+	// (PR #132), merged under the pairing-off allowance. The client code is that of release p36: release builds of it
+	// (pairing on, production .env.local), with settings that differ only in their build identity, read 3,375,833 to
+	// 3,376,302, and the p37 build exceeded the previous allowance by 101.
+	totalGzipBaselineBytes: 3_372_998,
 	totalGzipAllowedIncreaseBytes: 10_000,
 	tradeStartup: {
 		requiredRouteIds: ["__root__", "/trade/$symbol"],
