@@ -402,7 +402,7 @@ test("preserves quantity, its denomination and reduce-only through real desktop/
 		else await expect(page.getByRole("button", { name: "USDC", exact: true })).toBeVisible();
 	}
 	await page.getByRole("button", { name: "USDC", exact: true }).click();
-	await expect(size).toHaveValue("1");
+	await expect(size).toHaveValue("1.000");
 	await page.setViewportSize({ width: 1440, height: 1000 });
 	await page.getByRole("checkbox", { name: "Reduce Only", exact: true }).uncheck();
 	await page.getByRole("checkbox", { name: "Take Profit / Stop Loss", exact: true }).check();

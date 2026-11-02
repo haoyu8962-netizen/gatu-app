@@ -614,6 +614,11 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Fixed
 
+- The order size field keeps every size decimal when the slider, the percentage box, the phone's
+  Available amount, the unit toggle or a Reduce Only selection fills it (0.80 HYPE rather than 0.8), as
+  on the official terminal, so a nonzero size no longer changes width while the slider moves within the
+  same whole number. A size that rounds down to zero still shows 0. Typed sizes stay as typed, and
+  orders still send the size without trailing zeros.
 - A language link (`?lang=`) loads the current shell from the network instead of the offline shell
   cache, so a returning visitor still gets the link's language after a release. The cached shell is
   used only when the network fails or the server returns a 5xx error, and the first navigation

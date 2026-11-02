@@ -67,11 +67,16 @@ interface SizeModeToggleInput {
 	szDecimals: number;
 }
 
+/**
+ * A size the terminal writes into the size field keeps every size decimal (0.80, not 0.8), as the official
+ * terminal's input does, so the number keeps its width while the slider moves. Typed sizes stay as typed, and
+ * `formatSizeForOrder` still sends the exchange the trimmed form.
+ */
 function formatSizeValue(value: Numeric, decimals: number): string {
 	const size = toBig(value);
 	if (!size || size.lte(0)) return "0";
 	const fixed = size.toFixed(decimals, Big.roundDown);
-	return fixed.includes(".") ? fixed.replace(/\.?0+$/, "") : fixed;
+	return Big(fixed).eq(0) ? "0" : fixed;
 }
 
 export function getMaxSizeForOrderEntry(input: OrderEntryMaxSizeInput): number {
@@ -311,13 +316,18 @@ export function getReduceOnlySizeSelection(
 	const max = toBig(maxBase);
 	if (!max?.gt(0) || !Number.isFinite(pct) || pct < 0 || pct > 100) return null;
 	const baseSize = max.times(pct).div(100).round(szDecimals, Big.roundDown).toFixed();
-	const size = getSelectedSizeDisplay(baseSize, sizeMode, price);
+	const size = getSelectedSizeDisplay(baseSize, sizeMode, price, szDecimals);
 	return size === null ? null : { size, baseSize };
 }
-export function getSelectedSizeDisplay(baseSize: string, sizeMode: SizeMode, price: number): string | null {
+export function getSelectedSizeDisplay(
+	baseSize: string,
+	sizeMode: SizeMode,
+	price: number,
+	szDecimals: number,
+): string | null {
 	const base = toBig(baseSize);
 	if (!base || base.lt(0)) return null;
-	if (sizeMode === "base") return base.toFixed();
+	if (sizeMode === "base") return formatSizeValue(base, szDecimals);
 	const px = toBig(price);
 	return px?.gt(0) ? base.times(px).toFixed(QUOTE_SIZE_INPUT_MAX_DECIMALS, Big.roundDown) : null;
 }

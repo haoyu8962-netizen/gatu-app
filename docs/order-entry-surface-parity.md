@@ -156,3 +156,23 @@ pnpm --dir apps/terminal exec playwright test \
 - 与官方的差异：表单既有换算优先用标记价（`getConversionPrice`），官方有限价时用限价。这是表单原有行为，本次未改。
 
 回归：`src/lib/tests/book-size-mode-request.test.tsx` 用真实的下单与订单簿两个 store 核对：只换算一次、之后改单位或重新渲染不重放、请求早于表单挂载时在 StrictMode 下也只换算一次、单位相同不换算、别的市场的请求丢弃；`tests/trade-panel-open-interest-cap.test.tsx`（桌面）与 `tests/mobile-trade-size-validation-a11y.test.tsx`（手机）核对两端都接上了这条路径；`orderbook-panel-safety.test.tsx` 与 `mobile-orderbook-subscription.test.tsx` 核对两处单位下拉写出的请求。
+
+## 程序填入的数量保留全部小数位（2026-11-02）
+
+运营方反馈：手机下单面板拖动数量滑杆时，数量在 0.8 与 0.84 之间跳动，右对齐的数字随位数伸缩，看起来不稳。原因是 `domain/trade/order/size.ts` 的 `formatSizeValue` 先按 `szDecimals` 截断，再删掉末尾的零。
+
+官方做法：2026-11-02 在官方终端核对，读了页面自己加载的代码，并用运营方已登录的账户实测，没有下单，也没有启用交易。
+- 数量框是通用数字输入 `_p`。外部写入的值经 `gp` 显示，没有开 `trimTrailingZeros` 时走 `ele(e, nDecimals)`，也就是 `e.toFixed(nDecimals)` 再换成当地的小数分隔符。下单表单传入的 `nDecimals` 在名义金额模式下是 2，否则是 `szDecimals`；滑杆按 `F3(百分比 × 最大数量 / 100, nDecimals, "floor")` 取值。
+- 在 HYPE（`szDecimals` 2）上依次输入百分比 69、60、43，数量框显示 0.80、0.70、0.50；拖动滑杆时同样固定两位小数。用户手动输入的文字保持原样。
+- 本终端的 TP/SL 弹窗本来就按 `toFixed(szDecimals)` 填写数量。
+
+本终端改为：
+- 以下几种情况由程序写入数量框时，保留全部数量小数位：滑杆、百分比框、手机上点「可用」金额填满、计价单位切换、只减仓选择。基础币按 `szDecimals` 位，计价币仍是 2 位；截断后为零时仍显示 `0`。
+- 手动输入不受影响。发给交易所的数量仍是规范的去零字符串：普通单、触发单和 TWAP 经 `formatSizeForOrder`，Scale 各档经 `formatDecimalFloor`；只减仓的 `baseSize`（执行来源）也仍是去零形式。对这些新补零的草稿，交易所收到的字符串没有变化。
+- 数量框本来就用 `tabular-nums`。对非零、整数位数相同的数量，补零后滑动时数字宽度不再变化。但有三种情况宽度仍会变：截断后为零的 `0` 进入第一个最小数量单位时（比如 `0` 到 `0.01`）；计价币模式在零值时显示 `0.00`；整数部分进位时，这一点与官方相同。
+- 小数点设为逗号时，数量框仍显示点，例如 `0.80`。这是 [数字格式设置](number-format-setting.md) 对输入框的现行规则；官方会按当地的分隔符显示。
+
+回归：
+- `src/lib/tests/order-size.test.ts`：68% 与 72% 得 0.80 与 0.84；5 位小数的市场得 0.00120；`formatSizeForOrder` 仍得去零形式；从计价币切回基础币得 1000.00。
+- `src/lib/tests/reduce-only.test.ts`：只减仓选择显示 0.60，`baseSize` 为 0.6。
+- 浏览器：夹具里 BTC 的 `szDecimals` 为 3。`tests/browser/reduce-only.pw.ts` 要求 100% 只减仓显示 `7.150`；`tests/browser/mobile-trade-all-orders.pw.ts` 要求在只减仓状态下从 USDC 切回 BTC 时显示 `1.000`。
