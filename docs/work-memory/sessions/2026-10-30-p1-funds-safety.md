@@ -7,10 +7,10 @@
   "kind": "task",
   "status": "recorded",
   "topics": ["account-funding", "pr-review"],
-  "summary": "全功能审查第一批的第二组（D1、D2、B4/D4）。D1：发送前调用 preTransferCheck，被制裁地址拒绝；有激活费或目的地址从未发过交易时在同一弹窗进入确认步骤，披露费用与丢失风险，必须勾选后静态的 Send / Send with Fee 才可用；请求失败或答复异常不发送。D2：邮箱提现拒绝本人地址与两个网络的 USDC 合约地址，表单与提交时都检查。B4/D4：发送改用与提款相同的资金动作可用性（含地区）并在执行前复核地区；兑换与反手跟随交易地区闸门，反手在资产锁内复核。平仓类动作不变，待运营方决定。全量单测与 account-actions 浏览器套件结果见正文。未推送。",
+  "summary": "Send 增加目的地址预检和必要的费用确认，提现校验目标，Swap 和反手复核地区。#124 原 head 两片浏览器回归失败，#129 带入平仓夹具修复，变更随 p36 发布。真实资金操作仍待验。",
   "thread": null,
   "baseCommit": "d99c2bc9",
-  "commits": [],
+  "commits": ["b617f844", "4aaa1222", "0144c66f", "e35d1f8b", "21ca05c5"],
   "sources": [
     {"path": "apps/terminal/src/components/trade/positions/send-modal.tsx"},
     {"path": "apps/terminal/src/domain/trade/send-destination.ts"},
@@ -77,3 +77,7 @@
 
 - 受限地区的只减仓动作、发送 Max 是否预留激活费：已按官方实践决定（见下文「按官方实践处理的待定事项」）。
 - 发送确认步骤的 320px 换行没有用浏览器布局套件核对。
+
+## 周整理补记（2026-11-02）
+
+查询时 #124 的 `46bcc1fb` 仍有 2 项 FAILURE。`21ca05c5` 修正 position-close-all 夹具的地区钩子替身，在 #129 头部及 p36 均可达。 [本周核对记录](2026-11-02-weekly-memory-review.md)

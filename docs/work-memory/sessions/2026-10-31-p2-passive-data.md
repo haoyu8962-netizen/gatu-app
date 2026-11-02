@@ -7,10 +7,10 @@
   "kind": "task",
   "status": "recorded",
   "topics": ["market-recovery", "order-entry"],
-  "summary": "运营方要求继续修复 P2，修复方案先核对官方开发文档并与官方终端对比。本组为全功能审查的被动数据与全局项，先做两项明确违反现行契约、不需要决策的：B21 持仓 TP/SL 弹窗在标记价未就绪时用警告框显示「Loading...」（守卫本来就不靠它），B17 桌面「存款与提款」页签读取失败时红字「Failed to load deposits and withdrawals.」（手机已静默，规范要求保留主动重试与已确认的上限说明）。依据官方前端包（TP/SL 弹窗无加载文字、确认只按校验禁用；存提款为空数组渲染、无错误文字）与 docs/mobile-data-presentation.md。分支 claude/p2-passive-data，基于本地集成分支 claude/p1-integration 的 329f241d。E9：交易、委托、资金费三张历史页删掉 role=alert 告警横条与大号警告图标，首次失败与离线改为共享的中性占位（HistoryPageUnavailable：读屏描述 + 中性 Retry，离线时只留忙碌占位），空缓存加刷新失败不再得出没有记录；上限说明改用 stroke-warning-weak 与 warning-soft。F3：手机上设置弹窗打开时焦点放在弹层本身（不聚焦滑点输入、不弹键盘），并隐藏「Desktop layout · Reset」。Codex 审查 7.5/10 的 3 项 P2 与 1 项 P3 已修（刷新中的空缓存不下结论、刷新中不给 Retry、读屏节点移出忙碌区、存提款空快照刷新失败不下结论）。变异均被测试抓到；未推送。",
+  "summary": "TP/SL 与历史表读取中的错误或未确认空状态保持静默，手机打开设置时避免弹起键盘。#131/#132 接续组合、质押、推荐与金库的展示，相关修复进入 p36。",
   "thread": null,
   "baseCommit": "329f241d",
-  "commits": [],
+  "commits": ["9e932c0c", "7833ae79", "5c51e514", "0fa4b79c", "9cf10b51"],
   "sources": [
     {"path": "apps/terminal/src/components/trade/positions/position-tpsl-modal.tsx"},
     {"path": "apps/terminal/src/components/trade/positions/account-transfers-tab.tsx"},

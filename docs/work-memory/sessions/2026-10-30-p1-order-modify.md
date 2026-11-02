@@ -7,10 +7,10 @@
   "kind": "task",
   "status": "recorded",
   "topics": ["pr-review", "order-entry"],
-  "summary": "全功能审查第一批的第六组（B3）。本终端下的每笔订单都由 trackOrderRequest 带 cloid，而改单规则对非空 cloid 一律拒绝，所以桌面没有编辑按钮、手机改单只报不能修改。现在合法的 cloid（0x 加 32 位十六进制）不再拦截，格式不对仍失败关闭；按官方做法以 oid 改单、替换订单不带 c。限价单新增改价：领域层 limitPrice 字段（新价必须已在最小变动单位上，否则 invalid-price；与原价相同为 no-change），桌面价格单元格行内编辑，手机改单弹窗增加价格输入，可与数量一起改成一笔替换；待确认记录与对账增加原价与期望价。触发单仍不开放（需要 SDK 的 always-place）。未推送。",
+  "summary": "支持带合法 cloid 的本终端订单改单及限价修改。后续允许只减仓触发单按 oid 使用 always-place 替换，随 p36 发布。交易所对 a: true 替换的实际结果及 oid 行为仍待签名验收。",
   "thread": null,
   "baseCommit": "d99c2bc9",
-  "commits": [],
+  "commits": ["7831e8cf", "501a4208", "4dfc2662", "eec63eb9"],
   "sources": [
     {"path": "apps/terminal/src/domain/trade/open-order-modification.ts"},
     {"path": "apps/terminal/src/domain/trade/open-order-modification-form.ts"},
@@ -69,3 +69,7 @@
 ## 后续与替代关系
 
 - 触发单改单已按官方实践部分放开（见上文「按官方实践处理的待定事项」）；`a: true` 替换在交易所的实际表现（含改单后 `oid` 是否保留）未在测试网验证，需要运营方签名。
+
+## 周整理补记（2026-11-02）
+
+旧摘要中触发单全部不可改的范围已缩小。后续提交 `4dfc2662` 只开放只减仓触发单，保留原记录中的测试网验收项。 [本周核对记录](2026-11-02-weekly-memory-review.md)

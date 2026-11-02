@@ -122,3 +122,8 @@ Codex 只读窄范围复审（low）给 9.3/10，无发现。它认为源码层�
 - 发布后要在真实浏览器里验证：回访者第一次点语言链接（仍由旧 SW 回答）；之后的语言链接走网络；离线与 5xx 时回退缓存壳；以及 CloudFront README 已列的 iOS Safari。
 - PR 合入 `dev` 后，两条源分支 `claude/link-language-review-fixes`、`claude/release-p35-record` 与工作树 `sync-code-start-dev-08b8d0` 可以清理。它们属于别的会话，按手册第 4 节要逐个经运营方同意后再删。
 - p35 记录已追加更正：补上 `452a2247` 的存在、审查与修复，并写明 p35 的发布结论不覆盖这些改动。原文没有改写。
+- 2026-11-02 补记（另一会话）：
+  - 运营方说「全绿后合并」后，PR #134 于 05:09:04Z 以 merge commit 合入 `dev`（`ce18a5a5`，父 `df119e05`、`b726adb7`，树与头相同），第一条里「合并仍要运营方同意」到此结束。
+  - 合并前头 `b726adb7` 的 Static Checks、Terminal Tests 两片与配对关闭构建都通过；浏览器回归没有触发，因为它的路径过滤不含 `apps/terminal/public/**`。
+  - 同日随 p37 发布（`main` `2fcae4d5`，见 [p37 发布记录](2026-11-02-cloudfront-release-p37.md)）。
+  - 上面列出的真实浏览器验证仍未做。

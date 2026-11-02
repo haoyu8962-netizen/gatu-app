@@ -77,6 +77,12 @@
   - 判定只认 GitHub 生成的 PR 合并提交：两个父提交，提交者 `noreply@github.com`，标题 `Merge pull request #N from …`。所以进 `dev` 的 PR 也要用 merge commit 合并。用 squash 或 rebase 合并，或者直接推送 `dev`，都会让覆盖运行早于该提交的工作流在下一次晋升全跑。D1 原文只写了进 `main` 的 PR；它的理由（任务记录引用分支上的提交哈希）对进 `dev` 的 PR 同样成立，`.claude/rules/git.md` 已补上这一条。
   - 五个工作流都触发的一次进 `dev` 推送，按作业向上取整约 64–68 计费分钟（上面两轮实测）。「后果与边界」第一条估算的约 33 计费分钟已经过时：单测已拆成两片（2026-10-12 补记），单测与浏览器套件也都变长了。`actions/runs/{id}/timing` 的 `billable` 返回 0，拿不到官方计费数。
   - 本机读接口时出现过读响应体中途断线（`terminated`）。脚本只在请求本身失败时重试一次，读响应体失败不会重试，该工作流会带警告全跑：少省一次分钟，不会误跳过。
+- 2026-11-02 补记（D8 第一次晋升，[p37 发布记录](../work-memory/sessions/2026-11-02-cloudfront-release-p37.md)）：PR #139（`dev` `ce18a5a5` → `main`）是判定作业第一次在晋升 PR 上运行。上文要等第一次晋升才能观察的几项，结果如下：
+  - 四个判定作业都分到了运行器，各 7–11 秒成功。它们检出 GitHub 的合并提交（`Merge ce18a5a5… into 047b4bb3…`），读到了 #134、#130 的运行与检出日志，所以权限、无 blob 克隆和读日志都正常。判定与本机预演逐字相同，没有出现 `the check failed` 警告。
+  - 四个工作流都判为覆盖：`Terminal Tests` 与 `Production Builds` 由 #134 的运行覆盖，浏览器回归与 `Website and Brand` 由 #130 的运行覆盖（#134 没有改动这两个工作流的输入）。
+  - 被跳过的下游作业各显示为一条 skipped，名称里的矩阵变量不展开，例如 `Test terminal and release tooling (${{ matrix.shard }}/2)`。`Production Builds` 只运行 `pairing true`（8 分 25 秒）；`Static Checks` 照常全跑（2 分 37 秒）。
+  - 按作业向上取整约 16 计费分钟，接近 2026-10-31 补记估算的 14–15；从开 PR 到最后一项检查结束约 9 分钟。
+  - 同日第二次晋升 #141 只带一个改预算脚本的 PR（#140）。PR 的差异只有两个文件，所以只有 `Terminal Tests` 与 `Production Builds` 触发，两者都由 #140 的运行覆盖；`Static Checks`、浏览器回归与 `Website and Brand` 的 `paths` 不含这两个文件，没有触发。本机预演对后两个工作流判为「not covered」，原因是上次晋升以来没有 PR 改动过它们的输入。这次晋升用不到这个判定：没有新输入的工作流，不在晋升 PR 的差异里，所以不会触发。
 
 ## 证据
 

@@ -7,10 +7,10 @@
   "kind": "task",
   "status": "recorded",
   "topics": ["pr-review", "order-entry"],
-  "summary": "运营方 2026-10-31 选择把五个 P2 分支（下单校验、表格、资金、行情、被动数据）合成一个集成 PR 推到 dev。分支 claude/p2-integration 从 claude/p2-order-validation（已含本地 P1 集成 329f241d：dev d99c2bc9 + #123–#128 + #124 夹具修复）起，依次 --no-ff 合并其余四个分支；冲突只在 CHANGELOG、INDEX.md、balances.test.ts 末尾与 historical-orders-page.tsx 的导入行。合并结果与已跑过全量的本地预览只差任务记录与 CI 清单。按 CI 元数据的生产构建只超出总量预算（+15,813，允许 10,000）；按固定构建身份依次构建 dev、P1 集成与本分支，测得 +15,708（P1 +8,360、P2 +7,348），基线上调到 3,366,201（docs/terminal-performance-baseline.md，提交 1178a94d）。Codex 只读审查集成本身 9.5/10、无发现；本地按 CI 跑完八组浏览器回归共 240 项通过。",
+  "summary": "五组 P2 连同 P1 后续修复经 #129 进入 p36。集成带入 #124 缺失的夹具修复并重定总量基线。评审后又修正休眠和改时场景下的 L1 过期估计，保留早期预算及回归失败记录。",
   "thread": null,
   "baseCommit": "d99c2bc9",
-  "commits": [],
+  "commits": ["329f241d", "21ca05c5", "1178a94d", "ca327a50", "4d6398ed", "44d95ef9", "90658436"],
   "sources": [
     {"path": "docs/work-memory/sessions/2026-10-31-p2-order-validation.md"},
     {"path": "docs/work-memory/sessions/2026-10-31-p2-tables.md"},

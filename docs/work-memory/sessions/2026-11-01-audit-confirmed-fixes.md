@@ -7,10 +7,10 @@
   "kind": "task",
   "status": "recorded",
   "topics": ["i18n-runtime", "pr-review", "hyperliquid-api"],
-  "summary": "PR #129 合入 dev（90658436）后，运营方要求修复 2026-10-30 全功能审查里确认仍存在的问题，并「请你调试 app.hyperliquid.xyz/trade/HYPE，根据实践来修复」。分支 claude/audit-confirmed-fixes，基于 90658436。第一组不需要运营方决定的项全部修完：F1 四种语言 31 条空译文补齐并加 catalog-completeness-contract；F2 阿拉伯语带符号数值按 CLDR 加 U+200E（useNumberFormat 在从右到左界面返回另一套函数）；M3 ⌘K 命令菜单本地化、现货价格按现货规则；E12 质押被拒显示交易所原文（ADR 0024）；E13 组合页切回时刷新期间保留上一份数据（官方无年龄门槛）；M7 最大滑点改强调色；成交历史日期带年份。B6 经主网只读实测不成立，只改文档。每项有会失败的测试与变异核对。第二组（订单簿 M2/M9/C5、选择器 M4/C9、显示名 C3、无价代币计 0、E5、手机成交筛选）留到下一批。2026-11-01 推送并开 PR #131；CI 一项时区相关的测试失败已修；运营方要求的 Codex 三路对抗审查（V 9.2、B 8.3、C 8.0）查出的 E13 未来时间戳、金库与 API 钱包的拒绝分类顺序、资金费等历史缺年份都已修复并做变异核对；之后三轮窄范围复审 8.3、8.5、9.2，运营方同意后这些审查修复于 2026-11-01 推送到 PR #131。",
+  "summary": "#131 修正四种语言的缺译、RTL 正负号、命令菜单、质押拒绝提示、组合恢复及历史日期等，随 p36 发布。审查后的 CI 结果与早期失败分别保留。",
   "thread": null,
   "baseCommit": "90658436",
-  "commits": [],
+  "commits": ["cd49cb62", "5d226361", "6f2942b8", "b426535a", "4a280f04", "695080a6", "ec067207"],
   "sources": [
     {"path": "docs/work-memory/sessions/2026-10-30-full-feature-audit.md"},
     {"path": "docs/number-format-setting.md"},
