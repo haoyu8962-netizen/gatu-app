@@ -433,6 +433,65 @@ The sixth round (commit `4af147fd`) changed one classification function in the d
 3,286,638 in total (+16), 1,626,663 static trade startup, 117,769 mobile and 201,070 desktop, with the desktop runtime
 increment 918 bytes under its allowance. Later commits on the branch change tests and documents only.
 
+## Total-client re-baseline before release p37 (2026-11-02)
+
+The release build of p37 failed the total-client budget: 3,376,302 gzip bytes, +10,101 over the 3,366,201 baseline
+against the 10,000-byte allowance; every other budget passed. It was built from `main` `17766a53`
+([PR #139](https://github.com/zora4523-bot/gatu-app/pull/139)), whose tree is that of `dev` `ce18a5a5`. Its client code
+is that of release p36 (`047b4bb3`): since then `dev` merged only CI tooling
+([PR #130](https://github.com/zora4523-bot/gatu-app/pull/130)), documents and
+[PR #134](https://github.com/zora4523-bot/gatu-app/pull/134), whose one runtime change, `public/sw.js`, is copied as is
+and is not part of `.output/public/assets`. No dependency changed: `pnpm-lock.yaml` and every `package.json` are
+identical to `047b4bb3`. Release builds of this code (pairing on, the production `.env.local`, Node 22.15.0), whose
+settings differ only in their build identity, read:
+
+| Build | Commit | All client JS + CSS | Over 3,366,201 |
+| --- | --- | ---: | ---: |
+| p36 precheck | `26c06d02` | 3,376,114 | +9,913 |
+| p36 release | `047b4bb3` | 3,375,833 | +9,632 |
+| p37 precheck | `ce18a5a5` | 3,375,877 | +9,676 |
+| p37 release | `17766a53` | 3,376,302 | +10,101 |
+
+The CI build of the promotion (pairing on, CI metadata, no `.env.local`) read 3,375,959 (+9,758). The 469-byte spread
+is consistent with the build-identity noise that the funds dialog section below describes: the commit hash, release ID
+and build time are compiled into the client, so they change the content hash of every chunk that holds them or imports
+one that does, and the renamed imports compress differently. That is an attribution, not a controlled experiment: no
+per-asset comparison of these four builds was made. Either way, the room left had become smaller than the spread
+between builds of unchanged code, so a release build could fail without any change to the code.
+
+Measured in an isolated worktree of `ce18a5a5` without `.env.local`, with Node 22.15.0, pnpm 10.21.0
+(`CI=true pnpm install --frozen-lockfile --prefer-offline`), `NITRO_PRESET=node-server` and the fixed identity of the
+reproduction protocol (`SAIRN_BUILD_SHA=e4e09966b175679ac7e13ea192246ce27fae15b5
+SAIRN_RELEASE_ID=startup-guardrail-baseline SAIRN_BUILD_TIME=2026-08-27T00:00:00.000Z NODE_ENV=production pnpm --filter
+@sairn/terminal build`), once per pairing state, pairing on first:
+
+| Metric | pairing off (`VITE_MOBILE_PAIRING_ENABLED=false`) | pairing on (`=true`) |
+| --- | ---: | ---: |
+| All client JS + CSS | 3,372,998 (451 assets, 449 chunks) | 3,375,924 (450 chunks) |
+| Route preloads only (6 files, diagnostic) | 522,716 | not read |
+| Static trade startup (103 assets) | 1,651,557 | 1,652,780 |
+| Mobile runtime increment (15 assets) | 119,786 | 119,776 |
+| Desktop runtime increment (30 assets) | 204,624 | 204,556 |
+| Mobile static + runtime (118 assets) | 1,771,343 | 1,772,556 |
+| Desktop static + runtime (133 assets) | 1,856,181 | 1,857,336 |
+| `trade-terminal-page` | 127,645 | 127,640 |
+| `vaults-page` | 30,522 | 30,521 |
+
+The total-client baseline becomes the pairing-off build, 3,372,998 (+6,797), as it did before release p32. That folds
+in what `dev` merged under the pairing-off allowance since the 2026-10-31 raise: the +363 already counted then,
+[PR #131](https://github.com/zora4523-bot/gatu-app/pull/131) (its head `d8a2acf5` read 3,366,511, 53 below the
+integration measured on 2026-10-31) and the second audit batch,
+[PR #132](https://github.com/zora4523-bot/gatu-app/pull/132) (+6,252 measured for `a9973c83` in the next section; the
+remaining +235 over `a9973c83` covers its later commits and build noise together and was not measured apart). The pairing-on build sits +2,926 over the new baseline and the four release
+builds +2,835 to +3,304, so promotion and release builds fit again with about 6,700 bytes to spare.
+
+The other baselines are unchanged and this tree passes them. Pairing off, it reads static trade startup +7,628 (2,372
+left), mobile runtime increment +9,206 (794 left), desktop runtime increment +1,941 (8,059 left), `trade-terminal-page`
+127,645 (359 left) and `vaults-page` 30,522 (254 left). Release builds sit closer: pairing on and the production
+`.env.local` add about 1,600 to the static trade startup, which the p37 release build read at +9,210 (790 left), and its
+mobile runtime increment read +9,199 (801 left). Growth on either path has to be measured in the release
+configuration; growth beyond that room needs a reduction or a documented re-baseline before a release build can pass.
+
 ## Second audit batch route-surface re-baseline (2026-11-01)
 
 The second batch of confirmed audit fixes (`claude/audit-group2`, stacked on the branch of
