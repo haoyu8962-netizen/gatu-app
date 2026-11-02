@@ -234,6 +234,8 @@ jobs:
           src/lib/tests/dashboard-chrome.test.tsx
           src/lib/tests/dashboard-frame-view.test.tsx
           src/lib/tests/legal-doc-page.test.tsx
+          src/lib/tests/client-bootstrap-error.test.ts
+          src/lib/tests/sw-navigation-cache.test.ts
 
       - name: Test order draft and exchange session lifecycles
         working-directory: apps/terminal
@@ -402,6 +404,7 @@ jobs:
           src/lib/tests/date-locale-reactivity-contract.test.ts
           src/lib/tests/number-format-direction.test.tsx
           src/lib/tests/i18n-hot-switch.test.tsx
+          src/lib/tests/link-locale.test.ts
           src/lib/tests/action-error.test.ts
           src/lib/tests/errors.test.ts
           src/lib/tests/lingui-helper-translator-contract.test.ts

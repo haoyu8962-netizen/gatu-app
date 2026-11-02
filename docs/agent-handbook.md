@@ -54,6 +54,7 @@
   - `git add -- <已暂存删除的路径> <其他文件>` 会整体中止，一个文件都不暂存。暂存后一律用 `git status --short` 检查。
   - git stash 栈被所有工作树共享，不要用裸 `git stash` 或 `git stash pop`。
   - 工作树没装依赖时，提交钩子找不到 lefthook，会打印「Can't find lefthook in PATH」后放行，commitlint 与 Biome 都没跑，钩子的后备探测还会留下 Swift 的 `.build/` 目录。这时用主检出的 `node_modules/.bin/commitlint`（在主检出目录运行）手动校验提交信息，提交后删掉 `.build/`；改了代码的提交先装依赖再提交。
+  - Claude 桌面应用的命令沙盒里，lefthook 找得到却启动不了钩子命令：commit-msg 在 0.00 秒内报 `operation not permitted` 并拒绝提交（2026-11-02 实测，同一条信息在沙盒外通过），所以提交在沙盒外执行。同一个沙盒里 `gh` 校验不了 TLS 证书（`x509: OSStatus -26276`），也要在沙盒外运行；`pnpm install` 用不了全局存储，会把依赖下载到工作树里 Git 忽略的 `.pnpm-store/`（约 1.4 GB），`prepare` 里的 `lefthook install` 因写不了 `.git/hooks` 而失败，钩子本来就在，不影响安装。
 - **清理工作树前**逐项核对：`git status --porcelain` 为空；分支提交都已在 `origin/dev`（只在 `main` 上的分支先核对 `origin/main` 的祖先关系）；没有 `.worklog/`；`.env.local` 与主检出 `cmp` 相同（不打印内容）；`lsof -d cwd -Fpcn` 显示没有进程以它为工作目录（`lsof +D` 会递归扫描 `node_modules`，非常慢）；没有打开的 PR。其他会话名下的工作树，要运营方逐个同意后才清理。发布工作树放在仓库外（`gatu-release-*`），保留到下一次发布，作为回滚产物。
 - **shell 陷阱**：`| tail` 之类的管道会吞掉前一个命令的退出码，判断成败时单独取 `$?`；`pnpm build … | head` 会让构建收到 SIGPIPE 提前终止，应先写日志文件再 grep；zsh 不按空格拆分 `$var`，传文件列表要写 `${=var}`；不要用 `path`、`status` 作变量名；macOS 没有 `timeout` 命令；BSD `sed` 不认 `\|`，要用 `sed -E` 加 `|`。
 - **本机网络**：本机有 HTTP 代理（`127.0.0.1:6152`）和 fake-ip DNS（解析到 `198.18.x.x`）。核对 DNS 要问权威服务器（`dig @<权威 NS>`，看 `aa` 标志）；`curl --resolve` 要加 `--noproxy '*'`；经过代理时 `curl -I` 的第一行是 CONNECT 的 200，状态码要用 `-w '%{http_code}'` 取。经代理访问 GitHub HTTPS 偶有 TLS 重置，重试或改用 `gh api`。Claude 桌面应用的命令沙盒会拦下经 SOCKS 代理的 SSH（报 `nc: connection failed, SOCKS error 2`），`git fetch` 与 `git push` 要在沙盒外执行；运营方可以用 `/sandbox` 调整放行规则。
@@ -76,7 +77,8 @@
 
 - 工具链是 Node 22.15.0 与 pnpm 10.21.0（见 `package.json` 的 `engines` 与 `packageManager`）。生产构建脚本已带 8 GB 堆（`--max-old-space-size=8192`），因为 Privy 的依赖树在默认堆大小下会内存不足。
 - **选择检查**：按 [AGENTS.md 的 Verification](../AGENTS.md#verification) 跑改动触及的契约分组；跨多个契约时跑全量 `pnpm --filter @sairn/terminal test`。纯文档改动只需核对链接和路径并运行 `git diff --check`，不要声称跑过运行时测试。
-- **全量单测的偶发超时**：机器负载高时（其他会话在构建或运行 Codex），`vi.waitFor` 的 1 秒等待会偶发超时，常见于 `mobile-agent-sync-modal`、`client-bootstrap-error`、`chart-build-assets`、`positions-panel-preload`、`global-modals-hip3-disclaimer`。单独重跑这些文件，或用 `--maxWorkers=4` 再跑一次全量作为干净证据。不要和 Codex 审查或生产构建同时跑全量。
+- **全量单测的偶发超时**：机器负载高时（其他会话在构建或运行 Codex），`vi.waitFor` 的 1 秒等待会偶发超时，常见于 `mobile-agent-sync-modal`、`chart-build-assets`、`positions-panel-preload`、`global-modals-hip3-disclaimer`。单独重跑这些文件，或用 `--maxWorkers=4` 再跑一次全量作为干净证据。不要和 Codex 审查或生产构建同时跑全量。`client-bootstrap-error` 原来也在这份名单里，它的失败另有原因，见下一条。
+- **`afterEach` 里的 `vi.doUnmock` 会和下一个用例的 `vi.doMock` 竞态**（2026-11-02，PR #134 的 CI 与本地同样偶发）：Vitest 4.0.16 只把 `doMock`、`doUnmock` 排进队列，到下一次导入时用 `Promise.all` 一起解析，每条在自己的路径解析完成时生效，不按排队顺序；`vi.resetModules()` 和 `vi.restoreAllMocks()` 都不处理这个队列。如果 `afterEach` 撤销了某个路径，下一个用例在任何导入之前又替换同一路径，两条操作就会进同一批，撤销可能后生效，结果加载了真模块。这时用例要么约 50 ms 通过，要么一直等不到；放宽 `vi.waitFor` 没有用。写法：每个用例在导入前自己 `vi.doMock` 需要的路径，`afterEach` 里不要 `doUnmock` 同一路径。`client-bootstrap-error` 与 `link-locale` 已经改了。`client-root-fatal` 还有同样的窗口。`privy-fiat-funding-host-gate` 不受影响：它的 `beforeEach` 先 `await` 一次导入，遗留的撤销在用例 `doMock` 之前就处理完了。
 - **包体测量**（规则见[性能基线](terminal-performance-baseline.md#reproduction-protocol)）：
   - 在不含 `apps/terminal/.env.local` 的隔离工作树里构建。这个文件会让 Privy 应用 ID 与各个开关进入每个 `import.meta.env` 字面量，总量约多 530 字节，而 CI 没有它。两侧各自 `pnpm install --frozen-lockfile --prefer-offline`，可以并行构建。
   - 固定构建元数据（`SAIRN_BUILD_SHA`、`SAIRN_RELEASE_ID`、`SAIRN_BUILD_TIME`）。CI 式元数据（40 位提交号、`ci-…` 发布号、不固定构建时间）比文档里的固定元数据约多 323 字节。本地余量不到约 1 kB 时，按 CI 元数据再量一次；离上限 100 字节以内时，本地读数预测不了 CI 的结果。
