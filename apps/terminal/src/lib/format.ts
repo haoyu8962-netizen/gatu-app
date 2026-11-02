@@ -13,7 +13,7 @@ import {
 } from "@/config/i18n";
 import { HL_PERP_PRICE_MAX_DECIMALS, HL_PRICE_MAX_DECIMALS } from "@/config/trade";
 import { getNumberFormatRevision, subscribeNumberFormatChange } from "@/lib/number-format-reactivity";
-import { toNumber } from "@/lib/trade/numbers";
+import { getPriceDisplayDecimals, toNumber } from "@/lib/trade/numbers";
 import { getResolvedFormatLocale } from "@/stores/use-global-settings-store";
 
 type Formatter = Intl.NumberFormat | Intl.DateTimeFormat;
@@ -217,8 +217,8 @@ export function formatUSD(value: string | number | null | undefined, opts?: numb
  * Calculate price decimals from szDecimals using Hyperliquid's market-specific rule.
  * Perp prices use max(0, 6 - szDecimals); spot prices use max(0, 8 - szDecimals).
  *
- * @example szDecimalsToPriceDecimals(4) -> 2 (BTC: szDecimals=4, shows $88,140.12)
- * @example szDecimalsToPriceDecimals(3) -> 3 (ETH: szDecimals=3, shows $3,456.789)
+ * @example szDecimalsToPriceDecimals(4) -> 2 (BTC: szDecimals=4, at most 2 price decimals)
+ * @example szDecimalsToPriceDecimals(3) -> 3 (ETH: szDecimals=3, at most 3 price decimals)
  * @example szDecimalsToPriceDecimals(0) -> 6 (low-priced perpetual)
  * @example szDecimalsToPriceDecimals(0, "spot") -> 8 (low-priced spot asset)
  */
@@ -232,35 +232,55 @@ export interface FormatPriceOptions extends FormatOptions {
 	szDecimals?: number;
 	/** Hyperliquid market type used to select the protocol decimal cap. Defaults to perpetuals. */
 	marketType?: "perp" | "spot";
-	/** Remove trailing zeros (e.g., 12.00 -> 12, 12.50 -> 12.5). Defaults to true. */
+	/**
+	 * Remove trailing zeros (e.g., 12.00 -> 12, 12.50 -> 12.5). A market price (`szDecimals` without `decimals`)
+	 * keeps them unless this is true; an explicit `decimals` removes them unless this is false.
+	 */
 	trimZeros?: boolean;
 }
 
 /**
- * Format a price with decimal places derived from szDecimals.
- * Uses Hyperliquid's market-specific `MAX_DECIMALS - szDecimals` rule.
+ * Format a price. With `szDecimals` it is a market price shown as the official terminal shows it (`R3`): five
+ * significant figures, capped at the market's protocol decimals (`MAX_DECIMALS - szDecimals`), and every one of
+ * those decimals kept, so a live price keeps its width as it moves. An explicit `decimals` and compact notation
+ * keep the trimmed form.
  *
- * @example formatPrice(88140.123, { szDecimals: 4 }) -> "$88,140.12" (BTC)
- * @example formatPrice("3456.789", { szDecimals: 3 }) -> "$3,456.789" (ETH)
+ * @example formatPrice(88140.123, { szDecimals: 4 }) -> "$88,140" (BTC)
+ * @example formatPrice("3456.789", { szDecimals: 3 }) -> "$3,456.8" (ETH)
+ * @example formatPrice(85.81, { szDecimals: 2 }) -> "$85.810" (HYPE)
  * @example formatPrice(0.00001234, { szDecimals: 0 }) -> "$0.000012" (low-priced)
  */
 export function formatPrice(value: string | number | null | undefined, opts?: FormatPriceOptions): string {
 	const parsed = parseNumberInput(value);
 	if (!isValidNumber(parsed.value)) return FALLBACK_VALUE_PLACEHOLDER;
 
-	// Derive decimals from szDecimals if provided, otherwise use explicit decimals or default to 2
 	const { decimals: decOpt, compact, szDecimals, marketType, trimZeros, ...rest } = opts ?? {};
-	const resolvedDecimals = decOpt ?? (szDecimals !== undefined ? szDecimalsToPriceDecimals(szDecimals, marketType) : 2);
+	const protocolDecimals = szDecimals !== undefined ? szDecimalsToPriceDecimals(szDecimals, marketType) : undefined;
+	const usesCompactNotation = compact === true && Math.abs(parsed.value) >= FORMAT_COMPACT_THRESHOLD;
+	const isMarketPrice = decOpt === undefined && protocolDecimals !== undefined && !usesCompactNotation;
+	const resolvedDecimals = resolvePriceDecimals(parsed.value, decOpt, protocolDecimals, isMarketPrice);
+	const keepsTrailingZeros = trimZeros === undefined ? isMarketPrice : !trimZeros;
 
 	const defaults: Intl.NumberFormatOptions = {
 		style: "currency",
 		currency: "USD",
-		minimumFractionDigits: trimZeros === false ? resolvedDecimals : 0,
+		minimumFractionDigits: keepsTrailingZeros ? resolvedDecimals : 0,
 		maximumFractionDigits: resolvedDecimals,
 	};
 
 	const formatOptions = buildNumberFormatOptions(parsed.value, { compact, ...rest }, defaults, false);
 	return formatNumberParts(parsed.value, formatOptions);
+}
+
+function resolvePriceDecimals(
+	value: number,
+	decimals: number | undefined,
+	protocolDecimals: number | undefined,
+	isMarketPrice: boolean,
+): number {
+	if (decimals !== undefined) return decimals;
+	if (protocolDecimals === undefined) return 2;
+	return isMarketPrice ? getPriceDisplayDecimals(value, protocolDecimals) : protocolDecimals;
 }
 
 export function formatLiquidationPrice(
@@ -270,12 +290,7 @@ export function formatLiquidationPrice(
 ): string {
 	const parsed = parseNumberInput(value);
 	if (!isValidNumber(parsed.value)) return FALLBACK_VALUE_PLACEHOLDER;
-	const abs = Math.abs(parsed.value);
-	if (abs >= 1_000_000) return formatPrice(value, { ...opts, szDecimals, compact: true });
-	if (abs >= 100_000) {
-		const cap = Math.min(4, szDecimalsToPriceDecimals(szDecimals));
-		return formatPrice(value, { ...opts, decimals: cap });
-	}
+	if (Math.abs(parsed.value) >= 1_000_000) return formatPrice(value, { ...opts, szDecimals, compact: true });
 	return formatPrice(value, { ...opts, szDecimals });
 }
 

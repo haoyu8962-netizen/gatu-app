@@ -55,7 +55,8 @@ describe("collateral amounts", () => {
 	it("formats prices with the market's protocol decimals instead of a compact or cent format", () => {
 		expect(getMarketPriceFormatOptions(USDC_PERP)).toEqual({ marketType: "perp", szDecimals: 5 });
 		expect(getMarketPriceFormatOptions({ kind: "spot", szDecimals: 2 })).toEqual({ marketType: "spot", szDecimals: 2 });
-		expect(numberFormat.formatPrice("29780.5", getMarketPriceFormatOptions(USDC_PERP))).toBe("$29,780.5");
+		expect(numberFormat.formatPrice("2978.5", getMarketPriceFormatOptions(USDC_PERP))).toBe("$2,978.5");
+		expect(numberFormat.formatPrice("29780", getMarketPriceFormatOptions(USDC_PERP))).toBe("$29,780");
 		expect(numberFormat.formatPrice("0.18342", getMarketPriceFormatOptions(undefined))).toBe("$0.18342");
 	});
 });

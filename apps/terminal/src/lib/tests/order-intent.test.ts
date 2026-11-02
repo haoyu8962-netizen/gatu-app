@@ -759,6 +759,10 @@ describe("limit close order planning", () => {
 		expect(shortClose.orders[0]?.b).toBe(true);
 	});
 
+	it("sends a price the dialog filled with trailing zeros in its canonical form", () => {
+		expect(buildOrderPlan(limitClose({ price: "100.50" })).orders[0]?.p).toBe("100.5");
+	});
+
 	it("preserves string precision before applying protocol formatting", () => {
 		const plan = buildOrderPlan(
 			limitClose({

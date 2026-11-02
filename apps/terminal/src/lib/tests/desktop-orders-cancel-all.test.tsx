@@ -506,7 +506,7 @@ describe("desktop cancel all orders confirmation", () => {
 		];
 		act(() => root.render(<ReviewedOrders />));
 		let cells = [...container.querySelectorAll("tbody tr td")].map((cell) => cell.textContent?.trim() ?? "");
-		expect(cells[9]).toBe("Activation: $160 / Retracement: 1%");
+		expect(cells[9]).toBe("Activation: $160.00 / Retracement: 1%");
 
 		mocks.orders = [
 			{
@@ -519,7 +519,7 @@ describe("desktop cancel all orders confirmation", () => {
 		];
 		act(() => root.render(<ReviewedOrders />));
 		cells = [...container.querySelectorAll("tbody tr td")].map((cell) => cell.textContent?.trim() ?? "");
-		expect(cells[9]).toMatch(/^Trigger: \$168\.30* \/ Retracement: 1%$/);
+		expect(cells[9]).toBe("Trigger: $168.30 / Retracement: 1%");
 	});
 
 	it("hides destructive bulk actions when the open-orders snapshot is empty", () => {

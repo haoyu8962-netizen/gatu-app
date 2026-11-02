@@ -156,3 +156,57 @@ pnpm --dir apps/terminal exec playwright test \
 - 与官方的差异：表单既有换算优先用标记价（`getConversionPrice`），官方有限价时用限价。这是表单原有行为，本次未改。
 
 回归：`src/lib/tests/book-size-mode-request.test.tsx` 用真实的下单与订单簿两个 store 核对：只换算一次、之后改单位或重新渲染不重放、请求早于表单挂载时在 StrictMode 下也只换算一次、单位相同不换算、别的市场的请求丢弃；`tests/trade-panel-open-interest-cap.test.tsx`（桌面）与 `tests/mobile-trade-size-validation-a11y.test.tsx`（手机）核对两端都接上了这条路径；`orderbook-panel-safety.test.tsx` 与 `mobile-orderbook-subscription.test.tsx` 核对两处单位下拉写出的请求。
+
+## 程序填入的数量保留全部小数位（2026-11-02）
+
+运营方反馈：手机下单面板拖动数量滑杆时，数量在 0.8 与 0.84 之间跳动，右对齐的数字随位数伸缩，看起来不稳。原因是 `domain/trade/order/size.ts` 的 `formatSizeValue` 先按 `szDecimals` 截断，再删掉末尾的零。
+
+官方做法：2026-11-02 在官方终端核对，读了页面自己加载的代码，并用运营方已登录的账户实测，没有下单，也没有启用交易。
+- 数量框是通用数字输入 `_p`。外部写入的值经 `gp` 显示，没有开 `trimTrailingZeros` 时走 `ele(e, nDecimals)`，也就是 `e.toFixed(nDecimals)` 再换成当地的小数分隔符。下单表单传入的 `nDecimals` 在名义金额模式下是 2，否则是 `szDecimals`；滑杆按 `F3(百分比 × 最大数量 / 100, nDecimals, "floor")` 取值。
+- 在 HYPE（`szDecimals` 2）上依次输入百分比 69、60、43，数量框显示 0.80、0.70、0.50；拖动滑杆时同样固定两位小数。用户手动输入的文字保持原样。
+- 本终端的 TP/SL 弹窗本来就按 `toFixed(szDecimals)` 填写数量。
+
+本终端改为：
+- 以下几种情况由程序写入数量框时，保留全部数量小数位：滑杆、百分比框、手机上点「可用」金额填满、计价单位切换、只减仓选择。基础币按 `szDecimals` 位，计价币仍是 2 位；截断后为零时仍显示 `0`。
+- 手动输入不受影响。发给交易所的数量仍是规范的去零字符串：普通单、触发单和 TWAP 经 `formatSizeForOrder`，Scale 各档经 `formatDecimalFloor`；只减仓的 `baseSize`（执行来源）也仍是去零形式。对这些新补零的草稿，交易所收到的字符串没有变化。
+- 数量框本来就用 `tabular-nums`。对非零、整数位数相同的数量，补零后滑动时数字宽度不再变化。但有三种情况宽度仍会变：截断后为零的 `0` 进入第一个最小数量单位时（比如 `0` 到 `0.01`）；计价币模式在零值时显示 `0.00`；整数部分进位时，这一点与官方相同。
+- 小数点设为逗号时，数量框仍显示点，例如 `0.80`。这是 [数字格式设置](number-format-setting.md) 对输入框的现行规则；官方会按当地的分隔符显示。
+
+回归：
+- `src/lib/tests/order-size.test.ts`：68% 与 72% 得 0.80 与 0.84；5 位小数的市场得 0.00120；`formatSizeForOrder` 仍得去零形式；从计价币切回基础币得 1000.00。
+- `src/lib/tests/reduce-only.test.ts`：只减仓选择显示 0.60，`baseSize` 为 0.6。
+- 浏览器：夹具里 BTC 的 `szDecimals` 为 3。`tests/browser/reduce-only.pw.ts` 要求 100% 只减仓显示 `7.150`；`tests/browser/mobile-trade-all-orders.pw.ts` 要求在只减仓状态下从 USDC 切回 BTC 时显示 `1.000`。
+
+`formatSizeValue` 随后改名为导出的 `formatSizeForInput`，修改订单的起始数量也用它（见下一节）。
+
+## 价格框的程序填值与 TP/SL 换算价（2026-11-02，同一任务的审查补充）
+
+运营方要求审查其他地方有没有同类问题，并一次修完（[数字格式规则 12](number-format-setting.md)）：
+
+- **价格框的程序填值**：补到官方的价格位数（`formatPriceForInput`，5 位有效数字，上限 `6/8 − szDecimals`）。官方「修改订单」弹窗的价格框用的是 `nDecimals = L3(价格, szDecimals, 品种)`。覆盖以下入口：
+  - 桌面与手机下单面板的 Mid、Scale 起止价的 Mid，以及切到限价时的预填；
+  - 点订单簿价格：`useBookPriceSelection` 现在接收市场的 asset id 与 `szDecimals`；
+  - 限价平仓的 Mid。
+- **TP/SL 换算价**：由百分比或盈亏金额换算的 TP/SL 价格，在下单表单与 TP/SL 弹窗中共用 `lib/trade/tpsl.ts`。
+  - 原先按 `6 − szDecimals` 位四舍五入。例如 HYPE 显示 90.4029，比 5 位有效数字多一位，直到提交时才被 `formatPriceForOrder` 改成 90.403。
+  - 现在换算时就四舍五入到 5 位有效数字，显示 90.403，与提交时一致，框里显示的就是订单将要带上的价格。切换成盈亏金额时也按这个价格计算：持仓 TP/SL 弹窗原先按未取整的 28243.17 算出 107.61，订单实际带上 28243，现在显示 107.66。
+  - 换算价只取整一次，所以个别订单价与原先差一个最小价位：80 × 1.0726811 = 85.814488，原先先取 85.8145、提交时再取成 85.815，现在直接是 85.814（`tpsl.test.ts`）。
+  - 官方这里向下取整（`P3(..., "floor")`），会显示 90.402。本终端沿用四舍五入：向下取整时，多头止盈价离开仓价不到一个最小价位就会被取成开仓价而被判为无效输入，四舍五入把这个范围缩小到半个价位。两者最多差一个最小价位（[数字格式](number-format-setting.md)「与官方终端的差异」）。
+- **修改订单的起始值**（桌面行内编辑、手机弹窗）：数量保留 `szDecimals` 位，价格补到官方位数（`formatOpenOrderEditValue`）。修改计划按数值比较（`numericValuesEqual`），对账用 `decimalsEqual`，补零不会被当成改动。
+- **已有 TP/SL 的预填**（持仓 TP/SL 弹窗的触发价与限价）：原先按 `6 − szDecimals` 位预填（HYPE 85.81 显示 85.8100），现在经 `formatPriceForInput`（85.810）。更新计划按数值比较，原样确认不算改动。
+- **限价平仓失焦**：原先失焦时写回 `formatPriceForOrder` 的去零形式，会把 Mid 补的零去掉；现在只有取整改变了数值时才写回，并按官方位数补零，合法的输入保持原样。提交 hook 收到框里的值，`buildOrderPlan` 再规范成去零的订单价。
+- **下单摘要与手机市价**：下单摘要的预估强平价和手机下单页的市价随 `formatPrice` 改用官方位数，拖动滑杆、行情在同一数量级内跳动时不再跳位数。
+- **Max 填值**（兑换、Earn、金库、质押）：至少 2 位小数，按输入允许的位数向下取整，不截掉更多的精确位数（`formatDecimalFloor` 的 `minDecimals`）。输入只允许 0 或 1 位小数时按允许的位数，结果为零时仍是 `0`。金库在控制器里补零，`availableAmount` 仍是去零的校验值；Earn 提交前仍经 `toEarnProtocolAmount` 去零。
+
+回归测试（2026-11-02）：
+
+- `src/lib/tests/format.test.ts`：85.81 显示 `$85.810`，BTC 88140.123 显示 `$88,140`，447.934 显示 447.93；显式 `decimals` 与 `trimZeros: true` 保持去零形式；强平价 150000.5 显示 `$150,001`。
+- `src/lib/tests/numbers.test.ts`：`getPriceDisplayDecimals` 的各数量级，`formatDecimalFloor` 补零（12.5 → 12.50）且不截掉 12.345678、只允许 0 位小数时保持整数；`formatPriceAtDisplayDecimals` 按取整后的价格定位数（99.9996 → 100.00）。
+- `src/lib/tests/orders.test.ts`：`formatPriceForInput` 得 85.810、77560、现货 0.001235 与 170.00，`formatPriceForOrder` 对 170.00 仍得 170。
+- 价格框填值：`price-input`、`mobile-trade-price-field`、`trade-form-scale-mid`、`trade-form-compact-fields`（Mid 得 55.950、102.50、1,234.6）；`tests/trade-panel-open-interest-cap.test.tsx` 与 `tests/mobile-trade-size-validation-a11y.test.tsx`（点 98.5 的订单簿价格得 98.500）。
+- TP/SL：`tpsl.test.ts`（105 得 105.00、95 得 95.000，只取整一次得 85.814，跨过 100 得 100.00）、`tp-sl-section.test.tsx`、`position-tpsl-modal.test.tsx`（盈亏 107.66，已有 TP 预填 295.50 且原样确认不算改动）、`trade-form-tp-sl.test.tsx`。
+- 限价平仓：`position-limit-close-modal.test.tsx`（Mid 的 100.50 失焦后不变）、`order-intent.test.ts`（100.50 下单为 100.5）。
+- 订单簿点价：`book-price-selection.test.tsx`（98.5 写成 98.500 且只写一次，之后元数据变化不重放；元数据到达前的点击保持原文）。
+- 修改订单：`open-order-modification.test.ts`（起始值 2.000、100.00 不算改动）、`mobile-order-modification.test.tsx`（170.00）、`desktop-orders-cancel-all.test.tsx`。
+- Max：`earn-domain`、`earn-action-modal`（5,029.40 USDC，提交 5029.4）、`swap.test.ts`、`use-vault-action-controller.test.tsx`（10.10）、`staking-domain.test.ts`。
+- 其他显示：`document-title.test.tsx`（61.120）、`command-menu.test.tsx`、`order-summary.test.tsx`、`historical-order-price.test.tsx`、`collateral-amount.test.ts`、`mobile-orders-card.test.tsx`。

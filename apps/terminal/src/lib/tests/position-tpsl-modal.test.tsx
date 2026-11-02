@@ -642,7 +642,7 @@ describe("PositionTpSlModal live data", () => {
 		expect(testState.getPosition).toHaveBeenCalledWith(positionRef.coin, positionRef.dex);
 		expect(testState.subscriptions).toContainEqual({ method: "activeAssetCtx", params: { coin: positionRef.coin } });
 		expect(container.textContent).toContain("Short position");
-		expect(container.textContent).toContain("28,595.5");
+		expect(container.textContent).toContain("Mark Price$28,596");
 		expect(container.textContent).not.toContain("No active positions.");
 	});
 
@@ -671,7 +671,7 @@ describe("PositionTpSlModal live data", () => {
 			(button) => button.textContent === "%",
 		);
 		act(() => unitToggle?.click());
-		expect(getInput(container, "Take profit return").value).toBe("107.61");
+		expect(getInput(container, "Take profit return").value).toBe("107.66");
 	});
 
 	it("keeps a quote-PnL draft as the source of truth when the configured size changes", () => {
@@ -970,7 +970,7 @@ describe("PositionTpSlModal live data", () => {
 			root.render(modalElement(positionRef));
 		});
 
-		expect(container.textContent).toContain("28,001.25");
+		expect(container.textContent).toContain("Mark Price$28,001");
 		expect(container.textContent).toContain("+$10.50");
 		expect(getInput(container, "Take Profit").value).toBe("27500");
 	});
@@ -978,7 +978,7 @@ describe("PositionTpSlModal live data", () => {
 	it("blocks submission when the live TP/SL order changed after opening", () => {
 		testState.orders = [openOrder()];
 		renderModal();
-		expect(getInput(container, "Take Profit").value).toBe("30000.000");
+		expect(getInput(container, "Take Profit").value).toBe("30000");
 
 		testState.orders = [openOrder({ oid: 8, triggerPx: "29500" })];
 		act(() => {
@@ -986,6 +986,44 @@ describe("PositionTpSlModal live data", () => {
 		});
 
 		expect(container.textContent).toContain("Trading data changed while this dialog was open.");
+		expect(getButton(container, "Confirm").disabled).toBe(true);
+	});
+
+	it("prefills an existing TP at the official price decimals without reading it as a change", () => {
+		testState.orders = [openOrder({ triggerPx: "295.5", limitPx: "325.05", triggerCondition: "Price below 295.5" })];
+		renderModal();
+		expect(getInput(container, "Take Profit").value).toBe("295.50");
+		expect(getButton(container, "Confirm").disabled).toBe(true);
+
+		act(() => setInputValue(getInput(container, "Take Profit"), "295.6"));
+		expect(getButton(container, "Confirm").disabled).toBe(false);
+	});
+
+	it("prefills existing trigger-limit TP and SL prices at the official decimals without reading them as a change", () => {
+		const limitLeg = { sz: "0.1", origSz: "0.1" };
+		testState.orders = [
+			openOrder({
+				...limitLeg,
+				orderType: "Take Profit Limit",
+				triggerPx: "295.5",
+				limitPx: "296.5",
+				triggerCondition: "Price below 295.5",
+			}),
+			openOrder({
+				...limitLeg,
+				oid: 8,
+				orderType: "Stop Limit",
+				triggerPx: "31000",
+				limitPx: "31100",
+				triggerCondition: "Price above 31000",
+			}),
+		];
+		renderModal();
+
+		expect(getInput(container, "Take Profit").value).toBe("295.50");
+		expect(getInput(container, "Stop Loss").value).toBe("31000");
+		expect(getInput(container, "Take profit limit price").value).toBe("296.50");
+		expect(getInput(container, "Stop loss limit price").value).toBe("31100");
 		expect(getButton(container, "Confirm").disabled).toBe(true);
 	});
 

@@ -946,7 +946,7 @@ describe("MobileTradeView order book price clicks", () => {
 		await renderView(root);
 
 		expect(testState.actions.setOrderType.mock.calls).toEqual(expected === orderType ? [] : [[expected]]);
-		expect(testState.actions.setLimitPriceFromUser).toHaveBeenCalledWith(`BTC|${expected}`, "98.5");
+		expect(testState.actions.setLimitPriceFromUser).toHaveBeenCalledWith(`BTC|${expected}`, "98.500");
 	});
 
 	it.each(["takeProfitMarket", "twap", "scale"] as const)(

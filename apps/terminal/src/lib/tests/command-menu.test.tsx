@@ -71,7 +71,7 @@ describe("command menu", () => {
 				pairName: "HYPE/USDC",
 				tokensInfo: [{ name: "HYPE" }, { name: "USDC" }],
 				szDecimals: 0,
-				markPx: "0.12345678",
+				markPx: "0.0012345678",
 			},
 			{
 				kind: "builderPerp",
@@ -115,6 +115,6 @@ describe("command menu", () => {
 	it("labels each market kind like the market selector and prices spot markets with spot decimals", () => {
 		const rows = [...container.querySelectorAll("[data-item]")].map((row) => row.textContent);
 
-		expect(rows).toEqual(["BTC$77,559.1永续", "@107$0.12345678现货", "xyz:AAPL$0.1235xyz"]);
+		expect(rows).toEqual(["BTC$77,559永续", "@107$0.0012346现货", "xyz:AAPL$0.1235xyz"]);
 	});
 });

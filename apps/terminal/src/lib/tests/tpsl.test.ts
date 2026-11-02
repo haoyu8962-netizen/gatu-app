@@ -33,10 +33,10 @@ describe("position TP/SL ROE pricing", () => {
 		const tpPrice = calculateTpPriceFromRoe(28_600.68, "buy", 25, 20, 2);
 		const slPrice = calculateSlPriceFromRoe(28_600.68, "buy", 5, 20, 2);
 
-		expect(tpPrice).toBe("28958.19");
-		expect(slPrice).toBe("28529.18");
+		expect(tpPrice).toBe("28958");
+		expect(slPrice).toBe("28529");
 		expect(calculateEstimatedPnl({ referencePrice: 28_600.68, side: "buy", size: 0.301 }, tpPrice)).toBeCloseTo(
-			107.61,
+			107.55,
 			2,
 		);
 	});
@@ -54,6 +54,15 @@ describe("position TP/SL ROE pricing", () => {
 	it("preserves price-percentage helpers used by pre-entry TP/SL", () => {
 		expect(calculateTpPrice(100, "buy", 25, 2)).toBe("125.00");
 		expect(calculateSlPrice(100, "buy", 5, 2)).toBe("95.00");
+	});
+
+	it("rounds a worked-out price once, so the order carries the nearest tick", () => {
+		expect(calculateTpPrice(80, "buy", 7.26811, 4)).toBe("85.814");
+		expect(calculateSlPrice(80, "sell", 7.26811, 4)).toBe("85.814");
+		expect(calculateTpPriceFromRoe(80, "buy", 72.6811, 10, 4)).toBe("85.814");
+		expect(calculateSlPriceFromRoe(80, "sell", 72.6811, 10, 4)).toBe("85.814");
+		expect(calculateTargetPriceFromPnl("80", "buy", "1", "5.814488", "tp", 4)).toBe("85.814");
+		expect(calculateTpPrice(99.9, "buy", 0.1, 4)).toBe("100.00");
 	});
 
 	it("keeps position PnL and risk/reward calculations exact as strings", () => {
@@ -84,10 +93,10 @@ describe("position TP/SL ROE pricing", () => {
 	});
 
 	it("converts editable PnL and ROE magnitudes without floating-point arithmetic", () => {
-		expect(calculateTargetPriceFromPnl("100", "buy", "2", "10", "tp", 3)).toBe("105.000");
+		expect(calculateTargetPriceFromPnl("100", "buy", "2", "10", "tp", 3)).toBe("105.00");
 		expect(calculateTargetPriceFromPnl("100", "buy", "2", "10", "sl", 3)).toBe("95.000");
 		expect(calculateTargetPriceFromPnl("100", "sell", "2", "10", "tp", 3)).toBe("95.000");
-		expect(calculateTargetPriceFromPnl("100", "sell", "2", "10", "sl", 3)).toBe("105.000");
+		expect(calculateTargetPriceFromPnl("100", "sell", "2", "10", "sl", 3)).toBe("105.00");
 
 		expect(calculateRoeMagnitudeFromPriceExact("100", "105", "buy", "tp", "5")).toBe("25");
 		expect(calculateRoeMagnitudeFromPriceExact("100", "95", "buy", "sl", "5")).toBe("25");

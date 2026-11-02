@@ -1,9 +1,9 @@
 import { useLingui } from "@lingui/react/macro";
 import { CrosshairIcon } from "@phosphor-icons/react";
 import type React from "react";
-import { formatPriceForOrder } from "@/domain/trade/orders";
+import { formatPriceForInput } from "@/domain/trade/orders";
 import { szDecimalsToPriceDecimals } from "@/lib/format";
-import { type Numeric, toBig, toFixed } from "@/lib/trade/numbers";
+import { formatPriceAtDisplayDecimals, type Numeric, toBig } from "@/lib/trade/numbers";
 import { NumberInput } from "./number-input";
 
 const PRICE_INPUT_DEFAULT_DECIMALS = 4;
@@ -17,10 +17,10 @@ export function getFormattedMidPrice(
 	const parsedMid = toBig(midPrice);
 	if (!parsedMid?.gt(0)) return undefined;
 	if (typeof assetId === "number" && typeof szDecimals === "number") {
-		return formatPriceForOrder(parsedMid, { assetId, szDecimals });
+		return formatPriceForInput(parsedMid, { assetId, szDecimals });
 	}
 	const priceDecimals = szDecimalsToPriceDecimals(szDecimals ?? PRICE_INPUT_DEFAULT_DECIMALS, marketType);
-	return toFixed(parsedMid, priceDecimals);
+	return formatPriceAtDisplayDecimals(parsedMid, priceDecimals);
 }
 
 interface Props extends Omit<React.ComponentPropsWithoutRef<typeof NumberInput>, "maxLabel" | "onMaxClick"> {

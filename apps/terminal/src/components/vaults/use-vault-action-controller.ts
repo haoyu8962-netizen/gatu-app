@@ -28,6 +28,7 @@ import {
 	transitionFundsAction,
 } from "@/components/funds-action/funds-action-state";
 import { compareFundsAmounts, scaleFundsAmount, USDC_ATOMIC_DECIMALS } from "@/components/funds-action/funds-amount";
+import { FILLED_AMOUNT_MIN_DECIMALS } from "@/config/app";
 import { useGeoRestriction } from "@/hooks/use-geo-restriction";
 import { useReconnectWallet, useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { type ActionFailure, classifyActionErrorOr, describeActionFailure } from "@/lib/errors/action-error";
@@ -849,7 +850,10 @@ export function useVaultActionController({
 	return {
 		action: visibleAction,
 		availableAmount,
-		maxAmount: availableAmount === null ? null : formatDecimalFloor(availableAmount, USDC_ATOMIC_DECIMALS),
+		maxAmount:
+			availableAmount === null
+				? null
+				: formatDecimalFloor(availableAmount, USDC_ATOMIC_DECIMALS, FILLED_AMOUNT_MIN_DECIMALS),
 		minimumAmount,
 		belowMinimum: minimumAmount !== null && amount?.valid === true && !meetsMinimum,
 		actionAvailability,

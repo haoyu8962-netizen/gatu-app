@@ -24,6 +24,8 @@ export const DEFAULT_MARKET_NAME = "BTC";
 export const DEFAULT_MARKET_SCOPE = "perp" as const;
 export const DEFAULT_QUOTE_TOKEN = "USDC";
 export const USDC_TRANSFER_DECIMALS = 2;
+/** A balance the terminal fills into an amount field (Max) keeps at least this many decimals: 12.5 reads 12.50. */
+export const FILLED_AMOUNT_MIN_DECIMALS = 2;
 
 export const HL_ALL_DEXS = "ALL_DEXS" as const;
 

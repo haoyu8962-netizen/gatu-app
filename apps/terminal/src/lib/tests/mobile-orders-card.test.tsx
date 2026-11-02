@@ -347,7 +347,7 @@ describe("MobileOrdersTab disclosure card", () => {
 		];
 		renderOrders();
 
-		expect(container.textContent).toContain("Trigger: $168 / Retracement: 2 · Watermark: $170");
+		expect(container.textContent).toContain("Trigger: $168.00 / Retracement: 2 · Watermark: $170.00");
 		expect(container.textContent).not.toContain("retracement 2, best 170");
 	});
 
@@ -368,7 +368,7 @@ describe("MobileOrdersTab disclosure card", () => {
 		const label = [...container.querySelectorAll<HTMLElement>("div")].find(
 			(element) => element.textContent?.trim() === "TP/SL",
 		);
-		expect(label?.nextElementSibling?.textContent).toBe("$160 / $140");
+		expect(label?.nextElementSibling?.textContent).toBe("$160.00 / $140.00");
 	});
 
 	it("shows the SDK-derived mark distance and warns below ten percent", () => {

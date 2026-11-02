@@ -35,6 +35,7 @@ import {
 import {
 	buildOpenOrderModifyPlan,
 	createOpenOrderModifyTarget,
+	formatOpenOrderEditValue,
 	getOpenOrderModifyCapabilities,
 	type OpenOrderModifyBlockReason,
 	type OpenOrderModifyField,
@@ -220,10 +221,14 @@ function getModificationExpectation(field: OpenOrderModifyField, value: string) 
 	return { expectedTriggerPx: value };
 }
 
-function getOrderEditValue(order: OpenOrder, field: OpenOrderModifyField): string {
-	if (field === "size") return order.sz;
-	if (field === "limitPrice") return order.limitPx;
-	return order.triggerPx;
+function getOrderEditValue(
+	order: OpenOrder,
+	field: OpenOrderModifyField,
+	market: OpenOrderModifyMarketBinding,
+): string {
+	if (field === "size") return formatOpenOrderEditValue(order.sz, field, market);
+	if (field === "limitPrice") return formatOpenOrderEditValue(order.limitPx, field, market);
+	return formatOpenOrderEditValue(order.triggerPx, field, market);
 }
 
 function getOrderEditTriggerId(oid: number, field: OpenOrderModifyField): string {
@@ -938,7 +943,7 @@ export function OrdersTab({ toolbarTarget }: Props = {}) {
 			return;
 		}
 
-		const value = getOrderEditValue(order, field);
+		const value = getOrderEditValue(order, field, market);
 		editReturnTargetRef.current = { field, oid: order.oid };
 		editTargetRef.current = result.target;
 		editValueRef.current = value;

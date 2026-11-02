@@ -21,6 +21,7 @@ import {
 	isConfirmedOpenOrderCancelResponse,
 } from "@/domain/trade/open-order-cancel";
 import {
+	formatOpenOrderEditValue,
 	getOpenOrderModifyCapabilities,
 	type OpenOrderModifyBlockReason,
 	type OpenOrderModifyMarketBinding,
@@ -685,15 +686,20 @@ export function MobileOrdersTab({ className, disclosureState, scrollMode = "cont
 			return;
 		}
 
-		const triggerPrice = result.target.triggerPrice ? order.triggerPx : undefined;
-		const limitPrice = result.target.limitPrice ? order.limitPx : undefined;
+		const size = formatOpenOrderEditValue(order.sz, "size", market);
+		const triggerPrice = result.target.triggerPrice
+			? formatOpenOrderEditValue(order.triggerPx, "triggerPrice", market)
+			: undefined;
+		const limitPrice = result.target.limitPrice
+			? formatOpenOrderEditValue(order.limitPx, "limitPrice", market)
+			: undefined;
 		modifyTargetRef.current = result.target;
-		modifySizeRef.current = order.sz;
+		modifySizeRef.current = size;
 		modifyTriggerPriceRef.current = triggerPrice;
 		modifyLimitPriceRef.current = limitPrice;
 		modifyExecutionRef.current = null;
 		setModifyTarget(result.target);
-		setModifySize(order.sz);
+		setModifySize(size);
 		setModifyTriggerPrice(triggerPrice);
 		setModifyLimitPrice(limitPrice);
 		setModifyValidationError(null);

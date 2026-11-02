@@ -195,7 +195,8 @@ describe("swap quote", () => {
 	});
 
 	it("reserves buy-side slippage when calculating the maximum input", () => {
-		expect(getMaxSwapInput("101", true, 100, 6)).toBe("100");
-		expect(getMaxSwapInput("101", false, 100, 6)).toBe("101");
+		expect(getMaxSwapInput("101", true, 100, 6)).toBe("100.00");
+		expect(getMaxSwapInput("101", false, 100, 6)).toBe("101.00");
+		expect(getMaxSwapInput("101.5", false, 100, 0)).toBe("101");
 	});
 });

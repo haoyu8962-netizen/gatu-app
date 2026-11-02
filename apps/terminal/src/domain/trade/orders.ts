@@ -14,7 +14,14 @@ import {
 	SCALE_SKEW_DEFAULT,
 } from "@/config/trade";
 import { getTriggerMarketExecutionPrice } from "@/domain/trade/order/price";
-import { formatDecimalFloor, isPositive, type Numeric, toBig, toNumber } from "@/lib/trade/numbers";
+import {
+	formatDecimalFloor,
+	formatPriceAtDisplayDecimals,
+	isPositive,
+	type Numeric,
+	toBig,
+	toNumber,
+} from "@/lib/trade/numbers";
 import type { Side } from "@/lib/trade/types";
 
 export interface OrderBuildParams {
@@ -596,6 +603,21 @@ interface PriceFormatOptions {
 
 export function formatPriceForOrder(value: Numeric, options?: PriceFormatOptions): string {
 	return formatPriceForOrderWithRounding(value, options, Big.roundHalfUp);
+}
+
+/**
+ * A price the terminal writes into a price field (Mid, an order book row, an order being edited, an existing TP/SL):
+ * the order price with every decimal the official terminal shows for it (five significant figures within the
+ * protocol cap), so 85.81 reads 85.810. A missing price fills nothing. Submission still sends the trimmed
+ * `formatPriceForOrder` form.
+ */
+export function formatPriceForInput(value: Numeric, options: PriceFormatOptions): string {
+	if (toBig(value) === null) return "";
+	const price = formatPriceForOrder(value, options);
+	const priceValue = toBig(price);
+	if (!priceValue?.gt(0) || !isValidSizeDecimalsForAsset(options.assetId, options.szDecimals)) return price;
+	const protocolDecimals = isSpotAssetId(options.assetId) ? HL_PRICE_MAX_DECIMALS : HL_PERP_PRICE_MAX_DECIMALS;
+	return formatPriceAtDisplayDecimals(priceValue, protocolDecimals - options.szDecimals);
 }
 
 /**

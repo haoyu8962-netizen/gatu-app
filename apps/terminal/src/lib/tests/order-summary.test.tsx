@@ -83,7 +83,7 @@ describe("OrderSummary information rows", () => {
 			"Slippage",
 			"Fees",
 		]);
-		expect(getRowValue(container, "Liq. Price")).toBe("$65");
+		expect(getRowValue(container, "Liq. Price")).toBe("$65.000");
 		expect(getRowValue(container, "Est. Slippage")).toBe("0.37%");
 		expect(container.textContent).toContain("1.4%");
 		const slippageValue = [...container.querySelectorAll("button span")].find((span) => span.textContent === "1.4%");

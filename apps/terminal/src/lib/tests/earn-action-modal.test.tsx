@@ -369,9 +369,9 @@ describe("earn action modal", () => {
 	it("submits exactly the Max amount the dialog displayed", async () => {
 		const onOpenChange = render("borrow", 0, createData());
 		const maxButton = container.querySelector<HTMLButtonElement>('[data-testid="max"]');
-		expect(maxButton?.textContent).toContain("5,029.4 USDC");
+		expect(maxButton?.textContent).toContain("5,029.40 USDC");
 		act(() => maxButton?.click());
-		expect(getInput(container).value).toBe("5029.4");
+		expect(getInput(container).value).toBe("5029.40");
 
 		act(() => getSubmit(container).click());
 		await flush();
@@ -747,10 +747,10 @@ describe("earn action modal", () => {
 	it("keeps a limited Max exact even after the full position becomes available", async () => {
 		render("withdraw", 0, createUsdcData({ supplied: "100", reserveBalance: "50" }));
 		act(() => container.querySelector<HTMLButtonElement>('[data-testid="max"]')?.click());
-		expect(getInput(container).value).toBe("50");
+		expect(getInput(container).value).toBe("50.00");
 		expect(container.textContent).not.toContain("Withdraws your entire");
 		render("withdraw", 0, createUsdcData({ supplied: "100", reserveBalance: "10000" }));
-		expect(getInput(container).value).toBe("50");
+		expect(getInput(container).value).toBe("50.00");
 		expect(container.textContent).not.toContain("Withdraws your entire");
 		act(() => getSubmit(container).click());
 		await flush();

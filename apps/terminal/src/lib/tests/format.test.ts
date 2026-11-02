@@ -117,13 +117,26 @@ describe("format", () => {
 		expect(formatUSD(150000, { compact: false })).toBe("$150,000.00");
 	});
 
-	it("formats prices using szDecimals", () => {
+	it("formats market prices as the official terminal does: five significant figures, protocol cap, zeros kept", () => {
 		expect(szDecimalsToPriceDecimals(4)).toBe(2);
 		expect(szDecimalsToPriceDecimals(0, "spot")).toBe(8);
-		expect(formatPrice(88140.123, { szDecimals: 4 })).toBe("$88,140.12");
+		expect(formatPrice(88140.123, { szDecimals: 4 })).toBe("$88,140");
+		expect(formatPrice("123456", { szDecimals: 0 })).toBe("$123,456");
+		expect(formatPrice("85.81", { szDecimals: 2 })).toBe("$85.810");
 		expect(formatPrice("0.00000011", { szDecimals: 0, marketType: "spot" })).toBe("$0.00000011");
-		expect(formatPrice("447.934", { szDecimals: 3, style: "decimal" })).toBe("447.934");
-		expect(formatLiquidationPrice("447.934", 3, { style: "decimal" })).toBe("447.934");
+		expect(formatPrice("447.934", { szDecimals: 3, style: "decimal" })).toBe("447.93");
+		expect(formatPrice("85.81", { szDecimals: 2, trimZeros: true })).toBe("$85.81");
+		expect(formatPrice("85.81", { szDecimals: 2, decimals: 4 })).toBe("$85.81");
+		expect(formatLiquidationPrice("447.934", 3, { style: "decimal" })).toBe("447.93");
+		expect(formatLiquidationPrice("150000.5", 5)).toBe("$150,001");
+		expect(formatPrice("-85.81", { szDecimals: 2 })).toBe("-$85.810");
+		expect(formatPrice("NaN", { szDecimals: 2 })).toBe(formatPrice(undefined, { szDecimals: 2 }));
+	});
+
+	it("takes a market price's decimals from the price before rounding, as the official R3 does", () => {
+		expect(formatPrice("99.9996", { szDecimals: 2 })).toBe("$100.000");
+		expect(formatPrice("100", { szDecimals: 2 })).toBe("$100.00");
+		expect(formatPrice("1000", { szDecimals: 2 })).toBe("$1,000.0");
 	});
 
 	it("formats token amounts and percentages", () => {
