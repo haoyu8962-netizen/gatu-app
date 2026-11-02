@@ -3,26 +3,31 @@
   "schemaVersion": 1,
   "id": "2026-11-02-size-field-fixed-decimals",
   "date": "2026-11-02",
-  "title": "下单数量框：程序填入的数量保留全部小数位（0.80 而非 0.8）",
+  "title": "数量框与市场价格：程序填入与显示的数值保留官方位数（0.80、85.810）",
   "kind": "task",
   "status": "recorded",
-  "topics": ["order-entry"],
-  "summary": "运营方反馈手机下单面板拖滑杆时数量在 0.8 与 0.84 之间跳动、右对齐数字随位数伸缩。根因是 domain/trade/order/size.ts 的 formatSizeValue 截断后删掉末尾的零。官方终端只读核对代码（数字输入 _p 经 gp→ele 以 toFixed(nDecimals) 显示外部写入的值）并用运营方已登录账户实测（69/60/43% 得 0.80/0.70/0.50，拖动同样两位），未下单。改为滑杆、百分比框、手机点可用金额、单位切换与只减仓选择写入时保留 szDecimals 位，零仍为 0；手动输入不变，下单字符串仍由 formatSizeForOrder 去零。真实设备上的滑动观感未验收。",
+  "topics": ["order-entry", "i18n-runtime", "account-funding"],
+  "summary": "运营方反馈手机下单面板拖滑杆时数量在 0.8 与 0.84 之间跳动、右对齐数字随位数伸缩。根因是 domain/trade/order/size.ts 的 formatSizeValue 截断后删掉末尾的零。官方终端只读核对代码（数字输入 _p 经 gp→ele 以 toFixed(nDecimals) 显示外部写入的值）并用运营方已登录账户实测（69/60/43% 得 0.80/0.70/0.50，拖动同样两位），未下单。改为滑杆、百分比框、手机点可用金额、单位切换与只减仓选择写入时保留 szDecimals 位，零仍为 0；手动输入不变，下单字符串仍由 formatSizeForOrder 去零。运营方随后要求审查同类问题并一次修完：市场价格按官方 R3 显示（5 位有效数字、上限 6/8−szDecimals、保留末尾的零），Mid、点订单簿价格、限价平仓 Mid、修改订单起始值与 TP/SL 换算价补到同样位数（TP/SL 四舍五入，官方向下取整），兑换、Earn、金库、质押的 Max 至少两位小数；提交字符串不变。真实设备观感未验收。",
   "thread": null,
   "baseCommit": "991796cd",
-  "commits": [],
+  "commits": ["32c75b68"],
   "sources": [
     {"path": "apps/terminal/src/domain/trade/order/size.ts"},
     {"path": "apps/terminal/src/hooks/trade/use-order-entry-data.ts"},
     {"path": "apps/terminal/src/domain/trade/orders.ts"},
     {"path": "apps/terminal/src/domain/trade/position-tpsl-size.ts"},
     {"path": "docs/order-entry-surface-parity.md"},
+    {"path": "docs/number-format-setting.md"},
+    {"path": "apps/terminal/src/lib/format.ts"},
+    {"path": "apps/terminal/src/lib/trade/numbers.ts"},
+    {"path": "apps/terminal/src/lib/trade/tpsl.ts"},
+    {"path": "apps/terminal/src/domain/trade/open-order-modification.ts"},
     {"url": "https://app.hyperliquid.xyz/trade/HYPE"}
   ],
   "supersedes": []
 }
 -->
-# 下单数量框：程序填入的数量保留全部小数位（0.80 而非 0.8）
+# 数量框与市场价格：程序填入与显示的数值保留官方位数（0.80、85.810）
 
 ## 背景与范围
 
@@ -68,7 +73,59 @@
 
 - Codex CLI（`gpt-6-astra`，只读，low）评 9/10，没有 P0–P2。它核对了全部调用方，包括订单簿单位下拉经同一个切换函数的那条路径，也核对了各条下单路径的规范字符串和 `toFixed` 计数。唯一一项 P3 是文档说得太满：零值和计价币零值的宽度、Scale 用的规范化函数，以及逗号小数设置下的显示。这三点已按建议改准。它在只读沙盒里没能启动 Vitest，所以测试结果以上面本机的运行为准。
 
+## 审查补充：价格显示、价格框填值与 Max（同日）
+
+运营方随后要求「其他地方是否同样存在这类问题，请 review 一遍相关的功能块」，审查结论交付后要求「一次修完」。基线是上面的提交 `32c75b68`，同一分支。
+
+**官方做法。** 只读核对官方页面加载的脚本（`config-BUOnMMpI.js`），未连接钱包、未点交易控件。
+- 价格显示用 `R3(价格, szDecimals, 品种) = z3(价格, L3(价格, szDecimals, 品种))`。`L3 = max(0, min(5 − floor(log10|价格|) − 1, (现货 8，否则 6) − szDecimals))`；`z3` 以相同的最少与最多小数位调用 `toLocaleString`，所以保留末尾的零。仓位表的开仓价、标记价和预估强平价都经它显示。
+- 修改订单弹窗的价格框传 `nDecimals = L3`；由百分比或盈亏金额换算的 TP/SL 价格用 `P3(..., "floor")`。
+- 标签页标题由 `Pw` 生成，用 `R3(中间价, 0, 品种)`（`szDecimals` 按 0）。当时标题读数如 `86.168 | HYPE | Hyperliquid`，三位小数。
+
+**发现（原有做法）。**
+- `formatPrice` 带 `szDecimals` 时按 `6/8 − szDecimals` 位显示并去零：BTC 最多两位、HYPE 的 85.81 显示 85.81，价格跳动时宽度随之变化。
+- Mid、点订单簿价格和限价平仓 Mid 写入 `formatPriceForOrder` 的去零形式；修改订单的起始值是交易所原样字符串（`2`、`170`）。
+- TP/SL 换算价按 `6 − szDecimals` 位取整，比 5 位有效数字多一位，提交时才被改。持仓 TP/SL 弹窗因此按未取整的 28243.17 算盈亏（107.61），订单实际带上 28243。
+- 兑换、Earn、金库、质押的 Max 填入去零的值（`12.5`、`100`）。金库的去零发生在控制器的 `maxAmount`，不在领域层的 `availableAmount`。
+
+**修改。**
+- `formatPrice` 的市场价格路径改用 `getPriceDisplayDecimals`（`lib/trade/numbers.ts`）并保留末尾的零；显式 `decimals` 与紧凑写法不变；`formatLiquidationPrice` 去掉 ≥100k 的 4 位上限分支（5 位有效数字已经覆盖）。
+- 价格框填值：`formatPriceForInput`（`domain/trade/orders.ts`）、`getFormattedMidPrice`、`useBookPriceSelection`（新增 asset id 与 `szDecimals` 参数）、限价平仓 Mid、`formatOpenOrderEditValue`（桌面行内编辑与手机弹窗的起始值）。
+- TP/SL 换算价与无 asset id 的 Mid 经 `formatPriceAtDisplayDecimals`：先四舍五入，再按取整后的值定位数，所以 99.9996 写成 100.00 而不是 100.000。
+- Max：`formatDecimalFloor` 新增 `minDecimals`，`FILLED_AMOUNT_MIN_DECIMALS = 2`（`config/app.ts`），兑换、Earn、金库控制器与质押（`formatHypeMaxInput`）使用；`szDecimals` 为 0 的代币仍是整数。
+- 提交字符串不变：下单与修改仍经 `formatPriceForOrder` / `formatSizeForOrder`，Earn 经 `toEarnProtocolAmount`，修改计划与对账按数值比较。
+- 文档：数字格式规则 12 与「与官方终端的差异」、`order-entry-surface-parity.md` 新节（含回归测试清单）、`trading-toolbar-redesign.md` 的 Prices 一条、`CHANGELOG.md` 三条。
+
+**有意的偏离。**
+- TP/SL 换算价沿用四舍五入，不照搬官方的向下取整。先按官方向下取整实现时，`trade-form-tp-sl` 的一个用例得到空框：多头止盈价离开仓价不到一个最小价位，被取成开仓价；按盈亏金额换算的用例也从 27601 变成 27600。四舍五入把前一种情况缩小到半个价位，并与提交时 `formatPriceForOrder` 的取整一致。两者最多差一个最小价位。
+- 标签页标题用市场自己的 `szDecimals`，只在 `6 − szDecimals` 的上限起作用时与官方不同。
+- 官方 `L3` 用 `Math.log(x) / Math.log(10)`，整十次幂时会多一位小数；本终端用 `Math.log10`，不复刻。
+
+**未改。** 成交通知的均价按有效数字显示（`order-notification-copy.ts` 不传 `szDecimals`）；CSV 导出交易所原样字符串；订单簿、成交列表与行情头部原本就按同一规则（`getTradePriceDecimals`）；表格数量列与美元金额原本就固定位数。
+
+**验证。** 工作区为 `32c75b68` 加未提交改动。
+- Biome：44 个改动的 TypeScript 文件通过（两处先按格式化器换行）；`pnpm --filter @sairn/terminal typecheck` 通过；`git diff --check` 通过。
+- 全量终端 Vitest（`pnpm --filter @sairn/terminal test`）：714 个文件中 710 个通过、1 个跳过、3 个失败。
+  - `mobile-agent-sync-modal` 27 项在全量并发下 5 秒超时（这次没有加 `--maxWorkers=4`），单独重跑 27/27 通过。
+  - `vite-development-cache` 在沙盒里不能监听 5173 端口（`listen EPERM`），沙盒外重跑通过。
+  - `funds-modal-scroll-contract` 是上面记录的本机误报。
+- 第一轮全量运行有 26 个文件失败：一个是本机误报，一个是 `decimal-display-contract` 的登记数，其余逐个核对后是补零或 5 位有效数字带来的预期变化，已改断言。金库的用例另外暴露补零放错了位置（领域层的 `availableAmount` 而不是控制器的 `maxAmount`），已改到控制器。改了测试数据的三处：`historical-order-price` 的 95001.5 和 `collateral-amount` 的 29780.5 都超过 5 位有效数字，不是合法的价格，改为 9500.5 与 2978.5；`command-menu` 的现货价改为 0.0012345678，让现货与永续的上限差异仍然可见。
+- 新增单元测试：`numbers.test.ts`（`getPriceDisplayDecimals`、`formatPriceAtDisplayDecimals`、`formatDecimalFloor` 的 `minDecimals`）、`orders.test.ts`（`formatPriceForInput`）、`open-order-modification.test.ts`（补零的起始值不算改动）、`staking-domain.test.ts`（`formatHypeMaxInput`）。
+- 浏览器套件（Playwright，Chromium，脚本注入的输入，沙盒外运行以监听本地端口）：
+  - `mobile-trade-all-orders.playwright.config.ts` 47/47 通过。夹具 BTC 的 `szDecimals` 为 3，切到限价时的预填、Mid 与 Scale 的 Mid 改为预期 `100.00`。
+  - 共享配置下的 `trade-size-slider-performance`、`trade-panel-all-orders`、`trade-panel-layout` 34/34 通过。
+- Codex CLI（`gpt-6-astra`，只读，low，约 11 万 token）评 8/10，没有 P0/P1。四项发现逐条核对后都成立，已处理：
+  - P2：限价平仓失焦时写回 `formatPriceForOrder` 的去零形式，Mid 补的零一失焦就没了。改为只有取整改变数值时才写回，并按官方位数补零；合法输入保持原样。提交 hook 收到框里的值（如 `100.50`），`buildOrderPlan` 仍规范成 `100.5`。
+  - P2：持仓 TP/SL 弹窗打开已有 TP/SL 时，四个价格框按 `6 − szDecimals` 位预填（HYPE 显示 85.8100），漏改。改用 `formatPriceForInput`，缺值仍为空；原有用例的 30000.000 随之变成 30000。
+  - P3：换算价只取整一次会改变个别订单价，例如 80 × 1.0726811 原先下单 85.815，现在是 85.814。保留只取整一次，加了用例，并写进文档和 CHANGELOG。
+  - P3：文档说得太满。宽度不变只在同一数量级内成立：显示按取整前的价格定位数，99.9996 显示 100.000，和官方一样。Max 在输入只允许 0 或 1 位、结果为零时不补零。已改准。
+  - 按它的建议补了用例：订单簿点价只写一次、之后元数据变化不重放，元数据到达前的点击保持原文；`formatPrice` 的负数、NaN 和跨数量级；超过 5 位有效数字的委托价 95001.5 显示 `$95,002`。
+  - 两项 P2 修复都做了变异：把预填改回 `toFixed`、把失焦改回去零写法后，新用例都失败，复原后通过。Codex 在只读沙盒里没有运行测试，测试结果以本机运行为准。
+- 第二轮 Codex（同样只读、low，约 7.6 万 token，只审上面四项的修复）评 9.2/10，没有发现。按它建议的变异又补了用例：失焦时合法输入保持原文、取整后写回带尾零的值（100.499 → 100.50）、已有触发限价 TP 与 SL 的四个预填、`formatPriceForInput` 对 `undefined`/`null`/空串返回空、四个换算函数各自只取整一次。九个变异（失焦总是补零、失焦写回去零值、四个预填逐个改回 `toFixed`、删掉空值分支、ROE 与盈亏换算各恢复一次协议位数取整）全部被抓住，复原后通过。
+- 未做：真实手机与桌面上的观感；官方终端里修改订单弹窗和追踪止损显示的实测（账户没有对应订单）；兑换、Earn、金库、质押的 Max 没有浏览器用例，只有单元测试。
+
 ## 后续与替代关系
 
 - 平仓类弹窗（市价平仓、限价平仓）有各自的数量与百分比逻辑，本次没有改，也没有发现它们用去零写法。
-- 全仓库剩下的去零写法是 `formatSizeForOrder`（下单规范字符串）和 `lib/trade/numbers.ts` 的 `formatDecimalFloor`（桌面当前仓位文字、金库金额、Scale 各档下单数量），都不是数量输入框。
+- 去零写法现在只留在规范字符串（`formatSizeForOrder`、`formatPriceForOrder`、Scale 各档经 `formatDecimalFloor`）和不传 `minDecimals` 的显示（桌面当前仓位文字、金库金额）。价格框、数量框和 Max 的程序填值都已补零（见上一节）。
+- 下一次改价格显示或填值，先读 `docs/number-format-setting.md` 规则 12 与「与官方终端的差异」，以及 `docs/order-entry-surface-parity.md` 的「价格框的程序填值与 TP/SL 换算价」。

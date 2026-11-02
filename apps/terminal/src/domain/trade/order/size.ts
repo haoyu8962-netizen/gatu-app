@@ -72,7 +72,7 @@ interface SizeModeToggleInput {
  * terminal's input does, so the number keeps its width while the slider moves. Typed sizes stay as typed, and
  * `formatSizeForOrder` still sends the exchange the trimmed form.
  */
-function formatSizeValue(value: Numeric, decimals: number): string {
+export function formatSizeForInput(value: Numeric, decimals: number): string {
 	const size = toBig(value);
 	if (!size || size.lte(0)) return "0";
 	const fixed = size.toFixed(decimals, Big.roundDown);
@@ -257,7 +257,7 @@ export function getSizeForPercent(input: SizeForPercentInput): string {
 				return quoteAmount.toFixed(QUOTE_SIZE_INPUT_MAX_DECIMALS, Big.roundDown);
 			}
 			const tokenAmount = Big(input.maxSize).times(pct);
-			return formatSizeValue(tokenAmount, input.szDecimals);
+			return formatSizeForInput(tokenAmount, input.szDecimals);
 		}
 
 		if (isQuoteMode) {
@@ -267,7 +267,7 @@ export function getSizeForPercent(input: SizeForPercentInput): string {
 			return quoteAmount.toFixed(QUOTE_SIZE_INPUT_MAX_DECIMALS, Big.roundDown);
 		}
 		const tokenAmount = Big(input.spotBalance.baseAvailable).times(pct);
-		return formatSizeValue(tokenAmount, input.szDecimals);
+		return formatSizeForInput(tokenAmount, input.szDecimals);
 	}
 
 	if (input.maxSize <= 0) return "";
@@ -277,7 +277,7 @@ export function getSizeForPercent(input: SizeForPercentInput): string {
 		if (input.price <= 0) return "";
 		return size.times(input.price).toFixed(QUOTE_SIZE_INPUT_MAX_DECIMALS, Big.roundDown);
 	}
-	return formatSizeValue(size, input.szDecimals);
+	return formatSizeForInput(size, input.szDecimals);
 }
 
 export function getSizeValueForModeToggle(input: SizeModeToggleInput): string {
@@ -286,7 +286,7 @@ export function getSizeValueForModeToggle(input: SizeModeToggleInput): string {
 	if (input.sizeMode === "base") {
 		return Big(input.sizeValue).times(input.price).toFixed(QUOTE_SIZE_INPUT_MAX_DECIMALS, Big.roundDown);
 	}
-	return formatSizeValue(input.sizeValue, input.szDecimals);
+	return formatSizeForInput(input.sizeValue, input.szDecimals);
 }
 
 export function getSliderValue(sizeValue: number, maxSize: number): number {
@@ -327,7 +327,7 @@ export function getSelectedSizeDisplay(
 ): string | null {
 	const base = toBig(baseSize);
 	if (!base || base.lt(0)) return null;
-	if (sizeMode === "base") return formatSizeValue(base, szDecimals);
+	if (sizeMode === "base") return formatSizeForInput(base, szDecimals);
 	const px = toBig(price);
 	return px?.gt(0) ? base.times(px).toFixed(QUOTE_SIZE_INPUT_MAX_DECIMALS, Big.roundDown) : null;
 }

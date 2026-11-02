@@ -115,6 +115,7 @@ This file contains durable project instructions for coding agents. Read `agent.m
 - Typed decimal input stays a `.` protocol string; when the setting displays `,` as the decimal sign, a typed `,` is normalized to `.` before validation (`normalizeDecimalInput` / `normalizeDecimalInputEvent`), and every bare `<input inputMode="decimal">` must use that helper; `locale-format-contract` scans both rules.
 - A decimal string that is already rounded or truncated for display (a Big.js `toFixed` result, a protocol price or size shown as is, a viem amount) goes through `formatDecimalString` from `useNumberFormat()`, which keeps the caller's digits and swaps the separators; values that still need rounding keep the rounding formatters. Never build display text from `toFixed`/`toPrecision` or group thousands by hand (`docs/number-format-setting.md` rule 10, `docs/adr/0037-exact-decimal-display-separators.md`); `decimal-display-contract` requires every other `toFixed`/`toPrecision` call to be registered by file with its use and count.
 - The chart receives `numeric_formatting` at creation and follows a setting change through the same state-preserving rebuild as a locale change; a number-format change never reloads the page.
+- A market price shows the official terminal's decimals with its trailing zeros kept, and a value the terminal writes into a price, size or Max field keeps its decimals the same way; submissions still send the canonical trimmed strings, and edits compare values numerically (`docs/number-format-setting.md` rule 12, which owns the rule and its deliberate deviations).
 - History tables and their CSV exports follow `docs/trading-toolbar-redesign.md` (History values): prices at the market's protocol decimals, a liquidation label only for the account's own or a protocol liquidation, HIP-3 amounts in their collateral, ledger rows classified by HyperCore system address, and exported numbers exactly as the exchange sent them.
 
 ## Desktop trading layout contract
@@ -325,6 +326,10 @@ pnpm --dir apps/terminal exec vitest run \
 # Number and date formatting
 pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/format.test.ts \
+  src/lib/tests/numbers.test.ts \
+  src/lib/tests/price-input.test.tsx \
+  src/lib/tests/tpsl.test.ts \
+  src/lib/tests/document-title.test.tsx \
   src/lib/tests/number-format-settings.test.ts \
   src/lib/tests/number-format-reactivity-contract.test.ts \
   src/lib/tests/date-locale-reactivity-contract.test.ts \
@@ -358,6 +363,9 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/desktop-grid-layout.test.ts \
   src/lib/tests/grid-content-height.test.tsx \
   src/lib/tests/order-entry.test.ts \
+  src/lib/tests/orders.test.ts \
+  src/lib/tests/mobile-trade-price-field.test.tsx \
+  src/lib/tests/trade-form-scale-mid.test.tsx \
   src/lib/tests/order-entry-store.test.tsx \
   src/lib/tests/order-validation.test.ts \
   src/lib/tests/order-intent.test.ts \

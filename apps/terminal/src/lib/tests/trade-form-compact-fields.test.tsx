@@ -118,8 +118,8 @@ describe("compact trade form fields", () => {
 
 		act(() => buttons[0]?.click());
 		act(() => buttons[1]?.click());
-		expect(mocks.setScaleStart).toHaveBeenCalledWith("101.2500");
-		expect(mocks.setScaleEnd).toHaveBeenCalledWith("101.2500");
+		expect(mocks.setScaleStart).toHaveBeenCalledWith("101.25");
+		expect(mocks.setScaleEnd).toHaveBeenCalledWith("101.25");
 	});
 
 	it("wraps every compact scale field in the trading panel frame", () => {

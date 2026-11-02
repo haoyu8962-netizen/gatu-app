@@ -9,6 +9,7 @@ import type { FundsActionReference } from "../funds-action/funds-action-marker";
 import { type FundsActionState, getFundsActionSteps } from "../funds-action/funds-action-state";
 import {
 	createStakingActionSubmission,
+	formatHypeMaxInput,
 	formatStakingAmount,
 	type HypeAmountValidation,
 	type StakingActionRequest,
@@ -125,7 +126,12 @@ export function StakingActionModal({
 								<Trans>Available</Trans>:{" "}
 								<bdi dir="ltr">{formatStakingAmount(action.maxAmount, numberFormat)} HYPE</bdi>
 							</span>
-							<Button variant="ghost" intent="brand" size="xs" onClick={() => setAmount(action.maxAmount)}>
+							<Button
+								variant="ghost"
+								intent="brand"
+								size="xs"
+								onClick={() => setAmount(formatHypeMaxInput(action.maxAmount))}
+							>
 								<Trans>Max</Trans>
 							</Button>
 						</div>

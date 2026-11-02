@@ -48,13 +48,13 @@ describe("MobileTradePriceField", () => {
 			);
 		});
 		const button = container.querySelector<HTMLButtonElement>("button");
-		expect(button?.getAttribute("aria-label")).toBe("Use mid price 1,234.5679");
+		expect(button?.getAttribute("aria-label")).toBe("Use mid price 1,234.6");
 
 		numberFormatSetting.locale = "de-DE";
 		act(() => notifyNumberFormatChange());
-		expect(button?.getAttribute("aria-label")).toBe("Use mid price 1.234,5679");
+		expect(button?.getAttribute("aria-label")).toBe("Use mid price 1.234,6");
 		act(() => button?.click());
-		expect(onMidClick).toHaveBeenCalledExactlyOnceWith("1234.5679");
+		expect(onMidClick).toHaveBeenCalledExactlyOnceWith("1234.6");
 	});
 
 	it("keeps an explicit accessible name and forwards the exact formatted midpoint", () => {
@@ -89,7 +89,7 @@ describe("MobileTradePriceField", () => {
 		expect(midButton.className).toContain("after:inset-0");
 		expect(midButton.className).not.toContain("after:size-11");
 		act(() => midButton.click());
-		expect(onMidClick).toHaveBeenCalledWith("12345678901234567890.12");
+		expect(onMidClick).toHaveBeenCalledWith("12345678901234567890");
 	});
 
 	it("uses the visible field label as the accessible fallback", () => {
@@ -129,7 +129,7 @@ describe("MobileTradePriceField", () => {
 			const frame = button.parentElement;
 			const frameClasses = frame?.className;
 			expect(button.disabled).toBe(false);
-			expect(button.getAttribute("aria-label")).toBe("Use mid price 101.2500");
+			expect(button.getAttribute("aria-label")).toBe("Use mid price 101.25");
 
 			render(unavailablePrice);
 			expect(container.querySelector("button")).toBe(button);
@@ -148,9 +148,9 @@ describe("MobileTradePriceField", () => {
 			render("102.5");
 			expect(container.querySelector("button")).toBe(button);
 			expect(button.disabled).toBe(false);
-			expect(button.getAttribute("aria-label")).toBe("Use mid price 102.5000");
+			expect(button.getAttribute("aria-label")).toBe("Use mid price 102.50");
 			act(() => button.click());
-			expect(onMidClick).toHaveBeenCalledExactlyOnceWith("102.5000");
+			expect(onMidClick).toHaveBeenCalledExactlyOnceWith("102.50");
 		},
 	);
 });

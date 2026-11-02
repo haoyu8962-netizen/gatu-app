@@ -619,6 +619,23 @@ changes, not evidence that a build has been deployed or accepted on real devices
   on the official terminal, so a nonzero size no longer changes width while the slider moves within the
   same whole number. A size that rounds down to zero still shows 0. Typed sizes stay as typed, and
   orders still send the size without trailing zeros.
+- Market prices show the decimals the official terminal shows: five significant figures within the
+  market's protocol decimals, with trailing zeros kept (85.810 rather than 85.81, BTC as a whole
+  number). This covers positions, open orders, TWAP and history rows, the TP/SL, close and order
+  confirmation dialogs, the order summary's estimated liquidation price and Scale and TWAP summaries,
+  the phone order form's market price, market search and the tab title, so a live price keeps its
+  width as it moves within the same order of magnitude; an entry price averaged beyond five
+  significant figures now rounds to them, as on the official terminal.
+- Prices the terminal fills into a price field (Mid, an order book row, Limit Close's Mid, an order
+  being edited, an existing TP/SL) carry the same decimals, and Limit Close no longer drops them when
+  the field loses focus; an order being edited starts from a size with every size decimal. A TP/SL
+  price worked out from a percentage or a PNL amount is rounded once to five significant figures as
+  it is worked out, so the field shows the price the order carries (it used to show one decimal more
+  and was rounded again when the order was sent, which occasionally sent a price one tick away) and
+  the PNL shown for it is the PNL at that price.
+- Max in Swap, Earn, Vaults and Staking fills an amount with at least two decimals where the token
+  allows them (12.50 rather than 12.5) and keeps any further exact digits; Swap no longer risks
+  exponent notation for a tiny balance.
 - A language link (`?lang=`) loads the current shell from the network instead of the offline shell
   cache, so a returning visitor still gets the link's language after a release. The cached shell is
   used only when the network fails or the server returns a 5xx error, and the first navigation

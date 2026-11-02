@@ -559,6 +559,35 @@ describe("PositionLimitCloseModal", () => {
 		expect(testState.submit).toHaveBeenCalledWith({ price: "123.46", size: "2.5" });
 	});
 
+	it("keeps a legal typed price as typed on blur and pads a price the tick rounds", () => {
+		render();
+		const priceValue = () => container.querySelector<HTMLInputElement>('input[aria-label="Limit Price"]')?.value;
+		const blur = () => act(() => (testState.priceInputProps?.onBlur as () => void)());
+
+		enterPrice("100.5");
+		blur();
+		expect(priceValue()).toBe("100.5");
+		enterPrice("100.499");
+		blur();
+		expect(priceValue()).toBe("100.50");
+	});
+
+	it("keeps the Mid shortcut's trailing zeros after the price field loses focus", async () => {
+		testState.marketInfo.midPx = "100.5";
+		render();
+		const priceValue = () => container.querySelector<HTMLInputElement>('input[aria-label="Limit Price"]')?.value;
+
+		act(() => (testState.priceInputProps?.onMidClick as (value: string) => void)("100.5"));
+		expect(priceValue()).toBe("100.50");
+		act(() => (testState.priceInputProps?.onBlur as () => void)());
+		expect(priceValue()).toBe("100.50");
+
+		await act(async () => {
+			container.querySelector<HTMLButtonElement>('[data-testid="submit"]')?.click();
+		});
+		expect(testState.submit).toHaveBeenCalledWith({ price: "100.50", size: "2.5" });
+	});
+
 	it.each([
 		{ state: "reconciling", submissionId: "submission-1" },
 		{ state: "blocked" },

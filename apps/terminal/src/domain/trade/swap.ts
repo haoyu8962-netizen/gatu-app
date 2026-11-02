@@ -1,11 +1,11 @@
 import Big from "big.js";
-import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
+import { DEFAULT_QUOTE_TOKEN, FILLED_AMOUNT_MIN_DECIMALS } from "@/config/app";
 import { ORDER_MIN_NOTIONAL_USD } from "@/config/trade";
 import { STABLE_PAIR_FEE_SCALE } from "@/domain/trade/fees";
 import { builderFeeTenthsBpsToRate } from "@/domain/trade/order-fee-quote";
 import type { SpotMarketInfo } from "@/lib/hyperliquid/hooks/useMarketsInfo";
 import type { SpotToken } from "@/lib/hyperliquid/markets";
-import { toBig } from "@/lib/trade/numbers";
+import { formatDecimalFloor, toBig } from "@/lib/trade/numbers";
 
 const BPS_DIVISOR = 10_000;
 
@@ -143,12 +143,8 @@ export function getMaxSwapInput(
 ): string {
 	const balanceValue = toBig(balance);
 	if (!balanceValue || balanceValue.lte(0)) return "0";
-	if (!isBuying) return balanceValue.round(decimals, Big.roundDown).toString();
-
-	return balanceValue
-		.div(Big(1).plus(Big(slippageBps).div(BPS_DIVISOR)))
-		.round(decimals, Big.roundDown)
-		.toString();
+	const maximum = isBuying ? balanceValue.div(Big(1).plus(Big(slippageBps).div(BPS_DIVISOR))) : balanceValue;
+	return formatDecimalFloor(maximum, decimals, FILLED_AMOUNT_MIN_DECIMALS);
 }
 
 export function buildSwapQuote({

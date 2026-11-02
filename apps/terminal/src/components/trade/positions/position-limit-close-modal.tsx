@@ -4,7 +4,7 @@ import { ModalDescription, ModalTitle } from "@sairn/ui";
 import { useRef, useState } from "react";
 import { PriceInput } from "@/components/ui/price-input";
 import { isLiveMarkPriceReady } from "@/domain/trade/market-price";
-import { formatPriceForOrder } from "@/domain/trade/orders";
+import { formatPriceForInput, formatPriceForOrder } from "@/domain/trade/orders";
 import { estimatePositionLimitClosePnl } from "@/domain/trade/position-limit-close";
 import {
 	type PositionCloseSizingIntent,
@@ -260,7 +260,7 @@ function PositionLimitCloseModalBody({ position, openingTarget, open, onOpenChan
 
 	function setMidPrice(nextPrice: string) {
 		setPrice(
-			formatPriceForOrder(nextPrice, {
+			formatPriceForInput(nextPrice, {
 				assetId: position.assetId,
 				szDecimals: position.szDecimals,
 			}),
@@ -269,7 +269,9 @@ function PositionLimitCloseModalBody({ position, openingTarget, open, onOpenChan
 
 	function handlePriceBlur() {
 		setShowPriceError(true);
-		if (priceValid) setPriceInput(normalizedPrice);
+		if (priceValid && !priceValue?.eq(normalizedPrice)) {
+			setPriceInput(formatPriceForInput(priceInput, { assetId: position.assetId, szDecimals: position.szDecimals }));
+		}
 	}
 
 	function handleOpenChange(nextOpen: boolean) {

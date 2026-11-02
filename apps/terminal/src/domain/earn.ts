@@ -1,7 +1,7 @@
 import Big from "big.js";
-import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
+import { DEFAULT_QUOTE_TOKEN, FILLED_AMOUNT_MIN_DECIMALS } from "@/config/app";
 import { getSpotAvailableValue, getSpotTransferableValue } from "@/domain/trade/balances";
-import { toBig } from "@/lib/trade/numbers";
+import { formatDecimalFloor, toBig } from "@/lib/trade/numbers";
 
 export type EarnOperation = "supply" | "withdraw" | "borrow" | "repay";
 
@@ -340,7 +340,8 @@ export interface EarnMaxAmountInput {
 
 export function getEarnMaxAmount({ operation, row, summary, spotAvailable }: EarnMaxAmountInput): string | null {
 	const decimals = row.weiDecimals;
-	const floorToDecimals = (value: Big) => (value.lte(0) ? "0" : value.round(decimals, Big.roundDown).toFixed());
+	const floorToDecimals = (value: Big) =>
+		value.lte(0) ? "0" : formatDecimalFloor(value, decimals, FILLED_AMOUNT_MIN_DECIMALS);
 	if (operation === "supply") {
 		const available = toBig(spotAvailable);
 		return available ? floorToDecimals(available) : null;

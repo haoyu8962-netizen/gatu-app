@@ -6,7 +6,8 @@ import {
 	HL_PRICE_MAX_DECIMALS,
 	TRIGGER_MARKET_SLIPPAGE_BPS,
 } from "@/config/trade";
-import { formatPriceForOrder, formatSizeForOrder } from "@/domain/trade/orders";
+import { formatSizeForInput } from "@/domain/trade/order/size";
+import { formatPriceForInput, formatPriceForOrder, formatSizeForOrder } from "@/domain/trade/orders";
 import type { ExchangeParams } from "@/lib/hyperliquid";
 import { toBig } from "@/lib/trade/numbers";
 import type { OpenOrder } from "@/lib/trade/open-orders";
@@ -56,6 +57,20 @@ export interface OpenOrderModifyMarketBinding {
 	szDecimals: number;
 	kind: OpenOrderModifyMarketKind;
 	markPx?: string;
+}
+
+/**
+ * The value an edit field starts from, written as the official terminal's edit dialog shows it: a size with every
+ * size decimal and a price with its five-significant-figure decimals (0.80, 85.810). The modify plan compares
+ * values numerically, so the padding never reads as a change.
+ */
+export function formatOpenOrderEditValue(
+	value: string,
+	field: OpenOrderModifyField,
+	market: Pick<OpenOrderModifyMarketBinding, "assetId" | "szDecimals">,
+): string {
+	if (field === "size") return formatSizeForInput(value, market.szDecimals);
+	return formatPriceForInput(value, { assetId: market.assetId, szDecimals: market.szDecimals });
 }
 
 interface OpenOrderModifyFingerprint {
