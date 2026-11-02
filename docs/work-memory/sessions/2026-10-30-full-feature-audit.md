@@ -7,10 +7,10 @@
   "kind": "task",
   "status": "recorded",
   "topics": ["pr-review", "order-entry", "market-recovery", "account-funding", "i18n-runtime"],
-  "summary": "运营方要求遍历全部功能、对照 app.hyperliquid.xyz 找功能与 UI 缺陷、双端核对并请 Codex 二审后再规划。基线 dev d99c2bc9（线上 p35 同内容）。方法：Chrome 内对线上 p35 与官方终端只读并排实测、无头 Playwright 多尺寸与三种语言手机走查、五个只读代码审查代理（下单、持仓表格、行情图表、资金、仪表盘）、三路 Codex（gpt-6-astra、只读、medium）逐条证伪。实测复现：1W/1M 图表无数据、统一账户金库存入可用额为 $0、⌘K 菜单未本地化、成交价紧凑格式丢精度、盘口数量缩写、订单簿分组值被截断、四种语言各 31 条未译、阿拉伯语正负号错位、未设置 expiresAfter。未改代码；修复分批规划待运营方确认。限制：未连接真实下单与签名、未真机、注入事件不代表物理输入。",
+  "summary": "基于 p35 对照官方终端，在桌面与手机布局复现图表、金库、盘口及本地化问题。六组 P1、五组 P2 及两组后续修复进入 p36。原审查表保留发现时的状态，逐项线上与真实资金验收仍待做。",
   "thread": null,
   "baseCommit": "d99c2bc9",
-  "commits": [],
+  "commits": ["8fb9ee29", "c4a7e044", "90658436", "ec067207", "26c06d02", "047b4bb3"],
   "sources": [
     {"path": "apps/terminal/src/components/trade/chart/datafeed.ts"},
     {"path": "apps/terminal/src/components/vaults/use-vault-action-controller.ts"},
@@ -160,3 +160,7 @@
 ### 下一次先查
 
 本记录「二审结果」各表；Codex 三路报告与浏览器截图只在本机草稿目录，未入库。本记录不替代任何早先记录；2026-10-13 生产就绪审计的未修项仍以那份记录为准。
+
+## 周整理补记（2026-11-02）
+
+6 组 P1 与 5 组 P2 经 #129 整合。#131、#132 接续处理余额估值、手机成交筛选、现货名称和账户被动状态等。未覆盖事项仍按各组清单跟踪。 [本周核对记录](2026-11-02-weekly-memory-review.md)

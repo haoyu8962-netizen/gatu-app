@@ -7,10 +7,10 @@
   "kind": "task",
   "status": "recorded",
   "topics": ["order-entry", "hyperliquid-api"],
-  "summary": "运营方要求继续修复 P2，修复方案先核对官方开发文档并与官方终端对比。本组为全功能审查的下单校验：A2、A3、A4、A5、A11、A12，依据 2026-10-31 下载的官方生产前端包 config-BhZylSmU.js（zle/d8、!xJ(P) 与 needToDeposit、UJ、MJ/BJ、g6）与官方文档 Order types。分支 claude/p2-order-validation，基于本地集成分支 claude/p1-integration（dev d99c2bc9 + 第一批六个 P1 分支）。改动：永续限价单的最大数量按挂单价占用的保证金折算，表单与执行守卫同口径，Scale 逐档；有资金账户上的止损/止盈单不受可用余额与最大数量限制；TWAP 有触发价时最高/最低价只比触发价；TWAP 摘要改为约每笔数量；市价单附带 TP/SL 的守卫参照价改为与表单相同的中间价；现货市价买单在表单里按发送价（滑点上限价按发送规则取整）核对报价余额。相关测试、33 个变异与三轮 Codex 审查（终评 9/10）通过；未推送。",
+  "summary": "永续限价委托按挂单价计算可下数量，修正条件单余额限制、TWAP 子单与价格校验、附带 TP/SL 参照价及现货市价买入预算。改动经 #129 进入 p36。单独触发单方向的参照价仍按本项目约定。",
   "thread": null,
   "baseCommit": "0fd4b560",
-  "commits": [],
+  "commits": ["955983fd", "90658436"],
   "sources": [
     {"path": "apps/terminal/src/domain/trade/order/size.ts"},
     {"path": "apps/terminal/src/domain/trade/order/entry-execution-guard.ts"},

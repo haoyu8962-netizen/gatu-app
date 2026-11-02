@@ -7,10 +7,10 @@
   "kind": "task",
   "status": "recorded",
   "topics": ["account-funding", "pr-review"],
-  "summary": "全功能审查第一批的第四组（B1、B2、B10、B16、D3，顺带 B5、B19）。成交只在 liquidatedUser 为空或等于本人时标为本人强平（Market Order Liquidation），对手方被强平的成交显示 (Price Improved) 并保持方向颜色，后备、借款与自动减仓沿用官方名称；现货 Buy/Sell 与多空翻转方向可翻译。成交与委托历史价格按市场 szDecimals 的协议精度显示，不再缩写或截到两位。资金费历史显示多空方向，HIP-3 市场的付款与持仓盈亏、保证金、资金费按抵押币显示。资金费与委托历史 CSV 导出交易所原值。存款和提款把发往 USDC 系统地址的 send 记为提款、来自 CoreDepositWallet 的 send 记为存款、其他经系统地址的转移记为划转，来源或去向显示 HyperEVM（官方另从 Across 接口取具体链，未接入）。未推送。",
+  "summary": "修正强平归属、历史价格精度、HIP-3 抵押币、资金流水分类与 CSV。后续补齐子账户划转及持仓量奖励，随 p36 发布。真实账户流水逐行核对仍待做。",
   "thread": null,
   "baseCommit": "d99c2bc9",
-  "commits": [],
+  "commits": ["55c0b62e", "562c8687", "cfb73a0f", "690069fa"],
   "sources": [
     {"path": "apps/terminal/src/lib/trade/fill-direction.ts"},
     {"path": "apps/terminal/src/lib/trade/market-price-format.ts"},

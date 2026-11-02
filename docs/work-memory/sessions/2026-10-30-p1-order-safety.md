@@ -7,10 +7,10 @@
   "kind": "task",
   "status": "recorded",
   "topics": ["order-entry", "hyperliquid-api"],
-  "summary": "运营方选「先修第一批 P1」后的第一组（全功能审查 M1、A8、A1）。M1：createExchangeClient 与 getTradingClient 设置 SDK defaultExpiresAfter，L1 动作过期时间为 exchangeStatus 估计的交易所时间加 15 秒（墙钟与单调时钟取大，取不到时回落本机时间），ADR 0045；没有关闭开关，待运营方决定。A8：限价与触发价不在最小变动单位上时校验器拦截并给出合规示例价，提交时限价只向用户边界方向取整，确认弹窗与通知同口径。A1：Scale 的换算价改为各档按数量加权的均价（对齐官方 Gq），USD 数量、订单价值、费用与手机保证金随之改变，reduce-only 浏览器测试的 Scale 保证金预期由 $10.00 改为 $8.00。全量单测与下单浏览器套件通过（vite-development-cache 在沙箱内因端口 EPERM 失败，沙箱外通过）。未推送。",
+  "summary": "L1 交易延迟保护默认开启并可关闭，正常窗口为估计交易所时间加 15 秒。#129 改用单调经过时间并处理休眠后重采样。限价与触发价校验、Scale 按档位计价一并进入 p36。",
   "thread": null,
   "baseCommit": "d99c2bc9",
-  "commits": [],
+  "commits": ["cd2f434c", "7b54a4b1", "2bab5b64", "ca327a50", "646fda33", "0c32af85"],
   "sources": [
     {"path": "packages/hl-react/src/internal/exchange/server-clock.ts"},
     {"path": "packages/hl-react/src/clients.ts"},
@@ -84,3 +84,7 @@
 
 - 「关闭交易延迟保护」开关已按官方实践补上（见上文「按官方实践处理的待定事项」）。
 - 第一批其余各组（资金安全、金库与仪表盘、历史与表格、图表、改单）在各自分支进行。
+
+## 周整理补记（2026-11-02）
+
+ADR 0045 的后续修订取代初版时钟公式及无开关的说法。样本不加半个往返时间，墙钟变化触发重采样，旧样本只按单调时间推进。真实网络过期拒绝仍待验。 [本周核对记录](2026-11-02-weekly-memory-review.md)
