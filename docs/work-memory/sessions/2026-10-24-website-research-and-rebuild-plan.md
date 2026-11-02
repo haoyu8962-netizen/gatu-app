@@ -7,10 +7,10 @@
   "kind": "task",
   "status": "recorded",
   "topics": ["brand-identity", "jurisdiction-marketing"],
-  "summary": "运营方认为官网 sairn.ai 太传统，要求用现代前端与加密原生技术重做。Agent 调研约 40 个同行站点、动效技术与仓库约束（docs/website-industry-research-2026-10.md），写出拟议、未批准的重建规划（docs/website-rebuild-plan.md：保留 Astro 静态站；首屏 Preview 窗口默认是未登录终端的演示录屏，第二视图是 Worker 里 Canvas 2D 的实时行情画布；fail-closed 数据层与 REST 权重上限，主张登记表，阶段 0 先删英文站与日本邮件矛盾的说法并补风险句，默认关闭的日语页，日本邮件依赖的 sairn.ai 能力，D1–D25 待决事项），经三轮修订与两轮 GPT 对抗审查。设计原型在 designs/website-hero-prototype（首屏、演示录屏、录制脚本与 DOM 守卫）；「加密之外的市场」审阅包（docs/marketing/beyond-crypto-review.md 与 designs/beyond-crypto-review）只供律师审阅，尚未发出。未改官网与终端代码，未运行官网测试或构建，没有发布或上线任何内容，2026-10-25 的改动没有提交；方向与评审原文未取得，原始证据只在本机 .worklog。",
+  "summary": "官网从原型推进到阶段 2，采用浅色首页、官网专用强调色与 Astro 7。p33 先交付终端依赖，terminal:check 通过后发布官网。其后每日检查报告 xyz:JIO 分类过期，市场配置待校正。",
   "thread": null,
   "baseCommit": "32125377",
-  "commits": [],
+  "commits": ["c32fb14c", "a237ed5a", "69a4e7a2", "371674ba", "33267066", "3d994e3d", "c39df181", "d4bd4f9c", "84c8eb1c", "e8bb774f", "6d430d27", "d6a32618", "6858ffba", "2dcfd3e0"],
   "sources": [
     {"path": "docs/website-plan.md"},
     {"path": "docs/adr/0043-website-marketing-accent.md"},
@@ -228,3 +228,7 @@
 - 第三轮 gpt-6-astra 对抗评审：8.0/10（较 8.2 降，主因功能缺陷）。已核实并修复：无 JS 时页签面板被 preflight `[hidden]` 隐藏；JIO/OURA 按每股报价导致行情为空；功能页签方向固定为 vertical；安全文案「never ask for verification code」与邮箱登录冲突；320px 市场表溢出。十项建议全部实施（另含首屏截图改为完整工作区并出 AVIF/WebP，达到 72 KB / 39 KB；三步上手补全；按钮阴影减轻）。
 - 验证（构建产物，2026-10-27）：`pnpm --filter @sairn/website test` 96 通过，`test:dist` 55 通过（含禁用 JS、拦截页签模块与 320/360/390 窄屏的 Chromium 测试），`tests/brand-cross-app.test.mjs` 7 通过，`pnpm brand:check` 通过。未做：Safari/Firefox、真机、VoiceOver/axe、线上 LCP；390px 下 LCP 是首屏文字段落而非 H1；公司图标的商标使用范围待运营方决定。
 - 功能区切换卡顿（运营方 2026-10-27 电脑实测反馈）：逐帧取证为整面板淡入导致深色窗口闪灰（12ms 透明度 0、约 210ms 才不透明）、截图懒加载到首次点击才下载、说明行数不同导致高度差 24px；主线程无长帧。修复为叠放交叉淡入、提前预加载解码、固定区块高度，`tabs-browser` 逐帧测试钉住；构建版录屏已给运营方。`test` 96、`test:dist` 56 通过。
+
+## 周整理补记（2026-11-02）
+
+后续以 website-plan.md、ADR 0043/0044 和 p33 发布记录为准。p32 的 terminal:check 失败保留于阶段 1。对 p33 的该项检查已通过，发布记录报告官网单测 97 项、产物测试 56 项通过。上周对 xyz:JIO 的预计已有每日检查结果，详见本周整理。 [本周核对记录](2026-11-02-weekly-memory-review.md)

@@ -10,7 +10,7 @@
   "summary": "生产审查的两批修复已分别经 PR #108/#109 合入并随 p32 发布，包含 CSV、TP/SL、自动存款重试、签名方队列隔离、外部存款未知结果、精确 Max 和平台限制。包体基线已由 PR #113 接续；分支保护、现货缺价估值、iframe 与 SW 问题及真实验收仍保留，OI 未知放行按 ADR 0023 维持。",
   "thread": null,
   "baseCommit": "6525fd04",
-  "commits": ["bd5e3fe0", "70973bb5", "db7690cb", "c08865d8"],
+  "commits": ["bd5e3fe0", "70973bb5", "db7690cb", "c08865d8", "7d06cd8b"],
   "sources": [
     {"path": "apps/terminal/src/lib/csv.ts"},
     {"path": "apps/terminal/src/components/trade/positions/history-tab.tsx"},
@@ -134,3 +134,7 @@ Codex CLI（`gpt-6-astra`、只读、`low`）第一轮 7/6/6 不通过，两项�
 后续来源：[2026-10-13-p32-rebaseline](2026-10-13-p32-rebaseline.md)；[2026-10-14-cloudfront-release-p32](2026-10-14-cloudfront-release-p32.md)。
 
 本补注为事后整理，只核对当前规范、代码、Git 和来源记录；来源测试及发布结果不作为本轮执行。查询时间和实际 head 见[本周整理](2026-10-19-weekly-memory-review.md)。
+
+## 周整理补记（2026-11-02）
+
+原有的现货余额缺价按入场成本估值一项已由 `7d06cd8b` 修正并进入 p36。其它审计事项仍保留各自的验证范围。 [本周核对记录](2026-11-02-weekly-memory-review.md)

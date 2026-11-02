@@ -7,10 +7,10 @@
   "kind": "task",
   "status": "recorded",
   "topics": ["account-funding", "pr-review"],
-  "summary": "全功能审查第一批的第三组（E1、E16、E6、E14，并入 E2 的存入 Max、E3、E4）。金库存入可存额按账户模式取值（统一账户与组合保证金用现货 USDC total − (spotHold ?? hold)，disabled 与 dexAbstraction 用永续 withdrawable，其余失败关闭），签名前同样重读；领导者在 allowDeposits=false 时仍可存入自有金库；官方最低存入 5 USDC（TVL 超过 1 亿为 10 USDC）在表单与签名前检查；存入与提取都有 Max（填已核验金额，提取不用协议的 usd=0 全额语义）。Portfolio 14 日成交量去掉当天未结束的一条。推荐接口答复不再因新增字段整体不可用；推荐码只收字母数字、最多 20 位并转大写，深链同样转大写。全量单测与金库、推荐浏览器套件通过（沙箱端口项除外）。未推送。",
+  "summary": "按账户模式和有效快照确定金库可用额，修正最低存款、Max、组合成交量与推荐码校验。改动随 p36 发布。金库全额提取语义和真实存取仍待验。",
   "thread": null,
   "baseCommit": "d99c2bc9",
-  "commits": [],
+  "commits": ["e9edd855", "91323d9c", "c56dcf4a"],
   "sources": [
     {"path": "apps/terminal/src/components/vaults/vault-action-domain.ts"},
     {"path": "apps/terminal/src/components/vaults/domain/vaults.ts"},
