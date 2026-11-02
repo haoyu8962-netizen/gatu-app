@@ -2,6 +2,8 @@
 
 状态：拟议，尚未实现或发布。建立/修订日期：2026-09-13。原方案见提交 `0662cae1`；根据[首轮复核](../work-memory/sessions/2026-09-13-across-plan-review-followup.md)收缩首期范围，再按 [N1–N8 复核](../work-memory/sessions/2026-09-13-across-rereview-resolution.md)补齐验收和恢复边界。
 
+2026-10-31 补记：搁置。运营方当日决定「搁置 Across，继续保持目前这个方案」，证据见[任务记录](../work-memory/sessions/2026-10-31-across-shelved-and-open-issues.md)：持久地址接口的权限始终没有开通（2026-09-13 至 09-15 用当时的 Key 调 `POST /deposit-addresses` 五次都是 403 `FORBIDDEN_API_KEY`，10-31 用假 Key 发同样的请求得到同样的答复）；自助申请表只发放 Integrator ID 与 API Key，可勾选的存款地址接口只有已弃用、地址 24 小时有效的 `/swap/counterfactual`。现行方案不变：新存款只走 [CCTP](../cctp-deposits.md)（含 [ADR 0040](0040-automatic-email-wallet-deposits.md) 的邮箱自动存款）与 [ADR 0034](0034-privy-card-funding.md) 的银行卡入金，提款按 `usdcRouting` 走 CCTP（`sendToEvmWithData`）或 `withdraw3`。重新启动前先经 Across 的共享渠道取得持久地址权限，再按现行 CloudFront + S3 + Lambda 架构重做持久化与部署设计；下文保留为历史方案。
+
 ## 目标与决策
 
 减少邮箱用户向 EOA 转入后再次显式存款的操作，保留精确 owner、旧余额及在途资金恢复。首期仅主网邮箱原生 USDC，以经验证的 USDC-SPOT 为目标；固定 SPOT 可能仍需显式模式选择/划转，不承诺转入后立即可交易。

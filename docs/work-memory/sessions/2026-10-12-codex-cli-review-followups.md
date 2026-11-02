@@ -7,10 +7,10 @@
   "kind": "task",
   "status": "verified",
   "topics": ["pr-review", "account-funding", "order-entry"],
-  "summary": "运营方问此前的 PR 是否调用过 Codex CLI gpt-6-astra 轻度对抗审查：没有；GitHub 上的 Codex 机器人只审 PR 开启时的首个提交，#97、#101、#102、#103 的后续修复提交无人复审。补跑两路只读 low 强度审查并在推送前对修复再审一轮。成立并修复：法律核验未绑定签名账户（P1）；未接受条款时自动宿主先尝试再报失败并锁死；未知状态警告被覆盖、授权到期后不恢复；排队中的尝试不随法律状态失效而取消；报价币模式冻结基础币数量造成显示金额与下单价值脱节（撤回 #102 的该部分）；CI 结构断言的五种绕过。运营方决定以后代码 PR 推送前默认跑一轮。未做真实钱包验证。",
+  "summary": "PR #104 的 owner 绑定、法律门控、未决授权恢复、滑杆报价币语义及 CI 断言修复已随 p31 发布；生产审查后又补充安全重试与存储读取失败处理，并随 p32 发布。原 CI 清单漏测、全量补跑和各轮审查范围保留，真实钱包与物理拖动仍未由本次整理验收。",
   "thread": null,
   "baseCommit": "4c0da2b8",
-  "commits": [],
+  "commits": ["2fb0e907", "88827567"],
   "sources": [
     {"path": "apps/terminal/src/hooks/trade/use-fresh-legal-action-guard.ts"},
     {"path": "apps/terminal/src/lib/hyperliquid/use-deposit.ts"},
@@ -61,3 +61,11 @@
 ## 后续与替代关系
 
 补充 [Codex 分支审查](2026-10-11-codex-deposit-branch-review.md)、[滑杆闪烁](2026-10-12-slider-percent-basis-flicker.md) 与 [CI 分片](2026-10-12-ci-terminal-test-shards.md)；其中滑杆记录里「报价币百分比选择记录基础币来源」一条被本记录取代，其余不变。
+
+## 周整理补注（2026-10-19）
+
+原“修复合入后需随下一次发布上线”已由 p31 来源记录更新。p32 又接续自动存款的退避重试和授权意向读取失败处理。预推送审查规则属于手册现行约定；后续发布任务中“Codex 先不用管”的原话仅是该任务的历史授权，不成为本次或以后任务豁免。
+
+后续来源：[2026-10-12-cloudfront-release-p31](2026-10-12-cloudfront-release-p31.md)；[2026-10-13-production-readiness-audit](2026-10-13-production-readiness-audit.md)；[2026-10-14-cloudfront-release-p32](2026-10-14-cloudfront-release-p32.md)。
+
+本补注为事后整理，只核对当前规范、代码、Git 和来源记录；来源测试及发布结果不作为本轮执行。查询时间和实际 head 见[本周整理](2026-10-19-weekly-memory-review.md)。

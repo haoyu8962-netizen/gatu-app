@@ -19,9 +19,113 @@ const PULL_REQUEST_WORKFLOWS = [
 	"slider-browser.yml",
 	"claude-code-review.yml",
 ];
+// The workflows a dev to main promotion may skip, each with the job its coverage job decides about (ADR 0016 D8).
+const PROMOTION_COVERAGE_JOBS = {
+	"terminal-tests.yml": "terminal-tests",
+	"slider-browser.yml": "terminal-browser",
+	"production-build.yml": "terminal",
+	"website-build.yml": "website",
+};
+const PROMOTION = { event_name: "pull_request", base_ref: "main", head_ref: "dev" };
+const EVENTS = [
+	{
+		name: "a pull request into dev",
+		github: { event_name: "pull_request", base_ref: "dev", head_ref: "claude/feature" },
+		pairings: ["false"],
+	},
+	{ name: "a covered promotion", github: PROMOTION, covered: "true", skips: true, pairings: ["true"] },
+	{ name: "an uncovered promotion", github: PROMOTION, covered: "false", pairings: ["false", "true"] },
+	{
+		name: "a promotion whose coverage job failed",
+		github: PROMOTION,
+		covered: "",
+		coverageFails: true,
+		pairings: ["false", "true"],
+	},
+	{
+		name: "an urgent fix into main",
+		github: { event_name: "pull_request", base_ref: "main", head_ref: "claude/hotfix" },
+		pairings: ["false", "true"],
+	},
+	{ name: "a release tag", github: { event_name: "push", base_ref: "", head_ref: "" }, pairings: ["false", "true"] },
+	{
+		name: "a manual run",
+		github: { event_name: "workflow_dispatch", base_ref: "", head_ref: "" },
+		pairings: ["false", "true"],
+	},
+	{
+		name: "a cancelled run of a pull request into dev",
+		github: { event_name: "pull_request", base_ref: "dev", head_ref: "claude/feature" },
+		cancelled: true,
+	},
+	{ name: "a cancelled promotion", github: PROMOTION, covered: "false", cancelled: true },
+];
+const EXPRESSION_TOKEN = /\s+|==|!=|&&|\|\||!|\(|\)|'[^']*'|fromJSON\(|cancelled\(\)|(?:github|needs)(?:\.[\w-]+)+/y;
 
 function readWorkflow(name) {
 	return readFileSync(new URL(`../.github/workflows/${name}`, import.meta.url), "utf8");
+}
+
+/** A workflow's jobs by id, each as the text of the lines below its id. */
+function workflowJobs(source) {
+	const jobs = {};
+	let id;
+	for (const line of (/^jobs:\n([\s\S]*)$/m.exec(source)?.[1] ?? "").split("\n")) {
+		const start = /^ {2}([\w-]+):$/.exec(line);
+		if (start) {
+			id = start[1];
+			jobs[id] = [];
+		} else if (id && !/^ {0,2}\S/.test(line)) {
+			jobs[id].push(line);
+		}
+	}
+	return Object.fromEntries(Object.entries(jobs).map(([job, lines]) => [job, lines.join("\n")]));
+}
+
+function jobValue(job, key) {
+	return new RegExp(`^ {4}${key}: (.+)$`, "m").exec(job)?.[1];
+}
+
+/**
+ * Evaluates the part of GitHub's expression syntax these workflows use. Every value compared here is a
+ * lowercase string, so JavaScript's operators of the same names give GitHub's results; any other syntax
+ * (another function, a number, an object filter) fails the test instead of being guessed at.
+ */
+function evaluate(expression, { github, covered = "", cancelled = false }) {
+	const source = expression.trim().replace(/^\$\{\{([\s\S]*)\}\}$/, "$1");
+	EXPRESSION_TOKEN.lastIndex = 0;
+	while (EXPRESSION_TOKEN.lastIndex < source.length) {
+		const at = EXPRESSION_TOKEN.lastIndex;
+		assert.ok(EXPRESSION_TOKEN.exec(source), `unsupported expression syntax: ${source.slice(at)}`);
+	}
+	const needs = { coverage: { outputs: { covered } } };
+	return new Function("github", "needs", "cancelled", `return (${source.replaceAll("fromJSON(", "JSON.parse(")});`)(
+		github,
+		needs,
+		() => cancelled,
+	);
+}
+
+/** What `needs.coverage.outputs.covered` holds for an event: empty unless the coverage job ran. */
+function coverageOutput(name, event) {
+	const { coverage } = workflowJobs(readWorkflow(name));
+	return !event.cancelled && evaluate(jobValue(coverage, "if"), event) ? (event.covered ?? "") : "";
+}
+
+/**
+ * Whether GitHub starts a job that needs the coverage job. An `if` that calls no status function also requires
+ * `success()`: the run was not cancelled and every job it needs succeeded, so a skipped coverage job (any event but
+ * a promotion) would skip it too. A status function's name inside a string literal is not a call.
+ */
+function jobRuns(name, job, event) {
+	const { coverage } = workflowJobs(readWorkflow(name));
+	const coverageSucceeded = !event.cancelled && evaluate(jobValue(coverage, "if"), event) && !event.coverageFails;
+	const succeeded = !event.cancelled && (jobValue(job, "needs") === undefined || coverageSucceeded);
+	const condition = jobValue(job, "if");
+	if (condition === undefined) return succeeded;
+	const callsStatusFunction = /\b(?:success|failure|always|cancelled)\(\)/.test(condition.replace(/'[^']*'/g, "''"));
+	const context = { github: event.github, covered: coverageOutput(name, event), cancelled: Boolean(event.cancelled) };
+	return (callsStatusFunction || succeeded) && evaluate(condition, context);
 }
 
 function countOccurrences(source, needle) {
@@ -118,19 +222,82 @@ test("cancels superseded runs in pull request workflows and never in the comment
 	assert.equal(/^concurrency:/m.test(readWorkflow("claude.yml")), false);
 });
 
-test("builds the default pairing on pull requests and every pairing for main, release tags and manual runs", () => {
+test("builds the default on pull requests into dev, the pairing-on state alone on a covered promotion, and both otherwise", () => {
 	const builds = readWorkflow("production-build.yml");
-	const [, defaultPairings, allPairings] =
-		/github\.event_name == 'pull_request' && github\.base_ref != 'main'\)\s+&& '(\[[^']+\])'\s+\|\| '(\[[^']+\])'/.exec(
-			builds,
-		) ?? [];
+	const { terminal } = workflowJobs(builds);
+	const pairing = /^ {8}pairing: >-\n((?: {10}.+\n)+)/m.exec(terminal)?.[1];
+	assert.ok(pairing, "the build matrix is no longer one folded pairing expression");
 
-	assert.deepEqual(JSON.parse(defaultPairings), [{ enabled: "false" }]);
-	const combinations = JSON.parse(allPairings).map((pairing) => pairing.enabled);
-	assert.deepEqual(combinations.sort(), ["false", "true"]);
-
-	assert.equal(/^\s+branches:/m.test(builds), false, "a base-branch filter would stop pull requests into dev from building");
+	for (const event of EVENTS) {
+		const builds = jobRuns("production-build.yml", terminal, event);
+		assert.equal(builds, !event.cancelled, `${event.name} ${builds ? "builds" : "builds nothing"}`);
+		if (!builds) continue;
+		const context = { github: event.github, covered: coverageOutput("production-build.yml", event) };
+		const built = evaluate(pairing.replace(/\n */g, " "), context).map((entry) => entry.enabled);
+		assert.deepEqual(built, event.pairings, `${event.name} builds pairing ${built.join(" and ")}`);
+	}
 	assert.equal(/^  workflow_dispatch:/m.test(builds), true);
+});
+
+test("asks for promotion coverage only on a dev to main promotion, read-only and in one shared form", () => {
+	const forms = new Set();
+	for (const name of Object.keys(PROMOTION_COVERAGE_JOBS)) {
+		const source = readWorkflow(name);
+		const { coverage } = workflowJobs(source);
+		assert.ok(coverage, `${name} has no coverage job`);
+		for (const event of EVENTS) {
+			assert.equal(
+				evaluate(jobValue(coverage, "if"), event),
+				event.github === PROMOTION,
+				`${name} ${event.github === PROMOTION ? "must" : "must not"} ask for coverage on ${event.name}`,
+			);
+		}
+		assert.equal(jobValue(coverage, "name"), "Promotion coverage");
+		assert.equal(countOccurrences(source, "node scripts/promotion-coverage.mjs"), 1, `${name} asks for coverage once`);
+		assert.equal(coverage.includes(`run: node scripts/promotion-coverage.mjs ${name}\n`), true, `${name} must ask about its own runs`);
+		assert.match(
+			coverage,
+			/^ {4}outputs:\n {6}covered: \$\{\{ steps\.check\.outputs\.covered \}\}\n[\s\S]*- id: check\n {8}run: node /m,
+			"the script's covered= line must reach the jobs that read needs.coverage.outputs.covered",
+		);
+		assert.match(coverage, /^ {10}fetch-depth: 0$/m, "the script walks dev's history and finds main's newest dev commit");
+		assert.match(coverage, /^ {4}permissions:\n {6}actions: read\n {6}contents: read\n(?! {6})/m);
+		assert.equal(/:\s*write\b/.test(coverage), false, "the coverage job only reads");
+		assert.equal(
+			/^\s+branches(?:-ignore)?:/m.test(source),
+			false,
+			`${name}: a base-branch filter would stop pull requests into dev from running it, or skip a fix that goes straight into main`,
+		);
+		forms.add(coverage.replace(name, "<workflow>"));
+	}
+	assert.equal(forms.size, 1, "the coverage jobs differ in more than the workflow they ask about");
+
+	const staticChecks = readWorkflow("static-checks.yml");
+	assert.equal(/^\s+needs:/m.test(staticChecks), false, "a promotion always runs the static checks");
+	assert.equal(staticChecks.includes("promotion-coverage.mjs"), false, "a promotion always runs the static checks");
+});
+
+test("skips the tests, browser regressions and website build only on a promotion found covered", () => {
+	for (const [name, job] of Object.entries(PROMOTION_COVERAGE_JOBS)) {
+		const jobs = workflowJobs(readWorkflow(name));
+		assert.deepEqual(Object.keys(jobs), ["coverage", job], `${name} has a job outside the promotion coverage decision`);
+		assert.equal(jobValue(jobs[job], "needs"), "coverage", `${name}: ${job} must wait for the coverage decision`);
+		if (name === "production-build.yml") continue;
+		for (const event of EVENTS) {
+			const runs = jobRuns(name, jobs[job], event);
+			assert.equal(runs, !event.skips && !event.cancelled, `${name} ${runs ? "runs" : "skips"} ${job} for ${event.name}`);
+		}
+	}
+
+	const terminalTests = readWorkflow("terminal-tests.yml");
+	for (const file of ["scripts/promotion-coverage.mjs", "scripts/promotion-coverage.test.mjs"]) {
+		assert.equal(terminalTests.includes(`- "${file}"`), true, `terminal-tests.yml does not start for ${file}`);
+	}
+	assert.match(
+		terminalTests,
+		/node --test\n(?:[ \t]+scripts\/\S+\n)*[ \t]+scripts\/promotion-coverage\.test\.mjs\n/,
+		"the coverage decision's own tests never run in CI",
+	);
 });
 
 test("starts the release builds for release tags only, never for archive tags", () => {
@@ -179,7 +346,7 @@ test("shards every browser invocation by test, in two jobs", () => {
 		"the brand surface regression must run in the browser job",
 	);
 	assert.equal(
-		Number(/timeout-minutes: (\d+)/.exec(browser)?.[1]) >= 25,
+		Number(jobValue(workflowJobs(browser)["terminal-browser"], "timeout-minutes")) >= 25,
 		true,
 		"a shard runs every browser suite and outran a 15-minute limit; keep at least 25 minutes",
 	);
@@ -566,7 +733,8 @@ test("runs the website workflows on an exact Node version that satisfies the web
 test("checks the website market snapshot daily, read-only, with the website workflow's pinned setup", () => {
 	const markets = readWorkflow("website-markets-check.yml");
 	const website = readWorkflow("website-build.yml");
-	const actions = (workflow) => [...workflow.matchAll(/^\s*- uses: (\S+)/gm)].map((match) => match[1]).sort();
+	// The website workflow checks out twice, once in its promotion coverage job; the rule is the same pinned commits.
+	const actions = (workflow) => [...new Set([...workflow.matchAll(/^\s*- uses: (\S+)/gm)].map((match) => match[1]))].sort();
 
 	assert.match(markets, /^on:\n  schedule:\n    - cron: "[0-9]+ [0-9]+ \* \* \*"\n  workflow_dispatch:\n\n/m, "runs once a day and on demand");
 	assert.equal(/^\s+(pull_request|push):/m.test(markets), false, "the check reads live exchange data, so it never gates a pull request");

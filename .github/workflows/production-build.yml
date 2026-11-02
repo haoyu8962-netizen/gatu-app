@@ -42,18 +42,53 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # A dev to main promotion skips the jobs below when the pull requests merged into dev already
+  # passed this workflow on the tree being promoted, and runs them in full on any doubt (ADR 0016
+  # D8). Every other event skips this job and runs the rest as before.
+  coverage:
+    if: github.event_name == 'pull_request' && github.base_ref == 'main' && github.head_ref == 'dev'
+    name: Promotion coverage
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: read
+      contents: read
+    outputs:
+      covered: ${{ steps.check.outputs.covered }}
+    steps:
+      # The script reads commits, trees and this workflow file but no other file contents, so a blobless
+      # clone of the whole history is enough, and it needs nothing but git and the runner's own Node.
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          fetch-depth: 0
+          filter: blob:none
+          sparse-checkout: |
+            scripts
+            .github/workflows
+
+      - id: check
+        run: node scripts/promotion-coverage.mjs production-build.yml
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+
   terminal:
+    needs: coverage
+    if: ${{ !cancelled() }}
     strategy:
       fail-fast: false
       matrix:
-        # Pull requests build only the production default, with the pairing switch off.
-        # Pull requests into main (the dev to main promotion), release tags and manual runs build
-        # both states. A job-level `if` cannot do this because it cannot read `matrix`. The
-        # lines of the expression share one indent so that YAML folds them into a single line.
+        # Pull requests into dev build only the production default, with the pairing switch off. A
+        # promotion whose pull requests already built that default on the promoted tree builds only
+        # the pairing-on state, the one the release ships. Every other promotion, a pull request into
+        # main from another branch, release tags and manual runs build both states. A job-level `if`
+        # cannot do this because it cannot read `matrix`. The lines of the expression share one
+        # indent so that YAML folds them into a single line.
         pairing: >-
           ${{ fromJSON(
           (github.event_name == 'pull_request' && github.base_ref != 'main')
           && '[{"enabled":"false"}]'
+          || needs.coverage.outputs.covered == 'true'
+          && '[{"enabled":"true"}]'
           || '[{"enabled":"false"},{"enabled":"true"}]'
           ) }}
     name: Build terminal (pairing ${{ matrix.pairing.enabled }})

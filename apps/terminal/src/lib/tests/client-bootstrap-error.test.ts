@@ -10,8 +10,8 @@ describe("client bootstrap error handling", () => {
 	});
 
 	afterEach(() => {
-		vi.doUnmock("../error-reporting/client");
-		vi.doUnmock("../../client-hydrate");
+		// No vi.doUnmock here: Vitest resolves queued mocks and unmocks together at the next import and applies each one
+		// when its path resolves, so an unmock left for the next test could land after that test's vi.doMock.
 		vi.restoreAllMocks();
 		window.history.replaceState(null, "", "/");
 		document.body.replaceChildren();

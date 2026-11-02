@@ -18,6 +18,13 @@ function html(body: string) {
 	});
 }
 
+function opaqueRedirect() {
+	const response = new Response(null, { status: 302, headers: { location: `${origin}/trade/BTC` } });
+	Object.defineProperty(response, "type", { value: "opaqueredirect" });
+	Object.defineProperty(response, "status", { value: 0 });
+	return response;
+}
+
 function createHarness() {
 	const stores = new Map<string, Map<string, Response>>();
 	const listeners = new Map<string, (event: Record<string, unknown>) => void>();
@@ -48,7 +55,7 @@ function createHarness() {
 	const context = { self, caches: { open }, fetch, Request, Response, URL, setTimeout, clearTimeout };
 	runInNewContext(serviceWorker, context);
 	function navigate(path: string) {
-		const request = new Request(new URL(path, origin));
+		const request = new Request(new URL(path, origin), { redirect: "manual" });
 		Object.defineProperty(request, "mode", { value: "navigate" });
 		let response: Promise<Response> | undefined;
 		const background: Promise<unknown>[] = [];
@@ -228,5 +235,79 @@ describe("service worker navigation caching", () => {
 		for (const source of [serviceWorker, edge, staticPages]) {
 			expect(source.match(/\[A-Za-z0-9\]\{1,(\d+)\}/)?.[1]).toBe("16");
 		}
+	});
+});
+
+// 2026-10-28 review: a language link (`?lang=`) is often a returning visitor's first visit after a release; a
+// cached shell from the previous release would boot an entry that ignores the parameter, so it goes to the network.
+describe("service worker navigation for a language link", () => {
+	it("serves the current shell from the network instead of an older cached one, and caches it", async () => {
+		const harness = createHarness();
+		const cache = await harness.open("shell-v10");
+		await cache.put(`${origin}/shell-v10`, html("previous release"));
+		harness.fetch.mockResolvedValueOnce(html("current release"));
+		const navigation = harness.navigate("/trade/xyz:ANT?lang=ja&utm_source=newsletter");
+		expect(await (await navigation.response)?.text()).toBe("current release");
+		await Promise.all(navigation.background);
+		expect(await harness.stores.get("shell-v10")?.get(`${origin}/shell-v10`)?.clone().text()).toBe("current release");
+	});
+
+	it("falls back to the cached shell when the network fails", async () => {
+		const harness = createHarness();
+		const cache = await harness.open("shell-v10");
+		await cache.put(`${origin}/shell-v10`, html("cached"));
+		harness.fetch.mockRejectedValueOnce(new TypeError("offline"));
+		const navigation = harness.navigate("/trade/BTC?lang=ja");
+		expect(await (await navigation.response)?.text()).toBe("cached");
+	});
+
+	it.each([500, 503, 599])(
+		"serves the cached shell instead of a %s server error, like any other navigation, and keeps it",
+		async (status) => {
+			const harness = createHarness();
+			const cache = await harness.open("shell-v10");
+			await cache.put(`${origin}/shell-v10`, html("cached"));
+			harness.fetch.mockResolvedValueOnce(new Response("busy", { status, headers: { "content-type": "text/html" } }));
+			const navigation = harness.navigate("/trade/BTC?lang=ja");
+			expect(await (await navigation.response)?.text()).toBe("cached");
+			await Promise.all(navigation.background);
+			expect(await harness.stores.get("shell-v10")?.get(`${origin}/shell-v10`)?.clone().text()).toBe("cached");
+		},
+	);
+
+	it.each([
+		["a 404", () => new Response("missing", { status: 404, headers: { "content-type": "text/html" } })],
+		["a redirect", opaqueRedirect],
+	])("passes %s to the browser even when a shell is cached, and keeps the cache", async (_, answer) => {
+		const harness = createHarness();
+		const cache = await harness.open("shell-v10");
+		await cache.put(`${origin}/shell-v10`, html("cached"));
+		const network = answer();
+		harness.fetch.mockResolvedValueOnce(network);
+		const navigation = harness.navigate("/trade/BTC?lang=ja");
+		expect(await navigation.response).toBe(network);
+		await Promise.all(navigation.background);
+		expect(await harness.stores.get("shell-v10")?.get(`${origin}/shell-v10`)?.clone().text()).toBe("cached");
+	});
+
+	it("does not cache an error page and fails like the network when nothing is cached", async () => {
+		const harness = createHarness();
+		harness.fetch.mockResolvedValueOnce(
+			new Response("busy", { status: 503, headers: { "content-type": "text/html" } }),
+		);
+		const failed = harness.navigate("/trade/BTC?lang=ja");
+		expect((await failed.response)?.status).toBe(503);
+		await Promise.all(failed.background);
+		expect(harness.stores.get("shell-v10")?.get(`${origin}/shell-v10`)).toBeUndefined();
+		harness.fetch.mockRejectedValueOnce(new TypeError("offline"));
+		await expect(harness.navigate("/trade/BTC?lang=ja").response).rejects.toThrow("offline");
+	});
+
+	it("keeps serving other navigations from the cache first", async () => {
+		const harness = createHarness();
+		const cache = await harness.open("shell-v10");
+		await cache.put(`${origin}/shell-v10`, html("cached"));
+		harness.fetch.mockReturnValueOnce(new Promise(() => {}));
+		expect(await (await harness.navigate("/trade/BTC?utm_source=newsletter").response)?.text()).toBe("cached");
 	});
 });
