@@ -385,6 +385,32 @@ describe("desktop TWAP toolbar", () => {
 		);
 	});
 
+	it("shows TWAP history prices at the market's protocol decimals, as the other history tables do", () => {
+		const history = testState.twapHistory;
+		const fills = testState.twapFills;
+		testState.twapHistory = history.map((entry) => ({
+			...entry,
+			state: { ...entry.state, executedNtl: "6130.123" },
+		})) as TwapHistoryResponse;
+		testState.twapFills = fills.map((fill) => ({ ...fill, px: "374.5" })) as UserFillsResponse;
+		try {
+			render();
+			const tabs = () => Array.from(container.querySelectorAll<HTMLButtonElement>('[role="tab"]'));
+			act(() => tabs()[1]?.click());
+			expect(container.textContent).toContain("$1,000.020065");
+			act(() =>
+				tabs()
+					.find((tab) => tab.textContent === "Fill History")
+					?.click(),
+			);
+			expect(container.textContent).toContain("$374.5");
+			expect(container.textContent).not.toContain("$374.50");
+		} finally {
+			testState.twapHistory = history;
+			testState.twapFills = fills;
+		}
+	});
+
 	it("shows a slice fill's fee token by its display name", () => {
 		const fills = testState.twapFills;
 		testState.twapFills = fills.map((fill) => ({ ...fill, feeToken: "USDT0" })) as UserFillsResponse;

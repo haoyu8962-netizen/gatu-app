@@ -11,6 +11,7 @@ import {
 	getSizeValueFromInput,
 	getSliderValue,
 } from "@/domain/trade/order/size";
+import { formatSizeForOrder } from "@/domain/trade/orders";
 
 describe("order size input precision", () => {
 	it("uses quote precision for USD mode regardless of lot size", () => {
@@ -81,6 +82,20 @@ describe("percentage sizing", () => {
 		expect(getSizeForPercent(percentInput({ pct: Number(pct), maxSize: 0.6900001, price: 84.292 }))).toBe(expected);
 	});
 
+	it.each([
+		[68, 1.1781, 2, "0.80"],
+		[72, 1.1781, 2, "0.84"],
+		[50, 0.0024, 5, "0.00120"],
+	])(
+		"keeps every size decimal for a %i%% base request, as the official terminal shows it",
+		(pct, maxSize, szDecimals, expected) => {
+			const sizeInput = getSizeForPercent(percentInput({ pct, maxSize, sizeMode: "base", szDecimals }));
+
+			expect(sizeInput).toBe(expected);
+			expect(formatSizeForOrder(sizeInput, szDecimals)).toBe(Big(expected).toString());
+		},
+	);
+
 	it("keeps a coarse lot at zero until the request reaches its first executable quantity", () => {
 		const input = percentInput({ maxSize: 0.012, sizeMode: "base", szDecimals: 3 });
 
@@ -107,7 +122,7 @@ describe("size unit conversion", () => {
 
 		expect(quoteInput).toBe("35.00");
 		expect(convertedSize).toBeLessThanOrEqual(input.sizeValue);
-		expect(getSizeValueForModeToggle({ ...input, sizeValue: convertedSize, sizeMode: "quote" })).toBe("1000");
+		expect(getSizeValueForModeToggle({ ...input, sizeValue: convertedSize, sizeMode: "quote" })).toBe("1000.00");
 	});
 });
 

@@ -84,10 +84,41 @@ export function floorToDecimals(value: number, maxDecimals: number): number {
 	return floor(value, maxDecimals) ?? Number.NaN;
 }
 
-export function formatDecimalFloor(value: Numeric, maxDecimals: number): string {
+/**
+ * Floors to `maxDecimals` and drops trailing zeros, but keeps at least `minDecimals` places on a nonzero value
+ * (12.5 reads 12.50 with two), so an amount the terminal fills in shows cents without losing exact digits.
+ */
+export function formatDecimalFloor(value: Numeric, maxDecimals: number, minDecimals = 0): string {
 	const fixed = floorToString(value, maxDecimals);
-	if (!fixed.includes(".")) return fixed;
-	return fixed.replace(/\.?0+$/, "");
+	const trimmed = fixed.includes(".") ? fixed.replace(/\.?0+$/, "") : fixed;
+	const minimum = Math.min(minDecimals, maxDecimals);
+	if (trimmed === "0" || minimum <= 0) return trimmed;
+	const pointIndex = trimmed.indexOf(".");
+	const decimals = pointIndex === -1 ? 0 : trimmed.length - pointIndex - 1;
+	if (decimals >= minimum) return trimmed;
+	return `${trimmed}${pointIndex === -1 ? "." : ""}${"0".repeat(minimum - decimals)}`;
+}
+
+/**
+ * Decimals the official terminal shows for one price (its `L3`): five significant figures, never more than the
+ * market's protocol decimals. The same rule gives the finest order book grouping (`getPriceGroupingOptions`).
+ *
+ * @example getPriceDisplayDecimals(85.81, 4) -> 3 (HYPE shows 85.810)
+ * @example getPriceDisplayDecimals(88140.5, 2) -> 0 (BTC shows 88,141)
+ */
+export function getPriceDisplayDecimals(price: number, maxDecimals: number): number {
+	const magnitude = Math.abs(price);
+	if (!Number.isFinite(magnitude) || magnitude === 0) return maxDecimals;
+	return Math.max(0, Math.min(4 - Math.floor(Math.log10(magnitude)), maxDecimals));
+}
+
+/**
+ * A price rounded half up to the decimals the official terminal shows for it, with every one of those decimals kept.
+ * The decimals follow the rounded price, so 99.9996 under a cap of four reads 100.00, not 100.000.
+ */
+export function formatPriceAtDisplayDecimals(price: Big, maxDecimals: number): string {
+	const rounded = price.round(getPriceDisplayDecimals(price.toNumber(), maxDecimals), Big.roundHalfUp);
+	return rounded.toFixed(getPriceDisplayDecimals(rounded.toNumber(), maxDecimals));
 }
 
 export function limitDecimalInput(input: string, maxDecimals: number): string {

@@ -43,8 +43,8 @@ const REGISTERED_FIXED_POINT_CALLS: Readonly<Record<string, Registration>> = {
 		use: "normalized protocol decimals and the submitted HYPE amount, shown through formatStakingAmount",
 	},
 	"components/trade/positions/position-tpsl-modal.tsx": {
-		count: 6,
-		use: "TP/SL price and size input prefills, also sent in the trigger orders",
+		count: 2,
+		use: "TP/SL size input prefill and Max, also sent in the trigger orders",
 	},
 	"components/trade/tradebox/bridge/amount-entry-screen.tsx": {
 		count: 2,
@@ -67,8 +67,8 @@ const REGISTERED_FIXED_POINT_CALLS: Readonly<Record<string, Registration>> = {
 		use: "atomic amount for the preflight balance comparison",
 	},
 	"domain/earn.ts": {
-		count: 13,
-		use: "normalized reserve and account decimals, protocol amounts and Max values; displays use lib/format formatters",
+		count: 12,
+		use: "normalized reserve and account decimals and protocol amounts (Max values floor through formatDecimalFloor); displays use lib/format formatters",
 	},
 	"domain/market/calculations.ts": {
 		count: 4,
@@ -103,7 +103,7 @@ const REGISTERED_FIXED_POINT_CALLS: Readonly<Record<string, Registration>> = {
 		use: "maximum reducible size for the order guard",
 	},
 	"domain/trade/order/size.ts": {
-		count: 13,
+		count: 12,
 		use: "order size protocol strings, size input values, quote-capped scale sizes and the lot sizes searched for a resting perp order's maximum",
 	},
 	"domain/trade/orders.ts": {
@@ -151,8 +151,8 @@ const REGISTERED_FIXED_POINT_CALLS: Readonly<Record<string, Registration>> = {
 		use: "truncated notional before formatUSD and formatQuoteAmount",
 	},
 	"lib/trade/numbers.ts": {
-		count: 3,
-		use: "shared fixed-point, floor and plain-notation helpers for input values and protocol strings; displays pass their result to formatDecimalString",
+		count: 4,
+		use: "shared fixed-point, floor, plain-notation and price-field helpers for input values and protocol strings; displays pass their result to formatDecimalString",
 	},
 	"lib/trade/order-notification-copy.ts": {
 		count: 1,
@@ -169,10 +169,6 @@ const REGISTERED_FIXED_POINT_CALLS: Readonly<Record<string, Registration>> = {
 	"lib/trade/referral.ts": {
 		count: 1,
 		use: "progress percentage for a CSS width and aria-valuenow",
-	},
-	"lib/trade/tpsl.ts": {
-		count: 5,
-		use: "TP/SL target prices for the inputs and trigger orders",
 	},
 	"lib/trade/withdrawal.ts": {
 		count: 3,

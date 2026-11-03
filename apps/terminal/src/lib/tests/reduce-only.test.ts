@@ -56,11 +56,14 @@ describe("Reduce Only capacity", () => {
 		const selected = getReduceOnlySizeSelection("7.15", pct, "quote", 95.997, 2);
 		const baseSize = pct === 0 ? "0" : pct === 50 ? "3.57" : "7.15";
 		expect(selected?.baseSize).toBe(baseSize);
-		expect(getSelectedSizeDisplay(baseSize, "base", 95.997)).toBe(baseSize);
+		expect(getSelectedSizeDisplay(baseSize, "base", 95.997, 2)).toBe(baseSize);
 		if (pct === 100)
 			expect(
 				getSizeStringFromInput({ sizeInput: selected?.size ?? "", sizeMode: "quote", price: 95.997, szDecimals: 2 }),
 			).toBe("7.14");
+	});
+	it("shows a base selection with every size decimal while the order keeps the trimmed base size", () => {
+		expect(getReduceOnlySizeSelection("1.2", 50, "base", 95.997, 2)).toEqual({ size: "0.60", baseSize: "0.6" });
 	});
 	it("marks margin as inapplicable without changing ordinary margin", () => {
 		expect(getOrderMetrics({ sizeValue: 2, price: 100, leverage: 10, reduceOnly: true }).marginRequired).toBeNull();

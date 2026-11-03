@@ -22,12 +22,12 @@ for (const width of [1440, 1108, 375]) {
 		await expect(max).toBeEnabled();
 		await expect(max).toContainText("0.00");
 		await max.click();
-		await expect(form.getByRole("textbox", { name: "Size", exact: true })).toHaveValue("7.15");
+		await expect(form.getByRole("textbox", { name: "Size", exact: true })).toHaveValue("7.150");
 		await max.evaluate((node) => node.setAttribute("data-max-identity", "preserved"));
 		await page.getByRole("button", { name: "中文", exact: true }).click();
 		const chineseMax = form.getByRole("button", { name: "使用最大可减仓数量", exact: true });
 		await expect(chineseMax).toHaveAttribute("data-max-identity", "preserved");
-		await expect(form.getByRole("textbox", { name: "数量", exact: true })).toHaveValue("7.15");
+		await expect(form.getByRole("textbox", { name: "数量", exact: true })).toHaveValue("7.150");
 		await page.getByRole("button", { name: "English", exact: true }).click();
 		await form.getByRole("checkbox", { name: "Reduce Only", exact: true }).uncheck();
 		await expect(form.getByRole("button", { name: "Use max available balance", exact: true })).toBeDisabled();
@@ -88,7 +88,7 @@ for (const width of [1440, 1108, 375]) {
 			await pct.fill("");
 			await pct.fill("100");
 			await pct.blur();
-			await expect(size).toHaveValue("7.15");
+			await expect(size).toHaveValue("7.150");
 			const label = position.startsWith("-") ? "Long" : "Short";
 			const submit = form.getByRole("button", { name: width <= 1000 ? label : `Place ${label} Order`, exact: true });
 			await expect(submit).toBeEnabled();

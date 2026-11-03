@@ -7,10 +7,10 @@
   "kind": "task",
   "status": "recorded",
   "topics": ["work-memory", "docs-governance", "brand-identity", "static-hosting", "hyperliquid-api"],
-  "summary": "核对上周以来 12 个未进入远端 dev/main 的本地提交及两份任务记录。官网已从原型规划进入阶段 1 本地实施，旧律师前置条件已有来源中的后续决定；两份摘要及提交引用仍落后。保留官网 terminal:check 失败、真实验收与性能测量缺口；仅新增记忆记录和索引，没有合并、发布或发送邮件。",
+  "summary": "10 月 26 日整理了日本地区与官网阶段 1 的 12 个本地提交。其后 #115/#116 交付 p33，#135 把本周整理纳入 dev。11 月 2 日已补正两份来源摘要并核对官网快照的 JIO 分类失败。",
   "thread": {"id": "01a08f6b-26ae-7642-a9a5-a074d906c899", "title": "启动3006端口开发服务器"},
   "baseCommit": "43b78f96ccae64ee19e61f01a04eed420ab92af9",
-  "commits": ["712df93c", "9225e1c0", "56c50766", "32125377", "c32fb14c", "a237ed5a", "69a4e7a2", "371674ba", "33267066", "3d994e3d", "c39df181", "d4bd4f9c"],
+  "commits": ["712df93c", "9225e1c0", "56c50766", "32125377", "c32fb14c", "a237ed5a", "69a4e7a2", "371674ba", "33267066", "3d994e3d", "c39df181", "d4bd4f9c", "ad408e8c", "1262bf5d"],
   "sources": [
     {"path": "docs/work-memory/README.md"},
     {"path": "docs/agent-handbook.md"},
@@ -131,3 +131,7 @@ git show d4bd4f9c:docs/adr/0042-japan-allowed-trading-region.md
 - 「两份来源的摘要与提交引用仍落后」到 2026-11-02 仍成立：[日本记录](2026-10-24-japan-trading-region-and-email.md)与[官网记录](2026-10-24-website-research-and-rebuild-plan.md)的 `summary` 停在 10-24/25 的阶段，`commits` 仍为空，本次没有改写。
 
 核对方法与证据见[本地记录分支合入记录](2026-11-02-local-record-branches-sync.md)。
+
+## 周整理补记（2026-11-02）
+
+10 月 26 日留下的两份来源摘要与提交引用现已补齐。`ad408e8c` 可从 `df119e05` 追溯，`047b4bb3` 仍不含这次整理提交。 [本周核对记录](2026-11-02-weekly-memory-review.md)

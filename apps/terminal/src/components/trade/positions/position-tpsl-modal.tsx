@@ -22,6 +22,7 @@ import {
 	isOrderBatchResolutionError,
 	resolveOrderBatchResponse,
 } from "@/domain/trade/order-tracking";
+import { formatPriceForInput } from "@/domain/trade/orders";
 import { getPositionTpSlSizeForPercent, getPositionTpSlSizePercent } from "@/domain/trade/position-tpsl-size";
 import { shouldWarnPositionTpSlSlippage } from "@/domain/trade/position-tpsl-slippage";
 import { useMaxMarketOrderNotionals } from "@/hooks/trade/use-max-market-order-notionals";
@@ -480,18 +481,19 @@ function PositionTpSlForm({
 	const initialUsesPartialSize = toBig(initialConfiguredSize)?.gt(0) ?? false;
 	const initialExecutionMode: PositionTpSlExecutionMode =
 		initialTpSlInfo?.tpIsMarket === false || initialTpSlInfo?.slIsMarket === false ? "limit" : "market";
-	const [tpPriceInput, setTpPriceInput] = useState(() => toBig(initialTpSlInfo?.tpPrice)?.toFixed(decimals) ?? "");
-	const [slPriceInput, setSlPriceInput] = useState(() => toBig(initialTpSlInfo?.slPrice)?.toFixed(decimals) ?? "");
+	const priceMarket = { assetId: positionRef.assetId, szDecimals: positionRef.szDecimals };
+	const [tpPriceInput, setTpPriceInput] = useState(() => formatPriceForInput(initialTpSlInfo?.tpPrice, priceMarket));
+	const [slPriceInput, setSlPriceInput] = useState(() => formatPriceForInput(initialTpSlInfo?.slPrice, priceMarket));
 	const [configureAmount, setConfigureAmount] = useState(initialUsesPartialSize);
 	const [sizeInput, setSizeInput] = useState(
 		() => toBig(initialUsesPartialSize ? initialConfiguredSize : size)?.toFixed(positionRef.szDecimals, 0) ?? "",
 	);
 	const [executionMode, setExecutionMode] = useState<PositionTpSlExecutionMode>(initialExecutionMode);
 	const [tpLimitPriceInput, setTpLimitPriceInput] = useState(() =>
-		initialTpSlInfo?.tpIsMarket === false ? (toBig(initialTpSlInfo.tpLimitPrice)?.toFixed(decimals) ?? "") : "",
+		initialTpSlInfo?.tpIsMarket === false ? formatPriceForInput(initialTpSlInfo.tpLimitPrice, priceMarket) : "",
 	);
 	const [slLimitPriceInput, setSlLimitPriceInput] = useState(() =>
-		initialTpSlInfo?.slIsMarket === false ? (toBig(initialTpSlInfo.slLimitPrice)?.toFixed(decimals) ?? "") : "",
+		initialTpSlInfo?.slIsMarket === false ? formatPriceForInput(initialTpSlInfo.slLimitPrice, priceMarket) : "",
 	);
 	const [returnUnit, setReturnUnit] = useState<"pnl" | "roe">("roe");
 	const [tpReturnDraft, setTpReturnDraft] = useState<string | null>(null);

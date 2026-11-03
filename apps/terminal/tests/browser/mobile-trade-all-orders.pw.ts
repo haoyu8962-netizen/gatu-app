@@ -402,7 +402,7 @@ test("preserves quantity, its denomination and reduce-only through real desktop/
 		else await expect(page.getByRole("button", { name: "USDC", exact: true })).toBeVisible();
 	}
 	await page.getByRole("button", { name: "USDC", exact: true }).click();
-	await expect(size).toHaveValue("1");
+	await expect(size).toHaveValue("1.000");
 	await page.setViewportSize({ width: 1440, height: 1000 });
 	await page.getByRole("checkbox", { name: "Reduce Only", exact: true }).uncheck();
 	await page.getByRole("checkbox", { name: "Take Profit / Stop Loss", exact: true }).check();
@@ -533,7 +533,7 @@ for (const desktop of [false, true]) {
 		await expect(mid).toBeDisabled();
 		const waitingPriceBounds = await price.boundingBox();
 		await page.getByRole("button", { name: "Market success", exact: true }).click();
-		await expect(price).toHaveValue("100");
+		await expect(price).toHaveValue("100.00");
 		expect((await price.boundingBox())?.width).toBeCloseTo(waitingPriceBounds?.width ?? 0, 1);
 		await price.fill("99");
 		await page.getByRole("button", { name: "Market stale", exact: true }).click();
@@ -544,7 +544,7 @@ for (const desktop of [false, true]) {
 		await page.getByRole("button", { name: "Market success", exact: true }).click();
 		await expect(price).toHaveValue("");
 		await mid.click();
-		await expect(price).toHaveValue("100");
+		await expect(price).toHaveValue("100.00");
 		await chooseOrder("TWAP");
 		await form.getByRole("textbox", { name: "Hour(s)", exact: true }).fill("1");
 		await form.getByRole("textbox", { name: "Minute(s)", exact: true }).fill("0");
@@ -569,7 +569,7 @@ for (const desktop of [false, true]) {
 			.getByRole("button", { name: /^Use mid price/ })
 			.first()
 			.click();
-		await expect(start).toHaveValue("100");
+		await expect(start).toHaveValue("100.00");
 	});
 
 	test(`keeps ${desktop ? "desktop" : "mobile"} order forms quiet while market data recovers`, async ({ page }) => {

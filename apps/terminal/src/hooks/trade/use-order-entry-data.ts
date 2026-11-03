@@ -299,7 +299,7 @@ export function useOrderEntryData({
 		const mode = sizeMode === "base" ? "quote" : "base";
 		if (effectiveReduceOnly && sizeInput.trim()) {
 			const baseSize = derived.sizeForOrder;
-			const size = getSelectedSizeDisplay(baseSize, mode, conversionPrice);
+			const size = getSelectedSizeDisplay(baseSize, mode, conversionPrice, derived.szDecimals);
 			if (size !== null) {
 				setSizeSelection(size, { context: `${sizeContext}:${mode}`, baseSize }, mode);
 				return;

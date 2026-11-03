@@ -66,7 +66,7 @@ describe("market document title ownership", () => {
 		"preserves the destination title %s when its head updates before the trading effect cleans up",
 		(title) => {
 			renderTitle();
-			expect(document.title).toBe("61.12 HYPE/USDC · Sairn");
+			expect(document.title).toBe("61.120 HYPE/USDC · Sairn");
 			document.title = title;
 			removeTitle();
 			expect(document.title).toBe(title);
@@ -93,7 +93,7 @@ describe("market document title ownership", () => {
 		renderTitle();
 		runtime.perpPrice = "63.45";
 		renderTitle();
-		expect(document.title).toBe("63.45 HYPE/USDC · Sairn");
+		expect(document.title).toBe("63.450 HYPE/USDC · Sairn");
 		removeTitle();
 		expect(document.title).toBe(SEO_DEFAULTS.defaultTitle);
 	});
@@ -102,7 +102,7 @@ describe("market document title ownership", () => {
 		renderTitle();
 		runtime.formatLocale = "de-DE";
 		act(() => notifyNumberFormatChange());
-		expect(document.title).toBe("61,12 HYPE/USDC · Sairn");
+		expect(document.title).toBe("61,120 HYPE/USDC · Sairn");
 		removeTitle();
 		expect(document.title).toBe(SEO_DEFAULTS.defaultTitle);
 	});
@@ -120,6 +120,6 @@ describe("market document title ownership", () => {
 			{ coin: "@107" },
 			{ enabled: kind === "spot", pauseWhenHidden: false },
 		);
-		expect(document.title).toBe(`${kind === "spot" ? "62.23" : "61.12"} HYPE/USDC · Sairn`);
+		expect(document.title).toBe(`${kind === "spot" ? "62.230" : "61.120"} HYPE/USDC · Sairn`);
 	});
 });

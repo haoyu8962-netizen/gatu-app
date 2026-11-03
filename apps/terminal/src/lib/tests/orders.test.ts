@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
 	buildFrontendMarketOrder,
 	createScaleOrderLevelPlan,
+	formatPriceForInput,
 	formatPriceForOrder,
 	formatSizeForOrder,
 	getDefaultLeverage,
@@ -102,6 +103,20 @@ describe("orders", () => {
 		expect(formatSizeForOrder(0, 0)).toBe("0");
 		expect(formatSizeForOrder(100, 2)).toBe("100");
 		expect(formatSizeForOrder(1.2, 2)).toBe("1.2");
+	});
+});
+
+describe("price field fills", () => {
+	it("fills the order's price at the decimals the official terminal shows", () => {
+		expect(formatPriceForInput("85.8099", { assetId: 7, szDecimals: 2 })).toBe("85.810");
+		expect(formatPriceForInput("77559.5", { assetId: 0, szDecimals: 5 })).toBe("77560");
+		expect(formatPriceForInput("0.0012345", { assetId: 10_000, szDecimals: 2 })).toBe("0.001235");
+		expect(formatPriceForInput("170", { assetId: 0, szDecimals: 3 })).toBe("170.00");
+		expect(formatPriceForOrder("170.00", { assetId: 0, szDecimals: 3 })).toBe("170");
+		expect(formatPriceForInput("1.23", { assetId: 0, szDecimals: 7 })).toBe("0");
+		for (const missing of [undefined, null, ""]) {
+			expect(formatPriceForInput(missing, { assetId: 0, szDecimals: 3 })).toBe("");
+		}
 	});
 });
 

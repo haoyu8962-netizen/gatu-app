@@ -43,17 +43,19 @@ describe("PriceInput", () => {
 		if (!midButton) throw new Error("Expected midpoint action");
 
 		act(() => midButton.click());
-		expect(onMidClick).toHaveBeenCalledWith("12345678901234567890.12");
+		expect(onMidClick).toHaveBeenCalledWith("12345678901234567890");
 	});
 });
 
 describe("getFormattedMidPrice", () => {
-	it("keeps the decimal-only formatting when no asset is known", () => {
-		expect(getFormattedMidPrice("55.8925", 2, "perp")).toBe("55.8925");
+	it("shows the official price decimals when no asset is known", () => {
+		expect(getFormattedMidPrice("55.8925", 2, "perp")).toBe("55.893");
+		expect(getFormattedMidPrice("55.9", 2, "perp")).toBe("55.900");
 	});
 
 	it("rounds the mid to a protocol-legal tick when the asset is known", () => {
 		expect(getFormattedMidPrice("55.8925", 2, "perp", 0)).toBe("55.893");
-		expect(getFormattedMidPrice("55.95", 2, "perp", 0)).toBe("55.95");
+		expect(getFormattedMidPrice("55.95", 2, "perp", 0)).toBe("55.950");
+		expect(getFormattedMidPrice("77559.5", 5, "perp", 0)).toBe("77560");
 	});
 });

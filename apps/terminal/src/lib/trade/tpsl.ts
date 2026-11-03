@@ -1,7 +1,6 @@
-import type Big from "big.js";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import type { NumberFormatters } from "@/lib/format";
-import { type Numeric, toBig, toSafeBig } from "./numbers";
+import { formatPriceAtDisplayDecimals, type Numeric, toBig, toSafeBig } from "./numbers";
 import type { Side } from "./types";
 
 interface TpSlCollateralMarket {
@@ -19,11 +18,14 @@ export function getTpSlCollateralSymbol(market: TpSlCollateralMarket | null | un
 	return quoteSymbol || null;
 }
 
+// TP/SL prices worked out from a percentage or a PNL amount round half up to the official price decimals, as
+// formatPriceForOrder does when the order is sent, so a field shows the price its order carries. The official
+// terminal rounds them down (P3(..., "floor")), at most one tick away (docs/number-format-setting.md, rule 12).
 export function calculateTpPrice(
 	referencePrice: Numeric,
 	side: Side,
 	tpPercent: Numeric,
-	decimals: number,
+	maxDecimals: number,
 ): string | null {
 	const ref = toSafeBig(referencePrice);
 	const pct = toSafeBig(tpPercent);
@@ -31,14 +33,14 @@ export function calculateTpPrice(
 
 	const percentValue = ref.times(pct).div(100);
 	const price = side === "buy" ? ref.plus(percentValue) : ref.minus(percentValue);
-	return price.toFixed(decimals);
+	return formatPriceAtDisplayDecimals(price, maxDecimals);
 }
 
 export function calculateSlPrice(
 	referencePrice: Numeric,
 	side: Side,
 	slPercent: Numeric,
-	decimals: number,
+	maxDecimals: number,
 ): string | null {
 	const ref = toSafeBig(referencePrice);
 	const pct = toSafeBig(slPercent);
@@ -46,7 +48,7 @@ export function calculateSlPrice(
 
 	const percentValue = ref.times(pct).div(100);
 	const price = side === "buy" ? ref.minus(percentValue) : ref.plus(percentValue);
-	return price.toFixed(decimals);
+	return formatPriceAtDisplayDecimals(price, maxDecimals);
 }
 
 export function calculateTpPriceFromRoe(
@@ -54,7 +56,7 @@ export function calculateTpPriceFromRoe(
 	side: Side,
 	tpPercent: Numeric,
 	leverage: Numeric,
-	decimals: number,
+	maxDecimals: number,
 ): string | null {
 	const ref = toSafeBig(referencePrice);
 	const pct = toSafeBig(tpPercent);
@@ -63,7 +65,7 @@ export function calculateTpPriceFromRoe(
 
 	const priceDelta = ref.times(pct).div(100).div(leverageValue);
 	const price = side === "buy" ? ref.plus(priceDelta) : ref.minus(priceDelta);
-	return price.gt(0) ? price.toFixed(decimals) : null;
+	return price.gt(0) ? formatPriceAtDisplayDecimals(price, maxDecimals) : null;
 }
 
 export function calculateSlPriceFromRoe(
@@ -71,7 +73,7 @@ export function calculateSlPriceFromRoe(
 	side: Side,
 	slPercent: Numeric,
 	leverage: Numeric,
-	decimals: number,
+	maxDecimals: number,
 ): string | null {
 	const ref = toSafeBig(referencePrice);
 	const pct = toSafeBig(slPercent);
@@ -80,7 +82,7 @@ export function calculateSlPriceFromRoe(
 
 	const priceDelta = ref.times(pct).div(100).div(leverageValue);
 	const price = side === "buy" ? ref.minus(priceDelta) : ref.plus(priceDelta);
-	return price.gt(0) ? price.toFixed(decimals) : null;
+	return price.gt(0) ? formatPriceAtDisplayDecimals(price, maxDecimals) : null;
 }
 
 export function calculatePercentFromPrice(
@@ -133,7 +135,7 @@ export function calculateTargetPriceFromPnl(
 	size: Numeric,
 	pnlMagnitude: Numeric,
 	type: "tp" | "sl",
-	decimals: number,
+	maxDecimals: number,
 ): string | null {
 	const reference = toBig(referencePrice);
 	const positionSize = toBig(size);
@@ -145,7 +147,7 @@ export function calculateTargetPriceFromPnl(
 	const favorableDirection = side === "buy" ? 1 : -1;
 	const direction = type === "tp" ? favorableDirection : -favorableDirection;
 	const target = reference.plus(magnitude.div(positionSize).times(direction));
-	return target.gt(0) ? target.toFixed(decimals) : null;
+	return target.gt(0) ? formatPriceAtDisplayDecimals(target, maxDecimals) : null;
 }
 
 export function calculateRoeMagnitudeFromPriceExact(

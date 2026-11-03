@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
 	buildOpenOrderModifyPlan,
 	createOpenOrderModifyTarget,
+	formatOpenOrderEditValue,
 	getOpenOrderModifyCapabilities,
 	type OpenOrderModifyField,
 	type OpenOrderModifyMarketBinding,
@@ -133,6 +134,30 @@ describe("open order limit price and client order id modifications", () => {
 				order: makeLimitOrder({ orderType: "Market", tif: "FrontendMarket" }),
 			}),
 		).toEqual({ status: "blocked", reason: "unsupported-market-order" });
+	});
+});
+
+describe("open order edit start values", () => {
+	it("starts an edit from the size and prices at the decimals the official editor shows", () => {
+		expect(formatOpenOrderEditValue("2", "size", market)).toBe("2.000");
+		expect(formatOpenOrderEditValue("170", "limitPrice", market)).toBe("170.00");
+		expect(formatOpenOrderEditValue("168.3", "triggerPrice", market)).toBe("168.30");
+		expect(formatOpenOrderEditValue("77559", "limitPrice", { assetId: 0, szDecimals: 5 })).toBe("77559");
+	});
+
+	it("does not read the padded start values as a change", () => {
+		const order = makeLimitOrder();
+		expect(formatOpenOrderEditValue(order.limitPx, "limitPrice", market)).toBe("100.00");
+		for (const field of ["size", "limitPrice"] as const) {
+			const value = formatOpenOrderEditValue(field === "size" ? order.sz : order.limitPx, field, market);
+			expect(buildPlan(captureTarget(order, field), order, value)).toEqual({ status: "blocked", reason: "no-change" });
+		}
+		const trigger = makeTriggerOrder("Stop Market");
+		const triggerValue = formatOpenOrderEditValue(trigger.triggerPx, "triggerPrice", market);
+		expect(buildPlan(captureTarget(trigger, "triggerPrice"), trigger, triggerValue)).toEqual({
+			status: "blocked",
+			reason: "no-change",
+		});
 	});
 });
 

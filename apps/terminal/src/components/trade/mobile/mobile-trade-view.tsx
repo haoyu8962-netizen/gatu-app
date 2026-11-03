@@ -430,7 +430,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 		if (active && isSpotMarket && isTriggerOrder) setOrderType("market");
 	}, [active, isSpotMarket, isTriggerOrder, setOrderType]);
 
-	useBookPriceSelection(market?.name);
+	useBookPriceSelection(market?.name, market?.assetId, market?.szDecimals);
 	useBookSizeModeRequest(market?.name, sizeMode, toggleSizeDenomination);
 	const price = getOrderPrice(
 		orderType,

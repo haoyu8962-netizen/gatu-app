@@ -250,13 +250,13 @@ describe("earn max amounts", () => {
 		const hype = snapshot.supplyRows.find((row) => row.token === 150);
 		if (!usdc || !hype) throw new Error("rows missing");
 		const summary = snapshot.summary;
-		expect(getEarnMaxAmount({ operation: "supply", row: hype, summary, spotAvailable: "3.5" })).toBe("3.5");
-		expect(getEarnMaxAmount({ operation: "withdraw", row: usdc, summary, spotAvailable: "700" })).toBe("500");
+		expect(getEarnMaxAmount({ operation: "supply", row: hype, summary, spotAvailable: "3.5" })).toBe("3.50");
+		expect(getEarnMaxAmount({ operation: "withdraw", row: usdc, summary, spotAvailable: "700" })).toBe("500.00");
 		expect(getEarnMaxAmount({ operation: "withdraw", row: hype, summary, spotAvailable: "3.5" })).toBe(
 			Big("5029.4").div(Big("92.76").times("0.65")).round(8, Big.roundDown).toFixed(),
 		);
-		expect(getEarnMaxAmount({ operation: "borrow", row: usdc, summary, spotAvailable: "700" })).toBe("5029.4");
-		expect(getEarnMaxAmount({ operation: "repay", row: usdc, summary, spotAvailable: "700" })).toBe("700");
+		expect(getEarnMaxAmount({ operation: "borrow", row: usdc, summary, spotAvailable: "700" })).toBe("5029.40");
+		expect(getEarnMaxAmount({ operation: "repay", row: usdc, summary, spotAvailable: "700" })).toBe("700.00");
 		expect(getEarnMaxAmount({ operation: "repay", row: usdc, summary, spotAvailable: "5000" })).toBe("1000.00000001");
 		expect(getEarnMaxAmount({ operation: "supply", row: usdc, summary, spotAvailable: null })).toBeNull();
 	});
@@ -312,7 +312,7 @@ describe("fresh earn submission", () => {
 				...base,
 				request: { operation: "borrow", token: 0, amount: "100", displayedMax: "5029.4", full: null },
 			}).max,
-		).toBe("5029.4");
+		).toBe("5029.40");
 		expect(() =>
 			verifyFreshEarnSubmission({
 				...base,
@@ -432,11 +432,11 @@ describe("earn liquidity and spendable balance", () => {
 		const usdc = snapshot?.supplyRows.find((row) => row.token === 0);
 		if (!snapshot || !usdc) throw new Error("rows missing");
 		expect(getEarnMaxAmount({ operation: "borrow", row: usdc, summary: snapshot.summary, spotAvailable: "700" })).toBe(
-			"120",
+			"120.00",
 		);
 		expect(
 			getEarnMaxAmount({ operation: "withdraw", row: usdc, summary: snapshot.summary, spotAvailable: "700" }),
-		).toBe("120");
+		).toBe("120.00");
 	});
 
 	it("uses the smaller of the transferable and post-maintenance balance", () => {
@@ -498,7 +498,7 @@ describe("earn minimum position and full withdrawals", () => {
 			full: { principal: "495" },
 		};
 		expect(getEarnProtocolAmount(request)).toBeNull();
-		expect(verifyFreshEarnSubmission({ ...base, request }).max).toBe("500");
+		expect(verifyFreshEarnSubmission({ ...base, request }).max).toBe("500.00");
 		const accrued = parseEarnUserState({
 			...USER_RESPONSE,
 			tokenToState: [

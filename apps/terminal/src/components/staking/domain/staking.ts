@@ -1,12 +1,15 @@
 import Big from "big.js";
+import { FILLED_AMOUNT_MIN_DECIMALS } from "@/config/app";
 import type { NumberFormatters } from "@/lib/format";
 import type { PassiveQueryState } from "@/lib/passive-query-state";
+import { formatDecimalFloor } from "@/lib/trade/numbers";
 
 const ADDRESS_PATTERN = /^0x[0-9a-fA-F]{40}$/u;
 const HASH_PATTERN = /^0x[0-9a-fA-F]{64}$/u;
 const UNSIGNED_DECIMAL_PATTERN = /^(?:0|[1-9]\d*)(?:\.\d+)?$/u;
 const HYPE_INPUT_PATTERN = /^(?:0|[1-9]\d*)(?:\.\d{0,8})?$/u;
 const HYPE_WEI_SCALE = Big(10).pow(8);
+const HYPE_INPUT_DECIMALS = 8;
 
 export type StakingPeriod = "day" | "week" | "month";
 export type StakingValidatorStatus = "active" | "jailed" | "inactive";
@@ -304,6 +307,11 @@ export function calculateDelegationWeightedApr(
 		weightedApr = weightedApr.plus(amount.times(validator.stats[period].predictedApr));
 	}
 	return delegated.gt(0) ? weightedApr.div(delegated).toString() : null;
+}
+
+/** The HYPE amount a Max button fills in: the maximum floored to HYPE's eight decimals, with at least two shown. */
+export function formatHypeMaxInput(maximum: string): string {
+	return formatDecimalFloor(maximum, HYPE_INPUT_DECIMALS, FILLED_AMOUNT_MIN_DECIMALS);
 }
 
 export function validateHypeActionAmount(input: string, maximum?: string): HypeAmountValidation {

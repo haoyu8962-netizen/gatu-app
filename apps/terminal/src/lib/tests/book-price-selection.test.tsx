@@ -19,8 +19,8 @@ const form = {
 	triggerPrice: "",
 };
 
-function OrderForm({ marketName }: { marketName: string }) {
-	useBookPriceSelection(marketName);
+function OrderForm({ marketName, assetId, szDecimals }: { marketName: string; assetId?: number; szDecimals?: number }) {
+	useBookPriceSelection(marketName, assetId, szDecimals);
 	form.actions = useOrderEntryActions();
 	form.limitPrice = useLimitPrice();
 	form.orderType = useOrderType();
@@ -72,6 +72,27 @@ describe("order book price clicks with the real stores", () => {
 		act(() => actions().setLimitPrice("97"));
 		act(() => root.render(createElement(OrderForm, { marketName: "BTC" })));
 		expect(form).toMatchObject({ orderType: "market", limitPrice: "97", triggerPrice: "100" });
+	});
+
+	it("writes the clicked price at the market's decimals once, and later market metadata does not apply it again", () => {
+		start("limit");
+		act(() => root.render(createElement(OrderForm, { marketName: "BTC", assetId: 0, szDecimals: 3 })));
+		click("BTC", "98.5");
+		expect(form.limitPrice).toBe("98.500");
+		expect(form.selectedPrice).toBeNull();
+
+		act(() => actions().setLimitPrice("97"));
+		act(() => root.render(createElement(OrderForm, { marketName: "BTC", assetId: 0, szDecimals: 2 })));
+		expect(form.limitPrice).toBe("97");
+	});
+
+	it("keeps a click made before the market metadata arrives as clicked", () => {
+		start("limit");
+		click("BTC", "98.5");
+		expect(form.limitPrice).toBe("98.5");
+
+		act(() => root.render(createElement(OrderForm, { marketName: "BTC", assetId: 0, szDecimals: 3 })));
+		expect(form.limitPrice).toBe("98.5");
 	});
 
 	it.each([

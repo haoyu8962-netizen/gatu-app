@@ -57,19 +57,19 @@ describe("TradeFormScale Mid controls", () => {
 		const midButtons = () =>
 			[...container.querySelectorAll<HTMLButtonElement>("button")].filter((button) => button.textContent === "Mid");
 		expect(midButtons().map((button) => button.getAttribute("aria-label"))).toEqual([
-			"Use mid price 1,234.5679",
-			"Use mid price 1,234.5679",
+			"Use mid price 1,234.6",
+			"Use mid price 1,234.6",
 		]);
 
 		mocks.formatLocale = "fr-FR";
 		act(() => notifyNumberFormatChange());
 		expect(midButtons().map((button) => button.getAttribute("aria-label"))).toEqual([
-			"Use mid price 1 234,5679",
-			"Use mid price 1 234,5679",
+			"Use mid price 1 234,6",
+			"Use mid price 1 234,6",
 		]);
 		expect(container.textContent).toContain("0,01–100");
 		act(() => midButtons()[0]?.click());
-		expect(mocks.setScaleStart).toHaveBeenCalledExactlyOnceWith("1234.5679");
+		expect(mocks.setScaleStart).toHaveBeenCalledExactlyOnceWith("1234.6");
 	});
 
 	it("fills both scale boundaries from the provided market reference", () => {
@@ -90,8 +90,8 @@ describe("TradeFormScale Mid controls", () => {
 		act(() => midButtons[0]?.click());
 		act(() => midButtons[1]?.click());
 
-		expect(mocks.setScaleStart).toHaveBeenCalledWith("101.2500");
-		expect(mocks.setScaleEnd).toHaveBeenCalledWith("101.2500");
+		expect(mocks.setScaleStart).toHaveBeenCalledWith("101.25");
+		expect(mocks.setScaleEnd).toHaveBeenCalledWith("101.25");
 	});
 
 	it("keeps compact mobile fields readable with exactly one working mid control per boundary", () => {
@@ -115,13 +115,13 @@ describe("TradeFormScale Mid controls", () => {
 		const midButtons = [...container.querySelectorAll<HTMLButtonElement>("button")];
 		expect(midButtons).toHaveLength(2);
 		for (const button of midButtons) {
-			expect(button.getAttribute("aria-label")).toBe("Use mid price 101.2500");
+			expect(button.getAttribute("aria-label")).toBe("Use mid price 101.25");
 			expect(button.classList.contains("text-trading-panel-success")).toBe(true);
 			expect(button.disabled).toBe(false);
 			act(() => button.click());
 		}
-		expect(mocks.setScaleStart).toHaveBeenCalledExactlyOnceWith("101.2500");
-		expect(mocks.setScaleEnd).toHaveBeenCalledExactlyOnceWith("101.2500");
+		expect(mocks.setScaleStart).toHaveBeenCalledExactlyOnceWith("101.25");
+		expect(mocks.setScaleEnd).toHaveBeenCalledExactlyOnceWith("101.25");
 		render(true);
 		for (const input of inputs) expect(input.disabled).toBe(true);
 		for (const button of midButtons) {
@@ -180,11 +180,11 @@ describe("TradeFormScale Mid controls", () => {
 			expect([...container.querySelectorAll("button")]).toEqual(buttons);
 			for (const button of buttons) {
 				expect(button.disabled).toBe(false);
-				expect(button.getAttribute("aria-label")).toBe("Use mid price 102.5000");
+				expect(button.getAttribute("aria-label")).toBe("Use mid price 102.50");
 				act(() => button.click());
 			}
-			expect(mocks.setScaleStart).toHaveBeenCalledExactlyOnceWith("102.5000");
-			expect(mocks.setScaleEnd).toHaveBeenCalledExactlyOnceWith("102.5000");
+			expect(mocks.setScaleStart).toHaveBeenCalledExactlyOnceWith("102.50");
+			expect(mocks.setScaleEnd).toHaveBeenCalledExactlyOnceWith("102.50");
 		},
 	);
 });

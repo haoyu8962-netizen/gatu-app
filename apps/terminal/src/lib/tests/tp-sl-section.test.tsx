@@ -56,7 +56,7 @@ describe("TpSlSection position ROE shortcuts", () => {
 		const fiftyPercentButtons = container.querySelectorAll<HTMLButtonElement>('button[aria-label="Set to 50%"]');
 		expect(fiftyPercentButtons[0]?.disabled).toBe(false);
 		act(() => fiftyPercentButtons[0]?.click());
-		expect(onTpPriceChange).toHaveBeenCalledWith("102.5000");
+		expect(onTpPriceChange).toHaveBeenCalledWith("102.50");
 	});
 
 	it("provides 44px input and shortcut targets when embedded in a mobile sheet", () => {
@@ -109,7 +109,7 @@ describe("TpSlSection position ROE shortcuts", () => {
 
 		const buttons = container.querySelectorAll<HTMLButtonElement>('button[aria-label="Set to 25%"]');
 		act(() => buttons[0]?.click());
-		expect(onTpPriceChange).toHaveBeenCalledWith("9119789245425255.4125");
+		expect(onTpPriceChange).toHaveBeenCalledWith("9119789245425255");
 	});
 
 	it("renders linked PnL inputs with an accessible unit toggle", () => {

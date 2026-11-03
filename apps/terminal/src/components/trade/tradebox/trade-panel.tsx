@@ -373,7 +373,7 @@ export function TradePanel() {
 	const swapTargetToken =
 		isMarketCatalogLoading || marketCatalogError ? null : getBuilderPerpSwapTargetToken(market, spotMarkets);
 
-	useBookPriceSelection(market?.name);
+	useBookPriceSelection(market?.name, market?.assetId, market?.szDecimals);
 	useBookSizeModeRequest(market?.name, sizeMode, toggleSizeDenomination);
 
 	useEffect(() => {

@@ -257,7 +257,7 @@ describe("useVaultActionController", () => {
 
 		await act(async () => current().requestAction("deposit"));
 		expect(current().availableAmount).toBe("10.1");
-		expect(current().maxAmount).toBe("10.1");
+		expect(current().maxAmount).toBe("10.10");
 		act(() => current().setAmount("4"));
 		expect(current().canReview).toBe(false);
 		expect(current().belowMinimum).toBe(true);

@@ -10,6 +10,7 @@ import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { formatDateTime, useNumberFormat } from "@/lib/format";
 import { useMarkets } from "@/lib/hyperliquid";
+import { getMarketPriceFormatOptions } from "@/lib/trade/market-price-format";
 import { getUserFillNotional } from "@/lib/trade/user-fills";
 import { getMarketCloseValueColorClass } from "@/lib/ui/value-color";
 import { PassiveDataPlaceholder } from "./passive-data-placeholder";
@@ -113,10 +114,7 @@ export function TwapFillHistoryTable() {
 												{getDirectionLabel(fill.dir)}
 											</td>
 											<td className="p-0 text-right text-market-close-fg tabular-nums">
-												{formatPrice(fill.px, {
-													szDecimals,
-													marketType: market?.kind === "spot" ? "spot" : "perp",
-												})}
+												{formatPrice(fill.px, getMarketPriceFormatOptions({ kind: market?.kind, szDecimals }))}
 											</td>
 											<td className="p-0 text-right text-market-close-fg tabular-nums">
 												{formatNumber(fill.sz, szDecimals)} {marketLabel}

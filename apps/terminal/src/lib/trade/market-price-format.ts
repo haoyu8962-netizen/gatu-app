@@ -1,5 +1,5 @@
 import { HL_PRICE_MAX_DECIMALS } from "@/config/trade";
-import type { FormatPriceOptions } from "@/lib/format";
+import { type FormatPriceOptions, szDecimalsToPriceDecimals } from "@/lib/format";
 
 interface PriceFormatMarket {
 	kind?: string;
@@ -7,11 +7,13 @@ interface PriceFormatMarket {
 }
 
 /**
- * Format options for a market's protocol prices (fills, order limits and triggers): the market's
- * tick precision, never compact notation. Without market metadata every protocol decimal is kept,
- * so an exact price is never shortened to two decimals.
+ * Format options for a market's protocol prices in history tables (fills, order limits and triggers, TWAP
+ * averages): every decimal the market's tick allows, trailing zeros removed, never compact notation. An average
+ * fill price can carry more digits than a tick, so history keeps them rather than the five-significant-figure
+ * market display that `formatPrice` gives a bare `szDecimals` (AGENTS.md, History values). Without market
+ * metadata every protocol decimal is kept, so an exact price is never shortened to two decimals.
  */
 export function getMarketPriceFormatOptions(market: PriceFormatMarket | null | undefined): FormatPriceOptions {
 	if (market?.szDecimals === undefined) return { decimals: HL_PRICE_MAX_DECIMALS };
-	return { szDecimals: market.szDecimals, marketType: market.kind === "spot" ? "spot" : "perp" };
+	return { decimals: szDecimalsToPriceDecimals(market.szDecimals, market.kind === "spot" ? "spot" : "perp") };
 }

@@ -106,5 +106,6 @@ describe("HistoricalOrderPrice", () => {
 		expect(renderPrice(createLimitOrder("0.18342"), { kind: "perp", szDecimals: 0 })).toContain(">$0.18342<");
 		expect(renderPrice(createLimitOrder("0.000123"), { kind: "spot", szDecimals: 2 })).toContain(">$0.000123<");
 		expect(renderPrice(createLimitOrder("95001.5"), { kind: "perp", szDecimals: 5 })).toContain(">$95,001.5<");
+		expect(renderPrice(createLimitOrder("0.1834"), { kind: "perp", szDecimals: 0 })).toContain(">$0.1834<");
 	});
 });

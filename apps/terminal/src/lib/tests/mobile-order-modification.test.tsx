@@ -337,7 +337,7 @@ describe("mobile order modification", () => {
 	it("changes the price and size of this terminal's own limit order in one replacement", async () => {
 		mocks.orders = [{ ...triggerOrder, cloid: "0x0000000000000000000000000000abcd" }];
 		const { size, price } = openEditor();
-		expect(price?.value).toBe("170");
+		expect(price?.value).toBe("170.00");
 		await act(async () => {
 			if (!size || !price) return;
 			changeInput(price, "171.5");

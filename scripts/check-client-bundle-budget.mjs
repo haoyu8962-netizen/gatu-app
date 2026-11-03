@@ -158,11 +158,12 @@ const budgets = {
 		],
 	},
 	surfaces: [
-		// Raised 2026-11-01 by +762 for the second batch of audit fixes: the order-book unit request, compact-book size
-		// fitting, the shared book-price click and the spot address redirect. Measured as the fixed-identity Node 22.15.0
-		// build with VITE_MOBILE_PAIRING_ENABLED=false of a9973c83 (127,646) minus that of PR #131's d8a2acf5 (126,884),
-		// both without .env.local (docs/terminal-performance-baseline.md).
-		{ name: "trade-terminal-page", baselineGzipBytes: 124_004, allowedIncreaseBytes: 4_000 },
+		// Raised 2026-11-03 by +66 for the price-decimals fix (PR #143), after the p38 release precheck left it 169 bytes
+		// under its allowance. Measured as the fixed-identity Node 22.15.0 build with VITE_MOBILE_PAIRING_ENABLED=false
+		// of dev 51e99321 (127,711) minus that of 991796cd (127,645), both without .env.local; pairing on measures +78
+		// (docs/terminal-performance-baseline.md). The raise before it, +762 on 2026-11-01, covered the second batch of
+		// audit fixes.
+		{ name: "trade-terminal-page", baselineGzipBytes: 124_070, allowedIncreaseBytes: 4_000 },
 		{ name: "token-selector-popup", baselineGzipBytes: 14_355, allowedIncreaseBytes: 1_500 },
 		{ name: "api-wallet", baselineGzipBytes: 17_967, allowedIncreaseBytes: 2_000 },
 		{ name: "fundingHistory._address", baselineGzipBytes: 6_820, allowedIncreaseBytes: 1_500 },

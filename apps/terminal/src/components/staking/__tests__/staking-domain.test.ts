@@ -6,6 +6,7 @@ import {
 	createStakingActionSubmission,
 	createValidatorViews,
 	deriveStakingPageState,
+	formatHypeMaxInput,
 	formatStakingAmount,
 	formatStakingRatio,
 	isSystemFinalizedWithdrawal,
@@ -193,6 +194,12 @@ describe("staking domain", () => {
 			delegatedAmount: "100",
 			selectedStats: { predictedApr: "0.02" },
 		});
+	});
+
+	it("fills Max with at least two decimals and every exact HYPE decimal", () => {
+		expect(formatHypeMaxInput("12.5")).toBe("12.50");
+		expect(formatHypeMaxInput("0.123456789")).toBe("0.12345678");
+		expect(formatHypeMaxInput("0")).toBe("0");
 	});
 
 	it("scales HYPE with eight exact decimals and fails closed beyond safe integers", () => {
