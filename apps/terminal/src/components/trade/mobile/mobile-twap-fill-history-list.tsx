@@ -8,6 +8,7 @@ import { useTwapSliceFills } from "@/hooks/trade/use-twap-slice-fills";
 import { cn } from "@/lib/cn";
 import { formatDateTimeShort, useNumberFormat } from "@/lib/format";
 import { useMarkets } from "@/lib/hyperliquid";
+import { getMarketPriceFormatOptions } from "@/lib/trade/market-price-format";
 import { getUserFillNotional } from "@/lib/trade/user-fills";
 import { getMarketCloseValueColorClass } from "@/lib/ui/value-color";
 import type { MobileDataScrollMode } from "./mobile-positions-view";
@@ -129,10 +130,7 @@ export function MobileTwapFillHistoryList({ className, scrollMode = "contained" 
 								<div className="min-w-0">
 									<div className="truncate text-[10px] text-market-close-subtle">{t`Price`}</div>
 									<div className="truncate text-xs font-semibold text-market-close-fg tabular-nums">
-										{formatPrice(fill.px, {
-											szDecimals,
-											marketType: market?.kind === "spot" ? "spot" : "perp",
-										})}
+										{formatPrice(fill.px, getMarketPriceFormatOptions({ kind: market?.kind, szDecimals }))}
 									</div>
 								</div>
 								<div className="min-w-0">

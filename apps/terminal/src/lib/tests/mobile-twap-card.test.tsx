@@ -386,6 +386,27 @@ describe("MobileTwapTab card", () => {
 		expect(container.textContent).toContain("+1.25 USDC");
 	});
 
+	it("shows TWAP history prices at the market's protocol decimals, as the other history tables do", () => {
+		const history = mocks.twapHistory;
+		const fills = mocks.twapFills;
+		mocks.twapHistory = history.map((entry) => ({
+			...entry,
+			state: { ...entry.state, executedNtl: "6132.123" },
+		})) as TwapHistoryResponse;
+		mocks.twapFills = fills.map((fill) => ({ ...fill, px: "374.5" })) as UserFillsResponse;
+		try {
+			render();
+			selectSubview("History");
+			expect(container.textContent).toContain("$1,000.02006");
+			selectSubview("Fill History");
+			expect(container.textContent).toContain("$374.5");
+			expect(container.textContent).not.toContain("$374.50");
+		} finally {
+			mocks.twapHistory = history;
+			mocks.twapFills = fills;
+		}
+	});
+
 	it("shows a slice fill's fee token by its display name", () => {
 		const fills = mocks.twapFills;
 		mocks.twapFills = fills.map((fill) => ({ ...fill, feeToken: "USDT0" })) as UserFillsResponse;

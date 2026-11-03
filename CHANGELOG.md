@@ -621,11 +621,13 @@ changes, not evidence that a build has been deployed or accepted on real devices
   orders still send the size without trailing zeros.
 - Market prices show the decimals the official terminal shows: five significant figures within the
   market's protocol decimals, with trailing zeros kept (85.810 rather than 85.81, BTC as a whole
-  number). This covers positions, open orders, TWAP and history rows, the TP/SL, close and order
+  number). This covers positions, open orders, running TWAP orders, the TP/SL, close and order
   confirmation dialogs, the order summary's estimated liquidation price and Scale and TWAP summaries,
   the phone order form's market price, market search and the tab title, so a live price keeps its
   width as it moves within the same order of magnitude; an entry price averaged beyond five
-  significant figures now rounds to them, as on the official terminal.
+  significant figures now rounds to them, as on the official terminal. History tables (fills, order
+  history and TWAP history) keep every decimal of the market's tick, so an average fill price such as
+  88,140.5 is never rounded.
 - Prices the terminal fills into a price field (Mid, an order book row, Limit Close's Mid, an order
   being edited, an existing TP/SL) carry the same decimals, and Limit Close no longer drops them when
   the field loses focus; an order being edited starts from a size with every size decimal. A TP/SL

@@ -209,4 +209,5 @@ pnpm --dir apps/terminal exec playwright test \
 - 订单簿点价：`book-price-selection.test.tsx`（98.5 写成 98.500 且只写一次，之后元数据变化不重放；元数据到达前的点击保持原文）。
 - 修改订单：`open-order-modification.test.ts`（起始值 2.000、100.00 不算改动）、`mobile-order-modification.test.tsx`（170.00）、`desktop-orders-cancel-all.test.tsx`。
 - Max：`earn-domain`、`earn-action-modal`（5,029.40 USDC，提交 5029.4）、`swap.test.ts`、`use-vault-action-controller.test.tsx`（10.10）、`staking-domain.test.ts`。
-- 其他显示：`document-title.test.tsx`（61.120）、`command-menu.test.tsx`、`order-summary.test.tsx`、`historical-order-price.test.tsx`、`collateral-amount.test.ts`、`mobile-orders-card.test.tsx`。
+- 其他显示：`document-title.test.tsx`（61.120）、`command-menu.test.tsx`、`order-summary.test.tsx`、`mobile-orders-card.test.tsx`。
+- 历史表格保留协议小数位（2026-11-03 起，见[数字格式规则 12](number-format-setting.md)）：`historical-order-price.test.tsx`（95001.5 显示为 `$95,001.5`）、`collateral-amount.test.ts`、`desktop-twap-tab.test.tsx` 与 `mobile-twap-card.test.tsx`（TWAP 均价显示 6 位或 5 位协议小数，成交价 374.5 不补零）。
