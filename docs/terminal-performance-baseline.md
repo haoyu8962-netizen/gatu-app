@@ -433,6 +433,100 @@ The sixth round (commit `4af147fd`) changed one classification function in the d
 3,286,638 in total (+16), 1,626,663 static trade startup, 117,769 mobile and 201,070 desktop, with the desktop runtime
 increment 918 bytes under its allowance. Later commits on the branch change tests and documents only.
 
+## Price-decimals route-surface re-baseline before release p38 (2026-11-03)
+
+[PR #143](https://github.com/zora4523-bot/gatu-app/pull/143) (merged into `dev` as `1cf68b39`) keeps the official
+terminal's decimals in sizes and prices: market prices keep their trailing zeros, and values the terminal writes into
+price, size and Max fields keep their decimals ([number format rule 12](number-format-setting.md),
+[task record](work-memory/sessions/2026-11-02-size-field-fixed-decimals.md)). Its pairing-off CI build passed every
+budget, with `trade-terminal-page` at 127,718 (286 left).
+
+The release precheck for p38 built `dev` `51e99321` in the release worktree with the release settings. Its client code is
+that of `1cf68b39`, because [PR #144](https://github.com/zora4523-bot/gatu-app/pull/144) changed records only. The
+settings were pairing on, the production `.env.local`, Node 22.15.0 and release identity `cloudfront-2026-11-03-p38`.
+
+- Every budget passed, but `trade-terminal-page` read 127,835, 169 bytes under its allowance. The precheck rule requires
+  200 ([agent handbook](agent-handbook.md), section 8).
+- The other readings were:
+  - total 3,376,546 (6,452 left);
+  - static trade startup 1,653,489 (440 left);
+  - mobile runtime increment 119,778 (802 left);
+  - `vaults-page` 30,537 (239 left).
+
+Measurement setup:
+
+- Each tree was built in its own worktree without `.env.local`, with Node 22.15.0 and pnpm 10.21.0
+  (`CI=true pnpm install --frozen-lockfile --prefer-offline`).
+- Each tree was built twice, pairing off first, with this command:
+
+  ```bash
+  SAIRN_BUILD_SHA=e4e09966b175679ac7e13ea192246ce27fae15b5 SAIRN_RELEASE_ID=startup-guardrail-baseline \
+  SAIRN_BUILD_TIME=2026-08-27T00:00:00.000Z NODE_ENV=production NITRO_PRESET=node-server \
+  VITE_MOBILE_PAIRING_ENABLED=false pnpm --filter @sairn/terminal build
+  ```
+
+  The second build used `VITE_MOBILE_PAIRING_ENABLED=true`.
+- The base is `dev` `991796cd`, whose client code is that of release p37. Since `ce18a5a5`, measured in the next section,
+  `dev` changed only the budget script and records.
+- No dependency changed: `pnpm-lock.yaml` and every `package.json` are identical on both sides.
+
+| Metric | `991796cd` off | `51e99321` off | Change | `991796cd` on | `51e99321` on | Change |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Client chunks (no circular static imports) | 449 | 449 | 0 | 450 | 450 | 0 |
+| All client JS + CSS | 3,372,896 | 3,373,122 | +226 | 3,375,529 | 3,376,196 | +667 |
+| Route preloads only (6 files, diagnostic) | not read | not read | | not read | not read | |
+| Static trade startup (103 assets) | 1,651,653 | 1,651,966 | +313 | 1,652,590 | 1,653,003 | +413 |
+| Mobile runtime increment (15 assets) | 119,789 | 119,767 | −22 | 119,773 | 119,763 | −10 |
+| Desktop runtime increment (30 assets) | 204,612 | 204,571 | −41 | 204,546 | 204,554 | +8 |
+| Mobile static + runtime (118 assets) | 1,771,442 | 1,771,733 | +291 | 1,772,363 | 1,772,766 | +403 |
+| Desktop static + runtime (133 assets) | 1,856,265 | 1,856,537 | +272 | 1,857,136 | 1,857,557 | +421 |
+| `trade-terminal-page` | 127,645 | 127,711 | +66 | 127,634 | 127,712 | +78 |
+| `vaults-page` | 30,525 | 30,531 | +6 | 30,524 | 30,533 | +9 |
+
+The same client code, measured the day before as `ce18a5a5` with the same protocol, gives the noise between builds. The
+base differs from it by:
+
+- total −102 (pairing off) and −395 (pairing on);
+- static trade startup +96 and −190;
+- runtime increments and named route surfaces by 12 bytes or less, `trade-terminal-page` by 0 and −6.
+
+The +66 and +78 of `trade-terminal-page` are therefore growth, but the 12 bytes between them are within the noise.
+
+The per-asset comparison uses the pairing-off builds, grouped by chunk name without its content hash. Of 439 names, 245
+change:
+
+- `vendor-tanstack-router` +126 holds the shared number helpers of `lib/trade/numbers.ts`, which Rollup bundles beside
+  the router. Only the branch build has `Math.log10` in that chunk.
+- `use-account-abstraction-control` +85, the phone account tabs.
+- `trade-terminal-page` +66.
+- `staking` +55 and `earn` +28, whose Max now pads.
+- `twap-details` +48 and `format` +39.
+- `position-dialog-host` +21, the TP/SL and Limit Close dialogs.
+- `order-submission-feedback` −25.
+- The other 236 names change by less than 20 bytes each, −217 together. Five of them are chunks of surfaces #143 changed:
+  `size-percent-input` +16 (the price field's Mid), `orders-tab` +11, `spot-swap-feedback` +11, `vaults-page` +6 and
+  `trade-panel` +2. The rest are renamed imports and their compression.
+
+These are chunk-level readings: no source map or module manifest was produced, so which module of #143 sits in which
+chunk is inferred from the chunk names and the code they contain, not measured per module.
+
+Changes to the baselines:
+
+- `trade-terminal-page` is raised by the pairing-off growth, +66, to 124,070, as the 2026-11-01 raise was; its allowance
+  is unchanged.
+- Against the new baseline:
+  - the release precheck build has 235 bytes left;
+  - the PR's pairing-off CI build has 352;
+  - the two protocol builds of `51e99321` have 359 (pairing off) and 358 (pairing on).
+- The other baselines are unchanged.
+- Room left in the release configuration, smallest first:
+  - `trade-terminal-page` 235;
+  - `vaults-page` 239;
+  - static trade startup 440;
+  - `token-selector-popup` 482;
+  - `funding-history-panel` 799;
+  - mobile runtime increment 802.
+
 ## Total-client re-baseline before release p37 (2026-11-02)
 
 The release build of p37 failed the total-client budget: 3,376,302 gzip bytes, +10,101 over the 3,366,201 baseline

@@ -7,7 +7,7 @@
   "kind": "task",
   "status": "recorded",
   "topics": ["order-entry", "i18n-runtime", "account-funding"],
-  "summary": "运营方反馈手机下单面板拖滑杆时数量在 0.8 与 0.84 之间跳动、右对齐数字随位数伸缩。根因是 domain/trade/order/size.ts 的 formatSizeValue 截断后删掉末尾的零。官方终端只读核对代码（数字输入 _p 经 gp→ele 以 toFixed(nDecimals) 显示外部写入的值）并用运营方已登录账户实测（69/60/43% 得 0.80/0.70/0.50，拖动同样两位），未下单。改为滑杆、百分比框、手机点可用金额、单位切换与只减仓选择写入时保留 szDecimals 位，零仍为 0；手动输入不变，下单字符串仍由 formatSizeForOrder 去零。运营方随后要求审查同类问题并一次修完：市场价格按官方 R3 显示（5 位有效数字、上限 6/8−szDecimals、保留末尾的零），Mid、点订单簿价格、限价平仓 Mid、修改订单起始值与 TP/SL 换算价补到同样位数（TP/SL 四舍五入，官方向下取整），兑换、Earn、金库、质押的 Max 至少两位小数；提交字符串不变。运营方同意后经 PR #143 于 2026-11-03 以合并提交 1cf68b39 合入 dev（CI 全部通过），未晋升 main、未发布；真实设备观感未验收。",
+  "summary": "运营方反馈手机下单面板拖滑杆时数量在 0.8 与 0.84 之间跳动、右对齐数字随位数伸缩。根因是 domain/trade/order/size.ts 的 formatSizeValue 截断后删掉末尾的零。官方终端只读核对代码（数字输入 _p 经 gp→ele 以 toFixed(nDecimals) 显示外部写入的值）并用运营方已登录账户实测（69/60/43% 得 0.80/0.70/0.50，拖动同样两位），未下单。改为滑杆、百分比框、手机点可用金额、单位切换与只减仓选择写入时保留 szDecimals 位，零仍为 0；手动输入不变，下单字符串仍由 formatSizeForOrder 去零。运营方随后要求审查同类问题并一次修完：市场价格按官方 R3 显示（5 位有效数字、上限 6/8−szDecimals、保留末尾的零），Mid、点订单簿价格、限价平仓 Mid、修改订单起始值与 TP/SL 换算价补到同样位数（TP/SL 四舍五入，官方向下取整），兑换、Earn、金库、质押的 Max 至少两位小数；提交字符串不变。运营方同意后经 PR #143 于 2026-11-03 以合并提交 1cf68b39 合入 dev（CI 全部通过）。运营方随后要求晋升到 main：发布预检中 trade-terminal-page 只余 169 字节（规则要求 200），运营方选「重定基线后晋升」，按复现规则成对测得 #143 使它增长 +66（配对关闭）、+78（配对开启），按配对关闭的 +66 上调到 124,070（分支 claude/p38-trade-page-rebaseline）。未晋升 main、未发布；真实设备观感未验收。",
   "thread": null,
   "baseCommit": "991796cd",
   "commits": ["32c75b68", "ee9b6cca", "5f7a321c", "1cf68b39"],
@@ -22,6 +22,8 @@
     {"path": "apps/terminal/src/lib/trade/numbers.ts"},
     {"path": "apps/terminal/src/lib/trade/tpsl.ts"},
     {"path": "apps/terminal/src/domain/trade/open-order-modification.ts"},
+    {"path": "scripts/check-client-bundle-budget.mjs"},
+    {"path": "docs/terminal-performance-baseline.md"},
     {"url": "https://app.hyperliquid.xyz/trade/HYPE"}
   ],
   "supersedes": []
@@ -140,6 +142,51 @@
   - `vaults-page` 30,536，余 240 字节；
   - 手机运行时增量余 804 字节，交易启动余 1,974 字节，总量余 9,648 字节。
 - 运营方说「合并 PR」后，PR #143 于 2026-11-03 01:24（UTC+8）以合并提交 `1cf68b39` 合入 dev。合并时锁定头提交 `5f7a321c`，合并后的树与它相同。未晋升 main，未发布。
+
+## 发布预检与重定基线（2026-11-03）
+
+运营方在 PR #143、#144 合入 `dev` 后说「继续合并PR 到主分支」。两个 PR 已经在 `dev` 里，所以理解为 `dev → main` 晋升。按手册第 8 节，开晋升 PR 之前先做发布预检。
+
+**预检。**
+- 在仓库外新建发布工作树 `gatu-release-p38`，检出 `dev` `51e99321`。`.env.local` 只软链、不读内容。
+- Node 22.15.0、pnpm 10.21.0 按锁文件安装，用时 28.8 秒。
+- 用 p37 正式发布的开关构建：配对开启，三个闸门开，`VITE_CCTP_SPONSORED_DEPOSIT_TESTNET_ENABLED=false`，`VITE_HYPERLIQUID_TESTNET=` 为空，发布号 `cloudfront-2026-11-03-p38`。
+- `build-meta.json` 的提交、发布号与闸门都正确，全部预算通过。
+- 但 `trade-terminal-page` 为 127,835，只余 169 字节，低于规则要求的 200；其余各项都满足阈值：
+
+| 预算 | 读数 | 余量 |
+| --- | ---: | ---: |
+| 总量 | 3,376,546 | 6,452 |
+| 交易启动 | 1,653,489 | 440 |
+| 手机运行时增量 | 119,778 | 802 |
+| `trade-terminal-page` | 127,835 | 169 |
+| `vaults-page` | 30,537 | 239 |
+
+- 晋升覆盖的本机预演：`scripts/promotion-coverage.mjs`，`--base origin/main --head origin/dev`。四个工作流都判为已覆盖，由 #143 的运行 41483460419、41483460363、41483460487、41483460203 覆盖，之后的 #144 没有改动它们的输入。重定基线的 PR 改了 `scripts/`，这次预演在它合入后不再成立，开晋升 PR 前要重做。
+
+**运营方选「重定基线后晋升」。**
+- 按复现规则，在会话暂存目录建两个不含 `.env.local` 的工作树，用 Node 22.15.0、`CI=true pnpm install --frozen-lockfile --prefer-offline` 安装。
+- 构建开关：固定身份、`NITRO_PRESET=node-server`，各自先配对关闭、后配对开启。两侧是 `991796cd`（#143 之前的 `dev`）与 `51e99321`。
+- 基线一侧配对关闭时 `trade-terminal-page` 为 127,645，与 p37 记录里 `ce18a5a5` 的读数相同。
+- `trade-terminal-page` 增长 +66（配对关闭）和 +78（配对开启）；总量增长 +226 和 +667；手机运行时 −22 和 −10。
+- 同一份客户端代码前一天在 `ce18a5a5` 测过。两次相比，总量差 −102 和 −395，交易启动差 +96 和 −190，运行时增量与路由块在 12 字节以内，`trade-terminal-page` 差 0 和 −6。所以 +66 与 +78 之间的 12 字节在噪声范围内。
+- 逐块比较（配对关闭）：
+  - `vendor-tanstack-router` +126，是 `lib/trade/numbers.ts` 的新函数，只有分支一侧这个块里有 `Math.log10`；
+  - 其余增长都在 #143 改过的界面所在的块；
+  - 另有 236 个块各变不到 20 字节，合计 −217；
+  - 依赖与锁文件没有变化。
+- 先按配对开启的 +78 写了 124,082，再改为配对关闭的 +66，即 124,070，允许值不变。改动原因：独立审查子代理指出，上调幅度应与前两次重定基线一致，且两者之差在噪声内。Codex CLI 当时因登录失效（`401 Unauthorized`）没能运行，所以改由子代理审查。
+- 上调后余量：发布预检构建 235，#143 的 CI 构建 352，两份复现构建 359 和 358。其他基线不变。
+- 发布配置下余量最小的几项，从小到大：
+  - `trade-terminal-page` 235；
+  - `vaults-page` 239；
+  - 交易启动 440；
+  - `token-selector-popup` 482；
+  - `funding-history-panel` 799；
+  - 手机运行时 802。
+- 子代理还指出文档把 `trade-terminal-page` 的增长归给了桌面订单表和价格框，而这两处其实在 `orders-tab`、`size-percent-input` 块里；缺少规则要求的块数、合计数与命令里的配对开关。均已改正；路由预加载诊断没读，写为 not read。
+- 证据存在本机忽略目录 `.worklog/2026-11-03/p38-trade-page-rebaseline/`：四份构建的预算报告与逐块 gzip、两侧状态、预检产物重读的预算报告、测量脚本。预检原始构建日志随会话暂存目录被清掉，预算报告是对 `gatu-release-p38` 里同一份产物重新读取的。
+- 细节写进 `docs/terminal-performance-baseline.md` 的「Price-decimals route-surface re-baseline before release p38 (2026-11-03)」。
 
 ## 后续与替代关系
 
