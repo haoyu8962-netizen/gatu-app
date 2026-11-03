@@ -8,6 +8,7 @@ import { useTwapHistory } from "@/hooks/trade/use-twap-history";
 import { cn } from "@/lib/cn";
 import { formatClockDuration, formatDateTimeShort, useNumberFormat } from "@/lib/format";
 import { useMarkets } from "@/lib/hyperliquid";
+import { getMarketPriceFormatOptions } from "@/lib/trade/market-price-format";
 import { getTwapAverageFillPrice, getTwapHistoryDurationMs, getTwapHistoryTimeMs } from "@/lib/trade/order-history";
 import type { MobileDataScrollMode } from "./mobile-positions-view";
 import { useMobileTerminalTab } from "./use-mobile-terminal-tab";
@@ -63,10 +64,7 @@ export function MobileTwapHistoryList({ className, scrollMode = "contained" }: P
 				const market = markets.getMarket(entry.state.coin);
 				const marketLabel = market?.shortName ?? entry.state.coin;
 				const szDecimals = markets.getSzDecimals(entry.state.coin);
-				const priceOptions = {
-					szDecimals,
-					marketType: market?.kind === "spot" ? ("spot" as const) : ("perp" as const),
-				};
+				const priceOptions = getMarketPriceFormatOptions({ kind: market?.kind, szDecimals });
 				const averageFillPrice = getTwapAverageFillPrice(entry);
 				const statusLabel = getTwapHistoryStatusLabel(entry.status.status);
 				const eventKey = `${entry.twapId ?? entry.state.timestamp}:${entry.time}:${entry.status.status}`;

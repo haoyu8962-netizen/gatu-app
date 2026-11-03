@@ -7,7 +7,7 @@
   "kind": "task",
   "status": "recorded",
   "topics": ["order-entry", "i18n-runtime", "account-funding"],
-  "summary": "运营方反馈手机下单面板拖滑杆时数量在 0.8 与 0.84 之间跳动、右对齐数字随位数伸缩。根因是 domain/trade/order/size.ts 的 formatSizeValue 截断后删掉末尾的零。官方终端只读核对代码（数字输入 _p 经 gp→ele 以 toFixed(nDecimals) 显示外部写入的值）并用运营方已登录账户实测（69/60/43% 得 0.80/0.70/0.50，拖动同样两位），未下单。改为滑杆、百分比框、手机点可用金额、单位切换与只减仓选择写入时保留 szDecimals 位，零仍为 0；手动输入不变，下单字符串仍由 formatSizeForOrder 去零。运营方随后要求审查同类问题并一次修完：市场价格按官方 R3 显示（5 位有效数字、上限 6/8−szDecimals、保留末尾的零），Mid、点订单簿价格、限价平仓 Mid、修改订单起始值与 TP/SL 换算价补到同样位数（TP/SL 四舍五入，官方向下取整），兑换、Earn、金库、质押的 Max 至少两位小数；提交字符串不变。运营方同意后经 PR #143 于 2026-11-03 以合并提交 1cf68b39 合入 dev（CI 全部通过）。运营方随后要求晋升到 main：发布预检中 trade-terminal-page 只余 169 字节（规则要求 200），运营方选「重定基线后晋升」，按复现规则成对测得 #143 使它增长 +66（配对关闭）、+78（配对开启），按配对关闭的 +66 上调到 124,070（分支 claude/p38-trade-page-rebaseline）。未晋升 main、未发布；真实设备观感未验收。",
+  "summary": "运营方反馈手机下单面板拖滑杆时数量在 0.8 与 0.84 之间跳动、右对齐数字随位数伸缩。根因是 domain/trade/order/size.ts 的 formatSizeValue 截断后删掉末尾的零。官方终端只读核对代码（数字输入 _p 经 gp→ele 以 toFixed(nDecimals) 显示外部写入的值）并用运营方已登录账户实测（69/60/43% 得 0.80/0.70/0.50，拖动同样两位），未下单。改为滑杆、百分比框、手机点可用金额、单位切换与只减仓选择写入时保留 szDecimals 位，零仍为 0；手动输入不变，下单字符串仍由 formatSizeForOrder 去零。运营方随后要求审查同类问题并一次修完：市场价格按官方 R3 显示（5 位有效数字、上限 6/8−szDecimals、保留末尾的零），Mid、点订单簿价格、限价平仓 Mid、修改订单起始值与 TP/SL 换算价补到同样位数（TP/SL 四舍五入，官方向下取整），兑换、Earn、金库、质押的 Max 至少两位小数；提交字符串不变。运营方同意后经 PR #143 于 2026-11-03 以合并提交 1cf68b39 合入 dev（CI 全部通过）。运营方随后要求晋升到 main：发布预检中 trade-terminal-page 只余 169 字节（规则要求 200），运营方选「重定基线后晋升」，按复现规则成对测得 #143 使它增长 +66（配对关闭）、+78（配对开启），按配对关闭的 +66 上调到 124,070（PR #145，2026-11-03 合入 dev 26f776ad）。晋升 PR #146 的 Codex 审查指出历史表格的均价被按行情规则取整（P1，与 AGENTS.md 历史表格规则冲突），已改回市场协议小数位（分支 claude/history-price-protocol-decimals）。未晋升 main、未发布；真实设备观感未验收。",
   "thread": null,
   "baseCommit": "991796cd",
   "commits": ["32c75b68", "ee9b6cca", "5f7a321c", "1cf68b39"],
@@ -187,6 +187,50 @@
 - 子代理还指出文档把 `trade-terminal-page` 的增长归给了桌面订单表和价格框，而这两处其实在 `orders-tab`、`size-percent-input` 块里；缺少规则要求的块数、合计数与命令里的配对开关。均已改正；路由预加载诊断没读，写为 not read。
 - 证据存在本机忽略目录 `.worklog/2026-11-03/p38-trade-page-rebaseline/`：四份构建的预算报告与逐块 gzip、两侧状态、预检产物重读的预算报告、测量脚本。预检原始构建日志随会话暂存目录被清掉，预算报告是对 `gatu-release-p38` 里同一份产物重新读取的。
 - 细节写进 `docs/terminal-performance-baseline.md` 的「Price-decimals route-surface re-baseline before release p38 (2026-11-03)」。
+
+## 晋升 PR #146 的审查意见与历史表格修复（2026-11-03）
+
+**发现。**
+- PR #145 合入 `dev`（`26f776ad`）后开了晋升 PR #146。Codex 机器人对 `26f776a` 提了一项 P1，位置在 `apps/terminal/src/lib/format.ts:261`。
+- 它的意见：只传 `szDecimals` 的调用都被当成行情显示，历史表格里超过 5 位有效数字的均价会被取整。例如桌面 TWAP 历史的均价 88140.5 显示为 $88,141。这违反 AGENTS.md 要求历史表格按市场协议小数位显示价格的规则。
+- 核实成立：
+  - 成交历史、委托历史经 `getMarketPriceFormatOptions` 传 `szDecimals`；
+  - TWAP 历史与 TWAP 成交（桌面、手机）在组件里直接传 `szDecimals`；
+  - #143 之后它们都按 5 位有效数字显示。
+- 这是 #143 的错。它在 `trading-toolbar-redesign.md` 的 History values 里把这条写成了 R3，等于在下级文档里改变了 AGENTS.md 契约的含义。
+
+**修复。** 分支 `claude/history-price-protocol-decimals`，从 `dev` `26f776ad` 切出。
+- `getMarketPriceFormatOptions` 改为给出显式的协议小数位 `decimals`：有市场元数据时是 6 或 8 减 `szDecimals`，没有时是 8。显示结果与 #143 之前逐位相同：最多协议小数位，去掉末尾的零。
+- TWAP 历史与 TWAP 成交的四处改用它。
+- 仓位、当前委托、进行中的 TWAP 等实时价格，仍按规则 12。
+- 文档：
+  - 规则 12 加上历史表格的例外；
+  - History values 的 Prices 改回协议小数位，没有元数据时按实际代码写为最多 8 位，原文写的 6 位不对；
+  - CHANGELOG 与 AGENTS.md 那条规则限定在历史表格之外。
+
+**测试。**
+- 恢复 `historical-order-price` 的 95001.5 → `$95,001.5`，以及 `collateral-amount` 的 29780.5 → `$29,780.5`。
+- 新增桌面与手机 TWAP 历史各一条用例：
+  - 均价 6130.123 / 6.13 显示 `$1,000.020065`；
+  - 均价 6132.123 / 6.132 显示 `$1,000.02006`；
+  - 成交价 374.5 不补零。
+- 五个变异都被抓住：选项改回 `szDecimals`，以及四处 TWAP 改回组件内联的写法。
+- 全量终端 Vitest（`--maxWorkers=4`）：714 个文件中 712 个通过、1 个跳过，唯一失败是已知的 `funds-modal-scroll-contract` 本机误报。Biome、typecheck 与 memory 三项检查通过。
+
+**包体。**
+- 测量方法：在隔离工作树里构建修复提交 `f67cbe04`，按复现规则用固定身份，不读 `.env.local`，与 `51e99321` 对比。
+
+| 预算 | 配对关闭 | 配对开启 |
+| --- | ---: | ---: |
+| `trade-terminal-page` | +0 | +3 |
+| 手机运行时 | +4 | +24 |
+| 桌面运行时 | 0 | +84 |
+| 交易启动 | +86 | +107 |
+| 总量 | +257 | +375 |
+
+- 总量和交易启动的变化都在同代码构建的噪声范围内。
+- 把这些增量加到发布预检的读数上，估算的余量是：`trade-terminal-page` 约 232、交易启动约 333、手机运行时约 778、总量约 6,077，都不低于手册阈值。
+- 证据在 `.worklog/2026-11-03/p38-trade-page-rebaseline/fix-*`。
 
 ## 后续与替代关系
 
