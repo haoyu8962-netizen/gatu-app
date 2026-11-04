@@ -62,8 +62,8 @@ describe("lazy trade settings modals", () => {
 		warmTradeSettingsModals("mobile");
 
 		expect(mocks.preloadLazyComponents).toHaveBeenCalledTimes(2);
-		expect(preloadedNames(0)).toEqual(["MarginModeModal", "LeverageModal", "AccountModeModal"]);
-		expect(preloadedNames(1)).toEqual(["MarginModeModal"]);
+		expect(preloadedNames(0)).toEqual(["MarginModeModal", "LeverageModal", "AccountModeModal", "MaxSlippageModal"]);
+		expect(preloadedNames(1)).toEqual(["MarginModeModal", "MaxSlippageModal"]);
 	});
 
 	it("does not download the dialogs on its own: nothing is warmed until the user reaches the order form", async () => {
@@ -107,17 +107,17 @@ describe("lazy trade settings modals", () => {
 		expect(onIntent).toHaveBeenCalledTimes(2);
 	});
 
-	it("keeps the three dialogs behind the lazy host instead of importing them into the order-entry surfaces", () => {
+	it("keeps the four dialogs behind the lazy host instead of importing them into the order-entry surfaces", () => {
 		const runtimeImport =
-			/^import (?!type\b)[^;]*?from "[^"]*\/(?:margin-mode-modal|leverage-modal|account-mode-modal)";/gm;
+			/^import (?!type\b)[^;]*?from "[^"]*\/(?:margin-mode-modal|leverage-modal|account-mode-modal|max-slippage-modal)";/gm;
 
 		for (const source of [TRADE_PANEL, MOBILE_TRADE_VIEW]) {
 			expect(source.match(runtimeImport) ?? []).toEqual([]);
 			expect(source).toContain('from "@/components/ui/lazy-dialog-host"');
 			expect(source).not.toMatch(/useEffect\([^)]*warmTradeSettingsModals/);
 		}
-		expect(TRADE_PANEL.match(/<LazyDialogHost\b/g)).toHaveLength(3);
-		expect(MOBILE_TRADE_VIEW.match(/<LazyDialogHost\b/g)).toHaveLength(1);
+		expect(TRADE_PANEL.match(/<LazyDialogHost\b/g)).toHaveLength(4);
+		expect(MOBILE_TRADE_VIEW.match(/<LazyDialogHost\b/g)).toHaveLength(2);
 		expect(TRADE_PANEL).toContain("onIntent={warmDesktopTradeSettingsModals}");
 		expect(MOBILE_TRADE_VIEW).toContain("onIntent={warmMobileTradeSettingsModals}");
 	});

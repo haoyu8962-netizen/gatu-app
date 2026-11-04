@@ -94,6 +94,7 @@ vi.mock("@/components/trade/tradebox/lazy-trade-settings-modals", () => ({
 	AccountModeModal: () => null,
 	LeverageModal: () => null,
 	MarginModeModal: () => null,
+	MaxSlippageModal: () => null,
 	warmTradeSettingsModals: vi.fn(),
 }));
 vi.mock("@/components/ui/lazy-dialog-host", () => ({ LazyDialogHost: () => null }));

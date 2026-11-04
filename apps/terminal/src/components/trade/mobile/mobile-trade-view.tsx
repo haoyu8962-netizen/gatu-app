@@ -6,7 +6,6 @@ import { ButtonLoading } from "@/components/brand/button-loading";
 import { depositModalIntentProps } from "@/components/trade/components/deposit-modal-intent";
 import { LazyDialogHost } from "@/components/ui/lazy-dialog-host";
 import { getFormattedMidPrice } from "@/components/ui/price-input";
-import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { TRADE_PANEL_LABELS } from "@/config/trade-panel-labels";
 import { get24hChange, getPositionDex } from "@/domain/market";
 import { getFundsAvailabilityNotice } from "@/domain/trade/data-presentation";
@@ -84,11 +83,7 @@ import { getTpSlCollateralSymbol } from "@/lib/trade/tpsl";
 import type { ButtonContent, Side, SizeMode } from "@/lib/trade/types";
 import { perpInput, spotInput, useOrderValidation } from "@/lib/trade/use-order-validation";
 import { getValueColorClass } from "@/lib/ui/value-color";
-import {
-	useDepositModalActions,
-	useEstablishConnectionModalActions,
-	useSettingsDialogActions,
-} from "@/stores/use-global-modal-store";
+import { useDepositModalActions, useEstablishConnectionModalActions } from "@/stores/use-global-modal-store";
 import { useMarketOrderSlippageBps, useMarketOrderSlippagePercent } from "@/stores/use-global-settings-store";
 import {
 	useLimitPrice,
@@ -115,8 +110,7 @@ import {
 	useTwapTriggerPrice,
 } from "@/stores/use-order-entry-store";
 import { TokenSelector } from "../chart/token-selector";
-import { OrderFeeSummaryValue } from "../components/order-fee-summary-value";
-import { MarginModeModal, warmTradeSettingsModals } from "../tradebox/lazy-trade-settings-modals";
+import { MarginModeModal, MaxSlippageModal, warmTradeSettingsModals } from "../tradebox/lazy-trade-settings-modals";
 import type { MobileTradeSettingsTab } from "../tradebox/margin-mode-modal";
 import { OrderConfirmationModal } from "../tradebox/order-confirmation-modal";
 import { ScaleOrderSummary } from "../tradebox/scale-order-summary";
@@ -153,7 +147,7 @@ function warmMobileTradeSettingsModals() {
 
 export function MobileTradeView({ active = true, className, embedded, sizeMode, onSizeModeChange }: Props) {
 	const numberFormat = useNumberFormat();
-	const { formatPrice, formatSlippageBps, formatToken, formatUSD } = numberFormat;
+	const { formatPrice, formatSlippageBps, formatToken } = numberFormat;
 	const { t } = useLingui();
 	const validationErrorId = useId();
 	const { address, isConnected, hasWalletAccess, sessionMode } = useWalletSession();
@@ -230,11 +224,11 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 
 	const [walletModalOpen, setWalletModalOpen] = useState(false);
 	const [showMarginDialog, setShowMarginDialog] = useState(false);
+	const [showSlippageDialog, setShowSlippageDialog] = useState(false);
 	const [settingsTab, setSettingsTab] = useState<MobileTradeSettingsTab>("margin");
 	const [marginDialogView, setMarginDialogView] = useState<"margin" | "leverage">("margin");
 	const { open: openDepositModal } = useDepositModalActions();
 	const { open: openEstablishConnectionModal } = useEstablishConnectionModalActions();
-	const { open: openSettingsDialog } = useSettingsDialogActions();
 	const geoRestriction = useGeoRestriction();
 	const tradeActionsBlocked = geoRestriction.actionsBlocked;
 	const tradeRestricted = geoRestriction.tradeRestricted;
@@ -484,7 +478,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 			positionStateReady &&
 			market?.marginMetadataReady === true &&
 			isLiveMarkPriceReady(markPriceStatus, market?.markPx, market?.markPriceReceivedAt) &&
-			canEstimateProspectiveLiquidationDraft({ marginMode, orderSize: sizeValue, maxOrderSize: maxSize }),
+			canEstimateProspectiveLiquidationDraft({ orderSize: sizeValue }),
 		reduceOnly,
 		existingPosition: prospectiveExistingPosition,
 		crossMarginAccount: crossMarginSnapshot.account,
@@ -844,6 +838,11 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 	const maxSizeLabel = reduceOnly ? t`Use max reducible size` : t`Use max available balance`;
 	const sizeModeLabel = sizeMode === "base" ? baseToken || "—" : quoteToken || "—";
 	const priceUnitLabel = quoteToken || "USDC";
+	const notApplicable = t`N/A`;
+
+	function openSlippageDialog() {
+		setShowSlippageDialog(true);
+	}
 
 	function formatAvailableBalance(): string {
 		const decimals = isSpotMarket && side === "sell" ? szDecimals : 2;
@@ -883,6 +882,9 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 					marginTiers={marginTiers}
 					quoteSymbol={getTpSlCollateralSymbol(market)}
 				/>
+			</LazyDialogHost>
+			<LazyDialogHost open={showSlippageDialog} onOpenChange={setShowSlippageDialog} presentation="drawer">
+				<MaxSlippageModal open={showSlippageDialog} onOpenChange={setShowSlippageDialog} presentation="drawer" />
 			</LazyDialogHost>
 			<div className={cn("shrink-0 border-b border-stroke-weak/60 bg-surface px-4 py-2", embedded && "hidden")}>
 				<div className="flex min-w-0 items-center justify-between gap-2">
@@ -1097,24 +1099,20 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 							{capabilities.isLeveraged && (
 								<MobileSummaryRowView
 									label={t`Liq. Price`}
-									value={formatSummaryPrice(liqPrice, market?.szDecimals, marketType, numberFormat)}
-									valueClass={getLiquidationPriceClassName(liqPrice, liqWarning)}
+									value={formatSummaryPrice(liqPrice, market?.szDecimals, marketType, numberFormat, notApplicable)}
+									valueClass={liqWarning ? "text-trading-panel-error" : undefined}
 									compact={embedded}
 								/>
 							)}
 							<MobileSummaryRowView
 								label={t`Order Value`}
-								value={orderValue > 0 ? formatUSD(orderValue, { compact: false }) : FALLBACK_VALUE_PLACEHOLDER}
+								value={formatSummaryAmount(orderValue, priceUnitLabel, numberFormat, notApplicable)}
 								compact={embedded}
 							/>
 							{capabilities.isLeveraged && (
 								<MobileSummaryRowView
 									label={t`Margin Req.`}
-									value={
-										marginRequired !== null && marginRequired > 0
-											? formatUSD(marginRequired, { compact: false })
-											: FALLBACK_VALUE_PLACEHOLDER
-									}
+									value={formatSummaryAmount(marginRequired, priceUnitLabel, numberFormat, notApplicable)}
 									compact={embedded}
 								/>
 							)}
@@ -1125,18 +1123,12 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 										estimatedSlippage: t`Est. Slippage`,
 										max: t(TRADE_PANEL_LABELS.max),
 									}}
-									value={estimatedSlippageText ?? FALLBACK_VALUE_PLACEHOLDER}
+									value={formatEstimatedSlippage(estimatedSlippageText, sizeValue, numberFormat, notApplicable)}
 									slippagePercent={numberFormat.formatNumber(slippagePercent)}
-									onClick={openSettingsDialog}
+									onClick={openSlippageDialog}
 									embedded={embedded}
 								/>
 							)}
-							<MobileSummaryRowView
-								label={t(TRADE_PANEL_LABELS.estimatedFee)}
-								value={<OrderFeeSummaryValue quote={feeQuote} />}
-								valueClass="min-w-0 flex-1 shrink whitespace-normal text-trading-panel-muted"
-								compact={embedded}
-							/>
 						</>
 					)}
 				</MobileTradeSummaryView>
@@ -1202,19 +1194,33 @@ export function MobileTradingApprovalErrorMessage({ cause }: { cause: unknown })
 		: t`Failed to enable trading`;
 }
 
-function getLiquidationPriceClassName(liqPrice: number | null, liqWarning: boolean): string | undefined {
-	if (!liqPrice) return "text-trading-panel-muted";
-	if (liqWarning) return "text-trading-panel-error";
-	return undefined;
-}
-
 function formatSummaryPrice(
 	value: number | null,
 	szDecimals: number | undefined,
 	marketType: "perp" | "spot",
 	numberFormat: NumberFormatters,
+	emptyLabel: string,
 ): string {
-	return isPositive(value) ? numberFormat.formatPrice(value, { szDecimals, marketType }) : FALLBACK_VALUE_PLACEHOLDER;
+	return isPositive(value) ? numberFormat.formatPrice(value, { szDecimals, marketType, style: "decimal" }) : emptyLabel;
+}
+
+function formatSummaryAmount(
+	value: number | null,
+	symbol: string,
+	numberFormat: NumberFormatters,
+	emptyLabel: string,
+): string {
+	return isPositive(value) ? numberFormat.formatToken(value, { decimals: 2, symbol }) : emptyLabel;
+}
+
+function formatEstimatedSlippage(
+	estimate: string | null,
+	size: number,
+	numberFormat: NumberFormatters,
+	emptyLabel: string,
+): string {
+	if (estimate) return estimate;
+	return size > 0 ? emptyLabel : `${numberFormat.formatNumber(0)}%`;
 }
 
 interface MobileButtonContentInput {

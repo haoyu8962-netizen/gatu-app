@@ -30,7 +30,7 @@ export interface TpSlState {
 	sl: string;
 }
 
-export type ActiveModal = "wallet" | "marginMode" | "leverage" | "accountMode" | null;
+export type ActiveModal = "wallet" | "marginMode" | "leverage" | "accountMode" | "maxSlippage" | null;
 
 export interface OrderRequest {
 	a: number;
