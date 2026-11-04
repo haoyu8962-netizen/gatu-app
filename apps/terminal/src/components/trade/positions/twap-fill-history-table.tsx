@@ -114,7 +114,7 @@ export function TwapFillHistoryTable() {
 												{getDirectionLabel(fill.dir)}
 											</td>
 											<td className="p-0 text-right text-market-close-fg tabular-nums">
-												{formatPrice(fill.px, getMarketPriceFormatOptions({ kind: market?.kind, szDecimals }))}
+												{formatPrice(fill.px, getMarketPriceFormatOptions(market))}
 											</td>
 											<td className="p-0 text-right text-market-close-fg tabular-nums">
 												{formatNumber(fill.sz, szDecimals)} {marketLabel}

@@ -243,3 +243,8 @@
 - 平仓类弹窗（市价平仓、限价平仓）有各自的数量与百分比逻辑，本次没有改，也没有发现它们用去零写法。
 - 去零写法现在只留在规范字符串（`formatSizeForOrder`、`formatPriceForOrder`、Scale 各档经 `formatDecimalFloor`）和不传 `minDecimals` 的显示（桌面当前仓位文字、金库金额）。价格框、数量框和 Max 的程序填值都已补零（见上一节）。
 - 下一次改价格显示或填值，先读 `docs/number-format-setting.md` 规则 12 与「与官方终端的差异」，以及 `docs/order-entry-surface-parity.md` 的「价格框的程序填值与 TP/SL 换算价」。
+- 2026-11-04 更正（[Codex 补审 PR #145 与 #147](2026-11-04-codex-review-pr145-pr147.md)）：运营方重新登录 Codex CLI 后，要求补审当时没经过 Codex 的 #145、#147。
+  - 上文说 #145 的 +66 与 +78「之间的 12 字节在噪声范围内」，依据不足：12 字节的上限来自别的读数，`trade-terminal-page` 两天之间只变了 0 与 −6，没有分离配对开关本身的影响。
+  - 上文写了路由预加载诊断没读（not read），但没有指出这不符合手册的复现规则：重定基线时要记录它本身的字节数。当时存档的预算报告只写了「来自 6 个路由预加载」，构建也没保留，现在补不了。
+  - #147 漏了一处：四张 TWAP 表把 `getSzDecimals()` 的值单独传给 `getMarketPriceFormatOptions`，市场不在目录里时它默认 4，只显示 2 位小数，没有用上「最多 8 位」的兜底。
+  - 这三处已在 `docs/terminal-performance-baseline.md`、`docs/trading-toolbar-redesign.md` 与代码里改正。本节的原文保留不改。

@@ -67,7 +67,7 @@ export function TwapHistoryTable() {
 								const market = markets.getMarket(entry.state.coin);
 								const marketLabel = market?.shortName ?? entry.state.coin;
 								const szDecimals = markets.getSzDecimals(entry.state.coin);
-								const priceOptions = getMarketPriceFormatOptions({ kind: market?.kind, szDecimals });
+								const priceOptions = getMarketPriceFormatOptions(market);
 								const averageFillPrice = getTwapAverageFillPrice(entry);
 								const statusLabel = getTwapHistoryStatusLabel(entry.status.status);
 								const statusDescription = entry.status.status === "error" ? entry.status.description : undefined;

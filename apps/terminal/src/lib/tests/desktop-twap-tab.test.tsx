@@ -22,6 +22,7 @@ const testState = vi.hoisted(() => ({
 	isWalletConnected: true,
 	loadMoreTwapFills: vi.fn(),
 	loadMoreTwapHistory: vi.fn(),
+	marketMissing: false,
 	navigateToMarket: vi.fn(),
 	retryTwapFillsRealtime: vi.fn(),
 	retryTwapHistoryRealtime: vi.fn(),
@@ -149,12 +150,16 @@ vi.mock("@/hooks/wallet/use-wallet-session", () => ({
 
 vi.mock("@/lib/hyperliquid", () => ({
 	useMarkets: () => ({
-		getMarket: () => ({
-			shortName: "GOOGL",
-			kind: "spot",
-			tokensInfo: [{ name: "GOOGL" }, { name: "USDH" }],
-		}),
-		getSzDecimals: () => 2,
+		getMarket: () =>
+			testState.marketMissing
+				? undefined
+				: {
+						shortName: "GOOGL",
+						kind: "spot",
+						szDecimals: 2,
+						tokensInfo: [{ name: "GOOGL" }, { name: "USDH" }],
+					},
+		getSzDecimals: () => (testState.marketMissing ? 4 : 2),
 		getTokenDisplayName: (name: string) => (name === "USDT0" ? "USDT" : name),
 	}),
 	useSubscription: vi.fn(() => ({
@@ -406,6 +411,34 @@ describe("desktop TWAP toolbar", () => {
 			expect(container.textContent).toContain("$374.5");
 			expect(container.textContent).not.toContain("$374.50");
 		} finally {
+			testState.twapHistory = history;
+			testState.twapFills = fills;
+		}
+	});
+
+	it("keeps up to eight decimals in TWAP history for a market missing from the catalog", () => {
+		const history = testState.twapHistory;
+		const fills = testState.twapFills;
+		testState.marketMissing = true;
+		testState.twapHistory = history.map((entry) => ({
+			...entry,
+			state: { ...entry.state, executedNtl: "0.0000756442", trigger: { above: true, px: "0.00001235" } },
+		})) as TwapHistoryResponse;
+		testState.twapFills = fills.map((fill) => ({ ...fill, px: "0.00001234" })) as UserFillsResponse;
+		try {
+			render();
+			const tabs = () => Array.from(container.querySelectorAll<HTMLButtonElement>('[role="tab"]'));
+			act(() => tabs()[1]?.click());
+			expect(container.textContent).toContain("$0.00001234");
+			expect(container.textContent).toContain("$0.00001235");
+			act(() =>
+				tabs()
+					.find((tab) => tab.textContent === "Fill History")
+					?.click(),
+			);
+			expect(container.textContent).toContain("$0.00001234");
+		} finally {
+			testState.marketMissing = false;
 			testState.twapHistory = history;
 			testState.twapFills = fills;
 		}
