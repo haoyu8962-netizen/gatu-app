@@ -7,6 +7,7 @@ import { createI18nRoot } from "./harness/react";
 
 const testState = vi.hoisted(() => ({
 	adaptiveProps: null as Record<string, unknown> | null,
+	numberInputProps: null as Record<string, unknown> | null,
 	slippagePercent: 2.5,
 	setMarketOrderSlippagePercent: vi.fn((value: number) => {
 		testState.slippagePercent = value;
@@ -29,14 +30,16 @@ vi.mock("@sairn/ui", () => ({
 }));
 
 vi.mock("@/components/ui/number-input", () => ({
-	NumberInput: (props: Record<string, unknown>) =>
-		createElement("input", {
+	NumberInput: (props: Record<string, unknown>) => {
+		testState.numberInputProps = props;
+		return createElement("input", {
 			value: String(props.value ?? ""),
 			"aria-label": props["aria-label"],
 			"aria-describedby": props["aria-describedby"],
 			"aria-invalid": props["aria-invalid"],
 			onChange: props.onChange,
-		}),
+		});
+	},
 }));
 
 vi.mock("@/stores/use-global-settings-store", async (importOriginal) => ({
@@ -53,6 +56,7 @@ describe("MaxSlippageModal", () => {
 
 	beforeEach(() => {
 		testState.adaptiveProps = null;
+		testState.numberInputProps = null;
 		testState.slippagePercent = 2.5;
 		testState.setMarketOrderSlippagePercent.mockClear();
 		container = document.createElement("div");
@@ -93,6 +97,12 @@ describe("MaxSlippageModal", () => {
 		expect(container.textContent).toContain("Market TP/SL orders use a max slippage of 10%.");
 		expect(container.textContent).toContain("0.1% – 5%");
 		expect(input().value).toBe("2.5");
+		expect(testState.numberInputProps).toMatchObject({
+			min: 0.1,
+			max: 5,
+			maxAllowedDecimals: 2,
+			mobileSafe: true,
+		});
 	});
 
 	it("saves a value inside the allowed range and closes", () => {

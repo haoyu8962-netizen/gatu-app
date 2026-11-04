@@ -624,9 +624,10 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Fixed
 
-- A cross order larger than the account can open, and an order from an empty account, now show a
-  liquidation price. As on the official terminal, the estimate assumes the account is topped up to the
-  position's initial margin.
+- A cross order larger than the account can open now shows a liquidation price. This covers a new
+  position or an add to a position in the same direction, including from an empty account or when the
+  fee would use up the equity. As on the official terminal, the estimate assumes the account is topped
+  up to the position's initial margin. Reducing and reversing orders still show none.
 - TWAP history and TWAP fills show up to eight decimals for a market missing from the catalog, as the
   other history tables do, instead of two (a price of 0.00001234 read $0).
 - The order size field keeps every size decimal when the slider, the percentage box, the phone's

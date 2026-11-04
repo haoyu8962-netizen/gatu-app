@@ -57,6 +57,44 @@ describe("estimateProspectiveLiquidation", () => {
 		expect(result.liqPrice).toBeCloseTo(81.0126582278481, 12);
 	});
 
+	it("tops up a short cross draft the same way", () => {
+		// Official c6 for a short: 100 + (200 - 1000 / 80) / 10 / (1 + 1 / 80).
+		const result = estimateProspectiveLiquidation(
+			isolatedInput({
+				marginMode: "cross",
+				side: "sell",
+				orderSize: 10,
+				leverage: 5,
+				crossMarginAccount: { accountValue: "100", maintenanceMarginUsed: "0" },
+			}),
+		);
+
+		expect(result.status).toBe("available");
+		expect(result.liqPrice).toBeCloseTo(118.5185185185185, 12);
+	});
+
+	it("tops up a same-direction cross add even when the execution fee leaves no equity", () => {
+		const result = estimateProspectiveLiquidation(
+			isolatedInput({
+				marginMode: "cross",
+				orderSize: 1000,
+				leverage: 5,
+				crossMarginAccount: { accountValue: "20", maintenanceMarginUsed: "1.25" },
+				executionFee: "45",
+				existingPosition: {
+					signedSize: "1",
+					positionValue: "100",
+					marginUsed: "2.5",
+					marginMode: "cross",
+					leverage: 5,
+				},
+			}),
+		);
+
+		expect(result.status).toBe("available");
+		expect(result.liqPrice).toBeCloseTo(81.0126582278481, 12);
+	});
+
 	it("keeps other positions' maintenance outside the topped-up initial margin", () => {
 		const result = estimateProspectiveLiquidation(
 			isolatedInput({

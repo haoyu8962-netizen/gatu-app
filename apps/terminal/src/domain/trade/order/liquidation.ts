@@ -369,7 +369,6 @@ function getProjectedPosition(input: {
 		const existingSize = signedSize.abs();
 		const snapshotMark = positionValue.div(existingSize);
 		const equityAtExecution = accountValue.plus(signedSize.times(input.price.minus(snapshotMark)));
-		if (equityAtExecution.lte(0)) return null;
 		return {
 			equity: equityAtExecution,
 			otherMaintenance,
