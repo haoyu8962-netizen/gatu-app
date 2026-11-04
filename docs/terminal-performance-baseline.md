@@ -483,6 +483,11 @@ Measurement setup:
 | `trade-terminal-page` | 127,645 | 127,711 | +66 | 127,634 | 127,712 | +78 |
 | `vaults-page` | 30,525 | 30,531 | +6 | 30,524 | 30,533 | +9 |
 
+The route preloads row does not meet the reproduction protocol, which asks for their own byte count when a baseline is
+re-set (`docs/agent-handbook.md`, section 6). The budget reports archived at build time
+(`.worklog/2026-11-03/p38-trade-page-rebaseline/*-budget.txt`) give only that the static trade closure comes from 6 route
+preloads, and the builds were not kept, so the bytes cannot be re-read now (corrected 2026-11-04 after a Codex review).
+
 The same client code, measured the day before as `ce18a5a5` with the same protocol, gives the noise between builds. The
 base differs from it by:
 
@@ -490,7 +495,10 @@ base differs from it by:
 - static trade startup +96 and −190;
 - runtime increments and named route surfaces by 12 bytes or less, `trade-terminal-page` by 0 and −6.
 
-The +66 and +78 of `trade-terminal-page` are therefore growth, but the 12 bytes between them are within the noise.
+The +66 and +78 of `trade-terminal-page` are therefore growth. The 12 bytes between them are small, but these
+measurements do not separate build noise from the effect of the pairing switch: the 12-byte bound comes from the other
+readings, and `trade-terminal-page` itself moved by 0 and −6 between the two days. +66 follows the pairing-off
+convention of the 2026-11-01 raise (wording corrected 2026-11-04 after a Codex review).
 
 The per-asset comparison uses the pairing-off builds, grouped by chunk name without its content hash. Of 439 names, 245
 change:
@@ -507,8 +515,10 @@ change:
   `size-percent-input` +16 (the price field's Mid), `orders-tab` +11, `spot-swap-feedback` +11, `vaults-page` +6 and
   `trade-panel` +2. The rest are renamed imports and their compression.
 
-These are chunk-level readings: no source map or module manifest was produced, so which module of #143 sits in which
-chunk is inferred from the chunk names and the code they contain, not measured per module.
+These are chunk-level readings. No source map was produced, and the module graph every build writes
+(`client-chunk-graph.json`, with each chunk's modules) was neither read nor kept for these builds, so which module of #143
+sits in which chunk is inferred from the chunk names and the code they contain, not measured per module (corrected
+2026-11-04: the earlier wording said no module manifest was produced).
 
 Changes to the baselines:
 

@@ -130,7 +130,7 @@ export function MobileTwapFillHistoryList({ className, scrollMode = "contained" 
 								<div className="min-w-0">
 									<div className="truncate text-[10px] text-market-close-subtle">{t`Price`}</div>
 									<div className="truncate text-xs font-semibold text-market-close-fg tabular-nums">
-										{formatPrice(fill.px, getMarketPriceFormatOptions({ kind: market?.kind, szDecimals }))}
+										{formatPrice(fill.px, getMarketPriceFormatOptions(market))}
 									</div>
 								</div>
 								<div className="min-w-0">
