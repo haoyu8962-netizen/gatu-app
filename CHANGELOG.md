@@ -614,6 +614,8 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Fixed
 
+- TWAP history and TWAP fills show up to eight decimals for a market missing from the catalog, as the
+  other history tables do, instead of two (a price of 0.00001234 read $0).
 - The order size field keeps every size decimal when the slider, the percentage box, the phone's
   Available amount, the unit toggle or a Reduce Only selection fills it (0.80 HYPE rather than 0.8), as
   on the official terminal, so a nonzero size no longer changes width while the slider moves within the
@@ -627,7 +629,7 @@ changes, not evidence that a build has been deployed or accepted on real devices
   width as it moves within the same order of magnitude; an entry price averaged beyond five
   significant figures now rounds to them, as on the official terminal. History tables (fills, order
   history and TWAP history) keep every decimal of the market's tick, so an average fill price such as
-  88,140.5 is never rounded.
+  88,140.5 is no longer rounded to five significant figures.
 - Prices the terminal fills into a price field (Mid, an order book row, Limit Close's Mid, an order
   being edited, an existing TP/SL) carry the same decimals, and Limit Close no longer drops them when
   the field loses focus; an order being edited starts from a size with every size decimal. A TP/SL
