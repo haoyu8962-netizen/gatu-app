@@ -64,7 +64,7 @@
 - **单位（第 4 项）。** 采用官方写法：金额是两位小数加报价币（与可用余额行一致，HIP-3 市场显示其结算币），清算价不带 `$`（与持仓卡片一致）。另一种理解是两者都加 `$`；没有采用，因为它与官方和可用余额行都不一致，对非美元结算币也不对。
 - **滑点颜色（第 5 项）。** 最大滑点改为 `text-signal`。
 - **滑点面板（第 6 项）。** 新增 `max-slippage-modal.tsx`，经 `lazy-trade-settings-modals.ts` 用 `createRetryableLazyComponent` 懒加载，并在下单面板的操作意图时预热。手机放在第二个 `LazyDialogHost`（drawer）里，桌面用 `activeModal === "maxSlippage"`。范围仍为 0.1%–5%。说明文字按本终端的实际行为写：市价平仓、全部平仓与反向都使用这个设置，市价 TP/SL 为 10%。
-- **费用行。** 移除，`TRADE_PANEL_LABELS.estimatedFee` 不再使用，一并删除。
+- **费用行。** 已移除。`TRADE_PANEL_LABELS.estimatedFee` 不再使用，但保留：第一次推送时顺手删了它，PR #151 因此碰到了官网构建的路径（`apps/terminal/src/config/**`）。官网的市场快照拉取于 2026-10-27，到 2026-11-04 已 8.4 天，超过 7 天上限，`Build website` 因此失败（`snapshot ... is 8.4 days old (limit 7); run markets:snapshot`）。这与本次改动无关，所以恢复这个文案，让 PR 不再触发官网构建；快照刷新另行处理。
 - **翻译。** 新增三条文案，六种语言都已翻译，`pnpm i18n:extract` 显示各语言缺失数与改动前相同（ar/es/fr/hi 35，ja 0，zh 3）。
 
 ## 验证与限制

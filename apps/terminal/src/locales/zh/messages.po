@@ -3263,6 +3263,7 @@ msgid "Equity"
 msgstr "净值"
 
 #: src/components/trade/tradebox/scale-order-summary.tsx
+#: src/config/trade-panel-labels.ts
 #: src/config/ui-text.ts
 msgid "Est. Fee"
 msgstr "预估费用"
