@@ -82,7 +82,6 @@ import { perpInput, spotInput, useOrderValidation } from "@/lib/trade/use-order-
 import {
 	useDepositModalActions,
 	useEstablishConnectionModalActions,
-	useSettingsDialogActions,
 	useSwapModalActions,
 } from "@/stores/use-global-modal-store";
 import { useMarketOrderSlippageBps, useMarketOrderSlippagePercent } from "@/stores/use-global-settings-store";
@@ -114,6 +113,7 @@ import {
 	AccountModeModal,
 	LeverageModal,
 	MarginModeModal,
+	MaxSlippageModal,
 	warmTradeSettingsModals,
 } from "./lazy-trade-settings-modals";
 import { OrderConfirmationModal } from "./order-confirmation-modal";
@@ -358,6 +358,9 @@ export function TradePanel() {
 	function handleAccountModeModalOpenChange(open: boolean) {
 		setActiveModal(open ? "accountMode" : null);
 	}
+	function handleMaxSlippageModalOpenChange(open: boolean) {
+		setActiveModal(open ? "maxSlippage" : null);
+	}
 	const sizeInteractionRef = useRef(false);
 	function handleSizeInteractionChange(active: boolean) {
 		sizeInteractionRef.current = active;
@@ -367,7 +370,6 @@ export function TradePanel() {
 
 	const { open: openDepositModal } = useDepositModalActions();
 	const { open: openEstablishConnectionModal } = useEstablishConnectionModalActions();
-	const { open: openSettingsDialog } = useSettingsDialogActions();
 	const { open: openSwapModal } = useSwapModalActions();
 
 	const swapTargetToken =
@@ -444,7 +446,7 @@ export function TradePanel() {
 			positionStateReady &&
 			market?.marginMetadataReady === true &&
 			isLiveMarkPriceReady(markPriceStatus, market?.markPx, market?.markPriceReceivedAt) &&
-			canEstimateProspectiveLiquidationDraft({ marginMode, orderSize: sizeValue, maxOrderSize: maxSize }),
+			canEstimateProspectiveLiquidationDraft({ orderSize: sizeValue }),
 		reduceOnly,
 		existingPosition: prospectiveExistingPosition,
 		crossMarginAccount: crossMarginSnapshot.account,
@@ -811,7 +813,7 @@ export function TradePanel() {
 				slippagePercent={slippagePercent}
 				estimatedSlippage={slippageEstimate}
 				szDecimals={market?.szDecimals}
-				onSlippageClick={openSettingsDialog}
+				onSlippageClick={() => setActiveModal("maxSlippage")}
 				orderType={orderType}
 				marketKind={market?.kind}
 			/>
@@ -882,6 +884,17 @@ export function TradePanel() {
 							portfolioMarginActivationEnabled={accountModeControl.portfolioMarginActivationEnabled}
 							onConnect={() => setActiveModal("wallet")}
 							onApply={handleAccountModeChange}
+						/>
+					</LazyDialogHost>
+					<LazyDialogHost
+						open={activeModal === "maxSlippage"}
+						onOpenChange={handleMaxSlippageModalOpenChange}
+						presentation="modal"
+					>
+						<MaxSlippageModal
+							open={activeModal === "maxSlippage"}
+							onOpenChange={handleMaxSlippageModalOpenChange}
+							presentation="modal"
 						/>
 					</LazyDialogHost>
 					{displayedConfirmation && (

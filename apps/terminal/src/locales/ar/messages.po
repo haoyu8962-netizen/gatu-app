@@ -634,6 +634,10 @@ msgstr "تعديل الرافعة المالية"
 msgid "Adjust Margin"
 msgstr "تعديل الهامش"
 
+#: src/components/trade/tradebox/max-slippage-modal.tsx
+msgid "Adjust Max Slippage"
+msgstr "تعديل الحد الأقصى للانزلاق"
+
 #: src/config/trade-panel-labels.ts
 msgid "Advanced"
 msgstr "متقدم"
@@ -1785,6 +1789,7 @@ msgstr "انقر للإرسال · لا يمكن التراجع عن الصفق�
 #: src/components/trade/tradebox/leverage-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
+#: src/components/trade/tradebox/max-slippage-modal.tsx
 #: src/components/ui/command.tsx
 #: src/components/ui/lazy-dialog-boundary.tsx
 #: src/components/vaults/vault-action-modal.tsx
@@ -2046,6 +2051,7 @@ msgstr "مبلغ TP/SL المحدد"
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 #: src/components/trade/tradebox/leverage-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
+#: src/components/trade/tradebox/max-slippage-modal.tsx
 #: src/components/vaults/vault-action-modal.tsx
 msgid "Confirm"
 msgstr "تأكيد"
@@ -3257,7 +3263,6 @@ msgid "Equity"
 msgstr "حقوق الملكية"
 
 #: src/components/trade/tradebox/scale-order-summary.tsx
-#: src/config/trade-panel-labels.ts
 #: src/config/ui-text.ts
 msgid "Est. Fee"
 msgstr "الرسوم المقدرة"
@@ -5129,6 +5134,14 @@ msgstr "يجب أن يكون السعر الأقصى أعلى من السعر ا
 msgid "Max price must be above trigger price"
 msgstr "يجب أن يكون السعر الأقصى أعلى من سعر التفعيل"
 
+#: src/components/trade/tradebox/max-slippage-modal.tsx
+msgid "Max slippage"
+msgstr "الحد الأقصى للانزلاق"
+
+#: src/components/trade/tradebox/max-slippage-modal.tsx
+msgid "Max slippage applies to market orders placed from the order form and to closing or reversing a position at market. Market TP/SL orders use a max slippage of {triggerSlippage}%."
+msgstr "ينطبق الحد الأقصى للانزلاق على أوامر السوق المرسلة من نموذج الأوامر وعلى إغلاق مركز أو عكسه بسعر السوق. تستخدم أوامر TP/SL السوقية حدًا أقصى للانزلاق قدره {triggerSlippage}%."
+
 #: src/components/trade/components/market-asset-info.tsx
 msgid "Maximum leverage"
 msgstr "الحد الأقصى للرافعة المالية"
@@ -5304,6 +5317,7 @@ msgstr "تم نقل {amount} HYPE إلى التخزين"
 #: src/components/earn/earn-view.tsx
 #: src/components/earn/earn-view.tsx
 #: src/components/earn/earn-view.tsx
+#: src/components/trade/mobile/mobile-trade-view.tsx
 msgid "N/A"
 msgstr "غير متاح"
 

@@ -578,6 +578,10 @@ msgstr "レバレッジを調整"
 msgid "Adjust Margin"
 msgstr "証拠金を調整"
 
+#: src/components/trade/tradebox/max-slippage-modal.tsx
+msgid "Adjust Max Slippage"
+msgstr "最大スリッページを調整"
+
 #: src/config/trade-panel-labels.ts
 msgid "Advanced"
 msgstr "詳細"
@@ -1600,6 +1604,7 @@ msgstr "クリックして送信 · 約定した取引は取り消せません"
 #: src/components/trade/tradebox/leverage-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
+#: src/components/trade/tradebox/max-slippage-modal.tsx
 #: src/components/ui/command.tsx
 #: src/components/ui/lazy-dialog-boundary.tsx
 #: src/components/vaults/vault-action-modal.tsx
@@ -1853,6 +1858,7 @@ msgstr "設定済み TP/SL 数量"
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 #: src/components/trade/tradebox/leverage-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
+#: src/components/trade/tradebox/max-slippage-modal.tsx
 #: src/components/vaults/vault-action-modal.tsx
 msgid "Confirm"
 msgstr "確認"
@@ -2944,7 +2950,6 @@ msgid "Equity"
 msgstr "純資産"
 
 #: src/components/trade/tradebox/scale-order-summary.tsx
-#: src/config/trade-panel-labels.ts
 #: src/config/ui-text.ts
 msgid "Est. Fee"
 msgstr "推定手数料"
@@ -4590,6 +4595,14 @@ msgstr "上限価格はマーク価格より高くしてください"
 msgid "Max price must be above trigger price"
 msgstr "上限価格はトリガー価格より高くしてください"
 
+#: src/components/trade/tradebox/max-slippage-modal.tsx
+msgid "Max slippage"
+msgstr "最大スリッページ"
+
+#: src/components/trade/tradebox/max-slippage-modal.tsx
+msgid "Max slippage applies to market orders placed from the order form and to closing or reversing a position at market. Market TP/SL orders use a max slippage of {triggerSlippage}%."
+msgstr "最大スリッページは、注文フォームから発注する成行注文と、成行での決済・ドテンに適用されます。成行のTP/SL注文には {triggerSlippage}% の最大スリッページが適用されます。"
+
 #: src/components/trade/components/market-asset-info.tsx
 msgid "Maximum leverage"
 msgstr "最大レバレッジ"
@@ -4738,6 +4751,7 @@ msgstr "{amount} HYPE をステーキングへ移動しました"
 #: src/components/earn/earn-view.tsx
 #: src/components/earn/earn-view.tsx
 #: src/components/earn/earn-view.tsx
+#: src/components/trade/mobile/mobile-trade-view.tsx
 msgid "N/A"
 msgstr "該当なし"
 

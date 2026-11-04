@@ -634,6 +634,10 @@ msgstr "调整杠杆"
 msgid "Adjust Margin"
 msgstr "调整保证金"
 
+#: src/components/trade/tradebox/max-slippage-modal.tsx
+msgid "Adjust Max Slippage"
+msgstr "调整最大滑点"
+
 #: src/config/trade-panel-labels.ts
 msgid "Advanced"
 msgstr "专业"
@@ -1785,6 +1789,7 @@ msgstr "点击提交 · 成交后不可撤销"
 #: src/components/trade/tradebox/leverage-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
+#: src/components/trade/tradebox/max-slippage-modal.tsx
 #: src/components/ui/command.tsx
 #: src/components/ui/lazy-dialog-boundary.tsx
 #: src/components/vaults/vault-action-modal.tsx
@@ -2046,6 +2051,7 @@ msgstr "止盈止损数量"
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 #: src/components/trade/tradebox/leverage-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
+#: src/components/trade/tradebox/max-slippage-modal.tsx
 #: src/components/vaults/vault-action-modal.tsx
 msgid "Confirm"
 msgstr "确认"
@@ -3257,7 +3263,6 @@ msgid "Equity"
 msgstr "净值"
 
 #: src/components/trade/tradebox/scale-order-summary.tsx
-#: src/config/trade-panel-labels.ts
 #: src/config/ui-text.ts
 msgid "Est. Fee"
 msgstr "预估费用"
@@ -5129,6 +5134,14 @@ msgstr "最高价须高于标记价"
 msgid "Max price must be above trigger price"
 msgstr "最高价须高于触发价"
 
+#: src/components/trade/tradebox/max-slippage-modal.tsx
+msgid "Max slippage"
+msgstr "最大滑点"
+
+#: src/components/trade/tradebox/max-slippage-modal.tsx
+msgid "Max slippage applies to market orders placed from the order form and to closing or reversing a position at market. Market TP/SL orders use a max slippage of {triggerSlippage}%."
+msgstr "最大滑点适用于从下单面板提交的市价单，以及以市价平仓或反向持仓。市价止盈止损单使用 {triggerSlippage}% 的最大滑点。"
+
 #: src/components/trade/components/market-asset-info.tsx
 msgid "Maximum leverage"
 msgstr "最大杠杆"
@@ -5304,6 +5317,7 @@ msgstr "已将 {amount} HYPE 转入质押"
 #: src/components/earn/earn-view.tsx
 #: src/components/earn/earn-view.tsx
 #: src/components/earn/earn-view.tsx
+#: src/components/trade/mobile/mobile-trade-view.tsx
 msgid "N/A"
 msgstr "不适用"
 

@@ -26,7 +26,7 @@ function isolatedInput(overrides: Partial<ProspectiveLiquidationInput> = {}): Pr
 }
 
 describe("estimateProspectiveLiquidation", () => {
-	it("estimates a new cross position from account equity and maintenance without using selected leverage", () => {
+	it("estimates a new cross position from account equity while the account covers its initial margin", () => {
 		const base = isolatedInput({
 			marginMode: "cross",
 			orderSize: 10,
@@ -34,11 +34,55 @@ describe("estimateProspectiveLiquidation", () => {
 		});
 
 		const fortyX = estimateProspectiveLiquidation(base);
-		const fiveX = estimateProspectiveLiquidation({ ...base, leverage: 5 });
+		const tenX = estimateProspectiveLiquidation({ ...base, leverage: 10 });
 
 		expect(fortyX.status).toBe("available");
 		expect(fortyX.liqPrice).toBeCloseTo(91.13924050632912, 12);
-		expect(fiveX.liqPrice).toBeCloseTo(fortyX.liqPrice ?? Number.NaN, 12);
+		expect(tenX.liqPrice).toBeCloseTo(fortyX.liqPrice ?? Number.NaN, 12);
+	});
+
+	it("tops a cross draft above the executable maximum up to its initial margin, as the official UI does", () => {
+		// Official c6: live value 100 is raised to 1000 / min(5, 40) = 200, so the
+		// price is 100 - (200 - 1000 / 80) / 10 / (1 - 1 / 80).
+		const result = estimateProspectiveLiquidation(
+			isolatedInput({
+				marginMode: "cross",
+				orderSize: 10,
+				leverage: 5,
+				crossMarginAccount: { accountValue: "100", maintenanceMarginUsed: "0" },
+			}),
+		);
+
+		expect(result.status).toBe("available");
+		expect(result.liqPrice).toBeCloseTo(81.0126582278481, 12);
+	});
+
+	it("keeps other positions' maintenance outside the topped-up initial margin", () => {
+		const result = estimateProspectiveLiquidation(
+			isolatedInput({
+				marginMode: "cross",
+				orderSize: 10,
+				leverage: 5,
+				crossMarginAccount: { accountValue: "100", maintenanceMarginUsed: "20" },
+			}),
+		);
+
+		expect(result.status).toBe("available");
+		expect(result.liqPrice).toBeCloseTo(81.0126582278481, 12);
+	});
+
+	it("estimates a cross draft from an empty account as if it held the initial margin", () => {
+		const result = estimateProspectiveLiquidation(
+			isolatedInput({
+				marginMode: "cross",
+				crossMarginAccount: { accountValue: "0", maintenanceMarginUsed: "0" },
+				executionFee: "0.045",
+			}),
+		);
+
+		expect(result.status).toBe("available");
+		expect(result.liqPrice).toBeCloseTo(98.73417721518987, 12);
+		expect(result.liqWarning).toBe(true);
 	});
 
 	it("keeps other cross positions' maintenance requirement in the candidate equation", () => {
@@ -296,6 +340,67 @@ describe("resolveCrossMarginAccount", () => {
 		).toEqual({ accountValue: "80", maintenanceMarginUsed: "15" });
 	});
 
+	it("accepts an empty account, whose drafts are estimated with the initial-margin top-up", () => {
+		expect(
+			resolveCrossMarginAccount({
+				accountMode: "disabled",
+				selectedDex: "",
+				selectedCollateralToken: 0,
+				selectedCrossAccountValue: "0",
+				selectedCrossMaintenanceMarginUsed: "0",
+				allDexStates: [],
+				dexCollateralTokens: [],
+				spotBalances: [],
+				dataReady: true,
+			}),
+		).toEqual({ accountValue: "0", maintenanceMarginUsed: "0" });
+		expect(
+			resolveCrossMarginAccount({
+				accountMode: "unifiedAccount",
+				selectedDex: "",
+				selectedCollateralToken: 0,
+				selectedCrossAccountValue: null,
+				selectedCrossMaintenanceMarginUsed: null,
+				allDexStates: [{ dex: "", crossMaintenanceMarginUsed: "0", positions: [] }],
+				dexCollateralTokens: [{ dex: "", token: 0 }],
+				spotBalances: [],
+				dataReady: true,
+			}),
+		).toEqual({ accountValue: "0", maintenanceMarginUsed: "0" });
+	});
+
+	it("fails closed for a negative account value or duplicate collateral balances", () => {
+		expect(
+			resolveCrossMarginAccount({
+				accountMode: "disabled",
+				selectedDex: "",
+				selectedCollateralToken: 0,
+				selectedCrossAccountValue: "-1",
+				selectedCrossMaintenanceMarginUsed: "0",
+				allDexStates: [],
+				dexCollateralTokens: [],
+				spotBalances: [],
+				dataReady: true,
+			}),
+		).toBeNull();
+		expect(
+			resolveCrossMarginAccount({
+				accountMode: "unifiedAccount",
+				selectedDex: "",
+				selectedCollateralToken: 0,
+				selectedCrossAccountValue: null,
+				selectedCrossMaintenanceMarginUsed: null,
+				allDexStates: [{ dex: "", crossMaintenanceMarginUsed: "0", positions: [] }],
+				dexCollateralTokens: [{ dex: "", token: 0 }],
+				spotBalances: [
+					{ token: 0, total: "10" },
+					{ token: 0, total: "20" },
+				],
+				dataReady: true,
+			}),
+		).toBeNull();
+	});
+
 	it("fails closed for portfolio mode, stale snapshots, and incomplete DEX mappings", () => {
 		const input = {
 			accountMode: "unifiedAccount",
@@ -393,19 +498,11 @@ describe("prospective account snapshot freshness", () => {
 });
 
 describe("prospective liquidation draft support", () => {
-	it("fails closed for an underfunded cross draft instead of inventing a top-up", () => {
-		expect(canEstimateProspectiveLiquidationDraft({ marginMode: "cross", orderSize: "1.01", maxOrderSize: "1" })).toBe(
-			false,
-		);
-		expect(canEstimateProspectiveLiquidationDraft({ marginMode: "cross", orderSize: "1", maxOrderSize: "1" })).toBe(
-			true,
-		);
-	});
-
-	it("allows isolated drafts because their initial margin is explicit in the estimator", () => {
-		expect(canEstimateProspectiveLiquidationDraft({ marginMode: "isolated", orderSize: "10", maxOrderSize: "1" })).toBe(
-			true,
-		);
+	it("estimates every draft that has a size, including one above the executable maximum", () => {
+		expect(canEstimateProspectiveLiquidationDraft({ orderSize: "1.01" })).toBe(true);
+		expect(canEstimateProspectiveLiquidationDraft({ orderSize: "0" })).toBe(false);
+		expect(canEstimateProspectiveLiquidationDraft({ orderSize: "" })).toBe(false);
+		expect(canEstimateProspectiveLiquidationDraft({ orderSize: "-1" })).toBe(false);
 	});
 });
 

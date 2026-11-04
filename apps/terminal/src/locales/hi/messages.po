@@ -634,6 +634,10 @@ msgstr "लीवरेज समायोजित करें"
 msgid "Adjust Margin"
 msgstr "मार्जिन समायोजित करें"
 
+#: src/components/trade/tradebox/max-slippage-modal.tsx
+msgid "Adjust Max Slippage"
+msgstr "अधिकतम स्लिपेज समायोजित करें"
+
 #: src/config/trade-panel-labels.ts
 msgid "Advanced"
 msgstr "उन्नत"
@@ -1785,6 +1789,7 @@ msgstr "सबमिट करने के लिए क्लिक करे�
 #: src/components/trade/tradebox/leverage-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
+#: src/components/trade/tradebox/max-slippage-modal.tsx
 #: src/components/ui/command.tsx
 #: src/components/ui/lazy-dialog-boundary.tsx
 #: src/components/vaults/vault-action-modal.tsx
@@ -2046,6 +2051,7 @@ msgstr "कॉन्फ़िगर की गई TP/SL राशि"
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 #: src/components/trade/tradebox/leverage-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
+#: src/components/trade/tradebox/max-slippage-modal.tsx
 #: src/components/vaults/vault-action-modal.tsx
 msgid "Confirm"
 msgstr "पुष्टि करें"
@@ -3257,7 +3263,6 @@ msgid "Equity"
 msgstr "इक्विटी"
 
 #: src/components/trade/tradebox/scale-order-summary.tsx
-#: src/config/trade-panel-labels.ts
 #: src/config/ui-text.ts
 msgid "Est. Fee"
 msgstr "अनु. शुल्क"
@@ -5129,6 +5134,14 @@ msgstr "अधिकतम मूल्य मार्क से अधिक �
 msgid "Max price must be above trigger price"
 msgstr "अधिकतम मूल्य ट्रिगर मूल्य से अधिक होना चाहिए"
 
+#: src/components/trade/tradebox/max-slippage-modal.tsx
+msgid "Max slippage"
+msgstr "अधिकतम स्लिपेज"
+
+#: src/components/trade/tradebox/max-slippage-modal.tsx
+msgid "Max slippage applies to market orders placed from the order form and to closing or reversing a position at market. Market TP/SL orders use a max slippage of {triggerSlippage}%."
+msgstr "अधिकतम स्लिपेज ऑर्डर फ़ॉर्म से दिए गए मार्केट ऑर्डर पर और मार्केट पर पोज़िशन बंद या रिवर्स करने पर लागू होता है। मार्केट TP/SL ऑर्डर {triggerSlippage}% का अधिकतम स्लिपेज इस्तेमाल करते हैं।"
+
 #: src/components/trade/components/market-asset-info.tsx
 msgid "Maximum leverage"
 msgstr "अधिकतम लीवरेज"
@@ -5304,6 +5317,7 @@ msgstr "{amount} HYPE स्टेकिंग में भेजा गया"
 #: src/components/earn/earn-view.tsx
 #: src/components/earn/earn-view.tsx
 #: src/components/earn/earn-view.tsx
+#: src/components/trade/mobile/mobile-trade-view.tsx
 msgid "N/A"
 msgstr "लागू नहीं"
 

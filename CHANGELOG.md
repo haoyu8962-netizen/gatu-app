@@ -64,6 +64,16 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Changed
 
+- The mobile order summary follows the official terminal:
+  - empty values read `N/A` in the value colour;
+  - order value and margin required are written in the market's collateral, for example `84.20 USDC`;
+  - the liquidation price is a plain price;
+  - the estimated slippage reads `0%` before a size is entered;
+  - the maximum slippage is no longer red;
+  - the estimated fee row is gone.
+
+  Tapping the slippage on desktop or mobile opens its own Adjust Max Slippage panel instead of the
+  whole Settings dialog. The allowed range stays 0.1%–5%.
 - A `dev` → `main` promotion no longer repeats the checks that `dev` already passed on the same tree
   ([ADR 0016](docs/adr/0016-dev-first-pull-requests-and-ci-tiers.md) D8). `Terminal Tests`, the
   browser regressions, `Production Builds` and `Website and Brand` each start with a
@@ -614,6 +624,9 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Fixed
 
+- A cross order larger than the account can open, and an order from an empty account, now show a
+  liquidation price. As on the official terminal, the estimate assumes the account is topped up to the
+  position's initial margin.
 - TWAP history and TWAP fills show up to eight decimals for a market missing from the catalog, as the
   other history tables do, instead of two (a price of 0.00001234 read $0).
 - The order size field keeps every size decimal when the slider, the percentage box, the phone's
