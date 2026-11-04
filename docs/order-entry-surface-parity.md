@@ -232,7 +232,7 @@ pnpm --dir apps/terminal exec playwright test \
   - 清算价不带 `$`，与持仓卡片一致；
   - 预估滑点在数量为 0 时显示 `0%`，有数量但无法估算时显示 `N/A`；
   - 最大滑点改用强调色；
-  - 移除预估费用行。
+  - 移除预估费用行。去掉这一行后，滑点成了摘要的最后一行，滑点按钮 44px 的触控区（伪元素）从行底向上展开，不再向下伸出内容区。若向下伸出，会撑高下单区的滚动高度，`mobile-trade-all-orders.pw.ts` 会报嵌套滚动（`nested scroll`）。
 - **滑点编辑面板。** 桌面与手机点滑点，都打开新的「Adjust Max Slippage」面板（`max-slippage-modal.tsx`），不再打开整个设置弹窗。面板经 `LazyDialogHost` 懒加载，用户操作下单面板时预热。
 
 **与官方的差异：**

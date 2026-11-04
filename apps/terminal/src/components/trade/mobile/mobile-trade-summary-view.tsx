@@ -66,7 +66,10 @@ export function MobileSlippageRowView({
 					type="button"
 					onClick={onClick}
 					aria-label={labels.slippage}
-					className="relative inline-flex cursor-pointer items-center gap-1 rounded-8 transition-opacity active:opacity-60 after:absolute after:left-1/2 after:top-1/2 after:size-11 after:-translate-x-1/2 after:-translate-y-1/2 hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
+					className={cn(
+						"relative inline-flex cursor-pointer items-center gap-1 rounded-8 transition-opacity active:opacity-60 after:absolute after:left-1/2 after:size-11 after:-translate-x-1/2 hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
+						embedded ? "after:-bottom-1" : "after:-bottom-1.5",
+					)}
 				>
 					<span className="text-trading-panel-muted">{labels.max}</span>
 					<span className="text-signal">{slippagePercent}%</span>

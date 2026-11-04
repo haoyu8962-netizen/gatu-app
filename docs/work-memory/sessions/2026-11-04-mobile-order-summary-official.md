@@ -94,6 +94,7 @@
   - 修复：去掉这一步的拒绝，交给补足处理。补充同向加仓与空单的补足用例，并让面板测试记录输入框的小数位、范围与 `mobileSafe`。
   - 变异核对：恢复这一步的拒绝、只对买单补足、只对新仓位补足、删掉 `maxAllowedDecimals`，四个变异都被测试抓到。
   - 审查方未能确认的一点：本终端用执行参考价，官方用标记价（限价更差时取限价）。这是既有的近似，本次没有改。
+- PR #151 的 CI：`Terminal browser regressions (1/2)` 在 `70b355fa` 上失败，失败的是 `mobile-trade-all-orders.pw.ts` 在 320、375、393px 的 `nested scroll`。原因是移除费用行后，滑点成了最后一行，其按钮居中的 44px 触控伪元素向下伸出约 10px，撑高了 `mobile-order-entry-scroll` 的滚动高度。修复：触控区改为从行底向上展开，布局不变。随后在本地跑完整的 `mobile-trade-all-orders.playwright.config.ts`，47 项全部通过，其中包括 `reduce-only.pw.ts` 和桌面下单布局。
 - 修复提交 `d521cffa` 的 Codex 窄范围复审（只看 `f0ea4119..d521cffa`，low）：9.3/10，没有新发现，确认原 P2 已修复，两个期望值按官方公式核算正确。这一轮是静态复审，测试与变异的运行结果来自作者自己的运行。
 
 未覆盖：
