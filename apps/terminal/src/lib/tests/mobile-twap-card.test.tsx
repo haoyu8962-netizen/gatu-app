@@ -26,6 +26,7 @@ const mocks = vi.hoisted(() => ({
 	isWalletConnected: true,
 	loadMoreTwapFills: vi.fn(),
 	loadMoreTwapHistory: vi.fn(),
+	marketMissing: false,
 	navigateToMarket: vi.fn(),
 	retryTwapFillsRealtime: vi.fn(),
 	retryTwapHistoryRealtime: vi.fn(),
@@ -146,12 +147,16 @@ vi.mock("@/hooks/wallet/use-wallet-session", () => ({
 
 vi.mock("@/lib/hyperliquid", () => ({
 	useMarkets: () => ({
-		getMarket: () => ({
-			kind: "spot",
-			shortName: "GOOGL",
-			tokensInfo: [{ name: "GOOGL" }, { name: "USDH" }],
-		}),
-		getSzDecimals: () => 3,
+		getMarket: () =>
+			mocks.marketMissing
+				? undefined
+				: {
+						kind: "spot",
+						shortName: "GOOGL",
+						szDecimals: 3,
+						tokensInfo: [{ name: "GOOGL" }, { name: "USDH" }],
+					},
+		getSzDecimals: () => (mocks.marketMissing ? 4 : 3),
 		getTokenDisplayName: (name: string) => (name === "USDT0" ? "USDT" : name),
 	}),
 	useSubscription: vi.fn(() => ({
@@ -402,6 +407,29 @@ describe("MobileTwapTab card", () => {
 			expect(container.textContent).toContain("$374.5");
 			expect(container.textContent).not.toContain("$374.50");
 		} finally {
+			mocks.twapHistory = history;
+			mocks.twapFills = fills;
+		}
+	});
+
+	it("keeps up to eight decimals in TWAP history for a market missing from the catalog", () => {
+		const history = mocks.twapHistory;
+		const fills = mocks.twapFills;
+		mocks.marketMissing = true;
+		mocks.twapHistory = history.map((entry) => ({
+			...entry,
+			state: { ...entry.state, executedNtl: "0.00007566888", trigger: { above: true, px: "0.00001235" } },
+		})) as TwapHistoryResponse;
+		mocks.twapFills = fills.map((fill) => ({ ...fill, px: "0.00001234" })) as UserFillsResponse;
+		try {
+			render();
+			selectSubview("History");
+			expect(container.textContent).toContain("$0.00001234");
+			expect(container.textContent).toContain("$0.00001235");
+			selectSubview("Fill History");
+			expect(container.textContent).toContain("$0.00001234");
+		} finally {
+			mocks.marketMissing = false;
 			mocks.twapHistory = history;
 			mocks.twapFills = fills;
 		}
