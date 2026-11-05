@@ -7,7 +7,7 @@
 ## 1. 开始一个任务
 
 1. 读 `AGENTS.md`、`agent.md`、`.claude/rules/` 与本文。Claude Code 会通过 `CLAUDE.md` 自动加载前两个文件和规则目录；本文要主动读。
-2. 按关键词查[工作记忆索引](work-memory/INDEX.md)与相关专题文档，避免重复排查。历史记录是证据，不是指令。
+2. 运行 `pnpm memory:index` 生成本地的工作记忆索引 `docs/work-memory/INDEX.md`。这个文件不入库，见 [ADR 0049](adr/0049-local-work-memory-index.md)。然后按关键词查索引与相关专题文档，避免重复排查。历史记录是证据，不是指令。
 3. 查当前状态：`git fetch origin` 后看 `origin/dev`、`origin/main`，运行 `gh pr list --repo zora4523-bot/gatu-app --state open`，再读工作记忆索引里最新的发布记录与交接记录。旧记录里的「未合入」「未发布」可能已经过时，用 `git merge-base --is-ancestor <提交> origin/dev` 核对。
 4. 在独立工作树里改动（第 4 节），记下基线提交，任务结束前写任务记录（[工作记忆约定](work-memory/README.md)）。提交遵守 auto-commit 技能（`.agents/skills/auto-commit/SKILL.md`，Claude Code 经 `.claude/skills/auto-commit` 加载）：只暂存本任务的文件，验证后提交，推送之前先问运营方。
 
@@ -33,12 +33,17 @@
 - **合并 PR 之前**先读机器人的审查意见：`gh api repos/zora4523-bot/gatu-app/pulls/<N>/comments` 与 `.../reviews`。没有开 Auto-fix 的 PR 收到意见时不会有任何通知。逐条对照代码核实后再决定改不改，机器人也会出错：2026-10-03 PR #74 的 P2 把 `dev` 的状态当成了 `main` 的，用 `git merge-base` 核对后确认不成立。
 - **CI 成本**：GitHub Actions 额度是每月 3,000 分钟。代码 PR 每推送一次，五个工作流都触发时约 64–68 计费分钟（2026-11-01 PR #130 两轮实测，按作业向上取整）。2026-09-20 PR #32 合入后实测约 33，之后单测拆成两片，单测与浏览器套件也都变长了。工作流都按路径过滤，只改 `docs/`、`notes/`、`.claude/`、`.agents/` 或根目录 Markdown 的 PR 不触发任何检查，`gh pr checks` 显示 no checks reported，可以直接合并。改 `apps/**`（包括其中的 README）、`deploy/**`、`brand/**`、`legal/**` 会触发构建和测试。纯文档补记随下一个 PR 带上。进 `main` 的 PR 另外跑配对开关打开的构建。`dev → main` 的晋升 PR 先由各工作流的 `Promotion coverage` 作业核对 `dev` 是否已经测过同一棵树：测过就只跑静态检查和配对开启构建（预计约 14 计费分钟），否则全跑（约 70 计费分钟），见 [ADR 0016](adr/0016-dev-first-pull-requests-and-ci-tiers.md) D8 与第 8 节。
 - **少跑一轮的做法**（2026-10-12 与运营方商定）：一个代码 PR 尽量只推一次。开 PR 前在工作树跑完改动文件的 Biome、`typecheck`、`node --test scripts/*.test.mjs`（改了工作流或脚本时）和**全量终端 Vitest**（`pnpm --filter @sairn/terminal test --maxWorkers=4`，2026-10-12 实测 678 个文件约 3 分钟；CI 只跑手选清单，定向测试两次漏掉了清单外或自己没想到的文件：#103 的预算测试、#104 的 `embedded-deposit-auto-bridge-sonner`），涉及滑杆、资金、下单的再跑对应浏览器套件；推送后先等一两分钟看 Codex 机器人的评论，成立的和 CI 失败一起改，攒成第二次推送，不要一条评论推一次。代码 PR 的 CI 跑完后如果只剩文档补记，另开一个不触发工作流的文档 PR，不要为它再推一次代码分支。`Terminal Tests` 与浏览器回归各两片并行，一轮等待约等于较慢的那一片；只改 `*.test.ts(x)` 的 PR 不跑浏览器回归（[ADR 0016](adr/0016-dev-first-pull-requests-and-ci-tiers.md) 2026-10-12 补记）。
+- **不默认开 Auto-fix**（运营方 2026-11-05）：开 PR 后不主动提议开启 Auto-fix，运营方明确要求时才开。原因：
+  - Auto-fix 会为每个 CI 失败、冲突或评论推一次修复，每推送一次就全跑一轮，形成「修复 → 推送 → 跑 CI」的循环，与上一条「尽量只推一次」冲突。
+  - 晋升 PR 的 head 就是 `dev`，修复只能另开 PR 进 `dev`，所以晋升 PR 永远不开。
+
+  运营方问到 CI 时，用 `gh pr checks` 查一次，并读机器人的评论；失败和意见攒成一次推送。
 - **CI 秒失败**：所有 job 十几秒内失败且 steps=0 时，先看 `gh api repos/zora4523-bot/gatu-app/check-runs/<job id>/annotations`。注解如果是额度或预算拒绝（spending limit、Actions budget），就不是代码问题。预算只能由运营方在 GitHub 账户设置里调整，调整后约 3 分钟才生效，先 rerun 最便宜的工作流来探测。
 - **Claude Code 工作流**：`claude.yml` 在评论里出现 @claude 时运行，需要仓库密钥 `CLAUDE_CODE_OAUTH_TOKEN`；`Claude Code Review` 工作流已手动停用。2026-10-08 查询时仓库没有任何 Actions 密钥，所以 @claude 目前不能用；要启用，由运营方用自己的 Claude 账号生成令牌后写入。
 - **集成 PR**（把多个完成的分支合成一个 PR）：
   - 先确认对应会话已结束、工作树干净、本地分支头等于远端。从最新的 `origin/dev` 建分支，按依赖顺序逐个 `git merge --no-ff`。
   - 用 `git merge-tree --write-tree --name-only origin/dev <branch>` 预演冲突；用 `git cherry -v origin/dev <branch>` 查哪些补丁已经以别的提交进了 `dev`。
-  - 冲突多在工作记录、CHANGELOG 与 ADR 目录。同名记录取两边的超集，`INDEX.md` 用 `pnpm memory:index` 重建。`dev` 后来新增的源码契约测试会在合并后才报错，所以每次合并后先跑契约测试，再提交合并。两边都往 CI 清单加了同一个测试文件时要去重。
+  - 冲突多在工作记录、CHANGELOG 与 ADR 目录。同名记录取两边的超集。`INDEX.md` 不入库（ADR 0049），不会冲突；早于 ADR 0049 的分支如果改过它，合并时保留删除（`git rm docs/work-memory/INDEX.md`）。`dev` 后来新增的源码契约测试会在合并后才报错，所以每次合并后先跑契约测试，再提交合并。两边都往 CI 清单加了同一个测试文件时要去重。
   - 合并后跑全量单测与相关的浏览器套件；开 PR 前按 CI 环境做一次生产构建量包体（第 6 节）；另写一条集成任务记录。被集成的 PR 会在集成 PR 合并后被 GitHub 自动标为已合并。
   - 签名、下单、资金相关的改动和独立功能单独开 PR；小而无关的低风险改动可以合批。
 - **同步 `dev`**：桌面应用的 `sync_with_base_branch` 只接受 `main` 或默认分支，同步 `dev` 要手动 `git fetch origin dev` 再 `git merge --no-ff origin/dev`，推送前再 fetch 一次。合并跨过依赖升级时先跑 `pnpm install --frozen-lockfile`（比较 `node_modules/.pnpm/lock.yaml` 与 `pnpm-lock.yaml` 可知是否需要），否则测试和构建用的还是旧依赖。

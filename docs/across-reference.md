@@ -4,7 +4,7 @@
 
 ## 阅读顺序
 
-1. 先读 [AGENTS.md](../AGENTS.md)、[项目开发约定](../agent.md)和上述接入方案；按任务核对现有 [CCTP](cctp-deposits.md)、[首次交易](trading-onboarding.md)及相关代码。工作记录从[索引](work-memory/INDEX.md)检索，不继承历史验证结论。
+1. 先读 [AGENTS.md](../AGENTS.md)、[项目开发约定](../agent.md)和上述接入方案；按任务核对现有 [CCTP](cctp-deposits.md)、[首次交易](trading-onboarding.md)及相关代码。工作记录从索引检索：先运行 `pnpm memory:index`，生成本地的 `docs/work-memory/INDEX.md`（ADR 0049）。不要继承历史验证结论。
 2. 用官方 [llms.txt](https://docs.across.to/llms.txt)定位相关页面。指南正文优先按需读取 `.mdx`，例如[持久地址指南 Markdown](https://docs.across.to/introduction/persistent-deposit-addresses.mdx)。索引用于找页面，不能代替正文。
 3. 接口字段、必填项、精度和响应结构回到正式 API 页面核对。若 `.mdx` 只有 `<APIPage ... />`、正文缺少 schema 或抓取结果只有标题，继续用浏览器展开参数，或读取官方实际发布并链接的 OpenAPI；无法取得时标记未核验，不猜下载地址或字段。
 4. 记录实际阅读日期、官方页面、对应代码版本及未核验项。关键协议变更前重新查官方资料；文档冲突时区分接口版本、环境和产品范围，不能用示例或旧记录补全未知契约。
