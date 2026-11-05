@@ -22,7 +22,8 @@ Node `>=22.15.0`, pnpm `10.21.0`. Production runs on CloudFront + S3 + Lambda.
 1. `AGENTS.md` (durable contracts), `agent.md` (implementation map, commands),
    `docs/agent-handbook.md` (working with the operator, worktrees, reviews, releases).
 2. `.claude/rules/*.md` — BINDING conventions that override your defaults; read every file.
-3. `docs/README.md` — the documentation map; `docs/work-memory/INDEX.md` — task records.
+3. `docs/README.md` — the documentation map; `docs/work-memory/INDEX.md` — task records (run `pnpm memory:index`
+   first: the index is generated locally and Git-ignored, see `docs/adr/0049-local-work-memory-index.md`).
 4. `apps/terminal/`:
    - `vite.config.ts` — Nitro, TanStack Start (SPA shell prerender), React Compiler, Lingui, Tailwind.
    - `src/routes/` — file routes: `/trade/:symbol` and `/trade/:base/:quote` (`/` redirects to a

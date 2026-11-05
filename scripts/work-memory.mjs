@@ -4,6 +4,7 @@ import { dirname, isAbsolute, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const indexPath = "docs/work-memory/INDEX.md";
 const metadataPattern = /^<!-- work-memory\r?\n([\s\S]*?)\r?\n-->\r?\n/;
 const idPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const statusLabels = { recorded: "已整理，验证见正文", verified: "已验证，范围见正文", superseded: "已被后续记录替代" };
@@ -50,6 +51,33 @@ export function parseRecord(text, filename) {
 	return { ...record, file: filename };
 }
 
+/**
+ * One `git cat-file --batch-check` for every referenced commit. A name that does not resolve or peel to a commit fails,
+ * as `git cat-file -e <name>^{commit}` did; an annotated tag of a commit passes. Output grows with the number of names,
+ * so the buffer does too.
+ */
+export function verifyCommits(repoRoot, commitOwners) {
+	const commits = [...commitOwners.keys()];
+	if (commits.length === 0) return;
+	const lines = execFileSync("git", ["cat-file", "--batch-check"], {
+		cwd: repoRoot,
+		input: commits.map((commit) => `${commit}^{commit}\n`).join(""),
+		encoding: "utf8",
+		maxBuffer: 1024 * 1024 + commits.length * 256,
+		stdio: ["pipe", "pipe", "pipe"],
+	})
+		.trimEnd()
+		.split("\n");
+	requireValue(lines.length === commits.length, "git cat-file --batch-check returned an unexpected number of lines");
+	commits.forEach((commit, index) => {
+		requireValue(lines[index].split(" ")[1] === "commit", `${commitOwners.get(commit)}: unknown commit ${commit}`);
+	});
+}
+
+function isTracked(repoRoot, path) {
+	return execFileSync("git", ["ls-files", "--", path], { cwd: repoRoot, encoding: "utf8" }).trim() !== "";
+}
+
 async function validatePath(repoRoot, path) {
 	requireValue(
 		typeof path === "string" && path && !isAbsolute(path) && !path.includes("\\"),
@@ -82,7 +110,7 @@ export async function loadMemory(repoRoot) {
 	for (const file of files)
 		records.push(parseRecord(await readFile(resolve(memoryRoot, "sessions", file), "utf8"), file));
 	const ids = new Set(records.map((record) => record.id));
-	const commits = new Set();
+	const commitOwners = new Map();
 	for (const record of records) {
 		for (const topic of record.topics) requireValue(topicIds.has(topic), `${record.id}: unknown topic ${topic}`);
 		for (const source of record.sources) {
@@ -95,7 +123,8 @@ export async function loadMemory(repoRoot) {
 		}
 		for (const oldId of record.supersedes)
 			requireValue(ids.has(oldId) && oldId !== record.id, `${record.id}: invalid supersedes ${oldId}`);
-		for (const commit of [record.baseCommit, ...record.commits]) commits.add(commit);
+		for (const commit of [record.baseCommit, ...record.commits])
+			if (!commitOwners.has(commit)) commitOwners.set(commit, record.id);
 		if (record.status === "superseded")
 			requireValue(
 				records.some((next) => next.supersedes.includes(record.id)),
@@ -113,8 +142,7 @@ export async function loadMemory(repoRoot) {
 		visited.add(id);
 	}
 	for (const id of ids) visit(id);
-	for (const commit of commits)
-		execFileSync("git", ["cat-file", "-e", `${commit}^{commit}`], { cwd: repoRoot, stdio: "pipe" });
+	verifyCommits(repoRoot, commitOwners);
 	return { topics, records };
 }
 
@@ -127,7 +155,7 @@ export function renderIndex({ topics, records }) {
 	const lines = [
 		"# 工作记忆索引",
 		"",
-		"由 `pnpm memory:index` 生成；请编辑任务记录，不直接修改此文件。",
+		"由 `pnpm memory:index` 在本地生成，不纳入版本控制（ADR 0049）；请编辑任务记录，不直接修改此文件。",
 		"",
 		"历史记录用于检索证据，不覆盖当前 AGENTS.md、专题规范或代码。记录日期不等于事件发生日期；测试结论只对正文注明的版本和范围有效。",
 		"",
@@ -162,16 +190,20 @@ export function renderIndex({ topics, records }) {
 	return `${lines.join("\n")}\n`;
 }
 
+/** Writes the local, Git-ignored index; `check` validates the records and that the index is not tracked (ADR 0049). */
 export async function updateIndex(repoRoot, check = false) {
-	const index = resolve(repoRoot, "docs/work-memory/INDEX.md");
-	const expected = renderIndex(await loadMemory(repoRoot));
+	const content = renderIndex(await loadMemory(repoRoot));
 	if (check) {
-		requireValue((await readFile(index, "utf8")) === expected, "Work-memory index is stale; run pnpm memory:index");
+		requireValue(
+			!isTracked(repoRoot, indexPath),
+			`${indexPath} must not be tracked; it is a local view (docs/adr/0049-local-work-memory-index.md): run git rm --cached ${indexPath}`,
+		);
 		return;
 	}
+	const index = resolve(repoRoot, indexPath);
 	const temporary = `${index}.${process.pid}.tmp`;
 	try {
-		await writeFile(temporary, expected, { flag: "wx" });
+		await writeFile(temporary, content, { flag: "wx" });
 		await rename(temporary, index);
 	} finally {
 		await unlink(temporary).catch((error) => {
@@ -185,5 +217,5 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
 	if (!["--write", "--check"].includes(mode) || process.argv.length !== 3)
 		throw new Error("Usage: node scripts/work-memory.mjs --write|--check");
 	await updateIndex(root, mode === "--check");
-	process.stdout.write(`Work-memory index ${mode === "--check" ? "verified" : "updated"}.\n`);
+	process.stdout.write(mode === "--check" ? "Work-memory records verified.\n" : "Work-memory index updated (local view).\n");
 }
