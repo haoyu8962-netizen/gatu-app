@@ -7,10 +7,10 @@
   "kind": "task",
   "status": "recorded",
   "topics": ["order-entry", "hyperliquid-api"],
-  "summary": "运营方在手机下单摘要上提出六项并要求移除预估费用行。对照官方 HYPE 页面与生产包 config-AY7r1vqO.js：全仓清算价改用官方的初始保证金补足规则（超额与空账户也能估算，桌面手机共用）；手机普通订单摘要的空值统一为同色 N/A，金额写成两位小数加报价币，清算价不带 $，数量为 0 时预估滑点为 0%，最大滑点改为强调色，去掉费用行；桌面与手机点滑点都打开新的 Adjust Max Slippage 面板（懒加载，范围仍为 0.1%–5%）。Scale/TWAP 摘要与桌面摘要的显示未改，待运营方决定；真实钱包与真机未验证。",
+  "summary": "运营方在手机下单摘要上提出六项并要求移除预估费用行。对照官方 HYPE 页面与生产包 config-AY7r1vqO.js：全仓清算价改用官方的初始保证金补足规则（超额与空账户也能估算，桌面手机共用）；手机普通订单摘要的空值统一为同色 N/A，金额写成两位小数加报价币，清算价不带 $，数量为 0 时预估滑点为 0%，最大滑点改为强调色，去掉费用行；桌面与手机点滑点都打开新的 Adjust Max Slippage 面板（懒加载，范围仍为 0.1%–5%）。Scale/TWAP 摘要与桌面摘要的显示未改，待运营方决定；真实钱包与真机未验证。PR #151 于 2026-11-05 以 8ca35543 合入 dev。p40 发布预检中 trade-terminal-page 余 123、交易启动余 195，都低于 200；按复现规则成对测量后，两项基线各提高 #151 的配对关闭增量（+96、+196）。",
   "thread": null,
   "baseCommit": "2230c64e",
-  "commits": [],
+  "commits": ["f0ea4119", "d521cffa", "6bfaa1b8", "70b355fa", "265d7d33", "8ca35543"],
   "sources": [
     { "path": "apps/terminal/src/domain/trade/order/liquidation.ts" },
     { "path": "apps/terminal/src/components/trade/mobile/mobile-trade-view.tsx" },
@@ -102,8 +102,49 @@
 - 真实钱包与真机未验证；
 - 浏览器套件 `reduce-only.pw.ts` 的期望已按新显示更新，但未在本地运行。
 
+## 合入、p40 发布预检与重定基线（2026-11-05）
+
+**合入。** PR #151 的 CI 全部通过。配对关闭的构建读数是 `trade-terminal-page` 127,805、交易启动 1,652,279。Codex 机器人没有发现。运营方说「合并 #151」后，以合并提交 `8ca35543` 合入 `dev`。
+
+**发布预检。** 运营方随后说「开晋升 PR」。按手册第 8 节，开晋升 PR 之前先做发布预检：
+- 在仓库外新建发布工作树 `gatu-release-p40`，`.env.local` 只软链、不读内容。
+- 检出 `dev` `8ca35543`，用 Node 22.15.0、pnpm 10.21.0 按锁文件安装，用时 29 秒。
+- 用 p39 正式发布的开关构建：配对开启，三个闸门开，`VITE_CCTP_SPONSORED_DEPOSIT_TESTNET_ENABLED=false`，`VITE_HYPERLIQUID_TESTNET=` 为空，发布号 `cloudfront-2026-11-05-p40`。构建时间 12:58–13:01。
+- 构建成功，451 个 chunk，无循环静态导入。但有两项低于预检要求的 200 字节：
+  - `trade-terminal-page` 127,947，只余 123；
+  - 交易启动 1,653,734，只余 195。
+- 其余各项都满足：总量余 3,836，手机运行时余 814，`vaults-page` 余 242。
+
+**晋升 PR 没有开。** 晋升覆盖的本机预演结果如下：
+- `terminal-tests`、`production-build`、`slider-browser` 判为已覆盖，覆盖它们的是 #151 的运行 41855435929、41855435932、41855436040；
+- `website-build` 不会触发。
+
+**重定基线。** 运营方选择「开重定基线 PR」。测量按复现规则成对进行，完整的表格与逐块对比见 `docs/terminal-performance-baseline.md` 的同日一节。
+- #151 前后的 `dev`（`2230c64e` 与 `8ca35543`）各在一个不含 `.env.local` 的工作树里，用固定构建身份构建两次，先关配对，再开配对。
+- `trade-terminal-page` 增加 +96 / +92，交易启动增加 +196 / +200。
+- 两边的模块图显示，交易启动里主要的正向增长来自三个块。配对关闭时三块合计 +234，其余启动资产净减 38，净增 +196。
+  - `trade-terminal-page` +96，其中有 `lazy-trade-settings-modals.ts`、`mobile-trade-view.tsx` 与 `mobile-trade-summary-view.tsx`；
+  - `vendor-tanstack-router` +118，其中有 `liquidation.ts` 的补足规则和英语目录 `locales/en/messages.po`，测量分不出两者各占多少；
+  - `styles.css` +20。
+- 新面板是懒加载块，+1,915，不进任何启动模型。六个非英语目录块合计 +557，也不进启动模型。
+- Codex CLI 只读审查（`gpt-6-astra`，low）给了 8.5/10，三项 P2，核实后都成立并已改正：
+  - 两种配对之间的差异，原文称为噪声界限。但没有同一配置的重复构建，所以改为「两种配对一致」；
+  - `messages` 的 +557 原文写成七个目录。实际是六个非英语目录，英语目录在 `vendor-tanstack-router` 里；
+  - 原文把交易启动的增长写成恰好等于三个块之和。改为「主要正向项」，并写明净抵消。
+
+  数字核对全部正确，没有 P1。改正后又做了一轮窄范围复审，只看改过的段落：三项都已修复，没有新发现，这个范围内 10/10。
+- 按配对关闭的增量提高两项基线，额度不变：
+  - `trade-terminal-page` 124,070 → 124,166；
+  - 交易启动 1,643,929 → 1,644,125。
+- 新基线下，预检产物余 219 与 391。用新预算脚本复查预检产物，通过。
+- 测量当时的工作树状态、预算输出与测量结果，保存在 Git 忽略的 `.worklog/2026-11-05/p40-rebaseline/`。
+
 ## 后续与替代关系
 
 - 待运营方决定：Scale 与 TWAP 摘要（仍是 `$` 金额加费用行）、桌面摘要的空值与单位，是否一并对齐。
-- 推送与开 PR 需运营方同意。下一次发布前，按发布预检规则测量 `trade-terminal-page` 与手机运行时余量。
+- 重定基线 PR 合入 `dev` 之后：
+  1. 这个 PR 改了 `scripts/`，所以要重做晋升覆盖的预演；
+  2. 在 `gatu-release-p40` 重跑发布预检；
+  3. 满足阈值后再开晋升 PR。
+  合并晋升 PR 与发布 p40，各需运营方同意。
 - 本记录不替代此前的记录。原 `canEstimateProspectiveLiquidationDraft` 的「超额不估算」决定，由本记录的补足规则取代。
