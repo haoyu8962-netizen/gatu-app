@@ -122,7 +122,11 @@ const budgets = {
 		// Re-baselined 2026-09-16 after ADR 0009 moved the startup placeholders onto shared views (+10,995 gzip bytes over surfaces 1-6).
 		// Raised 2026-10-02 by +62,713 for the Privy React Auth 3.46.0 upgrade: its core SDK now imports libphonenumber-js
 		// statically and its bundled viem grew (1,624,427 after minus 1,561,714 before; docs/terminal-performance-baseline.md).
-		baselineGzipBytes: 1_643_929,
+		// Raised 2026-11-05 by +196 for the mobile order summary (PR #151), after the p40 release precheck left it 195 bytes
+		// under its allowance: the fixed-identity Node 22.15.0 build with VITE_MOBILE_PAIRING_ENABLED=false of dev 8ca35543
+		// (1,652,171) minus that of 2230c64e (1,651,975), both without .env.local; pairing on measures +200
+		// (docs/terminal-performance-baseline.md).
+		baselineGzipBytes: 1_644_125,
 		allowedIncreaseBytes: 10_000,
 	},
 	tradeRuntimeStartup: {
@@ -158,12 +162,12 @@ const budgets = {
 		],
 	},
 	surfaces: [
-		// Raised 2026-11-03 by +66 for the price-decimals fix (PR #143), after the p38 release precheck left it 169 bytes
+		// Raised 2026-11-05 by +96 for the mobile order summary (PR #151), after the p40 release precheck left it 123 bytes
 		// under its allowance. Measured as the fixed-identity Node 22.15.0 build with VITE_MOBILE_PAIRING_ENABLED=false
-		// of dev 51e99321 (127,711) minus that of 991796cd (127,645), both without .env.local; pairing on measures +78
-		// (docs/terminal-performance-baseline.md). The raise before it, +762 on 2026-11-01, covered the second batch of
-		// audit fixes.
-		{ name: "trade-terminal-page", baselineGzipBytes: 124_070, allowedIncreaseBytes: 4_000 },
+		// of dev 8ca35543 (127,808) minus that of 2230c64e (127,712), both without .env.local; pairing on measures +92
+		// (docs/terminal-performance-baseline.md). The raises before it were +66 on 2026-11-03 for the price-decimals fix
+		// (PR #143) and +762 on 2026-11-01 for the second batch of audit fixes.
+		{ name: "trade-terminal-page", baselineGzipBytes: 124_166, allowedIncreaseBytes: 4_000 },
 		{ name: "token-selector-popup", baselineGzipBytes: 14_355, allowedIncreaseBytes: 1_500 },
 		{ name: "api-wallet", baselineGzipBytes: 17_967, allowedIncreaseBytes: 2_000 },
 		{ name: "fundingHistory._address", baselineGzipBytes: 6_820, allowedIncreaseBytes: 1_500 },
