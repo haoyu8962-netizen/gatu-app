@@ -138,20 +138,12 @@ export function areProspectiveAccountSnapshotsIndividuallyFresh(input: {
 }
 
 /**
- * The official UI assumes an insufficient-margin draft is topped up to initial
- * margin before estimating liquidation. Until that top-up pool can be rebuilt
- * exactly, cross drafts above the executable maximum must fail closed.
+ * A draft is estimated once it has a size. A cross draft above the executable
+ * maximum is included: like the official UI, the estimate then assumes the
+ * account is topped up to the position's initial margin.
  */
-export function canEstimateProspectiveLiquidationDraft(input: {
-	marginMode: MarginMode;
-	orderSize: Numeric;
-	maxOrderSize: Numeric;
-}): boolean {
-	const orderSize = toBig(input.orderSize);
-	if (!orderSize || orderSize.lte(0)) return false;
-	if (input.marginMode !== "cross") return true;
-	const maxOrderSize = toBig(input.maxOrderSize);
-	return maxOrderSize?.gt(0) === true && orderSize.lte(maxOrderSize);
+export function canEstimateProspectiveLiquidationDraft(input: { orderSize: Numeric }): boolean {
+	return toBig(input.orderSize)?.gt(0) === true;
 }
 
 function isFreshSnapshotTimestamp(receivedAt: number | undefined, now: number): boolean {
@@ -170,7 +162,7 @@ export function resolveCrossMarginAccount(input: ResolveCrossMarginAccountInput)
 	if (input.accountMode === "disabled") {
 		const accountValue = toBig(input.selectedCrossAccountValue);
 		const maintenanceMarginUsed = toBig(input.selectedCrossMaintenanceMarginUsed);
-		if (!accountValue || !maintenanceMarginUsed || accountValue.lte(0) || maintenanceMarginUsed.lt(0)) return null;
+		if (!accountValue || !maintenanceMarginUsed || accountValue.lt(0) || maintenanceMarginUsed.lt(0)) return null;
 		return { accountValue: accountValue.toString(), maintenanceMarginUsed: maintenanceMarginUsed.toString() };
 	}
 	if (input.accountMode !== "unifiedAccount") return null;
@@ -208,11 +200,11 @@ export function resolveCrossMarginAccount(input: ResolveCrossMarginAccountInput)
 	}
 
 	const matchingSpotBalances = input.spotBalances.filter((balance) => balance.token === selectedToken);
-	if (matchingSpotBalances.length !== 1) return null;
-	const spotTotal = toBig(matchingSpotBalances[0]?.total);
+	if (matchingSpotBalances.length > 1) return null;
+	const spotTotal = matchingSpotBalances.length === 0 ? Big(0) : toBig(matchingSpotBalances[0]?.total);
 	if (!spotTotal) return null;
 	const accountValue = spotTotal.minus(isolatedMargin);
-	if (accountValue.lte(0)) return null;
+	if (accountValue.lt(0)) return null;
 
 	return { accountValue: accountValue.toString(), maintenanceMarginUsed: maintenanceMarginUsed.toString() };
 }
@@ -350,7 +342,7 @@ function getProjectedPosition(input: {
 	if (input.marginMode === "cross") {
 		const accountValue = toBig(input.crossMarginAccount?.accountValue)?.minus(input.executionFee);
 		const maintenanceMarginUsed = toBig(input.crossMarginAccount?.maintenanceMarginUsed);
-		if (!accountValue || !maintenanceMarginUsed || accountValue.lte(0) || maintenanceMarginUsed.lt(0)) return null;
+		if (!accountValue || !maintenanceMarginUsed || maintenanceMarginUsed.lt(0)) return null;
 		if (!existing) {
 			return {
 				equity: accountValue,
@@ -377,7 +369,6 @@ function getProjectedPosition(input: {
 		const existingSize = signedSize.abs();
 		const snapshotMark = positionValue.div(existingSize);
 		const equityAtExecution = accountValue.plus(signedSize.times(input.price.minus(snapshotMark)));
-		if (equityAtExecution.lte(0)) return null;
 		return {
 			equity: equityAtExecution,
 			otherMaintenance,
@@ -425,6 +416,18 @@ function getProjectedPosition(input: {
 }
 
 /**
+ * Like the official UI, a cross estimate never assumes less than the position's
+ * initial margin: when the account's live value (equity less the other
+ * positions' maintenance) is below notional / leverage, the account is taken as
+ * topped up to exactly that amount, so a draft above the executable maximum
+ * still has a liquidation price.
+ */
+function withInitialMarginTopUp(projection: { equity: Big; otherMaintenance: Big }, initialMargin: Big): Big {
+	const liveValue = projection.equity.minus(projection.otherMaintenance);
+	return liveValue.gte(initialMargin) ? projection.equity : initialMargin.plus(projection.otherMaintenance);
+}
+
+/**
  * Estimates the liquidation price after a full fill for isolated or cross new
  * positions and same-direction adds. Portfolio/reducing/reversing paths fail
  * closed because their liquidation sequence cannot be represented by one price.
@@ -459,14 +462,14 @@ export function estimateProspectiveLiquidation(input: ProspectiveLiquidationInpu
 	});
 	if (!projection) return unavailable("unsupported-position-change");
 
-	const entryTier = getTierForNotional(tiers, projection.positionSize.times(price));
+	const entryNotional = projection.positionSize.times(price);
+	const entryTier = getTierForNotional(tiers, entryNotional);
 	if (!entryTier) return unavailable("invalid-margin-tiers");
 	if (leverage.gt(entryTier.maxLeverage)) return unavailable("entry-leverage-exceeds-tier");
-	const entryMaintenance = projection.positionSize
-		.times(price)
-		.times(entryTier.maintenanceRate)
-		.minus(entryTier.maintenanceDeduction);
-	if (projection.equity.lte(projection.otherMaintenance.plus(entryMaintenance))) {
+	const equity =
+		input.marginMode === "cross" ? withInitialMarginTopUp(projection, entryNotional.div(leverage)) : projection.equity;
+	const entryMaintenance = entryNotional.times(entryTier.maintenanceRate).minus(entryTier.maintenanceDeduction);
+	if (equity.lte(projection.otherMaintenance.plus(entryMaintenance))) {
 		return unavailable("position-not-maintained");
 	}
 
@@ -475,7 +478,7 @@ export function estimateProspectiveLiquidation(input: ProspectiveLiquidationInpu
 		const numerator = side
 			.times(projection.positionSize)
 			.times(price)
-			.minus(projection.equity)
+			.minus(equity)
 			.plus(projection.otherMaintenance)
 			.minus(tier.maintenanceDeduction);
 		const denominator = projection.positionSize.times(side.minus(tier.maintenanceRate));

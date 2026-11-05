@@ -433,6 +433,124 @@ The sixth round (commit `4af147fd`) changed one classification function in the d
 3,286,638 in total (+16), 1,626,663 static trade startup, 117,769 mobile and 201,070 desktop, with the desktop runtime
 increment 918 bytes under its allowance. Later commits on the branch change tests and documents only.
 
+## Mobile order summary trade-page and startup re-baseline before release p40 (2026-11-05)
+
+[PR #151](https://github.com/zora4523-bot/gatu-app/pull/151) (merged into `dev` as `8ca35543`) aligns the order summary
+with the official terminal ([order-entry parity](order-entry-surface-parity.md),
+[task record](work-memory/sessions/2026-11-04-mobile-order-summary-official.md)):
+
+- the cross liquidation estimate tops the account value up to the order's initial margin;
+- the mobile summary shows `N/A`, amounts in the collateral and no fee row;
+- a lazy Adjust Max Slippage panel replaces the Settings dialog for slippage.
+
+Its pairing-off CI build (head `265d7d33`, run 41855435932) passed every budget, with `trade-terminal-page` at 127,805
+(265 left) and static trade startup at 1,652,279 (1,650 left).
+
+The release precheck for p40 built `dev` `8ca35543` in the release worktree `gatu-release-p40` with the release
+settings: pairing on, the production `.env.local`, Node 22.15.0 and release identity `cloudfront-2026-11-05-p40`. The
+build passed, with 451 client chunks and no circular static imports. Two budgets were under the precheck rule's
+200 bytes ([agent handbook](agent-handbook.md), section 8):
+
+- `trade-terminal-page` read 127,947, 123 bytes under its allowance;
+- static trade startup read 1,653,734, 195 bytes under its allowance.
+
+The other readings were:
+
+- total 3,379,162 (3,836 left);
+- mobile runtime increment 119,766 (814 left);
+- desktop runtime increment 204,565 (8,118 left);
+- `vaults-page` 30,534 (242 left);
+- `token-selector-popup` 15,373 (482 left);
+- `funding-history-panel` 9,364 (797 left).
+
+Measurement setup:
+
+- Each tree was built in its own worktree without `.env.local`, with Node 22.15.0 and pnpm 10.21.0
+  (`CI=true pnpm install --frozen-lockfile --prefer-offline`). On both sides the installed `node_modules/.pnpm/lock.yaml`
+  lacks the four lines of `pnpm-lock.yaml` that hold the `fdir@6.5.0(picomatch@4.0.7)` snapshot; the frozen install
+  succeeded.
+- Each tree was built twice, pairing off first, with the command of the next section.
+- The base is `dev` `2230c64e`, whose client code is that of release p39.
+- No dependency changed: `pnpm-lock.yaml` and every `package.json` are identical on both sides.
+- Before each build, the head, tracked changes, env files, installed lock and toolchain were recorded. After it, the
+  budget lines and a measurement that includes the route preloads' own bytes, read with `analyzeClientBundle()` before
+  the next build replaced the output. Both are kept in the Git-ignored `.worklog/2026-11-05/p40-rebaseline/`.
+
+| Metric | `2230c64e` off | `8ca35543` off | Change | `2230c64e` on | `8ca35543` on | Change |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Client chunks (no circular static imports) | 449 | 450 | +1 | 450 | 451 | +1 |
+| All client JS + CSS | 3,373,575 | 3,375,962 | +2,387 | 3,376,638 | 3,378,996 | +2,358 |
+| Route preloads only (6 files, diagnostic) | 522,927 | 523,048 | +121 | 523,950 | 524,053 | +103 |
+| Static trade startup (103 assets) | 1,651,975 | 1,652,171 | +196 | 1,653,089 | 1,653,289 | +200 |
+| Mobile runtime increment (15 assets) | 119,767 | 119,765 | −2 | 119,782 | 119,762 | −20 |
+| Desktop runtime increment (30 assets) | 204,614 | 204,578 | −36 | 204,636 | 204,563 | −73 |
+| Mobile static + runtime (118 assets) | 1,771,742 | 1,771,936 | +194 | 1,772,871 | 1,773,051 | +180 |
+| Desktop static + runtime (133 assets) | 1,856,589 | 1,856,749 | +160 | 1,857,725 | 1,857,852 | +127 |
+| `trade-terminal-page` | 127,712 | 127,808 | +96 | 127,710 | 127,802 | +92 |
+| `vaults-page` | 30,534 | 30,532 | −2 | 30,533 | 30,534 | +1 |
+
+No earlier protocol measurement has the client code of `2230c64e`. After the `51e99321` measurement of the next
+section, #147 and #149 changed `lib/trade/market-price-format.ts` and four TWAP history components. No tree was built
+twice with the same settings, so these measurements give no independent bound on build noise. What they show is that
+the growth is consistent across the two pairings:
+
+- Every chunk that moved by 20 bytes or more holds a module #151 changed, or is the stylesheet that its new classes
+  changed.
+- Both pairings show the same five such chunks.
+- Between the pairings, the static trade startup and `trade-terminal-page` changes differ by 4 bytes, and the runtime
+  increments by up to 37. Each of these differences mixes the effect of the pairing switch with build variance.
+
+The per-asset comparison uses the pairing-off builds, grouped by chunk name without its content hash. Of 440 names,
+287 change:
+
+- `max-slippage-modal` +1,915 is new: the lazy panel, outside every startup model.
+- `messages` +557 is the six non-English catalog chunks together (`ar`, `es`, `fr`, `hi`, `ja`, `zh`). Each holds the
+  three new strings.
+- `vendor-tanstack-router` +118 holds two modules that #151 changed:
+  - `domain/trade/order/liquidation.ts`, the initial-margin top-up;
+  - the English catalog `locales/en/messages.po`.
+
+  These measurements do not split the 118 bytes between the two.
+- `trade-terminal-page` +96 holds `lazy-trade-settings-modals.ts`, `mobile-trade-view.tsx` and
+  `mobile-trade-summary-view.tsx`.
+- `styles.css` +20: the new utility classes.
+- The other 282 names change by less than 20 bytes each, −319 together. Among them:
+  - `trade-panel` +3 holds `tradebox/trade-panel.tsx`, the desktop panel;
+  - `fees` −11 holds no module #151 changed.
+
+Those three static-startup assets are the main positive contributors, not the whole change:
+
+- with pairing off they add +234 (96 + 118 + 20), and the other startup assets, `fees` among them, net −38, for +196;
+- with pairing on they add +210 (92 + 98 + 20), and the others net −10, for +200.
+
+The module graph shows where the changed modules sit. By itself it does not attribute bytes to them.
+
+Unlike in the next section, the module-to-chunk placement was read from the `client-chunk-graph.json` of both trees,
+not inferred from chunk names. The graph read is the one the pairing-on builds left in place. The pairing-off graphs
+were not kept. Their placement is taken to be the same, because both pairings show the same five chunks growing.
+
+Changes to the baselines:
+
+- `trade-terminal-page` is raised by the pairing-off growth, +96, to 124,166, as the 2026-11-03 and 2026-11-01 raises
+  were.
+- Static trade startup is raised by its pairing-off growth, +196, to 1,644,125.
+- Both allowances are unchanged, and so are the other baselines.
+
+Room left against the new baselines (`trade-terminal-page`, then static trade startup):
+
+- the release precheck build: 219 and 391 (the raised budget, run on that artifact, passes);
+- #151's pairing-off CI build: 361 and 1,846;
+- the protocol builds of `8ca35543`: 358 and 1,954 with pairing off, 364 and 836 with pairing on.
+
+Room left in the release configuration, smallest first:
+
+- `trade-terminal-page` 219;
+- `vaults-page` 242;
+- static trade startup 391;
+- `token-selector-popup` 482;
+- `funding-history-panel` 797;
+- mobile runtime increment 814.
+
 ## Price-decimals route-surface re-baseline before release p38 (2026-11-03)
 
 [PR #143](https://github.com/zora4523-bot/gatu-app/pull/143) (merged into `dev` as `1cf68b39`) keeps the official

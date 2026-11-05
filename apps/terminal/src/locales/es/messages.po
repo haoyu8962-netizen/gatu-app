@@ -634,6 +634,10 @@ msgstr "Ajustar apalancamiento"
 msgid "Adjust Margin"
 msgstr "Ajustar margen"
 
+#: src/components/trade/tradebox/max-slippage-modal.tsx
+msgid "Adjust Max Slippage"
+msgstr "Ajustar deslizamiento máximo"
+
 #: src/config/trade-panel-labels.ts
 msgid "Advanced"
 msgstr "Avanzado"
@@ -1785,6 +1789,7 @@ msgstr "Haz clic para enviar · Las operaciones ejecutadas no se pueden revertir
 #: src/components/trade/tradebox/leverage-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
+#: src/components/trade/tradebox/max-slippage-modal.tsx
 #: src/components/ui/command.tsx
 #: src/components/ui/lazy-dialog-boundary.tsx
 #: src/components/vaults/vault-action-modal.tsx
@@ -2046,6 +2051,7 @@ msgstr "Cantidad de TP/SL configurada"
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 #: src/components/trade/tradebox/leverage-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
+#: src/components/trade/tradebox/max-slippage-modal.tsx
 #: src/components/vaults/vault-action-modal.tsx
 msgid "Confirm"
 msgstr "Confirmar"
@@ -5129,6 +5135,14 @@ msgstr "El precio máximo debe ser superior al precio de marca"
 msgid "Max price must be above trigger price"
 msgstr "El precio máximo debe estar por encima del precio de activación"
 
+#: src/components/trade/tradebox/max-slippage-modal.tsx
+msgid "Max slippage"
+msgstr "Deslizamiento máximo"
+
+#: src/components/trade/tradebox/max-slippage-modal.tsx
+msgid "Max slippage applies to market orders placed from the order form and to closing or reversing a position at market. Market TP/SL orders use a max slippage of {triggerSlippage}%."
+msgstr "El deslizamiento máximo se aplica a las órdenes a mercado enviadas desde el formulario de órdenes y al cerrar o invertir una posición a mercado. Las órdenes TP/SL a mercado usan un deslizamiento máximo del {triggerSlippage}%."
+
 #: src/components/trade/components/market-asset-info.tsx
 msgid "Maximum leverage"
 msgstr "Apalancamiento máximo"
@@ -5304,6 +5318,7 @@ msgstr "Moviste {amount} HYPE a staking"
 #: src/components/earn/earn-view.tsx
 #: src/components/earn/earn-view.tsx
 #: src/components/earn/earn-view.tsx
+#: src/components/trade/mobile/mobile-trade-view.tsx
 msgid "N/A"
 msgstr "N/D"
 

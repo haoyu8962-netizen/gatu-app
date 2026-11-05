@@ -634,6 +634,10 @@ msgstr "Ajuster l'effet de levier"
 msgid "Adjust Margin"
 msgstr "Ajuster la marge"
 
+#: src/components/trade/tradebox/max-slippage-modal.tsx
+msgid "Adjust Max Slippage"
+msgstr "Ajuster le glissement maximal"
+
 #: src/config/trade-panel-labels.ts
 msgid "Advanced"
 msgstr "Avancé"
@@ -1785,6 +1789,7 @@ msgstr "Cliquez pour envoyer · Les transactions exécutées sont irréversibles
 #: src/components/trade/tradebox/leverage-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
+#: src/components/trade/tradebox/max-slippage-modal.tsx
 #: src/components/ui/command.tsx
 #: src/components/ui/lazy-dialog-boundary.tsx
 #: src/components/vaults/vault-action-modal.tsx
@@ -2046,6 +2051,7 @@ msgstr "Montant TP/SL configuré"
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 #: src/components/trade/tradebox/leverage-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
+#: src/components/trade/tradebox/max-slippage-modal.tsx
 #: src/components/vaults/vault-action-modal.tsx
 msgid "Confirm"
 msgstr "Confirmer"
@@ -5129,6 +5135,14 @@ msgstr "Le prix maximal doit être supérieur au prix mark"
 msgid "Max price must be above trigger price"
 msgstr "Le prix maximal doit être supérieur au prix de déclenchement"
 
+#: src/components/trade/tradebox/max-slippage-modal.tsx
+msgid "Max slippage"
+msgstr "Glissement maximal"
+
+#: src/components/trade/tradebox/max-slippage-modal.tsx
+msgid "Max slippage applies to market orders placed from the order form and to closing or reversing a position at market. Market TP/SL orders use a max slippage of {triggerSlippage}%."
+msgstr "Le glissement maximal s’applique aux ordres au marché passés depuis le formulaire d’ordre, ainsi qu’à la clôture ou à l’inversion d’une position au marché. Les ordres TP/SL au marché utilisent un glissement maximal de {triggerSlippage}%."
+
 #: src/components/trade/components/market-asset-info.tsx
 msgid "Maximum leverage"
 msgstr "Effet de levier maximal"
@@ -5304,6 +5318,7 @@ msgstr "{amount} HYPE transférés vers le staking"
 #: src/components/earn/earn-view.tsx
 #: src/components/earn/earn-view.tsx
 #: src/components/earn/earn-view.tsx
+#: src/components/trade/mobile/mobile-trade-view.tsx
 msgid "N/A"
 msgstr "N/D"
 

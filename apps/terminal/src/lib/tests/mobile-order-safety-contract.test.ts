@@ -83,7 +83,7 @@ describe("mobile order safety contract", () => {
 
 	it("keeps the slippage settings control interactive before wallet connection", () => {
 		expect(mobileTradeView).not.toContain("embedded && !isConnected ?");
-		expect(mobileTradeView).toMatch(/<MobileSlippageRowView[\s\S]*?onClick=\{openSettingsDialog\}/);
+		expect(mobileTradeView).toMatch(/<MobileSlippageRowView[\s\S]*?onClick=\{openSlippageDialog\}/);
 		expect(mobileSummaryView).toMatch(/<button\s+type="button"\s+onClick=\{onClick\}\s+aria-label=\{labels.slippage\}/);
 		const button = mobileSummaryView.match(/<button[\s\S]*?<\/button>/)?.[0];
 		expect(button).toBeDefined();
@@ -97,9 +97,6 @@ describe("mobile order safety contract", () => {
 		expect(mobileTradeView).toContain("t`Order Value`");
 		expect(mobileTradeView).toContain("t`Margin Req.`");
 		expect(mobileTradeView).toContain("t`Slippage`");
-		expect(mobileTradeView).toContain("t(TRADE_PANEL_LABELS.estimatedFee)");
-		expect(readFileSync(new URL("../../config/trade-panel-labels.ts", import.meta.url), "utf8")).toContain(
-			"estimatedFee: msg`Est. Fee`",
-		);
+		expect(mobileTradeView).not.toContain("estimatedFee");
 	});
 });

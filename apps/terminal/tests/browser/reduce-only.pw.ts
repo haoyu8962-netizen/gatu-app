@@ -175,14 +175,14 @@ test("review regression: ordinary mobile margin follows each order type's price 
 		const margin = form.getByText("Margin Req.", { exact: true }).locator("..");
 		await expect(margin).toContainText(getExpectedMargin(type));
 		await form.getByRole("checkbox", { name: "Reduce Only", exact: true }).check();
-		await expect(margin.locator("span").last()).toHaveText("-");
+		await expect(margin.locator("span").last()).toHaveText(type === "Scale" ? "-" : "N/A");
 	}
 	await chooseOrder(page, 375, "TWAP");
 	await expect(form.getByText("Margin Req.", { exact: true })).toHaveCount(0);
 });
 
 function getExpectedMargin(type: string): string {
-	if (type.includes("Limit")) return "$9.00";
 	if (type === "Scale") return "$8.00";
-	return "$10.00";
+	if (type.includes("Limit")) return "9.00 USDC";
+	return "10.00 USDC";
 }
