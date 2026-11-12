@@ -920,18 +920,22 @@ have an install capability.
 - Installation support does not imply offline navigation support. Do not
   advertise the terminal as offline-capable unless the service worker gains a
   tested application-shell/navigation strategy.
-- The service worker updates the cached application shell exactly as v10
-  did: every navigation that receives a cacheable shell stores it, whatever
-  happens to the assets ([ADR 0051](adr/0051-service-worker-startup-asset-cache.md)).
+- The service worker's shell write path is v10's: every navigation that
+  receives a cacheable shell stores it, with no read or wait before the write;
+  the one addition is that a failed write empties the rebuildable asset cache
+  and retries once ([ADR 0051](adr/0051-service-worker-startup-asset-cache.md)).
   Same-origin immutable `/assets/` files are answered cache-first from the
-  versioned asset cache, and only responses that are a clean 200 of the
-  expected content type and not `no-store` are stored. When a navigation
-  replaces the shell with a different one, a serial, best-effort background
-  refresh keeps only the assets of the new and the previous shell and fetches
-  the new shell's preloads, stylesheets, scripts and the two surface `<meta>`
-  lists; it is capped by a time limit, skipped when a newer shell has been
-  stored, and its failures never affect the shell. The worker does not
-  precache the whole build, does not intercept the TradingView files, and
+  versioned asset cache, except for reload-type requests; only clean 200s of
+  the expected content type whose `Cache-Control` declares `immutable` (and not
+  `no-store`) are stored, so dropping `immutable` at the origin turns this
+  cache off. After each shell write, a serial, idempotent sync reconciles the
+  asset cache with the shell actually cached and a manifest of the last
+  completed sync: it keeps the new and the recorded assets, fetches the
+  missing ones under a time limit and moves the manifest only when it
+  finished. Provided the network works, nothing times out, the worker is not
+  stopped and storage accepts writes, the latest shell's assets are then all
+  cached; otherwise the next navigation continues the sync. The worker does
+  not precache the whole build, does not intercept the TradingView files, and
   keeps the navigation bypass list, the `?lang=` network-first rule and the
   cacheable-shell checks. A font or asset response is cloned before it is
   handed to the page, never afterwards. Cache names, limits and the

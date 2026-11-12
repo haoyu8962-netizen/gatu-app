@@ -42,7 +42,7 @@ function createHarness() {
 		return {
 			match: async (request: Request | string) => entries.get(keyOf(request))?.clone(),
 			put: async (request: Request | string, response: Response) => {
-				entries.set(keyOf(request), response);
+				entries.set(keyOf(request), new Response(await response.arrayBuffer(), response));
 			},
 		};
 	});

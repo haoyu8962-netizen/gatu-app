@@ -1,6 +1,9 @@
 import { getBootstrapFatalCopy, getBootstrapFatalDirection, getBootstrapFatalLocale } from "@/lib/bootstrap-error-copy";
 
 const BOOTSTRAP_ERROR_PAGE_ATTRIBUTE = "data-terminal-bootstrap-error";
+// The Service Worker's startup asset caches (ADR 0051); clearing them lets a reload fetch every chunk again.
+const ASSET_CACHE_PREFIX = "assets-";
+const ASSET_CACHE_CLEAR_TIMEOUT_MS = 1_000;
 
 interface BootstrapErrorPageOptions {
 	onReload?: () => void;
@@ -51,5 +54,22 @@ export function renderBootstrapErrorPage({ onReload = reloadWindow }: BootstrapE
 }
 
 function reloadWindow(): void {
-	window.location.reload();
+	void clearAssetCachesThenReload(() => window.location.reload());
+}
+
+export async function clearAssetCachesThenReload(
+	reload: () => void,
+	timeoutMs = ASSET_CACHE_CLEAR_TIMEOUT_MS,
+): Promise<void> {
+	try {
+		if (typeof caches !== "undefined") {
+			const clearing = caches
+				.keys()
+				.then((keys) =>
+					Promise.allSettled(keys.filter((key) => key.startsWith(ASSET_CACHE_PREFIX)).map((key) => caches.delete(key))),
+				);
+			await Promise.race([clearing, new Promise((resolve) => setTimeout(resolve, timeoutMs))]);
+		}
+	} catch {}
+	reload();
 }

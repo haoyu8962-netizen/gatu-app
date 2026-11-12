@@ -629,12 +629,15 @@ changes, not evidence that a build has been deployed or accepted on real devices
   version, it switches to it on the next start as before, and meanwhile downloads that version's
   startup files in the background and keeps them on the device, so the next start reads them from
   the device instead of the network. If the app is closed before that finishes, or a file cannot be
-  downloaded, the next start fetches the missing files from the network. Files of older versions
-  are removed from the device when a new version arrives. The interface fonts are now kept on the
-  device as intended (they were never stored before), so startup no longer waits for them when the
-  browser has dropped its own copy. Each release is still downloaded once in the background (about
-  1.5 MB), and the first start after installing, or after this update, still loads from the
-  network. Not yet confirmed on a phone (ADR 0051).
+  downloaded, the next start fetches the missing files from the network and the download continues
+  later. Files of older versions are removed from the device when a new version arrives, and when
+  the device runs out of room for a new version, the stored files are cleared so the update still
+  goes through. The "Reload terminal" button on the startup error screen also clears these
+  files first. The interface fonts are now kept on the device as intended (they were never stored
+  before), so startup no longer waits for them when the browser has dropped its own copy. Each
+  release is still downloaded once in the background (about 1.5 MB), and the first start after
+  installing, or after this update, still loads from the network. Not yet confirmed on a phone
+  (ADR 0051).
 - Reopening the terminal after it sat in the background brings prices, the order book and account
   data back sooner. The terminal now checks its connections the moment the page is shown again,
   or the network returns, instead of up to five seconds later; it retries at once instead of

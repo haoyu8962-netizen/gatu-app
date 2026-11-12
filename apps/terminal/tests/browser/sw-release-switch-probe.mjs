@@ -7,7 +7,12 @@
 //   4. release C is deployed while one of its assets cannot be fetched; shell C is stored anyway,
 //      and once the asset is back the next fresh page boots C, fetching the missing asset;
 //   5. release D is deployed; the assets of the shells before C (A and B) are removed;
-//   6. a font outside /assets/ is stored in the font cache (the clone fix).
+//   6. Chromium only: release E is deployed and the Service Worker is stopped (DevTools protocol
+//      `ServiceWorker.stopAllWorkers`) while one asset is still downloading; the asset manifest
+//      stays at D, and the next navigation, served by a new worker instance, completes the sync.
+//      WebKit exposes no way to stop a worker from Playwright, so this step is skipped there;
+//   7. release F serves one asset with `Cache-Control: no-cache`; it is never stored;
+//   8. a font outside /assets/ is stored in the font cache (the clone fix).
 // The releases are synthetic two-file builds, not the terminal: this proves the worker's cache
 // behaviour in Chromium and WebKit, not the startup time of the real application or of iOS.
 //
@@ -40,12 +45,14 @@ function files(name) {
 	};
 }
 
-const releases = Object.fromEntries(["A", "B", "C", "D"].map((name) => [name, release(name, files(name))]));
+const releases = Object.fromEntries(["A", "B", "C", "D", "E", "F"].map((name) => [name, release(name, files(name))]));
 const allFiles = Object.assign({}, ...Object.values(releases).map((value) => value.files));
 
 let current = releases.A;
 let assetsOffline = false;
 const brokenAssets = new Set();
+const revalidatedAssets = new Set(["/assets/vendor-F.js"]);
+const heldAssets = new Map();
 const assetRequests = [];
 
 const server = createServer((request, response) => {
@@ -68,8 +75,14 @@ const server = createServer((request, response) => {
 			response.end("unavailable");
 			return;
 		}
-		response.writeHead(200, { "content-type": "text/javascript", "cache-control": "public, max-age=31536000, immutable" });
-		response.end(body);
+		const cacheControl = revalidatedAssets.has(path) ? "no-cache" : "public, max-age=31536000, immutable";
+		const send = () => {
+			response.writeHead(200, { "content-type": "text/javascript", "cache-control": cacheControl });
+			response.end(body);
+		};
+		const hold = heldAssets.get(path);
+		if (hold) hold.then(send);
+		else send();
 		return;
 	}
 	response.writeHead(200, { "content-type": "text/html; charset=utf-8", "cache-control": "no-cache" });
@@ -88,8 +101,10 @@ async function cacheState(page) {
 		};
 		const shellCache = (await caches.has("shell-v11")) ? await caches.open("shell-v11") : undefined;
 		const shell = await (await shellCache?.match(new URL("shell-v11", location.origin).href))?.text();
+		const manifest = await (await shellCache?.match(new URL("shell-assets-v11", location.origin).href))?.text();
 		return {
 			shell: shell?.match(/release (\w)/)?.[1],
+			manifest: manifest === undefined ? undefined : JSON.parse(manifest).map((url) => new URL(url).pathname),
 			assets: await read("assets-v11"),
 			fonts: await read("fonts-v11"),
 		};
@@ -168,7 +183,7 @@ for (const engine of engines) {
 		const fetched = assetRequests.slice(before);
 		check(
 			"the next fresh page boots C and fetches only the missing asset",
-			fetched.length === 1 && fetched[0] === "/assets/vendor-C.js",
+			fetched.length > 0 && fetched.every((path) => path === "/assets/vendor-C.js"),
 			fetched,
 		);
 
@@ -180,6 +195,51 @@ for (const engine of engines) {
 			"release D refreshed",
 		);
 		check("release D keeps C and D and removes the assets of A and B", has(d, "C"), d.assets);
+		await waitFor(page, (state) => state.manifest?.includes("/assets/entry-D.js"), "manifest D");
+
+		if (engine === "chromium") {
+			let release;
+			heldAssets.set("/assets/vendor-E.js", new Promise((resolve) => {
+				release = resolve;
+			}));
+			current = releases.E;
+			before = assetRequests.length;
+			await page.goto(`${origin}/trade`);
+			await waitFor(page, (state) => state.shell === "E" && state.assets.includes("/assets/entry-E.js"), "release E started");
+			const session = await context.newCDPSession(page);
+			await session.send("ServiceWorker.enable");
+			await session.send("ServiceWorker.stopAllWorkers");
+			heldAssets.delete("/assets/vendor-E.js");
+			release();
+			const stopped = await cacheState(page);
+			check(
+				"stopping the worker mid-sync leaves the manifest at D and vendor-E missing",
+				stopped.manifest?.includes("/assets/entry-D.js") && !stopped.assets.includes("/assets/vendor-E.js"),
+				stopped,
+			);
+			await page.goto(`${origin}/trade`);
+			const resumed = await waitFor(
+				page,
+				(state) => has(state, "E") && state.manifest?.includes("/assets/entry-E.js"),
+				"sync resumed after the worker restarted",
+			);
+			const requests = assetRequests.slice(before);
+			check(
+				"the next navigation completes the sync without fetching what was already stored",
+				requests.filter((path) => path === "/assets/entry-E.js").length === 1,
+				{ manifest: resumed.manifest, requests },
+			);
+		}
+
+		current = releases.F;
+		await page.goto(`${origin}/trade`);
+		const f = await waitFor(page, (state) => state.shell === "F" && state.assets.includes("/assets/entry-F.js"), "release F stored");
+		await page.close();
+		page = await context.newPage();
+		await page.goto(`${origin}/trade`);
+		await page.waitForFunction(() => document.title === "F ready", undefined, { timeout: 10_000 });
+		const afterF = await cacheState(page);
+		check("an asset served with no-cache is never stored", !f.assets.includes("/assets/vendor-F.js") && !afterF.assets.includes("/assets/vendor-F.js"), afterF.assets);
 	} catch (error) {
 		check("probe", false, error instanceof Error ? error.message : String(error));
 	} finally {
