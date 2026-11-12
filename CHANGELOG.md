@@ -643,11 +643,11 @@ changes, not evidence that a build has been deployed or accepted on real devices
   connection that is still being set up is no longer closed for missing that answer. Pages that
   Chrome unfreezes while still in the background now recover when they are actually shown. Not yet
   confirmed on a phone (ADR 0050).
-- Live mark and mid prices for the market list no longer stop for good after one damaged update; the
-  stream restarts from a fresh snapshot. If it keeps failing, it is switched off after three attempts
-  instead of retrying endlessly. Browsers that cannot decompress the compact channels, and sessions
-  where that stream was switched off, show list prices from the regular market data instead, and
-  only while that data is less than ten seconds old.
+- Live mark and mid prices for the market list no longer stop silently after one damaged update.
+  If that stream fails, the list switches to prices from the regular market data instead of
+  retrying it endlessly; the list prices are briefly blank while that data reloads once. Browsers
+  that cannot decompress the compact channels use those prices from the start. These prices count
+  as current only while the data is about ten seconds old or newer.
 - On a phone, opening a trade page no longer opens an extra order-book connection that the phone
   layout does not use, which leaves more room under the exchange's per-address connection limit.
 - A cross order larger than the account can open now shows a liquidation price. This covers a new

@@ -130,6 +130,7 @@ jobs:
           src/lib/tests/l2-book-transport-pool-resume.test.ts
           src/lib/tests/websocket-half-open-reconnect.test.ts
           src/lib/tests/fast-asset-ctxs-decode-failures.test.ts
+          src/lib/tests/markets-info-fast-price-fallback.test.tsx
 
       - name: Test terminal interaction and mounting contracts
         working-directory: apps/terminal

@@ -821,18 +821,33 @@ transport. Adding account subscriptions must not disturb market subscriptions.
   in place of the SDK decoder for `fastAssetCtxs`: the SDK chains every frame on
   one promise, so one frame that failed to decode, or a listener that threw,
   left the stream silent while it still looked subscribed. A failing frame now
-  ends the subscription through `onError`, and the store subscribes again for a
-  fresh snapshot. Because the store clears its retry count when a subscription
-  is confirmed, decode failures of `fastAssetCtxs` are counted across
-  subscriptions (a decoded frame clears the count), and after three in a row
-  `isFastAssetCtxsDisabled()` turns the channel off for the page session. A
-  browser without `DecompressionStream("deflate-raw")` subscribes to none of
-  the three. Without fast prices, `useMarketsInfo` prices each row from its own
-  context (`pac` / `sac` or `allDexsAssetCtxs` / `spotAssetCtxs`, with the
-  receipt time of the channel that supplied it), and those four subscriptions
-  then use `LIVE_MARK_MAX_STALE_MS` (10 seconds) as their staleness threshold,
-  so the store marks a context older than that stale and re-renders; it is
-  then no longer `success`. Execution guards do not read these row prices.
+  ends the subscription through `onError`. Frames arrive under TLS integrity
+  protection, so a decode failure is deterministic and a retry cannot help;
+  the store also clears its retry count whenever a subscription is confirmed,
+  so retries would loop at the shortest delay. The first failure of
+  `fastAssetCtxs` on a transport (decoding, the listener or the backlog)
+  therefore locks the channel on that transport: later subscriptions on it are
+  rejected without reaching the server, the store backs off normally, nothing
+  clears the lock, and a new transport (a reload or another network) starts
+  clean. `useMarketsInfo` stops subscribing to `fastAssetCtxs` for the life of
+  the hook after its first error. A browser without
+  `DecompressionStream("deflate-raw")` subscribes to none of the three. Without
+  fast prices, `useMarketsInfo` prices each row from its own context (`pac` /
+  `sac` or `allDexsAssetCtxs` / `spotAssetCtxs`, with the receipt time of the
+  channel that supplied it), and those four subscriptions then use
+  `LIVE_MARK_MAX_STALE_MS` (10 seconds) as their staleness threshold. The
+  watchdog checks every five seconds, so a context is marked stale 10 to 15
+  seconds after its receipt and is then no longer `success`. The interval of
+  the context channels is not guaranteed by the exchange; observed frames
+  every three to four seconds, throttled to five, keep the receipt age under
+  about nine seconds, and whether a phone sees false staleness is not
+  verified. Switching from fast prices to this path at runtime changes the
+  threshold, which is a dependency of `useSub`'s effect: each context
+  subscription is released and subscribed again once, its snapshot is
+  dropped, and row prices show placeholders until the new snapshot arrives.
+  That one-time gap is accepted; the store does not update thresholds in
+  place. A browser without decompression uses the ten-second threshold from
+  the start and never switches. Execution guards do not read these row prices.
   The selected market's order form takes its price from `activeAssetCtx` /
   `activeSpotAssetCtx`, and the close paths check a ten-second monotonic
   receipt age (`isLiveExecutionPriceReceiptFresh`).

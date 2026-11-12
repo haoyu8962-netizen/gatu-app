@@ -338,7 +338,6 @@ export {
 	type CompactSpotAssetCtxsEvent,
 	createCompactAssetCtxsAccumulator,
 	decodeCompactAssetCtxs,
-	isFastAssetCtxsDisabled,
 	parseCompactPerpAssetCtxsDelta,
 	parseCompactSpotAssetCtxsDelta,
 	subscribeCompactAssetCtxs,

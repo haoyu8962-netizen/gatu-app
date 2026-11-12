@@ -243,12 +243,7 @@ export function subscribeCompactAssetCtxs<C extends CompactAssetCtxsChannel>(
 	);
 }
 
-export const FAST_ASSET_CTXS_MAX_FAILURES = 3;
-let fastFailures = 0;
-
-export function isFastAssetCtxsDisabled(): boolean {
-	return fastFailures >= FAST_ASSET_CTXS_MAX_FAILURES;
-}
+const failedFastTransports = new WeakSet<ISubscriptionTransport>();
 
 /**
  * `fastAssetCtxs` carries every market's mark and mid price compressed like `pac`, a complete snapshot
@@ -256,11 +251,13 @@ export function isFastAssetCtxsDisabled(): boolean {
  * SDK's own decoder chains every frame on one promise, so a single frame that fails to decode, or a
  * listener that throws, left the stream silent for good while it still looked subscribed. Here such a
  * frame ends the subscription like any transport failure, and the store subscribes again for a fresh
- * snapshot instead of skipping a delta. The store forgets its retry count once a subscription is
- * confirmed, so a format the decoder cannot read would loop at the shortest retry delay; failures are
- * therefore counted across subscriptions, a decoded frame clears the count, and after
- * `FAST_ASSET_CTXS_MAX_FAILURES` in a row the channel stays off for the page session
- * (`isFastAssetCtxsDisabled`), so its consumer can fall back to another price source.
+ * snapshot instead of skipping a delta. Frames arrive under TLS integrity protection, so a frame that
+ * cannot be decoded means the format changed or the code is wrong, and retrying cannot help; the store
+ * also forgets its retry count whenever a subscription is confirmed, so retries would loop at its
+ * shortest delay. The first failure of any kind (decoding, the listener, the backlog) therefore locks
+ * the channel on that transport: later subscriptions on it are rejected without reaching the server,
+ * so the store backs off normally and the consumer falls back to another price source. Nothing clears
+ * the lock; a new transport (a reload or another network) starts clean.
  */
 export function subscribeFastAssetCtxs(
 	transport: ISubscriptionTransport,
@@ -268,20 +265,15 @@ export function subscribeFastAssetCtxs(
 	options?: CompactAssetCtxsSubscribeOptions,
 	subscribeDisconnect?: CompactAssetCtxsDisconnectSubscriber,
 ): Promise<ISubscription> {
-	if (isFastAssetCtxsDisabled()) return Promise.reject(new L2BookStreamError("invalid_frame"));
+	if (failedFastTransports.has(transport)) return Promise.reject(new L2BookStreamError("invalid_frame"));
 	return subscribeCompressedChannel(
 		transport,
 		"fastAssetCtxs",
 		(value) => parseKeyedDelta<FastAssetCtxsWsEvent[string]>(value, ["markPx", "midPx"]),
 		{
-			add: (delta) => {
-				fastFailures = 0;
-				return delta;
-			},
+			add: (delta) => delta,
 			reset: () => {},
-			fail: () => {
-				fastFailures += 1;
-			},
+			fail: () => failedFastTransports.add(transport),
 		},
 		listener,
 		options,

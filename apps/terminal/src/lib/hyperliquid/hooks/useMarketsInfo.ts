@@ -3,7 +3,6 @@ import {
 	type CompactPerpAssetCtxsEvent,
 	type CompactSpotAssetCtxsEvent,
 	canUseL2Decompression,
-	isFastAssetCtxsDisabled,
 	type PerpMarket,
 	type SpotMarket,
 	type SubscriptionStatus,
@@ -139,7 +138,7 @@ export function useMarketsInfoInternal(options: UseMarketsInfoOptions = {}) {
 	const markets = useMarkets();
 	const [compactCtxsFailed, setCompactCtxsFailed] = useState(isCompactMarketCtxsDisabled);
 	const useCompactCtxs = COMPACT_MARKET_CTXS_SUPPORTED && !compactCtxsFailed;
-	const [fastPricesFailed, setFastPricesFailed] = useState(isFastAssetCtxsDisabled);
+	const [fastPricesFailed, setFastPricesFailed] = useState(false);
 	const fastPricesAvailable = COMPACT_MARKET_CTXS_SUPPORTED && !fastPricesFailed;
 	const contextMaxStaleMs = fastPricesAvailable ? undefined : LIVE_MARK_MAX_STALE_MS;
 	const {
@@ -203,7 +202,7 @@ export function useMarketsInfoInternal(options: UseMarketsInfoOptions = {}) {
 	}, [compactPerpError, compactSpotError]);
 
 	useEffect(() => {
-		if (fastPriceError != null && isFastAssetCtxsDisabled()) setFastPricesFailed(true);
+		if (fastPriceError != null) setFastPricesFailed(true);
 	}, [fastPriceError]);
 
 	const allDexsCtxs = compactPerpCtxs ?? allDexsCtxsEvent?.ctxs;

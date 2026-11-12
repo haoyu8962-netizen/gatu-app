@@ -285,6 +285,17 @@ describe("order book transports after the page or the network returns", () => {
 		},
 	);
 
+	it.each([2, 3])("leaves a connection in ready state %i to its close path instead of probing it", async (state) => {
+		const { transports, subscribe } = createHarness();
+		await subscribe({ coin: "HYPE" });
+		transports[0].socket.readyState = state;
+
+		setHidden(true);
+		setHidden(false);
+
+		expect(transports[0].socket.send).not.toHaveBeenCalled();
+	});
+
 	it("does not time a heartbeat against a connection that is still opening", async () => {
 		const { transports, subscribe } = createHarness();
 		const { onError } = await subscribe({ coin: "HYPE" });

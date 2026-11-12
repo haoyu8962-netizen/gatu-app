@@ -413,9 +413,22 @@ describe("WebSocket transport monitor", () => {
 
 		probeLiveness(socket, 300, onSettle);
 		socket.message('{"channel":"error","data":"pong"}');
+		expect(onSettle).not.toHaveBeenCalled();
 		socket.message('{"channel": "pong"}');
 
 		expect(onSettle).toHaveBeenCalledExactlyOnceWith(true);
+	});
+
+	it("declares a socket dead when only error frames that mention pong arrive", async () => {
+		vi.useFakeTimers({ now: 0 });
+		const socket = new FakeSocket();
+		const onSettle = vi.fn();
+
+		probeLiveness(socket, 300, onSettle);
+		socket.message('{"channel":"error","data":"pong"}');
+		await vi.advanceTimersByTimeAsync(300);
+
+		expect(onSettle).toHaveBeenCalledExactlyOnceWith(false);
 	});
 
 	it("does not probe a quiet socket while the page is hidden or offline", async () => {
