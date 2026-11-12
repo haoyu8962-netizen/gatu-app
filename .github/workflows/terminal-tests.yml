@@ -131,6 +131,7 @@ jobs:
           src/lib/tests/websocket-half-open-reconnect.test.ts
           src/lib/tests/fast-asset-ctxs-decode-failures.test.ts
           src/lib/tests/markets-info-fast-price-fallback.test.tsx
+          src/lib/tests/market-ctxs-fallback.test.ts
 
       - name: Test terminal interaction and mounting contracts
         working-directory: apps/terminal
@@ -313,6 +314,7 @@ jobs:
           src/lib/tests/open-order-modification-form.test.ts
           src/lib/tests/spot-swap-execution-guard.test.ts
           src/lib/tests/position-reverse-submit.test.tsx
+          src/lib/tests/position-limit-close-submit.test.tsx
 
       - name: Test confirmation surface contracts
         working-directory: apps/terminal
@@ -352,6 +354,7 @@ jobs:
           src/lib/tests/deposit-modal-withdrawal-routing-guard.test.tsx
           src/lib/tests/cctp-deposit-tracking-notifier.test.tsx
           src/lib/tests/referral-action-modal.test.tsx
+          src/lib/tests/use-referral-actions.test.tsx
           src/lib/tests/api-wallet-action-modal.test.tsx
           src/lib/tests/vault-action-modal.test.tsx
           src/lib/tests/vault-detail-page-outcomes.test.tsx
