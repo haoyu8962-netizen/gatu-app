@@ -267,13 +267,18 @@ function writeSessionRecord(
 	}
 }
 
-async function withSessionLock<T>(env: HyperliquidEnv, owner: string, action: () => Promise<T> | T): Promise<T | null> {
+async function withSessionLock<T>(
+	env: HyperliquidEnv,
+	owner: string,
+	action: () => Promise<T> | T,
+	signal?: AbortSignal,
+): Promise<T | null> {
 	if (typeof navigator === "undefined" || !navigator.locks || typeof navigator.locks.request !== "function") {
 		return null;
 	}
 
 	try {
-		return await navigator.locks.request(getLockName(env, owner), { mode: "exclusive" }, action);
+		return await navigator.locks.request(getLockName(env, owner), { mode: "exclusive", signal }, action);
 	} catch {
 		return null;
 	}
@@ -442,6 +447,7 @@ export async function startAgentRegistrationExecution<T>(
 	canStart: () => boolean,
 	execute: () => Promise<T>,
 	preExecutionGuard?: AgentRegistrationPreExecutionGuard,
+	signal?: AbortSignal,
 ): Promise<AgentRegistrationExecutionStartResult<T>> {
 	if (preExecutionGuard && lease.activeOwner) throw new Error(PRE_EXECUTION_GUARD_ACTIVE_OWNER_MESSAGE);
 	const invalidated = { status: "invalidated" } as const;
@@ -482,6 +488,7 @@ export async function startAgentRegistrationExecution<T>(
 			if (!lease.activeOwner) return start();
 			return (await runWithActiveAgentOwnerExecutionLease(lease.activeOwner, start)) ?? invalidated;
 		},
+		signal,
 	);
 	if (guardFailure.failed) throw guardFailure.error;
 	return result ?? invalidated;

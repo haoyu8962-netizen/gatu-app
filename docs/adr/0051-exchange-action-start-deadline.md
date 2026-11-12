@@ -1,6 +1,6 @@
 # ADR 0051：动作从入队到签名最多等 15 秒，执行前的法律复核不可暂停
 
-- 状态：已接受并实施（2026-11-12）；分支 `claude/fix-order-submit-deadline`（基于 `dev` `810a45db`），未合入 `dev`、未发布。真实网络、真实钱包与真机未验收。
+- 状态：已接受并实施（2026-11-12）；分支 `claude/fix-order-submit-deadline`（基于 `dev` `810a45db`），未合入 `dev`、未发布。同日按三路对抗审查修订（第二个提交）：决策 3 的上限检查移到签名器之前，新增决策 6（离线提交立即失败）与决策 7（截止后放开会话锁与资金锁）。真实网络、真实钱包与真机未验收。
 - 关联：[ADR 0045](0045-l1-action-expiry.md)（L1 动作带 15 秒 `expiresAfter`）；[ADR 0022](0022-subscription-staleness-monotonic-clock.md)（年龄取单调时钟与墙钟较大者）；[ADR 0019](0019-global-trading-notifications.md)、[ADR 0024](0024-translate-action-errors-at-render.md)（结果通知与错误文案）；[签名模型](../hyperliquid-signing.md)；[运行时守则](../runtime-guardrails.md) §1；2026-11-12 全局缺陷审查 P1-1（提交 `9395acca` 的 `docs/work-memory/sessions/2026-11-12-global-defect-review.md`）。
 
 ## 背景
@@ -19,17 +19,22 @@ ADR 0045 的 `expiresAfter` 在 SDK 签名时才计算，管不到签名之前�
 - 执行路径上的法律复核不再可暂停，整体有超时，超时按现有的 `status_unavailable` 失败关闭。界面显示用的被动法律状态查询（`use-legal-status.ts`）保留原有重试策略。
 - 失败时释放调度器的位置、资金锁和资产锁。
 - 不改变签名身份、`expiresAfter`、nonce、执行守卫、确认面板与通知路由的既有规则。
-- 只在 `hl-react` 调度器与法律复核处改动；包体余量很小，代码尽量紧凑，不新增界面文案。
+- 改动集中在 `hl-react` 的调度器、法律复核与 client 创建处，外加应用 `QueryClient` 的 mutation 默认值；包体余量很小，代码尽量紧凑，不新增界面文案。
 
 ## 决策
 
 1. **复核只发一次请求，整体 10 秒**（`legal-execution.ts`）。`verifyLegalActionAllowed` 用 `retry: false`、`networkMode: "always"` 调 `fetchQuery`，再与 `LEGAL_STATUS_HTTP_TIMEOUT_MS`（10 秒）的计时器竞速；计时器先到就抛 `LegalActionNotAllowedError("status_unavailable", { statusReason: "timeout" })`。缓存命中规则不变（普通动作 30 秒内复用成功结果，资金动作强制取新）。竞速也覆盖一种会继承暂停的情形：查询已有在途请求时，TanStack 让 `fetchQuery` 加入那个请求（`query.fetch` 的 `continueRetry`），被动查询的重试器若已暂停，复核会跟着挂起。资金锁内的复核同样落在这 10 秒内，复核抛错后 `runWithFundsActionLock` 的回调结束，锁随之释放。
 2. **入队到签名的上限为 15 秒**（`request-scheduler.ts` 的 `EXCHANGE_ACTION_START_DEADLINE_MS`），与 ADR 0045 的窗口一致：动作在本地最多再等一个链上窗口，超过就不签。时刻在调度器收到动作时记下（`useExchange` 的 `mutationFn` 同步调用，即点击确认、通过前置校验之后），同时记墙钟与单调时钟，年龄取两者较大者（ADR 0022 的 `getReceiptAgeMs`）：往回调系统时间不会延长上限，设备休眠时单调时钟可能停走，墙钟仍会计入。
-3. **两处执行上限**。
-   - 调度器为每个有上限的动作设一个计时器：到时动作仍未开始，就以 `ExchangeActionDeadlineError` 拒绝；若它正占着调度器（停在启动闸门里），同时让出位置，排在后面的动作接着执行。仍在闸门里的旧流程之后调用 `start()` 只会得到 `invalidated`，不会签名。
-   - 后台标签页的计时器会被节流，页面被冻结时完全不走，所以调度器在调用 SDK 之前（`start()`，即会话锁内、`preExecutionGuard` 之后）再按年龄检查一次，超过上限同样拒绝。这一步是最终保证，计时器只负责尽早释放。
+3. **上限的终点是调用签名器之前**。起点是入队（决策 2），终点是 SDK 调用钱包的 `signTypedData` 之前；钱包自己的确认弹窗（外部钱包）发生在调用之内，不计入。
+   - 调度器为每个有上限的动作设一个计时器：到时动作仍未开始，就以 `ExchangeActionDeadlineError` 拒绝；若它正占着调度器（停在启动闸门里），同时让出位置，排在后面的动作接着执行。仍在闸门里的旧流程之后调用 `start()` 只会得到 `invalidated`，不会签名。后台标签页的计时器会被节流，页面冻结时完全不走，计时器只负责尽早释放。
+   - 调度器在调用 SDK 之前（`start()`，会话锁内、`preExecutionGuard` 之后）按年龄检查一次。
+   - SDK 从被调用到签名之间还有异步等待：`defaultExpiresAfter()` 的服务器时钟同步（ADR 0045，最多 2 秒，冻结时更久）、SDK 内部的信号量、跨标签页 nonce 锁、owner signer 的 `getAddresses()` / `getChainId()`（`@nktkas/hyperliquid` 0.33.3：`executeL1Action` 先等 `defaultExpiresAfter`，再进 `executeWithShell` 取地址、取锁、取 nonce，最后在 `build` 里签名；用户签名动作在 `build` 里先取链 ID 再签名）。第一轮实现只在 `start()` 检查，审查用真实 SDK 复现了入队 60 秒后才签名、`expiresAfter` 是入队后 75 秒。现在 `clients.ts` 为每个 `ExchangeClient` 建一个「当前动作」槽位：调度器在 `start()` 时写入、执行结束时清空（每个 client 的执行是串行的，让出位置的旧流程永远不会 `run()`），交给 SDK 的钱包包一层 `Proxy`，`signTypedData`（及 ethers 的 `_signTypedData`）调用内层签名器之前按「墙钟与单调钟取大」检查年龄，超过就抛 `ExchangeActionDeadlineError`，内层签名器不被调用。`defaultExpiresAfter` 等完时钟同步后也检查一次，过期的动作不会再拿到新的有效期，也不进 nonce 锁。
+   - SDK 把钱包抛出的错误包进 `AbstractWalletError` 的 `cause`；`useExchange` 在 SDK 调用处把它解开成 `ExchangeActionDeadlineError`，所以 `classifyActionError` 与金库失败分类看到的是这个错误本身。
+   - 槽位为空时包装层不改变任何行为：Agent 授权（`use-explicit-agent-approval` 每次新建 client）、API 钱包页等不经调度器直接调用 client 的地方，以及无上限的撤单，都照常签名。
 4. **撤单不受上限约束**：`cancel`、`cancelByCloid`、`twapCancel` 不设上限（`getExchangeStartDeadlineMs`）。撤单只减少敞口；它们已是 `urgent` 优先级，但仍可能排在一个正在等待交易所应答的请求后面，这时让撤单失败，用户想撤掉的单就继续挂在簿上。这与官方文档在地址限额打满时仍允许撤单的思路一致。撤单的法律复核同样只发一次、10 秒封顶（决策 1），所以不会再被无限期暂停。只减仓的下单、改单和 `scheduleCancel` 仍受上限约束：它们会成交或改变挂单。
 5. **结果是「没有发出」**。`ExchangeActionDeadlineError` 在 `action-error.ts` 中按名称分类，复用已有译文「The checks before this request took too long. Nothing was signed or sent. Try again.」（与 `AgentRegistrationPreExecutionGuardTimeoutError` 相同，七种语言已有），不是未知结果；金库的失败分类把它列为确定失败（`deterministic`），不会显示为状态未知。通知仍走 ADR 0019 的既有路由：订单通知是失败状态（标题与其他签名前失败相同），正文说明没有签名也没有发出。
+6. **离线提交立即失败，联网后不补发**。`useMutation` 默认 `networkMode: "online"`：`onlineManager` 认为离线时，mutation 在进入 `mutationFn` 之前暂停，调度器的计时器还没创建；联网后 `resumePausedMutations` 用旧参数自动继续，没有新的确认（审查复现：离线 `paused: true`，120 秒后联网即 `success`）。`useExchange` 的 mutation 固定 `networkMode: "always"`，放在调用方选项之后，调用方不能覆盖；应用的 `QueryClient`（`providers/root.tsx`，仓库里唯一创建它的地方）把 mutation 默认值设为 `"always"`。离线时动作立即进入 `mutationFn`，在法律复核或请求处按现有路径失败关闭。仓库里其他 `useMutation`（Agent 注册、交易授权、builder fee 授权）没有显式写 `networkMode`，此前都会离线暂停、联网后自动继续，现在改为立即执行并在各自的请求处失败；没有哪一个依赖离线暂停。显式写 `networkMode: "online"` 的只有被动查询 `use-legal-status.ts`（查询，不是 mutation），保持不变。
+7. **截止后放开会话锁与资金锁**。资金动作先拿资金锁，再在会话锁上等待（`withSessionLock` 的 `navigator.locks.request` 原来没有 `signal`）。第一轮实现在 15 秒时只拒绝了调用方、让出调度器，旧流程仍卡在会话锁上并持有资金锁，用户按提示重试会在 10 秒后得到「资金操作繁忙」。现在调度器给每个条目一个 `AbortController`，在截止或被作废时 abort；signal 作为启动闸门（`ExchangeRequestStartGate`）的第二个参数传进 `useExchange`，再传给 `startAgentRegistrationExecution` 与会话锁的 `navigator.locks.request`，并在资金锁回调开头与法律复核里检查。尚未开始签名的流程在截止时退出，资金锁回调随之结束。已经 `started` 的动作不受影响，原有锁语义不变。
 
 ## 备选方案
 
@@ -49,7 +54,10 @@ ADR 0045 的 `expiresAfter` 在 SDK 签名时才计算，管不到签名之前�
 - 被动查询正在暂停时点下单，复核最多等 10 秒，然后失败关闭；页面重新聚焦后被动查询恢复，下一次提交通常命中新结果。
 - 资金锁等待（最多 10 秒）、复核（最多 10 秒）、`preExecutionGuard`（最多 10 秒）加起来可以超过 15 秒；这时动作按上限失败，不签名。正常情况下三者合计远低于 15 秒。
 - 外部钱包的用户签名动作，钱包确认发生在 `start()` 之后，不计入上限；但同一个用户签名调度器里排在一个等待钱包确认的动作后面的第二个动作，超过 15 秒会失败。
-- 会话锁（`withSessionLock`）的等待本身仍没有上限；上限到时调度器让出位置、调用方收到失败，停在锁上的旧流程拿到锁后不会签名。
+- 会话锁上的等待在截止时被 abort（决策 7）；资金锁的获取等待仍是自己的 10 秒上限，截止后拿到锁的旧流程立即返回。
+- 与 ADR 0045 叠加后的最坏时间：入队到调用签名器最多 15 秒，签名时取的 `expiresAfter` 是估计的交易所时间加 15 秒，所以入队到交易所接受最多约 30 秒（外部钱包的确认时间另计，且只出现在不带 `expiresAfter` 的用户签名动作上）。限价单被接受后何时成交不受这两个时限约束。
+- 离线时提交的动作立即以「未签名未发送」类错误结束，联网后不会自动补发（决策 6）。
+- 每个 `ExchangeClient` 只有一个槽位：若有代码在调度器执行动作的同时直接调用同一个 client，那次直接调用的签名会按正在执行的动作的上限检查。仓库里没有这样的调用（直接调用的 Agent 授权每次新建 client）。
 - 上限从调度器收到动作时算起，不含调用 `useExchange` 之前的应用层等待（例如首次交易前的 builder fee 授权在钱包里确认的时间）。
 - 订单通知标题仍是「订单失败」一类，与其他签名前失败一致；正文写明没有签名或发出。
 
@@ -57,6 +65,8 @@ ADR 0045 的 `expiresAfter` 在 SDK 签名时才计算，管不到签名之前�
 
 - 新增 `apps/terminal/src/lib/tests/exchange-start-deadline.test.tsx`（8 项）：失焦重试复现（第一次 `legalCheck` 网络失败、退避期间 `focusManager.setFocused(false)`，15 秒内被拒，重新聚焦后不签名、不再请求）；复核从不应答时 10 秒失败并让出调度器；排在挂起请求后的下单在 15 秒被拒而撤单之后照常发出；资金动作的复核加入一个已暂停的被动请求时 10 秒失败、资金锁被释放、之后的资金动作能执行；墙钟或单调时钟任一显示超时都拒绝启动；闸门卡住时调度器让出位置；无上限的请求不过期。
 - 修复前（只导出常量与错误类）跑这组测试：8 项中 6 项失败（复核从不应答一项因 SDK 自带 10 秒 HTTP 超时已有上限、对照项无上限两项通过）。
-- 变异：复核恢复重试、去掉复核竞速、去掉 `start()` 年龄检查、年龄只用墙钟、去掉计时器、计时器不让出调度器、撤单也设上限、`useExchange` 不传上限，各自让对应测试失败，均已还原。`networkMode` 改回 `online` 没有测试区分（两者都失败关闭，只差等待时长）。
+- 变异：复核恢复重试、去掉复核竞速、去掉 `start()` 年龄检查、年龄只用墙钟、去掉计时器、计时器不让出调度器、撤单也设上限、`useExchange` 不传上限，各自让对应测试失败，均已还原。`networkMode` 改回 `online` 没有测试区分（两者都失败关闭，只差等待时长）。以上是第一个提交的读数；第二个提交补了区分用例（见下）。
 - `action-error.test.ts`、`vault-action-domain.test.ts` 新增断言：`ExchangeActionDeadlineError` 显示「未签名或发送」文案、金库分类为确定失败；修复前两项失败。
+- 2026-11-12 修订（第二个提交）：新增 `apps/terminal/src/lib/tests/exchange-signing-deadline.test.tsx`，用真实的 SDK `ExchangeClient`（`createExchangeClient` 与 `createOwnerSignerClient`）、假的传输层与假的签名器，owner 签名与 Agent 签名两个分支各跑一遍；服务器时钟模块被替换为可控的 `getExpiresAfter`（其余 SDK 路径真实）。用例：时钟同步在入队 60 秒后才返回时下单与资金动作都不签名、不进 nonce 锁；第 14 秒进 SDK、同步再等 2 秒时不签名；nonce 锁等待跨过上限时在钱包处拒绝，错误经 SDK 后仍被 `classifyActionError` 与金库分类认作 `ExchangeActionDeadlineError`；用户签名的提款同样不签名；正常路径签名一次；撤单在同样的等待之后照常签名；执行结束后槽位清空，之后对同一 client 的直接调用照常签名；会话锁被占时截止后资金锁立即被下一个资金动作拿到；`onlineManager` 置离线时 mutation 不暂停、立即失败，120 秒后联网也不发送；`onlineManager` 离线时法律复核不等待；`providers/root.tsx` 的默认值与不经调度器的 client 不受影响。`exchange-start-deadline.test.tsx` 补了 15 秒字面值与豁免名单（三种撤单豁免，`order`、`modify`、`batchModify`、`twapOrder`、`scheduleCancel` 等不豁免）以及「旧流程在第二个动作执行时结束、第三个在排队」的交错用例。
+- 审查指出的六个变异（上限按 `requiresAgent` 豁免、`finally` 改成 `finishEntry(this.current ?? entry)`、资金动作豁免、常量改为 150 秒、豁免名单增删、复核改回 `online`）与本次新逻辑的十二个变异（去掉钱包处检查、去掉 `defaultExpiresAfter` 处检查、不写槽位、不清槽位、不解开 `cause`、mutation 不设 `always`、调用方可覆盖、`root.tsx` 无默认值、会话锁不带 signal、拒绝时不 abort、闸门拿不到 signal）各自让测试失败，均已还原。
 - 未做：真实网络、真实钱包、真机与后台冻结页面的验收；全量终端 Vitest 与生产构建（包体）由主会话之后统一运行。

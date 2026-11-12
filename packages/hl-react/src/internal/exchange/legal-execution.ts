@@ -23,6 +23,8 @@ interface VerifyLegalActionOptions {
 	owner: `0x${string}`;
 	capability?: LegalActionCapability;
 	forceFresh?: boolean;
+	/** Ends the wait with `status_unavailable` when the action it guards is abandoned. */
+	signal?: AbortSignal;
 }
 
 export function getExchangeLegalCapability(method: ExchangeMethod): LegalActionCapability {
@@ -44,6 +46,7 @@ export async function verifyLegalActionAllowed({
 	owner,
 	capability = "actions",
 	forceFresh = false,
+	signal,
 }: VerifyLegalActionOptions): Promise<LegalStatus> {
 	if (typeof navigator !== "undefined" && navigator.onLine === false) {
 		throw new LegalActionNotAllowedError("status_unavailable", { statusReason: "network" });
@@ -70,6 +73,11 @@ export async function verifyLegalActionAllowed({
 				timeout = setTimeout(
 					() => reject(new LegalActionNotAllowedError("status_unavailable", { statusReason: "timeout" })),
 					LEGAL_STATUS_HTTP_TIMEOUT_MS,
+				);
+				signal?.addEventListener(
+					"abort",
+					() => reject(new LegalActionNotAllowedError("status_unavailable", { statusReason: "aborted" })),
+					{ once: true },
 				);
 			}),
 		]);

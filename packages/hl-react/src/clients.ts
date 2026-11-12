@@ -11,7 +11,12 @@ import {
 import type { AbstractWallet } from "@nktkas/hyperliquid/signing";
 import type { PrivateKeyAccount } from "viem/accounts";
 import { createCrossTabNonceManager } from "./internal/exchange/cross-tab-nonce-manager";
-import { invalidateExchangeClientRequests } from "./internal/exchange/request-scheduler";
+import {
+	assertExchangeSigningDeadline,
+	type ExchangeSigningDeadlineSlot,
+	invalidateExchangeClientRequests,
+	registerExchangeSigningDeadline,
+} from "./internal/exchange/request-scheduler";
 import { createServerClock, type ServerClock } from "./internal/exchange/server-clock";
 import { getSdkReconnectionDelayMs } from "./internal/websocket/reliability";
 import { createWsTransportMonitor, type WsTransportMonitor } from "./internal/websocket/transport-monitor";
@@ -177,6 +182,42 @@ function getActionExpiry(isTestnet: boolean): () => Promise<number> {
 			: undefined) as () => Promise<number>;
 }
 
+/**
+ * Checks the scheduled action's deadline (ADR 0051) right before the wallet is asked to sign, the last
+ * asynchronous point before a signature exists. A wallet's own confirmation prompt happens inside the
+ * call and is not limited. With no scheduled action in the slot, the wallet behaves exactly as before.
+ */
+function guardSigning<W extends object>(wallet: W, slot: ExchangeSigningDeadlineSlot): W {
+	return new Proxy(wallet, {
+		get(target, key) {
+			const value = Reflect.get(target, key);
+			if ((key !== "signTypedData" && key !== "_signTypedData") || typeof value !== "function") return value;
+			const guarded = (...args: unknown[]) => {
+				assertExchangeSigningDeadline(slot);
+				return value.apply(target, args);
+			};
+			return Object.defineProperty(guarded, "length", { value: value.length });
+		},
+	});
+}
+
+function newExchangeClient(wallet: AbstractWallet, isTestnet: boolean, transport: IRequestTransport): ExchangeClient {
+	const slot: ExchangeSigningDeadlineSlot = {};
+	const expiry = getActionExpiry(isTestnet);
+	const client = new ExchangeClient({
+		transport,
+		wallet: guardSigning(wallet, slot),
+		nonceManager: createCrossTabNonceManager(isTestnet ? "Testnet" : "Mainnet"),
+		defaultExpiresAfter: async () => {
+			const expiresAfter = await expiry();
+			assertExchangeSigningDeadline(slot);
+			return expiresAfter;
+		},
+	});
+	registerExchangeSigningDeadline(client, slot);
+	return client;
+}
+
 export function createExchangeClient(
 	wallet: AbstractWallet,
 	isTestnet: boolean,
@@ -188,12 +229,7 @@ export function createExchangeClient(
 		const cached = tradingClientCache.get(cacheKey);
 		if (cached) return cached;
 	}
-	const client = new ExchangeClient({
-		transport: transport ?? getHttpTransport(isTestnet),
-		wallet,
-		nonceManager: createCrossTabNonceManager(isTestnet ? "Testnet" : "Mainnet"),
-		defaultExpiresAfter: getActionExpiry(isTestnet),
-	});
+	const client = newExchangeClient(wallet, isTestnet, transport ?? getHttpTransport(isTestnet));
 	if (shouldCache && cacheKey) {
 		tradingClientCache.set(cacheKey, client);
 	}
@@ -209,12 +245,7 @@ export function getTradingClient(wallet: AbstractWallet & { address: string }, i
 	const cached = agentTradingClientCache.get(key);
 	if (cached) return cached;
 	const signingWallet = isPrivateKeyAccount(wallet) ? createL1AgentWallet(wallet) : wallet;
-	const client = new ExchangeClient({
-		transport: getHttpTransport(isTestnet),
-		wallet: signingWallet,
-		nonceManager: createCrossTabNonceManager(isTestnet ? "Testnet" : "Mainnet"),
-		defaultExpiresAfter: getActionExpiry(isTestnet),
-	});
+	const client = newExchangeClient(signingWallet, isTestnet, getHttpTransport(isTestnet));
 	agentTradingClientCache.set(key, client);
 	return client;
 }

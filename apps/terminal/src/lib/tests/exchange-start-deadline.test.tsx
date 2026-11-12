@@ -5,6 +5,7 @@ import {
 	EXCHANGE_ACTION_START_DEADLINE_MS,
 	ExchangeActionDeadlineError,
 	ExchangeRequestScheduler,
+	getExchangeStartDeadlineMs,
 } from "@sairn/hl-react/internal/exchange/request-scheduler";
 import { LegalActionNotAllowedError } from "@sairn/hl-react/legal";
 import { focusManager, QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -366,5 +367,55 @@ describe("exchange request scheduler start deadline", () => {
 		await vi.advanceTimersByTimeAsync(10 * EXCHANGE_ACTION_START_DEADLINE_MS);
 		open();
 		await expect(request).resolves.toBe("cancelled");
+	});
+
+	it("limits every action to 15 seconds except the three cancels", () => {
+		expect(EXCHANGE_ACTION_START_DEADLINE_MS).toBe(15_000);
+		for (const method of ["cancel", "cancelByCloid", "twapCancel"] as const) {
+			expect(getExchangeStartDeadlineMs(method)).toBeUndefined();
+		}
+		for (const method of [
+			"order",
+			"modify",
+			"batchModify",
+			"twapOrder",
+			"scheduleCancel",
+			"updateLeverage",
+			"vaultTransfer",
+			"withdraw3",
+			"usdClassTransfer",
+		] as const) {
+			expect(getExchangeStartDeadlineMs(method)).toBe(15_000);
+		}
+	});
+
+	it("keeps the queue serial when an expired request's gate finishes while the next one runs", async () => {
+		vi.useFakeTimers();
+		const scheduler = new ExchangeRequestScheduler();
+		const { open, gate } = gatedStart();
+		const stuck = scheduler.schedule("normal", async () => "late", undefined, gate, 15_000);
+		stuck.catch(() => {});
+		await vi.advanceTimersByTimeAsync(15_000);
+
+		let releaseSecond = () => {};
+		const secondRun = vi.fn(
+			() =>
+				new Promise<string>((resolve) => {
+					releaseSecond = () => resolve("second");
+				}),
+		);
+		const second = scheduler.schedule("normal", secondRun);
+		await vi.advanceTimersByTimeAsync(0);
+		expect(secondRun).toHaveBeenCalledOnce();
+
+		const thirdRun = vi.fn(async () => "third");
+		const third = scheduler.schedule("normal", thirdRun);
+		open();
+		await vi.advanceTimersByTimeAsync(0);
+		expect(thirdRun).not.toHaveBeenCalled();
+
+		releaseSecond();
+		await expect(second).resolves.toBe("second");
+		await expect(third).resolves.toBe("third");
 	});
 });

@@ -64,11 +64,18 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Changed
 
-- An order, order change or funds action that cannot be signed within 15 seconds of confirming it is no
-  longer sent later: it fails with a notice that nothing was signed or sent, and you can submit it
-  again. Before, if the access check before signing hit a network error and you switched away from the
-  page, the action could be sent when you came back, minutes or hours later. Cancels are not limited
-  this way, so a busy queue never leaves an order on the book that you asked to cancel.
+- An order, order change or funds action is no longer signed more than 15 seconds after you confirm
+  it: it fails with a notice that nothing was signed or sent, and you can submit it again. Before, if
+  the access check before signing hit a network error and you switched away from the page, the action
+  could be sent when you came back, minutes or hours later. The time your own wallet takes to show and
+  confirm a signature request is not counted. Together with the existing 15-second expiry, an order
+  reaches the exchange within about 30 seconds of confirming it or not at all; when a resting limit
+  order fills is not affected. Cancels are not limited this way, so a busy queue never leaves an order
+  on the book that you asked to cancel.
+- An action you confirm while offline now fails at once instead of waiting and being sent
+  automatically when the connection returns.
+- After such a timeout, the next funds action can start at once instead of waiting about 10 seconds
+  and reporting that another funds operation is in progress.
 - The mobile order summary follows the official terminal:
   - empty values read `N/A` in the value colour;
   - order value and margin required are written in the market's collateral, for example `84.20 USDC`;

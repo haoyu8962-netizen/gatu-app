@@ -34,10 +34,18 @@ Do not collapse these states into one boolean.
 - The legal re-check before a signed action (`verifyLegalActionAllowed`) sends
   one request without retries and fails as `status_unavailable` after 10
   seconds; never give it a retry policy that TanStack can pause while the page
-  is unfocused. An action that has not reached its SDK call 15 seconds after
-  entering the request scheduler fails before signing, except cancels
+  is unfocused. An action whose wallet signer has not been called 15 seconds
+  after it entered the request scheduler fails before signing, except cancels;
+  the check runs before the SDK call, after the server-clock sync and in the
+  wallet wrapper of every `ExchangeClient`
   ([ADR 0051](adr/0051-exchange-action-start-deadline.md)). Passive legal status
   queries keep their retries.
+- Mutations never pause offline: `useExchange` fixes `networkMode: "always"`
+  and the application `QueryClient` makes it the mutation default, so nothing is
+  replayed without a new confirmation when the network returns.
+- A request rejected before it started (deadline or identity change) aborts its
+  start gate: the wait for the Agent registration session lock ends and the
+  funds-action lock is released at once.
 - Preserve the onboarding order documented in `docs/trading-onboarding.md`.
 - Agent registration and builder-fee approval are separate. First-time setup
   approves only the Agent; builder-fee approval is deferred until an action
