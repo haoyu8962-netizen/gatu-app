@@ -127,6 +127,40 @@
 - Privy 会话令牌在 `localStorage`：全局 `showWalletUIs: false` 下 CSP 是内嵌钱包静默签名的唯一防线。是否已启用 HttpOnly cookie 要看 Privy 控制台。
 - 路由名带点的市场会被边缘函数当成文件，目前没有实例。
 
+### 补充核实与官方对照（同日，运营方追问后）
+
+运营方问：审查的问题是否核对过、是否成立，有没有对照官方开发文档和官方终端 `https://app.hyperliquid.xyz/trade/HYPE` 的做法，然后再规划子代理执行修复。
+
+**补核实。** 此前只有代理结论的两条已读码：
+
+- P2-11：`activeSubmissionIds` 只在内存里（`use-pending-order-store.ts:161,344`），待确认记录经 `storage` 事件同步到其他标签页（同文件 524 行），其他标签页会把它当成需要对账的记录。前提成立；「通知永不结束」这一步没有逐行追到底。
+- P2-16：`client.ts` 只兜住它自己的两个动态导入；`_shell.html` 里没有 `onerror` 或任何脚本加载失败的处理。成立。
+
+**官方开发文档**（2026-11-12 读取）：
+
+| 规则 | 出处 | 对本仓库的含义 |
+| --- | --- | --- |
+| 服务器 60 秒没向某连接发过消息就关闭它；客户端发 `{"method":"ping"}`，服务器回 `{"channel":"pong"}` | WebSocket「Timeouts and heartbeats」 | `pong` 是文档规定的存活信号。P2-20 的修法（探测只认 `pong`）有依据 |
+| 每个 IP 最多 10 条 WebSocket 连接、每分钟最多新建 30 条、最多 1000 个订阅、用户相关订阅最多 10 个不同用户、每分钟最多发 2000 条消息 | 「Rate limits and user limits」 | **新发现（P2-21）**：本终端每个标签页最多 5 条连接（1 条共享加订单簿连接池 4 条），两个标签页就到上限；连接池自己的预算是每分钟 24 条新连接，与每 IP 30 条只差 6 条。仓库文档（ADR 0003、运行时守则）没有提到这两个上限。SDK 里的用户上限写的是 15，文档是 10 |
+| `orderStatus` 按 oid 或 cloid 查询，返回 `open`、`filled`、`canceled`、`marginCanceled` 等状态，权重 2 | 「Info endpoint」 | P2-9 可以在下结论前查一次，区分被撤销与已成交 |
+| `expiresAfter` 之后动作被拒绝；因过期被取消的动作消耗 5 倍地址限额。FAQ：动作 15 秒内没被接受就过期 | 「Exchange endpoint」与 FAQ「Action already expired」 | 签名前已经等了很久的动作应在本地失败关闭，不要签出去再让链拒绝 |
+
+**官方终端的做法**（读它 2026-11-12 的前端包 `config-HoX0zIlo.js` 与 `service-worker.js`，只读，没有连接钱包）：
+
+| 方面 | 官方 | 本终端 | 结论 |
+| --- | --- | --- | --- |
+| 连接数 | 一条多路复用连接承载全部订阅 | 1 条共享加最多 4 条订单簿 | 见 P2-21 |
+| 静默检测 | 每秒检查，15 秒没有任何消息就重连 | 5 秒检查一次，45 秒；回到前台时另有 ADR 0050 的处理 | 我们的阈值是官方的三倍 |
+| 重连是否等旧连接关闭 | 不等：直接调用自己的 `onclose` 处理并安排重连 | 打补丁后不等（ADR 0050 决策 4） | 一致，补丁的做法有官方先例 |
+| 重连退避 | 1 秒起翻倍到 30 秒，收到任何消息就复位 | 0.5 秒起翻倍到 30 秒 | 相近 |
+| 被服务器以连接数超限拒绝 | 关闭原因以 `Cannot open more than` 开头时提示用户关闭其他标签页 | 没有识别，只按退避重试 | 应识别并说明 |
+| 页面隐藏时 | 行情类频道每 10 条只处理 1 条 | 每个订阅只保留最后一帧 | 做法不同，效果相近 |
+| `expiresAfter` | 签名时取「估计的服务器时间 + 15 秒」；HTTP 请求 15 秒中止 | 同样在签名时计算 | 一致。官方在点击与签名之间没有可暂停的等待，P1-1 是我们独有的 |
+| 撤单结果 | 请求出错报错误；交易所回「Order was already canceled or filled」时单独处理；不查 `orderStatus` | 结果不明时订单消失即报「已取消」 | P2-9 成立，我们比官方多报了一个结论 |
+| 外部钱包授权签名 | 签完后恢复签名地址并与预期地址比对，不一致则放弃 | 只在签名前比对账户 | P2-13 的修法与官方一致 |
+| `fastAssetCtxs` 等压缩频道 | 自己解码，单帧失败只丢这一帧 | 走 SDK 的 Promise 队列，一次失败后永久失效 | P2-12 成立 |
+| 资源缓存 | Service Worker 预缓存 468 项 | 只缓存壳、字体、图标，且字体缓存实际为空 | P1-6 与字体缓存问题有官方对照 |
+
 ## 验证与限制
 
 - 主会话的核实手段：读代码与依赖源码、`stat` 文件大小、只读 grep 计数、今天的构建产物与日志，以及一次对线上站点的只读浏览器检查（Playwright Chromium 与 WebKit，读 `caches` 的条目数）。
@@ -150,4 +184,20 @@
 | 六 | P1-3 地区接口限流与告警 | 需要线上配置配合 |
 | 七 | 文档状态、契约测试漏洞、死代码与依赖清理 | 低风险，可合批 |
 
-需要运营方决定或操作的：是否轮换 IPdata 密钥；`/api/*` 是否加 WAF；ADR 0042 的索引状态如何更正；启动时是否允许显示内容（与 ADR 0010 相关）；官网行情快照的刷新。
+需要运营方决定或操作的：是否轮换 IPdata 密钥；`/api/*` 是否加 WAF；ADR 0042 的索引状态如何更正；启动时是否允许显示内容（与 ADR 0010 相关）；官网行情快照的刷新；CI 改跑全量会增加多少计费分钟、是否接受。
+
+### 第一波修复的分工（2026-11-12）
+
+运营方要求由 Opus 5.5 子代理执行修复。第一波选的是已核实、不需要运营方先做决定、文件互不重叠的五项，各在自己的工作树和分支上做，只提交不推送：
+
+| 分支 | 内容 | 主要文件 |
+| --- | --- | --- |
+| `claude/fix-order-submit-deadline` | P1-1：执行路径上的法律状态复核不再可暂停，签名前等待有上限 | `packages/hl-react/src/internal/exchange/`、`hooks/useExchange.ts` |
+| `claude/fix-cancel-outcome` | P2-9、P2-11：结果不明的撤单用 `orderStatus` 区分；其他标签页的镜像通知能收尾 | `apps/terminal/src/components/trade/*reconciliation.tsx`、`stores/use-pending-*.ts` |
+| `claude/fix-release-script` | P1-2、P2-7、P2-8：回滚能真正上传、Lambda 输出不含环境变量、更新后探活、CI 构建 Lambda 包 | `deploy/cloudfront/`、`.github/workflows/production-build.yml` |
+| `claude/fix-realtime-liveness` | P2-20、P2-12、P2-21 的一部分：探测只认 `pong`、静默 15 秒即探测、订单簿连接也用心跳判活、`fastAssetCtxs` 自己解码、识别连接数超限、手机不预热用不上的连接 | `packages/hl-react/src/internal/websocket/`、`subscriptions/`、`clients.ts` |
+| `claude/fix-sw-asset-cache` | P1-6、字体缓存：新壳引用的资源先存好再换壳、`/assets/` 走缓存优先、字体缓存的克隆时机 | `apps/terminal/public/sw.js` |
+
+约定：子代理只跑定向测试、类型检查和 Biome，不跑全量单测和生产构建（多个同时跑会互相拖慢并造成偶发超时）；全量单测、生产构建与包体、Codex 审查由主会话在每个分支上依次做。推送和开 PR 仍要运营方同意。
+
+第二波（等运营方决定或第一波合入后）：启动诊断与入口失败兜底（P1-5、P2-15、P2-16）、CI 跑全量（P1-4）、地区接口限流（P1-3）、文档与契约测试清理。
