@@ -113,7 +113,14 @@ const budgets = {
 	// (PR #132), merged under the pairing-off allowance. The client code is that of release p36: release builds of it
 	// (pairing on, production .env.local), with settings that differ only in their build identity, read 3,375,833 to
 	// 3,376,302, and the p37 build exceeded the previous allowance by 101.
-	totalGzipBaselineBytes: 3_372_998,
+	// Raised 2026-11-12 by +4,745 for the first wave of fixes from the global defect review, merged as one integration
+	// branch: the action start deadline and its click deadlines (ADR 0053), cancel outcomes and per-record tab
+	// ownership (ADR 0019 addendum), heartbeat-only liveness and the fast-price decoder (ADR 0050 addendum). Measured
+	// as the fixed-identity Node 22.15.0 build with VITE_MOBILE_PAIRING_ENABLED=false of the integration (3,381,009)
+	// minus that of dev 810a45db (3,376,264), both without .env.local; the +3,266 dev had already used stays counted.
+	// Without the raise the pairing-off build keeps 1,989 bytes and a release build, which reads about 3,000 more,
+	// would exceed the allowance (docs/terminal-performance-baseline.md).
+	totalGzipBaselineBytes: 3_377_743,
 	totalGzipAllowedIncreaseBytes: 10_000,
 	tradeStartup: {
 		requiredRouteIds: ["__root__", "/trade/$symbol"],
@@ -131,7 +138,13 @@ const budgets = {
 		// of dev 19db63d1 (1,652,171), both without .env.local; pairing on was not measured. The growth is the transport
 		// monitor, store and order-book pool code in the shared chunk, and without the raise the release configuration
 		// would be left with about 36 bytes (docs/terminal-performance-baseline.md).
-		baselineGzipBytes: 1_644_480,
+		// Raised 2026-11-12 by +3,987 for the first wave of fixes from the global defect review (see the total above):
+		// the same pair of builds reads 1,656,513 for the integration and 1,652,526 for dev 810a45db. The growth is code
+		// that every session runs: the request scheduler's deadline, the wallet guard and the fast-price decoder in the
+		// shared chunk (+2,059), the reconciliation hosts mounted at the root (+1,066), the pending order and TWAP stores
+		// (+850) and the English catalog (+471). Before the raise the integration build exceeded the allowance by 2,033
+		// (docs/terminal-performance-baseline.md).
+		baselineGzipBytes: 1_648_467,
 		allowedIncreaseBytes: 10_000,
 	},
 	tradeRuntimeStartup: {
@@ -183,7 +196,10 @@ const budgets = {
 		// Raised 2026-11-01 by +701 for the silent passive-data states of the Vault pages and the Vault dialog's data Retry
 		// (second batch of audit fixes), measured with the same pair of builds: 30,550 minus 29,849
 		// (docs/terminal-performance-baseline.md).
-		{ name: "vaults-page", baselineGzipBytes: 27_776, allowedIncreaseBytes: 3_000 },
+		// Raised 2026-11-12 by +104 for the vault dialog's click deadlines (ADR 0053 decision 10), measured with the pair
+		// of builds named at the total: 30,638 minus 30,534. Without it the chunk would keep 138 bytes, under the 200 the
+		// release precheck asks for.
+		{ name: "vaults-page", baselineGzipBytes: 27_880, allowedIncreaseBytes: 3_000 },
 		// Added 2026-09-27 with the Funding Comparison route (Node 22.15.0 build of the SDK feature batch).
 		{ name: "fundingComparison", baselineGzipBytes: 11_133, allowedIncreaseBytes: 1_500 },
 		{ name: "funding-history-panel", baselineGzipBytes: 8_661, allowedIncreaseBytes: 1_500 },
