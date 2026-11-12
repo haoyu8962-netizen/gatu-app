@@ -649,6 +649,23 @@ changes, not evidence that a build has been deployed or accepted on real devices
   release is still downloaded once in the background (about 1.5 MB), and the first start after
   installing, or after this update, still loads from the network. Not yet confirmed on a phone
   (ADR 0052).
+- A cancel whose result never came back is no longer reported as Canceled just because the order
+  left your open orders. The terminal first asks the exchange what happened to each order and
+  reports a result only when every order is accounted for: canceled, filled before it could be
+  canceled, or a mix of both. If any order is still open or its status cannot be read, the
+  notification asks you to check your open orders or fills instead of claiming a result. A TWAP
+  termination counts as done only when the exchange confirms it; otherwise the terminal waits up
+  to 15 seconds for the TWAP history and reports a TWAP that finished on its own as such. An
+  unconfirmed cancel notification you closed stays closed until a definite result arrives, also
+  when the order or TWAP turns out to be still active.
+- With the terminal open in two tabs on the same account, an order or TWAP sent in one tab no
+  longer leaves a "Confirming" notification in the other tab that never goes away, and the other
+  tab no longer settles it first. If the sending tab closes, another tab on the same account and
+  network takes it over; tabs on another account, or not connected, leave it alone. When another
+  tab took over and settled it, the first tab drops its own "Confirming" notification instead
+  of keeping it forever; the result is shown in the tab that settled it. Such an
+  order is kept for up to 24 hours waiting for a tab of its account; after that it is dropped
+  without a notification.
 - Reopening the terminal after it sat in the background brings prices, the order book and account
   data back sooner. The terminal now checks its connections the moment the page is shown again,
   or the network returns, instead of up to five seconds later; it retries at once instead of

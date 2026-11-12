@@ -5,6 +5,11 @@ import {
 	TWAP_RECONCILIATION_MAX_AGE_MS,
 	type TwapIntent,
 } from "@/domain/trade/twap";
+import {
+	type PendingSubmissionIdentity,
+	type PendingSubmissionSharing,
+	shareSubmissionsBetweenTabs,
+} from "@/lib/trade/pending-submission-tab-ownership";
 import { z } from "@/lib/zod";
 
 const baselineSchema = z.object({
@@ -75,6 +80,12 @@ interface PendingTwapStore {
 	actions: {
 		add: (input: AddPendingTwapInput) => PendingTwapSubmission;
 		markActive: (id: string) => void;
+		/** The owner and network this tab can reconcile now, or null while it cannot reconcile any. */
+		serve: (identity: PendingSubmissionIdentity | null) => void;
+		/** Whether this tab still reconciles the submission: an asynchronous step checks it before writing. */
+		owns: (id: string) => boolean;
+		/** Submissions that left the store while another tab reconciled them, each reported once. */
+		takeRemovedElsewhere: () => string[];
 		clearActive: (id: string) => void;
 		remove: (id: string) => void;
 		resolve: (id: string) => PendingTwapSubmission | null;
@@ -256,6 +267,7 @@ export function createPendingTwapStore(storage: PendingTwapStorage | null = getB
 					user: input.user.toLowerCase() as `0x${string}`,
 					createdAt: now,
 				};
+				sharing.claim(submission.id);
 				set(() => {
 					const current = readPersistedPendingTwaps(storage);
 					if (!current) throw new PendingTwapPersistenceError();
@@ -271,6 +283,9 @@ export function createPendingTwapStore(storage: PendingTwapStorage | null = getB
 				});
 				return submission;
 			},
+			serve: (identity) => sharing.serve(identity),
+			owns: (id) => sharing.owns(id),
+			takeRemovedElsewhere: () => sharing.takeRemovedElsewhere(),
 			markActive: (id) => {
 				set((state) => ({ activeSubmissionIds: new Set(state.activeSubmissionIds).add(id) }));
 			},
@@ -379,6 +394,9 @@ export function createPendingTwapStore(storage: PendingTwapStorage | null = getB
 		});
 	}
 
+	const sharing: PendingSubmissionSharing = shareSubmissionsBetweenTabs(store, "sairn-pending-twap-owner-v1:", (id) =>
+		(readPersistedPendingTwaps(storage) ?? store.getState().submissions).some((submission) => submission.id === id),
+	);
 	return store;
 }
 

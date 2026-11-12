@@ -789,7 +789,7 @@ export function OrdersTab({ toolbarTarget }: Props = {}) {
 				}
 				return;
 			}
-			getPendingTradingActionActions().markOrderCancellationAwaiting(execution.actionId);
+			getPendingTradingActionActions().markOrderCancellationAccepted(execution.actionId);
 			syncPendingTradingActionFeedback({ ...feedbackIdentity, phase: "awaiting" }, "cancel");
 			if (!mountedRef.current || !isCancelExecutionCurrent(execution)) return;
 			setSelectedOrderIds((prev) => {

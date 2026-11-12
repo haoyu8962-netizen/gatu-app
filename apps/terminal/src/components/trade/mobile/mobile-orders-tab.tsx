@@ -937,7 +937,7 @@ export function MobileOrdersTab({ className, disclosureState, scrollMode = "cont
 				}
 				return;
 			}
-			getPendingTradingActionActions().markOrderCancellationAwaiting(execution.actionId);
+			getPendingTradingActionActions().markOrderCancellationAccepted(execution.actionId);
 			syncPendingTradingActionFeedback({ ...feedbackIdentity, phase: "awaiting" }, "cancel");
 			if (!mountedRef.current || !isCancelExecutionCurrent(execution)) return;
 		} catch (cause) {
