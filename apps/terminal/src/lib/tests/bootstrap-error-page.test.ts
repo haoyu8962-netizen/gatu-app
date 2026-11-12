@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { renderBootstrapErrorPage } from "@/lib/bootstrap-error-page";
+import { clearAssetCachesThenReload, renderBootstrapErrorPage } from "@/lib/bootstrap-error-page";
 
 describe("bootstrap error page", () => {
 	beforeEach(() => {
@@ -85,6 +85,46 @@ describe("bootstrap error page", () => {
 
 		const fallback = document.querySelector<HTMLElement>("[data-terminal-bootstrap-error]");
 		expect(fallback?.style.fontFamily).toBe("system-ui, sans-serif");
+	});
+});
+
+describe("bootstrap error page reload", () => {
+	afterEach(() => {
+		vi.unstubAllGlobals();
+		vi.useRealTimers();
+	});
+
+	it("deletes only the Service Worker asset caches before reloading", async () => {
+		const deleted: string[] = [];
+		vi.stubGlobal("caches", {
+			keys: async () => ["assets-v11", "assets-v12", "shell-v11", "fonts-v11"],
+			delete: async (key: string) => {
+				deleted.push(key);
+				return true;
+			},
+		});
+		const reload = vi.fn();
+		await clearAssetCachesThenReload(reload);
+		expect(deleted).toEqual(["assets-v11", "assets-v12"]);
+		expect(reload).toHaveBeenCalledOnce();
+	});
+
+	it("still reloads when Cache Storage throws, is missing or never answers", async () => {
+		const reload = vi.fn();
+		vi.stubGlobal("caches", {
+			keys: () => {
+				throw new Error("storage unavailable");
+			},
+		});
+		await clearAssetCachesThenReload(reload);
+		vi.stubGlobal("caches", undefined);
+		await clearAssetCachesThenReload(reload);
+		vi.useFakeTimers();
+		vi.stubGlobal("caches", { keys: () => new Promise(() => {}) });
+		const stalled = clearAssetCachesThenReload(reload);
+		await vi.advanceTimersByTimeAsync(1_000);
+		await stalled;
+		expect(reload).toHaveBeenCalledTimes(3);
 	});
 });
 
