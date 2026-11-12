@@ -211,7 +211,9 @@ function newExchangeClient(
 	const client = new ExchangeClient({
 		transport,
 		wallet: guardSigning(wallet, slot),
-		nonceManager: createCrossTabNonceManager(isTestnet ? "Testnet" : "Mainnet"),
+		nonceManager: createCrossTabNonceManager(isTestnet ? "Testnet" : "Mainnet", {
+			readExchangeNow: () => getServerClock(isTestnet).estimateNow(),
+		}),
 		defaultExpiresAfter: async () => {
 			const expiresAfter = await expiry();
 			assertExchangeSigningDeadline(slot);
