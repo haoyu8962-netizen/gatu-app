@@ -260,13 +260,13 @@ export class FastAssetCtxsLockedError extends L2BookStreamError {
  * SDK's own decoder chains every frame on one promise, so a single frame that fails to decode, or a
  * listener that throws, left the stream silent for good while it still looked subscribed. Here such a
  * frame ends the subscription like any transport failure, and the store subscribes again for a fresh
- * snapshot instead of skipping a delta. Frames arrive under TLS integrity protection, so a frame that
- * cannot be decoded means the format changed or the code is wrong, and retrying cannot help; the store
- * also forgets its retry count whenever a subscription is confirmed, so retries would loop at its
- * shortest delay. The first failure of any kind (decoding, the listener, the backlog) therefore locks
- * the channel on that transport: later subscriptions on it are rejected without reaching the server,
- * so the store backs off normally and the consumer falls back to another price source. Nothing clears
- * the lock; a new transport (a reload or another network) starts clean.
+ * snapshot instead of skipping a delta. A frame that cannot be decoded usually means the format changed
+ * or the code is wrong, and the store forgets its retry count whenever a subscription is confirmed, so
+ * retries would loop at its shortest delay. The first failure of any kind (decoding, the listener, the
+ * backlog) therefore locks the channel on that transport, a conservative choice that one stray listener
+ * exception also triggers: later subscriptions on it are rejected without reaching the server, so the
+ * store backs off normally and the consumer falls back to another price source. Nothing clears the
+ * lock; transports are cached per network and survive an SDK reconnect, so only a reload starts clean.
  */
 export function subscribeFastAssetCtxs(
 	transport: ISubscriptionTransport,

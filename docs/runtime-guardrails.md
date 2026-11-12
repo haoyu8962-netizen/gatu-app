@@ -821,15 +821,21 @@ transport. Adding account subscriptions must not disturb market subscriptions.
   in place of the SDK decoder for `fastAssetCtxs`: the SDK chains every frame on
   one promise, so one frame that failed to decode, or a listener that threw,
   left the stream silent while it still looked subscribed. A failing frame now
-  ends the subscription through `onError`. Frames arrive under TLS integrity
-  protection, so a decode failure is deterministic and a retry cannot help;
+  ends the subscription through `onError`. Locking on the first failure is a
+  conservative choice, not a proof that a retry could never help: a decode
+  failure is usually deterministic, but one stray listener exception or backlog
+  overflow locks the channel as well;
   the store also clears its retry count whenever a subscription is confirmed,
   so retries would loop at the shortest delay. The first failure of
   `fastAssetCtxs` on a transport (decoding, the listener or the backlog)
   therefore locks the channel on that transport: later subscriptions on it are
-  rejected without reaching the server, the store backs off normally, nothing
-  clears the lock, and a new transport (a reload or another network) starts
-  clean. The locking failure and every later rejection are a
+  rejected without reaching the server, the store backs off normally and nothing
+  clears the lock. Transports are cached per network and an SDK reconnect keeps
+  the same object, so only a reload starts clean. Known limit: with several
+  `fastAssetCtxs` subscriptions on one transport, those still alive are re-sent
+  by the SDK's subscription manager on reconnect without passing the lock; the
+  terminal shares one store subscription, so it does not happen there. The
+  locking failure and every later rejection are a
   `FastAssetCtxsLockedError` (exported from `@sairn/hl-react`; the store keeps
   the original error object). `useMarketsInfo` stops subscribing to
   `fastAssetCtxs` for the life of the hook only on that error, and reports it
