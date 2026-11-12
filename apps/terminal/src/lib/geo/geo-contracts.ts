@@ -5,6 +5,16 @@ import { z } from "@/lib/zod";
 
 export const REFERRAL_GEO_LEASE_MS = 60_000;
 
+/** Every reason the server reports when it cannot decide; clients treat each one as unavailable. */
+export const GEO_UNAVAILABLE_REASONS = [
+	"budget_exhausted",
+	"invalid_response",
+	"missing_config",
+	"missing_ip",
+	"provider_error",
+] as const;
+export type GeoUnavailableReason = (typeof GEO_UNAVAILABLE_REASONS)[number];
+
 export type ReferralActionGeoDecision =
 	| {
 			checkedAt: number;
@@ -20,7 +30,7 @@ export type ReferralActionGeoDecision =
 	  }
 	| {
 			checkedAt: number;
-			reason: "invalid_response" | "missing_config" | "missing_ip" | "provider_error";
+			reason: GeoUnavailableReason;
 			status: "unavailable";
 	  };
 
@@ -41,7 +51,7 @@ export const referralActionGeoDecisionSchema: z.ZodType<ReferralActionGeoDecisio
 	z.object({
 		status: z.literal("unavailable"),
 		checkedAt: z.number(),
-		reason: z.enum(["invalid_response", "missing_config", "missing_ip", "provider_error"]),
+		reason: z.enum(GEO_UNAVAILABLE_REASONS),
 	}),
 ]);
 
