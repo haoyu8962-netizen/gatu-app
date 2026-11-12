@@ -146,8 +146,12 @@ export function startExchangeActionDeadline(): ExchangeSigningDeadlineSlot {
 	};
 }
 
+export function hasExchangeActionDeadlinePassed(slot: ExchangeSigningDeadlineSlot): boolean {
+	return !!slot.current && hasPassedDeadline(slot.current);
+}
+
 export function assertExchangeSigningDeadline(slot: ExchangeSigningDeadlineSlot): void {
-	if (slot.current && hasPassedDeadline(slot.current)) throw new ExchangeActionDeadlineError();
+	if (hasExchangeActionDeadlinePassed(slot)) throw new ExchangeActionDeadlineError();
 }
 
 /** The SDK wraps a wallet error in `AbstractWalletError`; a deadline error is surfaced as itself. */

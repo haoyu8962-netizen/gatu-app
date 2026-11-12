@@ -430,6 +430,12 @@ only network, timeout, 408, 429, and 5xx failures receive bounded retries.
   initial Agent query may block the action, but background revalidation must
   not repeatedly disable the explicit Enable Trading entry; registration
   still refetches the definitive status before requesting a signature.
+- A confirm button that shows `Enable` authorizes first and then runs its
+  action (`useTradingGuard.runExplicitAction`), but only while the approval
+  finished within 15 seconds of the click. A later approval leaves the action
+  to a new click, without an error; the builder-fee and Agent approval flows
+  also refuse to request their signature after that limit
+  ([ADR 0051](adr/0051-exchange-action-start-deadline.md)).
 - Trading-page load, refresh, and route remount must not automatically present
   the connection dialog. An explicit Enable Trading request owns the modal
   session. Once requested, the dialog remains mounted while Agent verification

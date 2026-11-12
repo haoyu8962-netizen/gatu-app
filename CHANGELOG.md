@@ -81,6 +81,9 @@ changes, not evidence that a build has been deployed or accepted on real devices
 - Enabling trading no longer asks for the builder-fee or Agent approval signature more than 15 seconds
   after you clicked, for example after the connection dropped and came back; the request fails and
   you can click again.
+- When a confirm button showing Enable finishes enabling trading more than 15 seconds after your
+  click, the order, swap, TP/SL, margin or leverage change is no longer sent automatically: trading
+  is enabled and the button is ready, so you review the current values and confirm again.
 - The mobile order summary follows the official terminal:
   - empty values read `N/A` in the value colour;
   - order value and margin required are written in the market's collateral, for example `84.20 USDC`;

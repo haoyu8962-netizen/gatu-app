@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 
 import { useTradingGuard } from "@sairn/hl-react/hooks/useTradingGuard";
+import { onlineManager, QueryClient } from "@tanstack/react-query";
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -13,6 +14,7 @@ const state = vi.hoisted(() => ({
 	sessionMode: "wallet" as "wallet" | "agent-only",
 	builderFeeMissing: false,
 	authorize: vi.fn(),
+	onAssertCurrent: undefined as undefined | (() => void),
 }));
 
 vi.mock("@sairn/hl-react/provider", () => ({
@@ -27,6 +29,9 @@ vi.mock("../../../../../packages/hl-react/src/signing/use-trading-status", () =>
 		isSignerLoading: false,
 		isBuilderFeeLoading: false,
 	}),
+}));
+vi.mock("../../../../../packages/hl-react/src/signing/owner-signer-provider", () => ({
+	useHyperliquidOwnerSigner: () => (state.onAssertCurrent ? { assertCurrent: state.onAssertCurrent } : null),
 }));
 vi.mock("@sairn/hl-react/signing/use-trading-authorization", () => ({
 	useTradingAuthorization: () => ({ authorize: state.authorize, status: "idle", error: null }),
@@ -66,12 +71,15 @@ describe("explicit trading actions stay bound to the initiating session", () => 
 		state.ready = false;
 		state.sessionMode = "wallet";
 		state.builderFeeMissing = false;
+		state.onAssertCurrent = undefined;
 		pending = deferred();
 		state.authorize.mockReset().mockReturnValue(pending.promise);
 		render();
 	});
 	afterEach(() => {
 		if (mounted) act(() => root.unmount());
+		onlineManager.setOnline(true);
+		vi.useRealTimers();
 	});
 
 	it("never asks an Agent-only session to sign the approvals it is missing", () => {
@@ -210,5 +218,95 @@ describe("explicit trading actions stay bound to the initiating session", () => 
 		render();
 		expect(state.authorize).toHaveBeenCalledOnce();
 		expect(guard.isReady).toBe(true);
+	});
+
+	describe("when the approval finishes long after the click", () => {
+		const resolveAfter = (ms: number) => () => new Promise<string>((resolve) => setTimeout(() => resolve(OWNER), ms));
+
+		beforeEach(() => {
+			vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "setInterval", "clearInterval", "Date"] });
+		});
+
+		it("still runs the action when the approval finishes within 15 seconds", async () => {
+			state.authorize.mockImplementation(resolveAfter(14_000));
+			const action = vi.fn();
+			act(() => guard.guardAction(action));
+			await act(async () => {
+				await vi.advanceTimersByTimeAsync(14_000);
+			});
+			expect(action).toHaveBeenCalledOnce();
+		});
+
+		it("hands the action back to a new click when the approval took longer", async () => {
+			state.authorize.mockImplementation(resolveAfter(16_000));
+			const action = vi.fn();
+			act(() => guard.guardAction(action));
+			await act(async () => {
+				await vi.advanceTimersByTimeAsync(16_000);
+			});
+			expect(action).not.toHaveBeenCalled();
+			expect(guard.error).toBeNull();
+
+			state.ready = true;
+			render();
+			act(() => guard.guardAction(action));
+			await act(async () => {
+				await vi.advanceTimersByTimeAsync(0);
+			});
+			expect(action).toHaveBeenCalledOnce();
+		});
+
+		it("does not run the action when an approval paused offline needs no signature after 120 seconds", async () => {
+			const queryClient = new QueryClient();
+			queryClient.mount();
+			let approved = false;
+			state.authorize.mockImplementation(async () => {
+				const owner = await queryClient.fetchQuery({
+					queryKey: ["trading-status"],
+					queryFn: async () => OWNER,
+					networkMode: "online",
+					staleTime: 0,
+				});
+				approved = true;
+				return owner;
+			});
+			onlineManager.setOnline(false);
+			const action = vi.fn();
+			act(() => guard.guardAction(action));
+			await act(async () => {
+				await vi.advanceTimersByTimeAsync(120_000);
+			});
+			expect(approved).toBe(false);
+			await act(async () => {
+				onlineManager.setOnline(true);
+				await vi.advanceTimersByTimeAsync(0);
+			});
+			expect(state.authorize).toHaveBeenCalledOnce();
+			expect(approved).toBe(true);
+			expect(action).not.toHaveBeenCalled();
+			expect(guard.error).toBeNull();
+
+			state.authorize.mockImplementation(resolveAfter(1_000));
+			act(() => guard.guardAction(action));
+			await act(async () => {
+				await vi.advanceTimersByTimeAsync(1_000);
+			});
+			expect(action).toHaveBeenCalledOnce();
+			queryClient.unmount();
+			queryClient.clear();
+		});
+
+		it("never applies the limit to an action that needs no approval", async () => {
+			state.ready = true;
+			state.onAssertCurrent = () => vi.setSystemTime(Date.now() + 20_000);
+			render();
+			const action = vi.fn();
+			act(() => guard.guardAction(action));
+			await act(async () => {
+				await vi.advanceTimersByTimeAsync(0);
+			});
+			expect(state.authorize).not.toHaveBeenCalled();
+			expect(action).toHaveBeenCalledOnce();
+		});
 	});
 });
