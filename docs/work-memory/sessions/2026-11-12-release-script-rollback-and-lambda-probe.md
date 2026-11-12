@@ -7,10 +7,10 @@
   "kind": "task",
   "status": "recorded",
   "topics": ["static-hosting"],
-  "summary": "修复 2026-11-12 全局审查的 P1-2、P2-7、P2-8：sync 只让内容哈希文件走 aws s3 sync，其余一律 aws s3 cp，build-meta.json 在壳之前、_shell.html 最后上传，结尾按内容核对两者，失败时说明线上状态；lambda 只打印白名单字段，打包前拒绝带相对导入的入口，更新后经站点探活 /api/health 与 /api/geo；新增 check-lambda 与 --functions-dir、--skip-probe；Production Builds 构建并检查 Lambda 包。只跑了不触网的测试：test:cloudfront 53/53、ci-workflows 20/20，18 个变异全部被抓到。没有用 --execute 运行、没有回滚演练；是否轮换 IPdata 密钥待运营方决定。",
+  "summary": "修复 2026-11-12 全局审查的 P1-2、P2-7、P2-8：sync 只让内容哈希文件走 aws s3 sync，其余一律 aws s3 cp，build-meta.json 在壳之前、_shell.html 最后上传，结尾按内容核对两者，失败时说明线上状态；lambda 只打印白名单字段，打包前拒绝带相对导入的入口，更新后经站点探活 /api/health 与 /api/geo；新增 check-lambda 与 --functions-dir、--skip-probe；Production Builds 构建并检查 Lambda 包。只跑了不触网的测试：test:cloudfront 53/53、ci-workflows 20/20，18 个变异全部被抓到。第二轮按 Codex 审查（8.0，四项 P2、四个漏网变异）修复：相对导入检查放宽并加输出目录结构检查、拒绝含过滤通配符的文件名、每次探活请求 10 秒截止、失败说明只陈述本次运行的事实、sync 主体抽成 releaseStatic、捕获输出抽成 captureCommand、CI 契约禁止 continue-on-error、immutable 改称按路径分类；test:cloudfront 60/60、ci-workflows 20/20，第二轮记录的 26 个变异全部被抓到。两轮都没有用 --execute 运行、没有回滚演练；是否轮换 IPdata 密钥待运营方决定。",
   "thread": null,
   "baseCommit": "810a45db",
-  "commits": [],
+  "commits": ["436f6f89"],
   "sources": [
     { "path": "deploy/cloudfront/deploy.mjs" },
     { "path": "deploy/cloudfront/deploy.test.mjs" },
@@ -64,6 +64,27 @@
 - 演练输出（不带 `--execute`）：`lambda` 打印带 `--query` 的更新命令和探活计划；`sync` 对一个临时产物目录打印的命令顺序与上面一致。
 - `pnpm exec biome check` 对三个改动的 `.mjs` 文件报「No files were processed」：这几个文件在 Biome 配置里被忽略，没有格式检查。
 - 没有运行全量终端 Vitest 与 `pnpm build`（任务要求）；没有用 `--execute` 运行任何命令，没有做回滚演练。`aws s3 cp --recursive` 的 include 过滤、`--query` 的 JMESPath 写法、`aws s3 cp … -` 取回对象，都按 AWS CLI 文档与现有用法推断，没有对真实桶验证。函数 URL 指向未限定版本（`$LATEST`）是从部署手册的建立步骤推断的，未在控制台核对。
+
+### 第二轮：Codex 审查 8.0 之后（同日，提交 `436f6f89` 之后的下一个提交）
+
+主会话转来 Codex 对 `436f6f89` 的审查：评分 8.0，无 P0/P1，四项 P2，另有四个测试抓不到的变异；主会话逐条核对后判定都成立，并另外用 p41 的真实产物（1,647 个文件）空跑新计划，确认无遗漏、无重复、没有含通配字符的键、壳在最后。本轮处理：
+
+| 项 | 问题 | 处理 |
+| --- | --- | --- |
+| P2 相对导入检查 | `\bimport\s+` 要求空白，`import"./x.mjs"`、`import/*c*/"./x.mjs"` 会放行 | 关键字与说明符之间允许零个或多个空白和块注释，注释写明有意宁可误报；新增不依赖语法的结构检查：`dist-lambda` 里（递归）除入口外不得有 `.mjs`/`.js`/`.cjs`，`check-lambda` 与 `lambda` 都执行 |
+| P2 文件键当过滤模式 | `* ? [ ]` 在 AWS CLI 过滤器里是通配符 | `buildSyncPlan` 生成命令之前拒绝这类文件名并列出；假桶注释改为说明「过滤器即精确键」由这条拒绝规则保证 |
+| P2 探活无截止时间 | 服务端不应答或响应体不结束时探活永远挂着 | 每次请求连同读取响应体共用一个截止时间（默认 10 秒，`AbortController` 加定时器竞争，finally 清掉定时器），`verify` 同样受益；探活上限约 66 秒 |
+| P2 失败说明把未知说成确定 | 断言「壳仍是上一版」「标记已是本次构建」「壳部分写入」 | 只陈述本次运行的事实：已返回成功的阶段、失败命令的对象状态未知（S3 单键原子写入）、后面的阶段本次没写、运行前桶里是什么不知道；建议原样重跑再 `verify` |
+| 漏网变异 a、b | 删 CLI `sync` 里的 source map 检查或标记核对，测试仍通过 | `sync` 主体抽成可注入的 `releaseStatic`，测试钉住「先拒 `.map`、再上传、最后核对标记」 |
+| 漏网变异 c | `captureAws` 的标准输出改成继承，测试仍通过 | 抽出 `captureCommand`，测试用子进程调用它运行打印标记串的命令，断言子进程自己的输出里没有标记串 |
+| 漏网变异 d | 工作流新步骤加 `continue-on-error: true`，测试仍通过 | `ci-workflows.test.mjs` 禁止 `production-build.yml` 出现 `continue-on-error` |
+| 措辞 | 「只有带内容哈希的文件用 sync」比实际强 | 注释、README、ADR、手册改为「按路径分类」，并写明前提：构建不在 `assets/` 下用用过的名字产出不同内容 |
+
+结果（2026-11-12，本机，不触网）：`pnpm test:cloudfront` `ℹ tests 60`、`ℹ pass 60`、`ℹ fail 0`；`node --test scripts/ci-workflows.test.mjs` `ℹ pass 20`、`ℹ fail 0`；`build:lambda` 后 `check-lambda` 通过。`pnpm exec biome check` 对这几个 `.mjs` 仍报被配置忽略。
+
+变异（逐个打上、跑测试、还原）：四个漏网变异（a 删 `assertNoSourceMaps`、b 删标记核对、c 捕获改继承、d 加 `continue-on-error`）全部被抓到；第 1–4 项各挑的变异（导入正则恢复要求空白、跳过目录检查、目录检查忽略子目录、跳过通配符拒绝、放行方括号、截止只中止不拒绝、截止只覆盖 fetch 不覆盖响应体、`verify` 不传截止时间、不传 signal、定时器不清、失败说明写回「仍是上一版」、失败阶段算作成功、不提同阶段部分成功）全部被抓到；第一轮的五个变异在新代码上重跑也全部被抓到。过程中有三处第一次没抓到：「定时器竞争里多塞一个永不结束的 Promise」是等价变异（定时器照样胜出），换成「截止只中止不拒绝」后抓到；「失败阶段算作成功」原测试只在阶段第一条命令失败，补了阶段中途失败的用例后抓到；「定时器不清」只会让进程多等，补了「成功的请求不留下定时器」的断言后抓到。
+
+仍未做：没有以 `--execute` 运行，没有回滚演练；AWS CLI 对拒绝之外的过滤行为、真实网络下截止时间的表现都没有在真实环境里验证。
 
 ## 后续与替代关系
 

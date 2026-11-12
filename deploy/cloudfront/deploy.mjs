@@ -87,21 +87,36 @@ export const SHELL_KEY = "_shell.html";
 export const BUILD_META_KEY = "build-meta.json";
 
 /**
- * The stages of an upload, in order. Only content-hashed files may use `aws s3 sync`: it skips a
- * file whose size matches and whose local copy is older than the object, which is exactly a
- * rollback from a retained release worktree. Everything else is written with `aws s3 cp`, which
- * always uploads. The build metadata goes before the shell, and the shell is the last command, so
- * an interrupted upload can leave the metadata ahead of the shell but never a new shell behind old
- * metadata.
+ * The stages of an upload, in order. The classification is by path, through `objectCacheControl`:
+ * every file under `assets/`, the TradingView bundles whose names carry a 20-hex hash and the chart
+ * entry copy with a 16-hex hash are `immutable` and go through `aws s3 sync`, which skips a key that
+ * is already in the bucket with the same size and a newer timestamp. Nothing checks that a name
+ * really contains a hash of the content; this relies on the build never emitting different content
+ * under a name it has used before in those paths (Vite names every `assets/` file by its content
+ * hash). Everything else is written with `aws s3 cp`, which always uploads, so a rollback from an
+ * older worktree writes it back. The build metadata goes before the shell and the shell is the last
+ * command, so a run never writes the shell before the metadata.
  */
 export const SYNC_STAGES = Object.freeze({
-	immutable: "content-hashed files (sync: skipped when already in the bucket)",
-	mutable: "files without a content hash (always uploaded)",
+	immutable: "files classified immutable by path (sync: skipped when already in the bucket)",
+	mutable: "other files that are not HTML (always uploaded)",
 	pages: "HTML pages other than the shell (always uploaded)",
 	buildMeta: BUILD_META_KEY,
 	retiredPages: "retired legal page copies of this shell",
 	shell: SHELL_KEY,
 });
+
+/** Characters the AWS CLI reads as wildcards in `--include` / `--exclude` filters. */
+const FILTER_WILDCARDS = /[*?[\]]/;
+
+export function assertFilterSafeKeys(files) {
+	const unsafe = files.filter((file) => FILTER_WILDCARDS.test(file));
+	if (unsafe.length > 0) {
+		throw new Error(
+			`${unsafe.length} file name(s) contain a character the AWS CLI reads as a filter wildcard (* ? [ ]): ${unsafe.join(", ")}. A filter for them could skip the file or match others, so nothing was uploaded; rename them in the build`,
+		);
+	}
+}
 
 function filteredCommand(verb, { publicDir, bucket, keys, cacheControl }) {
 	return [
@@ -124,12 +139,14 @@ function singleFileCommand({ publicDir, bucket, key }) {
 }
 
 /**
- * The ordered upload as `{ stage, command }` steps. Include/exclude patterns are exact file keys, so
- * no command touches objects from another release and none deletes anything: viewers holding an
- * older shell keep working until their next navigation.
+ * The ordered upload as `{ stage, command }` steps. Each `--include` is a file key, and keys that
+ * contain a filter wildcard are refused before any command is built, so every filter matches exactly
+ * its own file. No command touches objects from another release and none deletes anything: viewers
+ * holding an older shell keep working until their next navigation.
  */
 export function buildSyncPlan({ publicDir, bucket, files }) {
 	const { early, late } = planUpload(files);
+	assertFilterSafeKeys([...early, ...late].map((item) => item.file));
 	const steps = [];
 	for (const [cacheControl, keys] of groupByCacheControl(early)) {
 		const stage = cacheControl === IMMUTABLE_CACHE_CONTROL ? "immutable" : "mutable";
@@ -150,22 +167,34 @@ export function buildSyncCommands(options) {
 	return buildSyncPlan(options).map((step) => step.command);
 }
 
-/** What the bucket holds when the step at `failedIndex` did not finish, for the operator who has to decide what to do next. */
-export function describeSyncFailure({ plan, failedIndex, bucket }) {
-	const stage = plan[failedIndex].stage;
-	const done = [...new Set(plan.slice(0, failedIndex).map((step) => SYNC_STAGES[step.stage]))];
-	const finished = done.length > 0 ? `Finished before it: ${done.join("; ")}.` : "No earlier stage finished.";
-	const rerun = "Run the same sync again; it uploads every file without a content hash again and skips the hashed ones already there.";
-	if (stage === "immutable" || stage === "mutable" || stage === "pages") {
-		return `The upload stopped at "${SYNC_STAGES[stage]}". ${finished} s3://${bucket} still serves the previous release's ${SHELL_KEY} and ${BUILD_META_KEY}, so viewers keep getting the previous release, but unhashed files that were already written (service worker, manifest, chart loader, theme styles, other pages) may be this build's. ${rerun}`;
-	}
-	if (stage === "buildMeta") {
-		return `The upload stopped while writing ${BUILD_META_KEY}. ${finished} ${BUILD_META_KEY} in s3://${bucket} may be either release; ${SHELL_KEY} is still the previous release's. ${rerun}`;
-	}
-	return `The upload stopped at "${SYNC_STAGES[stage]}". ${finished} ${BUILD_META_KEY} in s3://${bucket} already reports this build while ${SHELL_KEY} is still the previous release's${stage === "shell" ? " (or partly written)" : ""}; navigations keep getting the previous shell and verify fails on shell parity. ${rerun}`;
+function stageNames(steps) {
+	return [...new Set(steps.map((step) => `"${SYNC_STAGES[step.stage]}"`))];
 }
 
-/** Runs the plan in order and stops at the first failure with a description of what is live. */
+/**
+ * What this run knows after the command at `failedIndex` failed, and nothing more. S3 writes each
+ * key atomically, so an object the failed command touched holds either its earlier content or this
+ * build's, never part of one, and a command can report a failure after its write succeeded (a lost
+ * answer). The run cannot know what the bucket held before it started: an earlier interrupted run
+ * may already have written some of these files, the build metadata included.
+ */
+export function describeSyncFailure({ plan, failedIndex, bucket }) {
+	const failed = plan[failedIndex];
+	const remainingStages = new Set(plan.slice(failedIndex).map((step) => step.stage));
+	const completedStages = stageNames(plan.slice(0, failedIndex).filter((step) => !remainingStages.has(step.stage)));
+	const partlyDone = plan.slice(0, failedIndex).some((step) => step.stage === failed.stage);
+	const laterStages = stageNames(plan.slice(failedIndex + 1).filter((step) => step.stage !== failed.stage));
+	return [
+		`The upload to s3://${bucket} stopped at command ${failedIndex + 1} of ${plan.length}, stage "${SYNC_STAGES[failed.stage]}".`,
+		completedStages.length > 0 ? `Stages that returned success in this run: ${completedStages.join(", ")}.` : "No stage returned success in this run.",
+		`${partlyDone ? "Earlier commands of the same stage returned success. " : ""}The objects of the failed command are in an unknown state: each holds either its earlier content or this build's, never part of one.`,
+		laterStages.length > 0 ? `This run did not write the later stages: ${laterStages.join(", ")}.` : "No stage comes after it.",
+		"This command does not know what the bucket held before this run: an earlier interrupted run may already have written some of these files.",
+		"Run the same sync again unchanged, then verify.",
+	].join(" ");
+}
+
+/** Runs the plan in order and stops at the first failure with a description of what this run wrote. */
 export function runSyncPlan({ plan, bucket, run }) {
 	for (const [index, step] of plan.entries()) {
 		try {
@@ -348,10 +377,40 @@ export function summarizeLambdaUpdate(output) {
 	return `Lambda updated: ${fields.join(" ")}`;
 }
 
-/** Relative module specifiers in a bundled entry; the release zips the entry file alone, so any of them would be missing at run time. */
+/** Whitespace or block comments, any number, as minified or hand-written code may put between a keyword and its specifier. */
+const GAP = String.raw`(?:\s|/\*[\s\S]*?\*/)*`;
+const RELATIVE_IMPORT = new RegExp(String.raw`(?:\bfrom|\bimport${GAP}\(?)${GAP}(["'\`])(\.{1,2}/[^"'\`]*)\1`, "g");
+
+/**
+ * Relative module specifiers in a bundled entry; the release zips the entry file alone, so any of
+ * them would be missing at run time. This is a text scan, not a parser, and it errs on the side of
+ * refusing: a string such as `"from './x'"` inside the bundle also matches, which stops the upload
+ * with a clear message rather than letting a split chunk through. The directory check
+ * (`findExtraLambdaModules`) does not depend on syntax at all.
+ */
 export function findRelativeImports(code) {
-	const pattern = /(?:\bfrom\s*|\bimport\s*\(\s*|\bimport\s+)(["'`])(\.{1,2}\/[^"'`]*)\1/g;
-	return [...new Set([...code.matchAll(pattern)].map((match) => match[2]))];
+	return [...new Set([...code.matchAll(RELATIVE_IMPORT)].map((match) => match[2]))];
+}
+
+const MODULE_FILE = /\.(?:mjs|cjs|js)$/;
+
+/**
+ * Module files in the Lambda output directory other than the entries. `vite.lambda.config.ts`
+ * empties `dist-lambda`, emits the two entries at its top level and names any shared chunk
+ * `shared-[name].mjs`; the release adds only `.zip` files. Any other `.mjs`, `.js` or `.cjs`
+ * file, at any depth, means the build split code out of an entry.
+ */
+export function findExtraLambdaModules(files, entries = LAMBDA_ENTRIES) {
+	return files.filter((file) => MODULE_FILE.test(file) && !entries.includes(file));
+}
+
+export function assertNoExtraLambdaModules(files, entries = LAMBDA_ENTRIES) {
+	const extra = findExtraLambdaModules(files, entries);
+	if (extra.length > 0) {
+		throw new Error(
+			`The Lambda output holds ${extra.join(", ")} next to ${entries.join(", ")}; the build split a chunk out of an entry and the zip would carry the entry alone. Rebuild without shared chunks before uploading`,
+		);
+	}
 }
 
 export function assertSelfContainedLambdaEntry(code, entry) {
@@ -371,12 +430,19 @@ export const LAMBDA_ENTRIES = Object.freeze(["index.mjs", "csp-report.mjs"]);
  * one function and it serves `$LATEST`, so a broken package fails every geo check at once; the probe
  * retries a few times only to ride out a single transient error.
  */
-export async function probeApiAfterLambdaUpdate({ origin, fetchImpl = fetch, attempts = 3, delayMs = 3_000, sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms)) }) {
+export async function probeApiAfterLambdaUpdate({
+	origin,
+	fetchImpl = fetch,
+	attempts = 3,
+	delayMs = 3_000,
+	requestTimeoutMs = API_REQUEST_TIMEOUT_MS,
+	sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+}) {
 	const base = origin.replace(/\/+$/, "");
 	let results = [];
 	for (let attempt = 1; attempt <= attempts; attempt += 1) {
 		results = [];
-		for (const [name, run] of API_CHECKS) results.push(await settleCheck(name, () => run(base, fetchImpl)));
+		for (const [name, run] of API_CHECKS) results.push(await settleCheck(name, () => run(base, fetchImpl, requestTimeoutMs)));
 		if (results.every((result) => result.ok)) return { attempt, results };
 		if (attempt < attempts) await sleep(delayMs);
 	}
@@ -390,8 +456,9 @@ export async function probeApiAfterLambdaUpdate({ origin, fetchImpl = fetch, att
  * Checks the bundle, zips it, updates the function, waits for the update and probes the origin, in
  * that order. Every side effect is injected so the order and the printed output can be tested.
  */
-export async function releaseLambda({ functionName, bundle, zipPath, origin, skipProbe = false, execute, readBundle, zip, run, capture, probe, log = console.log }) {
+export async function releaseLambda({ functionName, bundle, zipPath, origin, skipProbe = false, execute, readBundle, listBundleDir, zip, run, capture, probe, log = console.log }) {
 	const entry = bundle.split(/[\\/]/).at(-1);
+	assertNoExtraLambdaModules(listBundleDir(), [...new Set([...LAMBDA_ENTRIES, entry])]);
 	assertSelfContainedLambdaEntry(readBundle(bundle), entry);
 	if (execute && !origin && !skipProbe) {
 		throw new Error("lambda --execute needs --origin to probe /api/health and /api/geo after the update (or --skip-probe for a function that does not serve them)");
@@ -442,17 +509,49 @@ async function settleCheck(name, run) {
 	}
 }
 
-async function checkGeoVerdict(base, fetchImpl) {
-	const response = await fetchImpl(`${base}/api/geo`, { headers: { accept: "application/json" } });
-	const text = await response.text();
-	expectThat(response.status === 200, `status ${response.status}: ${text.slice(0, 120)}`);
-	const verdict = JSON.parse(text);
+/**
+ * One deadline for a request and the reading of its body. Every API check asks this many
+ * milliseconds at most per request, so the post-update probe ends within
+ * `attempts × (checks × timeout) + (attempts − 1) × delay` (3 × 2 × 10 s + 2 × 3 s by default).
+ */
+export const API_REQUEST_TIMEOUT_MS = 10_000;
+
+/**
+ * Fetches `url` and reads its body as text before `timeoutMs` passes. The signal aborts a fetch that
+ * honours it; the timer settles the race even when the fetch implementation or the body ignores it.
+ */
+async function fetchTextWithin(fetchImpl, url, init, timeoutMs) {
+	const controller = new AbortController();
+	let timer;
+	const deadline = new Promise((_, reject) => {
+		timer = setTimeout(() => {
+			controller.abort();
+			reject(new Error(`no answer from ${new URL(url).pathname} within ${timeoutMs} ms`));
+		}, timeoutMs);
+	});
+	try {
+		return await Promise.race([
+			(async () => {
+				const response = await fetchImpl(url, { ...init, signal: controller.signal });
+				return { status: response.status, headers: response.headers, text: await response.text() };
+			})(),
+			deadline,
+		]);
+	} finally {
+		clearTimeout(timer);
+	}
+}
+
+async function checkGeoVerdict(base, fetchImpl, timeoutMs = API_REQUEST_TIMEOUT_MS) {
+	const response = await fetchTextWithin(fetchImpl, `${base}/api/geo`, { headers: { accept: "application/json" } }, timeoutMs);
+	expectThat(response.status === 200, `status ${response.status}: ${response.text.slice(0, 120)}`);
+	const verdict = JSON.parse(response.text);
 	expectThat(typeof verdict.country === "string" && verdict.country.length === 2, "verdict has no country");
 	return `country ${verdict.country}`;
 }
 
-async function checkHealthProbe(base, fetchImpl) {
-	const response = await fetchImpl(`${base}/api/health`);
+async function checkHealthProbe(base, fetchImpl, timeoutMs = API_REQUEST_TIMEOUT_MS) {
+	const response = await fetchTextWithin(fetchImpl, `${base}/api/health`, {}, timeoutMs);
 	expectThat(response.status === 204, `status ${response.status}`);
 	expectThat(response.headers.get("cache-control") === NO_STORE, `cache-control ${response.headers.get("cache-control")}`);
 }
@@ -468,7 +567,7 @@ const API_CHECKS = [
  * shell parity with the local build, security and preconnect headers, the live geo
  * endpoint, referral deep-link headers, and 404s for missing files.
  */
-export async function verifyDeployment({ origin, publicDir, network, fetchImpl = fetch, scriptHashesMode = "report-only", imageSourcesMode = "report-only" }) {
+export async function verifyDeployment({ origin, publicDir, network, fetchImpl = fetch, scriptHashesMode = "report-only", imageSourcesMode = "report-only", requestTimeoutMs = API_REQUEST_TIMEOUT_MS }) {
 	const base = origin.replace(/\/+$/, "");
 	const expectedApiOrigin = network === "testnet" ? "https://api.hyperliquid-testnet.xyz" : "https://api.hyperliquid.xyz";
 	const shell = readFileSync(join(publicDir, "_shell.html"));
@@ -515,7 +614,7 @@ export async function verifyDeployment({ origin, publicDir, network, fetchImpl =
 		expect(remoteGates === localGates, `remote release gates (${remoteGates}) differ from the local build (${localGates})`);
 		return `${remote.commit.slice(0, 8)} / ${remote.release} / ${remoteGates}`;
 	});
-	await check("geo endpoint answers with a real verdict", () => checkGeoVerdict(base, fetchImpl));
+	await check("geo endpoint answers with a real verdict", () => checkGeoVerdict(base, fetchImpl, requestTimeoutMs));
 	await check("signed lambda post with a payload hash", async () => {
 		const body = JSON.stringify({ override: null });
 		const response = await fetchImpl(`${base}/api/referral-geo`, {
@@ -611,7 +710,7 @@ export async function verifyDeployment({ origin, publicDir, network, fetchImpl =
 		expect(sources.includes("'self'") && !sources.includes("https:"), `${headerName} img-src still allows any https origin: ${imgSrc}`);
 		return `${sources.length} sources, ${imageSourcesMode}`;
 	});
-	await check("health probe answers 204", () => checkHealthProbe(base, fetchImpl));
+	await check("health probe answers 204", () => checkHealthProbe(base, fetchImpl, requestTimeoutMs));
 	await check("shell repeats from the edge", async () => {
 		await fetchImpl(`${base}/trade/HYPE`, { headers: { accept: "text/html" } });
 		const response = await fetchImpl(`${base}/trade/HYPE`, { headers: { accept: "text/html" } });
@@ -745,12 +844,17 @@ function runAws(args, execute) {
 	execFileSync("aws", full, { stdio: ["ignore", "inherit", "inherit"] });
 }
 
+/** Runs a program and returns its standard output instead of letting it reach this process's output. */
+export function captureCommand(file, args) {
+	return execFileSync(file, args, { encoding: "utf8", stdio: ["ignore", "pipe", "inherit"], maxBuffer: 16 * 1024 * 1024 });
+}
+
 /** Runs a command whose answer is printed only through a caller's summary; nothing it returns reaches the log as is. */
 function captureAws(args, execute) {
 	const full = awsArgs(args);
 	console.log(`aws ${full.map((arg) => (/[\s*{}]/.test(arg) ? JSON.stringify(arg) : arg)).join(" ")}`);
 	if (!execute) return "";
-	return execFileSync("aws", full, { encoding: "utf8", stdio: ["ignore", "pipe", "inherit"] });
+	return captureCommand("aws", full);
 }
 
 function readS3Object(bucket, key) {
@@ -873,6 +977,39 @@ export function assertReleaseMarkersUploaded({ bucket, publicDir, readObject }) 
 	}
 }
 
+/**
+ * The `sync` command: checks the gates and the build, uploads in plan order and, when executing,
+ * compares the release markers last. Side effects are injected so the order can be tested.
+ */
+export function releaseStatic({
+	publicDir,
+	bucket,
+	execute,
+	acknowledged = [],
+	listFiles = listPublicFiles,
+	assertLivePolicy,
+	run,
+	readObject,
+	log = console.log,
+	warn = console.warn,
+}) {
+	if (!existsSync(join(publicDir, SHELL_KEY))) throw new Error(`No ${SHELL_KEY} in ${publicDir}; run pnpm build first`);
+	const gates = evaluateReleaseGates({ buildMeta: JSON.parse(readFileSync(join(publicDir, BUILD_META_KEY), "utf8")), acknowledged });
+	log(`release gates: ${describeGateState(gates.state)}`);
+	if (gates.problems.length > 0) {
+		if (execute) throw new Error(gates.problems.join("\n"));
+		for (const problem of gates.problems) warn(`An executing sync would refuse this build: ${problem}`);
+	}
+	const files = listFiles(publicDir);
+	assertNoSourceMaps(files);
+	if (execute) assertLivePolicy(publicDir);
+	const plan = buildSyncPlan({ publicDir, bucket, files });
+	runSyncPlan({ plan, bucket, run });
+	if (!execute) return;
+	assertReleaseMarkersUploaded({ bucket, publicDir, readObject });
+	log(`Release markers match the local build byte for byte: ${RELEASE_MARKER_FILES.join(", ")}`);
+}
+
 function requireOption(options, name) {
 	if (!options[name]) throw new Error(`--${name.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)} is required`);
 	return options[name];
@@ -888,26 +1025,15 @@ async function main() {
 	}
 	switch (options.command) {
 		case "sync": {
-			const bucket = requireOption(options, "bucket");
-			if (!existsSync(join(publicDir, "_shell.html"))) throw new Error(`No _shell.html in ${publicDir}; run pnpm build first`);
-			const gates = evaluateReleaseGates({
-				buildMeta: JSON.parse(readFileSync(join(publicDir, "build-meta.json"), "utf8")),
+			releaseStatic({
+				publicDir,
+				bucket: requireOption(options, "bucket"),
+				execute: options.execute,
 				acknowledged: options.acknowledged,
+				assertLivePolicy: assertLivePolicyAllowsBuild,
+				run: (command) => runAws(command, options.execute),
+				readObject: readS3Object,
 			});
-			console.log(`release gates: ${describeGateState(gates.state)}`);
-			if (gates.problems.length > 0) {
-				if (options.execute) throw new Error(gates.problems.join("\n"));
-				for (const problem of gates.problems) console.warn(`An executing sync would refuse this build: ${problem}`);
-			}
-			const files = listPublicFiles(publicDir);
-			assertNoSourceMaps(files);
-			if (options.execute) assertLivePolicyAllowsBuild(publicDir);
-			const plan = buildSyncPlan({ publicDir, bucket, files });
-			runSyncPlan({ plan, bucket, run: (command) => runAws(command, options.execute) });
-			if (options.execute) {
-				assertReleaseMarkersUploaded({ bucket, publicDir, readObject: readS3Object });
-				console.log(`Release markers match the local build byte for byte: ${RELEASE_MARKER_FILES.join(", ")}`);
-			}
 			break;
 		}
 		case "reupload": {
@@ -949,6 +1075,7 @@ async function main() {
 				skipProbe: options.skipProbe,
 				execute: options.execute,
 				readBundle: (path) => readFileSync(path, "utf8"),
+				listBundleDir: () => listPublicFiles(options.lambdaDir),
 				zip: (zipPath, path) => execFileSync("zip", ["-j", "-q", zipPath, path], { stdio: "inherit" }),
 				run: runAws,
 				capture: captureAws,
@@ -957,6 +1084,7 @@ async function main() {
 			break;
 		}
 		case "check-lambda": {
+			assertNoExtraLambdaModules(listPublicFiles(options.lambdaDir));
 			for (const entry of LAMBDA_ENTRIES) {
 				const bundle = resolve(options.lambdaDir, entry);
 				if (!existsSync(bundle)) throw new Error(`No Lambda bundle at ${bundle}; run pnpm --filter @sairn/terminal build:lambda`);

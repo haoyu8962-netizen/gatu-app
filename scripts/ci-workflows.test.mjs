@@ -776,4 +776,9 @@ test("builds the Lambda bundles on every production build and checks each entry 
 		false,
 		"every matrix entry checks the Lambda bundles",
 	);
+	assert.equal(
+		/^\s*continue-on-error:/m.test(builds),
+		false,
+		"a failed Lambda check, or any other production build step, must fail the job",
+	);
 });

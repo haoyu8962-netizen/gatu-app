@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, statSync, utimesSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -6,6 +7,8 @@ import test from "node:test";
 import { cspHash } from "../../scripts/collect-inline-script-hashes.mjs";
 import { parseScriptHashes } from "./function-code.mjs";
 import {
+	API_REQUEST_TIMEOUT_MS,
+	assertNoExtraLambdaModules,
 	assertReleaseIdentity,
 	assertNoSourceMaps,
 	assertReleaseMarkersUploaded,
@@ -19,6 +22,7 @@ import {
 	buildSyncPlan,
 	collectServedScriptHashes,
 	evaluateReleaseGates,
+	findExtraLambdaModules,
 	findRelativeImports,
 	HTML_CACHE_CONTROL,
 	IMMUTABLE_CACHE_CONTROL,
@@ -32,6 +36,7 @@ import {
 	releaseFunctionPath,
 	releaseLambda,
 	releaseGateState,
+	releaseStatic,
 	RETIRED_PAGE_KEYS,
 	resolveAwsProfile,
 	REVALIDATE_CACHE_CONTROL,
@@ -165,42 +170,176 @@ test("the release markers are compared by content, so a skipped upload of the sa
 	assert.throws(() => assertReleaseMarkersUploaded({ bucket: "b", publicDir, readObject: () => undefined }), /\(sha256 missing\)/);
 });
 
-test("an interrupted upload says what is live and never leaves a new shell behind old metadata", () => {
+/** Claims that only the state before the run could justify; a failure report must never make them. */
+const UNKNOWABLE_CLAIMS = /\bstill\b|previous release|already reports|serves|partly written/i;
+
+function failAt(plan, stage, { write } = {}) {
+	const ran = [];
+	const failedIndex = plan.findIndex((step) => step.stage === stage);
+	let message;
+	assert.throws(
+		() =>
+			runSyncPlan({
+				plan,
+				bucket: "b",
+				run: (command) => {
+					if (command === plan[failedIndex].command) {
+						write?.(command);
+						throw new Error("Failed to connect to proxy URL");
+					}
+					ran.push(command);
+					write?.(command);
+				},
+			}),
+		(error) => {
+			message = error.message;
+			return true;
+		},
+	);
+	return { ran, message };
+}
+
+test("an interrupted upload reports only what this run did and never writes the shell before the metadata", () => {
 	const files = ["_shell.html", "assets/a.js", "build-meta.json", "sw.js"];
 	const plan = buildSyncPlan({ publicDir: "/out", bucket: "b", files });
-	const failAt = (stage) => {
-		const ran = [];
-		const failedIndex = plan.findIndex((step) => step.stage === stage);
-		assert.throws(
-			() =>
-				runSyncPlan({
-					plan,
-					bucket: "b",
-					run: (command) => {
-						if (command === plan[failedIndex].command) throw new Error("Failed to connect to proxy URL");
-						ran.push(command);
-					},
-				}),
-			(error) => {
-				ran.error = error.message;
-				return true;
-			},
-		);
-		return ran;
-	};
-	const early = failAt("mutable");
-	assert.equal(early.length, 1);
-	assert.match(early.error, /still serves the previous release's _shell\.html and build-meta\.json/);
-	assert.match(early.error, /Cause: Failed to connect to proxy URL/);
-	assert.ok(!early.flat().includes("s3://b/_shell.html") && !early.flat().includes("s3://b/build-meta.json"));
-	assert.match(failAt("buildMeta").error, /build-meta\.json in s3:\/\/b may be either release; _shell\.html is still the previous release's/);
-	const late = failAt("shell");
-	assert.ok(late.flat().includes("s3://b/build-meta.json"));
-	assert.match(late.error, /build-meta\.json in s3:\/\/b already reports this build while _shell\.html is still the previous release's/);
-	assert.match(failAt("retiredPages").error, /already reports this build/);
+	const early = failAt(plan, "mutable");
+	assert.equal(early.ran.length, 1);
+	assert.match(early.message, /stopped at command 2 of 10, stage "other files that are not HTML \(always uploaded\)"/);
+	assert.match(early.message, /Stages that returned success in this run: "files classified immutable by path/);
+	assert.match(early.message, /each holds either its earlier content or this build's, never part of one/);
+	assert.match(early.message, /This run did not write the later stages: .*"build-meta\.json".*"_shell\.html"/);
+	assert.match(early.message, /does not know what the bucket held before this run/);
+	assert.match(early.message, /Run the same sync again unchanged, then verify\.\nCause: Failed to connect to proxy URL$/);
+	assert.ok(!early.ran.flat().includes("s3://b/_shell.html") && !early.ran.flat().includes("s3://b/build-meta.json"));
+	const meta = failAt(plan, "buildMeta");
+	assert.match(meta.message, /stage "build-meta\.json"/);
+	assert.match(meta.message, /This run did not write the later stages: "retired legal page copies of this shell", "_shell\.html"/);
+	const retired = failAt(plan, "retiredPages");
+	assert.match(retired.message, /Stages that returned success in this run: .*"build-meta\.json"/);
+	const shell = failAt(plan, "shell");
+	assert.ok(shell.ran.flat().includes("s3://b/build-meta.json"));
+	assert.match(shell.message, /stage "_shell\.html".*No stage comes after it\./);
+	const thirdRetired = plan.filter((step) => step.stage === "retiredPages")[2];
+	let midStage;
+	assert.throws(
+		() =>
+			runSyncPlan({
+				plan,
+				bucket: "b",
+				run: (command) => {
+					if (command === thirdRetired.command) throw new Error("Failed to connect to proxy URL");
+				},
+			}),
+		(error) => {
+			midStage = error.message;
+			return true;
+		},
+	);
+	assert.match(midStage, /Stages that returned success in this run: [^.]*"build-meta\.json"\./);
+	assert.doesNotMatch(midStage.match(/Stages that returned success in this run: [^.]*\./)[0], /retired legal page copies/, "a stage whose command failed never counts as a success");
+	assert.match(midStage, /Earlier commands of the same stage returned success\. The objects of the failed command are in an unknown state/);
+	for (const { message } of [early, meta, retired, shell, { message: midStage }]) assert.doesNotMatch(message, UNKNOWABLE_CLAIMS);
 	const ran = [];
 	runSyncPlan({ plan, bucket: "b", run: (command) => ran.push(command) });
 	assert.deepEqual(ran, plan.map((step) => step.command));
+});
+
+test("a failure report stays true when the failed command wrote its object and when an earlier run stopped later", () => {
+	const publicDir = createPublicDir();
+	writeFileSync(join(publicDir, "sw.js"), "self.version = 2;");
+	const files = listPublicFiles(publicDir);
+	const plan = buildSyncPlan({ publicDir, bucket: "b", files });
+	const fake = createFakeBucket({
+		"_shell.html": { body: Buffer.from("<html>older shell</html>"), mtimeMs: 0 },
+		"build-meta.json": { body: Buffer.from('{"commit":"older"}'), mtimeMs: 0 },
+	});
+
+	const lostAnswer = failAt(plan, "buildMeta", { write: fake.run });
+	assert.equal(fake.bucket.get("build-meta.json").body.toString("utf8"), JSON.stringify(BUILD_META), "the write happened although the command failed");
+	assert.match(lostAnswer.message, /objects of the failed command are in an unknown state/);
+	assert.doesNotMatch(lostAnswer.message, UNKNOWABLE_CLAIMS);
+
+	const second = failAt(plan, "mutable", { write: fake.run });
+	assert.equal(fake.bucket.get("build-meta.json").body.toString("utf8"), JSON.stringify(BUILD_META), "the first run left this build's metadata");
+	assert.equal(fake.bucket.get("_shell.html").body.toString("utf8"), "<html>older shell</html>");
+	assert.match(second.message, /This run did not write the later stages: .*"build-meta\.json"/);
+	assert.match(second.message, /an earlier interrupted run may already have written some of these files/);
+	assert.doesNotMatch(second.message, UNKNOWABLE_CLAIMS);
+});
+
+test("a file name with a filter wildcard is refused before any command is built", () => {
+	for (const name of ["assets/a*.js", "assets/a?.js", "assets/[a].js", "assets/a].js", "*.html"]) {
+		assert.throws(
+			() => buildSyncPlan({ publicDir: "/out", bucket: "b", files: ["_shell.html", "build-meta.json", "assets/ok.js", name] }),
+			(error) => error.message.includes(`(* ? [ ]): ${name}.`) && /nothing was uploaded/.test(error.message),
+			name,
+		);
+	}
+	assert.throws(() => buildSyncPlan({ publicDir: "/out", bucket: "b", files: ["_shell.html", "x*.css", "y?.png"] }), /2 file name\(s\).*x\*\.css, y\?\.png/);
+	assert.doesNotThrow(() => buildSyncPlan({ publicDir: "/out", bucket: "b", files: ["_shell.html", "assets/a.js.br", "assets/historicalOrders._address-Dw7jPxv9.js"] }));
+	assert.doesNotThrow(() => buildSyncPlan({ publicDir: "/out", bucket: "b", files: ["_shell.html", "assets/a*.js.br"] }), "a precompressed sibling is never uploaded");
+});
+
+function staticHarness({ publicDir = createPublicDir(), files, readObject } = {}) {
+	const events = [];
+	const fake = createFakeBucket();
+	return {
+		events,
+		fake,
+		options: {
+			publicDir,
+			bucket: "b",
+			listFiles: (dir) => files ?? listPublicFiles(dir),
+			assertLivePolicy: () => events.push("policy"),
+			run: (command) => {
+				events.push(`run ${command[1]}`);
+				fake.run(command);
+			},
+			readObject: (bucket, key) => {
+				events.push(`read ${key}`);
+				return (readObject ?? fake.readObject)(bucket, key);
+			},
+			log: () => {},
+			warn: () => {},
+		},
+	};
+}
+
+test("the sync command refuses source maps before uploading and compares the markers after the last upload", () => {
+	const executed = staticHarness();
+	releaseStatic({ ...executed.options, execute: true });
+	assert.equal(executed.events[0], "policy");
+	const reads = executed.events.map((event, index) => (event.startsWith("read ") ? index : -1)).filter((index) => index >= 0);
+	assert.deepEqual(reads.map((index) => executed.events[index]), ["read _shell.html", "read build-meta.json"]);
+	assert.ok(reads[0] > executed.events.findLastIndex((event) => event.startsWith("run ")), "the markers are read after every upload");
+
+	const maps = staticHarness();
+	assert.throws(
+		() => releaseStatic({ ...maps.options, listFiles: (dir) => [...listPublicFiles(dir), "assets/chunk-1.js.map"], execute: true }),
+		/source map/,
+	);
+	assert.deepEqual(maps.events, [], "nothing is checked or uploaded once a source map is found");
+
+	const stale = staticHarness({ readObject: (_, key) => (key === "_shell.html" ? Buffer.from("<html>older</html>") : Buffer.from(JSON.stringify(BUILD_META))) });
+	assert.throws(() => releaseStatic({ ...stale.options, execute: true }), /_shell\.html in s3:\/\/b .* differs from the local build/);
+
+	const dryRun = staticHarness();
+	releaseStatic({ ...dryRun.options, execute: false });
+	assert.ok(!dryRun.events.includes("policy") && !dryRun.events.some((event) => event.startsWith("read ")));
+});
+
+test("captured command output never reaches the release log", () => {
+	const marker = "IPDATA_API_KEY=marker-7f3a";
+	const script = [
+		`import { captureCommand } from ${JSON.stringify(new URL("./deploy.mjs", import.meta.url).href)};`,
+		`const out = captureCommand(process.execPath, ["-e", ${JSON.stringify(`console.log(${JSON.stringify(marker)})`)}]);`,
+		`process.stdout.write(out.includes(${JSON.stringify(marker)}) ? "captured" : "missing");`,
+	].join("\n");
+	const flags = process.execArgv.filter((flag) => flag.startsWith("--experimental-strip-types"));
+	const result = spawnSync(process.execPath, [...flags, "--input-type=module", "-e", script], { encoding: "utf8" });
+	assert.equal(result.status, 0, result.stderr);
+	assert.equal(result.stdout, "captured");
+	assert.ok(!result.stdout.includes(marker));
 });
 
 test("a build that carries source maps is refused", () => {
@@ -211,7 +350,9 @@ test("a build that carries source maps is refused", () => {
 /**
  * Models the two AWS CLI upload commands the release uses against an in-memory bucket. `s3 sync`
  * uploads a file only when the key is missing, the sizes differ or the local file is newer than the
- * object (the CLI's default comparison); `s3 cp` always uploads. Filters are exact keys here.
+ * object (the CLI's default comparison); `s3 cp` always uploads. Each `--include` is read as the
+ * exact key it names, which holds for real filters only because `buildSyncPlan` refuses keys that
+ * contain a wildcard character (`* ? [ ]`).
  */
 function createFakeBucket(objects = {}) {
 	const bucket = new Map(Object.entries(objects));
@@ -335,6 +476,66 @@ test("a lambda entry that imports a split-out chunk is refused before the zip", 
 	assert.deepEqual(LAMBDA_ENTRIES, ["index.mjs", "csp-report.mjs"]);
 });
 
+test("minified, commented and multi-line relative imports are all found", () => {
+	for (const [code, specifier] of [
+		['import"./x.mjs";', "./x.mjs"],
+		['import/*c*/"./x.mjs";', "./x.mjs"],
+		['export{a}from"./x.mjs";', "./x.mjs"],
+		['const m=import("./x.mjs");', "./x.mjs"],
+		['const m = import /* lazy */ ( "./x.mjs" );', "./x.mjs"],
+		["import {\n  a,\n  b,\n} from\n  '../x.mjs';", "../x.mjs"],
+		['import a/*x*/from/*y*/"./x.mjs";', "./x.mjs"],
+	]) {
+		assert.deepEqual(findRelativeImports(code), [specifier], code);
+	}
+	assert.deepEqual(findRelativeImports('import"node:crypto";export{a}from"node:module";'), []);
+});
+
+test("a Lambda output that holds a module file besides the entries is refused, at any depth", () => {
+	assert.deepEqual(findExtraLambdaModules(["index.mjs", "csp-report.mjs", "index.zip", "csp-report.zip"]), []);
+	assert.deepEqual(findExtraLambdaModules(["index.mjs", "csp-report.mjs", "shared-geo.mjs", "chunks/a.js", "lib/b.cjs", "notes.txt"]), [
+		"shared-geo.mjs",
+		"chunks/a.js",
+		"lib/b.cjs",
+	]);
+	assert.deepEqual(findExtraLambdaModules(["nested/index.mjs"]), ["nested/index.mjs"], "only the top-level entries are allowed");
+	assert.throws(() => assertNoExtraLambdaModules(["index.mjs", "csp-report.mjs", "shared-geo.mjs"]), /holds shared-geo\.mjs next to index\.mjs, csp-report\.mjs/);
+});
+
+test("every API request of the probe and of verify ends by its deadline, whatever the server does", { timeout: 10_000 }, async () => {
+	assert.equal(API_REQUEST_TIMEOUT_MS, 10_000);
+	const neverAnswers = () => new Promise(() => {});
+	const neverSendsBody = async () => ({ status: 200, headers: new Headers(), text: () => new Promise(() => {}) });
+	const signals = [];
+	const recordsSignal = (_, init) => {
+		signals.push(init.signal);
+		return new Promise(() => {});
+	};
+	for (const fetchImpl of [neverAnswers, neverSendsBody, recordsSignal]) {
+		const started = Date.now();
+		await assert.rejects(
+			probeApiAfterLambdaUpdate({ origin: "https://app.sairn.ai", fetchImpl, attempts: 2, delayMs: 1, requestTimeoutMs: 20, sleep: async () => {} }),
+			(error) => {
+				assert.match(error.message, /health probe answers 204: no answer from \/api\/health within 20 ms/);
+				assert.match(error.message, /geo endpoint answers with a real verdict: no answer from \/api\/geo within 20 ms/);
+				assert.match(error.message, /--lambda-dir <previous release worktree>\/apps\/terminal\/dist-lambda/);
+				return true;
+			},
+		);
+		assert.ok(Date.now() - started < 2_000, `the probe took ${Date.now() - started} ms`);
+	}
+	const timers = () => process.getActiveResourcesInfo().filter((resource) => resource === "Timeout").length;
+	const before = timers();
+	await probeApiAfterLambdaUpdate({ origin: "https://app.sairn.ai", fetchImpl: apiRoutes(), requestTimeoutMs: 60_000 });
+	assert.equal(timers(), before, "an answered request leaves no deadline timer running");
+	assert.equal(signals.length, 4);
+	assert.ok(signals.every((signal) => signal instanceof AbortSignal && signal.aborted), "each timed-out request is aborted");
+
+	const results = await verifyDeployment({ origin: "https://app.sairn.ai", publicDir: createPublicDir(), network: "mainnet", fetchImpl: (url, init) => (/\/api\/(geo|health)$/.test(new URL(url).pathname) ? neverAnswers() : fakeFetch({ "*": { status: 404, body: "missing" } })(url, init)), requestTimeoutMs: 20 });
+	assert.match(results.find((result) => result.name === "geo endpoint answers with a real verdict").detail, /no answer from \/api\/geo within 20 ms/);
+	assert.match(results.find((result) => result.name === "health probe answers 204").detail, /no answer from \/api\/health within 20 ms/);
+});
+
 function apiRoutes({ geo = { body: JSON.stringify({ country: "GB" }) }, health = { status: 204, body: null, headers: { "cache-control": NO_STORE } } } = {}) {
 	return fakeFetch({ "/api/geo": geo, "/api/health": health, "*": { status: 404, body: "missing" } });
 }
@@ -369,7 +570,7 @@ test("the API probe after a lambda update passes, retries a transient failure an
 	);
 });
 
-function lambdaHarness({ code = "export { handler };", probe } = {}) {
+function lambdaHarness({ code = "export { handler };", probe, bundleDir = ["index.mjs", "csp-report.mjs", "index.zip"] } = {}) {
 	const events = [];
 	return {
 		events,
@@ -378,6 +579,7 @@ function lambdaHarness({ code = "export { handler };", probe } = {}) {
 			bundle: "/release/apps/terminal/dist-lambda/index.mjs",
 			zipPath: "/release/apps/terminal/dist-lambda/index.zip",
 			readBundle: () => code,
+			listBundleDir: () => bundleDir,
 			zip: () => events.push("zip"),
 			run: (command, execute) => events.push(`${execute ? "run" : "print"} ${command.slice(0, 3).join(" ")}`),
 			capture: (command, execute) => {
@@ -410,6 +612,10 @@ test("a lambda release checks the bundle, updates, waits and then probes, printi
 	const split = lambdaHarness({ code: 'import { a } from "./shared-a.mjs";' });
 	await assert.rejects(releaseLambda({ ...split.options, origin: "https://app.sairn.ai", execute: true }), /shared chunk/);
 	assert.deepEqual(split.events, []);
+
+	const chunked = lambdaHarness({ bundleDir: ["index.mjs", "csp-report.mjs", "shared-geo.mjs"] });
+	await assert.rejects(releaseLambda({ ...chunked.options, origin: "https://app.sairn.ai", execute: true }), /holds shared-geo\.mjs/);
+	assert.deepEqual(chunked.events, []);
 
 	const broken = lambdaHarness({ probe: async () => Promise.reject(new Error("The API function does not answer")) });
 	await assert.rejects(releaseLambda({ ...broken.options, origin: "https://app.sairn.ai", execute: true }), /does not answer/);
