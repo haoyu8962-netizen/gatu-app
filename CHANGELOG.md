@@ -658,6 +658,28 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Fixed
 
+- Settings no longer overwrite each other across tabs: a tab that still held older settings used to write all of
+  them back when you changed anything in it, which could undo an order confirmation, slippage limit or
+  transaction-delay protection you had just tightened in another tab. Each tab now writes only what it changed and
+  follows the others; the visible table tab stays per window.
+- After your wallet signs a withdrawal, transfer, approval or the terms, the terminal checks that the signature was
+  made by the selected account before sending it. A signature from another account of the same wallet, or one that
+  cannot be checked (for example from a contract wallet), is not sent and is reported as a wallet mismatch.
+- The phone import page now shows the account the scanned key belongs to, before and after importing, and says
+  when importing replaces the trading session already on the phone.
+- The page footer shows Connecting or Offline while the market data connection is down instead of Connected, the
+  order book's mid price is treated as out of date during a disconnect, and balances no longer fall back to loading
+  for a moment right after signing in.
+- Startup no longer waits without limit for the language file: after three seconds the terminal opens in English
+  and switches when the file arrives. When the app's main script cannot be loaded at all, a reload screen appears
+  instead of a blank page.
+- A damaged local nonce record no longer blocks every action of that signer until site data is cleared, and a
+  trading key record written by a newer version is no longer deleted by an older tab because of fields it does not
+  know (this protects from this version on).
+- The region check (`/api/geo`) limits how many lookups one network can cause and how many each server instance
+  makes, and logs its failures, so address rotation can no longer use up the lookup quota unnoticed. Verdicts stay
+  per address.
+
 - Release tooling (ADR 0051): `deploy.mjs sync` uploads with `aws s3 cp` every file it does not
   classify as immutable by path (everything outside `assets/` and the hashed chart files), so a
   rollback from an older build of the same size now writes the shell and `build-meta.json` back

@@ -210,3 +210,7 @@
 - `claude/fix-sw-asset-cache` 最初的「新壳引用的资源先存好再换壳」经两轮对抗审查后被否决，改为写壳路径与 v10 相同、资源在写壳之后尽力对账（[ADR 0052](../../adr/0052-service-worker-startup-asset-cache.md)）。
 
 ADR 编号：三条分支原先都用了 0051，集成时发布脚本保留 0051，Service Worker 改为 0052，动作截止时间改为 0053；实时存活与撤单结果分别是 ADR 0050 与 ADR 0019 的补记。
+
+### 第二波的结果（2026-11-12 补记）
+
+P2-10、P2-13、P2-14、P2-15、P2-16、P1-3 的代码部分，以及 P3 里页脚连接状态、`bbo` 过期、`refreshKey`、Agent 记录 schema、nonce 自愈五条，已在分支 `claude/second-wave-fixes` 上修复，见[第二波记录](2026-11-12-second-wave-fixes.md)。仍未处理的项列在那份记录的「后续与替代关系」里。
