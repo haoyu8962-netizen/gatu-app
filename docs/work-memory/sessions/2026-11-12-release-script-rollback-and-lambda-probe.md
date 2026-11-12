@@ -7,10 +7,10 @@
   "kind": "task",
   "status": "recorded",
   "topics": ["static-hosting"],
-  "summary": "修复 2026-11-12 全局审查的 P1-2、P2-7、P2-8：sync 只让内容哈希文件走 aws s3 sync，其余一律 aws s3 cp，build-meta.json 在壳之前、_shell.html 最后上传，结尾按内容核对两者，失败时说明线上状态；lambda 只打印白名单字段，打包前拒绝带相对导入的入口，更新后经站点探活 /api/health 与 /api/geo；新增 check-lambda 与 --functions-dir、--skip-probe；Production Builds 构建并检查 Lambda 包。只跑了不触网的测试：test:cloudfront 53/53、ci-workflows 20/20，18 个变异全部被抓到。第二轮按 Codex 审查（8.0，四项 P2、四个漏网变异）修复：相对导入检查放宽并加输出目录结构检查、拒绝含过滤通配符的文件名、每次探活请求 10 秒截止、失败说明只陈述本次运行的事实、sync 主体抽成 releaseStatic、捕获输出抽成 captureCommand、CI 契约禁止 continue-on-error、immutable 改称按路径分类；test:cloudfront 60/60、ci-workflows 20/20，第二轮记录的 26 个变异全部被抓到。两轮都没有用 --execute 运行、没有回滚演练；是否轮换 IPdata 密钥待运营方决定。",
+  "summary": "修复 2026-11-12 全局审查的 P1-2、P2-7、P2-8：sync 只让内容哈希文件走 aws s3 sync，其余一律 aws s3 cp，build-meta.json 在壳之前、_shell.html 最后上传，结尾按内容核对两者，失败时说明线上状态；lambda 只打印白名单字段，打包前拒绝带相对导入的入口，更新后经站点探活 /api/health 与 /api/geo；新增 check-lambda 与 --functions-dir、--skip-probe；Production Builds 构建并检查 Lambda 包。只跑了不触网的测试：test:cloudfront 53/53、ci-workflows 20/20，18 个变异全部被抓到。第二轮按 Codex 审查（8.0，四项 P2、四个漏网变异）修复：相对导入检查放宽并加输出目录结构检查、拒绝含过滤通配符的文件名、每次探活请求 10 秒截止、失败说明只陈述本次运行的事实、sync 主体抽成 releaseStatic、捕获输出抽成 captureCommand、CI 契约禁止 continue-on-error、immutable 改称按路径分类；test:cloudfront 60/60、ci-workflows 20/20，第二轮记录的 26 个变异全部被抓到。第三轮按 Codex 复审（8.3，两项 P2、两项 P3）：Lambda 检查认行注释、拒绝入口互相导入、拒绝符号链接、扩展名不分大小写；verify 的每个请求带自管定时器的中止信号；失败说明补「对象不存在」；releaseStatic 的闸门拒绝有测试；test:cloudfront 64/64，8 个变异全部被抓到；CLI 的两处接线留作后续。两轮都没有用 --execute 运行、没有回滚演练；是否轮换 IPdata 密钥待运营方决定。",
   "thread": null,
   "baseCommit": "810a45db",
-  "commits": ["436f6f89"],
+  "commits": ["436f6f89", "739f1ed1"],
   "sources": [
     { "path": "deploy/cloudfront/deploy.mjs" },
     { "path": "deploy/cloudfront/deploy.test.mjs" },
@@ -86,6 +86,27 @@
 
 仍未做：没有以 `--execute` 运行，没有回滚演练；AWS CLI 对拒绝之外的过滤行为、真实网络下截止时间的表现都没有在真实环境里验证。
 
+### 第三轮：Codex 复审 8.3（`739f1ed1` 之后的下一个提交）
+
+Codex 复审 `739f1ed1`：8.3，无 P0/P1，两项 P2、两项 P3。主会话先在工作树里写了一半（`GAP` 的行注释分支、`verify` 的 `request` 包装与措辞、两条导入用例和一个失败中的新测试），本轮接手核对并补完：
+
+| 项 | 发现 | 处理 |
+| --- | --- | --- |
+| P2 Lambda 两层检查同时漏过 | `import // shared handler\n  "./csp-report.mjs";`：正则不认行注释，目录检查又允许另一个入口，而 zip 里只有 `index.mjs` | 核对并保留主会话加的行注释分支；补「两个入口互相导入也被拒绝」用例（目录检查通过、入口检查拒绝、什么都没打包）。便宜的同类缺口一并补上：新增 `listLambdaOutput`，符号链接单独列出并拒绝（原来的遍历会静默跳过它们），扩展名比较不分大小写。函数注释写明词法检查不是解析器、不再扩展，更新后的探活是最后一道网 |
+| P2 `verify` 其余请求无截止 | 只有 health/geo 有截止，`/trade/HYPE`、`/api/referral-geo` 等会无限等待 | 主会话用的 `AbortSignal.timeout` 的定时器不保持事件循环，「等信号才拒绝」的假 fetch 让事件循环提前清空、后面的测试被取消。换成 `verify` 自己管理的普通定时器：每个请求一个 `AbortController` 加 `setTimeout`（以 `no answer from <路径> within <N> ms` 为原因中止），定时器收进集合，在 `check()` 的 finally 里清掉；health/geo 仍用 `fetchTextWithin`。新测试断言每个请求都带 `AbortSignal`、首项以 `no answer from /trade/HYPE within 20 ms` 失败、结束后没有残留定时器、几秒内结束；原测试标题改为只说 probe 和 verify 的 health/geo 两项 |
+| P3 失败说明漏了「对象不存在」 | 说明只写「原内容或本次构建的」 | 核对代码、注释、README 三处都是 absent / unchanged / this build's；ADR 0051 的中文同步改；补「对象此前不存在且上传失败」的用例 |
+| P3 抽取后 CLI 接线无测试 | 三个变异抓不到：`captureAws` 改回直通、`releaseStatic` 的调用换成空操作、执行时的闸门拒绝改恒假 | 只做便宜的第三个：`releaseStatic` 在 `execute: true` 且闸门不符时拒绝、什么都不上传，`execute: false` 时只警告并照常打印计划，带上确认参数后照常执行 |
+
+结果（2026-11-12，本机，不触网）：`pnpm test:cloudfront` `ℹ tests 64`、`ℹ pass 64`、`ℹ fail 0`、`ℹ cancelled 0`；`node --test scripts/ci-workflows.test.mjs` `ℹ pass 20`、`ℹ fail 0`。
+
+变异（逐个打上、跑测试、还原）全部被抓到：删 `GAP` 的行注释分支；`request` 不传 signal；`check()` 不清定时器；执行时闸门拒绝改恒假；接受符号链接；扩展名比较区分大小写；遍历重新跳过符号链接；失败说明去掉「不存在」。
+
+留作后续（本轮不做）：
+- `createRequire` 读相对 JSON 这类加载方式，不往词法检查里加：它不是解析器，更新后的探活是最后一道网。
+- 两处 CLI 接线仍未被测试强制：`captureAws` 改回直通、`main()` 里 `releaseStatic(...)` 的调用被换成空操作，现有测试都抓不到。需要在 `PATH` 里放一个假的 `aws` 做端到端测试，成本较高，另开任务。
+
+仍未以 `--execute` 运行，也没有做回滚演练。
+
 ## 后续与替代关系
 
 - 运营方决定是否轮换 IPdata 密钥（此前的发布日志与会话记录可能含有它）。
@@ -93,4 +114,6 @@
 - 找一个低风险窗口做一次回滚演练（例如回到上一版再回到当前版），把每一步的输出写进记录；顺带核实桶是否开启了版本控制。
 - 未做的可选项：排行榜处理器的上游超时 15 秒（`apps/terminal/src/lib/leaderboard/leaderboard-server.ts` 的 `upstreamTimeoutMs`）长于部署手册写的 Lambda 超时 10 秒，「刷新失败回旧快照」的分支走不到。改哪一边要决定：缩短上游超时可能让大响应正常刷新失败，加长 Lambda 超时是运营方的 AWS 设置；线上实际超时也未核实。
 - `assertReleaseIdentity` 的错误信息会打印调用者 ARN（含账号号码），只在身份不符时出现；如需要可另行改为只打印类型。
+- 未被测试强制的 CLI 接线：`captureAws` 是否经 `captureCommand` 捕获、`sync` 分支是否真的调用 `releaseStatic`。补法是在 `PATH` 里放假的 `aws` 跑 `deploy.mjs` 的端到端测试（第三轮记录）。
+- `createRequire` 读相对文件这类加载方式不在 Lambda 词法检查之内，依赖更新后的探活兜底。
 - 本记录不替代此前的记录。

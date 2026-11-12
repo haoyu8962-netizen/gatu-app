@@ -173,8 +173,8 @@ function stageNames(steps) {
 
 /**
  * What this run knows after the command at `failedIndex` failed, and nothing more. S3 writes each
- * key atomically, so an object the failed command touched holds either its earlier content or this
- * build's, never part of one, and a command can report a failure after its write succeeded (a lost
+ * key atomically, so an object the failed command touched is absent, unchanged or this build's,
+ * never a partial write, and a command can report a failure after its write succeeded (a lost
  * answer). The run cannot know what the bucket held before it started: an earlier interrupted run
  * may already have written some of these files, the build metadata included.
  */
@@ -187,7 +187,7 @@ export function describeSyncFailure({ plan, failedIndex, bucket }) {
 	return [
 		`The upload to s3://${bucket} stopped at command ${failedIndex + 1} of ${plan.length}, stage "${SYNC_STAGES[failed.stage]}".`,
 		completedStages.length > 0 ? `Stages that returned success in this run: ${completedStages.join(", ")}.` : "No stage returned success in this run.",
-		`${partlyDone ? "Earlier commands of the same stage returned success. " : ""}The objects of the failed command are in an unknown state: each holds either its earlier content or this build's, never part of one.`,
+		`${partlyDone ? "Earlier commands of the same stage returned success. " : ""}The objects of the failed command are in an unknown state: each is absent, unchanged or this build's, never a partial write.`,
 		laterStages.length > 0 ? `This run did not write the later stages: ${laterStages.join(", ")}.` : "No stage comes after it.",
 		"This command does not know what the bucket held before this run: an earlier interrupted run may already have written some of these files.",
 		"Run the same sync again unchanged, then verify.",
@@ -377,8 +377,8 @@ export function summarizeLambdaUpdate(output) {
 	return `Lambda updated: ${fields.join(" ")}`;
 }
 
-/** Whitespace or block comments, any number, as minified or hand-written code may put between a keyword and its specifier. */
-const GAP = String.raw`(?:\s|/\*[\s\S]*?\*/)*`;
+/** Whitespace, block comments or line comments, any number, as minified or hand-written code may put between a keyword and its specifier. */
+const GAP = String.raw`(?:\s|/\*[\s\S]*?\*/|//[^\n]*(?:\n|$))*`;
 const RELATIVE_IMPORT = new RegExp(String.raw`(?:\bfrom|\bimport${GAP}\(?)${GAP}(["'\`])(\.{1,2}/[^"'\`]*)\1`, "g");
 
 /**
@@ -386,25 +386,51 @@ const RELATIVE_IMPORT = new RegExp(String.raw`(?:\bfrom|\bimport${GAP}\(?)${GAP}
  * them would be missing at run time. This is a text scan, not a parser, and it errs on the side of
  * refusing: a string such as `"from './x'"` inside the bundle also matches, which stops the upload
  * with a clear message rather than letting a split chunk through. The directory check
- * (`findExtraLambdaModules`) does not depend on syntax at all.
+ * (`findExtraLambdaModules`) does not depend on syntax at all. It is not a parser and is not meant
+ * to become one: forms such as `createRequire` reading a relative file are deliberately not
+ * scanned. The last net is the probe right after the update, which fails when the uploaded entry
+ * cannot load what it needs.
  */
 export function findRelativeImports(code) {
 	return [...new Set([...code.matchAll(RELATIVE_IMPORT)].map((match) => match[2]))];
 }
 
-const MODULE_FILE = /\.(?:mjs|cjs|js)$/;
+const MODULE_FILE = /\.(?:mjs|cjs|js)$/i;
 
 /**
  * Module files in the Lambda output directory other than the entries. `vite.lambda.config.ts`
  * empties `dist-lambda`, emits the two entries at its top level and names any shared chunk
  * `shared-[name].mjs`; the release adds only `.zip` files. Any other `.mjs`, `.js` or `.cjs`
- * file, at any depth, means the build split code out of an entry.
+ * file, at any depth and in any letter case, means the build split code out of an entry.
  */
 export function findExtraLambdaModules(files, entries = LAMBDA_ENTRIES) {
 	return files.filter((file) => MODULE_FILE.test(file) && !entries.includes(file));
 }
 
-export function assertNoExtraLambdaModules(files, entries = LAMBDA_ENTRIES) {
+/**
+ * Files and symbolic links in the Lambda output directory, relative to it. Symbolic links are listed
+ * apart because the walk does not follow them and the zip would carry whatever they point at.
+ */
+export function listLambdaOutput(directory) {
+	const files = [];
+	const symlinks = [];
+	function walk(current) {
+		for (const entry of readdirSync(current, { withFileTypes: true })) {
+			const path = join(current, entry.name);
+			const name = relative(directory, path).replaceAll("\\", "/");
+			if (entry.isSymbolicLink()) symlinks.push(name);
+			else if (entry.isDirectory()) walk(path);
+			else if (entry.isFile()) files.push(name);
+		}
+	}
+	walk(directory);
+	return { files: files.sort(), symlinks: symlinks.sort() };
+}
+
+export function assertNoExtraLambdaModules({ files, symlinks = [] }, entries = LAMBDA_ENTRIES) {
+	if (symlinks.length > 0) {
+		throw new Error(`The Lambda output holds symbolic links (${symlinks.join(", ")}); the build writes plain files only, so refusing to package it`);
+	}
 	const extra = findExtraLambdaModules(files, entries);
 	if (extra.length > 0) {
 		throw new Error(
@@ -569,17 +595,34 @@ const API_CHECKS = [
  */
 export async function verifyDeployment({ origin, publicDir, network, fetchImpl = fetch, scriptHashesMode = "report-only", imageSourcesMode = "report-only", requestTimeoutMs = API_REQUEST_TIMEOUT_MS }) {
 	const base = origin.replace(/\/+$/, "");
+	const deadlines = new Set();
+	/**
+	 * Every other request of verify carries its own deadline as an abort signal, which ends a fetch,
+	 * or the reading of its body, that hangs. The timers are ordinary ones (`AbortSignal.timeout`
+	 * does not keep the event loop alive) and `check` clears them when its check settles.
+	 */
+	function request(url, init = {}) {
+		const controller = new AbortController();
+		const timer = setTimeout(() => controller.abort(new Error(`no answer from ${new URL(url).pathname} within ${requestTimeoutMs} ms`)), requestTimeoutMs);
+		deadlines.add(timer);
+		return fetchImpl(url, { ...init, signal: controller.signal });
+	}
 	const expectedApiOrigin = network === "testnet" ? "https://api.hyperliquid-testnet.xyz" : "https://api.hyperliquid.xyz";
 	const shell = readFileSync(join(publicDir, "_shell.html"));
 	const buildMeta = JSON.parse(readFileSync(join(publicDir, "build-meta.json"), "utf8"));
 	const results = [];
 	async function check(name, run) {
-		results.push(await settleCheck(name, run));
+		try {
+			results.push(await settleCheck(name, run));
+		} finally {
+			for (const timer of deadlines) clearTimeout(timer);
+			deadlines.clear();
+		}
 	}
 	const expect = expectThat;
 
 	await check("shell for a trade navigation", async () => {
-		const response = await fetchImpl(`${base}/trade/HYPE`, { headers: { accept: "text/html" } });
+		const response = await request(`${base}/trade/HYPE`, { headers: { accept: "text/html" } });
 		expect(response.status === 200, `status ${response.status}`);
 		expect(sha256(Buffer.from(await response.arrayBuffer())) === sha256(shell), "body differs from local _shell.html");
 		expect(response.headers.get("content-security-policy"), "missing content-security-policy");
@@ -596,7 +639,7 @@ export async function verifyDeployment({ origin, publicDir, network, fetchImpl =
 			const expectedName = standalone ? `local ${key}` : "local _shell.html";
 			const route = `/${key.slice(0, -"/index.html".length)}`;
 			for (const path of [route, `/${key}`]) {
-				const response = await fetchImpl(`${base}${path}`, { headers: { accept: "text/html" } });
+				const response = await request(`${base}${path}`, { headers: { accept: "text/html" } });
 				expect(response.status === 200, `${path} status ${response.status}`);
 				expect(sha256(Buffer.from(await response.arrayBuffer())) === expected, `${path} body differs from ${expectedName}`);
 			}
@@ -605,7 +648,7 @@ export async function verifyDeployment({ origin, publicDir, network, fetchImpl =
 		return `${summary.shell} shell, ${summary.standalone} standalone`;
 	});
 	await check("build metadata parity", async () => {
-		const response = await fetchImpl(`${base}/build-meta.json`);
+		const response = await request(`${base}/build-meta.json`);
 		expect(response.status === 200, `status ${response.status}`);
 		const remote = await response.json();
 		expect(remote.commit === buildMeta.commit && remote.release === buildMeta.release, "remote build-meta differs");
@@ -617,7 +660,7 @@ export async function verifyDeployment({ origin, publicDir, network, fetchImpl =
 	await check("geo endpoint answers with a real verdict", () => checkGeoVerdict(base, fetchImpl, requestTimeoutMs));
 	await check("signed lambda post with a payload hash", async () => {
 		const body = JSON.stringify({ override: null });
-		const response = await fetchImpl(`${base}/api/referral-geo`, {
+		const response = await request(`${base}/api/referral-geo`, {
 			method: "POST",
 			headers: {
 				accept: "application/json",
@@ -635,7 +678,7 @@ export async function verifyDeployment({ origin, publicDir, network, fetchImpl =
 		return `status ${decision.status}`;
 	});
 	await check("referral deep link headers", async () => {
-		const response = await fetchImpl(`${base}/join/__sairn_healthcheck__`, { headers: { accept: "text/html" } });
+		const response = await request(`${base}/join/__sairn_healthcheck__`, { headers: { accept: "text/html" } });
 		expect(response.status === 200, `status ${response.status}`);
 		expect(response.headers.get("cache-control") === "no-store", "cache-control must be no-store");
 		expect(response.headers.get("referrer-policy") === "no-referrer", "referrer-policy must be no-referrer");
@@ -643,7 +686,7 @@ export async function verifyDeployment({ origin, publicDir, network, fetchImpl =
 		expect(response.headers.get("x-sairn-route") === "referral-join", "x-sairn-route marker missing");
 	});
 	await check("pairing page headers", async () => {
-		const response = await fetchImpl(`${base}/mobile-agent-sync`, { headers: { accept: "text/html" } });
+		const response = await request(`${base}/mobile-agent-sync`, { headers: { accept: "text/html" } });
 		expect(response.status === 200, `status ${response.status}`);
 		expect(response.headers.get("cache-control") === "no-store", "cache-control must be no-store");
 		expect(response.headers.get("referrer-policy") === "no-referrer", "referrer-policy must be no-referrer");
@@ -651,24 +694,24 @@ export async function verifyDeployment({ origin, publicDir, network, fetchImpl =
 	});
 	await check("missing files stay 404", async () => {
 		for (const path of ["/missing.webmanifest", "/.env"]) {
-			const response = await fetchImpl(`${base}${path}`);
+			const response = await request(`${base}${path}`);
 			expect(response.status === 404, `${path} status ${response.status}`);
 		}
-		const asset = await fetchImpl(`${base}/assets/missing-${Date.now()}.js`);
+		const asset = await request(`${base}/assets/missing-${Date.now()}.js`);
 		expect(asset.status === 404, `asset status ${asset.status}`);
-		const chart = await fetchImpl(`${base}/charting_library/missing-${Date.now()}.js`);
+		const chart = await request(`${base}/charting_library/missing-${Date.now()}.js`);
 		expect(chart.status === 404, `chart status ${chart.status}`);
-		const serverFn = await fetchImpl(`${base}/_serverFn/abc`);
+		const serverFn = await request(`${base}/_serverFn/abc`);
 		expect(serverFn.status === 404, `server function status ${serverFn.status}`);
 	});
 	await check("chart entry is immutable and preloaded by the shell", async () => {
 		const href = /<link rel="preload" href="(\/charting_library\/charting_library\.[0-9a-f]{16}\.js)" as="script"/.exec(shell.toString("utf8"))?.[1];
 		expect(href, "the local shell does not preload a content-hashed chart entry");
 		expect(existsSync(join(publicDir, href.slice(1))), `${href} is not in the local build`);
-		const response = await fetchImpl(`${base}${href}`);
+		const response = await request(`${base}${href}`);
 		expect(response.status === 200, `status ${response.status}`);
 		expect(response.headers.get("cache-control") === IMMUTABLE_CACHE_CONTROL, `cache-control ${response.headers.get("cache-control")}`);
-		const plain = await fetchImpl(`${base}/charting_library/charting_library.js`);
+		const plain = await request(`${base}/charting_library/charting_library.js`);
 		expect(plain.headers.get("cache-control") === REVALIDATE_CACHE_CONTROL, `unhashed entry cache-control ${plain.headers.get("cache-control")}`);
 		return href;
 	});
@@ -676,7 +719,7 @@ export async function verifyDeployment({ origin, publicDir, network, fetchImpl =
 		const hrefs = [...shell.toString("utf8").matchAll(/<link rel="modulepreload" href="(\/assets\/[^"]+)"/g)].map((match) => match[1]);
 		expect(hrefs.length >= MIN_SHELL_PRELOADS, `only ${hrefs.length} modulepreload links in the local shell`);
 		for (const href of hrefs) expect(existsSync(join(publicDir, href.slice(1))), `${href} is not in the local build`);
-		const response = await fetchImpl(`${base}${hrefs.at(-1)}`);
+		const response = await request(`${base}${hrefs.at(-1)}`);
 		expect(response.status === 200, `status ${response.status} for ${hrefs.at(-1)}`);
 		expect(response.headers.get("cache-control") === IMMUTABLE_CACHE_CONTROL, `cache-control ${response.headers.get("cache-control")}`);
 		for (const name of SURFACE_PRELOAD_META_NAMES) {
@@ -690,7 +733,7 @@ export async function verifyDeployment({ origin, publicDir, network, fetchImpl =
 		let total = 0;
 		for (const page of pages) {
 			const route = page === "_shell.html" ? "/trade/HYPE" : `/${page.slice(0, -"/index.html".length)}`;
-			const response = await fetchImpl(`${base}${route}`, { headers: { accept: "text/html" } });
+			const response = await request(`${base}${route}`, { headers: { accept: "text/html" } });
 			expect(response.status === 200, `${route} status ${response.status}`);
 			const hashes = collectInlineScripts(await response.text()).map((script) => script.hash);
 			const scriptSrc = /(?:^|;\s*)script-src ([^;]*)/.exec(response.headers.get(headerName) ?? "")?.[1];
@@ -702,7 +745,7 @@ export async function verifyDeployment({ origin, publicDir, network, fetchImpl =
 		return `${pages.length} pages, ${total} inline scripts, ${scriptHashesMode}`;
 	});
 	await check("image sources follow the edge config", async () => {
-		const response = await fetchImpl(`${base}/trade/HYPE`, { headers: { accept: "text/html" } });
+		const response = await request(`${base}/trade/HYPE`, { headers: { accept: "text/html" } });
 		const headerName = imageSourcesMode === "enforce" ? "content-security-policy" : "content-security-policy-report-only";
 		const imgSrc = /(?:^|;\s*)img-src ([^;]*)/.exec(response.headers.get(headerName) ?? "")?.[1];
 		expect(imgSrc !== undefined, `no ${headerName} with an img-src`);
@@ -712,8 +755,8 @@ export async function verifyDeployment({ origin, publicDir, network, fetchImpl =
 	});
 	await check("health probe answers 204", () => checkHealthProbe(base, fetchImpl, requestTimeoutMs));
 	await check("shell repeats from the edge", async () => {
-		await fetchImpl(`${base}/trade/HYPE`, { headers: { accept: "text/html" } });
-		const response = await fetchImpl(`${base}/trade/HYPE`, { headers: { accept: "text/html" } });
+		await request(`${base}/trade/HYPE`, { headers: { accept: "text/html" } });
+		const response = await request(`${base}/trade/HYPE`, { headers: { accept: "text/html" } });
 		expect(response.headers.get("cache-control") === HTML_CACHE_CONTROL, `cache-control ${response.headers.get("cache-control")}`);
 		const cache = response.headers.get("x-cache") ?? "";
 		expect(/^(Hit|RefreshHit) from cloudfront/.test(cache), `x-cache ${cache || "missing"}`);
@@ -722,8 +765,8 @@ export async function verifyDeployment({ origin, publicDir, network, fetchImpl =
 	await check("chart bundles are immutable at the edge", async () => {
 		const bundle = findChartBundle(publicDir);
 		expect(bundle, "no hashed chart bundle in the local build");
-		await fetchImpl(`${base}/charting_library/bundles/${bundle}`);
-		const response = await fetchImpl(`${base}/charting_library/bundles/${bundle}`);
+		await request(`${base}/charting_library/bundles/${bundle}`);
+		const response = await request(`${base}/charting_library/bundles/${bundle}`);
 		expect(response.status === 200, `status ${response.status}`);
 		expect(response.headers.get("cache-control") === IMMUTABLE_CACHE_CONTROL, `cache-control ${response.headers.get("cache-control")}`);
 		const cache = response.headers.get("x-cache") ?? "";
@@ -732,7 +775,7 @@ export async function verifyDeployment({ origin, publicDir, network, fetchImpl =
 	});
 	if (network === "testnet") {
 		await check("testnet stays out of search results", async () => {
-			const response = await fetchImpl(`${base}/trade/HYPE`, { headers: { accept: "text/html" } });
+			const response = await request(`${base}/trade/HYPE`, { headers: { accept: "text/html" } });
 			expect((response.headers.get("x-robots-tag") ?? "").includes("noindex"), "x-robots-tag must be noindex");
 		});
 	}
@@ -1075,7 +1118,7 @@ async function main() {
 				skipProbe: options.skipProbe,
 				execute: options.execute,
 				readBundle: (path) => readFileSync(path, "utf8"),
-				listBundleDir: () => listPublicFiles(options.lambdaDir),
+				listBundleDir: () => listLambdaOutput(options.lambdaDir),
 				zip: (zipPath, path) => execFileSync("zip", ["-j", "-q", zipPath, path], { stdio: "inherit" }),
 				run: runAws,
 				capture: captureAws,
@@ -1084,7 +1127,7 @@ async function main() {
 			break;
 		}
 		case "check-lambda": {
-			assertNoExtraLambdaModules(listPublicFiles(options.lambdaDir));
+			assertNoExtraLambdaModules(listLambdaOutput(options.lambdaDir));
 			for (const entry of LAMBDA_ENTRIES) {
 				const bundle = resolve(options.lambdaDir, entry);
 				if (!existsSync(bundle)) throw new Error(`No Lambda bundle at ${bundle}; run pnpm --filter @sairn/terminal build:lambda`);

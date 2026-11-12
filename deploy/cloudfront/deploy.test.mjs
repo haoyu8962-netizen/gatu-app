@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, statSync, utimesSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, statSync, symlinkSync, utimesSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
@@ -27,6 +27,7 @@ import {
 	HTML_CACHE_CONTROL,
 	IMMUTABLE_CACHE_CONTROL,
 	LAMBDA_ENTRIES,
+	listLambdaOutput,
 	listPublicFiles,
 	NO_STORE,
 	objectCacheControl,
@@ -206,7 +207,7 @@ test("an interrupted upload reports only what this run did and never writes the 
 	assert.equal(early.ran.length, 1);
 	assert.match(early.message, /stopped at command 2 of 10, stage "other files that are not HTML \(always uploaded\)"/);
 	assert.match(early.message, /Stages that returned success in this run: "files classified immutable by path/);
-	assert.match(early.message, /each holds either its earlier content or this build's, never part of one/);
+	assert.match(early.message, /each is absent, unchanged or this build's, never a partial write/);
 	assert.match(early.message, /This run did not write the later stages: .*"build-meta\.json".*"_shell\.html"/);
 	assert.match(early.message, /does not know what the bucket held before this run/);
 	assert.match(early.message, /Run the same sync again unchanged, then verify\.\nCause: Failed to connect to proxy URL$/);
@@ -258,6 +259,12 @@ test("a failure report stays true when the failed command wrote its object and w
 	assert.equal(fake.bucket.get("build-meta.json").body.toString("utf8"), JSON.stringify(BUILD_META), "the write happened although the command failed");
 	assert.match(lostAnswer.message, /objects of the failed command are in an unknown state/);
 	assert.doesNotMatch(lostAnswer.message, UNKNOWABLE_CLAIMS);
+
+	const empty = createFakeBucket();
+	const neverWritten = failAt(plan, "buildMeta", { write: (command) => command[3] !== "s3://b/build-meta.json" && empty.run(command) });
+	assert.equal(empty.bucket.has("build-meta.json"), false, "the object did not exist and the failed upload did not create it");
+	assert.match(neverWritten.message, /each is absent, unchanged or this build's, never a partial write/);
+	assert.doesNotMatch(neverWritten.message, UNKNOWABLE_CLAIMS);
 
 	const second = failAt(plan, "mutable", { write: fake.run });
 	assert.equal(fake.bucket.get("build-meta.json").body.toString("utf8"), JSON.stringify(BUILD_META), "the first run left this build's metadata");
@@ -326,6 +333,26 @@ test("the sync command refuses source maps before uploading and compares the mar
 	const dryRun = staticHarness();
 	releaseStatic({ ...dryRun.options, execute: false });
 	assert.ok(!dryRun.events.includes("policy") && !dryRun.events.some((event) => event.startsWith("read ")));
+});
+
+test("the sync command refuses an unacknowledged release gate when executing and only warns in a dry run", () => {
+	const publicDir = createPublicDir();
+	writeFileSync(join(publicDir, "build-meta.json"), JSON.stringify({ ...BUILD_META, mobileSync: { enabled: true } }));
+
+	const executed = staticHarness({ publicDir });
+	assert.throws(() => releaseStatic({ ...executed.options, execute: true }), /exposes Mobile Agent pairing; pass --allow-mobile-pairing/);
+	assert.deepEqual(executed.events, [], "nothing is checked or uploaded");
+
+	const warnings = [];
+	const dryRun = staticHarness({ publicDir });
+	releaseStatic({ ...dryRun.options, execute: false, warn: (line) => warnings.push(line) });
+	assert.equal(warnings.length, 1);
+	assert.match(warnings[0], /^An executing sync would refuse this build: This build exposes Mobile Agent pairing/);
+	assert.ok(dryRun.events.some((event) => event.startsWith("run ")), "a dry run still prints the plan");
+
+	const acknowledged = staticHarness({ publicDir });
+	releaseStatic({ ...acknowledged.options, execute: true, acknowledged: ["mobile-pairing"] });
+	assert.ok(acknowledged.events.includes("read _shell.html"));
 });
 
 test("captured command output never reaches the release log", () => {
@@ -485,6 +512,8 @@ test("minified, commented and multi-line relative imports are all found", () => 
 		['const m = import /* lazy */ ( "./x.mjs" );', "./x.mjs"],
 		["import {\n  a,\n  b,\n} from\n  '../x.mjs';", "../x.mjs"],
 		['import a/*x*/from/*y*/"./x.mjs";', "./x.mjs"],
+		['import // shared handler\n  "./x.mjs";', "./x.mjs"],
+		['export * from // re-export\n"./x.mjs"', "./x.mjs"],
 	]) {
 		assert.deepEqual(findRelativeImports(code), [specifier], code);
 	}
@@ -499,10 +528,33 @@ test("a Lambda output that holds a module file besides the entries is refused, a
 		"lib/b.cjs",
 	]);
 	assert.deepEqual(findExtraLambdaModules(["nested/index.mjs"]), ["nested/index.mjs"], "only the top-level entries are allowed");
-	assert.throws(() => assertNoExtraLambdaModules(["index.mjs", "csp-report.mjs", "shared-geo.mjs"]), /holds shared-geo\.mjs next to index\.mjs, csp-report\.mjs/);
+	assert.deepEqual(findExtraLambdaModules(["index.mjs", "SHARED-GEO.MJS", "lib/b.Js", "c.CJS"]), ["SHARED-GEO.MJS", "lib/b.Js", "c.CJS"], "extensions compare in any letter case");
+	assert.throws(() => assertNoExtraLambdaModules({ files: ["index.mjs", "csp-report.mjs", "shared-geo.mjs"] }), /holds shared-geo\.mjs next to index\.mjs, csp-report\.mjs/);
+	assert.throws(() => assertNoExtraLambdaModules({ files: ["index.mjs", "csp-report.mjs"], symlinks: ["shared.json"] }), /symbolic links \(shared\.json\)/);
 });
 
-test("every API request of the probe and of verify ends by its deadline, whatever the server does", { timeout: 10_000 }, async () => {
+test("the Lambda output listing reports symbolic links instead of skipping them", () => {
+	const directory = mkdtempSync(join(tmpdir(), "sairn-lambda-out-"));
+	writeFileSync(join(directory, "index.mjs"), "export {};");
+	writeFileSync(join(directory, "csp-report.mjs"), "export {};");
+	mkdirSync(join(directory, "chunks"));
+	writeFileSync(join(directory, "chunks", "a.js"), "export {};");
+	symlinkSync(join(directory, "index.mjs"), join(directory, "linked.mjs"));
+	const listing = listLambdaOutput(directory);
+	assert.deepEqual(listing, { files: ["chunks/a.js", "csp-report.mjs", "index.mjs"], symlinks: ["linked.mjs"] });
+	assert.throws(() => assertNoExtraLambdaModules(listing), /symbolic links \(linked\.mjs\)/);
+});
+
+test("an entry that imports the other entry passes the directory check but is still refused", async () => {
+	const code = 'import // shared handler\n  "./csp-report.mjs";\nexport { handler };';
+	assert.doesNotThrow(() => assertNoExtraLambdaModules({ files: ["index.mjs", "csp-report.mjs"] }));
+	assert.throws(() => assertSelfContainedLambdaEntry(code, "index.mjs"), /index\.mjs imports \.\/csp-report\.mjs/);
+	const harness = lambdaHarness({ code, bundleDir: { files: ["index.mjs", "csp-report.mjs"] } });
+	await assert.rejects(releaseLambda({ ...harness.options, origin: "https://app.sairn.ai", execute: true }), /imports \.\/csp-report\.mjs/);
+	assert.deepEqual(harness.events, [], "nothing is zipped or uploaded");
+});
+
+test("the probe's requests and the health and geo checks of verify end by their deadline, whatever the server does", { timeout: 10_000 }, async () => {
 	assert.equal(API_REQUEST_TIMEOUT_MS, 10_000);
 	const neverAnswers = () => new Promise(() => {});
 	const neverSendsBody = async () => ({ status: 200, headers: new Headers(), text: () => new Promise(() => {}) });
@@ -534,6 +586,29 @@ test("every API request of the probe and of verify ends by its deadline, whateve
 	const results = await verifyDeployment({ origin: "https://app.sairn.ai", publicDir: createPublicDir(), network: "mainnet", fetchImpl: (url, init) => (/\/api\/(geo|health)$/.test(new URL(url).pathname) ? neverAnswers() : fakeFetch({ "*": { status: 404, body: "missing" } })(url, init)), requestTimeoutMs: 20 });
 	assert.match(results.find((result) => result.name === "geo endpoint answers with a real verdict").detail, /no answer from \/api\/geo within 20 ms/);
 	assert.match(results.find((result) => result.name === "health probe answers 204").detail, /no answer from \/api\/health within 20 ms/);
+});
+
+test("every other request of verify carries the deadline as an abort signal", { timeout: 10_000 }, async () => {
+	const seen = [];
+	const hangsUntilAborted = (url, init = {}) => {
+		seen.push([new URL(url).pathname, init.signal]);
+		return new Promise((_, reject) => {
+			init.signal?.addEventListener("abort", () => reject(init.signal.reason), { once: true });
+		});
+	};
+	const timers = () => process.getActiveResourcesInfo().filter((resource) => resource === "Timeout").length;
+	const before = timers();
+	const started = Date.now();
+	const results = await verifyDeployment({ origin: "https://app.sairn.ai", publicDir: createPublicDir(), network: "mainnet", fetchImpl: hangsUntilAborted, requestTimeoutMs: 20 });
+	assert.ok(seen.length >= 10, `verify made ${seen.length} requests`);
+	const unsignalled = seen.filter(([, signal]) => !(signal instanceof AbortSignal)).map(([pathname]) => pathname);
+	assert.deepEqual(unsignalled, [], "every request of verify carries an abort signal");
+	assert.equal(results[0].name, "shell for a trade navigation");
+	assert.equal(results[0].ok, false);
+	assert.match(results[0].detail, /no answer from \/trade\/HYPE within 20 ms/);
+	assert.ok(results.every((result) => !result.ok), "every check ends, none hangs");
+	assert.equal(timers(), before, "no deadline timer outlives verify");
+	assert.ok(Date.now() - started < 5_000, `verify took ${Date.now() - started} ms`);
 });
 
 function apiRoutes({ geo = { body: JSON.stringify({ country: "GB" }) }, health = { status: 204, body: null, headers: { "cache-control": NO_STORE } } } = {}) {
@@ -570,7 +645,7 @@ test("the API probe after a lambda update passes, retries a transient failure an
 	);
 });
 
-function lambdaHarness({ code = "export { handler };", probe, bundleDir = ["index.mjs", "csp-report.mjs", "index.zip"] } = {}) {
+function lambdaHarness({ code = "export { handler };", probe, bundleDir = { files: ["index.mjs", "csp-report.mjs", "index.zip"] } } = {}) {
 	const events = [];
 	return {
 		events,
@@ -613,7 +688,7 @@ test("a lambda release checks the bundle, updates, waits and then probes, printi
 	await assert.rejects(releaseLambda({ ...split.options, origin: "https://app.sairn.ai", execute: true }), /shared chunk/);
 	assert.deepEqual(split.events, []);
 
-	const chunked = lambdaHarness({ bundleDir: ["index.mjs", "csp-report.mjs", "shared-geo.mjs"] });
+	const chunked = lambdaHarness({ bundleDir: { files: ["index.mjs", "csp-report.mjs", "shared-geo.mjs"] } });
 	await assert.rejects(releaseLambda({ ...chunked.options, origin: "https://app.sairn.ai", execute: true }), /holds shared-geo\.mjs/);
 	assert.deepEqual(chunked.events, []);
 
