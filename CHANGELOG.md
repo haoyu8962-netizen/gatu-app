@@ -624,6 +624,14 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Fixed
 
+- Release tooling (ADR 0051): `deploy.mjs sync` uploads every file without a content hash with
+  `aws s3 cp`, so a rollback from an older build of the same size now writes the shell and
+  `build-meta.json` back instead of skipping them while reporting success; the build metadata goes
+  before the shell, the shell is the last upload, and both are compared with the local build by
+  content. `deploy.mjs lambda` prints only the version, code size, code hash and state of the update
+  instead of the function's configuration (which included its environment variables), refuses an
+  entry that imports a split-out chunk, and probes `/api/health` and `/api/geo` through the site
+  right after the update. The production build workflow now builds and checks the Lambda bundles.
 - Reopening the terminal after it sat in the background brings prices, the order book and account
   data back sooner. The terminal now checks its connections the moment the page is shown again,
   or the network returns, instead of up to five seconds later; it retries at once instead of

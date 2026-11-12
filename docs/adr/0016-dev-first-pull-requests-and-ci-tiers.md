@@ -83,6 +83,7 @@
   - 被跳过的下游作业各显示为一条 skipped，名称里的矩阵变量不展开，例如 `Test terminal and release tooling (${{ matrix.shard }}/2)`。`Production Builds` 只运行 `pairing true`（8 分 25 秒）；`Static Checks` 照常全跑（2 分 37 秒）。
   - 按作业向上取整约 16 计费分钟，接近 2026-10-31 补记估算的 14–15；从开 PR 到最后一项检查结束约 9 分钟。
   - 同日第二次晋升 #141 只带一个改预算脚本的 PR（#140）。PR 的差异只有两个文件，所以只有 `Terminal Tests` 与 `Production Builds` 触发，两者都由 #140 的运行覆盖；`Static Checks`、浏览器回归与 `Website and Brand` 的 `paths` 不含这两个文件，没有触发。本机预演对后两个工作流判为「not covered」，原因是上次晋升以来没有 PR 改动过它们的输入。这次晋升用不到这个判定：没有新输入的工作流，不在晋升 PR 的差异里，所以不会触发。
+- 2026-11-12 补记（[ADR 0051](0051-release-script-rollback-and-lambda-probe.md)）：`Production Builds` 的 `terminal` 作业在安装依赖之后、客户端构建之前加一步「Build the Lambda bundles and check each entry stands alone」：`pnpm --filter @sairn/terminal build:lambda`、`node deploy/cloudfront/deploy.mjs check-lambda`（入口没有相对导入，发布只把入口文件打进 zip）与两个入口的 `node --check`。此前没有任何工作流构建 Lambda 包。本机实测 `build:lambda` 约 9 秒，每个矩阵条目都跑（不加 `if`，晋升时只构建配对开启的那一条也照样检查），计费分钟基本不变。放在客户端构建之前，失败时省下约 8 分钟。触发条件不变：`apps/**` 与 `deploy/**` 已在路径过滤里。`ci-workflows.test.mjs` 新增一条断言钉住这一步的命令、顺序与不设条件（四个变异都会让它失败）。
 
 ## 证据
 

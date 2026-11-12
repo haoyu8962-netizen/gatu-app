@@ -82,32 +82,99 @@ function groupByCacheControl(items) {
 	return groups;
 }
 
+/** The file a viewer's navigation receives; it is always the last object an upload writes. */
+export const SHELL_KEY = "_shell.html";
+export const BUILD_META_KEY = "build-meta.json";
+
 /**
- * One `aws s3 sync` per cache policy and phase. Include/exclude patterns are exact file keys, so the
- * sync never touches objects from another release and never deletes anything: viewers holding an
+ * The stages of an upload, in order. Only content-hashed files may use `aws s3 sync`: it skips a
+ * file whose size matches and whose local copy is older than the object, which is exactly a
+ * rollback from a retained release worktree. Everything else is written with `aws s3 cp`, which
+ * always uploads. The build metadata goes before the shell, and the shell is the last command, so
+ * an interrupted upload can leave the metadata ahead of the shell but never a new shell behind old
+ * metadata.
+ */
+export const SYNC_STAGES = Object.freeze({
+	immutable: "content-hashed files (sync: skipped when already in the bucket)",
+	mutable: "files without a content hash (always uploaded)",
+	pages: "HTML pages other than the shell (always uploaded)",
+	buildMeta: BUILD_META_KEY,
+	retiredPages: "retired legal page copies of this shell",
+	shell: SHELL_KEY,
+});
+
+function filteredCommand(verb, { publicDir, bucket, keys, cacheControl }) {
+	return [
+		"s3",
+		verb,
+		publicDir,
+		`s3://${bucket}`,
+		...(verb === "cp" ? ["--recursive"] : []),
+		"--exclude",
+		"*",
+		...keys.flatMap((key) => ["--include", key]),
+		"--cache-control",
+		cacheControl,
+		"--no-progress",
+	];
+}
+
+function singleFileCommand({ publicDir, bucket, key }) {
+	return ["s3", "cp", join(publicDir, key), `s3://${bucket}/${key}`, "--cache-control", objectCacheControl(key), "--no-progress"];
+}
+
+/**
+ * The ordered upload as `{ stage, command }` steps. Include/exclude patterns are exact file keys, so
+ * no command touches objects from another release and none deletes anything: viewers holding an
  * older shell keep working until their next navigation.
  */
-export function buildSyncCommands({ publicDir, bucket, files }) {
+export function buildSyncPlan({ publicDir, bucket, files }) {
 	const { early, late } = planUpload(files);
-	const commands = [];
-	for (const phase of [early, late]) {
-		for (const [cacheControl, keys] of groupByCacheControl(phase)) {
-			const includes = keys.flatMap((key) => ["--include", key]);
-			commands.push([
-				"s3",
-				"sync",
-				publicDir,
-				`s3://${bucket}`,
-				"--exclude",
-				"*",
-				...includes,
-				"--cache-control",
-				cacheControl,
-				"--no-progress",
-			]);
+	const steps = [];
+	for (const [cacheControl, keys] of groupByCacheControl(early)) {
+		const stage = cacheControl === IMMUTABLE_CACHE_CONTROL ? "immutable" : "mutable";
+		steps.push({ stage, command: filteredCommand(stage === "immutable" ? "sync" : "cp", { publicDir, bucket, keys, cacheControl }) });
+	}
+	steps.sort((left, right) => Number(left.stage === "mutable") - Number(right.stage === "mutable"));
+	const pages = late.filter((item) => item.file !== SHELL_KEY && item.file !== BUILD_META_KEY);
+	for (const [cacheControl, keys] of groupByCacheControl(pages)) {
+		steps.push({ stage: "pages", command: filteredCommand("cp", { publicDir, bucket, keys, cacheControl }) });
+	}
+	if (files.includes(BUILD_META_KEY)) steps.push({ stage: "buildMeta", command: singleFileCommand({ publicDir, bucket, key: BUILD_META_KEY }) });
+	for (const command of buildRetiredPageCommands({ publicDir, bucket, files })) steps.push({ stage: "retiredPages", command });
+	if (files.includes(SHELL_KEY)) steps.push({ stage: "shell", command: singleFileCommand({ publicDir, bucket, key: SHELL_KEY }) });
+	return steps;
+}
+
+export function buildSyncCommands(options) {
+	return buildSyncPlan(options).map((step) => step.command);
+}
+
+/** What the bucket holds when the step at `failedIndex` did not finish, for the operator who has to decide what to do next. */
+export function describeSyncFailure({ plan, failedIndex, bucket }) {
+	const stage = plan[failedIndex].stage;
+	const done = [...new Set(plan.slice(0, failedIndex).map((step) => SYNC_STAGES[step.stage]))];
+	const finished = done.length > 0 ? `Finished before it: ${done.join("; ")}.` : "No earlier stage finished.";
+	const rerun = "Run the same sync again; it uploads every file without a content hash again and skips the hashed ones already there.";
+	if (stage === "immutable" || stage === "mutable" || stage === "pages") {
+		return `The upload stopped at "${SYNC_STAGES[stage]}". ${finished} s3://${bucket} still serves the previous release's ${SHELL_KEY} and ${BUILD_META_KEY}, so viewers keep getting the previous release, but unhashed files that were already written (service worker, manifest, chart loader, theme styles, other pages) may be this build's. ${rerun}`;
+	}
+	if (stage === "buildMeta") {
+		return `The upload stopped while writing ${BUILD_META_KEY}. ${finished} ${BUILD_META_KEY} in s3://${bucket} may be either release; ${SHELL_KEY} is still the previous release's. ${rerun}`;
+	}
+	return `The upload stopped at "${SYNC_STAGES[stage]}". ${finished} ${BUILD_META_KEY} in s3://${bucket} already reports this build while ${SHELL_KEY} is still the previous release's${stage === "shell" ? " (or partly written)" : ""}; navigations keep getting the previous shell and verify fails on shell parity. ${rerun}`;
+}
+
+/** Runs the plan in order and stops at the first failure with a description of what is live. */
+export function runSyncPlan({ plan, bucket, run }) {
+	for (const [index, step] of plan.entries()) {
+		try {
+			run(step.command);
+		} catch (error) {
+			const cause = error instanceof Error ? error.message : String(error);
+			throw new Error(`${describeSyncFailure({ plan, failedIndex: index, bucket })}\nCause: ${cause}`);
 		}
 	}
-	return commands;
 }
 
 /**
@@ -253,11 +320,102 @@ export function buildInvalidationCommand(distributionId) {
 	return ["cloudfront", "create-invalidation", "--distribution-id", distributionId, "--paths", "/*"];
 }
 
+/**
+ * The only fields of a Lambda FunctionConfiguration a release prints. The full configuration that
+ * `update-function-code` returns includes `Environment.Variables`, which hold the IPdata API key.
+ */
+export const LAMBDA_UPDATE_FIELDS = Object.freeze(["Version", "CodeSize", "CodeSha256", "State", "LastUpdateStatus"]);
+
 export function buildLambdaCommands({ functionName, zipPath }) {
+	const query = `{${LAMBDA_UPDATE_FIELDS.map((field) => `${field}: ${field}`).join(", ")}}`;
 	return [
-		["lambda", "update-function-code", "--function-name", functionName, "--zip-file", `fileb://${zipPath}`, "--publish"],
+		["lambda", "update-function-code", "--function-name", functionName, "--zip-file", `fileb://${zipPath}`, "--publish", "--query", query, "--output", "json"],
 		["lambda", "wait", "function-updated", "--function-name", functionName],
 	];
+}
+
+/** One line from the update's answer, built from the allowed fields alone, whatever the answer holds. */
+export function summarizeLambdaUpdate(output) {
+	let parsed;
+	try {
+		parsed = JSON.parse(output);
+	} catch {
+		return "Lambda updated (the answer was not JSON and is not printed)";
+	}
+	const fields = LAMBDA_UPDATE_FIELDS.filter((field) => typeof parsed?.[field] === "string" || typeof parsed?.[field] === "number").map(
+		(field) => `${field}=${parsed[field]}`,
+	);
+	return `Lambda updated: ${fields.join(" ")}`;
+}
+
+/** Relative module specifiers in a bundled entry; the release zips the entry file alone, so any of them would be missing at run time. */
+export function findRelativeImports(code) {
+	const pattern = /(?:\bfrom\s*|\bimport\s*\(\s*|\bimport\s+)(["'`])(\.{1,2}\/[^"'`]*)\1/g;
+	return [...new Set([...code.matchAll(pattern)].map((match) => match[2]))];
+}
+
+export function assertSelfContainedLambdaEntry(code, entry) {
+	const relative = findRelativeImports(code);
+	if (relative.length > 0) {
+		throw new Error(
+			`${entry} imports ${relative.join(", ")}; the build split a shared chunk out of it and the zip would carry ${entry} alone. Keep the Lambda entries free of shared chunks before uploading`,
+		);
+	}
+}
+
+/** The Lambda bundles `build:lambda` emits; `check-lambda` and CI check each of them. */
+export const LAMBDA_ENTRIES = Object.freeze(["index.mjs", "csp-report.mjs"]);
+
+/**
+ * Asks the public origin whether the API function answers right after an update. Both networks share
+ * one function and it serves `$LATEST`, so a broken package fails every geo check at once; the probe
+ * retries a few times only to ride out a single transient error.
+ */
+export async function probeApiAfterLambdaUpdate({ origin, fetchImpl = fetch, attempts = 3, delayMs = 3_000, sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms)) }) {
+	const base = origin.replace(/\/+$/, "");
+	let results = [];
+	for (let attempt = 1; attempt <= attempts; attempt += 1) {
+		results = [];
+		for (const [name, run] of API_CHECKS) results.push(await settleCheck(name, () => run(base, fetchImpl)));
+		if (results.every((result) => result.ok)) return { attempt, results };
+		if (attempt < attempts) await sleep(delayMs);
+	}
+	const failures = results.filter((result) => !result.ok).map((result) => `${result.name}: ${result.detail}`);
+	throw new Error(
+		`The API function does not answer through ${base} after the update (${failures.join("; ")}). Both networks run this package now and fail closed on /api/geo. Upload the previous release's package with: node deploy/cloudfront/deploy.mjs lambda --function-name <name> --lambda-dir <previous release worktree>/apps/terminal/dist-lambda --origin ${base} --execute`,
+	);
+}
+
+/**
+ * Checks the bundle, zips it, updates the function, waits for the update and probes the origin, in
+ * that order. Every side effect is injected so the order and the printed output can be tested.
+ */
+export async function releaseLambda({ functionName, bundle, zipPath, origin, skipProbe = false, execute, readBundle, zip, run, capture, probe, log = console.log }) {
+	const entry = bundle.split(/[\\/]/).at(-1);
+	assertSelfContainedLambdaEntry(readBundle(bundle), entry);
+	if (execute && !origin && !skipProbe) {
+		throw new Error("lambda --execute needs --origin to probe /api/health and /api/geo after the update (or --skip-probe for a function that does not serve them)");
+	}
+	log(`zip -j ${zipPath} ${bundle}`);
+	if (execute) zip(zipPath, bundle);
+	const [update, wait] = buildLambdaCommands({ functionName, zipPath });
+	const output = capture(update, execute);
+	if (execute) log(summarizeLambdaUpdate(output));
+	run(wait, execute);
+	if (skipProbe) {
+		log("Probe skipped (--skip-probe)");
+		return;
+	}
+	if (!origin) {
+		log("No --origin given: an executing update would refuse to run without the probe");
+		return;
+	}
+	if (!execute) {
+		log(`After the update: probe ${origin.replace(/\/+$/, "")}/api/health and /api/geo`);
+		return;
+	}
+	const { attempt, results } = await probe(origin);
+	log(`API probe through ${origin} passed${attempt > 1 ? ` on attempt ${attempt}` : ""}: ${results.map((result) => `${result.name}${result.detail ? ` (${result.detail})` : ""}`).join(", ")}`);
 }
 
 function findChartBundle(publicDir) {
@@ -271,6 +429,40 @@ function sha256(buffer) {
 	return createHash("sha256").update(buffer).digest("hex");
 }
 
+function expectThat(condition, message) {
+	if (!condition) throw new Error(message);
+}
+
+async function settleCheck(name, run) {
+	try {
+		const detail = await run();
+		return { name, ok: true, detail: detail ?? "" };
+	} catch (error) {
+		return { name, ok: false, detail: error instanceof Error ? error.message : String(error) };
+	}
+}
+
+async function checkGeoVerdict(base, fetchImpl) {
+	const response = await fetchImpl(`${base}/api/geo`, { headers: { accept: "application/json" } });
+	const text = await response.text();
+	expectThat(response.status === 200, `status ${response.status}: ${text.slice(0, 120)}`);
+	const verdict = JSON.parse(text);
+	expectThat(typeof verdict.country === "string" && verdict.country.length === 2, "verdict has no country");
+	return `country ${verdict.country}`;
+}
+
+async function checkHealthProbe(base, fetchImpl) {
+	const response = await fetchImpl(`${base}/api/health`);
+	expectThat(response.status === 204, `status ${response.status}`);
+	expectThat(response.headers.get("cache-control") === NO_STORE, `cache-control ${response.headers.get("cache-control")}`);
+}
+
+/** The checks `verify` and the post-update Lambda probe share. */
+const API_CHECKS = [
+	["health probe answers 204", checkHealthProbe],
+	["geo endpoint answers with a real verdict", checkGeoVerdict],
+];
+
 /**
  * Checks the public origin exactly the way the old Node health check did, but through CloudFront:
  * shell parity with the local build, security and preconnect headers, the live geo
@@ -283,16 +475,9 @@ export async function verifyDeployment({ origin, publicDir, network, fetchImpl =
 	const buildMeta = JSON.parse(readFileSync(join(publicDir, "build-meta.json"), "utf8"));
 	const results = [];
 	async function check(name, run) {
-		try {
-			const detail = await run();
-			results.push({ name, ok: true, detail: detail ?? "" });
-		} catch (error) {
-			results.push({ name, ok: false, detail: error instanceof Error ? error.message : String(error) });
-		}
+		results.push(await settleCheck(name, run));
 	}
-	function expect(condition, message) {
-		if (!condition) throw new Error(message);
-	}
+	const expect = expectThat;
 
 	await check("shell for a trade navigation", async () => {
 		const response = await fetchImpl(`${base}/trade/HYPE`, { headers: { accept: "text/html" } });
@@ -330,14 +515,7 @@ export async function verifyDeployment({ origin, publicDir, network, fetchImpl =
 		expect(remoteGates === localGates, `remote release gates (${remoteGates}) differ from the local build (${localGates})`);
 		return `${remote.commit.slice(0, 8)} / ${remote.release} / ${remoteGates}`;
 	});
-	await check("geo endpoint answers with a real verdict", async () => {
-		const response = await fetchImpl(`${base}/api/geo`, { headers: { accept: "application/json" } });
-		const text = await response.text();
-		expect(response.status === 200, `status ${response.status}: ${text.slice(0, 120)}`);
-		const verdict = JSON.parse(text);
-		expect(typeof verdict.country === "string" && verdict.country.length === 2, "verdict has no country");
-		return `country ${verdict.country}`;
-	});
+	await check("geo endpoint answers with a real verdict", () => checkGeoVerdict(base, fetchImpl));
 	await check("signed lambda post with a payload hash", async () => {
 		const body = JSON.stringify({ override: null });
 		const response = await fetchImpl(`${base}/api/referral-geo`, {
@@ -433,11 +611,7 @@ export async function verifyDeployment({ origin, publicDir, network, fetchImpl =
 		expect(sources.includes("'self'") && !sources.includes("https:"), `${headerName} img-src still allows any https origin: ${imgSrc}`);
 		return `${sources.length} sources, ${imageSourcesMode}`;
 	});
-	await check("health probe answers 204", async () => {
-		const response = await fetchImpl(`${base}/api/health`);
-		expect(response.status === 204, `status ${response.status}`);
-		expect(response.headers.get("cache-control") === NO_STORE, `cache-control ${response.headers.get("cache-control")}`);
-	});
+	await check("health probe answers 204", () => checkHealthProbe(base, fetchImpl));
 	await check("shell repeats from the edge", async () => {
 		await fetchImpl(`${base}/trade/HYPE`, { headers: { accept: "text/html" } });
 		const response = await fetchImpl(`${base}/trade/HYPE`, { headers: { accept: "text/html" } });
@@ -493,6 +667,8 @@ function readArgs(argv) {
 		publicDir: "apps/terminal/.output/public",
 		lambdaDir: "apps/terminal/dist-lambda",
 		lambdaEntry: "index.mjs",
+		functionsDir: FUNCTIONS_DIR,
+		skipProbe: false,
 		network: "mainnet",
 		acknowledged: [],
 	};
@@ -528,6 +704,12 @@ function readArgs(argv) {
 			case "--lambda-entry":
 				options.lambdaEntry = value();
 				break;
+			case "--functions-dir":
+				options.functionsDir = value();
+				break;
+			case "--skip-probe":
+				options.skipProbe = true;
+				break;
 			case "--network":
 				options.network = value();
 				break;
@@ -558,9 +740,27 @@ function awsArgs(args) {
 
 function runAws(args, execute) {
 	const full = awsArgs(args);
-	console.log(`aws ${full.map((arg) => (/[\s*]/.test(arg) ? JSON.stringify(arg) : arg)).join(" ")}`);
+	console.log(`aws ${full.map((arg) => (/[\s*{}]/.test(arg) ? JSON.stringify(arg) : arg)).join(" ")}`);
 	if (!execute) return;
 	execFileSync("aws", full, { stdio: ["ignore", "inherit", "inherit"] });
+}
+
+/** Runs a command whose answer is printed only through a caller's summary; nothing it returns reaches the log as is. */
+function captureAws(args, execute) {
+	const full = awsArgs(args);
+	console.log(`aws ${full.map((arg) => (/[\s*{}]/.test(arg) ? JSON.stringify(arg) : arg)).join(" ")}`);
+	if (!execute) return "";
+	return execFileSync("aws", full, { encoding: "utf8", stdio: ["ignore", "pipe", "inherit"] });
+}
+
+function readS3Object(bucket, key) {
+	return execFileSync("aws", awsArgs(["s3", "cp", `s3://${bucket}/${key}`, "-", "--no-progress"]), { stdio: ["ignore", "pipe", "inherit"], maxBuffer: 16 * 1024 * 1024 });
+}
+
+/** Source maps would publish the source of every chunk next to it; the build emits none. */
+export function assertNoSourceMaps(files) {
+	const maps = files.filter((file) => file.endsWith(".map"));
+	if (maps.length > 0) throw new Error(`The build contains ${maps.length} source map(s), for example ${maps.slice(0, 3).join(", ")}; refusing to publish them`);
 }
 
 function readAwsJson(args) {
@@ -653,14 +853,22 @@ function describeGateState(state) {
 }
 
 /** The files a viewer receives first; a sync that stopped early must never look like a release. */
-export const RELEASE_MARKER_FILES = ["_shell.html", "build-meta.json"];
+export const RELEASE_MARKER_FILES = [SHELL_KEY, BUILD_META_KEY];
 
-export function assertReleaseMarkersUploaded({ bucket, publicDir, headObject }) {
+/**
+ * Compares the bytes of each marker in the bucket with the local build. Sizes are not enough: the
+ * shell and the build metadata of consecutive releases often have the same size, so a skipped
+ * upload would pass a size check.
+ */
+export function assertReleaseMarkersUploaded({ bucket, publicDir, readObject }) {
 	for (const file of RELEASE_MARKER_FILES) {
-		const localBytes = statSync(join(publicDir, file)).size;
-		const remoteBytes = headObject(bucket, file);
-		if (remoteBytes !== localBytes) {
-			throw new Error(`${file} in s3://${bucket} is ${remoteBytes} bytes but the local build is ${localBytes} bytes; the sync did not finish`);
+		const local = sha256(readFileSync(join(publicDir, file)));
+		const body = readObject(bucket, file);
+		const remote = body === undefined || body === null ? "missing" : sha256(body);
+		if (remote !== local) {
+			throw new Error(
+				`${file} in s3://${bucket} (sha256 ${remote.slice(0, 12)}) differs from the local build (sha256 ${local.slice(0, 12)}); the upload did not finish, run the same sync again`,
+			);
 		}
 	}
 }
@@ -673,7 +881,7 @@ function requireOption(options, name) {
 async function main() {
 	const options = readArgs(process.argv.slice(2));
 	const publicDir = resolve(options.publicDir);
-	if (options.command !== "verify") {
+	if (options.command !== "verify" && options.command !== "check-lambda") {
 		awsProfile = resolveAwsProfile({ profile: options.profile });
 		console.log(`aws profile: ${awsProfile}`);
 		if (options.execute) assertReleaseIdentity(readAwsJson(["sts", "get-caller-identity"]).Arn);
@@ -691,21 +899,14 @@ async function main() {
 				if (options.execute) throw new Error(gates.problems.join("\n"));
 				for (const problem of gates.problems) console.warn(`An executing sync would refuse this build: ${problem}`);
 			}
-			if (options.execute) assertLivePolicyAllowsBuild(publicDir);
 			const files = listPublicFiles(publicDir);
-			for (const command of buildSyncCommands({ publicDir, bucket, files })) {
-				runAws(command, options.execute);
-			}
-			for (const command of buildRetiredPageCommands({ publicDir, bucket, files })) {
-				runAws(command, options.execute);
-			}
+			assertNoSourceMaps(files);
+			if (options.execute) assertLivePolicyAllowsBuild(publicDir);
+			const plan = buildSyncPlan({ publicDir, bucket, files });
+			runSyncPlan({ plan, bucket, run: (command) => runAws(command, options.execute) });
 			if (options.execute) {
-				assertReleaseMarkersUploaded({
-					bucket,
-					publicDir,
-					headObject: (name, key) => readAwsJson(["s3api", "head-object", "--bucket", name, "--key", key]).ContentLength,
-				});
-				console.log(`Release markers match the local build: ${RELEASE_MARKER_FILES.join(", ")}`);
+				assertReleaseMarkersUploaded({ bucket, publicDir, readObject: readS3Object });
+				console.log(`Release markers match the local build byte for byte: ${RELEASE_MARKER_FILES.join(", ")}`);
 			}
 			break;
 		}
@@ -740,15 +941,33 @@ async function main() {
 			const functionName = requireOption(options, "functionName");
 			const bundle = resolve(options.lambdaDir, options.lambdaEntry);
 			if (!existsSync(bundle) || !statSync(bundle).isFile()) throw new Error(`No Lambda bundle at ${bundle}; run pnpm --filter @sairn/terminal build:lambda`);
-			const zipPath = resolve(options.lambdaDir, `${options.lambdaEntry.replace(/\.mjs$/, "")}.zip`);
-			console.log(`zip -j ${zipPath} ${bundle}`);
-			if (options.execute) execFileSync("zip", ["-j", "-q", zipPath, bundle], { stdio: "inherit" });
-			for (const command of buildLambdaCommands({ functionName, zipPath })) runAws(command, options.execute);
+			await releaseLambda({
+				functionName,
+				bundle,
+				zipPath: resolve(options.lambdaDir, `${options.lambdaEntry.replace(/\.mjs$/, "")}.zip`),
+				origin: options.origin,
+				skipProbe: options.skipProbe,
+				execute: options.execute,
+				readBundle: (path) => readFileSync(path, "utf8"),
+				zip: (zipPath, path) => execFileSync("zip", ["-j", "-q", zipPath, path], { stdio: "inherit" }),
+				run: runAws,
+				capture: captureAws,
+				probe: (origin) => probeApiAfterLambdaUpdate({ origin }),
+			});
+			break;
+		}
+		case "check-lambda": {
+			for (const entry of LAMBDA_ENTRIES) {
+				const bundle = resolve(options.lambdaDir, entry);
+				if (!existsSync(bundle)) throw new Error(`No Lambda bundle at ${bundle}; run pnpm --filter @sairn/terminal build:lambda`);
+				assertSelfContainedLambdaEntry(readFileSync(bundle, "utf8"), entry);
+			}
+			console.log(`Lambda entries are self-contained: ${LAMBDA_ENTRIES.join(", ")}`);
 			break;
 		}
 		case "functions": {
 			for (const { name, file } of CLOUDFRONT_FUNCTIONS) {
-				let path = resolve(FUNCTIONS_DIR, file);
+				let path = resolve(options.functionsDir, file);
 				if (!existsSync(path)) throw new Error(`No CloudFront Function code at ${path}`);
 				if (name === RESPONSE_FUNCTION_NAME) {
 					if (!existsSync(join(publicDir, "_shell.html"))) throw new Error(`No _shell.html in ${publicDir}; the response function needs the build's inline script hashes`);
@@ -788,7 +1007,7 @@ async function main() {
 			break;
 		}
 		default:
-			console.error("usage: node deploy/cloudfront/deploy.mjs <sync|reupload|invalidate|aliases|lambda|functions|verify> [--execute] [--bucket B] [--only PREFIX]... [--alias HOST]... [--certificate-arn ARN] [--distribution ID] [--function-name F] [--lambda-entry index.mjs] [--origin URL] [--network mainnet|testnet] [--allow-sponsored-mainnet-deposits] [--allow-mobile-pairing]");
+			console.error("usage: node deploy/cloudfront/deploy.mjs <sync|reupload|invalidate|aliases|lambda|check-lambda|functions|verify> [--execute] [--bucket B] [--only PREFIX]... [--alias HOST]... [--certificate-arn ARN] [--distribution ID] [--function-name F] [--lambda-dir DIR] [--lambda-entry index.mjs] [--skip-probe] [--functions-dir DIR] [--public-dir DIR] [--origin URL] [--network mainnet|testnet] [--allow-sponsored-mainnet-deposits] [--allow-mobile-pairing]");
 			process.exit(2);
 	}
 }
