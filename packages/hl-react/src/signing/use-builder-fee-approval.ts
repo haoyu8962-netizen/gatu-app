@@ -2,6 +2,7 @@ import { useMutation } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import type { Address } from "viem";
 import { useExchange } from "../hooks/useExchange";
+import { assertExchangeSigningDeadline, startExchangeActionDeadline } from "../internal/exchange/request-scheduler";
 import { useHyperliquid } from "../provider";
 import { convertFeeToPercentageString } from "./agent-utils";
 import { useHyperliquidOwnerSigner } from "./owner-signer-provider";
@@ -48,6 +49,7 @@ export function useBuilderFeeApproval(): UseBuilderFeeApprovalResult {
 	const approval = useMutation({
 		mutationKey: ["hl", "builderFeeApproval", address],
 		mutationFn: async (): Promise<void> => {
+			const deadline = startExchangeActionDeadline();
 			const startAddress = address;
 			if (!startAddress) throw new Error("No wallet connected");
 			assertSameWallet(startAddress);
@@ -57,6 +59,7 @@ export function useBuilderFeeApproval(): UseBuilderFeeApprovalResult {
 			if (!requirements.needsBuilderFee) return;
 			if (!builderConfig?.b || builderConfig.f === undefined)
 				throw new Error("Builder fee configuration is unavailable");
+			assertExchangeSigningDeadline(deadline);
 
 			setAwaitingWallet(true);
 			const approvalPromise = approveBuilderFee.mutateAsync({

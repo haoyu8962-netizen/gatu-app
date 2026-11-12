@@ -48,6 +48,7 @@ export async function verifyLegalActionAllowed({
 	forceFresh = false,
 	signal,
 }: VerifyLegalActionOptions): Promise<LegalStatus> {
+	if (signal?.aborted) throw new LegalActionNotAllowedError("status_unavailable", { statusReason: "aborted" });
 	if (typeof navigator !== "undefined" && navigator.onLine === false) {
 		throw new LegalActionNotAllowedError("status_unavailable", { statusReason: "network" });
 	}

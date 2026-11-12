@@ -44,8 +44,16 @@ Do not collapse these states into one boolean.
   and the application `QueryClient` makes it the mutation default, so nothing is
   replayed without a new confirmation when the network returns.
 - A request rejected before it started (deadline or identity change) aborts its
-  start gate: the wait for the Agent registration session lock ends and the
-  funds-action lock is released at once.
+  start gate: the wait for the Agent registration session lock ends, a running
+  pre-execution guard stops waiting, and the funds-action lock is released at
+  once; an already aborted signal skips the guard and the legal re-check.
+- The deadline ends where the wallet signer is called. Steps after it (the owner
+  signer's `verifyOwner()`, the embedded wallet's signing round trip, the
+  post-signature identity check, an external wallet's prompt) are not limited:
+  an L1 action is still bounded by `expiresAfter` when Transaction Delay
+  Protection is on and the server-time sample is reliable, a user-signed action
+  is not. The builder-fee and Agent approval flows check their own age before
+  they ask for a signature.
 - Preserve the onboarding order documented in `docs/trading-onboarding.md`.
 - Agent registration and builder-fee approval are separate. First-time setup
   approves only the Agent; builder-fee approval is deferred until an action

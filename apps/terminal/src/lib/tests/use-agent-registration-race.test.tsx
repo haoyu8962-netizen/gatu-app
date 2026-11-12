@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 
+import { ExchangeActionDeadlineError } from "@sairn/hl-react/internal/exchange/request-scheduler";
 import {
 	type AgentApprovalMutateAsync,
 	type AgentApprovalOptions,
@@ -394,6 +395,41 @@ describe("useAgentRegistration logout races", () => {
 			}),
 		);
 		expect(testState.approveAgent).not.toHaveBeenCalled();
+	});
+
+	it("does not ask for an Agent approval when the status check before it outlasts the action limit", async () => {
+		testState.refetchAgent.mockImplementationOnce(
+			() =>
+				new Promise((resolve) =>
+					setTimeout(
+						() =>
+							resolve({
+								isAgentReady: false,
+								isBuilderFeeReady: true,
+								isReady: false,
+								needsAgent: true,
+								needsBuilderFee: false,
+								signaturesRequired: 1,
+							}),
+						60_000,
+					),
+				),
+		);
+
+		await act(async () => {
+			root.render(createElement(QueryClientProvider, { client: queryClient }, createElement(RegistrationButton)));
+		});
+		act(() => {
+			container.querySelector("button")?.click();
+		});
+		await flushMicrotasks();
+		await act(async () => {
+			await vi.advanceTimersByTimeAsync(60_000);
+		});
+
+		await expect(registrationPromise).rejects.toBeInstanceOf(ExchangeActionDeadlineError);
+		expect(testState.approveAgent).not.toHaveBeenCalled();
+		expect(window.localStorage.getItem(AGENT_STORAGE_KEY)).toBeNull();
 	});
 
 	it("does not sign when the initial Agent status cannot be loaded", async () => {

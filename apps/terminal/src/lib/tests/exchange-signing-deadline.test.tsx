@@ -7,6 +7,10 @@ import type { ExchangeClient, IRequestTransport } from "@nktkas/hyperliquid";
 import { createExchangeClient } from "@sairn/hl-react/clients";
 import { useExchange } from "@sairn/hl-react/hooks/useExchange";
 import { ExchangeActionDeadlineError } from "@sairn/hl-react/internal/exchange/request-scheduler";
+import {
+	captureAgentRegistrationExecutionLease,
+	startAgentRegistrationExecution,
+} from "@sairn/hl-react/signing/agent-registration-session";
 import { onlineManager, QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
@@ -33,6 +37,7 @@ const WITHDRAW = { destination: OWNER, amount: "1" };
 
 const state = vi.hoisted(() => ({
 	clockWaits: [] as Array<() => Promise<void>>,
+	guardWaits: [] as Array<() => Promise<void>>,
 	enforceLegalActions: false,
 	exchangeLifecycle: { id: Symbol("exchange-signing-deadline-test"), active: true },
 	legalCheck: null as unknown as Mock,
@@ -81,7 +86,7 @@ vi.mock("@sairn/hl-react/provider", () => ({
 }));
 
 type Mutate = (params: unknown) => Promise<unknown>;
-type Mutations = Record<"order" | "cancel" | "vaultTransfer" | "withdraw3", Mutate>;
+type Mutations = Record<"order" | "cancel" | "vaultTransfer" | "withdraw3" | "guardedWithdraw", Mutate>;
 
 interface Outcome {
 	settled: boolean;
@@ -240,6 +245,7 @@ describe.each(["owner", "agent"] as const)("exchange signing deadline with the %
 		vi.spyOn(performance, "now").mockImplementation(() => realNow() + perfOffset);
 		signatures.length = 0;
 		state.clockWaits = [];
+		state.guardWaits = [];
 		state.enforceLegalActions = false;
 		state.legalCheck = vi.fn().mockResolvedValue({ acceptedTerms: true, userAllowed: true, restrictions: "n" });
 		Object.defineProperty(window.navigator, "onLine", { configurable: true, value: true });
@@ -292,11 +298,17 @@ describe.each(["owner", "agent"] as const)("exchange signing deadline with the %
 		const cancel = useExchange("cancel");
 		const vaultTransfer = useExchange("vaultTransfer");
 		const withdraw3 = useExchange("withdraw3");
+		const guardedWithdraw = useExchange("withdraw3", {
+			preExecutionGuard: async () => {
+				await state.guardWaits.shift()?.();
+			},
+		});
 		captured = {
 			order: order.mutateAsync as Mutate,
 			cancel: cancel.mutateAsync as Mutate,
 			vaultTransfer: vaultTransfer.mutateAsync as Mutate,
 			withdraw3: withdraw3.mutateAsync as Mutate,
+			guardedWithdraw: guardedWithdraw.mutateAsync as Mutate,
 		};
 		return null;
 	}
@@ -473,6 +485,30 @@ describe.each(["owner", "agent"] as const)("exchange signing deadline with the %
 		expect(signatures).toHaveLength(1);
 	});
 
+	it("releases both locks at the deadline while the pre-execution guard that entered at 14 seconds still waits", async () => {
+		const releaseSession = locks.hold(SESSION_LOCK_PREFIX);
+		state.guardWaits.push(() => new Promise(() => {}));
+		const mutations = render();
+		const sessionLock = `${SESSION_LOCK_PREFIX}Mainnet:${OWNER}`;
+
+		const first = track(mutations.guardedWithdraw(WITHDRAW));
+		await advance(14_000);
+		releaseSession();
+		await advance(0);
+		expect(locks.isHeld(sessionLock)).toBe(true);
+		expect(locks.isHeld(FUNDS_LOCK_NAME)).toBe(true);
+
+		await advance(1_000);
+		expect(first.error).toBeInstanceOf(ExchangeActionDeadlineError);
+		expect(locks.isHeld(sessionLock)).toBe(false);
+		expect(locks.isHeld(FUNDS_LOCK_NAME)).toBe(false);
+
+		const second = track(mutations.guardedWithdraw(WITHDRAW));
+		await advance(0);
+		expect(second).toEqual({ settled: true });
+		expect(signatures).toHaveLength(1);
+	});
+
 	it("fails an action submitted offline at once and never sends it when the network returns", async () => {
 		state.enforceLegalActions = true;
 		state.legalCheck.mockRejectedValue(new TypeError("fetch failed"));
@@ -491,6 +527,56 @@ describe.each(["owner", "agent"] as const)("exchange signing deadline with the %
 		await advance(120_000);
 		expect(signatures).toEqual([]);
 		expect(exchangeRequests()).toBe(0);
+	});
+});
+
+describe("pre-execution guard after an abandoned start", () => {
+	afterEach(() => {
+		window.localStorage.clear();
+	});
+
+	it("does not run the guard when the action was abandoned before the session lock was granted", async () => {
+		window.localStorage.setItem(
+			SESSION_STORAGE_KEY,
+			JSON.stringify({ version: 1, epoch: "11111111-1111-4111-8111-111111111111", state: "active" }),
+		);
+		Object.defineProperty(window.navigator, "locks", {
+			configurable: true,
+			value: {
+				request: (_name: string, _options: unknown, callback: (lock: Lock) => unknown) =>
+					Promise.resolve(callback({} as Lock)),
+			},
+		});
+		const lease = captureAgentRegistrationExecutionLease("Mainnet", OWNER);
+		if (!lease) throw new Error("Expected an execution lease");
+		const controller = new AbortController();
+		controller.abort();
+		const guard = vi.fn(async () => {});
+		const execute = vi.fn(async () => "sent");
+
+		await expect(
+			startAgentRegistrationExecution(lease, () => true, execute, guard, controller.signal),
+		).resolves.toEqual({ status: "invalidated" });
+		expect(guard).not.toHaveBeenCalled();
+		expect(execute).not.toHaveBeenCalled();
+	});
+});
+
+describe("aborted legal re-check", () => {
+	it("sends no request when the action was already abandoned", async () => {
+		const legalCheck = vi.fn().mockResolvedValue({ acceptedTerms: true, userAllowed: true, restrictions: "n" });
+		const controller = new AbortController();
+		controller.abort();
+		await expect(
+			verifyLegalActionAllowed({
+				queryClient: new QueryClient(),
+				info: { legalCheck } as never,
+				env: "Mainnet",
+				owner: OWNER,
+				signal: controller.signal,
+			}),
+		).rejects.toMatchObject({ reason: "status_unavailable", statusReason: "aborted" });
+		expect(legalCheck).not.toHaveBeenCalled();
 	});
 });
 

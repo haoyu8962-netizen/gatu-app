@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
 
+import { ExchangeActionDeadlineError } from "@sairn/hl-react/internal/exchange/request-scheduler";
 import { useBuilderFeeApproval } from "@sairn/hl-react/signing/use-builder-fee-approval";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { onlineManager, QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -71,6 +72,8 @@ describe("useBuilderFeeApproval", () => {
 	});
 
 	afterEach(() => {
+		onlineManager.setOnline(true);
+		vi.useRealTimers();
 		act(() => root.unmount());
 		queryClient.clear();
 		container.remove();
@@ -122,5 +125,54 @@ describe("useBuilderFeeApproval", () => {
 
 		expect(testState.approveBuilderFee).toHaveBeenCalledOnce();
 		expect(testState.refetchBuilderFee).toHaveBeenCalledTimes(2);
+	});
+
+	it("does not sign when the builder fee status query paused offline answers 120 seconds after the click", async () => {
+		vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "setInterval", "clearInterval", "Date"] });
+		queryClient.setDefaultOptions({ mutations: { retry: false, networkMode: "always" }, queries: { retry: false } });
+		testState.refetchBuilderFee.mockImplementation(() =>
+			queryClient.fetchQuery({
+				queryKey: ["builder-fee-status"],
+				queryFn: async () => requirements(true),
+				networkMode: "online",
+				staleTime: 0,
+			}),
+		);
+		const hook = renderHook();
+		onlineManager.setOnline(false);
+
+		let failure: unknown;
+		await act(async () => {
+			hook.approve().catch((error: unknown) => {
+				failure = error;
+			});
+			await vi.advanceTimersByTimeAsync(120_000);
+		});
+		expect(failure).toBeUndefined();
+
+		await act(async () => {
+			onlineManager.setOnline(true);
+			await vi.advanceTimersByTimeAsync(0);
+		});
+		expect(failure).toBeInstanceOf(ExchangeActionDeadlineError);
+		expect(testState.approveBuilderFee).not.toHaveBeenCalled();
+	});
+
+	it("still approves a fee whose status arrives within the limit", async () => {
+		vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "setInterval", "clearInterval", "Date"] });
+		testState.refetchBuilderFee
+			.mockImplementationOnce(() => new Promise((resolve) => setTimeout(() => resolve(requirements(true)), 14_000)))
+			.mockResolvedValueOnce(requirements(false));
+		const hook = renderHook();
+
+		let done: Promise<void> | undefined;
+		await act(async () => {
+			done = hook.approve();
+			await vi.advanceTimersByTimeAsync(14_000);
+		});
+		await act(async () => {
+			await done;
+		});
+		expect(testState.approveBuilderFee).toHaveBeenCalledOnce();
 	});
 });

@@ -302,6 +302,7 @@ jobs:
           src/lib/tests/exchange-action-expiry.test.ts
           src/lib/tests/exchange-start-deadline.test.tsx
           src/lib/tests/exchange-signing-deadline.test.tsx
+          src/lib/tests/builder-fee-approval.test.tsx
           src/lib/tests/open-order-modification.test.ts
           src/lib/tests/open-order-modification-form.test.ts
           src/lib/tests/spot-swap-execution-guard.test.ts

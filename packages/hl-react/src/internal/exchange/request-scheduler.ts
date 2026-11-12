@@ -135,6 +135,17 @@ function hasPassedDeadline(entry: SigningDeadline): boolean {
 	return entry.deadlineMs !== undefined && getReceiptAgeMs(entry.queuedAt, entry.queuedAtMonotonic) >= entry.deadlineMs;
 }
 
+/** A deadline that starts now, for a flow that signs outside the scheduler (builder fee, Agent approval). */
+export function startExchangeActionDeadline(): ExchangeSigningDeadlineSlot {
+	return {
+		current: {
+			queuedAt: Date.now(),
+			queuedAtMonotonic: performance.now(),
+			deadlineMs: EXCHANGE_ACTION_START_DEADLINE_MS,
+		},
+	};
+}
+
 export function assertExchangeSigningDeadline(slot: ExchangeSigningDeadlineSlot): void {
 	if (slot.current && hasPassedDeadline(slot.current)) throw new ExchangeActionDeadlineError();
 }

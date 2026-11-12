@@ -3,6 +3,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { Address } from "viem";
 import { zeroAddress } from "viem";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
+import { assertExchangeSigningDeadline, startExchangeActionDeadline } from "../internal/exchange/request-scheduler";
 import { useHyperliquid } from "../provider";
 import { type AgentApprovalOptions, useAgentApprovalOverride } from "./agent-approval-provider";
 import {
@@ -167,6 +168,7 @@ export function useAgentRegistration(options: { enabled?: boolean } = {}): UseAg
 		retry: false,
 		mutationFn: async (options?: AgentRegistrationOptions): Promise<Address> => {
 			if (!enabled) throw new Error("Agent registration is disabled for owner-wallet trading");
+			const deadline = startExchangeActionDeadline();
 			const registrationIdentity = { address, env };
 			let phase: AgentRegistrationFailurePhase = "preflight";
 			let resetAllowed = false;
@@ -397,6 +399,7 @@ export function useAgentRegistration(options: { enabled?: boolean } = {}): UseAg
 					if (!approveAgentOverride) {
 						throw new Error("A host Agent approval provider is required");
 					}
+					assertExchangeSigningDeadline(deadline);
 					const privateKey = generatePrivateKey();
 					const account = privateKeyToAccount(privateKey);
 					const publicKey = account.address;
