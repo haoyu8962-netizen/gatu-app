@@ -16,6 +16,7 @@ import {
 import * as twapReservations from "@/lib/trade/twap-order-asset-reservation";
 import { getActiveTwapReservationId } from "@/lib/trade/twap-order-asset-reservation";
 import {
+	dismissOrderQueueItem,
 	getOrderQueueItem,
 	type OrderQueueItem,
 	useOrderQueue,
@@ -77,6 +78,7 @@ function QueueFeedback() {
 
 const mocks = vi.hoisted(() => ({
 	clientKey: "0x1111111111111111111111111111111111111111",
+	env: "Mainnet" as "Mainnet" | "Testnet",
 	activeData: undefined as
 		| { dex: string; user: `0x${string}`; states: Array<[number, ReturnType<typeof createTwapState>]> }
 		| undefined,
@@ -114,7 +116,7 @@ vi.mock("sonner", () => ({
 }));
 
 vi.mock("@/lib/hyperliquid", () => ({
-	useHyperliquid: () => ({ clientKey: mocks.clientKey, env: "Mainnet" }),
+	useHyperliquid: () => ({ clientKey: mocks.clientKey, env: mocks.env }),
 	useSubscription: (method: string) => ({
 		data: method === "twapStates" ? mocks.activeData : mocks.historyData,
 		status: "active",
@@ -218,6 +220,7 @@ describe("TwapReconciliation", () => {
 		mocks.infoToast.mockReset();
 		mocks.dismissToast.mockReset();
 		mocks.clientKey = USER;
+		mocks.env = "Mainnet";
 		mocks.activeLastMessageAt = undefined;
 		mocks.activeMonotonicLastMessageAt = undefined;
 		getPendingTwapActions().prune(Number.MAX_SAFE_INTEGER);
@@ -921,9 +924,9 @@ describe("TwapReconciliation", () => {
 		const NEUTRAL = "TWAP is no longer active. Check TWAP history before retrying.";
 		type HistoryStatus = "terminated" | "finished" | "activated";
 
-		function setHistory(entries: Array<{ twapId: number; status: HistoryStatus }>) {
+		function setHistory(entries: Array<{ twapId: number; status: HistoryStatus }>, user: `0x${string}` = USER) {
 			mocks.historyData = {
-				user: USER,
+				user,
 				isSnapshot: true,
 				history: entries.map(({ twapId, status }) => ({
 					twapId,
@@ -934,11 +937,11 @@ describe("TwapReconciliation", () => {
 			};
 		}
 
-		async function renderWithoutActiveTwap(twapId: number) {
+		async function renderWithoutActiveTwap(twapId: number, env: "Mainnet" | "Testnet" = "Mainnet") {
 			const now = Date.now();
 			const monotonicNow = performance.now();
 			const cancellation = getPendingTradingActionActions().claimTwapCancellation({
-				env: "Mainnet",
+				env,
 				owner: USER,
 				twapId,
 				assetId: 7,
@@ -1010,6 +1013,100 @@ describe("TwapReconciliation", () => {
 			expect(getPendingTradingActionSnapshot().twapCancellations).toHaveLength(0);
 			expectActionFeedback(cancellation.id, "unconfirmed", NEUTRAL);
 			expect(vi.getTimerCount()).toBe(0);
+		});
+
+		it("does not read another network's history after the host switches networks while it waits", async () => {
+			setHistory([{ twapId: 95, status: "activated" }]);
+			const cancellation = await renderWithoutActiveTwap(95);
+
+			mocks.env = "Testnet";
+			setHistory([{ twapId: 95, status: "terminated" }]);
+			act(() => root.render(createReconciliation()));
+			await act(() => vi.advanceTimersByTimeAsync(TRADING_ACTION_CONFIRMATION_TIMEOUT_MS + 1_000));
+			expect(getOrderQueueItem(`pending-trading-action:${cancellation.id}`)?.status).toBe("unconfirmed");
+			expect(getPendingTradingActionSnapshot().twapCancellations).toHaveLength(1);
+
+			mocks.env = "Mainnet";
+			setHistory([{ twapId: 95, status: "finished" }]);
+			await act(async () => {
+				root.render(createReconciliation());
+				await vi.advanceTimersByTimeAsync(1_000);
+			});
+			expectActionFeedback(cancellation.id, "failed", "TWAP finished before it could be terminated.");
+		});
+
+		it("does not read the history of another account", async () => {
+			setHistory([{ twapId: 96, status: "terminated" }], "0x2222222222222222222222222222222222222222");
+			const cancellation = await renderWithoutActiveTwap(96);
+			await act(() => vi.advanceTimersByTimeAsync(TRADING_ACTION_CONFIRMATION_TIMEOUT_MS));
+
+			expectActionFeedback(cancellation.id, "unconfirmed", NEUTRAL);
+		});
+
+		it("lets a remounted host settle from the history it received", async () => {
+			setHistory([{ twapId: 97, status: "activated" }]);
+			const cancellation = await renderWithoutActiveTwap(97);
+
+			act(() => root.render(createElement(Fragment)));
+			setHistory([{ twapId: 97, status: "finished" }]);
+			await act(async () => {
+				root.render(createReconciliation());
+				await vi.advanceTimersByTimeAsync(1_000);
+			});
+			expectActionFeedback(cancellation.id, "failed", "TWAP finished before it could be terminated.");
+
+			await act(() => vi.advanceTimersByTimeAsync(TRADING_ACTION_CONFIRMATION_TIMEOUT_MS));
+			expectActionFeedback(cancellation.id, "failed", "TWAP finished before it could be terminated.");
+		});
+
+		it("does not settle a different action that reused the waiting action's ID", async () => {
+			vi.spyOn(globalThis.crypto, "randomUUID").mockReturnValue("00000000-0000-4000-8000-000000000098");
+			setHistory([{ twapId: 98, status: "activated" }]);
+			await renderWithoutActiveTwap(98);
+
+			act(() => getPendingTradingActionActions().reset());
+			const testnet = getPendingTradingActionActions().claimTwapCancellation({
+				env: "Testnet",
+				owner: USER,
+				twapId: 98,
+				assetId: 7,
+			});
+			if (!testnet) throw new Error("Expected Testnet TWAP cancellation claim");
+			setHistory([{ twapId: 98, status: "terminated" }]);
+			await act(() => vi.advanceTimersByTimeAsync(2_000));
+
+			expect(getPendingTradingActionSnapshot().twapCancellations).toEqual([
+				expect.objectContaining({ id: testnet.id, env: "Testnet" }),
+			]);
+		});
+
+		it("keeps a hidden unconfirmed notification hidden when the wait ends without a result", async () => {
+			setHistory([{ twapId: 99, status: "activated" }]);
+			const cancellation = await renderWithoutActiveTwap(99);
+			const id = `pending-trading-action:${cancellation.id}`;
+			expect(getOrderQueueItem(id)?.status).toBe("unconfirmed");
+			act(() => dismissOrderQueueItem(id));
+
+			await act(() => vi.advanceTimersByTimeAsync(TRADING_ACTION_CONFIRMATION_TIMEOUT_MS));
+
+			expect(getPendingTradingActionSnapshot().twapCancellations).toHaveLength(0);
+			expect(getOrderQueueItem(id)).toMatchObject({ status: "unconfirmed", dismissed: true });
+		});
+
+		it.each([
+			{ status: "finished" as const, feedback: "failed" as const },
+			{ status: "terminated" as const, feedback: "success" as const },
+		])("shows a hidden notification again once the history shows the TWAP $status", async ({ status, feedback }) => {
+			setHistory([{ twapId: 100, status: "activated" }]);
+			const cancellation = await renderWithoutActiveTwap(100);
+			const id = `pending-trading-action:${cancellation.id}`;
+			act(() => dismissOrderQueueItem(id));
+
+			setHistory([{ twapId: 100, status }]);
+			act(() => root.render(createReconciliation()));
+			await act(() => vi.advanceTimersByTimeAsync(1_000));
+
+			expect(getOrderQueueItem(id)).toMatchObject({ status: feedback, dismissed: false });
 		});
 	});
 });

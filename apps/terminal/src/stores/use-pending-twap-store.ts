@@ -7,6 +7,7 @@ import {
 } from "@/domain/trade/twap";
 import {
 	type PendingSubmissionIdentity,
+	type PendingSubmissionSharing,
 	shareSubmissionsBetweenTabs,
 } from "@/lib/trade/pending-submission-tab-ownership";
 import { z } from "@/lib/zod";
@@ -81,6 +82,8 @@ interface PendingTwapStore {
 		markActive: (id: string) => void;
 		/** The owner and network this tab can reconcile now, or null while it cannot reconcile any. */
 		serve: (identity: PendingSubmissionIdentity | null) => void;
+		/** Whether this tab still reconciles the submission: an asynchronous step checks it before writing. */
+		owns: (id: string) => boolean;
 		clearActive: (id: string) => void;
 		remove: (id: string) => void;
 		resolve: (id: string) => PendingTwapSubmission | null;
@@ -279,6 +282,7 @@ export function createPendingTwapStore(storage: PendingTwapStorage | null = getB
 				return submission;
 			},
 			serve: (identity) => sharing.serve(identity),
+			owns: (id) => sharing.owns(id),
 			markActive: (id) => {
 				set((state) => ({ activeSubmissionIds: new Set(state.activeSubmissionIds).add(id) }));
 			},
@@ -387,7 +391,7 @@ export function createPendingTwapStore(storage: PendingTwapStorage | null = getB
 		});
 	}
 
-	const sharing = shareSubmissionsBetweenTabs(store, "sairn-pending-twap-owner-v1:", (id) =>
+	const sharing: PendingSubmissionSharing = shareSubmissionsBetweenTabs(store, "sairn-pending-twap-owner-v1:", (id) =>
 		(readPersistedPendingTwaps(storage) ?? store.getState().submissions).some((submission) => submission.id === id),
 	);
 	return store;

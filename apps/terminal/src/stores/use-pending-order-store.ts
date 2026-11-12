@@ -10,6 +10,7 @@ import {
 } from "@/domain/trade/order-tracking";
 import {
 	type PendingSubmissionIdentity,
+	type PendingSubmissionSharing,
 	shareSubmissionsBetweenTabs,
 } from "@/lib/trade/pending-submission-tab-ownership";
 import { z } from "@/lib/zod";
@@ -169,6 +170,8 @@ interface PendingOrderStore {
 		markActive: (id: string) => void;
 		/** The owner and network this tab can reconcile now, or null while it cannot reconcile any. */
 		serve: (identity: PendingSubmissionIdentity | null) => void;
+		/** Whether this tab still reconciles the submission: an asynchronous step checks it before writing. */
+		owns: (id: string) => boolean;
 		clearActive: (id: string) => void;
 		remove: (id: string) => void;
 		markChecked: (cloid: string, checkedAt: number) => void;
@@ -388,6 +391,7 @@ export function createPendingOrderStore(storage: PendingOrderStorage | null = ge
 				});
 			},
 			serve: (identity) => sharing.serve(identity),
+			owns: (id) => sharing.owns(id),
 			markActive: (id) => {
 				set((state) => ({ activeSubmissionIds: new Set(state.activeSubmissionIds).add(id) }));
 			},
@@ -545,7 +549,7 @@ export function createPendingOrderStore(storage: PendingOrderStorage | null = ge
 		});
 	}
 
-	const sharing = shareSubmissionsBetweenTabs(store, "sairn-pending-order-owner-v1:", (id) =>
+	const sharing: PendingSubmissionSharing = shareSubmissionsBetweenTabs(store, "sairn-pending-order-owner-v1:", (id) =>
 		(readPersistedPendingOrders(storage) ?? store.getState().submissions).some((submission) => submission.id === id),
 	);
 	return store;

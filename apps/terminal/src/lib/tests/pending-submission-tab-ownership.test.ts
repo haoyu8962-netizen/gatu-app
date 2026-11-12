@@ -181,9 +181,9 @@ describe.each(kinds)("pending $name submission ownership between tabs", ({ lockP
 		Object.defineProperty(window.navigator, "locks", { configurable: true, value: undefined });
 	});
 
-	function openTab(storage: Storage, user: string | null) {
+	function openTab(storage: Storage, user: string | null, env: "Mainnet" | "Testnet" = "Mainnet") {
 		const tab = createTab(storage);
-		tab.actions().serve(user ? { env: "Mainnet", user } : null);
+		tab.actions().serve(user ? { env, user } : null);
 		return tab;
 	}
 
@@ -255,6 +255,7 @@ describe.each(kinds)("pending $name submission ownership between tabs", ({ lockP
 			const submission = sender.add();
 			const otherAccount = openTab(storage, USER_Y);
 			const disconnected = openTab(storage, null);
+			const otherNetwork = openTab(storage, USER_X, "Testnet");
 			const sameAccount = openTab(storage, USER_X);
 			await settle();
 
@@ -263,6 +264,7 @@ describe.each(kinds)("pending $name submission ownership between tabs", ({ lockP
 
 			expect(isBlocked(otherAccount, submission.id)).toBe(true);
 			expect(isBlocked(disconnected, submission.id)).toBe(true);
+			expect(isBlocked(otherNetwork, submission.id)).toBe(true);
 			expect(isBlocked(sameAccount, submission.id)).toBe(false);
 			expect(locks.holderCount(`${lockPrefix}${submission.id}`)).toBe(1);
 			expect(locks.requestCount(`${lockPrefix}${submission.id}`)).toBe(2);

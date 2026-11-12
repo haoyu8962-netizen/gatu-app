@@ -5,6 +5,12 @@ export interface PendingSubmissionIdentity {
 	user: string;
 }
 
+export interface PendingSubmissionSharing {
+	claim: (id: string) => void;
+	serve: (identity: PendingSubmissionIdentity | null) => void;
+	owns: (id: string) => boolean;
+}
+
 interface TabOwnedSubmissionState {
 	submissions: readonly (PendingSubmissionIdentity & { id: string })[];
 	activeSubmissionIds: Set<string>;
@@ -31,13 +37,15 @@ function getLockManager(): LockManager | undefined {
  * that the record is still stored and still its own to serve, and otherwise lets it go at once; a
  * holder whose identity stops matching releases the lock unless the submission is still being sent
  * from it. The browser releases a closed or crashed tab's locks, so a waiting tab of the same account
- * takes over. Without Web Locks every tab reconciles every submission, as before.
+ * takes over. Without Web Locks every tab reconciles every submission, as before. `owns` tells an
+ * asynchronous step that resumes after an `await` whether this tab still reconciles the submission,
+ * so a lookup that returns after the lock moved to another tab writes nothing.
  */
 export function shareSubmissionsBetweenTabs<S extends TabOwnedSubmissionState>(
 	store: StoreApi<S>,
 	lockPrefix: string,
 	isStored: (id: string) => boolean,
-): { claim: (id: string) => void; serve: (identity: PendingSubmissionIdentity | null) => void } {
+): PendingSubmissionSharing {
 	const claims = new Map<string, Claim>();
 	let identity: PendingSubmissionIdentity | null = null;
 	let syncing = false;
@@ -138,5 +146,6 @@ export function shareSubmissionsBetweenTabs<S extends TabOwnedSubmissionState>(
 			identity = next;
 			sync();
 		},
+		owns: (id) => store.getState().submissions.some((submission) => submission.id === id) && !claims.get(id)?.blocked,
 	};
 }

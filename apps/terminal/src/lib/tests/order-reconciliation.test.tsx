@@ -6,7 +6,11 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { OrderReconciliation } from "@/components/trade/order-reconciliation";
 import { STORAGE_KEYS } from "@/config/app";
-import { ORDER_RECONCILIATION_CONFIRMATION_WINDOW_MS, type OrderProcessingStatus } from "@/domain/trade/order-tracking";
+import {
+	ORDER_RECONCILIATION_CONFIRMATION_WINDOW_MS,
+	ORDER_RECONCILIATION_MAX_AGE_MS,
+	type OrderProcessingStatus,
+} from "@/domain/trade/order-tracking";
 import { settlePartialOrderCancellation } from "@/lib/trade/pending-trading-action-feedback";
 import {
 	getPositionMarketCloseActions,
@@ -21,7 +25,11 @@ import {
 	useOrderQueue,
 	useOrderQueueActions,
 } from "@/stores/use-order-queue-store";
-import { getPendingOrderActions, hasPendingOrderForAssets } from "@/stores/use-pending-order-store";
+import {
+	createPendingOrderStore,
+	getPendingOrderActions,
+	hasPendingOrderForAssets,
+} from "@/stores/use-pending-order-store";
 import {
 	getPendingTradingActionActions,
 	getPendingTradingActionSnapshot,
@@ -63,6 +71,7 @@ const POSITION: PositionMarketCloseRef = {
 };
 const mocks = vi.hoisted(() => ({
 	clientKey: "0x1111111111111111111111111111111111111111",
+	env: "Mainnet" as "Mainnet" | "Testnet",
 	infoOrderStatus: vi.fn(),
 	successToast: vi.fn(),
 	warningToast: vi.fn(),
@@ -88,7 +97,7 @@ vi.mock("sonner", () => ({
 }));
 
 vi.mock("@/lib/hyperliquid", () => ({
-	useHyperliquid: () => ({ clientKey: mocks.clientKey, env: "Mainnet", info: { orderStatus: mocks.infoOrderStatus } }),
+	useHyperliquid: () => ({ clientKey: mocks.clientKey, env: mocks.env, info: { orderStatus: mocks.infoOrderStatus } }),
 	useSubscription: (method: string) =>
 		method === "openOrders"
 			? {
@@ -132,6 +141,7 @@ describe("OrderReconciliation", () => {
 		mocks.errorToast.mockReset();
 		mocks.dismissToast.mockReset();
 		mocks.clientKey = USER;
+		mocks.env = "Mainnet";
 		mocks.orderUpdatesData = undefined;
 		mocks.openOrdersData = undefined;
 		mocks.openOrdersLastMessageAt = undefined;
@@ -1745,6 +1755,64 @@ describe("OrderReconciliation", () => {
 			expect(getOrderQueueItem(`pending-trading-action:${cancellation.id}`)?.status).toBe("confirming");
 		});
 
+		it("ignores open orders of another network when deciding whether the order came back", async () => {
+			let answer!: (value: unknown) => void;
+			mocks.infoOrderStatus.mockReturnValue(
+				new Promise((resolve) => {
+					answer = resolve;
+				}),
+			);
+			const cancellation = claimUnconfirmedCancellation([101], "unconfirmed");
+			await renderAndSettle();
+
+			mocks.env = "Testnet";
+			mocks.openOrdersData = { orders: [{ oid: 101, sz: "1", triggerPx: "0" }] };
+			mocks.openOrdersMonotonicLastMessageAt = performance.now() + 1;
+			await renderAndSettle();
+			await act(async () => {
+				answer(orderStatus("canceled"));
+				for (let index = 0; index < 5; index += 1) await Promise.resolve();
+			});
+
+			expectActionFeedback(cancellation.id, "success", "Canceled");
+		});
+
+		it("turns a confirming cancellation unconfirmed when the lookup brings no result", async () => {
+			mocks.infoOrderStatus.mockRejectedValue(new Error("network"));
+			const cancellation = claimUnconfirmedCancellation([103], "awaiting");
+
+			await renderAndSettle();
+
+			expect(getOrderQueueItem(`pending-trading-action:${cancellation.id}`)).toMatchObject({
+				status: "unconfirmed",
+				dismissed: false,
+			});
+			expectActionFeedback(cancellation.id, "unconfirmed", NO_LONGER_OPEN);
+		});
+
+		it("keeps a hidden unconfirmed cancellation hidden when the lookup brings no result", async () => {
+			let fail!: (error: Error) => void;
+			mocks.infoOrderStatus.mockReturnValue(
+				new Promise((_resolve, reject) => {
+					fail = reject;
+				}),
+			);
+			const cancellation = claimUnconfirmedCancellation([102], "unconfirmed");
+			const id = `pending-trading-action:${cancellation.id}`;
+			await renderAndSettle();
+			expect(getOrderQueueItem(id)?.status).toBe("unconfirmed");
+			act(() => dismissOrderQueueItem(id));
+
+			await act(async () => {
+				fail(new Error("network"));
+				for (let index = 0; index < 5; index += 1) await Promise.resolve();
+			});
+
+			expect(getPendingTradingActionSnapshot().orderCancellations).toEqual([]);
+			expect(getOrderQueueItem(id)).toMatchObject({ status: "unconfirmed", dismissed: true });
+			expectActionFeedback(cancellation.id, "unconfirmed", NO_LONGER_OPEN);
+		});
+
 		it("does not bring back the notification of a cancellation that ended while its lookup was running", async () => {
 			let answer!: (value: unknown) => void;
 			mocks.infoOrderStatus.mockReturnValue(
@@ -1927,6 +1995,45 @@ describe("OrderReconciliation", () => {
 			expect(otherTabLocks.has(LOCK_NAME)).toBe(true);
 		});
 
+		it("does not settle a lookup that returns after this tab handed the submission to another tab", async () => {
+			let answer!: (value: unknown) => void;
+			mocks.infoOrderStatus.mockReturnValue(
+				new Promise((resolve) => {
+					answer = resolve;
+				}),
+			);
+			const cloid = "0x000000000000000000000000000000bb" as const;
+			act(() => root.render(createReconciliation()));
+			const submission = getPendingOrderActions().add({
+				env: "Mainnet",
+				user: USER,
+				intentKey: "handed-over-order",
+				children: [{ assetId: 11, cloid }],
+			});
+			const storageKey = `${STORAGE_KEYS.PENDING_ORDERS}:submission:Mainnet:${USER}:${submission.id}`;
+			const otherTab = createPendingOrderStore(window.localStorage);
+			otherTab.getState().actions.serve({ env: "Mainnet", user: USER });
+			await flush();
+			await act(() => vi.advanceTimersByTimeAsync(3_000));
+			expect(mocks.infoOrderStatus).toHaveBeenCalledWith({ user: USER, oid: cloid });
+			expect(otherTab.getState().actions.owns(submission.id)).toBe(false);
+
+			mocks.clientKey = "0x2222222222222222222222222222222222222222";
+			act(() => root.render(createReconciliation()));
+			await flush();
+			expect(otherTab.getState().actions.owns(submission.id)).toBe(true);
+
+			await act(async () => {
+				answer({ status: "order", order: { status: "filled" } });
+				for (let index = 0; index < 5; index += 1) await Promise.resolve();
+			});
+
+			expect(window.localStorage.getItem(storageKey)).not.toBeNull();
+			expect(findQueueForAsset(11)?.status).not.toBe("success");
+			window.localStorage.removeItem(storageKey);
+			act(() => getPendingOrderActions().remove(submission.id));
+		});
+
 		it("settles a timed-out submission from a fill it already received once the closed tab's lock is free", async () => {
 			mocks.orderUpdatesData = [{ order: { cloid: OTHER_TAB_CLOID }, status: "filled" }];
 			act(() => root.render(createReconciliation()));
@@ -1941,5 +2048,34 @@ describe("OrderReconciliation", () => {
 			expect(findQueueForAsset(9)).toMatchObject({ owner: USER, status: "success", outcome: "filled" });
 			expect(window.localStorage.getItem(STORAGE_KEY)).toBeNull();
 		});
+	});
+
+	it("drops records older than 24 hours on startup, whichever account they belong to, and keeps newer ones", () => {
+		const otherUser = "0x2222222222222222222222222222222222222222";
+		function writeRecord(id: string, createdAt: number) {
+			const key = `${STORAGE_KEYS.PENDING_ORDERS}:submission:Mainnet:${otherUser}:${id}`;
+			window.localStorage.setItem(
+				key,
+				JSON.stringify({
+					id,
+					env: "Mainnet",
+					user: otherUser,
+					intentKey: id,
+					createdAt,
+					children: [{ assetId: 12, cloid: "0x000000000000000000000000000000cc", attempts: 0, nextCheckAt: createdAt }],
+				}),
+			);
+			window.dispatchEvent(new StorageEvent("storage", { key }));
+			return key;
+		}
+		const expired = writeRecord("expired-other-account", Date.now() - ORDER_RECONCILIATION_MAX_AGE_MS - 1);
+		const recent = writeRecord("recent-other-account", Date.now() - ORDER_RECONCILIATION_MAX_AGE_MS + 60_000);
+
+		act(() => root.render(createReconciliation()));
+
+		expect(window.localStorage.getItem(expired)).toBeNull();
+		expect(window.localStorage.getItem(recent)).not.toBeNull();
+		window.localStorage.removeItem(recent);
+		act(() => getPendingOrderActions().prune(Number.MAX_SAFE_INTEGER));
 	});
 });

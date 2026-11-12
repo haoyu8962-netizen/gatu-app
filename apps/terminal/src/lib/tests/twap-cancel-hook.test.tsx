@@ -64,7 +64,9 @@ const mocks = vi.hoisted(() => ({
 	warningToast: vi.fn(),
 	activeTwaps: undefined as { states: Array<[number, unknown]> } | undefined,
 	activeTwapsReceivedAt: undefined as number | undefined,
-	twapHistory: undefined as { history: Array<{ twapId: number; status: { status: string } }> } | undefined,
+	twapHistory: undefined as
+		| { user: string; history: Array<{ twapId: number; status: { status: string } }> }
+		| undefined,
 }));
 
 vi.mock("sonner", () => ({
@@ -419,7 +421,7 @@ describe("useTwapCancel", () => {
 
 		mocks.activeTwaps = { states: [] };
 		mocks.activeTwapsReceivedAt = performance.now() + 1;
-		mocks.twapHistory = { history: [{ twapId: 49, status: { status: "finished" } }] };
+		mocks.twapHistory = { user: USER, history: [{ twapId: 49, status: { status: "finished" } }] };
 		await act(async () => {
 			root.render(createElement(Fragment, null, createElement(Probe), createElement(TwapReconciliation)));
 			for (let index = 0; index < 10; index += 1) await Promise.resolve();

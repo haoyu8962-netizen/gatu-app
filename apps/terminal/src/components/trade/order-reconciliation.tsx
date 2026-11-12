@@ -17,6 +17,7 @@ import { orderReconciliationError } from "@/lib/trade/order-reconciliation-feedb
 import {
 	confirmPartialCancellationFeedback,
 	getPartialCancellationFeedback,
+	settleUnconfirmedTradingActionFeedback,
 	syncPendingTradingActionFeedback,
 	updatePendingTradingActionFeedback,
 } from "@/lib/trade/pending-trading-action-feedback";
@@ -275,9 +276,9 @@ export function OrderReconciliation() {
 						!activeSubmissionIds.has(submission.id),
 				)
 				.flatMap((submission) =>
-					submission.children.filter(
-						(child) => !isOrderStatusFinalForSubmission(submission, child.status) && child.nextCheckAt <= now,
-					),
+					submission.children
+						.filter((child) => !isOrderStatusFinalForSubmission(submission, child.status) && child.nextCheckAt <= now)
+						.map((child) => ({ ...child, submissionId: submission.id })),
 				)
 				.slice(0, ORDER_RECONCILIATION_POLL_LIMIT);
 			if (due.length === 0) return;
@@ -289,7 +290,7 @@ export function OrderReconciliation() {
 						getPendingOrderActions().markChecked(child.cloid, now);
 						try {
 							const result = await info.orderStatus({ user, oid: child.cloid });
-							if (result.status !== "order") return;
+							if (result.status !== "order" || !getPendingOrderActions().owns(child.submissionId)) return;
 							const completed = getPendingOrderActions().resolve(env, user, child.cloid, result.order.status);
 							if (completed) completeReconciliation(completed);
 						} catch {
@@ -380,12 +381,13 @@ async function verifyCancellation(
 	}
 	getPendingTradingActionActions().releaseOrderCancellation(current.id);
 	if (canceledCount + filledCount < total) {
-		updatePendingTradingActionFeedback(current, "cancel", {
-			status: "unconfirmed",
-			message: statuses.some((status) => status === "open" || status === "triggered")
+		settleUnconfirmedTradingActionFeedback(
+			current,
+			"cancel",
+			statuses.some((status) => status === "open" || status === "triggered")
 				? msg`The cancellation was not confirmed. Review open orders before retrying.`
 				: msg`The order is no longer open. Check your fills before retrying.`,
-		});
+		);
 		return;
 	}
 	const message = msg`Filled before it could be canceled. Check your positions.`;
