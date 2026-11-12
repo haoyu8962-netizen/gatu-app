@@ -539,6 +539,12 @@ describe("classifyActionError", () => {
 		expect(describeActionError(guardTimeout, translate, "Transfer failed")).toBe(
 			"The checks before this request took too long. Nothing was signed or sent. Try again.",
 		);
+		const deadline = Object.assign(new Error("Exchange request waited too long before signing and was not sent."), {
+			name: "ExchangeActionDeadlineError",
+		});
+		expect(describeActionError(deadline, translate, "Order failed")).toBe(
+			"The checks before this request took too long. Nothing was signed or sent. Try again.",
+		);
 		const rateLimited = Object.assign(new Error("Could not load agent status"), {
 			name: "AgentStatusError",
 			reason: "rate_limited",

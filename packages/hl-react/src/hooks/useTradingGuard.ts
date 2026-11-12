@@ -1,4 +1,5 @@
 import { useLayoutEffect, useRef, useState } from "react";
+import { hasExchangeActionDeadlinePassed, startExchangeActionDeadline } from "../internal/exchange/request-scheduler";
 import { useHyperliquid } from "../provider";
 import { useHyperliquidOwnerSigner } from "../signing/owner-signer-provider";
 import { useTradingAuthorization } from "../signing/use-trading-authorization";
@@ -75,13 +76,18 @@ export function useTradingGuard(options: UseTradingGuardOptions = {}): UseTradin
 		if (requireAuthorization && identityRef.current.sessionMode === "agent-only") return;
 		const identity = identityRef.current;
 		const attempt = Symbol("explicit-trading-action");
+		const deadline = startExchangeActionDeadline();
 		inFlight.current = attempt;
 		setLocalError(null);
 		const isCurrent = () => mounted.current && inFlight.current === attempt && identityRef.current === identity;
 		void (async () => {
 			try {
 				identity.ownerSigner?.assertCurrent();
-				if (requireAuthorization) await authorize();
+				if (requireAuthorization) {
+					await authorize();
+					// ADR 0053: an approval that finished after the limit hands the action back to a new click.
+					if (hasExchangeActionDeadlinePassed(deadline)) return;
+				}
 				if (!isCurrent()) return;
 				identity.ownerSigner?.assertCurrent();
 				await action?.();

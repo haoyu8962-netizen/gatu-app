@@ -430,6 +430,22 @@ only network, timeout, 408, 429, and 5xx failures receive bounded retries.
   initial Agent query may block the action, but background revalidation must
   not repeatedly disable the explicit Enable Trading entry; registration
   still refetches the definitive status before requesting a signature.
+- An explicit authorization (`useTradingAuthorization.authorize()`, reached
+  from Enable Trading or from a confirm button that shows `Enable`) starts one
+  15-second deadline when it is entered and hands it to the Agent registration
+  and the builder-fee approval. Each checks that same deadline before it asks
+  for a signature; the Agent registration checks it once before it generates
+  the key and again immediately before `approveAgent`, and a candidate saved in
+  between but never submitted is removed through the existing registration
+  cleanup. Time spent in an external wallet's prompt is not counted. Called on
+  their own, without a deadline, both flows start their own.
+- A confirm button that shows `Enable` and was not given
+  `requireReadyConfirmation` authorizes first and then runs its action
+  (`useTradingGuard.runExplicitAction`), but only while the approval finished
+  within 15 seconds of the click; a later approval leaves the action to a new
+  click, without an error. Buttons given `requireReadyConfirmation` (market,
+  limit and close-all closes, reverse, Earn) only authorize and never run the
+  action ([ADR 0053](adr/0053-exchange-action-start-deadline.md)).
 - Trading-page load, refresh, and route remount must not automatically present
   the connection dialog. An explicit Enable Trading request owns the modal
   session. Once requested, the dialog remains mounted while Agent verification

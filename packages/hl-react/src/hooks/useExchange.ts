@@ -9,7 +9,9 @@ import {
 	ExchangeRequestInvalidatedError,
 	type ExchangeRequestStartGate,
 	getExchangeRequestPriority,
+	getExchangeStartDeadlineMs,
 	scheduleExchangeRequest,
+	unwrapExchangeSigningDeadline,
 } from "../internal/exchange/request-scheduler";
 import { useHyperliquid } from "../provider";
 import { getExchangeMethodConfig } from "../registries/exchange";
@@ -152,7 +154,7 @@ export function useExchange<M extends ExchangeMethod>(
 		const defaultPreExecutionGuard: AgentRegistrationPreExecutionGuard | undefined = preExecutionGuard
 			? (signal) => preExecutionGuard(requestParams as ExchangeParams<M>, signal)
 			: undefined;
-		const verifyLegalAccess = async (forceFresh: boolean) => {
+		const verifyLegalAccess = async (forceFresh: boolean, signal: AbortSignal) => {
 			if (!enforceLegalActions) return;
 			await verifyLegalActionAllowed({
 				queryClient,
@@ -161,10 +163,12 @@ export function useExchange<M extends ExchangeMethod>(
 				owner: clientKey as `0x${string}`,
 				capability: getExchangeLegalCapability(method),
 				forceFresh,
+				signal,
 			});
 		};
 		const startWithSessionLease = async (
 			start: Parameters<ExchangeRequestStartGate>[0],
+			signal: AbortSignal,
 			guard: AgentRegistrationPreExecutionGuard | undefined = defaultPreExecutionGuard,
 		) => {
 			const guarded = await startAgentRegistrationExecution(
@@ -175,27 +179,29 @@ export function useExchange<M extends ExchangeMethod>(
 				},
 				() => Promise.resolve(start()),
 				guard,
+				signal,
 			);
 			return guarded.status === "started" ? await guarded.execution : { status: "invalidated" as const };
 		};
-		const startWithLegalGate: ExchangeRequestStartGate = async (start) => {
+		const startWithLegalGate: ExchangeRequestStartGate = async (start, signal) => {
 			if (!fundsAction) {
-				await verifyLegalAccess(false);
-				return startWithSessionLease(start);
+				await verifyLegalAccess(false, signal);
+				return startWithSessionLease(start, signal);
 			}
 			return runWithFundsActionLock(env, clientKey, async () => {
+				if (signal.aborted) return { status: "invalidated" };
 				let fundsPreExecutionGuard: AgentRegistrationPreExecutionGuard | undefined;
 				if (config.client === "user") {
-					fundsPreExecutionGuard = async (signal) => {
-						await defaultPreExecutionGuard?.(signal);
-						await verifyLegalAccess(true);
+					fundsPreExecutionGuard = async (guardSignal) => {
+						await defaultPreExecutionGuard?.(guardSignal);
+						await verifyLegalAccess(true, signal);
 					};
 				} else {
-					await verifyLegalAccess(true);
+					await verifyLegalAccess(true, signal);
 					fundsPreExecutionGuard = defaultPreExecutionGuard;
 				}
 
-				const started = await startWithSessionLease(start, fundsPreExecutionGuard);
+				const started = await startWithSessionLease(start, signal, fundsPreExecutionGuard);
 				if (started.status === "invalidated") return started;
 				const response = await started.execution;
 				return { status: "started", execution: Promise.resolve(response) };
@@ -208,10 +214,13 @@ export function useExchange<M extends ExchangeMethod>(
 				ownerSigner?.assertCurrent();
 				assertExchangeMutationAllowed(method, requestParams, portfolioMarginActivationEnabled);
 				assertExecutionAllowed(method, requestParams as ExchangeParams<M>, executionGuard);
-				return requestParams !== undefined ? fn.call(exchange, requestParams) : fn.call(exchange);
+				return (requestParams !== undefined ? fn.call(exchange, requestParams) : fn.call(exchange)).catch(
+					unwrapExchangeSigningDeadline,
+				);
 			},
 			requestGeneration,
 			startWithLegalGate,
+			getExchangeStartDeadlineMs(method),
 		);
 	};
 
@@ -222,5 +231,7 @@ export function useExchange<M extends ExchangeMethod>(
 		...(fundsAction ? { retry: false } : {}),
 		mutationKey,
 		mutationFn,
+		// Never paused while offline and replayed later without a new confirmation (ADR 0053).
+		networkMode: "always",
 	});
 }

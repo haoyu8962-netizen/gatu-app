@@ -2,6 +2,7 @@
 
 import { createHash } from "node:crypto";
 import { i18n } from "@lingui/core";
+import { ExchangeActionDeadlineError } from "@sairn/hl-react/internal/exchange/request-scheduler";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
@@ -593,6 +594,21 @@ describe("useExplicitAgentApproval", () => {
 			"Wallet connection failed. Unlock your wallet, approve the connection, then retry.",
 		);
 		expect(testState.createPrivyAgentSigner).not.toHaveBeenCalled();
+		expect(testState.clientApproveAgent).not.toHaveBeenCalled();
+	});
+
+	it("does not create a signer or dispatch once the trading-connection deadline has passed", async () => {
+		const hook = await renderApprovalHook();
+		const deadline = {
+			current: { queuedAt: Date.now() - 20_000, queuedAtMonotonic: performance.now() - 20_000, deadlineMs: 15_000 },
+		};
+
+		await expect(hook.mutateAsync({ agentAddress: AGENT, agentName: "Mobile" }, { deadline })).rejects.toBeInstanceOf(
+			ExchangeActionDeadlineError,
+		);
+
+		expect(testState.createPrivyAgentSigner).not.toHaveBeenCalled();
+		expect(testState.signTypedData).not.toHaveBeenCalled();
 		expect(testState.clientApproveAgent).not.toHaveBeenCalled();
 	});
 
