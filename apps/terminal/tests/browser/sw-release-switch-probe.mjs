@@ -12,6 +12,8 @@
 //      stays at D, and the next navigation, served by a new worker instance, completes the sync.
 //      WebKit exposes no way to stop a worker from Playwright, so this step is skipped there;
 //   7. release F serves one asset with `Cache-Control: no-cache`; it is never stored;
+//   7a. the startup error page's reload clears the `assets-*` caches; the manifest goes with them, and
+//      the next navigation records the current shell again while the page's own loads refill the cache;
 //   8. a font outside /assets/ is stored in the font cache (the clone fix).
 // The releases are synthetic two-file builds, not the terminal: this proves the worker's cache
 // behaviour in Chromium and WebKit, not the startup time of the real application or of iOS.
@@ -97,11 +99,15 @@ async function cacheState(page) {
 		const read = async (name) => {
 			if (!(await caches.has(name))) return [];
 			const cache = await caches.open(name);
-			return (await cache.keys()).map((request) => new URL(request.url).pathname).sort();
+			return (await cache.keys())
+				.map((request) => new URL(request.url).pathname)
+				.filter((path) => path !== "/asset-manifest-v11")
+				.sort();
 		};
 		const shellCache = (await caches.has("shell-v11")) ? await caches.open("shell-v11") : undefined;
 		const shell = await (await shellCache?.match(new URL("shell-v11", location.origin).href))?.text();
-		const manifest = await (await shellCache?.match(new URL("shell-assets-v11", location.origin).href))?.text();
+		const assetCache = (await caches.has("assets-v11")) ? await caches.open("assets-v11") : undefined;
+		const manifest = await (await assetCache?.match(new URL("asset-manifest-v11", location.origin).href))?.text();
 		return {
 			shell: shell?.match(/release (\w)/)?.[1],
 			manifest: manifest === undefined ? undefined : JSON.parse(manifest).map((url) => new URL(url).pathname),
@@ -240,6 +246,27 @@ for (const engine of engines) {
 		await page.waitForFunction(() => document.title === "F ready", undefined, { timeout: 10_000 });
 		const afterF = await cacheState(page);
 		check("an asset served with no-cache is never stored", !f.assets.includes("/assets/vendor-F.js") && !afterF.assets.includes("/assets/vendor-F.js"), afterF.assets);
+
+		await page.evaluate(async () => {
+			for (const key of await caches.keys()) if (key.startsWith("assets-")) await caches.delete(key);
+		});
+		const cleared = await cacheState(page);
+		check("clearing the asset caches removes the manifest with them", cleared.manifest === undefined && cleared.assets.length === 0, cleared);
+		before = assetRequests.length;
+		await page.close();
+		page = await context.newPage();
+		await page.goto(`${origin}/trade`);
+		await page.waitForFunction(() => document.title === "F ready", undefined, { timeout: 10_000 });
+		const refilled = await waitFor(
+			page,
+			(state) => state.manifest?.includes("/assets/entry-F.js") && state.assets.includes("/assets/entry-F.js"),
+			"refilled after clearing",
+		);
+		check(
+			"the next navigation records the current shell again and the page's own loads refill the cache",
+			refilled.assets.includes("/assets/entry-F.js") && refilled.manifest.includes("/assets/entry-F.js"),
+			{ refilled, serverRequests: assetRequests.slice(before) },
+		);
 	} catch (error) {
 		check("probe", false, error instanceof Error ? error.message : String(error));
 	} finally {

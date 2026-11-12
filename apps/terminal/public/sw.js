@@ -12,8 +12,9 @@ const MAX_ICON_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 // cache with the shell actually cached; it never decides whether the shell is updated.
 const ASSET_SYNC_CONCURRENCY = 6;
 const ASSET_SYNC_TIMEOUT_MS = 60_000;
-// The shell cache entry (a separate key, not a cache name) listing the assets of the last completed sync.
-const ASSET_MANIFEST = `shell-assets-${CACHE_VERSION}`;
+const ASSET_LOOKUP_TIMEOUT_MS = 1_500;
+// The asset cache entry, outside /assets/, listing the startup assets this asset cache was last reconciled with.
+const ASSET_MANIFEST = `asset-manifest-${CACHE_VERSION}`;
 const RELOAD_REQUEST_MODES = new Set(["reload", "no-cache", "no-store"]);
 const SHELL_ASSET_LINK_RELS = new Set(["modulepreload", "preload", "stylesheet"]);
 // The surface-specific startup lists written by scripts/inject-shell-preloads.mjs (SURFACE_PRELOAD_META).
@@ -40,6 +41,7 @@ const JAVASCRIPT_TYPES = new Set([
 ]);
 
 let assetSyncQueue = Promise.resolve();
+let shellWrites = 0;
 
 self.addEventListener("install", () => self.skipWaiting());
 self.addEventListener("activate", (event) => {
@@ -173,19 +175,24 @@ async function navigationNetworkFirst(request, cacheName, cacheKey, event) {
 	}
 }
 
-// Runs after the v10 shell write. A failed write empties the asset cache, which is rebuildable and shares the
-// origin's quota with the shell, and tries once more with the spare copy; a stored shell queues the asset sync.
+// Runs after the v10 shell write. A write refused for quota empties the asset cache, which is rebuildable and shares
+// the origin's quota with the shell, and tries once more with the spare copy, unless another shell was stored in the
+// meantime; any other failure is swallowed as in v10. A stored shell queues the asset sync.
 function afterShellPut(put, cache, cacheKey, spare) {
 	return put.then(
-		() => queueAssetSync(),
-		async () => {
+		() => {
+			shellWrites += 1;
+			return queueAssetSync();
+		},
+		async (error) => {
+			if (error?.name !== "QuotaExceededError") return;
+			const writes = shellWrites;
 			await Promise.resolve()
 				.then(() => caches.delete(ASSET_CACHE))
 				.catch(() => undefined);
-			await Promise.resolve()
-				.then(() => cache.delete(assetManifestKey()))
-				.catch(() => undefined);
+			if (shellWrites !== writes) return;
 			await cache.put(cacheKey, spare);
+			shellWrites += 1;
 			return queueAssetSync();
 		},
 	);
@@ -201,15 +208,14 @@ function queueAssetSync() {
 	return run;
 }
 
-// One sync at a time, capped at ASSET_SYNC_TIMEOUT_MS; every failure is ignored. Operations the Cache API has already
-// started cannot be cancelled by the cap, only the requests the sync makes.
+// One sync at a time; every failure is ignored. The time limit aborts only the requests the sync makes: the sync then
+// waits for its Cache API operations to finish on their own, so a late delete can never land after the next sync. A
+// Cache API operation that never returns therefore holds back every later sync of this worker (never a shell write).
 async function syncAssets() {
 	const controller = new AbortController();
-	const { signal } = controller;
-	const stopped = new Promise((resolve) => signal.addEventListener("abort", resolve, { once: true }));
 	const timer = setTimeout(() => controller.abort(), ASSET_SYNC_TIMEOUT_MS);
 	try {
-		await Promise.race([reconcileAssets(signal), stopped]);
+		await reconcileAssets(controller.signal);
 	} finally {
 		clearTimeout(timer);
 		controller.abort();
@@ -217,25 +223,27 @@ async function syncAssets() {
 }
 
 // Reconciles the asset cache with the shell actually in the cache, never with a shell some navigation fetched. The
-// manifest records the startup assets of the last shell the asset cache was completely reconciled with; it moves only
-// after every one of them is in the cache, so an interrupted sync is simply done again by the next one.
+// manifest lives in the asset cache itself, so it disappears with it: it lists the startup assets of the shell this
+// asset cache was last reconciled with. On first takeover it is just the first list seen, whose assets the page's own
+// loads store (the other layout's list is not guaranteed to be cached). It moves only after every listed asset is in
+// the cache, so an interrupted sync is simply done again by the next one.
 async function reconcileAssets(signal) {
 	const shellCache = await openCache(SHELL_CACHE);
 	if (!shellCache || signal.aborted) return;
-	let state = await readAssetState(shellCache);
-	if (!state || signal.aborted || sameAssets(state.recorded, state.wanted)) return;
-	if (!state.recorded) {
-		await writeAssetManifest(shellCache, state.wanted);
-		return;
-	}
 	const cache = await openCache(ASSET_CACHE);
 	if (!cache || signal.aborted) return;
+	let state = await readAssetState(shellCache, cache);
+	if (!state || signal.aborted || sameAssets(state.recorded, state.wanted)) return;
+	if (!state.recorded) {
+		await writeAssetManifest(cache, state.wanted);
+		return;
+	}
 	const keys = await cache.keys();
 	if (signal.aborted) return;
-	state = await readAssetState(shellCache);
+	state = await readAssetState(shellCache, cache);
 	if (!state?.recorded || signal.aborted || sameAssets(state.recorded, state.wanted)) return;
 	const { wanted, recorded } = state;
-	const keep = new Set([...wanted, ...recorded]);
+	const keep = new Set([...wanted, ...recorded, assetManifestKey()]);
 	await Promise.allSettled(keys.filter((key) => !keep.has(key.url)).map((key) => cache.delete(key)));
 	const queue = [...wanted];
 	async function work() {
@@ -252,13 +260,13 @@ async function reconcileAssets(signal) {
 		if (!(await matchAsset(cache, href))) return;
 	}
 	if (signal.aborted) return;
-	await writeAssetManifest(shellCache, wanted);
+	await writeAssetManifest(cache, wanted);
 }
 
-async function readAssetState(shellCache) {
+async function readAssetState(shellCache, cache) {
 	const html = await readCachedText(shellCache, new URL(SHELL_CACHE, self.location.origin).href);
 	if (html === undefined) return undefined;
-	const manifest = await readCachedText(shellCache, assetManifestKey());
+	const manifest = await readCachedText(cache, assetManifestKey());
 	let recorded;
 	try {
 		recorded = manifest === undefined ? undefined : JSON.parse(manifest);
@@ -275,9 +283,9 @@ function readCachedText(cache, key) {
 		.catch(() => undefined);
 }
 
-function writeAssetManifest(shellCache, hrefs) {
+function writeAssetManifest(cache, hrefs) {
 	const body = JSON.stringify([...hrefs].sort());
-	return shellCache.put(assetManifestKey(), new Response(body, { headers: { "content-type": "application/json" } }));
+	return cache.put(assetManifestKey(), new Response(body, { headers: { "content-type": "application/json" } }));
 }
 
 function sameAssets(recorded, wanted) {
@@ -320,15 +328,21 @@ function matchAsset(cache, href) {
 		.catch(() => undefined);
 }
 
-function hasCacheDirective(response, directive) {
-	return new RegExp(`(?:^|[\\s,])${directive}(?:$|[\\s,;=])`, "i").test(response.headers.get("cache-control") ?? "");
+function cacheDirectives(response) {
+	return new Set(
+		(response.headers.get("cache-control") ?? "")
+			.split(",")
+			.map((directive) => directive.split("=")[0].trim().toLowerCase())
+			.filter(Boolean),
+	);
 }
 
-// Only what the origin itself declares immutable is stored, so a deploy that drops `immutable` from /assets/ turns
-// this cache off and leaves those files to the HTTP cache, as in v10.
+// Only what the origin itself declares immutable, and does not forbid or ask to revalidate, is stored. Dropping
+// `immutable` from /assets/ stops new writes; entries already stored keep answering until CACHE_VERSION changes.
 function isStorableAsset(href, response) {
 	if (response.status !== 200 || response.redirected) return false;
-	if (!hasCacheDirective(response, "immutable") || hasCacheDirective(response, "no-store")) return false;
+	const directives = cacheDirectives(response);
+	if (!directives.has("immutable") || directives.has("no-store") || directives.has("no-cache")) return false;
 	const type = (response.headers.get("content-type") ?? "").split(";")[0].trim().toLowerCase();
 	const pathname = new URL(href).pathname;
 	if (/\.m?js$/i.test(pathname)) return JAVASCRIPT_TYPES.has(type);
@@ -336,28 +350,58 @@ function isStorableAsset(href, response) {
 	return type !== "text/html";
 }
 
-async function assetCacheFirst(request, event) {
-	const cache = await openCache(ASSET_CACHE);
-	if (!RELOAD_REQUEST_MODES.has(request.cache)) {
-		const cached = await matchAsset(cache, request.url);
-		if (cached) return cached;
-	}
-	const response = await fetch(request);
-	if (cache && isStorableAsset(request.url, response)) {
-		const copy = response.clone();
-		event.waitUntil(
-			Promise.resolve()
-				.then(() => cache.put(request.url, copy))
-				.catch(() => undefined),
+function withinTimeout(promise, timeoutMs) {
+	return new Promise((resolve) => {
+		const timeout = setTimeout(() => resolve(undefined), timeoutMs);
+		promise.then(
+			(value) => {
+				clearTimeout(timeout);
+				resolve(value);
+			},
+			() => {
+				clearTimeout(timeout);
+				resolve(undefined);
+			},
 		);
+	});
+}
+
+async function lookupAsset(href) {
+	const cache = await openCache(ASSET_CACHE);
+	return { cache, cached: await matchAsset(cache, href) };
+}
+
+function storeAfterResponse(event, cache, href, response) {
+	if (!isStorableAsset(href, response)) return;
+	const copy = response.clone();
+	event.waitUntil(
+		Promise.resolve(cache)
+			.then((value) => value?.put(href, copy))
+			.catch(() => undefined),
+	);
+}
+
+// The cache lookup is bounded: past ASSET_LOOKUP_TIMEOUT_MS the request goes to the network and nothing is written. A
+// reload-type request goes to the network at once and is written afterwards, best effort.
+async function assetCacheFirst(request, event) {
+	if (RELOAD_REQUEST_MODES.has(request.cache)) {
+		const response = await fetch(request);
+		storeAfterResponse(event, openCache(ASSET_CACHE), request.url, response);
+		return response;
 	}
+	const lookup = await withinTimeout(lookupAsset(request.url), ASSET_LOOKUP_TIMEOUT_MS);
+	if (lookup?.cached) return lookup.cached;
+	const response = await fetch(request);
+	if (lookup?.cache) storeAfterResponse(event, lookup.cache, request.url, response);
 	return response;
 }
 
 // A small scanner instead of global replacements. Every tag is read whole, honouring quoted attribute values, before
 // its name is looked at, so markup inside another tag's attribute never counts; comments are skipped (`<!-->` and
-// `<!--->` end at once, as in HTML); a script's body is skipped up to `</script` followed by whitespace, `/` or `>`.
-// Tags inside `<noscript>` or CDATA are still read, which can only keep or fetch a few more files.
+// `<!--->` end at once, and `-->` or `--!>` ends one, as in HTML); a script's body is skipped up to `</script` followed
+// by whitespace, `/` or `>`; a repeated attribute keeps its first value. It only guarantees to read in full the forms
+// scripts/inject-shell-preloads.mjs writes. `<noscript>`, CDATA and character references in attribute values (`&#46;`)
+// are not handled; reading them wrongly can only make a prefetch incomplete or larger, never affect a shell update.
 function shellAssetUrls(html) {
 	const hrefs = new Set();
 	function add(value) {
@@ -409,8 +453,10 @@ function shellAssetUrls(html) {
 function commentEnd(html, open) {
 	if (html.startsWith("<!-->", open)) return open + 5;
 	if (html.startsWith("<!--->", open)) return open + 6;
-	const close = html.indexOf("-->", open + 4);
-	return close < 0 ? -1 : close + 3;
+	const ends = [html.indexOf("-->", open + 4), html.indexOf("--!>", open + 4)].filter((index) => index >= 0);
+	if (ends.length === 0) return -1;
+	const close = Math.min(...ends);
+	return close + (html.startsWith("--!>", close) ? 4 : 3);
 }
 
 function scriptEnd(lower, from) {
@@ -441,7 +487,8 @@ function readAttributes(source) {
 	for (const [, name, double, single, bare] of source.matchAll(
 		/([^\s"'=<>/]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`]+)))?/g,
 	)) {
-		attributes.set(name.toLowerCase(), double ?? single ?? bare ?? "");
+		const key = name.toLowerCase();
+		if (!attributes.has(key)) attributes.set(key, double ?? single ?? bare ?? "");
 	}
 	return attributes;
 }

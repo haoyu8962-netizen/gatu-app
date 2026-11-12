@@ -922,24 +922,30 @@ have an install capability.
   tested application-shell/navigation strategy.
 - The service worker's shell write path is v10's: every navigation that
   receives a cacheable shell stores it, with no read or wait before the write;
-  the one addition is that a failed write empties the rebuildable asset cache
-  and retries once ([ADR 0051](adr/0051-service-worker-startup-asset-cache.md)).
-  Same-origin immutable `/assets/` files are answered cache-first from the
-  versioned asset cache, except for reload-type requests; only clean 200s of
-  the expected content type whose `Cache-Control` declares `immutable` (and not
-  `no-store`) are stored, so dropping `immutable` at the origin turns this
-  cache off. After each shell write, a serial, idempotent sync reconciles the
-  asset cache with the shell actually cached and a manifest of the last
-  completed sync: it keeps the new and the recorded assets, fetches the
-  missing ones under a time limit and moves the manifest only when it
+  the one addition is that a write refused for quota empties the rebuildable
+  asset cache and retries once, unless another shell was stored meanwhile
+  ([ADR 0051](adr/0051-service-worker-startup-asset-cache.md)). Other write
+  failures are swallowed as in v10. Same-origin immutable `/assets/` files are
+  answered cache-first from the versioned asset cache: the cache lookup is
+  bounded (past the limit the request goes to the network and nothing is
+  written), and reload-type requests go to the network first. Only clean 200s
+  of the expected content type whose `Cache-Control` declares `immutable` and
+  neither `no-store` nor `no-cache` are stored; dropping `immutable` at the
+  origin stops new writes, while stored entries keep answering until the cache
+  version changes. After each shell write, a serial, idempotent sync
+  reconciles the asset cache with the shell actually cached and a manifest
+  kept inside the asset cache itself, so the manifest disappears whenever the
+  asset cache does. The sync keeps the new and the recorded assets, fetches
+  the missing ones under a time limit that aborts only its requests (it still
+  waits for its Cache API operations), and moves the manifest only when it
   finished. Provided the network works, nothing times out, the worker is not
   stopped and storage accepts writes, the latest shell's assets are then all
   cached; otherwise the next navigation continues the sync. The worker does
   not precache the whole build, does not intercept the TradingView files, and
   keeps the navigation bypass list, the `?lang=` network-first rule and the
   cacheable-shell checks. A font or asset response is cloned before it is
-  handed to the page, never afterwards. Cache names, limits and the
-  release-switch probe live in the ADR.
+  handed to the page, never afterwards. Cache names, limits, the shell-scanner
+  limits and the release-switch probe live in the ADR.
 
 ### Important Files
 

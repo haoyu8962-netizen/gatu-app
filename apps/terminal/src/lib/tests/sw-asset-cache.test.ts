@@ -13,7 +13,7 @@ const terminalRoot = resolve(__dirname, "../../..");
 const serviceWorker = readFileSync(resolve(terminalRoot, "public/sw.js"), "utf8");
 const origin = "https://app.sairn.ai";
 const shellKey = `${origin}/shell-v11`;
-const manifestKey = `${origin}/shell-assets-v11`;
+const manifestKey = `${origin}/asset-manifest-v11`;
 const IMMUTABLE = "public, max-age=31536000, immutable";
 const CONTENT_TYPES: Record<string, string> = { css: "text/css", js: "text/javascript", woff2: "font/woff2" };
 
@@ -71,6 +71,10 @@ function createHarness({ quotaBytes }: HarnessOptions = {}) {
 	const requested: string[] = [];
 	const failingPuts = new Set<string>();
 	const hangingMatches = new Set<string>();
+	const hangingOpens = new Set<string>();
+	const putFilters: Array<(name: string, key: string, body: string) => Error | undefined> = [];
+	const entryDeleteGates = new Map<string, Promise<unknown>>();
+	const cacheDeleteGate: { current?: Promise<unknown> } = {};
 	const keysGates = new Map<string, Promise<unknown>>();
 	const keysCalls = new Map<string, number>();
 	const deleted: string[] = [];
@@ -108,6 +112,7 @@ function createHarness({ quotaBytes }: HarnessOptions = {}) {
 	}
 	const open = vi.fn(async (name: string) => {
 		await tick();
+		if (hangingOpens.has(name)) await new Promise(() => {});
 		let store = stores.get(name);
 		if (!store) {
 			store = new Map();
@@ -126,6 +131,10 @@ function createHarness({ quotaBytes }: HarnessOptions = {}) {
 				const body = await response.arrayBuffer();
 				if (failingPuts.has(name)) throw new DOMException("quota exceeded", "QuotaExceededError");
 				const key = keyOf(request);
+				for (const filter of putFilters) {
+					const error = filter(name, key, new TextDecoder().decode(body));
+					if (error) throw error;
+				}
 				const replaced = entries.get(key)?.bytes ?? 0;
 				if (quotaBytes !== undefined && usedBytes() - replaced + body.byteLength > quotaBytes) {
 					throw new DOMException("quota exceeded", "QuotaExceededError");
@@ -139,12 +148,18 @@ function createHarness({ quotaBytes }: HarnessOptions = {}) {
 				return snapshot.map((url) => new Request(url));
 			},
 			delete: async (request: Request | string) => {
+				const gate = entryDeleteGates.get(keyOf(request));
+				entryDeleteGates.delete(keyOf(request));
+				await gate;
 				deleted.push(keyOf(request));
 				return entries.delete(keyOf(request));
 			},
 		};
 	});
-	const deleteCache = vi.fn(async (name: string) => stores.delete(name));
+	const deleteCache = vi.fn(async (name: string) => {
+		await cacheDeleteGate.current;
+		return stores.delete(name);
+	});
 	const self = {
 		location: { origin },
 		addEventListener: (name: string, callback: (event: Record<string, unknown>) => void) => {
@@ -216,10 +231,13 @@ function createHarness({ quotaBytes }: HarnessOptions = {}) {
 		return stores.get(cacheName)?.get(new URL(key, origin).href)?.response.clone().text();
 	}
 	function cachedKeys(cacheName: string) {
-		return [...(stores.get(cacheName)?.keys() ?? [])].map((url) => url.replace(origin, "")).sort();
+		return [...(stores.get(cacheName)?.keys() ?? [])]
+			.filter((url) => url !== manifestKey)
+			.map((url) => url.replace(origin, ""))
+			.sort();
 	}
 	async function manifest() {
-		const text = await cachedText("shell-v11", manifestKey);
+		const text = await cachedText("assets-v11", manifestKey);
 		return text === undefined ? undefined : (JSON.parse(text) as string[]).map((url) => url.replace(origin, ""));
 	}
 	async function seed(cacheName: string, key: string, response: Response) {
@@ -236,6 +254,7 @@ function createHarness({ quotaBytes }: HarnessOptions = {}) {
 		deleteCache,
 		navigate,
 		get,
+		dispatch,
 		load,
 		respond,
 		requests,
@@ -246,6 +265,10 @@ function createHarness({ quotaBytes }: HarnessOptions = {}) {
 		seed,
 		failingPuts,
 		hangingMatches,
+		hangingOpens,
+		putFilters,
+		entryDeleteGates,
+		cacheDeleteGate,
 		keysGates,
 		keysCalls,
 		deleted,
@@ -259,7 +282,7 @@ type Harness = ReturnType<typeof createHarness>;
 async function seedRelease(harness: Harness, assets: string[], extra = "") {
 	await harness.seed("shell-v11", shellKey, shell(assets, extra));
 	await harness.seed(
-		"shell-v11",
+		"assets-v11",
 		manifestKey,
 		new Response(JSON.stringify(assets.map((path) => `${origin}${path}`).sort())),
 	);
@@ -331,6 +354,10 @@ describe("service worker asset cache", () => {
 		["JavaScript served as text/plain", () => asset("Service Unavailable", "text/plain")],
 		["a response marked no-store", () => asset("entry", "text/javascript", "public, immutable, no-store")],
 		["a response marked no-cache", () => asset("Service Unavailable", "text/javascript", "no-cache")],
+		["immutable mixed with no-cache", () => asset("entry", "text/javascript", "public, immutable, no-cache")],
+		["no-cache in upper case first", () => asset("entry", "text/javascript", "No-Cache, IMMUTABLE")],
+		["no-store in upper case last", () => asset("entry", "text/javascript", "IMMUTABLE, max-age=31536000, NO-STORE")],
+		["no-store without spaces", () => asset("entry", "text/javascript", "public,no-store,immutable")],
 		[
 			"a response without Cache-Control",
 			() => new Response("entry", { headers: { "content-type": "text/javascript" } }),
@@ -382,6 +409,46 @@ describe("service worker asset cache", () => {
 		harness.respond(path, () => asset("body", contentType));
 		expect(await harness.load(path)).toBe("body");
 		expect(harness.cachedKeys("assets-v11")).toEqual([path]);
+	});
+
+	it("answers from the network when the cache lookup does not settle in time, and writes nothing", async () => {
+		vi.useFakeTimers();
+		const harness = createHarness();
+		harness.hangingOpens.add("assets-v11");
+		harness.respond("/assets/index-A.js", () => asset("entry"));
+		const request = harness.get("/assets/index-A.js");
+		let answered = false;
+		const text = request.response?.then((response) => {
+			answered = true;
+			return response.text();
+		});
+		await vi.advanceTimersByTimeAsync(1_400);
+		expect(answered).toBe(false);
+		expect(harness.fetch).not.toHaveBeenCalled();
+		await vi.advanceTimersByTimeAsync(200);
+		expect(await text).toBe("entry");
+		await request.settled();
+		expect(request.background).toEqual([]);
+	});
+
+	it("sends a reload request to the network without waiting for the cache", async () => {
+		vi.useFakeTimers();
+		const harness = createHarness();
+		harness.hangingOpens.add("assets-v11");
+		harness.respond("/assets/index-A.js", () => asset("fresh body"));
+		const request = harness.get("/assets/index-A.js", { cache: "reload" });
+		await vi.advanceTimersByTimeAsync(10);
+		expect(await (await request.response)?.text()).toBe("fresh body");
+	});
+
+	it("answers a no-cors request for a stored asset from the cache", async () => {
+		const harness = createHarness();
+		await harness.seed("assets-v11", "/assets/styles-A.css", asset("body { }", "text/css"));
+		const request = new Request(`${origin}/assets/styles-A.css`);
+		Object.defineProperty(request, "mode", { value: "no-cors" });
+		const noCors = harness.dispatch(request);
+		expect(await (await noCors.response)?.text()).toBe("body { }");
+		expect(harness.fetch).not.toHaveBeenCalled();
 	});
 
 	it.each(["reload", "no-cache", "no-store"] as const)(
@@ -528,6 +595,49 @@ describe("service worker shell writes keep the v10 path", () => {
 		expect(await (await harness.navigate("/portfolio").response)?.text()).toBe(bigger);
 	});
 
+	it("does not retry a failed write when another shell was stored while the asset cache was being emptied", async () => {
+		const harness = createHarness();
+		await seedRelease(harness, ["/assets/index-A.js"]);
+		harness.putFilters.push((name, key, body) =>
+			name === "shell-v11" && key === shellKey && body.includes("index-B")
+				? new DOMException("quota exceeded", "QuotaExceededError")
+				: undefined,
+		);
+		const gate = deferred<void>();
+		harness.cacheDeleteGate.current = gate.promise;
+		harness.respond("/trade/BTC", () => shell(["/assets/index-B.js"]));
+		const older = harness.navigate("/trade/BTC");
+		await ticks(30);
+		expect(harness.deleteCache).toHaveBeenCalledWith("assets-v11");
+		harness.respond("/trade/BTC", () => shell(["/assets/index-C.js"]));
+		harness.respond("/assets/index-C.js", () => asset("index C"));
+		const newer = harness.navigate("/trade/BTC");
+		await ticks(30);
+		expect(await harness.cachedText("shell-v11", shellKey)).toContain("/assets/index-C.js");
+		harness.putFilters.length = 0;
+		gate.resolve();
+		await Promise.all([older.settled(), newer.settled()]);
+		expect(await harness.cachedText("shell-v11", shellKey)).toContain("/assets/index-C.js");
+	});
+
+	it("handles a write that fails for any other reason exactly as v10: no cleanup and no retry", async () => {
+		const harness = createHarness();
+		await seedRelease(harness, ["/assets/index-A.js"]);
+		let attempts = 0;
+		harness.putFilters.push((name, key) => {
+			if (name !== "shell-v11" || key !== shellKey) return undefined;
+			attempts += 1;
+			return new TypeError("the response body stream was interrupted");
+		});
+		harness.respond("/trade/BTC", () => shell(["/assets/index-B.js"]));
+		await harness.navigate("/trade/BTC").settled();
+		expect(attempts).toBe(1);
+		expect(harness.deleteCache).not.toHaveBeenCalled();
+		expect(harness.cachedKeys("assets-v11")).toEqual(["/assets/index-A.js"]);
+		expect(await harness.manifest()).toEqual(["/assets/index-A.js"]);
+		expect(await harness.cachedText("shell-v11", shellKey)).toContain("/assets/index-A.js");
+	});
+
 	it("stores the shell on the retry with its full body after a failed write", async () => {
 		const harness = createHarness();
 		await seedRelease(harness, ["/assets/index-A.js"]);
@@ -664,18 +774,75 @@ describe("service worker asset sync", () => {
 		await navigation.settled();
 		expect(await harness.manifest()).toEqual(["/assets/index-B.js"]);
 		expect(harness.requests("/assets/index-B.js")).toBe(0);
-		expect(harness.opened("assets-v11")).toBe(0);
+		expect(harness.keysCalls.get("assets-v11")).toBeUndefined();
 	});
 
-	it("does not open the asset cache when the recorded assets match the shell", async () => {
+	it("does not list, delete or fetch anything when the recorded assets match the shell", async () => {
 		const harness = createHarness();
 		await seedRelease(harness, ["/assets/index-A.js"]);
 		await harness.seed("assets-v11", "/assets/lazy-A.js", asset("lazy A"));
-		const opened = harness.opened("assets-v11");
 		harness.respond("/trade/BTC", () => shell(["/assets/index-A.js"]));
 		await harness.navigate("/trade/BTC").settled();
-		expect(harness.opened("assets-v11")).toBe(opened);
+		expect(harness.keysCalls.get("assets-v11")).toBeUndefined();
+		expect(harness.deleted).toEqual([]);
+		expect(harness.requestedAssets()).toEqual([]);
 		expect(harness.cachedKeys("assets-v11")).toEqual(["/assets/index-A.js", "/assets/lazy-A.js"]);
+	});
+
+	it("starts again after the asset cache was deleted on its own, since the manifest went with it", async () => {
+		const harness = createHarness();
+		await seedRelease(harness, ["/assets/index-A.js"]);
+		await harness.deleteCache("assets-v11");
+		expect(await harness.manifest()).toBeUndefined();
+		harness.respond("/trade/BTC", () => shell(["/assets/index-A.js"]));
+		await harness.navigate("/trade/BTC").settled();
+		expect(await harness.manifest()).toEqual(["/assets/index-A.js"]);
+		expect(harness.cachedKeys("assets-v11")).toEqual([]);
+		expect(harness.cachedKeys("shell-v11")).toEqual(["/shell-v11"]);
+	});
+
+	it("leaves no manifest behind when the asset cache is deleted while a sync runs", async () => {
+		const harness = createHarness();
+		await seedRelease(harness, ["/assets/index-A.js"]);
+		const gate = deferred<void>();
+		harness.keysGates.set("assets-v11", gate.promise);
+		harness.respond("/trade/BTC", () => shell(["/assets/index-B.js"]));
+		harness.respond("/assets/index-B.js", () => asset("index B"));
+		const navigation = harness.navigate("/trade/BTC");
+		await ticks(30);
+		expect(harness.keysCalls.get("assets-v11")).toBe(1);
+		await harness.deleteCache("assets-v11");
+		harness.keysGates.delete("assets-v11");
+		gate.resolve();
+		await navigation.settled();
+		expect(await harness.manifest()).toBeUndefined();
+		expect(harness.cachedKeys("assets-v11")).toEqual([]);
+	});
+
+	it("lets no delete of an earlier sync land after the next sync has started", async () => {
+		vi.useFakeTimers();
+		const harness = createHarness();
+		await seedWithFakeTimers(harness, ["/assets/index-A.js"]);
+		const lazy = harness.seed("assets-v11", "/assets/lazy-A.js", asset("lazy A"));
+		await vi.advanceTimersByTimeAsync(2);
+		await lazy;
+		const gate = deferred<void>();
+		harness.entryDeleteGates.set(`${origin}/assets/lazy-A.js`, gate.promise);
+		harness.respond("/trade/BTC", () => shell(["/assets/index-B.js"]));
+		harness.respond("/assets/index-B.js", () => asset("index B"));
+		harness.navigate("/trade/BTC");
+		await vi.advanceTimersByTimeAsync(61_000);
+		harness.respond("/trade/BTC", () => shell(["/assets/index-C.js"]));
+		harness.respond("/assets/index-C.js", () => asset("index C"));
+		const next = harness.navigate("/trade/BTC");
+		await vi.advanceTimersByTimeAsync(1_000);
+		expect(harness.requests("/assets/index-C.js")).toBe(0);
+		expect(harness.deleted).toEqual([]);
+		gate.resolve();
+		await vi.advanceTimersByTimeAsync(1_000);
+		await next.settled();
+		expect(harness.deleted[0]).toBe(`${origin}/assets/lazy-A.js`);
+		expect(harness.requests("/assets/index-C.js")).toBe(1);
 	});
 
 	it("also prefetches after a language link", async () => {
@@ -820,6 +987,11 @@ describe("service worker shell asset list", () => {
 		],
 		["an empty comment <!-->", '<!--><script src="/assets/real.js"></script>'],
 		["an empty comment <!--->", '<!---><script src="/assets/real.js"></script>'],
+		[
+			"a comment closed by --!>",
+			'<!-- <script src="/assets/absent.js"></script> --!><script src="/assets/real.js"></script>',
+		],
+		["a repeated attribute", '<script src="/assets/real.js" src="/assets/absent.js"></script>'],
 		["a > inside a quoted attribute", '<link rel="modulepreload" title="a>b" href="/assets/real.js">'],
 		[
 			"script markup inside another tag's attribute",
