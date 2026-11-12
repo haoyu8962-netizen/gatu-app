@@ -126,7 +126,12 @@ const budgets = {
 		// under its allowance: the fixed-identity Node 22.15.0 build with VITE_MOBILE_PAIRING_ENABLED=false of dev 8ca35543
 		// (1,652,171) minus that of 2230c64e (1,651,975), both without .env.local; pairing on measures +200
 		// (docs/terminal-performance-baseline.md).
-		baselineGzipBytes: 1_644_125,
+		// Raised 2026-11-12 by +355 for the WebSocket recovery when the page or the network returns (ADR 0050): the
+		// fixed-identity Node 22.15.0 build with VITE_MOBILE_PAIRING_ENABLED=false of that change (1,652,526) minus that
+		// of dev 19db63d1 (1,652,171), both without .env.local; pairing on was not measured. The growth is the transport
+		// monitor, store and order-book pool code in the shared chunk, and without the raise the release configuration
+		// would be left with about 36 bytes (docs/terminal-performance-baseline.md).
+		baselineGzipBytes: 1_644_480,
 		allowedIncreaseBytes: 10_000,
 	},
 	tradeRuntimeStartup: {

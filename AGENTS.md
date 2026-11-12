@@ -100,6 +100,15 @@ This file contains durable project instructions for coding agents. Read `agent.m
 - Reset pulse baselines and size-change comparison state whenever network, market, grouping or actual feed identity changes, so stale values cannot flash after switching context.
 - Preserve WebSocket `px` and `sz` values as decimal strings. Use Big.js outside React components for cumulative base size and cumulative quote notional; quote `Total` is the running sum of each level's `size * price`, not cumulative base size multiplied by the current row price. In the mobile split layout `Total` is static data — never animate or color it from the individual level `size`.
 
+## WebSocket recovery contract
+
+- [ADR 0050](docs/adr/0050-websocket-recovery-on-resume.md) and `docs/runtime-guardrails.md` §6 own the rules and their values. While subscription data is stale the page shows placeholders, so the time recovery takes is time the user sees no data.
+- Recovery starts when the page returns to the foreground or the network returns. It never waits for a periodic check, for a retry backoff or cooldown computed while the page was hidden or offline, or for a dead socket's `close` event.
+- A socket that still receives frames is never replaced because the page became visible: a quiet open socket is sent a heartbeat and replaced only when no frame follows.
+- Pooled order-book transports do not reconnect on their own. One that has been silent for its stream's staleness threshold is closed when the page or the network returns, and its consumers subscribe again through the pool's connection budget.
+- `patches/@nktkas__rews@4.1.0.patch` makes `reconnect()` and `close()` act without the old socket's `close` event. Keep it, or its upstream equivalent, when `@nktkas/rews` or the SDK changes, and re-run `apps/terminal/tests/browser/websocket-half-open-probe.mjs`.
+- These rules change when data returns, never what counts as fresh: staleness thresholds, placeholders and every execution guard stay as they are.
+
 ## Recent trades contract
 
 - `docs/recent-trades.md` owns the panel geometry, container-query breakpoints, precision derivation and time format.
@@ -314,6 +323,16 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/orderbook-price-selection.test.tsx \
   src/lib/tests/mobile-orderbook-mode.test.tsx \
   src/lib/tests/mobile-book-header-contract.test.ts
+
+# WebSocket recovery (page or network returns, half-open sockets; see ADR 0050)
+pnpm --dir apps/terminal exec vitest run \
+  src/lib/tests/ws-transport-monitor.test.ts \
+  src/lib/tests/store-resume.test.ts \
+  src/lib/tests/store-visibility-pause.test.ts \
+  src/lib/tests/visibility.test.ts \
+  src/lib/tests/l2-book-transport-pool.test.ts \
+  src/lib/tests/l2-book-transport-pool-resume.test.ts \
+  src/lib/tests/websocket-half-open-reconnect.test.ts
 
 # Recent trades
 pnpm --dir apps/terminal exec vitest run \

@@ -433,6 +433,62 @@ The sixth round (commit `4af147fd`) changed one classification function in the d
 3,286,638 in total (+16), 1,626,663 static trade startup, 117,769 mobile and 201,070 desktop, with the desktop runtime
 increment 918 bytes under its allowance. Later commits on the branch change tests and documents only.
 
+## WebSocket recovery static-startup re-baseline (2026-11-12)
+
+[ADR 0050](adr/0050-websocket-recovery-on-resume.md) makes market data recover as soon as the page returns to the
+foreground or the network returns ([task record](work-memory/sessions/2026-11-12-ios-resume-websocket-recovery.md)).
+The code it adds runs in every session, so it sits in static trade startup:
+
+- `packages/hl-react/src/internal/websocket/transport-monitor.ts`: the check on return and the heartbeat probe;
+- `packages/hl-react/src/store.ts`: the immediate retry of waiting subscriptions;
+- `packages/hl-react/src/subscriptions/l2-book-transport-pool.ts`: closing silent order-book transports;
+- `@nktkas/rews` 4.1.0 with `patches/@nktkas__rews@4.1.0.patch`, which changes one method.
+
+Measurement setup:
+
+- Base: `dev` `19db63d1`, built in its own worktree. Its client code is that of `8ca35543`, since #154 and #156
+  changed the budget script, records and tooling only, and its readings equal the `8ca35543` pairing-off column of the
+  next section byte for byte.
+- Head: the ADR 0050 change on top of `19db63d1`, built in the task worktree after the last code change.
+- Both without `.env.local`, with Node 22.15.0 and pnpm 10.21.0, `pnpm install --frozen-lockfile --prefer-offline`,
+  `VITE_MOBILE_PAIRING_ENABLED=false` and the fixed identity of the reproduction protocol. On both sides the installed
+  `node_modules/.pnpm/lock.yaml` lacks the four `fdir@6.5.0(picomatch@4.0.7)` lines, as in the next section.
+- The head worktree's `node_modules/.pnpm` also holds unlinked directories left by a `pnpm patch-commit` whose
+  lockfile changes were reverted ([agent handbook](agent-handbook.md), section 6); the frozen install links only what
+  `pnpm-lock.yaml` names.
+- Pairing on was not measured: the change touches no pairing code.
+- The budget lines of both builds and the per-chunk comparison are kept in the Git-ignored
+  `.worklog/2026-11-12/ios-resume-websocket-recovery/`.
+
+| Metric | `19db63d1` | ADR 0050 change | Change |
+| --- | ---: | ---: | ---: |
+| Client chunks (no circular static imports) | 450 | 450 | 0 |
+| All client JS + CSS | 3,375,962 | 3,376,264 | +302 |
+| Static trade startup (103 assets) | 1,652,171 | 1,652,526 | +355 |
+| Mobile runtime increment (15 assets) | 119,765 | 119,772 | +7 |
+| Desktop runtime increment (30 assets) | 204,578 | 204,602 | +24 |
+| `trade-terminal-page` | 127,808 | 127,810 | +2 |
+
+Grouped by chunk name without its content hash, one of 440 names changes by 20 bytes or more:
+`vendor-tanstack-router` +342, the chunk that holds the four modules above according to the head build's
+`client-chunk-graph.json`. The other 225 changed names move by less than 20 bytes each, −40 together.
+
+An earlier head build, taken before a one-line review fix, read +272 for static trade startup and +57 for the total.
+The two head builds differ by one assignment, so most of the 83 bytes between them is build variance. The release
+records report about 150 bytes for static trade startup between builds that differ only in identity.
+
+Change to the baseline: static trade startup is raised by the measured growth, +355, to 1,644,480. Its allowance and
+every other baseline are unchanged.
+
+Why now and not at the next release precheck: the p40 release build read 1,653,734 for static trade startup, 391 under
+its allowance. With +355 that configuration would have about 36 bytes left, below the 200 the precheck rule requires
+([agent handbook](agent-handbook.md), section 8), so the next precheck would fail without this raise.
+
+Room left against the new baseline, estimated from the readings above, not measured in the release configuration:
+
+- this change's pairing-off protocol build: 1,954 for static trade startup, 358 for `trade-terminal-page`;
+- the release configuration: about 391 for static trade startup, as after the p40 re-baseline.
+
 ## Mobile order summary trade-page and startup re-baseline before release p40 (2026-11-05)
 
 [PR #151](https://github.com/zora4523-bot/gatu-app/pull/151) (merged into `dev` as `8ca35543`) aligns the order summary

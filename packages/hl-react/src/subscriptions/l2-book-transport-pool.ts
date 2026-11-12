@@ -1,5 +1,9 @@
 import { type ISubscriptionTransport, TransportError } from "@nktkas/hyperliquid";
-import { markFrameReceivedAt } from "../internal/websocket/frame-receipt";
+import { type FrameReceipt, markFrameReceivedAt, receiveFrameNow } from "../internal/websocket/frame-receipt";
+import { getNetworkState, subscribeNetworkStatus } from "../internal/websocket/network-status";
+import { WS_RELIABILITY_LIMITS } from "../internal/websocket/reliability";
+import { getReceiptAgeMs } from "../internal/websocket/staleness";
+import { getVisibilityState, subscribeVisibility } from "../internal/websocket/visibility";
 
 interface BookTransport extends ISubscriptionTransport {
 	close(): void;
@@ -20,6 +24,8 @@ interface RememberedFrame {
 
 interface PoolEntry {
 	transport: BookTransport;
+	fast: boolean;
+	lastFrame: FrameReceipt;
 	leases: number;
 	disposed: boolean;
 	idleTimer?: ReturnType<typeof setTimeout>;
@@ -59,9 +65,15 @@ function readFrameCoin(event: CustomEvent<unknown>): string | undefined {
 	return typeof detail.coin === "string" ? detail.coin : undefined;
 }
 
+function getSilenceLimitMs(entry: PoolEntry): number {
+	const { l2BookFastThresholdMs, perMethodThresholdMs } = WS_RELIABILITY_LIMITS.staleness;
+	return entry.fast ? l2BookFastThresholdMs : perMethodThresholdMs.l2Book;
+}
+
 export function createL2BookTransportPool(createTransport: (isTestnet: boolean) => BookTransport) {
 	const entries = new Map<string, PoolEntry>();
 	let openedAt: number[] = [];
+	let stopWatchingResume: (() => void) | undefined;
 
 	function remove(key: string, entry: PoolEntry) {
 		if (entry.disposed) return;
@@ -69,7 +81,52 @@ export function createL2BookTransportPool(createTransport: (isTestnet: boolean) 
 		clearTimeout(entry.idleTimer);
 		entry.latestFrames.clear();
 		if (entries.get(key) === entry) entries.delete(key);
+		if (entries.size === 0) stopWatchingResume?.();
 		entry.transport.close();
+	}
+
+	// A phone suspends the page in the background, and these sockets never reconnect on their own:
+	// one that died without a close event would otherwise stay silent until the SDK keep-alive gives
+	// up on it, up to forty seconds after the page is back. A transport that has delivered no book
+	// frame for as long as its stream may stay quiet is closed when the page or the network returns;
+	// its consumers fail and subscribe again on a new connection. A book that kept receiving frames
+	// in a background tab is left alone. Heartbeat answers and confirmations do not count: a
+	// connection that carries no book data is not worth keeping either.
+	function closeSilentTransports() {
+		if (getNetworkState() === "offline") return;
+		for (const [key, entry] of [...entries]) {
+			const { receivedAt, monotonicReceivedAt } = entry.lastFrame;
+			if (getReceiptAgeMs(receivedAt, monotonicReceivedAt) >= getSilenceLimitMs(entry)) remove(key, entry);
+		}
+	}
+
+	function watchResume() {
+		if (stopWatchingResume) return;
+		let wasHidden = getVisibilityState() === "hidden";
+		let wasOffline = getNetworkState() === "offline";
+		const detachVisibility = subscribeVisibility((state) => {
+			if (state === "hidden") {
+				wasHidden = true;
+				return;
+			}
+			if (!wasHidden) return;
+			wasHidden = false;
+			closeSilentTransports();
+		});
+		const detachNetwork = subscribeNetworkStatus((state) => {
+			if (state === "offline") {
+				wasOffline = true;
+				return;
+			}
+			if (!wasOffline) return;
+			wasOffline = false;
+			closeSilentTransports();
+		});
+		stopWatchingResume = () => {
+			stopWatchingResume = undefined;
+			detachVisibility();
+			detachNetwork();
+		};
 	}
 
 	function acquire(isTestnet: boolean, book: BookPayload) {
@@ -88,12 +145,15 @@ export function createL2BookTransportPool(createTransport: (isTestnet: boolean) 
 			openedAt.push(now);
 			entry = {
 				transport: createTransport(isTestnet),
+				fast: book.fast,
+				lastFrame: receiveFrameNow(),
 				leases: 0,
 				disposed: false,
 				payloadLeases: new Map(),
 				latestFrames: new Map(),
 			};
 			entries.set(key, entry);
+			watchResume();
 		}
 		const acquired = entry;
 		clearTimeout(acquired.idleTimer);
@@ -103,6 +163,9 @@ export function createL2BookTransportPool(createTransport: (isTestnet: boolean) 
 		return {
 			transport: acquired.transport,
 			isActive: () => !acquired.disposed,
+			markAlive: () => {
+				acquired.lastFrame = receiveFrameNow();
+			},
 			remember: (event: CustomEvent<unknown>) => {
 				if (acquired.disposed) return;
 				acquired.latestFrames.set(payloadKey, { event, receivedAt: performance.now(), receivedAtWall: Date.now() });
@@ -152,8 +215,11 @@ export function createL2BookTransportPool(createTransport: (isTestnet: boolean) 
 				(event) => {
 					// The SDK dispatches every l2Book frame on the socket to every l2Book listener and
 					// filters by coin only in its method wrapper, so the pool must not let another coin's
-					// frame count as this payload's live frame or overwrite its remembered snapshot.
-					if (released || !lease.isActive() || readFrameCoin(event) !== book.coin) return;
+					// frame count as this payload's live frame or overwrite its remembered snapshot. Any
+					// book frame still proves that the connection delivers data.
+					if (released || !lease.isActive()) return;
+					lease.markAlive();
+					if (readFrameCoin(event) !== book.coin) return;
 					receivedLiveFrame = true;
 					lease.remember(event);
 					listener(event);

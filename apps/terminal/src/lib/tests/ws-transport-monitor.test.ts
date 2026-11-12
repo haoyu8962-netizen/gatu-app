@@ -10,6 +10,7 @@ class FakeSocket extends EventTarget {
 		this.readyState = 2;
 		this.dispatchEvent(new Event("close"));
 	});
+	send = vi.fn();
 
 	constructor(readyState = 1) {
 		super();
@@ -27,6 +28,33 @@ class FakeSocket extends EventTarget {
 }
 
 const noStateChanges = () => () => {};
+
+type VisibilityListener = (state: "visible" | "hidden") => void;
+type NetworkListener = (state: "online" | "offline") => void;
+
+function createPageState() {
+	let visibilityListener: VisibilityListener | undefined;
+	let networkListener: NetworkListener | undefined;
+	const options: Partial<WsTransportMonitorOptions> = {
+		subscribeVisibility: (listener) => {
+			visibilityListener = listener;
+			return () => {
+				visibilityListener = undefined;
+			};
+		},
+		subscribeNetworkStatus: (listener) => {
+			networkListener = listener;
+			return () => {
+				networkListener = undefined;
+			};
+		},
+	};
+	return {
+		options,
+		setVisibility: (state: "visible" | "hidden") => visibilityListener?.(state),
+		setNetwork: (state: "online" | "offline") => networkListener?.(state),
+	};
+}
 
 function createMonitor(socket: FakeSocket, overrides: Partial<WsTransportMonitorOptions> = {}) {
 	return createWsTransportMonitor(socket, {
@@ -224,52 +252,221 @@ describe("WebSocket transport monitor", () => {
 		unsubscribe();
 	});
 
-	it("keeps a healthy open socket connected after a foreground resume", () => {
-		let visibilityListener: ((state: "visible" | "hidden") => void) | undefined;
+	it("keeps an open socket that answers the resume heartbeat", async () => {
+		vi.useFakeTimers({ now: 0 });
+		const page = createPageState();
 		const socket = new FakeSocket();
 		const monitor = createMonitor(socket, {
-			subscribeVisibility: (listener: (state: "visible" | "hidden") => void) => {
-				visibilityListener = listener;
-				return () => {
-					visibilityListener = undefined;
-				};
-			},
+			inactivityThresholdMs: 1_000,
+			checkIntervalMs: 100,
+			resumeProbeTimeoutMs: 300,
+			...page.options,
 		});
 		const unsubscribe = monitor.subscribeReconnect(vi.fn());
 
-		visibilityListener?.("hidden");
-		visibilityListener?.("visible");
+		page.setVisibility("hidden");
+		await vi.advanceTimersByTimeAsync(500);
+		page.setVisibility("visible");
+
+		expect(socket.send).toHaveBeenCalledExactlyOnceWith('{"method":"ping"}');
+		expect(socket.reconnect).not.toHaveBeenCalled();
+
+		await vi.advanceTimersByTimeAsync(200);
+		socket.message();
+		await vi.advanceTimersByTimeAsync(600);
 
 		expect(socket.reconnect).not.toHaveBeenCalled();
 		unsubscribe();
 	});
 
-	it("reconnects on the next inactivity check when messages stopped while hidden", async () => {
+	it("replaces an open socket that stays silent after the resume heartbeat", async () => {
 		vi.useFakeTimers({ now: 0 });
-		let visibilityListener: ((state: "visible" | "hidden") => void) | undefined;
+		const page = createPageState();
+		const socket = new FakeSocket();
+		const monitor = createMonitor(socket, {
+			inactivityThresholdMs: 10_000,
+			checkIntervalMs: 5_000,
+			resumeProbeTimeoutMs: 300,
+			...page.options,
+		});
+		const disconnect = vi.fn();
+		const unsubscribe = monitor.subscribeDisconnect(disconnect);
+
+		page.setVisibility("hidden");
+		await vi.advanceTimersByTimeAsync(500);
+		page.setVisibility("visible");
+		await vi.advanceTimersByTimeAsync(299);
+		expect(socket.reconnect).not.toHaveBeenCalled();
+
+		await vi.advanceTimersByTimeAsync(1);
+		expect(socket.reconnect).toHaveBeenCalledExactlyOnceWith();
+		expect(disconnect).toHaveBeenCalledOnce();
+		unsubscribe();
+	});
+
+	it("replaces a socket that went silent while hidden as soon as the page returns", async () => {
+		vi.useFakeTimers({ now: 0 });
+		const page = createPageState();
+		const socket = new FakeSocket();
+		const monitor = createMonitor(socket, {
+			inactivityThresholdMs: 1_000,
+			checkIntervalMs: 60_000,
+			resumeProbeTimeoutMs: 300,
+			...page.options,
+		});
+		const unsubscribe = monitor.subscribeReconnect(vi.fn());
+
+		page.setVisibility("hidden");
+		await vi.advanceTimersByTimeAsync(1_500);
+		expect(socket.reconnect).not.toHaveBeenCalled();
+
+		page.setVisibility("visible");
+
+		expect(socket.reconnect).toHaveBeenCalledExactlyOnceWith();
+		expect(socket.send).not.toHaveBeenCalled();
+		unsubscribe();
+	});
+
+	it("skips the reconnection backoff of a socket that is not open when the page returns", () => {
+		const page = createPageState();
+		const socket = new FakeSocket();
+		socket.reconnect.mockImplementation(() => {});
+		const monitor = createMonitor(socket, page.options);
+		const disconnect = vi.fn();
+		const unsubscribe = monitor.subscribeDisconnect(disconnect);
+
+		socket.readyState = 0;
+		socket.dispatchEvent(new Event("close"));
+		expect(disconnect).toHaveBeenCalledOnce();
+
+		page.setVisibility("hidden");
+		page.setVisibility("visible");
+
+		expect(socket.reconnect).toHaveBeenCalledExactlyOnceWith();
+		expect(socket.send).not.toHaveBeenCalled();
+		expect(disconnect).toHaveBeenCalledOnce();
+		unsubscribe();
+	});
+
+	it("treats a monitor attached in a hidden page as returning when the page first becomes visible", () => {
+		const page = createPageState();
+		const socket = new FakeSocket();
+		const monitor = createMonitor(socket, { ...page.options, getVisibilityState: () => "hidden" });
+		const unsubscribe = monitor.subscribeReconnect(vi.fn());
+
+		page.setVisibility("visible");
+
+		expect(socket.send).toHaveBeenCalledExactlyOnceWith('{"method":"ping"}');
+		unsubscribe();
+	});
+
+	it("leaves the socket alone when the page becomes visible without having been hidden", () => {
+		const page = createPageState();
+		const socket = new FakeSocket();
+		const monitor = createMonitor(socket, page.options);
+		const unsubscribe = monitor.subscribeReconnect(vi.fn());
+
+		page.setVisibility("visible");
+
+		expect(socket.send).not.toHaveBeenCalled();
+		expect(socket.reconnect).not.toHaveBeenCalled();
+		unsubscribe();
+	});
+
+	it("waits for the network instead of probing when the page returns offline", async () => {
+		vi.useFakeTimers({ now: 0 });
+		const page = createPageState();
 		const socket = new FakeSocket();
 		const monitor = createMonitor(socket, {
 			inactivityThresholdMs: 1_000,
 			checkIntervalMs: 100,
-			subscribeVisibility: (listener: (state: "visible" | "hidden") => void) => {
-				visibilityListener = listener;
-				return () => {
-					visibilityListener = undefined;
-				};
-			},
+			resumeProbeTimeoutMs: 300,
+			...page.options,
 		});
 		const unsubscribe = monitor.subscribeReconnect(vi.fn());
 
-		visibilityListener?.("hidden");
-		await vi.advanceTimersByTimeAsync(1_500);
+		page.setVisibility("hidden");
+		page.setNetwork("offline");
+		await vi.advanceTimersByTimeAsync(5_000);
+		page.setVisibility("visible");
+		await vi.advanceTimersByTimeAsync(5_000);
+
+		expect(socket.send).not.toHaveBeenCalled();
 		expect(socket.reconnect).not.toHaveBeenCalled();
 
-		visibilityListener?.("visible");
-		expect(socket.reconnect).not.toHaveBeenCalled();
+		page.setNetwork("online");
+		expect(socket.reconnect).toHaveBeenCalledExactlyOnceWith();
+		unsubscribe();
+	});
 
-		await vi.advanceTimersByTimeAsync(100);
-		expect(socket.reconnect).toHaveBeenCalledTimes(1);
-		expect(socket.reconnect).toHaveBeenCalledWith();
+	it.each([
+		["the page is hidden again", (page: ReturnType<typeof createPageState>) => page.setVisibility("hidden")],
+		["the network drops", (page: ReturnType<typeof createPageState>) => page.setNetwork("offline")],
+	])("abandons the resume heartbeat when %s", async (_name, interrupt) => {
+		vi.useFakeTimers({ now: 0 });
+		const page = createPageState();
+		const socket = new FakeSocket();
+		const monitor = createMonitor(socket, {
+			inactivityThresholdMs: 60_000,
+			checkIntervalMs: 60_000,
+			resumeProbeTimeoutMs: 300,
+			...page.options,
+		});
+		const unsubscribe = monitor.subscribeReconnect(vi.fn());
+
+		page.setVisibility("hidden");
+		page.setVisibility("visible");
+		expect(socket.send).toHaveBeenCalledOnce();
+		interrupt(page);
+		await vi.advanceTimersByTimeAsync(1_000);
+
+		expect(socket.reconnect).not.toHaveBeenCalled();
+		unsubscribe();
+	});
+
+	it("does not replace a socket that closed on its own during the resume heartbeat", async () => {
+		vi.useFakeTimers({ now: 0 });
+		const page = createPageState();
+		const socket = new FakeSocket();
+		const monitor = createMonitor(socket, {
+			inactivityThresholdMs: 60_000,
+			checkIntervalMs: 60_000,
+			resumeProbeTimeoutMs: 300,
+			...page.options,
+		});
+		const unsubscribe = monitor.subscribeReconnect(vi.fn());
+
+		page.setVisibility("hidden");
+		page.setVisibility("visible");
+		socket.readyState = 0;
+		socket.dispatchEvent(new Event("close"));
+		socket.open();
+		await vi.advanceTimersByTimeAsync(1_000);
+
+		expect(socket.reconnect).not.toHaveBeenCalled();
+		unsubscribe();
+	});
+
+	it("still replaces a silent socket when the heartbeat cannot be sent", async () => {
+		vi.useFakeTimers({ now: 0 });
+		const page = createPageState();
+		const socket = new FakeSocket();
+		socket.send.mockImplementation(() => {
+			throw new Error("send failed");
+		});
+		const monitor = createMonitor(socket, {
+			inactivityThresholdMs: 60_000,
+			checkIntervalMs: 60_000,
+			resumeProbeTimeoutMs: 300,
+			...page.options,
+		});
+		const unsubscribe = monitor.subscribeReconnect(vi.fn());
+
+		page.setVisibility("hidden");
+		expect(() => page.setVisibility("visible")).not.toThrow();
+		await vi.advanceTimersByTimeAsync(300);
+
+		expect(socket.reconnect).toHaveBeenCalledExactlyOnceWith();
 		unsubscribe();
 	});
 });

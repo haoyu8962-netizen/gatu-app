@@ -12,6 +12,9 @@ patchedDependencies:
   '@nktkas/hyperliquid':
     hash: 62816c06be8be0e27c24f434d3141630257dc1f416f67d886cc0b126e8e7cb29
     path: patches/@nktkas__hyperliquid.patch
+  '@nktkas/rews@4.1.0':
+    hash: c7fc5f8bc8db8a9232e208c340306551b7c30296c95ec88012143cbe03a9d039
+    path: patches/@nktkas__rews@4.1.0.patch
   '@privy-io/react-auth@3.46.0':
     hash: 5caa2023939762fb8d9fdac7aa233182f6a3604885ba160a038efaec5df70e00
     path: patches/@privy-io__react-auth@3.46.0.patch
@@ -10077,7 +10080,7 @@ snapshots:
 
   '@nktkas/hyperliquid@0.33.3(patch_hash=62816c06be8be0e27c24f434d3141630257dc1f416f67d886cc0b126e8e7cb29)(typescript@5.7.2)':
     dependencies:
-      '@nktkas/rews': 4.1.0
+      '@nktkas/rews': 4.1.0(patch_hash=c7fc5f8bc8db8a9232e208c340306551b7c30296c95ec88012143cbe03a9d039)
       '@noble/hashes': 1.8.0
       decimal.js: 10.6.0
       valibot: 1.4.2(typescript@5.7.2)
@@ -10086,14 +10089,14 @@ snapshots:
 
   '@nktkas/hyperliquid@0.33.3(patch_hash=62816c06be8be0e27c24f434d3141630257dc1f416f67d886cc0b126e8e7cb29)(typescript@5.9.3)':
     dependencies:
-      '@nktkas/rews': 4.1.0
+      '@nktkas/rews': 4.1.0(patch_hash=c7fc5f8bc8db8a9232e208c340306551b7c30296c95ec88012143cbe03a9d039)
       '@noble/hashes': 1.8.0
       decimal.js: 10.6.0
       valibot: 1.4.2(typescript@5.9.3)
     transitivePeerDependencies:
       - typescript
 
-  '@nktkas/rews@4.1.0': {}
+  '@nktkas/rews@4.1.0(patch_hash=c7fc5f8bc8db8a9232e208c340306551b7c30296c95ec88012143cbe03a9d039)': {}
 
   '@noble/ciphers@1.2.1': {}
 
