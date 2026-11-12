@@ -3689,7 +3689,7 @@ msgstr "تم التنفيذ (لم يتم التحقق من الكمية)"
 
 #: src/components/trade/order-reconciliation.tsx
 msgid "Filled before it could be canceled. Check your positions."
-msgstr "نُفِّذ قبل أن يتسنى إلغاؤه. راجع مراكزك."
+msgstr "نُفِّذ الأمر قبل أن يتسنى إلغاؤه. راجع مراكزك."
 
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Filter by {label}"
@@ -9096,6 +9096,7 @@ msgstr "أُرسلت معاملة Arbitrum، لكن تعذر التحقق من �
 msgid "The cancellation response could not be confirmed. Refresh open orders before retrying."
 msgstr "تعذر تأكيد استجابة الإلغاء. حدّث الأوامر المفتوحة قبل إعادة المحاولة."
 
+#: src/components/trade/order-reconciliation.tsx
 #: src/components/trade/order-reconciliation.tsx
 msgid "The cancellation was not confirmed. Review open orders before retrying."
 msgstr "لم يُؤكد الإلغاء. راجع الأوامر المفتوحة قبل إعادة المحاولة."

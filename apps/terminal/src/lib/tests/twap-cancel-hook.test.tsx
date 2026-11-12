@@ -3,9 +3,10 @@
 import { createHash } from "node:crypto";
 import { i18n, type Messages } from "@lingui/core";
 import { ApiRequestError, HttpRequestError } from "@nktkas/hyperliquid";
-import { act, createElement } from "react";
+import { act, createElement, Fragment } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { TwapReconciliation } from "@/components/trade/twap-reconciliation";
 import { useTwapCancel } from "@/hooks/trade/use-twap-cancel";
 import {
 	getOrderAssetReservationState,
@@ -13,7 +14,12 @@ import {
 	runWithOrderAssetLocks,
 } from "@/lib/trade/order-asset-lock";
 import { getActiveTwapReservationId } from "@/lib/trade/twap-order-asset-reservation";
-import { type OrderQueueItem, removeOrderQueueItem, useOrderQueue } from "@/stores/use-order-queue-store";
+import {
+	getOrderQueueItem,
+	type OrderQueueItem,
+	removeOrderQueueItem,
+	useOrderQueue,
+} from "@/stores/use-order-queue-store";
 import {
 	getPendingTradingActionActions,
 	getPendingTradingActionSnapshot,
@@ -56,6 +62,9 @@ const mocks = vi.hoisted(() => ({
 	successToast: vi.fn(),
 	errorToast: vi.fn(),
 	warningToast: vi.fn(),
+	activeTwaps: undefined as { states: Array<[number, unknown]> } | undefined,
+	activeTwapsReceivedAt: undefined as number | undefined,
+	twapHistory: undefined as { history: Array<{ twapId: number; status: { status: string } }> } | undefined,
 }));
 
 vi.mock("sonner", () => ({
@@ -79,6 +88,12 @@ vi.mock("@/lib/hyperliquid", () => ({
 	},
 	useHyperliquid: () => ({ clientKey: mocks.clientKey, env: mocks.env }),
 	useMarkets: () => ({ getAssetId: () => mocks.assetId }),
+	useSubscription: (method: string) => ({
+		data: method === "twapStates" ? mocks.activeTwaps : mocks.twapHistory,
+		status: "active",
+		isStale: false,
+		monotonicLastMessageAt: method === "twapStates" ? mocks.activeTwapsReceivedAt : undefined,
+	}),
 }));
 
 let queueItems: OrderQueueItem[] = [];
@@ -118,6 +133,9 @@ describe("useTwapCancel", () => {
 		mocks.successToast.mockReset();
 		mocks.errorToast.mockReset();
 		mocks.warningToast.mockReset();
+		mocks.activeTwaps = undefined;
+		mocks.activeTwapsReceivedAt = undefined;
+		mocks.twapHistory = undefined;
 		window.localStorage.clear();
 		installExclusiveLockManager();
 		container = document.createElement("div");
@@ -151,6 +169,7 @@ describe("useTwapCancel", () => {
 		expect(mocks.mutateAsync).toHaveBeenCalledWith({ a: 7, t: 42 });
 		expect(getPendingTradingActionSnapshot().twapCancellations[0]).toMatchObject({
 			phase: "awaiting",
+			accepted: true,
 			requestStartedAt: expect.any(Number),
 		});
 		expect(mocks.successToast).not.toHaveBeenCalled();
@@ -367,6 +386,48 @@ describe("useTwapCancel", () => {
 		expect(queueItems.at(-1)).toMatchObject({ owner: USER, env: "Mainnet", status: "failed" });
 		expect(mocks.warningToast).not.toHaveBeenCalled();
 		expect(hookValue?.feedback?.tone).toBe("error");
+	});
+
+	it.each([
+		{ name: "a default response", response: { status: "ok", response: { type: "default" } } },
+		{
+			name: "an unknown TWAP cancel status",
+			response: { status: "ok", response: { type: "twapCancel", data: { status: "pending" } } },
+		},
+		{ name: "no response body", response: undefined },
+	])("leaves the termination unconfirmed after $name", async ({ response }) => {
+		mocks.mutateAsync.mockResolvedValueOnce(response);
+
+		await act(async () => {
+			await hookValue?.cancelTwap("BTC", 48);
+		});
+
+		const action = getPendingTradingActionSnapshot().twapCancellations[0];
+		expect(action?.phase).toBe("unconfirmed");
+		expect(action?.accepted).toBeUndefined();
+		expect(hookValue?.feedback?.tone).toBe("warning");
+	});
+
+	it("does not report a TWAP that finished after an unrecognised response as terminated", async () => {
+		mocks.mutateAsync.mockResolvedValueOnce({ status: "ok", response: { type: "default" } });
+		act(() => root.render(createElement(Fragment, null, createElement(Probe), createElement(TwapReconciliation))));
+		await act(async () => {
+			await hookValue?.cancelTwap("BTC", 49);
+		});
+		const action = getPendingTradingActionSnapshot().twapCancellations[0];
+		if (!action) throw new Error("Expected a pending TWAP termination");
+
+		mocks.activeTwaps = { states: [] };
+		mocks.activeTwapsReceivedAt = performance.now() + 1;
+		mocks.twapHistory = { history: [{ twapId: 49, status: { status: "finished" } }] };
+		await act(async () => {
+			root.render(createElement(Fragment, null, createElement(Probe), createElement(TwapReconciliation)));
+			for (let index = 0; index < 10; index += 1) await Promise.resolve();
+		});
+
+		const item = getOrderQueueItem(`pending-trading-action:${action.id}`);
+		expect(item?.status).toBe("failed");
+		expect(item?.message ? i18n._(item.message) : null).toBe("TWAP finished before it could be terminated.");
 	});
 
 	it("keeps the active TWAP asset reservation until a fresh snapshot confirms cancellation", async () => {

@@ -3689,7 +3689,7 @@ msgstr "Exécuté (quantité non vérifiée)"
 
 #: src/components/trade/order-reconciliation.tsx
 msgid "Filled before it could be canceled. Check your positions."
-msgstr "Exécuté avant de pouvoir être annulé. Vérifiez vos positions."
+msgstr "L'ordre a été exécuté avant de pouvoir être annulé. Vérifiez vos positions."
 
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Filter by {label}"
@@ -9096,6 +9096,7 @@ msgstr "La transaction Arbitrum a été soumise, mais son statut final n’a pas
 msgid "The cancellation response could not be confirmed. Refresh open orders before retrying."
 msgstr "La réponse d'annulation n'a pas pu être confirmée. Actualisez les ordres ouverts avant de réessayer."
 
+#: src/components/trade/order-reconciliation.tsx
 #: src/components/trade/order-reconciliation.tsx
 msgid "The cancellation was not confirmed. Review open orders before retrying."
 msgstr "L’annulation n’a pas été confirmée. Vérifiez les ordres ouverts avant de réessayer."

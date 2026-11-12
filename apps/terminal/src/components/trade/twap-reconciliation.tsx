@@ -1,5 +1,5 @@
 import { msg } from "@lingui/core/macro";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { HL_ALL_DEXS } from "@/config/app";
 import { matchesTwapIntent, TWAP_RECONCILIATION_CONFIRMATION_WINDOW_MS, type TwapStateLike } from "@/domain/trade/twap";
 import { useHyperliquid, useSubscription } from "@/lib/hyperliquid";
@@ -18,6 +18,7 @@ import {
 	getPendingTradingActionActions,
 	getPendingTradingActionSnapshot,
 	type PendingTwapCancellation,
+	TRADING_ACTION_CONFIRMATION_TIMEOUT_MS,
 	usePendingTwapCancellations,
 	wasReceivedAfter,
 } from "@/stores/use-pending-trading-action-store";
@@ -81,6 +82,15 @@ export function TwapReconciliation() {
 		{ user: address ?? "0x0000000000000000000000000000000000000000" },
 		{ enabled: !!address },
 	);
+	const twapHistoryRef = useRef<TwapHistoryEntries>(undefined);
+	useEffect(() => {
+		twapHistoryRef.current = twapHistory?.history;
+	}, [twapHistory]);
+	useEffect(() => {
+		const user = address?.toLowerCase();
+		getPendingTwapActions().serve(user ? { env, user } : null);
+		return () => getPendingTwapActions().serve(null);
+	}, [address, env]);
 
 	useEffect(() => {
 		if (!address || activeTwapsStatus !== "active" || activeTwapsStale || !activeTwaps) return;
@@ -102,21 +112,11 @@ export function TwapReconciliation() {
 				}
 				continue;
 			}
-			const ended = cancellation.accepted
-				? "terminated"
-				: twapHistory?.history.find((entry) => entry.twapId === cancellation.twapId)?.status.status;
-			void confirmTwapCancellation(cancellation, getTwapCancellationOutcome(ended));
+			void confirmTwapCancellation(cancellation, (final) =>
+				readTwapCancellationOutcome(cancellation, twapHistoryRef.current, final),
+			);
 		}
-	}, [
-		activeTwaps,
-		activeTwapsReceivedAt,
-		activeTwapsStale,
-		activeTwapsStatus,
-		address,
-		cancellations,
-		env,
-		twapHistory,
-	]);
+	}, [activeTwaps, activeTwapsReceivedAt, activeTwapsStale, activeTwapsStatus, address, cancellations, env]);
 
 	useEffect(() => {
 		for (const submission of submissions) {
@@ -186,21 +186,35 @@ export function TwapReconciliation() {
 }
 
 type TwapCancellationOutcome = Parameters<typeof updatePendingTradingActionFeedback>[2];
+type ReadTwapCancellationOutcome = (final: boolean) => TwapCancellationOutcome | undefined;
+type TwapHistoryEntries = ReadonlyArray<{ twapId?: number; status: { status: string } }> | undefined;
+
+const TWAP_ENDED_STATUSES: ReadonlySet<string> = new Set(["terminated", "finished", "stopped", "error"]);
+const TWAP_CANCELLATION_OUTCOME_WAIT_ATTEMPTS = TRADING_ACTION_CONFIRMATION_TIMEOUT_MS / TWAP_RECONCILIATION_RETRY_MS;
 
 /**
  * A termination the exchange accepted ends as Terminated. Otherwise the TWAP may have finished on its
- * own, so only the TWAP history decides; while it does not show how the TWAP ended the result stays
- * neutral.
+ * own, so its own entry in the TWAP history decides. The history can arrive after the active list,
+ * so the result waits for it, and stays neutral once the confirmation window has passed without it.
  */
-function getTwapCancellationOutcome(ended: string | undefined): TwapCancellationOutcome {
+function readTwapCancellationOutcome(
+	cancellation: PendingTwapCancellation,
+	history: TwapHistoryEntries,
+	final: boolean,
+): TwapCancellationOutcome | undefined {
+	const ended = cancellation.accepted
+		? "terminated"
+		: history?.find((entry) => entry.twapId === cancellation.twapId && TWAP_ENDED_STATUSES.has(entry.status.status))
+				?.status.status;
 	if (ended === "terminated") return { status: "success", message: msg`Terminated` };
 	if (ended === "finished") return { status: "failed", message: msg`TWAP finished before it could be terminated.` };
+	if (!ended && !final) return;
 	return { status: "unconfirmed", message: msg`TWAP is no longer active. Check TWAP history before retrying.` };
 }
 
 async function confirmTwapCancellation(
 	cancellation: PendingTwapCancellation,
-	outcome: TwapCancellationOutcome,
+	readOutcome: ReadTwapCancellationOutcome,
 	attempt = 1,
 ): Promise<void> {
 	if (attempt === 1) {
@@ -216,15 +230,12 @@ async function confirmTwapCancellation(
 		{ env: current.env, owner: current.owner, assetIds: [current.assetId] },
 		current.twapId,
 	);
-	const latest = findPendingTwapCancellation(cancellation);
-	if (!latest) {
+	if (!findPendingTwapCancellation(cancellation)) {
 		activeTwapCancellationReleases.delete(cancellation.id);
 		return;
 	}
 	if (released) {
-		getPendingTradingActionActions().resolveTwapCancellation(latest.id);
-		activeTwapCancellationReleases.delete(cancellation.id);
-		updatePendingTradingActionFeedback(latest, "twap-cancel", outcome);
+		settleTwapCancellation(cancellation, readOutcome, 0);
 		return;
 	}
 	if (attempt >= TWAP_CANCELLATION_RELEASE_MAX_ATTEMPTS) {
@@ -238,10 +249,30 @@ async function confirmTwapCancellation(
 				activeTwapCancellationReleases.delete(cancellation.id);
 				return;
 			}
-			void confirmTwapCancellation(retriable, outcome, attempt + 1);
+			void confirmTwapCancellation(retriable, readOutcome, attempt + 1);
 		},
 		TWAP_RECONCILIATION_RETRY_MS * 2 ** (attempt - 1),
 	);
+}
+
+function settleTwapCancellation(
+	cancellation: PendingTwapCancellation,
+	readOutcome: ReadTwapCancellationOutcome,
+	attempt: number,
+): void {
+	const latest = findPendingTwapCancellation(cancellation);
+	const outcome = latest && readOutcome(attempt >= TWAP_CANCELLATION_OUTCOME_WAIT_ATTEMPTS);
+	if (latest && !outcome) {
+		window.setTimeout(
+			() => settleTwapCancellation(cancellation, readOutcome, attempt + 1),
+			TWAP_RECONCILIATION_RETRY_MS,
+		);
+		return;
+	}
+	activeTwapCancellationReleases.delete(cancellation.id);
+	if (!latest || !outcome) return;
+	getPendingTradingActionActions().resolveTwapCancellation(latest.id);
+	updatePendingTradingActionFeedback(latest, "twap-cancel", outcome);
 }
 
 function findPendingTwapCancellation(expected: PendingTwapCancellation): PendingTwapCancellation | null {

@@ -334,6 +334,7 @@ jobs:
           src/lib/tests/pending-trading-action-store.test.ts
           src/lib/tests/order-reconciliation.test.tsx
           src/lib/tests/twap-reconciliation.test.tsx
+          src/lib/tests/twap-cancel-hook.test.tsx
           src/lib/tests/pending-submission-tab-ownership.test.ts
           src/lib/tests/spot-swap-modal.test.tsx
           src/lib/tests/account-mode-modal.test.tsx

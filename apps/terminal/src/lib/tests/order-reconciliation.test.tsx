@@ -1575,6 +1575,7 @@ describe("OrderReconciliation", () => {
 	describe("a cancellation whose outcome the exchange did not confirm", () => {
 		const FILLED_BEFORE_CANCEL = "Filled before it could be canceled. Check your positions.";
 		const NO_LONGER_OPEN = "The order is no longer open. Check your fills before retrying.";
+		const NOT_CONFIRMED_REVIEW_OPEN_ORDERS = "The cancellation was not confirmed. Review open orders before retrying.";
 
 		function claimUnconfirmedCancellation(oids: number[], phase: "awaiting" | "unconfirmed") {
 			const now = Date.now();
@@ -1674,7 +1675,96 @@ describe("OrderReconciliation", () => {
 			await renderAndSettle();
 
 			expectActionFeedback(unknown.id, "unconfirmed", NO_LONGER_OPEN);
-			expectActionFeedback(open.id, "unconfirmed", NO_LONGER_OPEN);
+			expectActionFeedback(open.id, "unconfirmed", NOT_CONFIRMED_REVIEW_OPEN_ORDERS);
+		});
+
+		it("never calls a triggered order canceled or filled", async () => {
+			mocks.infoOrderStatus.mockResolvedValue(orderStatus("triggered"));
+			const cancellation = claimUnconfirmedCancellation([89], "unconfirmed");
+
+			await renderAndSettle();
+
+			expectActionFeedback(cancellation.id, "unconfirmed", NOT_CONFIRMED_REVIEW_OPEN_ORDERS);
+		});
+
+		it.each([
+			{ name: "a fill and a failed lookup", oids: [90, 91], statuses: ["filled", "error"] },
+			{
+				name: "a fill, a cancel and an unknown order",
+				oids: [92, 93, 94],
+				statuses: ["filled", "canceled", "unknownOid"],
+			},
+			{
+				name: "a fill among ten looked-up orders and an eleventh never looked up",
+				oids: Array.from({ length: 11 }, (_, index) => 120 + index),
+				statuses: ["filled", ...Array<string>(10).fill("canceled")],
+			},
+		])("stays neutral for $name instead of reporting a failed batch", async ({ oids, statuses }) => {
+			mocks.infoOrderStatus.mockImplementation(({ oid }: { oid: number }) => {
+				const status = statuses[oids.indexOf(oid)];
+				if (status === "error") return Promise.reject(new Error("network"));
+				if (status === "unknownOid") return Promise.resolve({ status: "unknownOid" });
+				return Promise.resolve(orderStatus(status as OrderProcessingStatus));
+			});
+			const cancellation = claimUnconfirmedCancellation(oids, "unconfirmed");
+
+			await renderAndSettle();
+
+			expect(getOrderQueueItem(`pending-trading-action:${cancellation.id}`)).toMatchObject({ status: "unconfirmed" });
+			expectActionFeedback(cancellation.id, "unconfirmed", NO_LONGER_OPEN);
+		});
+
+		it("reports every order filled as a failed cancellation", async () => {
+			mocks.infoOrderStatus.mockResolvedValue(orderStatus("filled"));
+			const cancellation = claimUnconfirmedCancellation([95, 96], "unconfirmed");
+
+			await renderAndSettle();
+
+			expectActionFeedback(cancellation.id, "failed", FILLED_BEFORE_CANCEL);
+		});
+
+		it("draws no conclusion when the order is back in the open orders by the time the lookup returns", async () => {
+			let answer!: (value: unknown) => void;
+			mocks.infoOrderStatus.mockReturnValue(
+				new Promise((resolve) => {
+					answer = resolve;
+				}),
+			);
+			const cancellation = claimUnconfirmedCancellation([97], "awaiting");
+			await renderAndSettle();
+
+			mocks.openOrdersData = { orders: [{ oid: 97, sz: "1", triggerPx: "0" }] };
+			mocks.openOrdersMonotonicLastMessageAt = performance.now() + 1;
+			await renderAndSettle();
+			await act(async () => {
+				answer(orderStatus("open"));
+				for (let index = 0; index < 5; index += 1) await Promise.resolve();
+			});
+
+			expect(getPendingTradingActionSnapshot().orderCancellations).toMatchObject([{ id: cancellation.id }]);
+			expect(getOrderQueueItem(`pending-trading-action:${cancellation.id}`)?.status).toBe("confirming");
+		});
+
+		it("does not bring back the notification of a cancellation that ended while its lookup was running", async () => {
+			let answer!: (value: unknown) => void;
+			mocks.infoOrderStatus.mockReturnValue(
+				new Promise((resolve) => {
+					answer = resolve;
+				}),
+			);
+			const cancellation = claimUnconfirmedCancellation([98], "unconfirmed");
+			await renderAndSettle();
+
+			act(() => {
+				getPendingTradingActionActions().reset();
+				queueActions?.removeOrder(`pending-trading-action:${cancellation.id}`);
+			});
+			await act(async () => {
+				answer(orderStatus("canceled"));
+				for (let index = 0; index < 5; index += 1) await Promise.resolve();
+			});
+
+			expect(getOrderQueueItem(`pending-trading-action:${cancellation.id}`)).toBeUndefined();
 		});
 
 		it("looks up at most ten orders of a large batch and does not conclude for the rest", async () => {
@@ -1766,7 +1856,7 @@ describe("OrderReconciliation", () => {
 			if (queue?.length) otherTabLocks.set(name, queue);
 		}
 
-		function writeOtherTabSubmission(present: boolean) {
+		function writeOtherTabSubmission(present: boolean, unconfirmedAt?: number) {
 			if (present) {
 				window.localStorage.setItem(
 					STORAGE_KEY,
@@ -1776,6 +1866,7 @@ describe("OrderReconciliation", () => {
 						user: USER,
 						intentKey: "other-tab-order",
 						createdAt: Date.now(),
+						unconfirmedAt,
 						children: [{ assetId: 9, cloid: OTHER_TAB_CLOID, attempts: 0, nextCheckAt: Date.now() + 1_000 }],
 					}),
 				);
@@ -1834,6 +1925,21 @@ describe("OrderReconciliation", () => {
 
 			expect(findQueueForAsset(9)).toMatchObject({ owner: USER, env: "Mainnet", status: "confirming" });
 			expect(otherTabLocks.has(LOCK_NAME)).toBe(true);
+		});
+
+		it("settles a timed-out submission from a fill it already received once the closed tab's lock is free", async () => {
+			mocks.orderUpdatesData = [{ order: { cloid: OTHER_TAB_CLOID }, status: "filled" }];
+			act(() => root.render(createReconciliation()));
+			act(() => writeOtherTabSubmission(true, Date.now()));
+			await flush();
+			expect(findQueueForAsset(9)).toBeUndefined();
+			expect(hasPendingOrderForAssets("Mainnet", USER, [9])).toBe(false);
+
+			releaseLock(LOCK_NAME);
+			await flush();
+
+			expect(findQueueForAsset(9)).toMatchObject({ owner: USER, status: "success", outcome: "filled" });
+			expect(window.localStorage.getItem(STORAGE_KEY)).toBeNull();
 		});
 	});
 });

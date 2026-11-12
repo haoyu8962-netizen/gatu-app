@@ -4,6 +4,7 @@ import {
 	buildOpenOrderCancelActions,
 	getPartialOpenOrderCancel,
 	isConfirmedOpenOrderCancelResponse,
+	isConfirmedTwapCancelResponse,
 	resolveOpenOrderCancelAssetId,
 	resolveOpenOrderCancelResponse,
 } from "@/domain/trade/open-order-cancel";
@@ -65,6 +66,22 @@ describe("open order cancel responses", () => {
 		{ status: "ok", response: { type: "cancel", data: { statuses: [{}] } } },
 	])("rejects malformed, mismatched, and non-success responses", (response) => {
 		expect(isConfirmedOpenOrderCancelResponse(response, 1)).toBe(false);
+	});
+
+	it("accepts a TWAP termination only from the exact success response", () => {
+		expect(
+			isConfirmedTwapCancelResponse({ status: "ok", response: { type: "twapCancel", data: { status: "success" } } }),
+		).toBe(true);
+		for (const response of [
+			undefined,
+			{ status: "ok", response: { type: "default" } },
+			{ status: "ok", response: { type: "twapCancel", data: { status: "pending" } } },
+			{ status: "ok", response: { type: "twapCancel", data: { status: { error: "TWAP 1 is not active" } } } },
+			{ status: "ok", response: { type: "cancel", data: { status: "success" } } },
+			{ status: "err", response: { type: "twapCancel", data: { status: "success" } } },
+		]) {
+			expect(isConfirmedTwapCancelResponse(response)).toBe(false);
+		}
 	});
 });
 

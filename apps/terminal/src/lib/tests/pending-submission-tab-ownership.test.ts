@@ -4,7 +4,8 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createPendingOrderStore } from "@/stores/use-pending-order-store";
 import { createPendingTwapStore } from "@/stores/use-pending-twap-store";
 
-const USER = "0x1111111111111111111111111111111111111111" as const;
+const USER_X = "0x1111111111111111111111111111111111111111" as const;
+const USER_Y = "0x2222222222222222222222222222222222222222" as const;
 
 class MemoryStorage implements Storage {
 	private readonly items = new Map<string, string>();
@@ -34,48 +35,90 @@ class MemoryStorage implements Storage {
 	}
 }
 
-/** One exclusive lock per name with a FIFO queue, shared by the store instances that model tabs. */
-function installLockManager() {
-	const queues = new Map<string, Array<() => void>>();
-	const holders = new Map<string, () => void>();
+interface Waiter {
+	mode: LockMode;
+	grant: () => void;
+}
 
-	function grantNext(name: string): void {
-		const run = queues.get(name)?.shift();
-		if (run) run();
-		else queues.delete(name);
+/**
+ * Web Locks as the specification describes them for one document: exclusive and shared modes, a FIFO
+ * queue per name, `signal` aborting a queued request with an `AbortError`, and a request that can be
+ * made to reject. Store instances that share it model tabs of one browser.
+ */
+function installLockManager() {
+	const holders = new Map<string, Map<symbol, LockMode>>();
+	const queues = new Map<string, Waiter[]>();
+	const closers = new Map<string, Array<() => void>>();
+	const requests = new Map<string, number>();
+	const grants = new Map<string, number>();
+	let rejectRequests = false;
+
+	function canGrant(name: string, mode: LockMode): boolean {
+		const held = [...(holders.get(name)?.values() ?? [])];
+		return held.length === 0 || (mode === "shared" && held.every((heldMode) => heldMode === "shared"));
+	}
+
+	function grantWaiting(name: string): void {
+		const queue = queues.get(name) ?? [];
+		while (queue.length > 0) {
+			const next = queue[0];
+			if (!next || !canGrant(name, next.mode)) break;
+			queue.shift();
+			next.grant();
+		}
 	}
 
 	const manager = {
-		request(name: string, _options: LockOptions, callback: (lock: Lock | null) => unknown) {
+		request(name: string, options: LockOptions, callback: (lock: Lock | null) => unknown) {
+			if (rejectRequests) return Promise.reject(new DOMException("Lock request failed", "InvalidStateError"));
+			const mode = options.mode ?? "exclusive";
+			requests.set(name, (requests.get(name) ?? 0) + 1);
 			return new Promise((resolve, reject) => {
-				const run = () => {
-					let finished = false;
-					const finish = () => {
-						if (finished) return;
-						finished = true;
-						holders.delete(name);
-						grantNext(name);
-					};
-					holders.set(name, finish);
-					Promise.resolve()
-						.then(() => callback({ name, mode: "exclusive" } as Lock))
-						.then(resolve, reject)
-						.finally(finish);
+				const token = Symbol(name);
+				let finished = false;
+				const finish = () => {
+					if (finished) return;
+					finished = true;
+					holders.get(name)?.delete(token);
+					grantWaiting(name);
 				};
-				const queue = queues.get(name);
-				if (queue) {
-					queue.push(run);
-					return;
-				}
-				queues.set(name, []);
-				run();
+				const waiter: Waiter = {
+					mode,
+					grant: () => {
+						grants.set(name, (grants.get(name) ?? 0) + 1);
+						const held = holders.get(name) ?? new Map<symbol, LockMode>();
+						held.set(token, mode);
+						holders.set(name, held);
+						closers.set(name, [...(closers.get(name) ?? []), finish]);
+						Promise.resolve()
+							.then(() => callback({ name, mode } as Lock))
+							.then(resolve, reject)
+							.finally(finish);
+					},
+				};
+				options.signal?.addEventListener("abort", () => {
+					const queue = queues.get(name) ?? [];
+					const index = queue.indexOf(waiter);
+					if (index < 0) return;
+					queue.splice(index, 1);
+					reject(new DOMException("Aborted", "AbortError"));
+				});
+				const queue = queues.get(name) ?? [];
+				queues.set(name, queue);
+				if (queue.length === 0 && canGrant(name, mode)) waiter.grant();
+				else queue.push(waiter);
 			});
 		},
 	} as unknown as LockManager;
 	Object.defineProperty(window.navigator, "locks", { configurable: true, value: manager });
 	return {
-		isHeld: (name: string) => holders.has(name),
-		closeHolder: (name: string) => holders.get(name)?.(),
+		holderCount: (name: string) => holders.get(name)?.size ?? 0,
+		requestCount: (name: string) => requests.get(name) ?? 0,
+		grantCount: (name: string) => grants.get(name) ?? 0,
+		closeFirstHolder: (name: string) => closers.get(name)?.shift()?.(),
+		rejectRequests: () => {
+			rejectRequests = true;
+		},
 	};
 }
 
@@ -91,14 +134,14 @@ const kinds = [
 			const store = createPendingOrderStore(storage);
 			return {
 				store,
+				actions: () => store.getState().actions,
 				add: () =>
 					store.getState().actions.add({
 						env: "Mainnet",
-						user: USER,
+						user: USER_X,
 						intentKey: "tab-order",
 						children: [{ assetId: 31, cloid: "0x00000000000000000000000000000031" }],
 					}),
-				remove: (id: string) => store.getState().actions.remove(id),
 			};
 		},
 	},
@@ -109,10 +152,11 @@ const kinds = [
 			const store = createPendingTwapStore(storage);
 			return {
 				store,
+				actions: () => store.getState().actions,
 				add: () =>
 					store.getState().actions.add({
 						env: "Mainnet",
-						user: USER,
+						user: USER_X,
 						intent: {
 							assetId: 7,
 							coin: "xyz:GOLD",
@@ -127,7 +171,6 @@ const kinds = [
 						activeBaseline: { ready: true, knownIds: [] },
 						historyBaseline: { ready: true, knownIds: [] },
 					}),
-				remove: (id: string) => store.getState().actions.remove(id),
 			};
 		},
 	},
@@ -138,6 +181,16 @@ describe.each(kinds)("pending $name submission ownership between tabs", ({ lockP
 		Object.defineProperty(window.navigator, "locks", { configurable: true, value: undefined });
 	});
 
+	function openTab(storage: Storage, user: string | null) {
+		const tab = createTab(storage);
+		tab.actions().serve(user ? { env: "Mainnet", user } : null);
+		return tab;
+	}
+
+	function isBlocked(tab: ReturnType<typeof createTab>, id: string): boolean {
+		return tab.store.getState().activeSubmissionIds.has(id);
+	}
+
 	describe("with Web Locks", () => {
 		let locks: ReturnType<typeof installLockManager>;
 
@@ -147,60 +200,132 @@ describe.each(kinds)("pending $name submission ownership between tabs", ({ lockP
 
 		it("keeps a submission with the tab that sent it while that tab holds it", async () => {
 			const storage = new MemoryStorage();
-			const sender = createTab(storage);
+			const sender = openTab(storage, USER_X);
 			const submission = sender.add();
-			sender.store.getState().actions.markActive(submission.id);
-			const other = createTab(storage);
+			sender.actions().markActive(submission.id);
+			const other = openTab(storage, USER_X);
 			await settle();
 
-			expect(locks.isHeld(`${lockPrefix}${submission.id}`)).toBe(true);
+			expect(locks.holderCount(`${lockPrefix}${submission.id}`)).toBe(1);
 			expect(other.store.getState().submissions.map((entry) => entry.id)).toEqual([submission.id]);
-			expect(other.store.getState().activeSubmissionIds.has(submission.id)).toBe(true);
-			expect(sender.store.getState().activeSubmissionIds.has(submission.id)).toBe(true);
+			expect(isBlocked(other, submission.id)).toBe(true);
+			expect(isBlocked(sender, submission.id)).toBe(true);
 
-			sender.store.getState().actions.clearActive(submission.id);
+			sender.actions().clearActive(submission.id);
 			await settle();
-			expect(sender.store.getState().activeSubmissionIds.has(submission.id)).toBe(false);
-			expect(other.store.getState().activeSubmissionIds.has(submission.id)).toBe(true);
+			expect(isBlocked(sender, submission.id)).toBe(false);
+			expect(isBlocked(other, submission.id)).toBe(true);
+		});
+
+		it("keeps a submission that is still being sent even after its tab switches accounts", async () => {
+			const storage = new MemoryStorage();
+			const sender = openTab(storage, USER_X);
+			const submission = sender.add();
+			sender.actions().markActive(submission.id);
+			const other = openTab(storage, USER_X);
+			await settle();
+
+			sender.actions().serve({ env: "Mainnet", user: USER_Y });
+			await settle();
+			expect(isBlocked(other, submission.id)).toBe(true);
+
+			sender.actions().clearActive(submission.id);
+			await settle();
+			expect(isBlocked(sender, submission.id)).toBe(true);
+			expect(isBlocked(other, submission.id)).toBe(false);
 		});
 
 		it("does not take over a submission the sending tab settled, even before the other tab hears of it", async () => {
 			const storage = new MemoryStorage();
-			const sender = createTab(storage);
+			const sender = openTab(storage, USER_X);
 			const submission = sender.add();
-			const other = createTab(storage);
+			const other = openTab(storage, USER_X);
 			await settle();
 
-			sender.remove(submission.id);
+			sender.actions().remove(submission.id);
 			await settle();
 
-			expect(other.store.getState().activeSubmissionIds.has(submission.id)).toBe(true);
-			expect(locks.isHeld(`${lockPrefix}${submission.id}`)).toBe(false);
+			expect(isBlocked(other, submission.id)).toBe(true);
+			expect(locks.holderCount(`${lockPrefix}${submission.id}`)).toBe(0);
+		});
+
+		it("hands the submission of a closed tab to a tab of the same account, not to an earlier tab of another", async () => {
+			const storage = new MemoryStorage();
+			const sender = openTab(storage, USER_X);
+			const submission = sender.add();
+			const otherAccount = openTab(storage, USER_Y);
+			const disconnected = openTab(storage, null);
+			const sameAccount = openTab(storage, USER_X);
+			await settle();
+
+			locks.closeFirstHolder(`${lockPrefix}${submission.id}`);
+			await settle();
+
+			expect(isBlocked(otherAccount, submission.id)).toBe(true);
+			expect(isBlocked(disconnected, submission.id)).toBe(true);
+			expect(isBlocked(sameAccount, submission.id)).toBe(false);
+			expect(locks.holderCount(`${lockPrefix}${submission.id}`)).toBe(1);
+			expect(locks.requestCount(`${lockPrefix}${submission.id}`)).toBe(2);
+			expect(locks.grantCount(`${lockPrefix}${submission.id}`)).toBe(2);
+
+			otherAccount.actions().serve({ env: "Mainnet", user: USER_X });
+			sameAccount.actions().serve({ env: "Mainnet", user: USER_Y });
+			await settle();
+			expect(isBlocked(sameAccount, submission.id)).toBe(true);
+			expect(isBlocked(otherAccount, submission.id)).toBe(false);
+			expect(locks.holderCount(`${lockPrefix}${submission.id}`)).toBe(1);
+		});
+
+		it("stops waiting for the lock as soon as a waiting tab switches accounts", async () => {
+			const storage = new MemoryStorage();
+			const sender = openTab(storage, USER_X);
+			const submission = sender.add();
+			const switching = openTab(storage, USER_X);
+			const staying = openTab(storage, USER_X);
+			await settle();
+
+			switching.actions().serve({ env: "Mainnet", user: USER_Y });
+			locks.closeFirstHolder(`${lockPrefix}${submission.id}`);
+			await settle();
+
+			expect(isBlocked(switching, submission.id)).toBe(true);
+			expect(isBlocked(staying, submission.id)).toBe(false);
+			expect(locks.grantCount(`${lockPrefix}${submission.id}`)).toBe(2);
 		});
 
 		it("lets one other tab take over a submission whose sending tab closed", async () => {
 			const storage = new MemoryStorage();
-			const sender = createTab(storage);
+			const sender = openTab(storage, USER_X);
 			const submission = sender.add();
-			const other = createTab(storage);
-			const third = createTab(storage);
+			const other = openTab(storage, USER_X);
+			const third = openTab(storage, USER_X);
 			await settle();
 
-			locks.closeHolder(`${lockPrefix}${submission.id}`);
+			locks.closeFirstHolder(`${lockPrefix}${submission.id}`);
 			await settle();
 
-			expect(other.store.getState().activeSubmissionIds.has(submission.id)).toBe(false);
-			expect(third.store.getState().activeSubmissionIds.has(submission.id)).toBe(true);
-			expect(locks.isHeld(`${lockPrefix}${submission.id}`)).toBe(true);
+			expect(isBlocked(other, submission.id)).toBe(false);
+			expect(isBlocked(third, submission.id)).toBe(true);
+			expect(locks.holderCount(`${lockPrefix}${submission.id}`)).toBe(1);
+		});
+
+		it("reconciles in this tab when the lock request itself fails", async () => {
+			const storage = new MemoryStorage();
+			const submission = openTab(storage, USER_X).add();
+			locks.rejectRequests();
+			const other = openTab(storage, USER_X);
+			await settle();
+
+			expect(isBlocked(other, submission.id)).toBe(false);
 		});
 	});
 
 	it("lets every tab reconcile every submission without Web Locks", async () => {
 		const storage = new MemoryStorage();
-		const submission = createTab(storage).add();
-		const other = createTab(storage);
+		const submission = openTab(storage, USER_X).add();
+		const other = openTab(storage, USER_X);
 		await settle();
 
-		expect(other.store.getState().activeSubmissionIds.has(submission.id)).toBe(false);
+		expect(isBlocked(other, submission.id)).toBe(false);
 	});
 });

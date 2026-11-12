@@ -3315,7 +3315,7 @@ msgstr "約定済み（数量未確認）"
 
 #: src/components/trade/order-reconciliation.tsx
 msgid "Filled before it could be canceled. Check your positions."
-msgstr "キャンセル前に約定しました。ポジションを確認してください。"
+msgstr "注文はキャンセル前に約定しました。ポジションを確認してください。"
 
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Filter by {label}"
@@ -8159,6 +8159,7 @@ msgstr "Arbitrum トランザクションは送信されましたが、最終状
 msgid "The cancellation response could not be confirmed. Refresh open orders before retrying."
 msgstr "キャンセルの応答を確認できませんでした。再試行する前に未約定注文を更新してください。"
 
+#: src/components/trade/order-reconciliation.tsx
 #: src/components/trade/order-reconciliation.tsx
 msgid "The cancellation was not confirmed. Review open orders before retrying."
 msgstr "キャンセルを確認できませんでした。再試行する前に未約定注文を確認してください。"

@@ -3689,7 +3689,7 @@ msgstr "已成交（数量待核对）"
 
 #: src/components/trade/order-reconciliation.tsx
 msgid "Filled before it could be canceled. Check your positions."
-msgstr "撤销前已成交，请核对仓位。"
+msgstr "委托在取消前已成交，请核对持仓。"
 
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Filter by {label}"
@@ -9097,6 +9097,7 @@ msgid "The cancellation response could not be confirmed. Refresh open orders bef
 msgstr "无法确认取消结果。请刷新当前委托后再试。"
 
 #: src/components/trade/order-reconciliation.tsx
+#: src/components/trade/order-reconciliation.tsx
 msgid "The cancellation was not confirmed. Review open orders before retrying."
 msgstr "未能确认取消。重试前请检查当前委托。"
 
@@ -9256,7 +9257,7 @@ msgstr "订单无法立即与任何挂单成交。"
 
 #: src/components/trade/order-reconciliation.tsx
 msgid "The order is no longer open. Check your fills before retrying."
-msgstr "订单已不在当前委托中。重试前请核对成交记录。"
+msgstr "该委托已不在当前委托中。重试前请核对成交记录。"
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #~ msgid "The order is still being confirmed."

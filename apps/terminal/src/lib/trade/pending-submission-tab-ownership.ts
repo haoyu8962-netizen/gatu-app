@@ -1,27 +1,55 @@
 import type { StoreApi } from "zustand";
 
+export interface PendingSubmissionIdentity {
+	env: string;
+	user: string;
+}
+
 interface TabOwnedSubmissionState {
-	submissions: readonly { id: string }[];
+	submissions: readonly (PendingSubmissionIdentity & { id: string })[];
 	activeSubmissionIds: Set<string>;
+}
+
+interface Claim {
+	state: "idle" | "waiting" | "held" | "unlocked";
+	own: boolean;
+	blocked: boolean;
+	release?: () => void;
+}
+
+function getLockManager(): LockManager | undefined {
+	const locks = typeof navigator === "undefined" ? undefined : navigator.locks;
+	return locks && typeof locks.request === "function" ? locks : undefined;
 }
 
 /**
  * Lets one tab at a time reconcile a persisted pending submission (docs/trading-notifications.md).
- * The tab that adds a submission holds the Web Lock `<lockPrefix><id>` until the submission leaves
- * its store. Every other tab keeps the submission in `activeSubmissionIds`, which reconciliation
- * skips, and queues for the lock; the browser releases the locks of a closed or crashed tab, so the
- * first waiting tab that still finds the record in storage takes it over and holds the lock in turn.
- * Without Web Locks every tab reconciles every submission, as before. Returns the function the
- * store's `add` calls before it publishes a new submission.
+ * The tab that adds a submission holds the Web Lock `<lockPrefix><id>` while it sends it. Any tab
+ * that does not hold the lock keeps the submission in `activeSubmissionIds`, which reconciliation
+ * skips, and queues for the lock only while it can serve the submission: its reconciliation host
+ * reports the submission's owner and network through `serve`. A tab that gets the lock checks again
+ * that the record is still stored and still its own to serve, and otherwise lets it go at once; a
+ * holder whose identity stops matching releases the lock unless the submission is still being sent
+ * from it. The browser releases a closed or crashed tab's locks, so a waiting tab of the same account
+ * takes over. Without Web Locks every tab reconciles every submission, as before.
  */
 export function shareSubmissionsBetweenTabs<S extends TabOwnedSubmissionState>(
 	store: StoreApi<S>,
 	lockPrefix: string,
 	isStored: (id: string) => boolean,
-): (id: string) => void {
-	const releases = new Map<string, () => void>();
+): { claim: (id: string) => void; serve: (identity: PendingSubmissionIdentity | null) => void } {
+	const claims = new Map<string, Claim>();
+	let identity: PendingSubmissionIdentity | null = null;
+	let syncing = false;
 
-	function setBlocked(id: string, blocked: boolean): void {
+	function serves(id: string): boolean {
+		const submission = store.getState().submissions.find((entry) => entry.id === id);
+		return !!submission && submission.env === identity?.env && submission.user === identity.user;
+	}
+
+	function setBlocked(id: string, claim: Claim, blocked: boolean): void {
+		if (claim.blocked === blocked) return;
+		claim.blocked = blocked;
 		store.setState((state) => {
 			const activeSubmissionIds = new Set(state.activeSubmissionIds);
 			if (blocked) activeSubmissionIds.add(id);
@@ -30,42 +58,85 @@ export function shareSubmissionsBetweenTabs<S extends TabOwnedSubmissionState>(
 		});
 	}
 
-	function hold(id: string, foreign: boolean): void {
-		const locks = typeof navigator === "undefined" ? undefined : navigator.locks;
-		if (!locks || typeof locks.request !== "function") return;
-		let released = false;
-		let release: (() => void) | undefined;
-		releases.set(id, () => {
-			released = true;
-			release?.();
-		});
-		if (foreign) setBlocked(id, true);
+	function request(id: string, claim: Claim, locks: LockManager): void {
+		const controller = new AbortController();
+		let hold: (() => void) | undefined;
+		claim.state = "waiting";
+		claim.release = () => {
+			controller.abort();
+			hold?.();
+		};
 		locks
-			.request(`${lockPrefix}${id}`, { mode: "exclusive" }, () => {
-				if (released || !isStored(id)) return;
-				if (foreign) setBlocked(id, false);
+			.request(`${lockPrefix}${id}`, { mode: "exclusive", signal: controller.signal }, () => {
+				if (controller.signal.aborted) return;
+				if (!isStored(id) || (!claim.own && !serves(id))) {
+					claim.state = "idle";
+					return;
+				}
+				claim.state = "held";
+				setBlocked(id, claim, false);
 				return new Promise<void>((resolve) => {
-					release = resolve;
+					hold = resolve;
 				});
 			})
 			.catch(() => {
-				if (foreign && !released) setBlocked(id, false);
+				if (controller.signal.aborted || claims.get(id) !== claim) return;
+				claim.state = "unlocked";
+				setBlocked(id, claim, false);
 			});
 	}
 
-	function sync({ submissions }: S): void {
-		const ids = new Set(submissions.map((submission) => submission.id));
-		for (const [id, release] of releases) {
-			if (ids.has(id)) continue;
-			releases.delete(id);
-			release();
-		}
-		for (const id of ids) {
-			if (!releases.has(id)) hold(id, true);
+	function sync(): void {
+		if (syncing) return;
+		syncing = true;
+		try {
+			const { submissions, activeSubmissionIds } = store.getState();
+			const ids = new Set(submissions.map((submission) => submission.id));
+			for (const [id, claim] of claims) {
+				if (ids.has(id)) continue;
+				claims.delete(id);
+				claim.release?.();
+				setBlocked(id, claim, false);
+			}
+			const locks = getLockManager();
+			for (const id of ids) {
+				let claim = claims.get(id);
+				if (!claim) {
+					claim = { state: "idle", own: false, blocked: false };
+					claims.set(id, claim);
+				}
+				if (!locks || claim.state === "unlocked") continue;
+				const eligible = serves(id);
+				if (claim.state === "held" && !eligible && !activeSubmissionIds.has(id)) {
+					claim.release?.();
+					claim.state = "idle";
+					claim.own = false;
+				} else if (claim.state === "waiting" && !eligible && !claim.own) {
+					claim.release?.();
+					claim.state = "idle";
+				}
+				if (claim.state !== "idle") continue;
+				setBlocked(id, claim, true);
+				if (eligible) request(id, claim, locks);
+			}
+		} finally {
+			syncing = false;
 		}
 	}
 
 	store.subscribe(sync);
-	sync(store.getState());
-	return (id) => hold(id, false);
+	sync();
+	return {
+		claim: (id) => {
+			const locks = getLockManager();
+			const claim: Claim = { state: "idle", own: true, blocked: false };
+			claims.set(id, claim);
+			if (locks) request(id, claim, locks);
+			else claim.state = "unlocked";
+		},
+		serve: (next) => {
+			identity = next;
+			sync();
+		},
+	};
 }

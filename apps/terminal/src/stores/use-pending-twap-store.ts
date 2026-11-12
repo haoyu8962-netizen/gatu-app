@@ -5,7 +5,10 @@ import {
 	TWAP_RECONCILIATION_MAX_AGE_MS,
 	type TwapIntent,
 } from "@/domain/trade/twap";
-import { shareSubmissionsBetweenTabs } from "@/lib/trade/pending-submission-tab-ownership";
+import {
+	type PendingSubmissionIdentity,
+	shareSubmissionsBetweenTabs,
+} from "@/lib/trade/pending-submission-tab-ownership";
 import { z } from "@/lib/zod";
 
 const baselineSchema = z.object({
@@ -76,6 +79,8 @@ interface PendingTwapStore {
 	actions: {
 		add: (input: AddPendingTwapInput) => PendingTwapSubmission;
 		markActive: (id: string) => void;
+		/** The owner and network this tab can reconcile now, or null while it cannot reconcile any. */
+		serve: (identity: PendingSubmissionIdentity | null) => void;
 		clearActive: (id: string) => void;
 		remove: (id: string) => void;
 		resolve: (id: string) => PendingTwapSubmission | null;
@@ -257,7 +262,7 @@ export function createPendingTwapStore(storage: PendingTwapStorage | null = getB
 					user: input.user.toLowerCase() as `0x${string}`,
 					createdAt: now,
 				};
-				claimSubmission(submission.id);
+				sharing.claim(submission.id);
 				set(() => {
 					const current = readPersistedPendingTwaps(storage);
 					if (!current) throw new PendingTwapPersistenceError();
@@ -273,6 +278,7 @@ export function createPendingTwapStore(storage: PendingTwapStorage | null = getB
 				});
 				return submission;
 			},
+			serve: (identity) => sharing.serve(identity),
 			markActive: (id) => {
 				set((state) => ({ activeSubmissionIds: new Set(state.activeSubmissionIds).add(id) }));
 			},
@@ -381,7 +387,7 @@ export function createPendingTwapStore(storage: PendingTwapStorage | null = getB
 		});
 	}
 
-	const claimSubmission = shareSubmissionsBetweenTabs(store, "sairn-pending-twap-owner-v1:", (id) =>
+	const sharing = shareSubmissionsBetweenTabs(store, "sairn-pending-twap-owner-v1:", (id) =>
 		(readPersistedPendingTwaps(storage) ?? store.getState().submissions).some((submission) => submission.id === id),
 	);
 	return store;

@@ -8,7 +8,10 @@ import {
 	type OrderProcessingStatus,
 	type TrackedOrderChild,
 } from "@/domain/trade/order-tracking";
-import { shareSubmissionsBetweenTabs } from "@/lib/trade/pending-submission-tab-ownership";
+import {
+	type PendingSubmissionIdentity,
+	shareSubmissionsBetweenTabs,
+} from "@/lib/trade/pending-submission-tab-ownership";
 import { z } from "@/lib/zod";
 import type { OrderQueueMetadata } from "@/stores/use-order-queue-store";
 
@@ -164,6 +167,8 @@ interface PendingOrderStore {
 		add: (input: AddPendingOrderInput) => PendingOrderSubmission;
 		updateFeedback: (id: string, feedback: OrderQueueMetadata) => void;
 		markActive: (id: string) => void;
+		/** The owner and network this tab can reconcile now, or null while it cannot reconcile any. */
+		serve: (identity: PendingSubmissionIdentity | null) => void;
 		clearActive: (id: string) => void;
 		remove: (id: string) => void;
 		markChecked: (cloid: string, checkedAt: number) => void;
@@ -353,7 +358,7 @@ export function createPendingOrderStore(storage: PendingOrderStorage | null = ge
 					createdAt: now,
 					children: input.children.map((child) => ({ ...child, attempts: 0, nextCheckAt: now + 1_000 })),
 				};
-				claimSubmission(submission.id);
+				sharing.claim(submission.id);
 				set(() => {
 					const current = readPersistedPendingOrders(storage);
 					if (!current) throw new PendingOrderPersistenceError();
@@ -382,6 +387,7 @@ export function createPendingOrderStore(storage: PendingOrderStorage | null = ge
 					return { submissions: mergeMutationWithPersistedSnapshot(storage, submissions, [next]) };
 				});
 			},
+			serve: (identity) => sharing.serve(identity),
 			markActive: (id) => {
 				set((state) => ({ activeSubmissionIds: new Set(state.activeSubmissionIds).add(id) }));
 			},
@@ -539,7 +545,7 @@ export function createPendingOrderStore(storage: PendingOrderStorage | null = ge
 		});
 	}
 
-	const claimSubmission = shareSubmissionsBetweenTabs(store, "sairn-pending-order-owner-v1:", (id) =>
+	const sharing = shareSubmissionsBetweenTabs(store, "sairn-pending-order-owner-v1:", (id) =>
 		(readPersistedPendingOrders(storage) ?? store.getState().submissions).some((submission) => submission.id === id),
 	);
 	return store;

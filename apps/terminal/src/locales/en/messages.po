@@ -9097,6 +9097,7 @@ msgid "The cancellation response could not be confirmed. Refresh open orders bef
 msgstr "The cancellation response could not be confirmed. Refresh open orders before retrying."
 
 #: src/components/trade/order-reconciliation.tsx
+#: src/components/trade/order-reconciliation.tsx
 msgid "The cancellation was not confirmed. Review open orders before retrying."
 msgstr "The cancellation was not confirmed. Review open orders before retrying."
 

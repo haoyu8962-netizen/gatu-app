@@ -625,14 +625,16 @@ changes, not evidence that a build has been deployed or accepted on real devices
 ### Fixed
 
 - A cancel whose result never came back is no longer reported as Canceled just because the order
-  left your open orders. The terminal first asks the exchange what happened to the order: if it
-  filled, the notification says it filled before it could be canceled; if its status cannot be
-  read, it asks you to check your fills instead of claiming a cancel. The same applies to
-  terminating a TWAP that finished on its own.
+  left your open orders. The terminal first asks the exchange what happened to each order and
+  reports a result only when every order is accounted for: canceled, filled before it could be
+  canceled, or a mix of both. If any order is still open or its status cannot be read, the
+  notification asks you to check your open orders or fills instead of claiming a result. A TWAP
+  termination counts as done only when the exchange confirms it; otherwise the terminal waits up
+  to 15 seconds for the TWAP history and reports a TWAP that finished on its own as such.
 - With the terminal open in two tabs on the same account, an order or TWAP sent in one tab no
   longer leaves a "Confirming" notification in the other tab that never goes away, and the other
-  tab no longer settles it first. A tab that closes before its order is confirmed is still picked
-  up by another open tab.
+  tab no longer settles it first. If the sending tab closes, another tab on the same account and
+  network takes it over; tabs on another account, or not connected, leave it alone.
 - Reopening the terminal after it sat in the background brings prices, the order book and account
   data back sooner. The terminal now checks its connections the moment the page is shown again,
   or the network returns, instead of up to five seconds later; it retries at once instead of
