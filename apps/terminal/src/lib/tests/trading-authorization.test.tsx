@@ -1,9 +1,15 @@
 // @vitest-environment jsdom
 
+import { useTradingGuard } from "@sairn/hl-react/hooks/useTradingGuard";
+import {
+	assertExchangeSigningDeadline,
+	ExchangeActionDeadlineError,
+	type ExchangeSigningDeadlineSlot,
+} from "@sairn/hl-react/internal/exchange/request-scheduler";
 import { PERSIST_TRADING_CONNECTION_STORAGE_KEY } from "@sairn/hl-react/signing/agent-storage";
 import { deriveAgentRequirements } from "@sairn/hl-react/signing/use-agent-status";
 import { useTradingAuthorization } from "@sairn/hl-react/signing/use-trading-authorization";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { onlineManager, QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -33,6 +39,14 @@ vi.mock("@sairn/hl-react/signing/use-agent-status", async (importOriginal) => {
 	};
 });
 
+vi.mock("@sairn/hl-react/provider", () => ({
+	useHyperliquid: () => ({
+		clientKey: "0x1111111111111111111111111111111111111111",
+		env: "Mainnet",
+		sessionMode: "wallet",
+	}),
+}));
+
 vi.mock("@sairn/hl-react/signing/use-agent-registration", () => ({
 	useAgentRegistration: () => ({
 		error: null,
@@ -55,6 +69,13 @@ let hookValue: ReturnType<typeof useTradingAuthorization> | null = null;
 
 function Probe({ requiresBuilderFee = true }: { requiresBuilderFee?: boolean }) {
 	hookValue = useTradingAuthorization({ requiresBuilderFee });
+	return null;
+}
+
+let guardValue: ReturnType<typeof useTradingGuard> | null = null;
+
+function GuardProbe() {
+	guardValue = useTradingGuard();
 	return null;
 }
 
@@ -174,7 +195,10 @@ describe("trading authorization contracts", () => {
 		});
 
 		expect(testState.approveBuilderFee).toHaveBeenCalledOnce();
-		expect(testState.registerAgent).toHaveBeenCalledExactlyOnceWith({ persistConnection: false });
+		expect(testState.registerAgent).toHaveBeenCalledExactlyOnceWith({
+			persistConnection: false,
+			deadline: expect.objectContaining({ current: expect.any(Object) }),
+		});
 		expect(testState.registerAgent.mock.invocationCallOrder[0]).toBeLessThan(
 			testState.approveBuilderFee.mock.invocationCallOrder[0] ?? 0,
 		);
@@ -197,7 +221,10 @@ describe("trading authorization contracts", () => {
 		});
 
 		expect(testState.approveBuilderFee).not.toHaveBeenCalled();
-		expect(testState.registerAgent).toHaveBeenCalledExactlyOnceWith({ persistConnection: true });
+		expect(testState.registerAgent).toHaveBeenCalledExactlyOnceWith({
+			persistConnection: true,
+			deadline: expect.objectContaining({ current: expect.any(Object) }),
+		});
 	});
 
 	it("does not request builder approval for an Agent-only trading action", async () => {
@@ -227,5 +254,114 @@ describe("trading authorization contracts", () => {
 		await act(async () => {
 			await expect(hook.authorize()).rejects.toThrow("Trading authorization could not be confirmed");
 		});
+	});
+
+	describe("one deadline from the explicit authorization", () => {
+		const signBuilderFee = vi.fn();
+		const signAgent = vi.fn();
+
+		beforeEach(() => {
+			vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "setInterval", "clearInterval", "Date"] });
+			signBuilderFee.mockReset();
+			signAgent.mockReset();
+			queryClient.mount();
+			testState.approveBuilderFee.mockImplementation(async (deadline?: ExchangeSigningDeadlineSlot) => {
+				if (!deadline) throw new Error("The authorization deadline was not passed");
+				assertExchangeSigningDeadline(deadline);
+				signBuilderFee();
+			});
+			testState.registerAgent.mockImplementation(async (options?: { deadline?: ExchangeSigningDeadlineSlot }) => {
+				if (!options?.deadline) throw new Error("The authorization deadline was not passed");
+				assertExchangeSigningDeadline(options.deadline);
+				signAgent();
+				return AGENT;
+			});
+		});
+
+		afterEach(() => {
+			onlineManager.setOnline(true);
+			queryClient.unmount();
+			vi.useRealTimers();
+		});
+
+		function pausedFirstStatus(first: ReturnType<typeof requirements>, then: ReturnType<typeof requirements>) {
+			testState.refetch
+				.mockImplementationOnce(() =>
+					queryClient.fetchQuery({
+						queryKey: ["authorization-status"],
+						queryFn: async () => first,
+						networkMode: "online",
+						staleTime: 0,
+					}),
+				)
+				.mockResolvedValue(then);
+		}
+
+		async function authorizeOfflineFor(ms: number) {
+			const hook = renderHook();
+			onlineManager.setOnline(false);
+			let failure: unknown;
+			await act(async () => {
+				hook.authorize().catch((error: unknown) => {
+					failure = error;
+				});
+				await vi.advanceTimersByTimeAsync(ms);
+			});
+			await act(async () => {
+				onlineManager.setOnline(true);
+				await vi.advanceTimersByTimeAsync(0);
+			});
+			return failure;
+		}
+
+		it("does not approve the builder fee when the first status check was paused for 120 seconds", async () => {
+			pausedFirstStatus(requirements(true, false), requirements(false, false));
+			const failure = await authorizeOfflineFor(120_000);
+			expect(failure).toBeInstanceOf(ExchangeActionDeadlineError);
+			expect(signBuilderFee).not.toHaveBeenCalled();
+		});
+
+		it("does not approve the Agent when the first status check was paused for 120 seconds", async () => {
+			pausedFirstStatus(requirements(false, true), requirements(false, false));
+			const failure = await authorizeOfflineFor(120_000);
+			expect(failure).toBeInstanceOf(ExchangeActionDeadlineError);
+			expect(signAgent).not.toHaveBeenCalled();
+		});
+
+		it("approves both when the checks return within the limit", async () => {
+			pausedFirstStatus(requirements(true, true), requirements(true, false));
+			testState.refetch.mockResolvedValueOnce(requirements(true, false)).mockResolvedValue(requirements(false, false));
+			const failure = await authorizeOfflineFor(2_000);
+			expect(failure).toBeUndefined();
+			expect(signAgent).toHaveBeenCalledOnce();
+			expect(signBuilderFee).toHaveBeenCalledOnce();
+		});
+	});
+
+	it("keeps the Enable control busy while the authorization checks wait and releases it afterwards", async () => {
+		let answer = (_value: ReturnType<typeof requirements>) => {};
+		testState.refetch
+			.mockImplementationOnce(
+				() =>
+					new Promise((resolve) => {
+						answer = resolve;
+					}),
+			)
+			.mockResolvedValue(requirements(false, false));
+		act(() => {
+			root.render(createElement(QueryClientProvider, { client: queryClient }, createElement(GuardProbe)));
+		});
+		const action = vi.fn();
+		act(() => guardValue?.guardAction(action));
+		await act(async () => {
+			await vi.waitFor(() => expect(guardValue?.isEnabling).toBe(true));
+		});
+		expect(testState.refetch).toHaveBeenCalledOnce();
+
+		await act(async () => {
+			answer(requirements(false, false));
+			await vi.waitFor(() => expect(guardValue?.isEnabling).toBe(false));
+		});
+		expect(action).toHaveBeenCalledOnce();
 	});
 });

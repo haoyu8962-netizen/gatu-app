@@ -3,6 +3,7 @@ import { msg } from "@lingui/core/macro";
 import type { AbstractWallet } from "@nktkas/hyperliquid/signing";
 import { useSignTypedData } from "@privy-io/react-auth";
 import { useConnectionWalletClient } from "@sairn/hl-react";
+import { assertExchangeSigningDeadline } from "@sairn/hl-react/internal/exchange/request-scheduler";
 import { useQueryClient } from "@tanstack/react-query";
 import { useLayoutEffect, useRef, useState } from "react";
 import { isAddress, type WalletClient } from "viem";
@@ -174,6 +175,7 @@ export function useExplicitAgentApproval(): ExplicitAgentApproval {
 				}
 			};
 			const guarded = await startAgentRegistrationExecution(registrationLease, canSubmit, () => {
+				if (options.deadline) assertExchangeSigningDeadline(options.deadline);
 				const beforeSubmit = async () => {
 					assertApprovalSessionCurrent();
 					if (enforceLegalActions) {

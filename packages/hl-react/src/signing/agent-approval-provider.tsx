@@ -1,5 +1,6 @@
 import { createContext, type ReactNode, useContext } from "react";
 import type { Address } from "viem";
+import type { ExchangeSigningDeadlineSlot } from "../internal/exchange/request-scheduler";
 import type { ExchangeParams, ExchangeResponse } from "../types/clients";
 
 export interface AgentApprovalOptions {
@@ -8,6 +9,8 @@ export interface AgentApprovalOptions {
 	registrationPublicKey?: Address;
 	/** @internal Cancels a stale registration attempt before it can submit. */
 	signal?: AbortSignal;
+	/** @internal The trading-connection deadline (ADR 0051), checked again right before the wallet is asked. */
+	deadline?: ExchangeSigningDeadlineSlot;
 }
 
 export type AgentApprovalMutateAsync = (

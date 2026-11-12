@@ -256,6 +256,20 @@ describe("explicit trading actions stay bound to the initiating session", () => 
 			expect(action).toHaveBeenCalledOnce();
 		});
 
+		it("hands the action back for an embedded owner session too", async () => {
+			state.onAssertCurrent = () => {};
+			render();
+			state.authorize.mockImplementation(resolveAfter(16_000));
+			const action = vi.fn();
+			act(() => guard.guardAction(action));
+			await act(async () => {
+				await vi.advanceTimersByTimeAsync(16_000);
+			});
+			expect(state.authorize).toHaveBeenCalledOnce();
+			expect(action).not.toHaveBeenCalled();
+			expect(guard.error).toBeNull();
+		});
+
 		it("does not run the action when an approval paused offline needs no signature after 120 seconds", async () => {
 			const queryClient = new QueryClient();
 			queryClient.mount();

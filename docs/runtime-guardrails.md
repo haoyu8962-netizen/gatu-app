@@ -52,8 +52,11 @@ Do not collapse these states into one boolean.
   post-signature identity check, an external wallet's prompt) are not limited:
   an L1 action is still bounded by `expiresAfter` when Transaction Delay
   Protection is on and the server-time sample is reliable, a user-signed action
-  is not. The builder-fee and Agent approval flows check their own age before
-  they ask for a signature.
+  is not. The builder-fee and Agent approval flows use the deadline of the
+  explicit authorization that started them and check it before they ask for a
+  signature; the Agent flow checks again right before `approveAgent`. Waits that
+  application workflows add before they call `useExchange` are not covered
+  (ADR 0051, Not covered).
 - Preserve the onboarding order documented in `docs/trading-onboarding.md`.
 - Agent registration and builder-fee approval are separate. First-time setup
   approves only the Agent; builder-fee approval is deferred until an action

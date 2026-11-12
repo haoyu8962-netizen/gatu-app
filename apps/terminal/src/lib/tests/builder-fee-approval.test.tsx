@@ -1,6 +1,9 @@
 // @vitest-environment jsdom
 
-import { ExchangeActionDeadlineError } from "@sairn/hl-react/internal/exchange/request-scheduler";
+import {
+	ExchangeActionDeadlineError,
+	startExchangeActionDeadline,
+} from "@sairn/hl-react/internal/exchange/request-scheduler";
 import { useBuilderFeeApproval } from "@sairn/hl-react/signing/use-builder-fee-approval";
 import { onlineManager, QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, createElement } from "react";
@@ -155,6 +158,21 @@ describe("useBuilderFeeApproval", () => {
 			await vi.advanceTimersByTimeAsync(0);
 		});
 		expect(failure).toBeInstanceOf(ExchangeActionDeadlineError);
+		expect(testState.approveBuilderFee).not.toHaveBeenCalled();
+	});
+
+	it("checks the deadline of the authorization that started it instead of starting its own", async () => {
+		vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "setInterval", "clearInterval", "Date"] });
+		testState.refetchBuilderFee.mockResolvedValue(requirements(true));
+		const hook = renderHook();
+		const deadline = startExchangeActionDeadline();
+		await act(async () => {
+			await vi.advanceTimersByTimeAsync(16_000);
+		});
+
+		await act(async () => {
+			await expect(hook.approve(deadline)).rejects.toBeInstanceOf(ExchangeActionDeadlineError);
+		});
 		expect(testState.approveBuilderFee).not.toHaveBeenCalled();
 	});
 

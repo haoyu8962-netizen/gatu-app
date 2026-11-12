@@ -1,6 +1,7 @@
 import { useMutation } from "@tanstack/react-query";
 import type { Address } from "viem";
 import { zeroAddress } from "viem";
+import { startExchangeActionDeadline } from "../internal/exchange/request-scheduler";
 import { readPersistTradingConnection } from "./agent-storage";
 import { useHyperliquidOwnerSigner } from "./owner-signer-provider";
 import type { RegistrationStatus } from "./types";
@@ -33,8 +34,11 @@ export function useTradingAuthorization(options: UseTradingAuthorizationOptions 
 			tradingStatus.signerAddress,
 			requiresBuilderFee,
 		],
+		// The deadline starts at the click (ADR 0051); the request never waits offline before it.
+		networkMode: "always",
 		mutationFn: async (): Promise<Address> => {
 			ownerSigner?.assertCurrent();
+			const deadline = startExchangeActionDeadline();
 			const refetchRequirements = requiresBuilderFee ? tradingStatus.refetch : tradingStatus.refetchSigner;
 			let registeredAddress = tradingStatus.signerAddress;
 			let newlyVerifiedAgentAddress: Address | undefined;
@@ -44,6 +48,7 @@ export function useTradingAuthorization(options: UseTradingAuthorizationOptions 
 			if (requirements.needsAgent) {
 				registeredAddress = await agentRegistration.register({
 					persistConnection: readPersistTradingConnection(),
+					deadline,
 				});
 				ownerSigner?.assertCurrent();
 				newlyVerifiedAgentAddress = registeredAddress;
@@ -52,7 +57,7 @@ export function useTradingAuthorization(options: UseTradingAuthorizationOptions 
 			}
 
 			if (requiresBuilderFee && requirements.needsBuilderFee) {
-				await builderFeeApproval.approve();
+				await builderFeeApproval.approve(deadline);
 				ownerSigner?.assertCurrent();
 			}
 

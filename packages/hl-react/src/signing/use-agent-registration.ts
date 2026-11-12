@@ -3,7 +3,11 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { Address } from "viem";
 import { zeroAddress } from "viem";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
-import { assertExchangeSigningDeadline, startExchangeActionDeadline } from "../internal/exchange/request-scheduler";
+import {
+	assertExchangeSigningDeadline,
+	type ExchangeSigningDeadlineSlot,
+	startExchangeActionDeadline,
+} from "../internal/exchange/request-scheduler";
 import { useHyperliquid } from "../provider";
 import { type AgentApprovalOptions, useAgentApprovalOverride } from "./agent-approval-provider";
 import {
@@ -28,6 +32,8 @@ export type AgentRegistrationFailurePhase = "preflight" | "approval" | "persiste
 export interface AgentRegistrationOptions {
 	approval?: AgentApprovalOptions;
 	persistConnection?: boolean;
+	/** The deadline of the explicit authorization that started this registration (ADR 0051). */
+	deadline?: ExchangeSigningDeadlineSlot;
 }
 
 export interface UseAgentRegistrationResult {
@@ -168,7 +174,7 @@ export function useAgentRegistration(options: { enabled?: boolean } = {}): UseAg
 		retry: false,
 		mutationFn: async (options?: AgentRegistrationOptions): Promise<Address> => {
 			if (!enabled) throw new Error("Agent registration is disabled for owner-wallet trading");
-			const deadline = startExchangeActionDeadline();
+			const deadline = options?.deadline ?? startExchangeActionDeadline();
 			const registrationIdentity = { address, env };
 			let phase: AgentRegistrationFailurePhase = "preflight";
 			let resetAllowed = false;
@@ -412,13 +418,15 @@ export function useAgentRegistration(options: { enabled?: boolean } = {}): UseAg
 
 					const approvalParams = { agentAddress: publicKey };
 					const approvalController = new AbortController();
-					const approveAgentPromise = Promise.resolve().then(() =>
-						approveAgentOverride(approvalParams, {
+					const approveAgentPromise = Promise.resolve().then(() => {
+						assertExchangeSigningDeadline(deadline);
+						return approveAgentOverride(approvalParams, {
 							...approvalOptions,
 							registrationPublicKey: publicKey,
 							signal: approvalController.signal,
-						}),
-					);
+							deadline,
+						});
+					});
 					try {
 						await withWalletApprovalTimeout(approveAgentPromise, {
 							onTimeout: (error) => approvalController.abort(error),
