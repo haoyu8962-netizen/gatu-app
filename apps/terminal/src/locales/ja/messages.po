@@ -372,6 +372,7 @@ msgstr "アクセス制限"
 #: src/components/trade/positions/send-modal.tsx
 #: src/config/nav.tsx
 #: src/config/trade-panel-labels.ts
+#: src/routes/mobile-agent-sync.tsx
 msgid "Account"
 msgstr "アカウント"
 
@@ -3797,6 +3798,10 @@ msgstr "スマートフォンのアクセス権をインポート"
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 msgid "Important: send only native USDC on Arbitrum to this address. Other assets, including USDC.e, and transfers on other networks will not be credited to your trading account."
 msgstr "重要：このアドレスには Arbitrum 上のネイティブ USDC のみを送金してください。USDC.e を含む他の資産や他のネットワークからの送金は、取引アカウントに反映されません。"
+
+#: src/routes/mobile-agent-sync.tsx
+msgid "Importing replaces the current trading session on this phone."
+msgstr "インポートすると、このスマートフォンの現在の取引セッションが置き換えられます。"
 
 #: src/components/staking/staking-view.tsx
 #: src/components/staking/staking-view.tsx

@@ -416,6 +416,7 @@ msgstr "الوصول مقيّد"
 #: src/components/trade/positions/send-modal.tsx
 #: src/config/nav.tsx
 #: src/config/trade-panel-labels.ts
+#: src/routes/mobile-agent-sync.tsx
 msgid "Account"
 msgstr "الحساب"
 
@@ -4237,6 +4238,10 @@ msgstr "مهم: أرسل إلى هذا العنوان USDC الأصلي على A
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #~ msgid "Important: this address can only receive native USDC on Arbitrum. Do not send USDC.e or assets from other networks. Minimum deposit is {minimumDeposit}."
 #~ msgstr "مهم: يمكن لهذا العنوان استقبال USDC الأصلي على Arbitrum فقط. لا ترسل USDC.e أو أصولاً من شبكات أخرى. الحد الأدنى للإيداع هو {minimumDeposit}."
+
+#: src/routes/mobile-agent-sync.tsx
+msgid "Importing replaces the current trading session on this phone."
+msgstr "يؤدي الاستيراد إلى استبدال جلسة التداول الحالية على هذا الهاتف."
 
 #: src/components/staking/staking-view.tsx
 #: src/components/staking/staking-view.tsx

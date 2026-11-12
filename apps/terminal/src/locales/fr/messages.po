@@ -416,6 +416,7 @@ msgstr "Accès restreint"
 #: src/components/trade/positions/send-modal.tsx
 #: src/config/nav.tsx
 #: src/config/trade-panel-labels.ts
+#: src/routes/mobile-agent-sync.tsx
 msgid "Account"
 msgstr "Compte"
 
@@ -4237,6 +4238,10 @@ msgstr "Important : envoyez uniquement des USDC natifs sur Arbitrum à cette adr
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #~ msgid "Important: this address can only receive native USDC on Arbitrum. Do not send USDC.e or assets from other networks. Minimum deposit is {minimumDeposit}."
 #~ msgstr "Important : cette adresse ne peut recevoir que des USDC natifs sur Arbitrum. N'envoyez pas d'USDC.e ni d'actifs provenant d'autres réseaux. Le dépôt minimum est de {minimumDeposit}."
+
+#: src/routes/mobile-agent-sync.tsx
+msgid "Importing replaces the current trading session on this phone."
+msgstr "L'importation remplace la session de trading actuelle sur ce téléphone."
 
 #: src/components/staking/staking-view.tsx
 #: src/components/staking/staking-view.tsx

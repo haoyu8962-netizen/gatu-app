@@ -416,6 +416,7 @@ msgstr "访问受限"
 #: src/components/trade/positions/send-modal.tsx
 #: src/config/nav.tsx
 #: src/config/trade-panel-labels.ts
+#: src/routes/mobile-agent-sync.tsx
 msgid "Account"
 msgstr "账户"
 
@@ -4237,6 +4238,10 @@ msgstr "重要：请仅通过 Arbitrum 网络向此地址发送原生 USDC。发
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #~ msgid "Important: this address can only receive native USDC on Arbitrum. Do not send USDC.e or assets from other networks. Minimum deposit is {minimumDeposit}."
 #~ msgstr "重要：此地址只能接收 Arbitrum 网络的原生 USDC。请勿发送 USDC.e 或其他网络的资产。最低存款金额为 {minimumDeposit}。"
+
+#: src/routes/mobile-agent-sync.tsx
+msgid "Importing replaces the current trading session on this phone."
+msgstr "导入后将替换这台手机上当前的交易会话。"
 
 #: src/components/staking/staking-view.tsx
 #: src/components/staking/staking-view.tsx

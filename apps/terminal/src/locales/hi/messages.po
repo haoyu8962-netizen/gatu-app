@@ -416,6 +416,7 @@ msgstr "पहुँच प्रतिबंधित"
 #: src/components/trade/positions/send-modal.tsx
 #: src/config/nav.tsx
 #: src/config/trade-panel-labels.ts
+#: src/routes/mobile-agent-sync.tsx
 msgid "Account"
 msgstr "खाता"
 
@@ -4237,6 +4238,10 @@ msgstr "महत्वपूर्ण: इस पते पर केवल Arb
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #~ msgid "Important: this address can only receive native USDC on Arbitrum. Do not send USDC.e or assets from other networks. Minimum deposit is {minimumDeposit}."
 #~ msgstr "महत्वपूर्ण: यह पता केवल Arbitrum पर नेटिव USDC प्राप्त कर सकता है। USDC.e या अन्य नेटवर्क की संपत्तियां न भेजें। न्यूनतम जमा {minimumDeposit} है।"
+
+#: src/routes/mobile-agent-sync.tsx
+msgid "Importing replaces the current trading session on this phone."
+msgstr "इम्पोर्ट करने से इस फ़ोन पर मौजूदा ट्रेडिंग सत्र बदल जाएगा।"
 
 #: src/components/staking/staking-view.tsx
 #: src/components/staking/staking-view.tsx
