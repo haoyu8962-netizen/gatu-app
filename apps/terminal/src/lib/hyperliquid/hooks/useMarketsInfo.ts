@@ -3,6 +3,7 @@ import {
 	type CompactPerpAssetCtxsEvent,
 	type CompactSpotAssetCtxsEvent,
 	canUseL2Decompression,
+	isFastAssetCtxsDisabled,
 	type PerpMarket,
 	type SpotMarket,
 	type SubscriptionStatus,
@@ -138,23 +139,30 @@ export function useMarketsInfoInternal(options: UseMarketsInfoOptions = {}) {
 	const markets = useMarkets();
 	const [compactCtxsFailed, setCompactCtxsFailed] = useState(isCompactMarketCtxsDisabled);
 	const useCompactCtxs = COMPACT_MARKET_CTXS_SUPPORTED && !compactCtxsFailed;
+	const [fastPricesFailed, setFastPricesFailed] = useState(isFastAssetCtxsDisabled);
+	const fastPricesAvailable = COMPACT_MARKET_CTXS_SUPPORTED && !fastPricesFailed;
+	const contextMaxStaleMs = fastPricesAvailable ? undefined : LIVE_MARK_MAX_STALE_MS;
 	const {
 		data: compactPerpCtxs,
 		error: compactPerpError,
 		status: compactPerpStatus,
 		isStale: isCompactPerpStale,
+		lastMessageAt: compactPerpLastMessageAt,
 	} = useSubscription("pac", undefined, {
 		enabled: perpSubscriptionEnabled && useCompactCtxs,
 		throttleMs: updateInterval,
+		maxStaleMs: contextMaxStaleMs,
 	});
 	const {
 		data: compactSpotCtxs,
 		error: compactSpotError,
 		status: compactSpotStatus,
 		isStale: isCompactSpotStale,
+		lastMessageAt: compactSpotLastMessageAt,
 	} = useSubscription("sac", undefined, {
 		enabled: spotSubscriptionEnabled && useCompactCtxs,
 		throttleMs: updateInterval,
+		maxStaleMs: contextMaxStaleMs,
 	});
 	const {
 		data: allDexsCtxsEvent,
@@ -164,6 +172,7 @@ export function useMarketsInfoInternal(options: UseMarketsInfoOptions = {}) {
 	} = useSubscription("allDexsAssetCtxs", undefined, {
 		enabled: perpSubscriptionEnabled && !useCompactCtxs,
 		throttleMs: updateInterval,
+		maxStaleMs: contextMaxStaleMs,
 	});
 	const {
 		data: spotCtxsEvent,
@@ -173,14 +182,16 @@ export function useMarketsInfoInternal(options: UseMarketsInfoOptions = {}) {
 	} = useSubscription("spotAssetCtxs", undefined, {
 		enabled: spotSubscriptionEnabled && !useCompactCtxs,
 		throttleMs: updateInterval,
+		maxStaleMs: contextMaxStaleMs,
 	});
 	const {
 		data: fastAssetCtxs,
+		error: fastPriceError,
 		status: fastPriceSubscriptionStatus,
 		isStale: isFastPriceStale,
 		lastMessageAt: fastPriceLastMessageAt,
 	} = useSubscription("fastAssetCtxs", undefined, {
-		enabled: fastPriceSubscriptionEnabled && COMPACT_MARKET_CTXS_SUPPORTED,
+		enabled: fastPriceSubscriptionEnabled && fastPricesAvailable,
 		maxStaleMs: LIVE_MARK_MAX_STALE_MS,
 	});
 
@@ -191,13 +202,19 @@ export function useMarketsInfoInternal(options: UseMarketsInfoOptions = {}) {
 		setCompactCtxsFailed(true);
 	}, [compactPerpError, compactSpotError]);
 
+	useEffect(() => {
+		if (fastPriceError != null && isFastAssetCtxsDisabled()) setFastPricesFailed(true);
+	}, [fastPriceError]);
+
 	const allDexsCtxs = compactPerpCtxs ?? allDexsCtxsEvent?.ctxs;
+	const perpCtxsReceivedAt = compactPerpCtxs !== undefined ? compactPerpLastMessageAt : allDexsCtxsLastMessageAt;
 	const perpContextsLive =
 		compactPerpCtxs !== undefined
 			? isLiveContextsSubscription(compactPerpCtxs, compactPerpStatus, isCompactPerpStale)
 			: isLiveContextsSubscription(allDexsCtxsEvent?.ctxs, allDexsCtxsStatus, isAllDexsCtxsStale);
 	const legacySpotCtxs = useMemo(() => (spotCtxsEvent ? keySpotCtxsByCoin(spotCtxsEvent) : undefined), [spotCtxsEvent]);
 	const spotCtxs = compactSpotCtxs ?? legacySpotCtxs;
+	const spotCtxsReceivedAt = compactSpotCtxs !== undefined ? compactSpotLastMessageAt : spotCtxsLastMessageAt;
 	const spotContextsLive =
 		compactSpotCtxs !== undefined
 			? isLiveContextsSubscription(compactSpotCtxs, compactSpotStatus, isCompactSpotStale)
@@ -213,7 +230,7 @@ export function useMarketsInfoInternal(options: UseMarketsInfoOptions = {}) {
 			contextReceivedAt: number | undefined,
 		): T & C & LiveMarketPriceFields => {
 			const price = resolveFastMarketPrice(
-				COMPACT_MARKET_CTXS_SUPPORTED
+				fastPricesAvailable
 					? {
 							coin: market.name,
 							enabled: fastPriceSubscriptionEnabled,
@@ -245,11 +262,11 @@ export function useMarketsInfoInternal(options: UseMarketsInfoOptions = {}) {
 		};
 
 		const perpMarketsInfo: PerpMarketInfo[] = markets.perp.map((market) =>
-			withLivePrice(market, perpCtxs?.[market.ctxIndex], perpContextsLive, allDexsCtxsLastMessageAt),
+			withLivePrice(market, perpCtxs?.[market.ctxIndex], perpContextsLive, perpCtxsReceivedAt),
 		);
 
 		const spotMarketsInfo: SpotMarketInfo[] = markets.spot.map((market) =>
-			withLivePrice(market, spotCtxs?.[market.name], spotContextsLive, spotCtxsLastMessageAt),
+			withLivePrice(market, spotCtxs?.[market.name], spotContextsLive, spotCtxsReceivedAt),
 		);
 
 		const builderPerpMarketsInfo: BuilderPerpMarketsInfo = { all: [] };
@@ -260,7 +277,7 @@ export function useMarketsInfoInternal(options: UseMarketsInfoOptions = {}) {
 				market,
 				dexCtxs?.[market.ctxIndex],
 				perpContextsLive,
-				allDexsCtxsLastMessageAt,
+				perpCtxsReceivedAt,
 			);
 
 			builderPerpMarketsInfo.all.push(marketInfo);
@@ -287,8 +304,9 @@ export function useMarketsInfoInternal(options: UseMarketsInfoOptions = {}) {
 		spotCtxs,
 		perpContextsLive,
 		spotContextsLive,
-		allDexsCtxsLastMessageAt,
-		spotCtxsLastMessageAt,
+		perpCtxsReceivedAt,
+		spotCtxsReceivedAt,
+		fastPricesAvailable,
 		fastPriceSubscriptionEnabled,
 		fastAssetCtxs,
 		fastPriceSubscriptionStatus,

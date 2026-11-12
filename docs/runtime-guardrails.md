@@ -772,8 +772,9 @@ transport. Adding account subscriptions must not disturb market subscriptions.
     event. A socket that answers is never replaced because the page became
     visible: a desktop tab switch must not reset every stream and the chart.
     `probeLiveness` is the one implementation of the heartbeat, shared with the
-    order-book pool; it recognises the answer with a length and substring test,
-    not a JSON parse of every frame, and the SDK keep-alive's own answers count.
+    order-book pool; it parses only frames of at most forty characters and
+    requires `channel === "pong"`, so market data is never parsed and an error
+    frame that mentions pong does not count; the SDK keep-alive's own answers do.
   - `store.ts`: a subscription waiting out its retry backoff or its cooldown
     retries at once, and its failure count starts over, as it does when a
     cooldown ends: a retry that fails backs off from the first delay instead of
@@ -784,11 +785,15 @@ transport. Adding account subscriptions must not disturb market subscriptions.
     no `l2Book` frame for its stream's staleness threshold is closed, and its
     consumers subscribe again on a new connection inside the pool's connection
     budget. An `l2Book` frame for any coin on the connection counts; heartbeat
-    answers and subscription confirmations do not. Every other transport is
-    sent a heartbeat through its SDK socket and closed when no answer arrives
-    within `resumeProbeTimeoutMs`, because buffered book frames can make a dead
-    connection look fresh at that moment; a heartbeat that runs out while the
-    page is hidden again or offline closes nothing.
+    answers and subscription confirmations do not. Every other open transport
+    (`readyState === 1`) is sent a heartbeat through its SDK socket and closed
+    when no answer arrives within `resumeProbeTimeoutMs`, even while it keeps
+    receiving book frames, because buffered frames can make a dead connection
+    look fresh at that moment. A connection still opening is not probed: rews
+    would buffer the heartbeat, and the timer would measure the handshake. Each
+    transport keeps the cancel function of its probe; hiding the page, going
+    offline, removing the transport or starting a newer probe cancels it, so a
+    return before the old probe ran out gets a full answer time.
   - `patches/@nktkas__rews@4.1.0.patch`: `reconnect()` and `close()` do not wait
     for the old socket's `close` event, which Chromium fires for a half-open
     connection only after sixty seconds. Never add a path that waits for a
@@ -800,8 +805,11 @@ transport. Adding account subscriptions must not disturb market subscriptions.
 - While the page stays visible and online, the shared socket is checked every
   `checkIntervalMs`: one that has received no frame for `quietProbeThresholdMs`
   (15 seconds, the silence after which the official terminal reconnects) is
-  sent one heartbeat and replaced only when no answer follows; a second probe is
-  not sent while one is pending. The 45-second `inactivityThresholdMs` remains
+  sent one heartbeat and replaced only when no answer follows within
+  `quietProbeTimeoutMs` (5 seconds, wider than the 2.5-second resume probe
+  because nobody is waiting on a placeholder yet); a second probe is not sent
+  while one is pending. The worst case from the last frame to a reconnect is
+  15 + 5 + 5 seconds. The 45-second `inactivityThresholdMs` remains
   a backstop that replaces the socket without asking. A quiet page with only
   low-frequency user streams therefore sends a heartbeat about every fifteen to
   twenty seconds, in addition to the SDK keep-alive every thirty.
@@ -814,14 +822,25 @@ transport. Adding account subscriptions must not disturb market subscriptions.
   one promise, so one frame that failed to decode, or a listener that threw,
   left the stream silent while it still looked subscribed. A failing frame now
   ends the subscription through `onError`, and the store subscribes again for a
-  fresh snapshot. A browser without `DecompressionStream("deflate-raw")`
-  subscribes to none of the three; `useMarketsInfo` then prices each row from
-  its plain `allDexsAssetCtxs` / `spotAssetCtxs` context while that channel is
-  active and fresh (receipt within `LIVE_MARK_MAX_STALE_MS`, as for fast prices).
+  fresh snapshot. Because the store clears its retry count when a subscription
+  is confirmed, decode failures of `fastAssetCtxs` are counted across
+  subscriptions (a decoded frame clears the count), and after three in a row
+  `isFastAssetCtxsDisabled()` turns the channel off for the page session. A
+  browser without `DecompressionStream("deflate-raw")` subscribes to none of
+  the three. Without fast prices, `useMarketsInfo` prices each row from its own
+  context (`pac` / `sac` or `allDexsAssetCtxs` / `spotAssetCtxs`, with the
+  receipt time of the channel that supplied it), and those four subscriptions
+  then use `LIVE_MARK_MAX_STALE_MS` (10 seconds) as their staleness threshold,
+  so the store marks a context older than that stale and re-renders; it is
+  then no longer `success`. Execution guards do not read these row prices.
+  The selected market's order form takes its price from `activeAssetCtx` /
+  `activeSpotAssetCtx`, and the close paths check a ten-second monotonic
+  receipt age (`isLiveExecutionPriceReceiptFresh`).
 - Hyperliquid limits each IP address to 10 WebSocket connections and 30 new
   connections a minute. One terminal tab holds at most five: the shared socket
-  and four pooled order-book transports, so two tabs reach the limit; the pool
-  itself opens at most 24 a minute. The phone layout does not warm a full-depth
+  and four pooled order-book transports, so two tabs reach the limit. The pool
+  opens at most 24 order-book connections a minute; the shared socket's
+  reconnects are outside that budget, so nothing caps one tab at 30 a minute. The phone layout does not warm a full-depth
   order-book connection at startup (`lib/trade/orderbook-boot.ts`), because its
   trade page reads the compact book. The official terminal tells the user to
   close other tabs when the server refuses a connection with a reason starting

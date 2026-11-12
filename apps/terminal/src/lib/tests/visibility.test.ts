@@ -99,6 +99,19 @@ describe("visibility singleton", () => {
 		removeSpy.mockRestore();
 	});
 
+	it("removes every lifecycle listener it added when the last subscriber leaves", () => {
+		const addSpy = vi.spyOn(document, "addEventListener");
+		const removeSpy = vi.spyOn(document, "removeEventListener");
+		subscribeVisibility(vi.fn())();
+
+		for (const [type, handler] of addSpy.mock.calls) {
+			expect(removeSpy).toHaveBeenCalledWith(type, handler);
+		}
+		expect(addSpy.mock.calls.map(([type]) => type)).toContain("resume");
+		addSpy.mockRestore();
+		removeSpy.mockRestore();
+	});
+
 	it("does not emit when state has not changed", () => {
 		const listener = vi.fn();
 		const unsub = subscribeVisibility(listener);

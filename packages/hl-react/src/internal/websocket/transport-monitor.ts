@@ -17,6 +17,16 @@ export interface MonitoredWebSocket {
 
 export type ProbedWebSocket = Pick<MonitoredWebSocket, "addEventListener" | "removeEventListener" | "send">;
 
+// Only frames short enough to be a heartbeat answer are parsed, so market data is never parsed here.
+function isPongFrame(data: unknown): boolean {
+	if (typeof data !== "string" || data.length > 40) return false;
+	try {
+		return JSON.parse(data)?.channel === "pong";
+	} catch {
+		return false;
+	}
+}
+
 /**
  * Sends Hyperliquid's heartbeat request, the frame the SDK keep-alive also sends, and settles alive
  * when a heartbeat answer (`{"channel":"pong"}`, answering this request or the SDK's) arrives within
@@ -30,8 +40,7 @@ export function probeLiveness(
 	onSettle: (alive: boolean) => void,
 ): () => void {
 	const handleMessage = (event: Event) => {
-		const data = (event as MessageEvent).data;
-		if (typeof data === "string" && data.length < 40 && data.includes('"pong"')) settle(true);
+		if (isPongFrame((event as MessageEvent).data)) settle(true);
 	};
 	const timer = setTimeout(settle, timeoutMs, false);
 	function stop() {
@@ -55,6 +64,7 @@ type StateSubscriber<T> = (listener: (state: T) => void) => () => void;
 
 export interface WsTransportMonitorOptions {
 	quietProbeThresholdMs?: number;
+	quietProbeTimeoutMs?: number;
 	inactivityThresholdMs?: number;
 	checkIntervalMs?: number;
 	resumeProbeTimeoutMs?: number;
@@ -78,6 +88,7 @@ export function createWsTransportMonitor(
 	const disconnectListeners = new Set<() => void>();
 	const limits = WS_RELIABILITY_LIMITS.transport;
 	const quietProbeThresholdMs = options.quietProbeThresholdMs ?? limits.quietProbeThresholdMs;
+	const quietProbeTimeoutMs = options.quietProbeTimeoutMs ?? limits.quietProbeTimeoutMs;
 	const inactivityThresholdMs = options.inactivityThresholdMs ?? limits.inactivityThresholdMs;
 	const checkIntervalMs = options.checkIntervalMs ?? limits.checkIntervalMs;
 	const resumeProbeTimeoutMs = options.resumeProbeTimeoutMs ?? limits.resumeProbeTimeoutMs;
@@ -118,9 +129,9 @@ export function createWsTransportMonitor(
 	};
 
 	// A live socket answers a heartbeat within a round trip, so a quiet but healthy connection survives.
-	const startProbe = () => {
+	const startProbe = (timeoutMs: number) => {
 		clearProbe();
-		stopProbe = probeLiveness(socket, resumeProbeTimeoutMs, (alive) => {
+		stopProbe = probeLiveness(socket, timeoutMs, (alive) => {
 			stopProbe = undefined;
 			if (!alive) requestReconnect();
 		});
@@ -143,7 +154,7 @@ export function createWsTransportMonitor(
 			return;
 		}
 		if (getSilenceMs() >= inactivityThresholdMs) requestReconnect();
-		else startProbe();
+		else startProbe(resumeProbeTimeoutMs);
 	};
 
 	const markDisconnected = () => {
@@ -204,7 +215,7 @@ export function createWsTransportMonitor(
 			// threshold replaces it without asking.
 			const silenceMs = getSilenceMs();
 			if (silenceMs >= inactivityThresholdMs) requestReconnect();
-			else if (silenceMs >= quietProbeThresholdMs) startProbe();
+			else if (silenceMs >= quietProbeThresholdMs) startProbe(quietProbeTimeoutMs);
 		}, checkIntervalMs);
 
 		detachVisibility = watchVisibility((state) => {

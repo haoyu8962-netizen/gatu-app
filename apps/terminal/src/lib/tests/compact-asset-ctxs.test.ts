@@ -281,6 +281,29 @@ describe("fast mark and mid price subscription", () => {
 		expect(listener).not.toHaveBeenCalled();
 	});
 
+	it("drops a decode in flight when the shared socket disconnects", async () => {
+		const transport = createTransport();
+		const listener = vi.fn();
+		const disconnectListeners: (() => void)[] = [];
+		const subscribeDisconnect = vi.fn((handler: () => void) => {
+			disconnectListeners.push(handler);
+			return () => {};
+		});
+		const subscriptionClient = new CompactSubscriptionClient({
+			transport: transport as unknown as ISubscriptionTransport,
+			subscribeDisconnect,
+		});
+		await subscriptionClient.fastAssetCtxs(listener);
+		expect(subscribeDisconnect).toHaveBeenCalledOnce();
+
+		transport.emit(encode({ BTC: { markPx: "1" } }));
+		for (const handler of disconnectListeners) handler();
+		transport.emit(encode({ BTC: { markPx: "2" } }));
+		await vi.waitFor(() => expect(listener).toHaveBeenCalledOnce());
+		await new Promise((resolve) => setTimeout(resolve, 20));
+		expect(listener).toHaveBeenCalledExactlyOnceWith({ BTC: { markPx: "2" } });
+	});
+
 	it("reports a listener failure once instead of skipping the frames that follow", async () => {
 		const transport = createTransport();
 		const onError = vi.fn();

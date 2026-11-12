@@ -639,11 +639,15 @@ changes, not evidence that a build has been deployed or accepted on real devices
   server's answer to a heartbeat, both on the main connection and on order-book connections, and
   replaces the connection within a few seconds when it does not come. While the page stays open, a
   connection that has been quiet for fifteen seconds is checked the same way, as on the official
-  terminal, instead of waiting forty-five seconds. Pages that Chrome unfreezes while still in the
-  background now recover when they are actually shown. Not yet confirmed on a phone (ADR 0050).
+  terminal, and given five seconds to answer, instead of waiting forty-five seconds. An order-book
+  connection that is still being set up is no longer closed for missing that answer. Pages that
+  Chrome unfreezes while still in the background now recover when they are actually shown. Not yet
+  confirmed on a phone (ADR 0050).
 - Live mark and mid prices for the market list no longer stop for good after one damaged update; the
-  stream restarts from a fresh snapshot. Browsers that cannot decompress the compact channels no
-  longer subscribe to them in a loop and show list prices from the regular market data instead.
+  stream restarts from a fresh snapshot. If it keeps failing, it is switched off after three attempts
+  instead of retrying endlessly. Browsers that cannot decompress the compact channels, and sessions
+  where that stream was switched off, show list prices from the regular market data instead, and
+  only while that data is less than ten seconds old.
 - On a phone, opening a trade page no longer opens an extra order-book connection that the phone
   layout does not use, which leaves more room under the exchange's per-address connection limit.
 - A cross order larger than the account can open now shows a liquidation price. This covers a new

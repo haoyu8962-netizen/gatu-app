@@ -21,10 +21,12 @@ const mocks = vi.hoisted(() => ({
 	disableCompactMarketCtxs: vi.fn(),
 	compactDisabled: false,
 	decompressionSupported: true,
+	fastDisabled: false,
 }));
 
 vi.mock("@sairn/hl-react", () => ({
 	canUseL2Decompression: () => mocks.decompressionSupported,
+	isFastAssetCtxsDisabled: () => mocks.fastDisabled,
 	useHyperliquidTransport: () => ({ env: "Mainnet" }),
 	useSubscription: (...args: unknown[]) => {
 		mocks.useSubscription(...args);
@@ -161,6 +163,7 @@ describe("useMarketsInfoInternal subscription gate", () => {
 		mocks.useSubscription.mockReset();
 		mocks.disableCompactMarketCtxs.mockReset();
 		mocks.compactDisabled = false;
+		mocks.fastDisabled = false;
 		for (const key of Object.keys(mocks.responses)) delete mocks.responses[key];
 		mocks.fastPriceSubscription.data = undefined;
 		mocks.fastPriceSubscription.status = "idle";
@@ -307,26 +310,80 @@ describe("useMarketsInfoInternal subscription gate", () => {
 			captured = useWithoutDecompression({ alwaysSubscribeAll: true, subscriptionKeepAliveMs: 10_000 });
 			return null;
 		}
-		const receivedAt = Date.now();
+		const perpReceivedAt = Date.now() - 1_000;
+		const spotReceivedAt = Date.now() - 2_000;
 		mocks.responses.allDexsAssetCtxs = subscriptionResponse(
-			{ ctxs: [["", [BTC_PERP_CTX]]] },
-			{ lastMessageAt: receivedAt },
+			{
+				ctxs: [
+					["", [BTC_PERP_CTX]],
+					["xyz", [{ ...BTC_PERP_CTX, markPx: "200" }]],
+				],
+			},
+			{ lastMessageAt: perpReceivedAt },
 		);
-		mocks.responses.spotAssetCtxs = subscriptionResponse([{ ...SPOT_CTX, coin: "@1" }], { isStale: true });
+		mocks.responses.spotAssetCtxs = subscriptionResponse([{ ...SPOT_CTX, coin: "@1" }], {
+			lastMessageAt: spotReceivedAt,
+		});
 
 		act(() => root.render(<UnsupportedProbe />));
 
 		const latest = latestSubscriptionOptions();
 		expect(latest.get("fastAssetCtxs")).toEqual({ enabled: false, maxStaleMs: 10_000 });
 		expect(latest.get("pac")).toMatchObject({ enabled: false });
-		expect(latest.get("allDexsAssetCtxs")).toMatchObject({ enabled: true });
+		expect(latest.get("allDexsAssetCtxs")).toMatchObject({ enabled: true, maxStaleMs: 10_000 });
+		expect(latest.get("spotAssetCtxs")).toMatchObject({ enabled: true, maxStaleMs: 10_000 });
 		expect(captured.getMarketByName("BTC")).toMatchObject({
 			markPx: "100000",
 			midPx: "100001",
 			markPriceStatus: "success",
+			markPriceReceivedAt: perpReceivedAt,
+		});
+		expect(captured.getMarketByName("@1")).toMatchObject({
+			markPx: "42",
+			markPriceStatus: "success",
+			markPriceReceivedAt: spotReceivedAt,
+		});
+		expect(captured.getMarketByName("xyz:AAPL")).toMatchObject({
+			markPx: "200",
+			markPriceStatus: "success",
+			markPriceReceivedAt: perpReceivedAt,
+		});
+
+		mocks.responses.allDexsAssetCtxs = subscriptionResponse(
+			{ ctxs: [["", [BTC_PERP_CTX]]] },
+			{ lastMessageAt: Date.now() - 12_000, isStale: true },
+		);
+		act(() => root.render(<UnsupportedProbe />));
+		expect(captured.getMarketByName("BTC")?.markPriceStatus).not.toBe("success");
+	});
+
+	it("falls back to the compact context prices once the fast price stream is turned off for the session", () => {
+		const receivedAt = Date.now() - 1_000;
+		mocks.responses.pac = subscriptionResponse([["", [BTC_PERP_CTX]]], { lastMessageAt: receivedAt });
+		renderProbe(true);
+		expect(latestSubscriptionOptions().get("fastAssetCtxs")).toEqual({ enabled: true, maxStaleMs: 10_000 });
+
+		mocks.fastDisabled = true;
+		mocks.fastPriceSubscription.status = "error";
+		mocks.fastPriceSubscription.error = new Error("bad frame");
+		renderProbe(true);
+
+		const latest = latestSubscriptionOptions();
+		expect(latest.get("fastAssetCtxs")).toEqual({ enabled: false, maxStaleMs: 10_000 });
+		expect(latest.get("pac")).toMatchObject({ enabled: true, maxStaleMs: 10_000 });
+		expect(captured.getMarketByName("BTC")).toMatchObject({
+			markPx: "100000",
+			markPriceStatus: "success",
 			markPriceReceivedAt: receivedAt,
 		});
-		expect(captured.getMarketByName("@1")?.markPriceStatus).not.toBe("success");
+	});
+
+	it("keeps fast prices after an ordinary fast stream failure", () => {
+		mocks.fastPriceSubscription.status = "error";
+		mocks.fastPriceSubscription.error = new Error("closed");
+		renderProbe(true);
+		renderProbe(true);
+		expect(latestSubscriptionOptions().get("fastAssetCtxs")).toEqual({ enabled: true, maxStaleMs: 10_000 });
 	});
 
 	it("reports live perp contexts only for an active, fresh compact frame", () => {
