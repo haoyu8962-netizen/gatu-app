@@ -12,6 +12,10 @@ const shellKey = `${origin}/shell-v11`;
 
 type Handler = () => Response | Promise<Response>;
 
+function abortError() {
+	return new DOMException("aborted", "AbortError");
+}
+
 function asset(body: string, contentType = "text/javascript") {
 	return new Response(body, { headers: { "content-type": contentType } });
 }
@@ -41,14 +45,31 @@ function createHarness() {
 	const handlers = new Map<string, Handler>();
 	const requested: string[] = [];
 	const failingPuts = new Set<string>();
-	const forgetfulPuts = new Set<string>();
+	const failingPutUrls = new Set<string>();
+	const hangingPuts = new Set<string>();
 	const puts = new Map<string, number>();
-	const fetch = vi.fn(async (input: Request | string) => {
+	const matches = new Map<string, number>();
+	const aborted: string[] = [];
+	const flight = { current: 0, peak: 0 };
+	const fetch = vi.fn(async (input: Request | string, init?: RequestInit) => {
 		const url = typeof input === "string" ? input : input.url;
 		requested.push(url);
 		const handler = handlers.get(url);
 		if (!handler) throw new TypeError(`no network answer for ${url}`);
-		return handler();
+		const signal = init?.signal;
+		flight.current += 1;
+		flight.peak = Math.max(flight.peak, flight.current);
+		try {
+			return await new Promise<Response>((resolve, reject) => {
+				signal?.addEventListener("abort", () => {
+					aborted.push(url);
+					reject(abortError());
+				});
+				Promise.resolve().then(handler).then(resolve, reject);
+			});
+		} finally {
+			flight.current -= 1;
+		}
 	});
 	function keyOf(request: Request | string) {
 		return typeof request === "string" ? new URL(request).href : request.url;
@@ -62,12 +83,21 @@ function createHarness() {
 		}
 		const entries = store;
 		return {
-			match: async (request: Request | string) => entries.get(keyOf(request))?.clone(),
+			match: async (request: Request | string, options?: { ignoreVary?: boolean }) => {
+				matches.set(name, (matches.get(name) ?? 0) + 1);
+				const found = entries.get(keyOf(request));
+				if (found?.headers.has("vary") && !options?.ignoreVary) return undefined;
+				return found?.clone();
+			},
 			put: async (request: Request | string, response: Response) => {
 				if (response.bodyUsed) throw new TypeError("body already used");
 				puts.set(name, (puts.get(name) ?? 0) + 1);
+				if (hangingPuts.has(name)) {
+					hangingPuts.delete(name);
+					await new Promise(() => {});
+				}
 				if (failingPuts.has(name)) throw new DOMException("quota exceeded", "QuotaExceededError");
-				if (forgetfulPuts.has(name)) return;
+				if (failingPutUrls.has(keyOf(request))) throw new TypeError("Vary: * cannot be stored");
 				entries.set(keyOf(request), new Response(await response.arrayBuffer(), response));
 			},
 			keys: async () => [...entries.keys()].map((url) => new Request(url)),
@@ -94,6 +124,7 @@ function createHarness() {
 		Request,
 		Response,
 		URL,
+		AbortController,
 		setTimeout,
 		clearTimeout,
 	});
@@ -150,8 +181,12 @@ function createHarness() {
 		cachedKeys,
 		seed,
 		failingPuts,
-		forgetfulPuts,
+		failingPutUrls,
+		hangingPuts,
 		puts,
+		matches,
+		aborted,
+		flight,
 	};
 }
 
@@ -227,7 +262,7 @@ describe("service worker asset cache", () => {
 		expect(harness.open).not.toHaveBeenCalled();
 	});
 
-	it("answers exactly the immutable assets/ scope of the deploy cache policy", () => {
+	it("answers exactly the immutable assets/ scope of the deploy cache policy", async () => {
 		const keys = [
 			"assets/index-A.js",
 			"assets/styles-B.css",
@@ -243,9 +278,12 @@ describe("service worker asset cache", () => {
 		];
 		for (const key of keys) {
 			const harness = createHarness();
-			const answered = harness.get(`/${key}`).response !== undefined;
+			harness.respond(`/${key}`, () => asset(key, "font/woff2"));
+			const request = harness.get(`/${key}`);
 			const immutable = objectCacheControl(key) === IMMUTABLE_CACHE_CONTROL;
-			expect(answered, key).toBe(immutable && key.startsWith("assets/"));
+			expect(request.response !== undefined, key).toBe(immutable && key.startsWith("assets/"));
+			if (request.response) await (await request.response).text();
+			await request.settled();
 		}
 	});
 });
@@ -292,27 +330,167 @@ describe("service worker shell replacement", () => {
 		expect(await harness.cachedText("shell-v11", shellKey)).toContain("/assets/index-B.js");
 	});
 
-	it("keeps the cached shell when the asset cache cannot be written", async () => {
+	it("still moves to the new shell when the asset cache refuses every write (storage full)", async () => {
 		const harness = createHarness();
 		await harness.seed("shell-v11", shellKey, shell(["/assets/index-A.js"]));
 		harness.failingPuts.add("assets-v11");
-		harness.respond("/trade/BTC", () => shell(["/assets/index-B.js"]));
+		harness.respond("/trade/BTC", () => shell(["/assets/index-B.js", "/assets/vendor-B.js"]));
 		harness.respond("/assets/index-B.js", () => asset("index B"));
-		const navigation = harness.navigate("/trade/BTC");
-		expect(await (await navigation.response)?.text()).toContain("/assets/index-A.js");
-		await navigation.settled();
-		expect(await harness.cachedText("shell-v11", shellKey)).toContain("/assets/index-A.js");
+		harness.respond("/assets/vendor-B.js", () => asset("vendor B"));
+		const first = harness.navigate("/trade/BTC");
+		expect(await (await first.response)?.text()).toContain("/assets/index-A.js");
+		await first.settled();
+		const second = harness.navigate("/trade/BTC");
+		expect(await (await second.response)?.text()).toContain("/assets/index-B.js");
+		await second.settled();
+		expect(harness.cachedKeys("assets-v11")).toEqual([]);
 	});
 
-	it("keeps the cached shell when a stored asset is gone again by the time the shell would be replaced", async () => {
+	it("still moves to the new shell when one asset can never be stored (Vary: *)", async () => {
 		const harness = createHarness();
 		await harness.seed("shell-v11", shellKey, shell(["/assets/index-A.js"]));
-		harness.forgetfulPuts.add("assets-v11");
-		harness.respond("/trade/BTC", () => shell(["/assets/index-B.js"]));
+		harness.failingPutUrls.add(`${origin}/assets/vendor-B.js`);
+		harness.respond("/trade/BTC", () => shell(["/assets/index-B.js", "/assets/vendor-B.js"]));
 		harness.respond("/assets/index-B.js", () => asset("index B"));
+		harness.respond("/assets/vendor-B.js", () => asset("vendor B"));
+		const navigation = harness.navigate("/trade/BTC");
+		await navigation.settled();
+		expect(await harness.cachedText("shell-v11", shellKey)).toContain("/assets/index-B.js");
+		expect(harness.cachedKeys("assets-v11")).toEqual(["/assets/index-B.js"]);
+	});
+
+	it.each([
+		["a redirected response", () => Object.defineProperty(asset("vendor B"), "redirected", { value: true })],
+		["JavaScript served as text/plain", () => asset("Service Unavailable", "text/plain")],
+		[
+			"a response marked no-store",
+			() =>
+				new Response("vendor B", {
+					headers: { "content-type": "text/javascript", "cache-control": "private, no-store" },
+				}),
+		],
+	])("keeps the cached shell and stores nothing for %s", async (_, answer) => {
+		const harness = createHarness();
+		await harness.seed("shell-v11", shellKey, shell(["/assets/index-A.js"]));
+		harness.respond("/trade/BTC", () => shell(["/assets/vendor-B.js"]));
+		harness.respond("/assets/vendor-B.js", answer);
 		const navigation = harness.navigate("/trade/BTC");
 		await navigation.settled();
 		expect(await harness.cachedText("shell-v11", shellKey)).toContain("/assets/index-A.js");
+		expect(harness.cachedKeys("assets-v11")).toEqual([]);
+	});
+
+	it.each([
+		["/assets/styles-B.css", "text/plain"],
+		["/assets/entry-B.mjs", "application/octet-stream"],
+	])("does not store %s served as %s", async (path, contentType) => {
+		const harness = createHarness();
+		harness.respond(path, () => asset("body", contentType));
+		const request = harness.get(path);
+		await (await request.response)?.text();
+		await request.settled();
+		expect(harness.cachedKeys("assets-v11")).toEqual([]);
+	});
+
+	it.each([
+		["/assets/entry-B.js", "application/javascript"],
+		["/assets/entry-B.js", "text/javascript; charset=utf-8"],
+		["/assets/styles-B.css", "text/css"],
+		["/assets/inter-B.woff2", "binary/octet-stream"],
+		["/assets/inter-B.woff2", "font/woff2"],
+	])("stores %s served as %s", async (path, contentType) => {
+		const harness = createHarness();
+		harness.respond(path, () => asset("body", contentType));
+		const request = harness.get(path);
+		await (await request.response)?.text();
+		await request.settled();
+		expect(harness.cachedKeys("assets-v11")).toEqual([path]);
+	});
+
+	it("does not keep the partial assets of earlier failed candidates", async () => {
+		const harness = createHarness();
+		await harness.seed("shell-v11", shellKey, shell(["/assets/index-A.js"]));
+		await harness.seed("assets-v11", "/assets/index-A.js", asset("index A"));
+		for (const name of ["B", "C", "D"]) {
+			harness.respond("/trade/BTC", () => shell([`/assets/index-${name}.js`, `/assets/vendor-${name}.js`]));
+			harness.respond(`/assets/index-${name}.js`, () => asset(`index ${name}`));
+			harness.respond(`/assets/vendor-${name}.js`, () => new Response("busy", { status: 503 }));
+			await harness.navigate("/trade/BTC").settled();
+		}
+		expect(await harness.cachedText("shell-v11", shellKey)).toContain("/assets/index-A.js");
+		expect(harness.cachedKeys("assets-v11")).toEqual(["/assets/index-A.js", "/assets/index-D.js"]);
+	});
+
+	it("does nothing more for a shell identical to the cached one", async () => {
+		const harness = createHarness();
+		await harness.seed("shell-v11", shellKey, shell(["/assets/index-A.js"]));
+		harness.respond("/trade/BTC", () => shell(["/assets/index-A.js"]));
+		const writes = harness.puts.get("shell-v11");
+		await harness.navigate("/trade/BTC").settled();
+		expect(harness.puts.get("shell-v11")).toBe(writes);
+		expect(harness.matches.get("assets-v11")).toBeUndefined();
+		expect(harness.requests("/assets/index-A.js")).toBe(0);
+	});
+
+	it("rewrites an identical shell whose security policy changed, without prefetching", async () => {
+		const harness = createHarness();
+		await harness.seed("shell-v11", shellKey, shell(["/assets/index-A.js"]));
+		harness.respond("/trade/BTC", () => {
+			const changed = shell(["/assets/index-A.js"]);
+			changed.headers.set("content-security-policy", "script-src 'sha256-new'");
+			return changed;
+		});
+		await harness.navigate("/trade/BTC").settled();
+		const cache = await harness.open("shell-v11");
+		expect((await cache.match(shellKey))?.headers.get("content-security-policy")).toBe("script-src 'sha256-new'");
+		expect(harness.matches.get("assets-v11")).toBeUndefined();
+	});
+
+	it("prefetches six assets at a time", async () => {
+		const harness = createHarness();
+		await harness.seed("shell-v11", shellKey, shell(["/assets/index-A.js"]));
+		const names = Array.from({ length: 10 }, (_, index) => `/assets/chunk-${index}.js`);
+		harness.respond("/trade/BTC", () => shell(names));
+		for (const name of names) {
+			harness.respond(name, () => new Promise((done) => setTimeout(() => done(asset(name)), 5)));
+		}
+		await harness.navigate("/trade/BTC").settled();
+		expect(harness.flight.peak).toBe(6);
+		expect(await harness.cachedText("shell-v11", shellKey)).toContain("chunk-9.js");
+	});
+
+	it("answers from an entry stored with a Vary header", async () => {
+		const harness = createHarness();
+		harness.respond(
+			"/assets/index-A.js",
+			() => new Response("entry", { headers: { "content-type": "text/javascript", vary: "Accept-Encoding" } }),
+		);
+		const miss = harness.get("/assets/index-A.js");
+		await (await miss.response)?.text();
+		await miss.settled();
+		const hit = harness.get("/assets/index-A.js");
+		expect(await (await hit.response)?.text()).toBe("entry");
+		expect(harness.requests("/assets/index-A.js")).toBe(1);
+	});
+
+	it("lets the commit queue move on when a shell write stalls", async () => {
+		vi.useFakeTimers();
+		const harness = createHarness();
+		await vi.advanceTimersByTimeAsync(1);
+		const seeding = harness.seed("shell-v11", shellKey, shell(["/assets/index-A.js"]));
+		await vi.advanceTimersByTimeAsync(1);
+		await seeding;
+		harness.hangingPuts.add("shell-v11");
+		harness.respond("/trade/BTC", () => shell([]));
+		const stalled = harness.navigate("/trade/BTC");
+		await vi.advanceTimersByTimeAsync(10_100);
+		await stalled.settled();
+		harness.respond("/trade/BTC", () => shell([], '<meta name="release" content="C"/>'));
+		const next = harness.navigate("/trade/BTC");
+		await vi.advanceTimersByTimeAsync(100);
+		await next.settled();
+		vi.useRealTimers();
+		expect(await harness.cachedText("shell-v11", shellKey)).toContain('content="C"');
 	});
 
 	it("gives up after the time limit and keeps the cached shell", async () => {
@@ -335,8 +513,42 @@ describe("service worker shell replacement", () => {
 		expect(settled).toBe(false);
 		await vi.advanceTimersByTimeAsync(1_100);
 		expect(settled).toBe(true);
-		vi.useRealTimers();
+		expect(harness.aborted).toEqual([`${origin}/assets/index-B.js`]);
 		expect(await harness.cachedText("shell-v11", shellKey)).toContain("/assets/index-A.js");
+
+		harness.respond("/assets/index-B.js", () => asset("index B"));
+		const retry = harness.navigate("/trade/BTC");
+		await vi.advanceTimersByTimeAsync(100);
+		await retry.settled();
+		vi.useRealTimers();
+		expect(harness.requests("/assets/index-B.js")).toBe(2);
+		expect(await harness.cachedText("shell-v11", shellKey)).toContain("/assets/index-B.js");
+	});
+
+	it("does not abort a download the page shares when the job times out", async () => {
+		vi.useFakeTimers();
+		const harness = createHarness();
+		await vi.advanceTimersByTimeAsync(1);
+		const seeding = harness.seed("shell-v11", shellKey, shell(["/assets/index-A.js"]));
+		await vi.advanceTimersByTimeAsync(1);
+		await seeding;
+		const entry = deferred<Response>();
+		harness.respond("/trade/BTC", () => shell(["/assets/index-B.js"]));
+		harness.respond("/assets/index-B.js", () => entry.promise);
+		const navigation = harness.navigate("/trade/BTC");
+		await vi.advanceTimersByTimeAsync(10);
+		const page = harness.get("/assets/index-B.js");
+		await vi.advanceTimersByTimeAsync(61_000);
+		await navigation.settled();
+		expect(harness.aborted).toEqual([]);
+		entry.resolve(asset("index B"));
+		const text = page.response?.then((response) => response.text());
+		await vi.advanceTimersByTimeAsync(10);
+		expect(await text).toBe("index B");
+		await vi.advanceTimersByTimeAsync(10);
+		await page.settled();
+		vi.useRealTimers();
+		expect(harness.requests("/assets/index-B.js")).toBe(1);
 	});
 
 	it("serves the network shell on a miss and caches it with its assets", async () => {
@@ -399,24 +611,39 @@ describe("service worker shell replacement", () => {
 		expect(await harness.cachedText("shell-v11", shellKey)).toContain("/assets/index-C.js");
 	});
 
-	it("does not drop the stored assets of a newer shell that is still being prefetched when an older one is committed", async () => {
+	it("does not drop the stored assets of another candidate still being prefetched", async () => {
 		const harness = createHarness();
 		await harness.seed("shell-v11", shellKey, shell(["/assets/index-A.js"]));
-		harness.respond("/trade/BTC", () => shell(["/assets/index-B.js"]));
+		const vendor = deferred<Response>();
+		harness.respond("/trade/BTC", () => shell(["/assets/index-B.js", "/assets/vendor-B.js"]));
 		harness.respond("/assets/index-B.js", () => asset("index B"));
+		harness.respond("/assets/vendor-B.js", () => vendor.promise);
 		const older = harness.navigate("/trade/BTC");
 		await older.response;
-		const vendor = deferred<Response>();
-		harness.respond("/trade/BTC", () => shell(["/assets/index-C.js", "/assets/vendor-C.js"]));
+		for (let index = 0; index < 50 && !harness.cachedKeys("assets-v11").includes("/assets/index-B.js"); index += 1) {
+			await tick();
+		}
+		expect(harness.cachedKeys("assets-v11")).toContain("/assets/index-B.js");
+		harness.respond("/trade/BTC", () => shell(["/assets/index-C.js"]));
 		harness.respond("/assets/index-C.js", () => asset("index C"));
-		harness.respond("/assets/vendor-C.js", () => vendor.promise);
-		const newer = harness.navigate("/trade/BTC");
-		await older.settled();
-		expect(await harness.cachedText("shell-v11", shellKey)).toContain("/assets/index-B.js");
-		vendor.resolve(asset("vendor C"));
-		await newer.settled();
+		await harness.navigate("/trade/BTC").settled();
 		expect(await harness.cachedText("shell-v11", shellKey)).toContain("/assets/index-C.js");
-		expect(harness.requests("/assets/index-C.js")).toBe(1);
+		expect(harness.cachedKeys("assets-v11")).toContain("/assets/index-B.js");
+		vendor.resolve(asset("vendor B"));
+		await older.settled();
+		expect(await harness.cachedText("shell-v11", shellKey)).toContain("/assets/index-C.js");
+	});
+
+	it("fetches an asset again after a failed download of it", async () => {
+		const harness = createHarness();
+		harness.respond("/assets/index-A.js", () => new Response("busy", { status: 503 }));
+		const failed = harness.get("/assets/index-A.js");
+		await (await failed.response)?.text();
+		await failed.settled();
+		harness.respond("/assets/index-A.js", () => asset("entry"));
+		const retry = harness.get("/assets/index-A.js");
+		expect(await (await retry.response)?.text()).toBe("entry");
+		expect(harness.requests("/assets/index-A.js")).toBe(2);
 	});
 
 	it("keeps the assets of the new and the previous shell after a release switch and drops the rest", async () => {
@@ -493,7 +720,8 @@ describe("service worker shell asset list", () => {
 			"/assets/styles-BG9gMMIW.css",
 			"/assets/vendor-tanstack-router-Dxjx6Gvf.js",
 		];
-		for (const path of expected) harness.respond(path, () => asset(path));
+		const types: Record<string, string> = { css: "text/css", js: "text/javascript", woff2: "font/woff2" };
+		for (const path of expected) harness.respond(path, () => asset(path, types[path.split(".").pop() ?? ""]));
 		const navigation = harness.navigate("/trade/BTC");
 		await navigation.settled();
 		expect(harness.cachedKeys("assets-v11")).toEqual(expected);
@@ -501,6 +729,24 @@ describe("service worker shell asset list", () => {
 			[`${origin}/trade/BTC`, ...expected.map((path) => `${origin}${path}`)].sort(),
 		);
 		expect(await harness.cachedText("shell-v11", shellKey)).toContain("index-BykY0ZKy.js");
+	});
+
+	it("ignores references inside HTML comments and reads attributes that contain a >", async () => {
+		const harness = createHarness();
+		await harness.seed("shell-v11", shellKey, shell([]));
+		harness.respond(
+			"/trade/BTC",
+			() =>
+				new Response(
+					'<html><head><!-- <script src="/assets/absent.js"></script> --><link rel="modulepreload" title="a>b" href="/assets/real.js"></head></html>',
+					{ headers: { "content-type": "text/html" } },
+				),
+		);
+		harness.respond("/assets/real.js", () => asset("real"));
+		await harness.navigate("/trade/BTC").settled();
+		expect(harness.requests("/assets/absent.js")).toBe(0);
+		expect(harness.cachedKeys("assets-v11")).toEqual(["/assets/real.js"]);
+		expect(await harness.cachedText("shell-v11", shellKey)).toContain("/assets/real.js");
 	});
 
 	it("reads the same surface preload names that the build writes", () => {

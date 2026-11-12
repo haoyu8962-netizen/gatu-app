@@ -5,7 +5,15 @@
 //      startup assets in the background and only then replaces the cached shell;
 //   3. with every /assets/ request failing, a fresh navigation boots release B from the cache;
 //   4. release C references one asset the server cannot deliver; the cached shell stays B;
-//   5. a font outside /assets/ is stored in the font cache (the clone fix).
+//   5. release D fails the same way; the asset C left behind is removed, so failed candidates
+//      do not accumulate;
+//   6. release E serves one asset with `Vary: *`, which the Cache API always refuses to store;
+//      the worker still moves to shell E (storing is an optimisation, not a precondition) and
+//      a fresh page boots E;
+//   7. a font outside /assets/ is stored in the font cache (the clone fix).
+// Exhausting the storage quota is not simulated: a quota too small for the assets is also too
+// small for the shell itself, so it would not isolate the asset path; `Vary: *` is a write
+// failure the real Cache API produces on every engine.
 // The releases are synthetic two-file builds, not the terminal: this proves the worker's cache
 // behaviour in Chromium and WebKit, not the startup time of the real application or of iOS.
 //
@@ -44,11 +52,20 @@ const releases = {
 		"/assets/entry-C3.js": 'import "/assets/vendor-C3.js"; document.title = "C ready";',
 		"/assets/vendor-C3.js": "export {};",
 	}),
+	D: release("D", {
+		"/assets/entry-D4.js": 'import "/assets/vendor-D4.js"; document.title = "D ready";',
+		"/assets/vendor-D4.js": "export {};",
+	}),
+	E: release("E", {
+		"/assets/entry-E5.js": 'import "/assets/vendor-E5.js"; document.title = "E ready";',
+		"/assets/vendor-E5.js": "export {};",
+	}),
 };
 
 let current = releases.A;
 let assetsOffline = false;
-const brokenAssets = new Set(["/assets/vendor-C3.js"]);
+const brokenAssets = new Set(["/assets/vendor-C3.js", "/assets/vendor-D4.js"]);
+const unstorableAssets = new Set(["/assets/vendor-E5.js"]);
 const assetRequests = [];
 
 const server = createServer((request, response) => {
@@ -66,12 +83,13 @@ const server = createServer((request, response) => {
 	if (path.startsWith("/assets/")) {
 		assetRequests.push(path);
 		const body = Object.values(releases).find((value) => value.files[path])?.files[path];
-		if (assetsOffline || !body || (current === releases.C && brokenAssets.has(path))) {
+		if (assetsOffline || !body || brokenAssets.has(path)) {
 			response.writeHead(503, { "content-type": "text/plain", "cache-control": "no-store" });
 			response.end("unavailable");
 			return;
 		}
-		response.writeHead(200, { "content-type": "text/javascript", "cache-control": "no-store" });
+		const vary = unstorableAssets.has(path) ? { vary: "*" } : {};
+		response.writeHead(200, { "content-type": "text/javascript", "cache-control": "no-cache", ...vary });
 		response.end(body);
 		return;
 	}
@@ -163,6 +181,30 @@ for (const engine of engines) {
 		await cold.waitForTimeout(2_000);
 		const c = await cacheState(cold);
 		check("shell C with an undeliverable asset does not replace shell B", c.shell === "B", c);
+
+		current = releases.D;
+		await cold.goto(`${origin}/trade`);
+		await cold.waitForTimeout(2_000);
+		const d = await cacheState(cold);
+		check(
+			"failed candidate D removes what failed candidate C left behind",
+			d.shell === "B" && !d.assets.includes("/assets/entry-C3.js") && d.assets.includes("/assets/entry-D4.js"),
+			d,
+		);
+
+		current = releases.E;
+		await cold.goto(`${origin}/trade`);
+		const e = await waitFor(cold, (state) => state.shell === "E", "release E committed");
+		check(
+			"an asset the cache refuses (Vary: *) does not block shell E",
+			e.assets.includes("/assets/entry-E5.js") && !e.assets.includes("/assets/vendor-E5.js"),
+			e.assets,
+		);
+		await cold.close();
+		const fresh = await context.newPage();
+		await fresh.goto(`${origin}/trade`);
+		await fresh.waitForFunction(() => document.title === "E ready", undefined, { timeout: 10_000 });
+		check("release E boots, its unstorable asset from the network", true);
 	} catch (error) {
 		check("probe", false, error instanceof Error ? error.message : String(error));
 	} finally {

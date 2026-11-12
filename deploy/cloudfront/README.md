@@ -59,7 +59,7 @@
 
 发布时 `/*` 失效只影响 CloudFront，不清浏览器 CacheStorage，因此第一条导航可能仍显示上一版壳。已核对 `deploy.mjs` 的 `buildSyncCommands` 不包含 `--delete`：旧壳引用的哈希资源继续留在 S3；`prepareResponseFunction` 配合 `terminal-response.template.js` 合并 CURRENT/PREVIOUS 的内联脚本哈希，保留上一版一个发布周期。SW 保存的旧 Response 还自带当时的 CSP（不与新正文/新头混用）。保持现有“发布函数 → 上传资源和页面 → 失效 → 验证”顺序；不要在同步时清理旧哈希资源。`sw.js` 仍在 `NO_STORE_FILES` 中（`no-store`），`routes/__root.tsx` 注册仍用 `updateViaCache: "none"`；有问题的 SW 可在下次访问时更新替换，新版本激活会清理退休缓存，但发现更新的当次导航可能仍由旧 SW 回答。上线后需验证连续导航、离线后恢复、跨版本首次导航与 iOS Safari；本次 Node harness 不替代这些验收。
 
-2026-11-12 补充（[ADR 0051](../../docs/adr/0051-service-worker-startup-asset-cache.md)，代码实现不代表已发布）：SW 升到 v11，缓存为 `shell-v11`、`assets-v11`、`fonts-v11`、`icons-v11`，激活时清理 v10 与其他版本的 `assets-*`。同源 `/assets/` 的不可变文件（范围与 `objectCacheControl` 的 `assets/` immutable 规则一致；`charting_library/` 的哈希文件不经 SW）由 SW 缓存优先回答。导航的后台刷新拿到不同的新壳时，先把壳引用的启动资源存进 `assets-v11`，全部成功才替换壳；任何一个失败或超过时限就保留旧壳，这依赖上文「`sync` 从不 `--delete`、旧哈希资源留在 S3」。字体缓存此前从未写入（克隆时机错误），此版本起生效。部署脚本、上传顺序与 CSP 不需要改：预取是同源请求，`sw.js` 仍是 `no-store`。
+2026-11-12 补充（[ADR 0051](../../docs/adr/0051-service-worker-startup-asset-cache.md)，代码实现不代表已发布）：SW 升到 v11，缓存为 `shell-v11`、`assets-v11`、`fonts-v11`、`icons-v11`，激活时清理 v10 与其他版本的 `assets-*`。同源 `/assets/` 的不可变文件（范围与 `objectCacheControl` 的 `assets/` immutable 规则一致；`charting_library/` 的哈希文件不经 SW）由 SW 缓存优先回答。导航的后台刷新拿到不同的新壳时，先淘汰旧条目，再把壳引用的启动资源取回并存进 `assets-v11`，全部取回才替换壳；有资源取不回（网络侧失败）或超过时限就保留旧壳，这依赖上文「`sync` 从不 `--delete`、旧哈希资源留在 S3」。资源只是存不进缓存（配额、`Vary: *`）时照样换壳。SW 只缓存与扩展名相符的内容类型（`.js` 为 JavaScript 类型、`.css` 为 `text/css`），不缓存带 `no-store` 的响应；`aws s3 sync` 按扩展名推断的类型满足这条规则，线上实际返回的类型发布后要核对一次。字体缓存此前从未写入（克隆时机错误），此版本起生效。部署脚本、上传顺序与 CSP 不需要改：预取是同源请求，`sw.js` 仍是 `no-store`。
 
 `pnpm test:cloudfront` 运行以上生成器、函数与部署脚本的 node 测试。
 

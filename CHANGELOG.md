@@ -624,11 +624,14 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Fixed
 
-- Opening the installed terminal after a new version was released no longer has to download most
-  of the app again while the screen is still blank. The terminal now downloads a new version's
-  startup files in the background and switches to that version only once they are all stored on
-  the device; until then, and whenever a download fails, it keeps starting the version it already
-  has. Startup files are then read from the device instead of the network. The interface fonts are
+- Opening the installed terminal after a new version was released usually no longer has to
+  download most of the app again while the screen is still blank. The terminal now downloads a new
+  version's startup files in the background, stores them on the device and switches to that
+  version once they have all arrived; until then, and while a file cannot be downloaded, it keeps
+  starting the version it already has. Startup files are then read from the device instead of the
+  network. When the device has no room to store them, the terminal still updates and loads those
+  files from the network, as before. Files of an update that could not be completed are removed
+  from the device instead of piling up. The interface fonts are
   now kept on the device as intended (they were never stored before), so startup no longer waits for
   them when the browser has dropped its own copy. Each release is still downloaded once in the
   background (about 1.5 MB), and the first start after installing, or after this update, still loads

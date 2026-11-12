@@ -921,13 +921,20 @@ have an install capability.
   advertise the terminal as offline-capable unless the service worker gains a
   tested application-shell/navigation strategy.
 - The service worker swaps the cached application shell only after every
-  startup asset the new shell references is stored
+  startup asset the new shell references has been fetched, and it stores them
+  first so the next cold start reads them from the device
   ([ADR 0051](adr/0051-service-worker-startup-asset-cache.md)): same-origin
   immutable `/assets/` files are answered cache-first from the versioned asset
-  cache, a navigation's background refresh prefetches the new shell's preloads,
-  stylesheets, scripts and the two surface `<meta>` lists before replacing the
-  shell, and any failure, time-out or storage error keeps the previous shell.
-  A release switch keeps only the assets of the new and the previous shell.
+  cache, and a navigation's background refresh prefetches the new shell's
+  preloads, stylesheets, scripts and the two surface `<meta>` lists before
+  replacing the shell. Storing is an optimisation, never a precondition: a
+  network-side failure (a request error, a response that is not a clean 200 of
+  the expected content type, `no-store`) or the time limit keeps the previous
+  shell, while a storage-side failure (quota, `Vary: *`) must not block the
+  update. A candidate release first removes what neither the cached shell nor
+  a shell in progress references, so failed candidates do not accumulate; the
+  cache size stated in the ADR is an estimate for the normal path, not a hard
+  bound.
   The worker does not precache the whole build, does not intercept the
   TradingView files, and keeps the navigation bypass list, the `?lang=`
   network-first rule and the cacheable-shell checks. A font or asset response
