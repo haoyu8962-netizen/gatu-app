@@ -100,13 +100,13 @@ describe("service worker navigation caching", () => {
 		expect(() => network.clone()).toThrow();
 		expect(await body).toBe("first shell");
 		await refresh;
-		expect(await harness.stores.get("shell-v10")?.get(`${origin}/shell-v10`)?.clone().text()).toBe("first shell");
+		expect(await harness.stores.get("shell-v11")?.get(`${origin}/shell-v11`)?.clone().text()).toBe("first shell");
 	});
 
 	it("serves one shared application shell immediately with intact headers and refreshes in the background", async () => {
 		const harness = createHarness();
-		const cache = await harness.open("shell-v10");
-		await cache.put(`${origin}/shell-v10`, html("old"));
+		const cache = await harness.open("shell-v11");
+		await cache.put(`${origin}/shell-v11`, html("old"));
 		let finishFetch: ((response: Response) => void) | undefined;
 		harness.fetch.mockImplementationOnce(
 			() =>
@@ -126,7 +126,7 @@ describe("service worker navigation caching", () => {
 		const next = harness.navigate("/portfolio?tab=history");
 		expect(await (await next.response)?.text()).toBe("new");
 		await Promise.all(next.background);
-		expect([...(harness.stores.get("shell-v10")?.keys() ?? [])]).toEqual([`${origin}/shell-v10`]);
+		expect([...(harness.stores.get("shell-v11")?.keys() ?? [])]).toEqual([`${origin}/shell-v11`]);
 	});
 
 	it("answers legal pages from the same shell entry as every other application route", async () => {
@@ -140,8 +140,8 @@ describe("service worker navigation caching", () => {
 			expect(await (await hit.response)?.text(), path).toBe("shell");
 			await Promise.all(hit.background);
 		}
-		expect([...harness.stores.keys()]).toEqual(["shell-v10"]);
-		expect([...(harness.stores.get("shell-v10")?.keys() ?? [])]).toEqual([`${origin}/shell-v10`]);
+		expect([...harness.stores.keys()]).toEqual(["shell-v11"]);
+		expect([...(harness.stores.get("shell-v11")?.keys() ?? [])]).toEqual([`${origin}/shell-v11`]);
 	});
 
 	it.each([
@@ -187,13 +187,13 @@ describe("service worker navigation caching", () => {
 		const navigation = harness.navigate("/trade/ETH");
 		expect(await navigation.response).toBe(network);
 		await Promise.all(navigation.background);
-		expect(harness.stores.get("shell-v10")?.size).toBe(0);
+		expect(harness.stores.get("shell-v11")?.size).toBe(0);
 	});
 
 	it("does not store redirected HTML or replace a good cached shell with an error", async () => {
 		const harness = createHarness();
-		const cache = await harness.open("shell-v10");
-		await cache.put(`${origin}/shell-v10`, html("old"));
+		const cache = await harness.open("shell-v11");
+		await cache.put(`${origin}/shell-v11`, html("old"));
 		const redirected = html("redirect destination");
 		Object.defineProperty(redirected, "redirected", { value: true });
 		for (const response of [redirected, new Response("missing", { status: 404 })]) {
@@ -201,14 +201,14 @@ describe("service worker navigation caching", () => {
 			const navigation = harness.navigate("/trade/ETH");
 			expect(await (await navigation.response)?.text()).toBe("old");
 			await Promise.all(navigation.background);
-			expect(await harness.stores.get("shell-v10")?.get(`${origin}/shell-v10`)?.clone().text()).toBe("old");
+			expect(await harness.stores.get("shell-v11")?.get(`${origin}/shell-v11`)?.clone().text()).toBe("old");
 		}
 	});
 
 	it("keeps cached HTML on a network failure and serves network HTML when CacheStorage fails", async () => {
 		const harness = createHarness();
-		const cache = await harness.open("shell-v10");
-		await cache.put(`${origin}/shell-v10`, html("old"));
+		const cache = await harness.open("shell-v11");
+		await cache.put(`${origin}/shell-v11`, html("old"));
 		harness.fetch.mockRejectedValueOnce(new Error("offline"));
 		const cached = harness.navigate("/trade/ETH");
 		expect(await (await cached.response)?.text()).toBe("old");
@@ -243,19 +243,19 @@ describe("service worker navigation caching", () => {
 describe("service worker navigation for a language link", () => {
 	it("serves the current shell from the network instead of an older cached one, and caches it", async () => {
 		const harness = createHarness();
-		const cache = await harness.open("shell-v10");
-		await cache.put(`${origin}/shell-v10`, html("previous release"));
+		const cache = await harness.open("shell-v11");
+		await cache.put(`${origin}/shell-v11`, html("previous release"));
 		harness.fetch.mockResolvedValueOnce(html("current release"));
 		const navigation = harness.navigate("/trade/xyz:ANT?lang=ja&utm_source=newsletter");
 		expect(await (await navigation.response)?.text()).toBe("current release");
 		await Promise.all(navigation.background);
-		expect(await harness.stores.get("shell-v10")?.get(`${origin}/shell-v10`)?.clone().text()).toBe("current release");
+		expect(await harness.stores.get("shell-v11")?.get(`${origin}/shell-v11`)?.clone().text()).toBe("current release");
 	});
 
 	it("falls back to the cached shell when the network fails", async () => {
 		const harness = createHarness();
-		const cache = await harness.open("shell-v10");
-		await cache.put(`${origin}/shell-v10`, html("cached"));
+		const cache = await harness.open("shell-v11");
+		await cache.put(`${origin}/shell-v11`, html("cached"));
 		harness.fetch.mockRejectedValueOnce(new TypeError("offline"));
 		const navigation = harness.navigate("/trade/BTC?lang=ja");
 		expect(await (await navigation.response)?.text()).toBe("cached");
@@ -265,13 +265,13 @@ describe("service worker navigation for a language link", () => {
 		"serves the cached shell instead of a %s server error, like any other navigation, and keeps it",
 		async (status) => {
 			const harness = createHarness();
-			const cache = await harness.open("shell-v10");
-			await cache.put(`${origin}/shell-v10`, html("cached"));
+			const cache = await harness.open("shell-v11");
+			await cache.put(`${origin}/shell-v11`, html("cached"));
 			harness.fetch.mockResolvedValueOnce(new Response("busy", { status, headers: { "content-type": "text/html" } }));
 			const navigation = harness.navigate("/trade/BTC?lang=ja");
 			expect(await (await navigation.response)?.text()).toBe("cached");
 			await Promise.all(navigation.background);
-			expect(await harness.stores.get("shell-v10")?.get(`${origin}/shell-v10`)?.clone().text()).toBe("cached");
+			expect(await harness.stores.get("shell-v11")?.get(`${origin}/shell-v11`)?.clone().text()).toBe("cached");
 		},
 	);
 
@@ -280,14 +280,14 @@ describe("service worker navigation for a language link", () => {
 		["a redirect", opaqueRedirect],
 	])("passes %s to the browser even when a shell is cached, and keeps the cache", async (_, answer) => {
 		const harness = createHarness();
-		const cache = await harness.open("shell-v10");
-		await cache.put(`${origin}/shell-v10`, html("cached"));
+		const cache = await harness.open("shell-v11");
+		await cache.put(`${origin}/shell-v11`, html("cached"));
 		const network = answer();
 		harness.fetch.mockResolvedValueOnce(network);
 		const navigation = harness.navigate("/trade/BTC?lang=ja");
 		expect(await navigation.response).toBe(network);
 		await Promise.all(navigation.background);
-		expect(await harness.stores.get("shell-v10")?.get(`${origin}/shell-v10`)?.clone().text()).toBe("cached");
+		expect(await harness.stores.get("shell-v11")?.get(`${origin}/shell-v11`)?.clone().text()).toBe("cached");
 	});
 
 	it("does not cache an error page and fails like the network when nothing is cached", async () => {
@@ -298,15 +298,15 @@ describe("service worker navigation for a language link", () => {
 		const failed = harness.navigate("/trade/BTC?lang=ja");
 		expect((await failed.response)?.status).toBe(503);
 		await Promise.all(failed.background);
-		expect(harness.stores.get("shell-v10")?.get(`${origin}/shell-v10`)).toBeUndefined();
+		expect(harness.stores.get("shell-v11")?.get(`${origin}/shell-v11`)).toBeUndefined();
 		harness.fetch.mockRejectedValueOnce(new TypeError("offline"));
 		await expect(harness.navigate("/trade/BTC?lang=ja").response).rejects.toThrow("offline");
 	});
 
 	it("keeps serving other navigations from the cache first", async () => {
 		const harness = createHarness();
-		const cache = await harness.open("shell-v10");
-		await cache.put(`${origin}/shell-v10`, html("cached"));
+		const cache = await harness.open("shell-v11");
+		await cache.put(`${origin}/shell-v11`, html("cached"));
 		harness.fetch.mockReturnValueOnce(new Promise(() => {}));
 		expect(await (await harness.navigate("/trade/BTC?utm_source=newsletter").response)?.text()).toBe("cached");
 	});

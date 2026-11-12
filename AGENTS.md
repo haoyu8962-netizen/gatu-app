@@ -176,7 +176,7 @@ This file contains durable project instructions for coding agents. Read `agent.m
 ## Startup rendering contract
 
 - `docs/adr/0010-blank-until-ready-startup.md` and `.claude/rules/startup-rendering.md` own this contract. Every application route prerenders and hydrates the same visually empty `StartupFallback`: `aria-busy` and one screen-reader-only output, with no visible skeleton or chrome.
-- Keep theme bootstrap, head preloads, Service Worker registration and shell caching. Wait for the client runtime and persisted locale catalog before rendering real chrome. Docs, Support and the legal pages are dashboard routes inside the same application chrome, with no separate document navigation or prerendered page (`docs/adr/0020-legal-pages-in-app-shell.md`).
+- Keep theme bootstrap, head preloads, Service Worker registration and shell caching; the worker swaps the cached shell only after the startup assets it references are stored (`docs/adr/0051-service-worker-startup-asset-cache.md`). Wait for the client runtime and persisted locale catalog before rendering real chrome. Docs, Support and the legal pages are dashboard routes inside the same application chrome, with no separate document navigation or prerendered page (`docs/adr/0020-legal-pages-in-app-shell.md`).
 - Desktop and mobile trade loading states use their real frame/header/navigation/footer with an empty busy workspace. Reveal market content inside the existing frame when ready, preserving chrome DOM identity and mobile navigation state. Dashboard pending routes use the empty announcement; loaded pages own their real frame.
 - Runtime views stay pure, deterministic and props-only. Preserve mounted component behavior, translated labels, drafts, protocol values and every signing/data-availability guard. Do not reintroduce placeholder trees, shell-specific English catalogs or hydration route-surface overrides.
 - Application webfonts use `font-display: block`, and the startup gate waits (bounded) for the persisted locale catalog and the preloaded startup fonts before the first real render, so text never paints in a fallback font and reflows.
@@ -493,7 +493,9 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/mobile-nav-drawer-navigation.test.tsx \
   src/lib/tests/dashboard-frame-view.test.tsx \
   src/lib/tests/client-bootstrap-error.test.ts \
-  src/lib/tests/sw-navigation-cache.test.ts
+  src/lib/tests/sw-navigation-cache.test.ts \
+  src/lib/tests/sw-asset-cache.test.ts \
+  src/lib/tests/chart-asset-cache-policy.test.ts
 
 # Runtime translation contract (Change discipline) and error text (ADR 0024)
 pnpm --dir apps/terminal exec vitest run \

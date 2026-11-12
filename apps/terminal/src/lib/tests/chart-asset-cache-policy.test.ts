@@ -26,6 +26,7 @@ function createServiceWorkerHarness({
 }: ServiceWorkerHarnessOptions) {
 	const listeners = new Map<string, (event: Record<string, unknown>) => void>();
 	const self = {
+		location: { origin: "https://app.sairn.ai" },
 		addEventListener: (type: string, listener: (event: Record<string, unknown>) => void) => {
 			listeners.set(type, listener);
 		},
@@ -56,7 +57,7 @@ describe("TradingView asset cache policy", () => {
 	});
 
 	it("leaves TradingView delivery to HTTP caching and immediately updates the service worker", () => {
-		expect(serviceWorker).toContain('const CACHE_VERSION = "v10"');
+		expect(serviceWorker).toContain('const CACHE_VERSION = "v11"');
 		expect(serviceWorker).not.toContain("CHARTING_CACHE");
 		expect(serviceWorker).not.toContain('url.pathname.startsWith("/charting_library/")');
 		expect(rootRoute).toContain('scope: "/", updateViaCache: "none"');
@@ -75,7 +76,7 @@ describe("TradingView asset cache policy", () => {
 		expect(viteConfig).toMatch(/'\/join\/\*\*': \{[\s\S]*?headers: referralJoinHeaders/);
 	});
 
-	it("deletes only retired managed caches, the retired document cache included, when v10 activates", async () => {
+	it("deletes only retired managed caches, the v10 caches included, when v11 activates", async () => {
 		const deleted: string[] = [];
 		const listeners = createServiceWorkerHarness({
 			caches: {
@@ -88,6 +89,11 @@ describe("TradingView asset cache policy", () => {
 						"fonts-v10",
 						"icons-v10",
 						"shell-v10",
+						"assets-v10",
+						"assets-v11",
+						"fonts-v11",
+						"icons-v11",
+						"shell-v11",
 						"unrelated-cache",
 					]),
 				delete: (key: string) => {
@@ -106,7 +112,16 @@ describe("TradingView asset cache policy", () => {
 		});
 		await activation;
 
-		expect(deleted).toEqual(["charting-v7", "fonts-v7", "shell-v9", "documents-v9"]);
+		expect(deleted).toEqual([
+			"charting-v7",
+			"fonts-v7",
+			"shell-v9",
+			"documents-v9",
+			"fonts-v10",
+			"icons-v10",
+			"shell-v10",
+			"assets-v10",
+		]);
 	});
 
 	it("claims clients and finishes activation when CacheStorage stalls", async () => {

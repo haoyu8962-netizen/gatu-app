@@ -920,6 +920,19 @@ have an install capability.
 - Installation support does not imply offline navigation support. Do not
   advertise the terminal as offline-capable unless the service worker gains a
   tested application-shell/navigation strategy.
+- The service worker swaps the cached application shell only after every
+  startup asset the new shell references is stored
+  ([ADR 0051](adr/0051-service-worker-startup-asset-cache.md)): same-origin
+  immutable `/assets/` files are answered cache-first from the versioned asset
+  cache, a navigation's background refresh prefetches the new shell's preloads,
+  stylesheets, scripts and the two surface `<meta>` lists before replacing the
+  shell, and any failure, time-out or storage error keeps the previous shell.
+  A release switch keeps only the assets of the new and the previous shell.
+  The worker does not precache the whole build, does not intercept the
+  TradingView files, and keeps the navigation bypass list, the `?lang=`
+  network-first rule and the cacheable-shell checks. A font or asset response
+  is cloned before it is handed to the page, never afterwards. The current
+  cache names, limits and the release-switch probe live in the ADR.
 
 ### Important Files
 
@@ -958,6 +971,10 @@ have an install capability.
 - `apps/terminal/src/lib/tests/qr-classification.test.ts`
 - `apps/terminal/src/lib/tests/mobile-pairing-feature-gate.test.ts`
 - `apps/terminal/src/lib/tests/sw-navigation-cache.test.ts`
+- `apps/terminal/src/lib/tests/sw-asset-cache.test.ts`
+- `apps/terminal/src/lib/tests/chart-asset-cache-policy.test.ts`
+- `apps/terminal/tests/browser/sw-release-switch-probe.mjs` (real engines,
+  run from a normal shell; not part of CI)
 
 ## 9. Development And Browser Test Caches
 

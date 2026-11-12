@@ -624,6 +624,15 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Fixed
 
+- Opening the installed terminal after a new version was released no longer has to download most
+  of the app again while the screen is still blank. The terminal now downloads a new version's
+  startup files in the background and switches to that version only once they are all stored on
+  the device; until then, and whenever a download fails, it keeps starting the version it already
+  has. Startup files are then read from the device instead of the network. The interface fonts are
+  now kept on the device as intended (they were never stored before), so startup no longer waits for
+  them when the browser has dropped its own copy. Each release is still downloaded once in the
+  background (about 1.5 MB), and the first start after installing, or after this update, still loads
+  from the network. Not yet confirmed on a phone (ADR 0051).
 - Reopening the terminal after it sat in the background brings prices, the order book and account
   data back sooner. The terminal now checks its connections the moment the page is shown again,
   or the network returns, instead of up to five seconds later; it retries at once instead of
