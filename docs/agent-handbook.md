@@ -39,6 +39,7 @@
 
   运营方问到 CI 时，用 `gh pr checks` 查一次，并读机器人的评论；失败和意见攒成一次推送。
 - **CI 秒失败**：所有 job 十几秒内失败且 steps=0 时，先看 `gh api repos/zora4523-bot/gatu-app/check-runs/<job id>/annotations`。注解如果是额度或预算拒绝（spending limit、Actions budget），就不是代码问题。预算只能由运营方在 GitHub 账户设置里调整，调整后约 3 分钟才生效，先 rerun 最便宜的工作流来探测。
+- **运行器镜像**：安装 Playwright 浏览器的作业（浏览器回归、官网构建）固定在 `ubuntu-24.04`。2026-11-12 `ubuntu-latest` 变成 26.04 后，Playwright 1.59.1 报「does not support chromium on ubuntu26.04-x64」，这两类作业一分钟内失败，与 PR 内容无关。升级 Playwright 时再评估改回 `ubuntu-latest`。
 - **Claude Code 工作流**：`claude.yml` 在评论里出现 @claude 时运行，需要仓库密钥 `CLAUDE_CODE_OAUTH_TOKEN`；`Claude Code Review` 工作流已手动停用。2026-10-08 查询时仓库没有任何 Actions 密钥，所以 @claude 目前不能用；要启用，由运营方用自己的 Claude 账号生成令牌后写入。
 - **集成 PR**（把多个完成的分支合成一个 PR）：
   - 先确认对应会话已结束、工作树干净、本地分支头等于远端。从最新的 `origin/dev` 建分支，按依赖顺序逐个 `git merge --no-ff`。
