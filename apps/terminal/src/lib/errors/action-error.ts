@@ -224,10 +224,13 @@ const LEGAL_REASON_CODES: Record<string, ActionErrorCode> = {
 	terms_required: "terms-required",
 };
 
+const NOT_SENT_IN_TIME = msg`The checks before this request took too long. Nothing was signed or sent. Try again.`;
+
 const NAMED_ERROR_FAILURES: Record<string, ActionFailure> = {
-	AgentRegistrationPreExecutionGuardTimeoutError: msg`The checks before this request took too long. Nothing was signed or sent. Try again.`,
+	AgentRegistrationPreExecutionGuardTimeoutError: NOT_SENT_IN_TIME,
 	AgentRegistrationResetRequiredError: msg`This browser no longer has the exact trading key for the pending approval. Reset the trading connection before trying again.`,
 	CctpDepositTrackingPersistenceError: msg`This browser could not store deposit recovery data, so this deposit was not submitted. Allow site storage, then try again.`,
+	ExchangeActionDeadlineError: NOT_SENT_IN_TIME,
 	ExchangeRequestInvalidatedError: coded("identity-changed"),
 	FundsActionLockTimeoutError: coded("funds-operation-busy"),
 	FundsActionLockUnavailableError: coded("funds-coordination-unavailable"),

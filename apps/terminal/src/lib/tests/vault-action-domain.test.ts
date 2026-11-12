@@ -1,3 +1,4 @@
+import { ExchangeActionDeadlineError } from "@sairn/hl-react/internal/exchange/request-scheduler";
 import { getAddress } from "viem";
 import { describe, expect, it } from "vitest";
 import {
@@ -237,6 +238,7 @@ describe("Vault mutation result safety", () => {
 		const validationError = new Error("bad amount");
 		validationError.name = "ValidationError";
 		expect(classifyVaultMutationFailure(validationError)).toBe("deterministic");
+		expect(classifyVaultMutationFailure(new ExchangeActionDeadlineError())).toBe("deterministic");
 		expect(classifyVaultMutationFailure(new Error("transport disconnected"))).toBe("ambiguous");
 	});
 

@@ -9,6 +9,7 @@ import {
 	ExchangeRequestInvalidatedError,
 	type ExchangeRequestStartGate,
 	getExchangeRequestPriority,
+	getExchangeStartDeadlineMs,
 	scheduleExchangeRequest,
 } from "../internal/exchange/request-scheduler";
 import { useHyperliquid } from "../provider";
@@ -212,6 +213,7 @@ export function useExchange<M extends ExchangeMethod>(
 			},
 			requestGeneration,
 			startWithLegalGate,
+			getExchangeStartDeadlineMs(method),
 		);
 	};
 

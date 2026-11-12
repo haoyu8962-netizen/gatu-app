@@ -64,6 +64,11 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Changed
 
+- An order, order change or funds action that cannot be signed within 15 seconds of confirming it is no
+  longer sent later: it fails with a notice that nothing was signed or sent, and you can submit it
+  again. Before, if the access check before signing hit a network error and you switched away from the
+  page, the action could be sent when you came back, minutes or hours later. Cancels are not limited
+  this way, so a busy queue never leaves an order on the book that you asked to cancel.
 - The mobile order summary follows the official terminal:
   - empty values read `N/A` in the value colour;
   - order value and margin required are written in the market's collateral, for example `84.20 USDC`;

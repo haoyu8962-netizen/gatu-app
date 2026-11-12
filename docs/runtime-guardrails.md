@@ -31,6 +31,13 @@ Do not collapse these states into one boolean.
   approved agent already exists for the same owner.
 - Legal checks fail closed. A failed or unknown status must not expose Agent
   setup or ordinary global dialogs.
+- The legal re-check before a signed action (`verifyLegalActionAllowed`) sends
+  one request without retries and fails as `status_unavailable` after 10
+  seconds; never give it a retry policy that TanStack can pause while the page
+  is unfocused. An action that has not reached its SDK call 15 seconds after
+  entering the request scheduler fails before signing, except cancels
+  ([ADR 0051](adr/0051-exchange-action-start-deadline.md)). Passive legal status
+  queries keep their retries.
 - Preserve the onboarding order documented in `docs/trading-onboarding.md`.
 - Agent registration and builder-fee approval are separate. First-time setup
   approves only the Agent; builder-fee approval is deferred until an action
