@@ -52,7 +52,7 @@ function createHarness() {
 			listeners.set(name, callback);
 		},
 	};
-	const context = { self, caches: { open }, fetch, Request, Response, URL, AbortController, setTimeout, clearTimeout };
+	const context = { self, caches: { open }, fetch, Request, Response, URL, setTimeout, clearTimeout };
 	runInNewContext(serviceWorker, context);
 	function navigate(path: string) {
 		const request = new Request(new URL(path, origin), { redirect: "manual" });

@@ -920,26 +920,22 @@ have an install capability.
 - Installation support does not imply offline navigation support. Do not
   advertise the terminal as offline-capable unless the service worker gains a
   tested application-shell/navigation strategy.
-- The service worker swaps the cached application shell only after every
-  startup asset the new shell references has been fetched, and it stores them
-  first so the next cold start reads them from the device
-  ([ADR 0051](adr/0051-service-worker-startup-asset-cache.md)): same-origin
-  immutable `/assets/` files are answered cache-first from the versioned asset
-  cache, and a navigation's background refresh prefetches the new shell's
-  preloads, stylesheets, scripts and the two surface `<meta>` lists before
-  replacing the shell. Storing is an optimisation, never a precondition: a
-  network-side failure (a request error, a response that is not a clean 200 of
-  the expected content type, `no-store`) or the time limit keeps the previous
-  shell, while a storage-side failure (quota, `Vary: *`) must not block the
-  update. A candidate release first removes what neither the cached shell nor
-  a shell in progress references, so failed candidates do not accumulate; the
-  cache size stated in the ADR is an estimate for the normal path, not a hard
-  bound.
-  The worker does not precache the whole build, does not intercept the
-  TradingView files, and keeps the navigation bypass list, the `?lang=`
-  network-first rule and the cacheable-shell checks. A font or asset response
-  is cloned before it is handed to the page, never afterwards. The current
-  cache names, limits and the release-switch probe live in the ADR.
+- The service worker updates the cached application shell exactly as v10
+  did: every navigation that receives a cacheable shell stores it, whatever
+  happens to the assets ([ADR 0051](adr/0051-service-worker-startup-asset-cache.md)).
+  Same-origin immutable `/assets/` files are answered cache-first from the
+  versioned asset cache, and only responses that are a clean 200 of the
+  expected content type and not `no-store` are stored. When a navigation
+  replaces the shell with a different one, a serial, best-effort background
+  refresh keeps only the assets of the new and the previous shell and fetches
+  the new shell's preloads, stylesheets, scripts and the two surface `<meta>`
+  lists; it is capped by a time limit, skipped when a newer shell has been
+  stored, and its failures never affect the shell. The worker does not
+  precache the whole build, does not intercept the TradingView files, and
+  keeps the navigation bypass list, the `?lang=` network-first rule and the
+  cacheable-shell checks. A font or asset response is cloned before it is
+  handed to the page, never afterwards. Cache names, limits and the
+  release-switch probe live in the ADR.
 
 ### Important Files
 
