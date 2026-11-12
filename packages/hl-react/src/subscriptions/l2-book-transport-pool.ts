@@ -3,10 +3,13 @@ import { type FrameReceipt, markFrameReceivedAt, receiveFrameNow } from "../inte
 import { getNetworkState, subscribeNetworkStatus } from "../internal/websocket/network-status";
 import { WS_RELIABILITY_LIMITS } from "../internal/websocket/reliability";
 import { getReceiptAgeMs } from "../internal/websocket/staleness";
+import { type ProbedWebSocket, probeLiveness } from "../internal/websocket/transport-monitor";
 import { getVisibilityState, subscribeVisibility } from "../internal/websocket/visibility";
 
 interface BookTransport extends ISubscriptionTransport {
 	close(): void;
+	/** The SDK `WebSocketTransport` socket; without it a transport is judged by its book frames alone. */
+	socket?: ProbedWebSocket & { readonly readyState: number };
 }
 
 interface BookPayload {
@@ -29,6 +32,7 @@ interface PoolEntry {
 	leases: number;
 	disposed: boolean;
 	idleTimer?: ReturnType<typeof setTimeout>;
+	stopProbe?: () => void;
 	payloadLeases: Map<string, number>;
 	latestFrames: Map<string, RememberedFrame>;
 }
@@ -79,6 +83,7 @@ export function createL2BookTransportPool(createTransport: (isTestnet: boolean) 
 		if (entry.disposed) return;
 		entry.disposed = true;
 		clearTimeout(entry.idleTimer);
+		entry.stopProbe?.();
 		entry.latestFrames.clear();
 		if (entries.get(key) === entry) entries.delete(key);
 		if (entries.size === 0) stopWatchingResume?.();
@@ -89,15 +94,30 @@ export function createL2BookTransportPool(createTransport: (isTestnet: boolean) 
 	// one that died without a close event would otherwise stay silent until the SDK keep-alive gives
 	// up on it, up to forty seconds after the page is back. A transport that has delivered no book
 	// frame for as long as its stream may stay quiet is closed when the page or the network returns;
-	// its consumers fail and subscribe again on a new connection. A book that kept receiving frames
-	// in a background tab is left alone. Heartbeat answers and confirmations do not count: a
-	// connection that carries no book data is not worth keeping either.
+	// its consumers fail and subscribe again on a new connection. Heartbeat answers and confirmations
+	// do not count there: a connection that carries no book data is not worth keeping either. Every
+	// other transport is sent a heartbeat and closed when no answer follows, because book frames the
+	// kernel buffered while the page was suspended can arrive first and make a dead one look fresh.
+	// Hiding the page, losing the network or starting a newer heartbeat abandons the pending one. A
+	// socket that is still connecting would only buffer the heartbeat, so the answer time would measure
+	// the handshake; it is left to the connection timeout and the silence rule.
 	function closeSilentTransports() {
 		if (getNetworkState() === "offline") return;
 		for (const [key, entry] of [...entries]) {
 			const { receivedAt, monotonicReceivedAt } = entry.lastFrame;
+			const socket = entry.transport.socket;
+			entry.stopProbe?.();
 			if (getReceiptAgeMs(receivedAt, monotonicReceivedAt) >= getSilenceLimitMs(entry)) remove(key, entry);
+			else if (socket?.readyState === 1)
+				entry.stopProbe = probeLiveness(socket, WS_RELIABILITY_LIMITS.transport.resumeProbeTimeoutMs, (alive) => {
+					entry.stopProbe = undefined;
+					if (!alive) remove(key, entry);
+				});
 		}
+	}
+
+	function stopProbes() {
+		for (const entry of entries.values()) entry.stopProbe?.();
 	}
 
 	function watchResume() {
@@ -107,6 +127,7 @@ export function createL2BookTransportPool(createTransport: (isTestnet: boolean) 
 		const detachVisibility = subscribeVisibility((state) => {
 			if (state === "hidden") {
 				wasHidden = true;
+				stopProbes();
 				return;
 			}
 			if (!wasHidden) return;
@@ -116,6 +137,7 @@ export function createL2BookTransportPool(createTransport: (isTestnet: boolean) 
 		const detachNetwork = subscribeNetworkStatus((state) => {
 			if (state === "offline") {
 				wasOffline = true;
+				stopProbes();
 				return;
 			}
 			if (!wasOffline) return;

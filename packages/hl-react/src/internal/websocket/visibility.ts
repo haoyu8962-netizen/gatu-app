@@ -27,11 +27,6 @@ function handleFreeze() {
 	notify();
 }
 
-function handleResume() {
-	currentState = "visible";
-	notify();
-}
-
 function notify() {
 	if (!listeners) return;
 	for (const listener of listeners) {
@@ -43,7 +38,9 @@ function attach() {
 	document.addEventListener("visibilitychange", handleVisibilityChange);
 	window.addEventListener("pageshow", handlePageShow);
 	document.addEventListener("freeze", handleFreeze);
-	document.addEventListener("resume", handleResume);
+	// Chromium can unfreeze a page that is still in the background; `resume` reports the page's
+	// actual visibility, so the later return to the foreground is still announced.
+	document.addEventListener("resume", handleVisibilityChange);
 	currentState = document.hidden ? "hidden" : "visible";
 }
 
@@ -51,7 +48,7 @@ function detach() {
 	document.removeEventListener("visibilitychange", handleVisibilityChange);
 	window.removeEventListener("pageshow", handlePageShow);
 	document.removeEventListener("freeze", handleFreeze);
-	document.removeEventListener("resume", handleResume);
+	document.removeEventListener("resume", handleVisibilityChange);
 }
 
 export function subscribeVisibility(listener: VisibilityListener): () => void {

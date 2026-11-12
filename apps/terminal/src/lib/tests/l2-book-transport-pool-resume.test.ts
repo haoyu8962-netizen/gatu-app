@@ -7,9 +7,22 @@ type Listener = (event: CustomEvent<unknown>) => void;
 
 let createL2BookTransportPool: typeof import("../../../../../packages/hl-react/src/subscriptions/l2-book-transport-pool").createL2BookTransportPool;
 
+class FakeSocket extends EventTarget {
+	readyState = 1;
+	buffered: string[] = [];
+	send = vi.fn((data: string) => {
+		if (this.readyState !== 1) this.buffered.push(data);
+	});
+
+	pong() {
+		this.dispatchEvent(new MessageEvent("message", { data: '{"channel":"pong"}' }));
+	}
+}
+
 function createTransport() {
 	const registrations = new Set<{ listener: Listener; onError?: (error: TransportError) => void }>();
 	return {
+		socket: new FakeSocket(),
 		close: vi.fn(() => {
 			for (const registration of [...registrations]) {
 				registrations.delete(registration);
@@ -193,6 +206,121 @@ describe("order book transports after the page or the network returns", () => {
 
 		expect(transports[1].close).toHaveBeenCalledOnce();
 		expect(onError).toHaveBeenCalledOnce();
+	});
+
+	it("sends a heartbeat to a transport that still looks alive and closes it when no answer follows", async () => {
+		const { transports, subscribe } = createHarness();
+		const { onError } = await subscribe({ coin: "HYPE" });
+
+		setHidden(true);
+		await vi.advanceTimersByTimeAsync(10_000);
+		setHidden(false);
+		expect(transports[0].socket.send).toHaveBeenCalledExactlyOnceWith('{"method":"ping"}');
+		transports[0].emit("HYPE");
+		transports[0].emit("BTC");
+		await vi.advanceTimersByTimeAsync(2_499);
+		expect(transports[0].close).not.toHaveBeenCalled();
+
+		await vi.advanceTimersByTimeAsync(1);
+		expect(transports[0].close).toHaveBeenCalledOnce();
+		expect(onError).toHaveBeenCalledOnce();
+
+		await subscribe({ coin: "HYPE" });
+		expect(transports).toHaveLength(2);
+	});
+
+	it("keeps a transport that answers the heartbeat", async () => {
+		const { transports, subscribe } = createHarness();
+		const { onError } = await subscribe({ coin: "HYPE" });
+
+		setHidden(true);
+		await vi.advanceTimersByTimeAsync(10_000);
+		setHidden(false);
+		await vi.advanceTimersByTimeAsync(1_000);
+		transports[0].socket.pong();
+		await vi.advanceTimersByTimeAsync(5_000);
+
+		expect(transports[0].close).not.toHaveBeenCalled();
+		expect(onError).not.toHaveBeenCalled();
+	});
+
+	it.each([
+		["the page was hidden again", () => setHidden(true)],
+		["the network dropped", () => setOnline(false)],
+	])("does not close a transport whose heartbeat went unanswered after %s", async (_case, interrupt) => {
+		const { transports, subscribe } = createHarness();
+		await subscribe({ coin: "HYPE" });
+
+		setHidden(true);
+		setHidden(false);
+		expect(transports[0].socket.send).toHaveBeenCalledOnce();
+		interrupt();
+		await vi.advanceTimersByTimeAsync(5_000);
+
+		expect(transports[0].close).not.toHaveBeenCalled();
+	});
+
+	it.each([
+		["the page is hidden", () => setHidden(true), () => setHidden(false)],
+		["the network drops", () => setOnline(false), () => setOnline(true)],
+	])(
+		"gives a new heartbeat its full time when %s and returns before the old one ran out",
+		async (_case, leave, back) => {
+			const { transports, subscribe } = createHarness();
+			await subscribe({ coin: "HYPE" });
+
+			setHidden(true);
+			setHidden(false);
+			await vi.advanceTimersByTimeAsync(100);
+			leave();
+			await vi.advanceTimersByTimeAsync(2_300);
+			back();
+			expect(transports[0].socket.send).toHaveBeenCalledTimes(2);
+			await vi.advanceTimersByTimeAsync(2_499);
+			expect(transports[0].close).not.toHaveBeenCalled();
+
+			transports[0].socket.pong();
+			await vi.advanceTimersByTimeAsync(5_000);
+			expect(transports[0].close).not.toHaveBeenCalled();
+		},
+	);
+
+	it.each([2, 3])("leaves a connection in ready state %i to its close path instead of probing it", async (state) => {
+		const { transports, subscribe } = createHarness();
+		await subscribe({ coin: "HYPE" });
+		transports[0].socket.readyState = state;
+
+		setHidden(true);
+		setHidden(false);
+
+		expect(transports[0].socket.send).not.toHaveBeenCalled();
+	});
+
+	it("does not time a heartbeat against a connection that is still opening", async () => {
+		const { transports, subscribe } = createHarness();
+		const { onError } = await subscribe({ coin: "HYPE" });
+		transports[0].socket.readyState = 0;
+
+		setHidden(true);
+		setHidden(false);
+		await vi.advanceTimersByTimeAsync(5_000);
+
+		expect(transports[0].socket.send).not.toHaveBeenCalled();
+		expect(transports[0].socket.buffered).toEqual([]);
+		expect(transports[0].close).not.toHaveBeenCalled();
+		expect(onError).not.toHaveBeenCalled();
+	});
+
+	it("abandons the heartbeat of a transport that is closed for another reason", async () => {
+		const { transports, subscribe } = createHarness();
+		const { onError } = await subscribe({ coin: "HYPE" });
+		const removeListener = vi.spyOn(transports[0].socket, "removeEventListener");
+
+		setHidden(true);
+		setHidden(false);
+		transports[0].close();
+		expect(onError).toHaveBeenCalledOnce();
+		expect(removeListener).toHaveBeenCalledWith("message", expect.any(Function));
 	});
 
 	it("judges a transport opened in a background tab by the time since it was opened", async () => {

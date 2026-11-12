@@ -765,9 +765,16 @@ transport. Adding account subscriptions must not disturb market subscriptions.
   - `transport-monitor.ts` (the shared socket): a socket that is not open has its
     backoff skipped; an open socket that has been silent for the inactivity
     threshold is replaced at once; any other open socket is sent a heartbeat and
-    replaced only if no frame arrives within `resumeProbeTimeoutMs`. A socket
-    that keeps receiving frames is never replaced because the page became
+    replaced only if no heartbeat answer (`{"channel":"pong"}`) arrives within
+    `resumeProbeTimeoutMs`. Other frames do not count as the answer: a phone
+    that was suspended can deliver frames the kernel buffered before the
+    connection died, and they arrive before or right after the visibility
+    event. A socket that answers is never replaced because the page became
     visible: a desktop tab switch must not reset every stream and the chart.
+    `probeLiveness` is the one implementation of the heartbeat, shared with the
+    order-book pool; it parses only frames of at most forty characters and
+    requires `channel === "pong"`, so market data is never parsed and an error
+    frame that mentions pong does not count; the SDK keep-alive's own answers do.
   - `store.ts`: a subscription waiting out its retry backoff or its cooldown
     retries at once, and its failure count starts over, as it does when a
     cooldown ends: a retry that fails backs off from the first delay instead of
@@ -778,7 +785,15 @@ transport. Adding account subscriptions must not disturb market subscriptions.
     no `l2Book` frame for its stream's staleness threshold is closed, and its
     consumers subscribe again on a new connection inside the pool's connection
     budget. An `l2Book` frame for any coin on the connection counts; heartbeat
-    answers and subscription confirmations do not.
+    answers and subscription confirmations do not. Every other open transport
+    (`readyState === 1`) is sent a heartbeat through its SDK socket and closed
+    when no answer arrives within `resumeProbeTimeoutMs`, even while it keeps
+    receiving book frames, because buffered frames can make a dead connection
+    look fresh at that moment. A connection still opening is not probed: rews
+    would buffer the heartbeat, and the timer would measure the handshake. Each
+    transport keeps the cancel function of its probe; hiding the page, going
+    offline, removing the transport or starting a newer probe cancels it, so a
+    return before the old probe ran out gets a full answer time.
   - `patches/@nktkas__rews@4.1.0.patch`: `reconnect()` and `close()` do not wait
     for the old socket's `close` event, which Chromium fires for a half-open
     connection only after sixty seconds. Never add a path that waits for a
@@ -787,6 +802,72 @@ transport. Adding account subscriptions must not disturb market subscriptions.
   real engines. Re-run it, and `websocket-half-open-reconnect.test.ts`, when
   `@nktkas/rews` or the SDK changes: the patch is pinned to rews 4.1.0, and pnpm
   refuses to install when it no longer applies.
+- While the page stays visible and online, the shared socket is checked every
+  `checkIntervalMs`: one that has received no frame for `quietProbeThresholdMs`
+  (15 seconds, the silence after which the official terminal reconnects) is
+  sent one heartbeat and replaced only when no answer follows within
+  `quietProbeTimeoutMs` (5 seconds, wider than the 2.5-second resume probe
+  because nobody is waiting on a placeholder yet); a second probe is not sent
+  while one is pending. The worst case from the last frame to a reconnect is
+  15 + 5 + 5 seconds. The 45-second `inactivityThresholdMs` remains
+  a backstop that replaces the socket without asking. A quiet page with only
+  low-frequency user streams therefore sends a heartbeat about every fifteen to
+  twenty seconds, in addition to the SDK keep-alive every thirty.
+- `visibility.ts` takes the page's state from `document.hidden` on `resume`:
+  Chromium can unfreeze a page that is still in the background, and marking it
+  visible then would swallow the real return, so no resume recovery would run.
+- Compressed channels (`pac`, `sac`, `fastAssetCtxs`) decode through
+  `subscriptions/compact-asset-ctxs.ts`, which `CompactSubscriptionClient` uses
+  in place of the SDK decoder for `fastAssetCtxs`: the SDK chains every frame on
+  one promise, so one frame that failed to decode, or a listener that threw,
+  left the stream silent while it still looked subscribed. A failing frame now
+  ends the subscription through `onError`. Frames arrive under TLS integrity
+  protection, so a decode failure is deterministic and a retry cannot help;
+  the store also clears its retry count whenever a subscription is confirmed,
+  so retries would loop at the shortest delay. The first failure of
+  `fastAssetCtxs` on a transport (decoding, the listener or the backlog)
+  therefore locks the channel on that transport: later subscriptions on it are
+  rejected without reaching the server, the store backs off normally, nothing
+  clears the lock, and a new transport (a reload or another network) starts
+  clean. The locking failure and every later rejection are a
+  `FastAssetCtxsLockedError` (exported from `@sairn/hl-react`; the store keeps
+  the original error object). `useMarketsInfo` stops subscribing to
+  `fastAssetCtxs` for the life of the hook only on that error, and reports it
+  once per page as `market_ctxs_fast_fallback`. Any other error (a refused or
+  timed-out request, a lost connection) is transient: the store retries with
+  its own backoff, fast prices return when it recovers, and rows show
+  placeholders meanwhile instead of switching to context prices. A browser without
+  `DecompressionStream("deflate-raw")` subscribes to none of the three. Without
+  fast prices, `useMarketsInfo` prices each row from its own context (`pac` /
+  `sac` or `allDexsAssetCtxs` / `spotAssetCtxs`, with the receipt time of the
+  channel that supplied it), and those four subscriptions then use
+  `LIVE_MARK_MAX_STALE_MS` (10 seconds) as their staleness threshold. The
+  watchdog checks every five seconds, so a context is marked stale 10 to 15
+  seconds after its receipt and is then no longer `success`. The interval of
+  the context channels is not guaranteed by the exchange; observed frames
+  every three to four seconds, throttled to five, keep the receipt age under
+  about nine seconds, and whether a phone sees false staleness is not
+  verified. Switching from fast prices to this path at runtime changes the
+  threshold, which is a dependency of `useSub`'s effect: each context
+  subscription is released and subscribed again once, its snapshot is
+  dropped, and row prices show placeholders until the new snapshot arrives.
+  That one-time gap is accepted; the store does not update thresholds in
+  place. A browser without decompression uses the ten-second threshold from
+  the start and never switches. Execution guards do not read these row prices.
+  The selected market's order form takes its price from `activeAssetCtx` /
+  `activeSpotAssetCtx`, and the close paths check a ten-second monotonic
+  receipt age (`isLiveExecutionPriceReceiptFresh`).
+- Hyperliquid limits each IP address to 10 WebSocket connections and 30 new
+  connections a minute. One terminal tab holds at most five: the shared socket
+  and four pooled order-book transports, so two tabs reach the limit. The pool
+  opens at most 24 order-book connections a minute; the shared socket's
+  reconnects are outside that budget, so nothing caps one tab at 30 a minute. The phone layout does not warm a full-depth
+  order-book connection at startup (`lib/trade/orderbook-boot.ts`), because its
+  trade page reads the compact book. The official terminal tells the user to
+  close other tabs when the server refuses a connection with a reason starting
+  `Cannot open more than`; this terminal does not recognise that reason yet,
+  and a notice for it is a new category of passive data notice that
+  `docs/mobile-data-presentation.md` would have to admit first.
 
 ### Important Files
 

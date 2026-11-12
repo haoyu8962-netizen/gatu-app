@@ -645,6 +645,23 @@ changes, not evidence that a build has been deployed or accepted on real devices
   tabs does not reset the chart. Opening the terminal in a background tab no longer leaves market
   data blank until the next update. Not yet confirmed on a phone, and the white screen that iOS
   shows before the page appears is not addressed by this change (ADR 0050).
+- A connection that died while the phone was in the background is no longer mistaken for a live one
+  because data held back during the suspension arrives first: the terminal now waits for the
+  server's answer to a heartbeat, both on the main connection and on order-book connections, and
+  replaces the connection within a few seconds when it does not come. While the page stays open, a
+  connection that has been quiet for fifteen seconds is checked the same way, as on the official
+  terminal, and given five seconds to answer, instead of waiting forty-five seconds. An order-book
+  connection that is still being set up is no longer closed for missing that answer. Pages that
+  Chrome unfreezes while still in the background now recover when they are actually shown. Not yet
+  confirmed on a phone (ADR 0050).
+- Live mark and mid prices for the market list no longer stop silently after one damaged update.
+  If that stream delivers data the terminal cannot read, the list switches to prices from the regular
+  market data instead of retrying it endlessly, and the list prices are briefly blank while that
+  data reloads once. A brief connection problem is retried as before and the live prices come back. Browsers
+  that cannot decompress the compact channels use those prices from the start. These prices count
+  as current only while the data is about ten seconds old or newer.
+- On a phone, opening a trade page no longer opens an extra order-book connection that the phone
+  layout does not use, which leaves more room under the exchange's per-address connection limit.
 - A cross order larger than the account can open now shows a liquidation price. This covers a new
   position or an add to a position in the same direction, including from an empty account or when the
   fee would use up the equity. As on the official terminal, the estimate assumes the account is topped

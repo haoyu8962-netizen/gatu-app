@@ -1,4 +1,5 @@
 import { warmL2BookSubscription } from "@sairn/hl-react";
+import { MOBILE_MEDIA_QUERY } from "@/hooks/use-mobile";
 import { getTradeRouteMarketFromPath, isSafeTradeRouteMarketName } from "@/lib/hyperliquid/market-route";
 import { isTestnet } from "@/lib/network";
 import { getStoredSelectedMarket } from "@/stores/use-market-store";
@@ -28,10 +29,12 @@ export function getBootOrderbookCoin(pathname: string): string | undefined {
 /**
  * Opens the pooled order-book stream for the market a trade route names while the catalog loads.
  * The panel that mounts later joins the confirmed subscription and renders the freshest snapshot
- * in its first data commit instead of waiting for a new socket and a subscribe round trip.
+ * in its first data commit instead of waiting for a new socket and a subscribe round trip. The phone
+ * layout opens on the order form, whose compact book reads the incremental `l2` feed or the fast
+ * stream, so a full-depth connection there would only hold one of the ten an address may open.
  */
 export function bootOrderbook(pathname: string): void {
-	if (typeof window === "undefined") return;
+	if (typeof window === "undefined" || window.matchMedia?.(MOBILE_MEDIA_QUERY).matches) return;
 	const coin = getBootOrderbookCoin(pathname);
 	if (!coin) return;
 	releaseWarmOrderbook?.();
