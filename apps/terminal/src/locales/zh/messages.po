@@ -3495,6 +3495,7 @@ msgstr "复制失败"
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/trade-panel.tsx
 #: src/config/ui-text.ts
+#: src/lib/errors/action-error.ts
 msgid "Failed to enable trading"
 msgstr "启用交易失败"
 
@@ -10593,6 +10594,7 @@ msgstr "双边开放利益：该合约上的多头和空头头寸之和。"
 msgid "Type"
 msgstr "类型"
 
+#: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/positions/send-modal.tsx
 msgid "Unable to check the destination address. Nothing was sent."
 msgstr "无法检查目标地址，未发送任何资产。"

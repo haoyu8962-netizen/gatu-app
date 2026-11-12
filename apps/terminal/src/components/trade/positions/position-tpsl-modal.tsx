@@ -1,6 +1,10 @@
 import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
 import { WarningIcon } from "@phosphor-icons/react";
+import {
+	assertExchangeSigningDeadline,
+	startExchangeActionDeadline,
+} from "@sairn/hl-react/internal/exchange/request-scheduler";
 import { Button, Checkbox, ModalContent, ModalFooter, ModalHeader, ModalTitle } from "@sairn/ui";
 import { useId, useLayoutEffect, useRef, useState } from "react";
 import { DataPendingState } from "@/components/ui/data-pending-state";
@@ -176,6 +180,17 @@ class PositionTpSlExecutionContextError extends Error {
 		);
 		this.name = "PositionTpSlExecutionContextError";
 	}
+}
+
+class PositionTpSlReplacementDeadlineError extends Error {
+	constructor() {
+		super();
+		this.name = "PositionTpSlReplacementDeadlineError";
+	}
+}
+
+function isExchangeActionDeadlineError(error: unknown): boolean {
+	return error instanceof Error && error.name === "ExchangeActionDeadlineError";
 }
 
 function applyCompletedTpSlCancels(
@@ -533,6 +548,7 @@ function PositionTpSlForm({
 		if (uncertain) return { kind: "reconciling" };
 		if (error instanceof PositionTpSlFreshStateError) return { kind: "trading-data-changed" };
 		if (error instanceof PositionTpSlExecutionContextError) return { kind: error.reason };
+		if (error instanceof PositionTpSlReplacementDeadlineError) return { kind: "failed" };
 		if (error instanceof PositionTpSlMutationResponseError) return error.failure ?? { kind: "failed" };
 		return getOrderSubmissionFeedback(error) ?? classifyTradingActionError(error) ?? { kind: "failed" };
 	}
@@ -1038,6 +1054,7 @@ function PositionTpSlForm({
 
 	async function handleSubmit() {
 		if (!canSubmit || workflowSubmittingRef.current || amountInteractionSnapshotRef.current) return;
+		const deadline = startExchangeActionDeadline();
 		workflowSubmittingRef.current = true;
 		setIsWorkflowSubmitting(true);
 		setIsSubmitted(true);
@@ -1082,6 +1099,7 @@ function PositionTpSlForm({
 						throw new PositionTpSlExecutionContextError("market-context-mismatch");
 					}
 					await assertFreshWorkflowContext(workflowOrders);
+					assertExchangeSigningDeadline(deadline);
 
 					// Trigger replacement is deliberately cancel-then-place. Hyperliquid's
 					// batchModify replacement flag can place even when its cancel fails.
@@ -1097,9 +1115,9 @@ function PositionTpSlForm({
 						}
 					}
 					if (workflowOrders.length > 0) {
-						mutationStarted = true;
 						activeStep = "place";
 						activeExpectedCount = workflowOrders.length;
+						mutationStarted = true;
 						const submission = await submitOrder(
 							{ orders: workflowOrders, grouping: "positionTpsl" },
 							{
@@ -1120,7 +1138,11 @@ function PositionTpSlForm({
 						completedMutation = true;
 					}
 					return { state: "confirmed" } as const;
-				} catch (error) {
+				} catch (caught) {
+					const error =
+						completedMutation && activeStep === "place" && isExchangeActionDeadlineError(caught)
+							? new PositionTpSlReplacementDeadlineError()
+							: caught;
 					const apiResolution =
 						activeExpectedCount > 0 && isApiOrderResponseError(error)
 							? activeStep === "cancel"
@@ -1140,7 +1162,8 @@ function PositionTpSlForm({
 					const replacementRefused =
 						completedMutation &&
 						activeStep === "place" &&
-						(error instanceof PositionTpSlExecutionContextError ||
+						(error instanceof PositionTpSlReplacementDeadlineError ||
+							error instanceof PositionTpSlExecutionContextError ||
 							error instanceof PositionTpSlFreshStateError ||
 							(isOrderBatchResolutionError(error) && error.resolution.status === "rejected") ||
 							(isApiOrderResponseError(error) && apiResolution?.status === "rejected"));

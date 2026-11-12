@@ -612,6 +612,26 @@ describe("useExplicitAgentApproval", () => {
 		expect(testState.clientApproveAgent).not.toHaveBeenCalled();
 	});
 
+	it("binds the approval client to the click deadline and reports a late signature as the deadline error", async () => {
+		const hook = await renderApprovalHook();
+		const deadline = {
+			current: { queuedAt: Date.now(), queuedAtMonotonic: performance.now(), deadlineMs: 15_000 },
+		};
+		testState.clientApproveAgent.mockRejectedValueOnce(
+			Object.assign(new Error("Failed to sign typed data"), {
+				name: "AbstractWalletError",
+				cause: new ExchangeActionDeadlineError(),
+			}),
+		);
+
+		await expect(hook.mutateAsync({ agentAddress: AGENT, agentName: "Mobile" }, { deadline })).rejects.toBeInstanceOf(
+			ExchangeActionDeadlineError,
+		);
+
+		expect(testState.createExchangeClient).toHaveBeenCalledOnce();
+		expect(testState.createExchangeClient.mock.calls[0]?.[4]).toBe(deadline);
+	});
+
 	it("does not create a signer or dispatch when already aborted", async () => {
 		const hook = await renderApprovalHook();
 		const controller = new AbortController();

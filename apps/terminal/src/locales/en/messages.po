@@ -3495,6 +3495,7 @@ msgstr "Failed to copy"
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/trade-panel.tsx
 #: src/config/ui-text.ts
+#: src/lib/errors/action-error.ts
 msgid "Failed to enable trading"
 msgstr "Failed to enable trading"
 
@@ -10593,6 +10594,7 @@ msgstr "Two-sided open interest: the sum of long and short positions on this con
 msgid "Type"
 msgstr "Type"
 
+#: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/positions/send-modal.tsx
 msgid "Unable to check the destination address. Nothing was sent."
 msgstr "Unable to check the destination address. Nothing was sent."

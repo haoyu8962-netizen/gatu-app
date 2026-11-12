@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 
+import { i18n } from "@lingui/core";
 import { ApiRequestError } from "@nktkas/hyperliquid";
 import { act } from "react";
 import type { Root } from "react-dom/client";
@@ -15,6 +16,7 @@ import {
 	removeFundsActionMarker,
 } from "../../funds-action/funds-action-marker";
 import type { StakingActionSubmission } from "../domain/staking";
+import { getStakingActionFailureNotice } from "../domain/staking-action-feedback";
 import {
 	buildStakingRecoverySubmission,
 	type StakingActionsController,
@@ -785,5 +787,144 @@ describe("useStakingActions orchestration", () => {
 		await act(async () => submission);
 		expect(current().active).toBeNull();
 		expect(findPendingFundsAction("Mainnet", OWNER)).not.toBeNull();
+	});
+
+	describe("when the checks before the request finish long after the confirmation", () => {
+		function resolveAfter<T>(ms: number, value: T): Promise<T> {
+			return new Promise((resolve) => {
+				setTimeout(() => resolve(value), ms);
+			});
+		}
+
+		const preflightChecks = [
+			[
+				"the legal status",
+				(ms: number) => {
+					mocks.legalRefetch.mockImplementationOnce(() =>
+						resolveAfter(ms, {
+							data: { acceptedTerms: true, userAllowed: true, canPerformActions: true },
+							error: null,
+						}),
+					);
+				},
+			],
+			[
+				"the location check",
+				(ms: number) => {
+					mocks.geo.mockImplementationOnce(() =>
+						resolveAfter(ms, { checkedAt: Date.now(), country: "GB", status: "allowed", ttlMs: 60_000 }),
+					);
+				},
+			],
+			[
+				"the account snapshot",
+				(ms: number) => {
+					mocks.afterPreflight.mockImplementationOnce(() => resolveAfter(ms, undefined));
+				},
+			],
+		] as const;
+
+		function delayMarkerLock(ms: number) {
+			mocks.acquire.mockImplementationOnce(() => resolveAfter(ms, true));
+		}
+
+		function confirmDepositInHistory() {
+			mocks.methods.cDeposit.mockImplementationOnce(async () => {
+				mocks.preflight.spot = { balances: [{ coin: "HYPE", token: 150, total: "8", hold: "0" }] };
+				mocks.preflight.summary = {
+					delegated: "5",
+					undelegated: "12",
+					totalPendingWithdrawal: "0",
+					nPendingWithdrawals: 0,
+				};
+				mocks.history = history();
+				return { status: "ok" };
+			});
+		}
+
+		async function confirmAndWait(ms: number) {
+			const wallClock = Date.now();
+			const monotonicClock = performance.now();
+			act(() => current().review(cDeposit()));
+			let submission!: Promise<void>;
+			act(() => {
+				submission = current().submit();
+			});
+			await act(async () => {
+				await vi.advanceTimersByTimeAsync(ms);
+				await vi.runAllTimersAsync();
+				await submission;
+			});
+			expect(Date.now() - wallClock).toBeGreaterThanOrEqual(ms);
+			expect(performance.now() - monotonicClock).toBeGreaterThanOrEqual(ms);
+		}
+
+		function expectRequestNotSubmitted() {
+			for (const method of Object.values(mocks.methods)) expect(method).not.toHaveBeenCalled();
+			expect(mocks.sdkBoundaryEvents).toEqual(["spotRead:1"]);
+			const session = current().active;
+			expect(session).toMatchObject({
+				state: { stage: "done", result: "apiError" },
+				errorMessage: "preflightFailed",
+				failure: null,
+				match: null,
+			});
+			const notice = getStakingActionFailureNotice("apiError", session?.errorMessage, session?.failure ?? null);
+			expect(i18n._(notice.title)).toBe("Request not submitted");
+			expect(findPendingFundsAction("Mainnet", OWNER)).toBeNull();
+			expect(current().hasPendingMarker).toBe(false);
+			expect(current().isLocked).toBe(false);
+		}
+
+		beforeEach(() => {
+			vi.useFakeTimers();
+		});
+
+		it.each(preflightChecks)(
+			"never submits or claims the pending slot when %s answers 16 seconds after the confirmation",
+			async (_check, delay) => {
+				delay(16_000);
+				await confirmAndWait(16_000);
+
+				expectRequestNotSubmitted();
+				expect(mocks.acquire).not.toHaveBeenCalled();
+				expect(current().active?.reference).toBeNull();
+			},
+		);
+
+		it("releases the pending slot without submitting when the marker lock is granted 16 seconds after the confirmation", async () => {
+			delayMarkerLock(16_000);
+			await confirmAndWait(16_000);
+
+			expectRequestNotSubmitted();
+			expect(mocks.acquire).toHaveBeenCalledOnce();
+			expect(current().active?.reference).toMatchObject({ method: "cDeposit", atomicAmount: "200000000" });
+		});
+
+		it("gives the next confirmation a limit of its own", async () => {
+			preflightChecks[0][1](16_000);
+			await confirmAndWait(16_000);
+			expectRequestNotSubmitted();
+
+			confirmDepositInHistory();
+			act(() => current().retry());
+			await act(async () => current().submit());
+
+			expect(mocks.methods.cDeposit).toHaveBeenCalledExactlyOnceWith({ wei: 200_000_000 });
+			expect(current().active?.state).toEqual({ stage: "done", result: "success" });
+		});
+
+		it.each([...preflightChecks, ["the marker lock", delayMarkerLock]] as const)(
+			"submits once when %s answers 14 seconds after the confirmation",
+			async (_check, delay) => {
+				confirmDepositInHistory();
+				delay(14_000);
+				await confirmAndWait(14_000);
+
+				expect(mocks.methods.cDeposit).toHaveBeenCalledExactlyOnceWith({ wei: 200_000_000 });
+				expect(current().active).toMatchObject({ state: { stage: "done", result: "success" }, match: { hash: HASH } });
+				expect(findPendingFundsAction("Mainnet", OWNER)).toBeNull();
+			},
+		);
 	});
 });

@@ -1,19 +1,27 @@
 // @vitest-environment jsdom
 
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { i18n } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
+import { ExchangeActionDeadlineError } from "@sairn/hl-react/internal/exchange/request-scheduler";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { ReferralActionStatusUnknownError, useReferralActions } from "@/hooks/trade/use-referral-actions";
-import { classifyActionErrorOr, formatActionFailure } from "@/lib/errors/action-error";
+import {
+	type ReferralAction,
+	ReferralActionStatusUnknownError,
+	useReferralActions,
+} from "@/hooks/trade/use-referral-actions";
+import { classifyActionErrorOr, formatActionFailure, isAmbiguousExchangeActionError } from "@/lib/errors/action-error";
 import type { ReferralData } from "@/lib/trade/referral";
 import type { Translate } from "@/lib/translate";
 
 const OWNER = "0x1111111111111111111111111111111111111111" as const;
 const OTHER_OWNER = "0x2222222222222222222222222222222222222222" as const;
 const GEO_BLOCKED = msg`Referral actions are not available in your region. This referral request was not submitted.`;
+const REFERRAL_FAILURE = msg`Referral request could not be completed.`;
 const translate: Translate = (descriptor) => i18n._(descriptor);
 
 const testState = vi.hoisted(() => ({
@@ -21,6 +29,7 @@ const testState = vi.hoisted(() => ({
 	clientKey: "0x1111111111111111111111111111111111111111" as string,
 	env: "Mainnet" as "Mainnet" | "Testnet",
 	executionGuards: {} as Record<string, (() => void) | undefined>,
+	geoDelayMs: 0,
 	geoDecision: {
 		checkedAt: 0,
 		country: "GB",
@@ -41,7 +50,10 @@ const testState = vi.hoisted(() => ({
 }));
 
 vi.mock("@/lib/geo/get-referral-action-geo", () => ({
-	getReferralActionGeo: vi.fn(async () => testState.geoDecision),
+	getReferralActionGeo: vi.fn(async () => {
+		if (testState.geoDelayMs > 0) await new Promise((resolve) => setTimeout(resolve, testState.geoDelayMs));
+		return testState.geoDecision;
+	}),
 }));
 
 vi.mock("@/lib/hyperliquid", async (importOriginal) => {
@@ -130,6 +142,7 @@ describe("useReferralActions", () => {
 		testState.clientKey = OWNER;
 		testState.env = "Mainnet";
 		testState.executionGuards = {};
+		testState.geoDelayMs = 0;
 		testState.geoDecision = {
 			checkedAt: Date.now(),
 			country: "GB",
@@ -263,7 +276,7 @@ describe("useReferralActions", () => {
 			rejection = await hook.submit("apply", "SAIRN").catch((error: unknown) => error);
 		});
 
-		const failure = classifyActionErrorOr(rejection, msg`Referral request could not be completed.`);
+		const failure = classifyActionErrorOr(rejection, REFERRAL_FAILURE);
 		expect(failure).toEqual(GEO_BLOCKED);
 		expect(formatActionFailure(failure, translate)).toBe(
 			"Referral actions are not available in your region. This referral request was not submitted.",
@@ -397,5 +410,158 @@ describe("useReferralActions", () => {
 		await rejection;
 		expect(testState.registerReferrer).toHaveBeenCalledOnce();
 		expect(refetchReferral).toHaveBeenCalledTimes(7);
+	});
+
+	describe("when the checks before the request finish long after the confirmation", () => {
+		const LEGAL_ACCESS = {
+			data: { acceptedTerms: true, canUseReferrals: true, userAllowed: true },
+			error: null,
+		};
+		const NOT_SENT = "The checks before this request took too long. Nothing was signed or sent. Try again.";
+		const CASES: [ReferralAction, string | undefined][] = [
+			["apply", "SAIRN"],
+			["create", "MYCODE"],
+			["claim", undefined],
+		];
+
+		function answerLegalCheckAfter(ms: number) {
+			testState.legalRefetch.mockImplementation(
+				() => new Promise((resolve) => setTimeout(() => resolve(LEGAL_ACCESS), ms)),
+			);
+		}
+
+		function createReconciledData(action: ReferralAction): ReferralData {
+			if (action === "apply") return createReferralData({ referredBy: { code: "SAIRN", referrer: OWNER } });
+			if (action === "create") {
+				return createReferralData({
+					referrerState: { stage: "ready", data: { code: "MYCODE", nReferrals: 0, referralStates: [] } },
+				});
+			}
+			return createReferralData({
+				claimedRewards: "1.01",
+				tokenToState: [[0, { builderRewards: "0", claimedRewards: "1.01", cumVlm: "10000", unclaimedRewards: "0" }]],
+				unclaimedRewards: "0",
+			});
+		}
+
+		function getMutation(action: ReferralAction) {
+			if (action === "apply") return testState.setReferrer;
+			if (action === "create") return testState.registerReferrer;
+			return testState.claimRewards;
+		}
+
+		function expectNothingSubmitted() {
+			expect(testState.setReferrer).not.toHaveBeenCalled();
+			expect(testState.registerReferrer).not.toHaveBeenCalled();
+			expect(testState.claimRewards).not.toHaveBeenCalled();
+		}
+
+		function expectReportedAsNotSent(rejection: unknown) {
+			expect(rejection).toBeInstanceOf(ExchangeActionDeadlineError);
+			expect(rejection).not.toBeInstanceOf(ReferralActionStatusUnknownError);
+			expect(isAmbiguousExchangeActionError(rejection)).toBe(false);
+			expect(formatActionFailure(classifyActionErrorOr(rejection, REFERRAL_FAILURE), translate)).toBe(NOT_SENT);
+		}
+
+		async function advanceBothClocks(ms: number) {
+			const wallClock = Date.now();
+			const monotonicClock = performance.now();
+			await act(async () => {
+				await vi.advanceTimersByTimeAsync(ms);
+			});
+			expect(Date.now() - wallClock).toBeGreaterThanOrEqual(ms);
+			expect(performance.now() - monotonicClock).toBeGreaterThanOrEqual(ms);
+		}
+
+		beforeEach(() => {
+			vi.useFakeTimers();
+		});
+
+		it.each(CASES)(
+			"does not submit %s when the legal check answers 16 seconds after the confirmation",
+			async (action, code) => {
+				answerLegalCheckAfter(16_000);
+				const refetchReferral = vi.fn().mockResolvedValue(createReferralData());
+				const hook = renderHook(refetchReferral);
+
+				const outcome = hook.submit(action, code).catch((error: unknown) => error);
+				await advanceBothClocks(16_000);
+
+				expectNothingSubmitted();
+				expectReportedAsNotSent(await outcome);
+				expect(refetchReferral).toHaveBeenCalledOnce();
+
+				testState.legalRefetch.mockResolvedValue(LEGAL_ACCESS);
+				refetchReferral.mockResolvedValueOnce(createReferralData()).mockResolvedValueOnce(createReconciledData(action));
+				await act(async () => {
+					await expect(hook.submit(action, code)).resolves.toBeUndefined();
+				});
+				expect(getMutation(action)).toHaveBeenCalledOnce();
+			},
+		);
+
+		it("does not submit when the last check before the request answers 16 seconds after the confirmation", async () => {
+			testState.geoDelayMs = 16_000;
+			const refetchReferral = vi.fn().mockResolvedValue(createReferralData());
+			const hook = renderHook(refetchReferral);
+
+			const outcome = hook.submit("apply", "SAIRN").catch((error: unknown) => error);
+			await advanceBothClocks(16_000);
+
+			expectNothingSubmitted();
+			expectReportedAsNotSent(await outcome);
+			expect(refetchReferral).toHaveBeenCalledOnce();
+		});
+
+		it("counts the time from the confirmation across every check, not per check", async () => {
+			answerLegalCheckAfter(8_000);
+			testState.geoDelayMs = 8_000;
+			const refetchReferral = vi.fn().mockResolvedValue(createReferralData());
+			const hook = renderHook(refetchReferral);
+
+			const outcome = hook.submit("claim").catch((error: unknown) => error);
+			await advanceBothClocks(16_000);
+
+			expectNothingSubmitted();
+			expectReportedAsNotSent(await outcome);
+		});
+
+		it.each(CASES)(
+			"still submits %s once when the checks finish 14 seconds after the confirmation",
+			async (action, code) => {
+				answerLegalCheckAfter(7_000);
+				testState.geoDelayMs = 7_000;
+				const refetchReferral = vi
+					.fn()
+					.mockResolvedValueOnce(createReferralData())
+					.mockResolvedValueOnce(createReconciledData(action));
+				const hook = renderHook(refetchReferral);
+
+				const submission = hook.submit(action, code);
+				await advanceBothClocks(14_000);
+
+				await expect(submission).resolves.toBeUndefined();
+				expect(getMutation(action)).toHaveBeenCalledExactlyOnceWith(code === undefined ? undefined : { code });
+				expect(
+					testState.setReferrer.mock.calls.length +
+						testState.registerReferrer.mock.calls.length +
+						testState.claimRewards.mock.calls.length,
+				).toBe(1);
+				expect(refetchReferral).toHaveBeenCalledTimes(2);
+			},
+		);
+	});
+});
+
+describe("translation sources of this test file", () => {
+	it("names every catalog message once, so the committed catalog lists each of its sources", () => {
+		const origin = "src/lib/tests/use-referral-actions.test.tsx";
+		const source = readFileSync(resolve(__dirname, "use-referral-actions.test.tsx"), "utf8");
+		const catalog = readFileSync(resolve(__dirname, "../../locales/en/messages.po"), "utf8");
+		const messageUses = source.match(new RegExp(`\\bmsg${"`"}`, "g")) ?? [];
+		const listedSources = catalog.split("\n").filter((line) => line === `#: ${origin}`);
+
+		expect(messageUses.length).toBeGreaterThan(0);
+		expect(messageUses).toHaveLength(listedSources.length);
 	});
 });

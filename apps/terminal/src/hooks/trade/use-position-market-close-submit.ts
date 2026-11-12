@@ -1,4 +1,5 @@
 import { useLingui } from "@lingui/react/macro";
+import { assertExchangeSigningDeadline } from "@sairn/hl-react/internal/exchange/request-scheduler";
 import type Big from "big.js";
 import { useRef } from "react";
 import { toast } from "sonner";
@@ -125,7 +126,7 @@ export function usePositionMarketCloseSubmit() {
 
 	async function execute(attempt: PositionMarketCloseAttempt): Promise<void> {
 		const actions = getPositionMarketCloseActions();
-		const { queueId } = attempt;
+		const { queueId, deadline } = attempt;
 
 		try {
 			const sealedSession = getPositionMarketCloseModal();
@@ -214,6 +215,7 @@ export function usePositionMarketCloseSubmit() {
 					if (plan.errors.length > 0 || plan.orders.length !== 1) {
 						throw new PositionSubmitFeedbackCause(getPositionMarketClosePlanFeedback(plan.errors[0]));
 					}
+					assertExchangeSigningDeadline(deadline);
 					if (attempt.dismissFutureConfirmation) {
 						const preferenceStatus = dismissPositionMarketCloseConfirmation({
 							owner: refreshedSession.owner,

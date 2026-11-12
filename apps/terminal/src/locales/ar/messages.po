@@ -3495,6 +3495,7 @@ msgstr "فشل النسخ"
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/trade-panel.tsx
 #: src/config/ui-text.ts
+#: src/lib/errors/action-error.ts
 msgid "Failed to enable trading"
 msgstr "فشل تفعيل التداول"
 
@@ -10593,6 +10594,7 @@ msgstr "الفائدة المفتوحة ثنائية الجانب: مجموع ا
 msgid "Type"
 msgstr "النوع"
 
+#: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/positions/send-modal.tsx
 msgid "Unable to check the destination address. Nothing was sent."
 msgstr "تعذّر التحقق من عنوان الوجهة. لم يُرسل أي شيء."

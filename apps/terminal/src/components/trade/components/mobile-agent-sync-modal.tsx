@@ -1,5 +1,6 @@
 import { Trans, useLingui } from "@lingui/react/macro";
 import { DeviceMobileIcon, QrCodeIcon, WarningCircleIcon, WarningIcon } from "@phosphor-icons/react";
+import { startExchangeActionDeadline } from "@sairn/hl-react/internal/exchange/request-scheduler";
 import {
 	createMobileAgentApproval,
 	getMobileAgentSlotState,
@@ -168,6 +169,7 @@ function MobileAgentSyncDialog({
 
 	async function handleApprove() {
 		if (!canApprove || !walletAddress || isBusy) return;
+		const deadline = startExchangeActionDeadline();
 		operationRef.current?.abort();
 		const operation = new AbortController();
 		operationRef.current = operation;
@@ -194,7 +196,7 @@ function MobileAgentSyncDialog({
 			const approval = createMobileAgentApproval();
 			await approveAgent.mutateAsync(
 				{ agentAddress: approval.publicKey, agentName: approval.agentName },
-				{ signal: operation.signal, applicationReview: "confirmed" },
+				{ signal: operation.signal, applicationReview: "confirmed", deadline },
 			);
 			if (operation.signal.aborted) return;
 			setState({ status: "ready", approval, renderFailed: false });

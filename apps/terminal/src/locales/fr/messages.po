@@ -3495,6 +3495,7 @@ msgstr "Échec de la copie"
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/trade-panel.tsx
 #: src/config/ui-text.ts
+#: src/lib/errors/action-error.ts
 msgid "Failed to enable trading"
 msgstr "Échec de l'activation du trading"
 
@@ -10593,6 +10594,7 @@ msgstr "Intérêt ouvert bilatéral : somme des positions longues et courtes sur
 msgid "Type"
 msgstr "Type"
 
+#: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/positions/send-modal.tsx
 msgid "Unable to check the destination address. Nothing was sent."
 msgstr "Impossible de vérifier l'adresse de destination. Rien n'a été envoyé."

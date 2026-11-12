@@ -1,5 +1,9 @@
 import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
+import {
+	assertExchangeSigningDeadline,
+	startExchangeActionDeadline,
+} from "@sairn/hl-react/internal/exchange/request-scheduler";
 import { useRef, useState } from "react";
 import type { ExchangeOrder } from "@/config/trade";
 import { getPositionDex } from "@/domain/market";
@@ -129,6 +133,7 @@ export function usePositionLimitCloseSubmit(target: PositionLimitCloseTarget) {
 	const trackedOrder = useTrackedOrder({ executionGuard: assertExecutionContext });
 
 	async function submit(input: PositionLimitCloseSubmitInput): Promise<PositionLimitCloseSubmitOutcome> {
+		const deadline = startExchangeActionDeadline();
 		if (phaseRef.current !== "idle") return { state: "blocked" };
 		const submittedTarget = targetRef.current;
 		const queueId = addOrderQueueItem({
@@ -208,6 +213,7 @@ export function usePositionLimitCloseSubmit(target: PositionLimitCloseTarget) {
 				expectedOrder: order,
 				grouping: plan.grouping,
 			};
+			assertExchangeSigningDeadline(deadline);
 			setPhase("submitting");
 
 			const outcome = await trackedOrder.submitOrder(
@@ -219,6 +225,7 @@ export function usePositionLimitCloseSubmit(target: PositionLimitCloseTarget) {
 					riskContext: { marketKind: "perp", marginMode: fresh.marginMode },
 					exclusiveAssetLock: false,
 					confirmationMode: "accepted",
+					deadline,
 				},
 			);
 			if (outcome.state === "blocked") {

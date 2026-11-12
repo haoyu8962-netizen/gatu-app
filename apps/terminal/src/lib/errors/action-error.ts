@@ -235,6 +235,7 @@ const NAMED_ERROR_FAILURES: Record<string, ActionFailure> = {
 	FundsActionLockTimeoutError: coded("funds-operation-busy"),
 	FundsActionLockUnavailableError: coded("funds-coordination-unavailable"),
 	MissingWalletError: coded("wallet-unavailable"),
+	TradingAuthorizationIncompleteError: msg`Failed to enable trading`,
 	ValidationError: coded("request-invalid"),
 	WalletAccountMismatchError: coded("wallet-mismatch"),
 };

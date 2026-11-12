@@ -6,7 +6,11 @@ import { fileURLToPath } from "node:url";
 import type { ExchangeClient, IRequestTransport } from "@nktkas/hyperliquid";
 import { createExchangeClient } from "@sairn/hl-react/clients";
 import { useExchange } from "@sairn/hl-react/hooks/useExchange";
-import { ExchangeActionDeadlineError } from "@sairn/hl-react/internal/exchange/request-scheduler";
+import {
+	ExchangeActionDeadlineError,
+	startExchangeActionDeadline,
+	unwrapExchangeSigningDeadline,
+} from "@sairn/hl-react/internal/exchange/request-scheduler";
 import {
 	captureAgentRegistrationExecutionLease,
 	startAgentRegistrationExecution,
@@ -618,5 +622,110 @@ describe("mutation network mode contract", () => {
 		await expect(client.cancel(CANCEL as never)).resolves.toMatchObject({ status: "ok" });
 		expect(signatures).toHaveLength(1);
 		expect(request).toHaveBeenCalledOnce();
+	});
+});
+
+describe("direct client bound to the caller's deadline", () => {
+	const APPROVE = { agentAddress: AGENT, agentName: "Mobile QR" };
+	let perfOffset = 0;
+
+	beforeEach(() => {
+		vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "Date"] });
+		perfOffset = 0;
+		const realNow = performance.now.bind(performance);
+		vi.spyOn(performance, "now").mockImplementation(() => realNow() + perfOffset);
+		signatures.length = 0;
+	});
+
+	afterEach(() => {
+		vi.restoreAllMocks();
+		vi.useRealTimers();
+	});
+
+	function freezeFor(ms: number): void {
+		vi.setSystemTime(Date.now() + ms);
+		perfOffset += ms;
+	}
+
+	it.each([
+		[60_000, 0],
+		[14_000, 1],
+	])(
+		"when the SDK's nonce lock is granted %i ms after the click, signs the approval %i times",
+		async (waitMs, signed) => {
+			const locks = installLockManager();
+			const releaseNonce = locks.hold(NONCE_LOCK_PREFIX);
+			const { transport, request } = createTransport();
+			const deadline = startExchangeActionDeadline();
+			const client: ExchangeClient = createExchangeClient(
+				createJsonRpcWallet(OWNER) as never,
+				false,
+				undefined,
+				transport,
+				deadline,
+			);
+
+			const outcome = track(client.approveAgent(APPROVE as never).catch(unwrapExchangeSigningDeadline));
+			await vi.advanceTimersByTimeAsync(0);
+			expect(signatures).toEqual([]);
+			freezeFor(waitMs);
+			releaseNonce();
+			await vi.advanceTimersByTimeAsync(0);
+
+			expect(outcome.settled).toBe(true);
+			expect(signatures).toHaveLength(signed);
+			expect(request).toHaveBeenCalledTimes(signed);
+			if (signed === 0) expect(outcome.error).toBeInstanceOf(ExchangeActionDeadlineError);
+			else expect(outcome.error).toBeUndefined();
+		},
+	);
+
+	it("does not count the time the wallet itself takes to answer the signature request", async () => {
+		const locks = installLockManager();
+		const { transport, request } = createTransport();
+		const wallet = createJsonRpcWallet(OWNER);
+		const promptedWallet = {
+			...wallet,
+			async signTypedData(typedData: unknown) {
+				await new Promise((resolve) => setTimeout(resolve, 20_000));
+				freezeFor(20_000);
+				return wallet.signTypedData(typedData);
+			},
+		};
+		const client: ExchangeClient = createExchangeClient(
+			promptedWallet as never,
+			false,
+			undefined,
+			transport,
+			startExchangeActionDeadline(),
+		);
+
+		const outcome = track(client.approveAgent(APPROVE as never).catch(unwrapExchangeSigningDeadline));
+		await vi.advanceTimersByTimeAsync(20_000);
+		await vi.advanceTimersByTimeAsync(0);
+
+		expect(locks.acquisitionsWithPrefix(NONCE_LOCK_PREFIX)).toBe(1);
+		expect(outcome).toEqual({ settled: true });
+		expect(signatures).toHaveLength(1);
+		expect(request).toHaveBeenCalledOnce();
+	});
+
+	it("never binds a cached client to one click's deadline", async () => {
+		const deadline = startExchangeActionDeadline();
+		if (deadline.current) deadline.current.queuedAt -= 60_000;
+		const client: ExchangeClient = createExchangeClient(
+			createLocalWallet(AGENT) as never,
+			false,
+			"direct-deadline-cache-key",
+			undefined,
+			deadline,
+		);
+		const typedData = { domain: {}, types: {}, primaryType: "Agent", message: {} };
+
+		await expect(
+			(client.config_.wallet as unknown as { signTypedData: (data: unknown) => Promise<string> }).signTypedData(
+				typedData,
+			),
+		).resolves.toBe(SIGNATURE);
 	});
 });

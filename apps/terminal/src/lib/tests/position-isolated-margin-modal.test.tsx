@@ -639,6 +639,49 @@ describe("PositionIsolatedMarginModal", () => {
 		expectDismissedWith("failed", "Another action for this market is already in progress.");
 	});
 
+	it.each([
+		[16_000, 0],
+		[14_000, 1],
+	])(
+		"when the asset lock is granted %i ms after the click, sends the margin update %i times",
+		async (waitMs, calls) => {
+			let grant = () => {};
+			const granted = new Promise<void>((resolve) => {
+				grant = resolve;
+			});
+			Object.defineProperty(window.navigator, "locks", {
+				configurable: true,
+				value: {
+					async request(name: string, _options: LockOptions, callback: (lock: Lock | null) => unknown) {
+						await granted;
+						return callback({ name, mode: "exclusive" } as Lock);
+					},
+				},
+			});
+			renderModal();
+			act(() => setInputValue(getInput(container, "Margin amount"), "1"));
+			vi.useFakeTimers({ toFake: ["Date"] });
+			try {
+				await act(async () => getButton(container, "Add Margin").click());
+				expect(testState.updateMargin).not.toHaveBeenCalled();
+				vi.setSystemTime(Date.now() + waitMs);
+				await act(async () => {
+					grant();
+					await granted;
+				});
+			} finally {
+				vi.useRealTimers();
+			}
+
+			expect(testState.updateMargin).toHaveBeenCalledTimes(calls);
+			if (calls === 0) {
+				expectDismissedWith("failed", "The checks before this request took too long. Nothing was signed or sent.");
+			} else {
+				expect(lastQueueItem()?.status).toBe("success");
+			}
+		},
+	);
+
 	it("blocks an action when the current live position side differs from the opened position", async () => {
 		testState.position = {
 			...getLiveTestPosition(),

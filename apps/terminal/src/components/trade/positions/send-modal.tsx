@@ -1,6 +1,10 @@
 import { useLingui } from "@lingui/react/macro";
 import { InfoIcon, PaperPlaneTiltIcon, WarningCircleIcon } from "@phosphor-icons/react";
-import { ExchangeRequestInvalidatedError } from "@sairn/hl-react/internal/exchange/request-scheduler";
+import {
+	ExchangeRequestInvalidatedError,
+	hasExchangeActionDeadlinePassed,
+	startExchangeActionDeadline,
+} from "@sairn/hl-react/internal/exchange/request-scheduler";
 import {
 	Button,
 	Checkbox,
@@ -415,6 +419,7 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 	}
 
 	async function handleSendClick() {
+		const deadline = startExchangeActionDeadline();
 		if (!canSend || !address) return;
 		const checked: SendDraft = { destination, amount, token: selectedToken, accountType: activeAccountType };
 		const checkedIdentity = submissionIdentityRef.current;
@@ -447,6 +452,10 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 				feeDue: verdict.feeDue,
 				destinationHasSentTx: verdict.destinationHasSentTx,
 			});
+			return;
+		}
+		if (hasExchangeActionDeadlinePassed(deadline)) {
+			toast.error(t`Unable to check the destination address. Nothing was sent.`);
 			return;
 		}
 		await submitSend();

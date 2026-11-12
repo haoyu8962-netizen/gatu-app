@@ -201,8 +201,12 @@ function guardSigning<W extends object>(wallet: W, slot: ExchangeSigningDeadline
 	});
 }
 
-function newExchangeClient(wallet: AbstractWallet, isTestnet: boolean, transport: IRequestTransport): ExchangeClient {
-	const slot: ExchangeSigningDeadlineSlot = {};
+function newExchangeClient(
+	wallet: AbstractWallet,
+	isTestnet: boolean,
+	transport: IRequestTransport,
+	slot: ExchangeSigningDeadlineSlot = {},
+): ExchangeClient {
 	const expiry = getActionExpiry(isTestnet);
 	const client = new ExchangeClient({
 		transport,
@@ -223,13 +227,24 @@ export function createExchangeClient(
 	isTestnet: boolean,
 	cacheKey?: string,
 	transport?: IRequestTransport,
+	/**
+	 * For a client that is called directly, outside the request scheduler (Agent approval): the wallet guard holds
+	 * every signature of this client to the caller's deadline, so the SDK's own waits before the signer count too.
+	 * Never combined with `cacheKey`: a cached client outlives the click that created it.
+	 */
+	deadline?: ExchangeSigningDeadlineSlot,
 ): ExchangeClient {
 	const shouldCache = !!cacheKey && transport === undefined;
 	if (shouldCache && cacheKey) {
 		const cached = tradingClientCache.get(cacheKey);
 		if (cached) return cached;
 	}
-	const client = newExchangeClient(wallet, isTestnet, transport ?? getHttpTransport(isTestnet));
+	const client = newExchangeClient(
+		wallet,
+		isTestnet,
+		transport ?? getHttpTransport(isTestnet),
+		shouldCache ? undefined : deadline,
+	);
 	if (shouldCache && cacheKey) {
 		tradingClientCache.set(cacheKey, client);
 	}

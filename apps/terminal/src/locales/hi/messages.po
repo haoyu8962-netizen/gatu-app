@@ -3495,6 +3495,7 @@ msgstr "कॉपी करने में विफल"
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/trade-panel.tsx
 #: src/config/ui-text.ts
+#: src/lib/errors/action-error.ts
 msgid "Failed to enable trading"
 msgstr "ट्रेडिंग सक्षम करने में विफल"
 
@@ -10593,6 +10594,7 @@ msgstr "दो-तरफ़ा ओपन इंटरेस्ट: इस कॉ
 msgid "Type"
 msgstr "प्रकार"
 
+#: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/positions/send-modal.tsx
 msgid "Unable to check the destination address. Nothing was sent."
 msgstr "गंतव्य पता जाँचा नहीं जा सका। कुछ भी नहीं भेजा गया।"

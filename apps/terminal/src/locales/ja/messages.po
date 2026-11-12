@@ -3170,6 +3170,7 @@ msgstr "コピーできませんでした"
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/trade-panel.tsx
 #: src/config/ui-text.ts
+#: src/lib/errors/action-error.ts
 msgid "Failed to enable trading"
 msgstr "取引を有効化できませんでした"
 
@@ -9423,6 +9424,7 @@ msgstr "未決済建玉（両側合計）：このコントラクトのロング
 msgid "Type"
 msgstr "タイプ"
 
+#: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/positions/send-modal.tsx
 msgid "Unable to check the destination address. Nothing was sent."
 msgstr "送信先アドレスを確認できませんでした。何も送金されていません。"

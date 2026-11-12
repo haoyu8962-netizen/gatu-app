@@ -2,6 +2,11 @@
 
 import { i18n } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
+import {
+	assertExchangeSigningDeadline,
+	type ExchangeSigningDeadlineSlot,
+	hasExchangeActionDeadlinePassed,
+} from "@sairn/hl-react/internal/exchange/request-scheduler";
 import { act, createElement, Fragment, type ReactNode } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -16,6 +21,18 @@ const AGENT_VALID_UNTIL_MS = NOW_MS + 30 * 24 * 60 * 60 * 1000;
 const AGENT_NAME = `Mobile QR valid_until ${AGENT_VALID_UNTIL_MS}`;
 const BUILDER_ADDRESS = "0x9999999999999999999999999999999999999999";
 const IDENTITY_CHANGED = msg`The active wallet or network changed. Review the account and try again.`;
+const NOT_SENT_IN_TIME = "The checks before this request took too long. Nothing was signed or sent. Try again.";
+
+interface ApprovalCallOptions {
+	applicationReview?: string;
+	deadline?: ExchangeSigningDeadlineSlot;
+	signal?: AbortSignal;
+}
+
+// The real hook refuses an expired deadline before it creates a signer (use-explicit-agent-approval.test.tsx).
+async function approveWithinDeadline(_params: unknown, options?: ApprovalCallOptions) {
+	if (options?.deadline) assertExchangeSigningDeadline(options.deadline);
+}
 
 const testState = vi.hoisted(() => ({
 	approveAgent: vi.fn(),
@@ -204,7 +221,7 @@ describe("MobileAgentSyncModal", () => {
 		testState.isMobile = false;
 		testState.features.enabled = true;
 		testState.approveAgent.mockReset();
-		testState.approveAgent.mockResolvedValue(undefined);
+		testState.approveAgent.mockImplementation(approveWithinDeadline);
 		testState.builderFeeKnown = true;
 		testState.needsBuilderFee = false;
 		testState.extraAgents.mockReset();
@@ -266,7 +283,11 @@ describe("MobileAgentSyncModal", () => {
 		expect(testState.approveAgent).toHaveBeenCalledTimes(1);
 		expect(testState.approveAgent).toHaveBeenCalledWith(
 			{ agentAddress: AGENT_ADDRESS, agentName: AGENT_NAME },
-			{ signal: expect.any(AbortSignal), applicationReview: "confirmed" },
+			{
+				signal: expect.any(AbortSignal),
+				applicationReview: "confirmed",
+				deadline: { current: { queuedAt: NOW_MS, queuedAtMonotonic: expect.any(Number), deadlineMs: 15_000 } },
+			},
 		);
 		expect(container.querySelector("canvas")).toBeNull();
 		expect(findButton(container, "Approve mobile trading key")).toBeUndefined();
@@ -540,6 +561,76 @@ describe("MobileAgentSyncModal", () => {
 		expect(container.querySelector('[role="alert"]')?.textContent).toBe(
 			"Could not check on Hyperliquid whether trading is activated. Nothing was signed. Try again.",
 		);
+	});
+
+	async function clickApproveWithPendingActivationCheck() {
+		let answer: ((maxBuilderFee: number) => void) | undefined;
+		testState.maxBuilderFee.mockImplementationOnce(
+			() =>
+				new Promise<number>((resolve) => {
+					answer = resolve;
+				}),
+		);
+		act(() => getButton(container, "Approve mobile trading key").click());
+		await flushAsyncWork();
+		expect(testState.approveAgent).not.toHaveBeenCalled();
+
+		return async function answerActivated() {
+			await act(async () => answer?.(10));
+			await flushAsyncWork();
+		};
+	}
+
+	function getApprovalDeadline(callIndex: number) {
+		const [, options] = testState.approveAgent.mock.calls[callIndex] as [unknown, ApprovalCallOptions];
+		return options.deadline;
+	}
+
+	it("reports nothing signed and offers no QR when the activation check of a frozen page answers sixteen seconds after the click", async () => {
+		await renderModal();
+		const answerActivated = await clickApproveWithPendingActivationCheck();
+
+		vi.setSystemTime(NOW_MS + 16_000);
+		await answerActivated();
+
+		expect(testState.approveAgent).toHaveBeenCalledTimes(1);
+		const deadline = getApprovalDeadline(0);
+		expect(deadline?.current).toEqual({
+			queuedAt: NOW_MS,
+			queuedAtMonotonic: expect.any(Number),
+			deadlineMs: 15_000,
+		});
+		expect(deadline !== undefined && hasExchangeActionDeadlinePassed(deadline)).toBe(true);
+
+		const alerts = [...container.querySelectorAll('[role="alert"]')];
+		expect(alerts.map((alert) => alert.textContent)).toEqual([NOT_SENT_IN_TIME]);
+		expect(container.textContent).not.toContain("Hold to reveal");
+		expect(findButton(container, "Hold to reveal")).toBeUndefined();
+		expect(container.querySelector("canvas")).toBeNull();
+		expect(testState.qrToCanvas).not.toHaveBeenCalled();
+		expect(getButton(container, "Approve mobile trading key").hasAttribute("disabled")).toBe(false);
+
+		await approve();
+		expect(testState.approveAgent).toHaveBeenCalledTimes(2);
+		expect(getApprovalDeadline(1)?.current?.queuedAt).toBe(NOW_MS + 16_000);
+		expect(container.querySelector('[role="alert"]')).toBeNull();
+	});
+
+	it("goes on to the ready state when the activation check answers fourteen seconds after the click", async () => {
+		await renderModal();
+		const answerActivated = await clickApproveWithPendingActivationCheck();
+
+		vi.setSystemTime(NOW_MS + 14_000);
+		await answerActivated();
+
+		expect(testState.approveAgent).toHaveBeenCalledTimes(1);
+		const deadline = getApprovalDeadline(0);
+		expect(deadline?.current?.queuedAt).toBe(NOW_MS);
+		expect(deadline !== undefined && hasExchangeActionDeadlinePassed(deadline)).toBe(false);
+		expect(container.querySelector('[role="alert"]')).toBeNull();
+		expect(findButton(container, "Hold to reveal")).toBeDefined();
+		expect(findButton(container, "Approve mobile trading key")).toBeUndefined();
+		expect(container.querySelector("canvas")).toBeNull();
 	});
 
 	it("keeps the approved key and offers another reveal when the QR cannot be drawn", async () => {

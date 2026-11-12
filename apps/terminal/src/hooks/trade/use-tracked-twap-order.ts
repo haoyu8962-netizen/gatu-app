@@ -1,4 +1,8 @@
 import type { ExchangeExecutionGuard } from "@sairn/hl-react";
+import {
+	assertExchangeSigningDeadline,
+	startExchangeActionDeadline,
+} from "@sairn/hl-react/internal/exchange/request-scheduler";
 import { useRef, useState } from "react";
 import { HL_ALL_DEXS } from "@/config/app";
 import { doesOrderBatchMatchRiskContext, type OrderRiskContext } from "@/domain/trade/order-risk-context";
@@ -82,6 +86,7 @@ export function useTrackedTwapOrder(options: UseTrackedTwapOrderOptions = {}) {
 		params: ExchangeParams<"twapOrder">,
 		options: SubmitTwapOptions,
 	): Promise<TrackedTwapResult> {
+		const deadline = startExchangeActionDeadline();
 		if (!address) throw orderSubmissionFeedbackCause("no-active-account");
 		if (!doesOrderBatchMatchRiskContext([params.twap], options.riskContext)) {
 			throw orderSubmissionFeedbackCause("market-context-mismatch");
@@ -90,6 +95,7 @@ export function useTrackedTwapOrder(options: UseTrackedTwapOrderOptions = {}) {
 		const intent = createTwapIntent(params, options.coin);
 		const lockIdentity = { env, owner: address, assetIds: [intent.assetId] } as const;
 		const lockResult = await runWithAvailableOrderAssetLocks(lockIdentity, async (lease) => {
+			assertExchangeSigningDeadline(deadline);
 			const reservationIntent = getTwapOrderAssetReservationIntent(intent);
 			const reservationState = getOrderAssetReservationState(lease, reservationIntent);
 			const pendingTwapState = getPersistedPendingTwapAssetState(env, address, intent.assetId);
