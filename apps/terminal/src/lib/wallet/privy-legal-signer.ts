@@ -1,5 +1,6 @@
 import type { AbstractViemJsonRpcAccount } from "@nktkas/hyperliquid/signing";
 import type { SignTypedDataParams } from "@privy-io/react-auth";
+import { assertTypedDataSignedBy } from "./external-agent-signer";
 import type { PrivySignTypedData } from "./privy-agent-signer";
 import { hasSameWalletAddress } from "./privy-wagmi";
 
@@ -39,8 +40,10 @@ export function createPrivyLegalSigner({
 				address: expectedAddress,
 				uiOptions: { showWalletUIs: false },
 			});
+			const signature = result.signature as `0x${string}`;
+			await assertTypedDataSignedBy(typedData, signature, expectedAddress);
 			beforeSubmit();
-			return result.signature as `0x${string}`;
+			return signature;
 		},
 		async getAddresses(): Promise<`0x${string}`[]> {
 			return [expectedAddress];

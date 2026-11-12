@@ -2,6 +2,7 @@ import type { ExchangeClient, IRequestTransport } from "@nktkas/hyperliquid";
 import type { AbstractViemJsonRpcAccount } from "@nktkas/hyperliquid/signing";
 import { createExchangeClient, getHttpTransport } from "../clients";
 import { ExchangeRequestInvalidatedError } from "../internal/exchange/request-scheduler";
+import { assertTypedDataSignedBy } from "../wallet";
 import type { HyperliquidOwnerSigner } from "./owner-signer-provider";
 
 const ownerClients = new WeakMap<HyperliquidOwnerSigner, Map<boolean, ExchangeClient>>();
@@ -51,6 +52,7 @@ export function createOwnerSignerClient(
 		async signTypedData(typedData) {
 			await verifyOwner();
 			const signature = await wallet.signTypedData(typedData);
+			await assertTypedDataSignedBy(typedData, signature, signingAddress);
 			await verifyOwner();
 			return signature;
 		},

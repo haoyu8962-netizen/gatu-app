@@ -1,5 +1,6 @@
 import type { AbstractViemJsonRpcAccount } from "@nktkas/hyperliquid/signing";
-import type { WalletClient } from "viem";
+import { WalletAccountMismatchError } from "@sairn/hl-react";
+import { recoverTypedDataAddress, type WalletClient } from "viem";
 import { hasSameWalletAddress } from "./privy-wagmi";
 
 type HyperliquidTypedData = Parameters<AbstractViemJsonRpcAccount["signTypedData"]>[0];
@@ -29,6 +30,7 @@ export function createExternalAgentSigner({
 				primaryType: typedData.primaryType,
 				message: typedData.message,
 			});
+			await assertTypedDataSignedBy(typedData, signature, expectedAddress);
 			await beforeSubmit();
 			return signature;
 		},
@@ -47,4 +49,28 @@ function assertExpectedWallet(walletClient: WalletClient, expectedAddress: `0x${
 	if (!hasSameWalletAddress(walletClient.account?.address, expectedAddress)) {
 		throw new Error("The active external wallet does not match the selected Hyperliquid account.");
 	}
+}
+
+/**
+ * Hyperliquid executes an owner action for the address it recovers from the signature, so a wallet that signed
+ * with another account (or returned a contract-wallet signature) must never reach the exchange.
+ */
+export async function assertTypedDataSignedBy(
+	typedData: HyperliquidTypedData,
+	signature: `0x${string}`,
+	expectedAddress: `0x${string}`,
+): Promise<void> {
+	let recovered: `0x${string}`;
+	try {
+		recovered = await recoverTypedDataAddress({
+			domain: typedData.domain,
+			types: typedData.types,
+			primaryType: typedData.primaryType,
+			message: typedData.message,
+			signature,
+		} as Parameters<typeof recoverTypedDataAddress>[0]);
+	} catch {
+		throw new WalletAccountMismatchError();
+	}
+	if (!hasSameWalletAddress(recovered, expectedAddress)) throw new WalletAccountMismatchError();
 }

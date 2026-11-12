@@ -1,5 +1,6 @@
 import type { SignTypedDataParams } from "@privy-io/react-auth";
 import type { AgentApprovalOptions } from "@/lib/hyperliquid";
+import { assertTypedDataSignedBy } from "./external-agent-signer";
 import { hasSameWalletAddress } from "./privy-wagmi";
 
 interface PrivySignTypedDataOptions {
@@ -85,8 +86,10 @@ export function createPrivyAgentSigner({
 								isCancellable: true,
 							},
 			});
+			const signature = result.signature as `0x${string}`;
+			await assertTypedDataSignedBy(typedData, signature, expectedAddress);
 			await beforeSubmit();
-			return result.signature as `0x${string}`;
+			return signature;
 		},
 		async getAddresses(): Promise<`0x${string}`[]> {
 			return [expectedAddress];
