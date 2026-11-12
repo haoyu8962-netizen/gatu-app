@@ -10,7 +10,7 @@
   "summary": "修复 2026-11-12 全局审查的 P1-2、P2-7、P2-8：sync 只让内容哈希文件走 aws s3 sync，其余一律 aws s3 cp，build-meta.json 在壳之前、_shell.html 最后上传，结尾按内容核对两者，失败时说明线上状态；lambda 只打印白名单字段，打包前拒绝带相对导入的入口，更新后经站点探活 /api/health 与 /api/geo；新增 check-lambda 与 --functions-dir、--skip-probe；Production Builds 构建并检查 Lambda 包。只跑了不触网的测试：test:cloudfront 53/53、ci-workflows 20/20，18 个变异全部被抓到。第二轮按 Codex 审查（8.0，四项 P2、四个漏网变异）修复：相对导入检查放宽并加输出目录结构检查、拒绝含过滤通配符的文件名、每次探活请求 10 秒截止、失败说明只陈述本次运行的事实、sync 主体抽成 releaseStatic、捕获输出抽成 captureCommand、CI 契约禁止 continue-on-error、immutable 改称按路径分类；test:cloudfront 60/60、ci-workflows 20/20，第二轮记录的 26 个变异全部被抓到。第三轮按 Codex 复审（8.3，两项 P2、两项 P3）：Lambda 检查认行注释、拒绝入口互相导入、拒绝符号链接、扩展名不分大小写；verify 的每个请求带自管定时器的中止信号；失败说明补「对象不存在」；releaseStatic 的闸门拒绝有测试；test:cloudfront 64/64，8 个变异全部被抓到；CLI 的两处接线留作后续。两轮都没有用 --execute 运行、没有回滚演练；是否轮换 IPdata 密钥待运营方决定。",
   "thread": null,
   "baseCommit": "810a45db",
-  "commits": ["436f6f89", "739f1ed1"],
+  "commits": ["436f6f89", "739f1ed1", "65b7aa5f"],
   "sources": [
     { "path": "deploy/cloudfront/deploy.mjs" },
     { "path": "deploy/cloudfront/deploy.test.mjs" },

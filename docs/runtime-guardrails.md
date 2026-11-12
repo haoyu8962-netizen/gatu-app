@@ -53,10 +53,22 @@ Do not collapse these states into one boolean.
   an L1 action is still bounded by `expiresAfter` when Transaction Delay
   Protection is on and the server-time sample is reliable, a user-signed action
   is not. The builder-fee and Agent approval flows use the deadline of the
-  explicit authorization that started them and check it before they ask for a
-  signature; the Agent flow checks again right before `approveAgent`. Waits that
-  application workflows add before they call `useExchange` are not covered
-  (ADR 0053, Not covered).
+  explicit authorization that started them, or of the click that started them
+  (API wallet page, Link mobile device, the vault dialog), and check it before
+  they ask for a signature; the Agent flow checks again right before
+  `approveAgent`.
+- A workflow that waits before it calls `useExchange` or an approval
+  implementation (a query `refetch`, an HTTP snapshot, a Web Lock, a host that
+  mounts later) calls `startExchangeActionDeadline()` in its confirming handler
+  before any `await` and checks it right before each submission. A path that
+  queues its request from an asset-lock callback checks inside that callback:
+  the `ifAvailable` request does not queue, but its callback still runs later. A late action
+  is not submitted and reports the workflow's existing not-sent feedback; TP/SL
+  checks before its cancel only: once the old orders are cancelled the
+  replacement is still queued, and a refusal reports that the old TP/SL was
+  cancelled and the new one was not placed. The click deadline is not carried into the
+  scheduler, which counts its own 15 seconds from enqueue. ADR 0053 decision 10
+  lists the entries and the ones that need no check.
 - Preserve the onboarding order documented in `docs/trading-onboarding.md`.
 - Agent registration and builder-fee approval are separate. First-time setup
   approves only the Agent; builder-fee approval is deferred until an action
@@ -885,10 +897,13 @@ transport. Adding account subscriptions must not disturb market subscriptions.
   dropped, and row prices show placeholders until the new snapshot arrives.
   That one-time gap is accepted; the store does not update thresholds in
   place. A browser without decompression uses the ten-second threshold from
-  the start and never switches. Execution guards do not read these row prices.
-  The selected market's order form takes its price from `activeAssetCtx` /
-  `activeSpotAssetCtx`, and the close paths check a ten-second monotonic
-  receipt age (`isLiveExecutionPriceReceiptFresh`).
+  the start and never switches. One execution guard reads these row prices: an
+  open-order modification validates its trigger price against the row's mark
+  (`getMarketBinding` in the desktop and mobile order tabs), which on this
+  path comes from the context channel and stays under the ten-second
+  `isLiveMarkPriceReady` limit. The selected market's order form takes its
+  price from `activeAssetCtx` / `activeSpotAssetCtx`, and the close paths check
+  a ten-second monotonic receipt age (`isLiveExecutionPriceReceiptFresh`).
 - Hyperliquid limits each IP address to 10 WebSocket connections and 30 new
   connections a minute. One terminal tab holds at most five: the shared socket
   and four pooled order-book transports, so two tabs reach the limit. The pool
@@ -1053,8 +1068,11 @@ have an install capability.
   waits for its Cache API operations), and moves the manifest only when it
   finished. Provided the network works, nothing times out, the worker is not
   stopped and storage accepts writes, the latest shell's assets are then all
-  cached; otherwise the next navigation continues the sync. The worker does
-  not precache the whole build, does not intercept the TradingView files, and
+  cached; otherwise the next navigation continues the sync. The worker also
+  keeps the six lazy locale catalogs the shell lists in `sairn-locale-catalogs`,
+  so a non-English cold start after a release reads its catalog from the
+  device. It does not precache the whole build, does not intercept the
+  TradingView files (their content-hashed fonts included), and
   keeps the navigation bypass list, the `?lang=` network-first rule and the
   cacheable-shell checks. A font or asset response is cloned before it is
   handed to the page, never afterwards. Cache names, limits, the shell-scanner
@@ -1428,8 +1446,9 @@ Before merging any change that touches the areas above:
 - Hiding mobile UI state behind full route reloads.
 - Waiting for a timer, a backoff or a dead socket's `close` event before
   recovering market data after the page or the network returns.
-- Reconnecting a socket that still receives frames because the tab became
-  visible.
+- Replacing a socket that answered its heartbeat in time because the tab
+  became visible, or treating frames other than the heartbeat answer as proof
+  that a socket is alive.
 - Treating Privy authentication as proof that the expected signing wallet is
   active.
 - Rendering the application wallet drawer underneath a Privy modal.

@@ -437,8 +437,17 @@ only network, timeout, 408, 429, and 5xx failures receive bounded retries.
   for a signature; the Agent registration checks it once before it generates
   the key and again immediately before `approveAgent`, and a candidate saved in
   between but never submitted is removed through the existing registration
-  cleanup. Time spent in an external wallet's prompt is not counted. Called on
-  their own, without a deadline, both flows start their own.
+  cleanup. Time spent in an external wallet's prompt is not counted: when one
+  authorization needs both the Agent and the builder fee, the builder-fee step
+  counts from the moment the Agent registration returned, not from the click.
+  Called on their own, without a deadline, both flows start their own. The vault dialog
+  passes the deadline of its own click to the Agent registration it triggers,
+  and the API wallet page and Link mobile device pass theirs to the approval
+  implementation through `AgentApprovalOptions.deadline`.
+  `use-explicit-agent-approval` checks it before it creates the signer and binds
+  it to the approval client (`createExchangeClient`'s fifth argument), so the
+  wallet guard checks it again when the SDK reaches `signTypedData`, after the
+  SDK's own nonce-lock wait (ADR 0053 decision 10).
 - A confirm button that shows `Enable` and was not given
   `requireReadyConfirmation` authorizes first and then runs its action
   (`useTradingGuard.runExplicitAction`), but only while the approval finished

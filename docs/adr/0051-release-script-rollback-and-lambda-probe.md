@@ -13,7 +13,7 @@
 
 ## 决策
 
-1. **按路径判为 `immutable` 的文件走 `aws s3 sync`。** 以 `objectCacheControl` 的分类为准，分类看的是路径：`assets/` 下的全部文件、文件名带 20 位哈希的 TradingView bundle、带 16 位哈希的图表入口副本。脚本不校验文件名里的哈希是否真对应内容；桶里已有同名对象时跳过是正确的，前提是构建不会在这些路径下用用过的名字产出不同内容（Vite 按内容哈希命名 `assets/` 下的文件，TradingView 的文件名由上游带入）。每个 `--include` 是一个文件键；`*`、`?`、`[`、`]` 在 AWS CLI 的过滤器里是通配符，含这些字符的文件名会让过滤器漏传或匹配到别的文件（`*.html` 还会把壳提前带进页面阶段），所以 `buildSyncPlan` 在生成任何命令之前拒绝这类文件名并列出它们，当前产物里没有。其余文件（`sw.js`、`manifest.json`、图标、`robots.txt`、`sitemap.xml`、主题样式、未哈希的 `charting_library.js` 等、`sameorigin.html`、`404.html`、`build-meta.json`、`_shell.html`）一律用 `aws s3 cp` 上传，不看修改时间与大小。
+1. **按路径判为 `immutable` 的文件走 `aws s3 sync`。** 以 `objectCacheControl` 的分类为准，分类看的是路径：`assets/` 下的全部文件、文件名带 20 位哈希的 TradingView bundle、带 16 位哈希的图表入口副本。脚本不校验文件名里的哈希是否真对应内容；桶里已有同名对象时跳过是正确的，前提是构建不会在这些路径下用用过的名字产出不同内容（Vite 按内容哈希命名 `assets/` 下的文件，TradingView 的文件名由上游带入）。每个 `--include` 是一个文件键；`*`、`?`、`[`、`]` 在 AWS CLI 的过滤器里是通配符，产物目录也一样（AWS CLI 把每个过滤器拼在源目录的绝对路径后面再匹配，集成复审后补上：`assertFilterSafeDirectory` 在生成任何命令、核对闸门和读线上策略之前，拒绝绝对路径含这四个字符的产物目录）；含这些字符的文件名会让过滤器漏传或匹配到别的文件（`*.html` 还会把壳提前带进页面阶段），所以 `buildSyncPlan` 在生成任何命令之前拒绝这类文件名并列出它们，当前产物里没有。其余文件（`sw.js`、`manifest.json`、图标、`robots.txt`、`sitemap.xml`、主题样式、未哈希的 `charting_library.js` 等、`sameorigin.html`、`404.html`、`build-meta.json`、`_shell.html`）一律用 `aws s3 cp` 上传，不看修改时间与大小。
 2. **上传顺序：** 按路径判为 `immutable` 的文件 → 其余非 HTML 文件 → 壳以外的 HTML → `build-meta.json` → 六个遗留法律页的壳副本 → `_shell.html`。壳是最后一条命令，所以一次运行不会在写 `build-meta.json` 之前写壳。中途失败时脚本只陈述本次运行的事实：哪些阶段在本次运行里已返回成功；失败那条命令涉及的对象状态未知（S3 单键写入是原子的，每个对象要么不存在、要么未变、要么是本次构建的，不会是写了一半的，命令报错时写入也可能已经成功）；后面的阶段本次没有写；运行前桶里是什么本命令不知道（之前中断的运行可能已经写过一部分，包括 `build-meta.json`）。处理方式是原样重跑 `sync`，再 `verify`。2026-11-12 第二轮修订：第一版的说明会断言「壳仍是上一版」「标记已是本次构建」「壳部分写入」，这些都超出了脚本能知道的范围，已删除。
 3. **标记按内容核对。** `sync --execute` 结束后用 `aws s3 cp s3://<桶>/<键> -` 取回 `_shell.html` 与 `build-meta.json`，与本地文件比较 SHA-256。不用 `head-object` 的 ETag（KMS 加密或分段上传时不是 MD5），也不依赖上传时附带的校验和设置；取回两个小文件只需要发布身份已有的 `s3:GetObject`。
 4. **Lambda 更新只打印白名单字段。** `update-function-code` 带 `--query` 只取 `Version`、`CodeSize`、`CodeSha256`、`State`、`LastUpdateStatus`，脚本再捕获输出、按同一白名单拼一行打印；即使 `--query` 被删，原始应答也不会进日志。脚本里其余直接打印输出的命令已逐个核对：CloudFront 函数的 `update-function` / `publish-function` 返回函数摘要（不含代码），`update-distribution` 返回分发配置，`create-invalidation` 返回失效记录，都不含密钥；读取配置的命令（`get-function`、`describe-function`、`get-distribution-config`、`sts get-caller-identity`）一直是捕获后只取所需字段。
@@ -24,7 +24,7 @@
 
 ## 备选方案
 
-- **全部文件改用 `aws s3 cp --recursive`。** 最简单，但每次发布都要重传桶里已有的全部内容哈希文件，其中仅 TradingView 的 bundle 就约 1,150 个、版本之间通常不变；上传越多，本机代理的瞬时断开（p41 第一次 `sync` 就因此失败了一个文件）越容易打断一次发布。哈希文件同名即同内容，跳过它们没有风险。
+- **全部文件改用 `aws s3 cp --recursive`。** 最简单，但每次发布都要重传桶里已有的全部内容哈希文件，其中仅 TradingView 的 bundle 就约 1,150 个、版本之间通常不变；上传越多，本机代理的瞬时断开（p41 第一次 `sync` 就因此失败了一个文件）越容易打断一次发布。哈希文件同名即同内容，跳过它们没有风险。2026-11-12 集成复审更正：`sync` 的跳过只发生在重跑一次中断的 `sync` 和回滚时（桶里的对象不比本地文件旧）；全新构建的文件修改时间比桶里的新，正常发布仍会全部重传，所以这条理由只对「中断后重跑不必从头再传」成立。给 immutable 阶段加 `--size-only` 可以让正常发布也跳过，没有对真实桶验证过，列为后续。
 - **`aws s3 sync --exact-timestamps` 或 `--size-only` 以外的比较方式。** `--exact-timestamps` 只对「从 S3 下载」生效，上传方向仍按大小与修改时间；CLI 没有按内容比较的上传模式。
 - **回滚时先 `touch` 旧工作树的文件。** 能绕过跳过逻辑，但要求操作者记住这一步，脚本仍会对大小相同的跳过报成功；把规则放进脚本更可靠。
 - **标记核对用 `head-object` 的 `ChecksumSHA256`。** 要求每次上传都带 `--checksum-algorithm SHA256`，并依赖 CLI 版本与分段上传的组合校验和格式；取回文件比较字节更直接。
@@ -33,7 +33,7 @@
 ## 后果与边界
 
 - 每次 `sync` 会重传约三十个未哈希文件（图标、样式、`sw.js`、图表入口等），以及壳与遗留法律页；它们的 `Cache-Control` 每次都会被重写，所以这些文件的缓存策略变化不再需要 `reupload`。`reupload` 只剩一个用途：改写已在桶里、`sync` 会跳过的内容哈希文件的元数据。
-- 新的失败形态是「标记已新、壳仍旧」。此时导航仍拿到旧壳，`verify` 的壳对比与标记核对都会失败；处理方式是重跑同一条 `sync`。
+- 新的失败形态是「标记已新、壳仍旧」。此时导航仍拿到旧壳，`verify` 的壳对比与遗留法律页核对会失败，`build metadata parity` 会通过（线上的 `build-meta.json` 已是新版本）；处理方式是重跑同一条 `sync`。
 - `immutable` 的判定按路径而不是按内容：如果构建在 `assets/` 下用一个用过的名字产出了不同内容，`sync` 会跳过它而不报错。Vite 的命名方式使这种情况不会出现，脚本本身不防它。
 - 探活经过公网与 CloudFront，`/api/geo` 还依赖 IPdata：IPdata 自身故障也会让探活失败并建议重传，操作者要看失败明细再决定。探活不能阻止坏包生效，只能缩短发现时间。
 - 回滚的可行性只在读码与不触网的测试里确认，没有演练。跨 ADR 0020 之前的版本回滚、S3 版本控制恢复，都没有在本次核对；桶是否开启了版本控制也未核实。
