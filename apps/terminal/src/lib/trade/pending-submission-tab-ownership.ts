@@ -9,6 +9,7 @@ export interface PendingSubmissionSharing {
 	claim: (id: string) => void;
 	serve: (identity: PendingSubmissionIdentity | null) => void;
 	owns: (id: string) => boolean;
+	takeRemovedElsewhere: () => string[];
 }
 
 interface TabOwnedSubmissionState {
@@ -39,7 +40,9 @@ function getLockManager(): LockManager | undefined {
  * from it. The browser releases a closed or crashed tab's locks, so a waiting tab of the same account
  * takes over. Without Web Locks every tab reconciles every submission, as before. `owns` tells an
  * asynchronous step that resumes after an `await` whether this tab still reconciles the submission,
- * so a lookup that returns after the lock moved to another tab writes nothing.
+ * so a lookup that returns after the lock moved to another tab writes nothing. `takeRemovedElsewhere`
+ * hands the host each submission that left the store while another tab held it, so the host can
+ * withdraw the notification it showed for it without claiming a result it never saw.
  */
 export function shareSubmissionsBetweenTabs<S extends TabOwnedSubmissionState>(
 	store: StoreApi<S>,
@@ -47,6 +50,7 @@ export function shareSubmissionsBetweenTabs<S extends TabOwnedSubmissionState>(
 	isStored: (id: string) => boolean,
 ): PendingSubmissionSharing {
 	const claims = new Map<string, Claim>();
+	const removedElsewhere = new Set<string>();
 	let identity: PendingSubmissionIdentity | null = null;
 	let syncing = false;
 
@@ -77,8 +81,11 @@ export function shareSubmissionsBetweenTabs<S extends TabOwnedSubmissionState>(
 		locks
 			.request(`${lockPrefix}${id}`, { mode: "exclusive", signal: controller.signal }, () => {
 				if (controller.signal.aborted) return;
-				if (!isStored(id) || (!claim.own && !serves(id))) {
+				const sending = claim.own && store.getState().activeSubmissionIds.has(id);
+				if (!isStored(id) || (!serves(id) && !sending)) {
 					claim.state = "idle";
+					claim.own = false;
+					if (isStored(id)) setBlocked(id, claim, true);
 					return;
 				}
 				claim.state = "held";
@@ -103,6 +110,7 @@ export function shareSubmissionsBetweenTabs<S extends TabOwnedSubmissionState>(
 			for (const [id, claim] of claims) {
 				if (ids.has(id)) continue;
 				claims.delete(id);
+				if (claim.blocked) removedElsewhere.add(id);
 				claim.release?.();
 				setBlocked(id, claim, false);
 			}
@@ -145,6 +153,11 @@ export function shareSubmissionsBetweenTabs<S extends TabOwnedSubmissionState>(
 		serve: (next) => {
 			identity = next;
 			sync();
+		},
+		takeRemovedElsewhere: () => {
+			const ids = [...removedElsewhere];
+			removedElsewhere.clear();
+			return ids;
 		},
 		owns: (id) => store.getState().submissions.some((submission) => submission.id === id) && !claims.get(id)?.blocked,
 	};

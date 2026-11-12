@@ -172,6 +172,8 @@ interface PendingOrderStore {
 		serve: (identity: PendingSubmissionIdentity | null) => void;
 		/** Whether this tab still reconciles the submission: an asynchronous step checks it before writing. */
 		owns: (id: string) => boolean;
+		/** Submissions that left the store while another tab reconciled them, each reported once. */
+		takeRemovedElsewhere: () => string[];
 		clearActive: (id: string) => void;
 		remove: (id: string) => void;
 		markChecked: (cloid: string, checkedAt: number) => void;
@@ -392,6 +394,7 @@ export function createPendingOrderStore(storage: PendingOrderStorage | null = ge
 			},
 			serve: (identity) => sharing.serve(identity),
 			owns: (id) => sharing.owns(id),
+			takeRemovedElsewhere: () => sharing.takeRemovedElsewhere(),
 			markActive: (id) => {
 				set((state) => ({ activeSubmissionIds: new Set(state.activeSubmissionIds).add(id) }));
 			},

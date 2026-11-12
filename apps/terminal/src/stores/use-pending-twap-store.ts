@@ -84,6 +84,8 @@ interface PendingTwapStore {
 		serve: (identity: PendingSubmissionIdentity | null) => void;
 		/** Whether this tab still reconciles the submission: an asynchronous step checks it before writing. */
 		owns: (id: string) => boolean;
+		/** Submissions that left the store while another tab reconciled them, each reported once. */
+		takeRemovedElsewhere: () => string[];
 		clearActive: (id: string) => void;
 		remove: (id: string) => void;
 		resolve: (id: string) => PendingTwapSubmission | null;
@@ -283,6 +285,7 @@ export function createPendingTwapStore(storage: PendingTwapStorage | null = getB
 			},
 			serve: (identity) => sharing.serve(identity),
 			owns: (id) => sharing.owns(id),
+			takeRemovedElsewhere: () => sharing.takeRemovedElsewhere(),
 			markActive: (id) => {
 				set((state) => ({ activeSubmissionIds: new Set(state.activeSubmissionIds).add(id) }));
 			},

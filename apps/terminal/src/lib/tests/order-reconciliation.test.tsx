@@ -22,6 +22,7 @@ import {
 	dismissOrderQueueItem,
 	getOrderQueueItem,
 	type OrderQueueItem,
+	updateOrderQueueItem,
 	useOrderQueue,
 	useOrderQueueActions,
 } from "@/stores/use-order-queue-store";
@@ -1790,6 +1791,90 @@ describe("OrderReconciliation", () => {
 			expectActionFeedback(cancellation.id, "unconfirmed", NO_LONGER_OPEN);
 		});
 
+		it("keeps a hidden unconfirmed cancellation hidden when the order is still open", async () => {
+			const now = Date.now();
+			const monotonicNow = performance.now();
+			const cancellation = getPendingTradingActionActions().claimOrderCancellation({
+				env: "Mainnet",
+				owner: USER,
+				oids: [104],
+			});
+			if (!cancellation) throw new Error("Expected cancellation claim");
+			getPendingTradingActionActions().markOrderCancellationRequestStarted(cancellation.id, now - 2, monotonicNow - 2);
+			getPendingTradingActionActions().markOrderCancellationUnconfirmed(cancellation.id, now - 1, monotonicNow - 1);
+			const id = `pending-trading-action:${cancellation.id}`;
+			act(() => root.render(createReconciliation()));
+			expect(getOrderQueueItem(id)?.status).toBe("unconfirmed");
+			act(() => dismissOrderQueueItem(id));
+
+			mocks.openOrdersData = { orders: [{ oid: 104, sz: "1", triggerPx: "0" }] };
+			mocks.openOrdersMonotonicLastMessageAt = monotonicNow;
+			act(() => root.render(createReconciliation()));
+
+			expect(getPendingTradingActionSnapshot().orderCancellations).toEqual([]);
+			expect(getOrderQueueItem(id)).toMatchObject({ status: "unconfirmed", dismissed: true });
+			expectActionFeedback(cancellation.id, "unconfirmed", NOT_CONFIRMED_REVIEW_OPEN_ORDERS);
+		});
+
+		it("shows a still-open cancellation as unconfirmed when its notification was not yet unconfirmed", async () => {
+			const now = Date.now();
+			const monotonicNow = performance.now();
+			const cancellation = getPendingTradingActionActions().claimOrderCancellation({
+				env: "Mainnet",
+				owner: USER,
+				oids: [105],
+			});
+			if (!cancellation) throw new Error("Expected cancellation claim");
+			getPendingTradingActionActions().markOrderCancellationRequestStarted(cancellation.id, now - 2, monotonicNow - 2);
+			getPendingTradingActionActions().markOrderCancellationUnconfirmed(cancellation.id, now - 1, monotonicNow - 1);
+			const id = `pending-trading-action:${cancellation.id}`;
+			act(() => root.render(createReconciliation()));
+			act(() => dismissOrderQueueItem(id));
+			act(() => updateOrderQueueItem(id, { status: "confirming" }));
+
+			mocks.openOrdersData = { orders: [{ oid: 105, sz: "1", triggerPx: "0" }] };
+			mocks.openOrdersMonotonicLastMessageAt = monotonicNow;
+			act(() => root.render(createReconciliation()));
+
+			expect(getOrderQueueItem(id)).toMatchObject({ status: "unconfirmed", dismissed: false });
+		});
+
+		it("keeps the counts and rejection of a partly accepted batch whose canceled order is still open", async () => {
+			const now = Date.now();
+			const monotonicNow = performance.now();
+			const rejection = "Order was never placed, already canceled, or filled.";
+			const cancellation = getPendingTradingActionActions().claimOrderCancellation({
+				env: "Mainnet",
+				owner: USER,
+				oids: [106, 107],
+			});
+			if (!cancellation) throw new Error("Expected cancellation claim");
+			getPendingTradingActionActions().markOrderCancellationRequestStarted(cancellation.id, now - 3, monotonicNow - 3);
+			settlePartialOrderCancellation(cancellation, [106, 107], {
+				status: "partial",
+				totalCount: 2,
+				acceptedIndexes: [0],
+				errors: [{ index: 1, text: rejection }],
+			});
+			getPendingTradingActionActions().markOrderCancellationUnconfirmed(cancellation.id, now - 1, monotonicNow - 1);
+			const id = `pending-trading-action:${cancellation.id}`;
+			act(() => root.render(createReconciliation()));
+			act(() => updateOrderQueueItem(id, { status: "confirming" }));
+
+			mocks.openOrdersData = { orders: [{ oid: 106, sz: "1", triggerPx: "0" }] };
+			mocks.openOrdersMonotonicLastMessageAt = monotonicNow;
+			act(() => root.render(createReconciliation()));
+
+			expect(getPendingTradingActionSnapshot().orderCancellations).toEqual([]);
+			expect(getOrderQueueItem(id)).toMatchObject({
+				status: "unconfirmed",
+				acceptedCount: 1,
+				totalCount: 2,
+				countMode: "canceled",
+				error: { kind: "exchange-error", entries: [{ index: 1, text: rejection }] },
+			});
+		});
+
 		it("keeps a hidden unconfirmed cancellation hidden when the lookup brings no result", async () => {
 			let fail!: (error: Error) => void;
 			mocks.infoOrderStatus.mockReturnValue(
@@ -1904,7 +1989,8 @@ describe("OrderReconciliation", () => {
 					return new Promise((resolve) => {
 						const run = () => {
 							otherTabLocks.set(name, []);
-							Promise.resolve(callback({ name, mode: "exclusive" } as Lock))
+							Promise.resolve()
+								.then(() => callback({ name, mode: "exclusive" } as Lock))
 								.then(resolve)
 								.finally(() => releaseLock(name));
 						};
@@ -2032,6 +2118,65 @@ describe("OrderReconciliation", () => {
 			expect(findQueueForAsset(11)?.status).not.toBe("success");
 			window.localStorage.removeItem(storageKey);
 			act(() => getPendingOrderActions().remove(submission.id));
+		});
+
+		it("withdraws this tab's in-progress notification once the tab it handed over to settles the order", async () => {
+			const cloid = "0x000000000000000000000000000000dd" as const;
+			act(() => root.render(createReconciliation()));
+			const submission = getPendingOrderActions().add({
+				env: "Mainnet",
+				user: USER,
+				intentKey: "settled-elsewhere-order",
+				children: [{ assetId: 13, cloid }],
+			});
+			const storageKey = `${STORAGE_KEYS.PENDING_ORDERS}:submission:Mainnet:${USER}:${submission.id}`;
+			act(() => root.render(createReconciliation()));
+			expect(findQueueForAsset(13)?.status).toBe("confirming");
+			const otherTab = createPendingOrderStore(window.localStorage);
+			otherTab.getState().actions.serve({ env: "Mainnet", user: USER });
+
+			mocks.clientKey = "0x2222222222222222222222222222222222222222";
+			act(() => root.render(createReconciliation()));
+			await flush();
+			expect(otherTab.getState().actions.owns(submission.id)).toBe(true);
+
+			const settled = otherTab.getState().actions.resolve("Mainnet", USER, cloid, "filled");
+			expect(settled?.children[0]?.status).toBe("filled");
+			expect(window.localStorage.getItem(storageKey)).toBeNull();
+			act(() => window.dispatchEvent(new StorageEvent("storage", { key: storageKey })));
+			mocks.clientKey = USER;
+			act(() => root.render(createReconciliation()));
+			await flush();
+
+			expect(findQueueForAsset(13)).toBeUndefined();
+			expect(hasPendingOrderForAssets("Mainnet", USER, [13])).toBe(false);
+		});
+
+		it("keeps the notification of a submission this tab removes or settles itself", async () => {
+			const cloid = "0x000000000000000000000000000000ee" as const;
+			act(() => root.render(createReconciliation()));
+			const removed = getPendingOrderActions().add({
+				env: "Mainnet",
+				user: USER,
+				intentKey: "removed-here-order",
+				children: [{ assetId: 14, cloid: "0x000000000000000000000000000000ef" }],
+			});
+			act(() => root.render(createReconciliation()));
+			expect(findQueueForAsset(14)?.status).toBe("confirming");
+			act(() => getPendingOrderActions().remove(removed.id));
+			await flush();
+			expect(findQueueForAsset(14)?.status).toBe("confirming");
+
+			getPendingOrderActions().add({
+				env: "Mainnet",
+				user: USER,
+				intentKey: "settled-here-order",
+				children: [{ assetId: 15, cloid }],
+			});
+			mocks.orderUpdatesData = [{ order: { cloid }, status: "open" }];
+			act(() => root.render(createReconciliation()));
+			await flush();
+			expect(findQueueForAsset(15)).toMatchObject({ status: "success", outcome: "resting" });
 		});
 
 		it("settles a timed-out submission from a fill it already received once the closed tab's lock is free", async () => {

@@ -13,7 +13,10 @@ import {
 import { useHyperliquid, useSubscription } from "@/lib/hyperliquid";
 import { toBig } from "@/lib/trade/numbers";
 import { releaseOrderAssetReservations } from "@/lib/trade/order-asset-lock";
-import { orderReconciliationError } from "@/lib/trade/order-reconciliation-feedback";
+import {
+	orderReconciliationError,
+	withdrawNotificationsSettledElsewhere,
+} from "@/lib/trade/order-reconciliation-feedback";
 import {
 	confirmPartialCancellationFeedback,
 	getPartialCancellationFeedback,
@@ -62,6 +65,7 @@ export function OrderReconciliation() {
 	const cancellations = usePendingOrderCancellations();
 	const pollingRef = useRef(false);
 	const openOrderIdsRef = useRef<OpenOrderIds>(undefined);
+	const queueIdsRef = useRef<ReadonlyMap<string, string>>(new Map());
 	const normalizedAddress = address?.toLowerCase();
 	const hasCurrentTradingAction =
 		!!normalizedAddress &&
@@ -130,11 +134,12 @@ export function OrderReconciliation() {
 					continue;
 				}
 				getPendingTradingActionActions().releaseOrderCancellation(cancellation.id);
-				updatePendingTradingActionFeedback(cancellation, "cancel", {
-					status: "unconfirmed",
-					message: msg`The cancellation was not confirmed. Review open orders before retrying.`,
-					...(cancellation.partialResult ? getPartialCancellationFeedback(cancellation.partialResult) : {}),
-				});
+				settleUnconfirmedTradingActionFeedback(
+					cancellation,
+					"cancel",
+					msg`The cancellation was not confirmed. Review open orders before retrying.`,
+					cancellation.partialResult && getPartialCancellationFeedback(cancellation.partialResult),
+				);
 				continue;
 			}
 			if (!cancellation.accepted) {
@@ -212,6 +217,8 @@ export function OrderReconciliation() {
 	]);
 
 	useEffect(() => {
+		withdrawNotificationsSettledElsewhere(getPendingOrderActions().takeRemovedElsewhere(), queueIdsRef.current);
+		queueIdsRef.current = new Map(submissions.map((submission) => [submission.id, getSubmissionQueueId(submission)]));
 		for (const submission of submissions) {
 			if (!activeSubmissionIds.has(submission.id)) syncSubmissionQueue(submission);
 		}

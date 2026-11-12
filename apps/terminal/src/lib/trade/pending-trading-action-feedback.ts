@@ -88,11 +88,13 @@ export function settleUnconfirmedTradingActionFeedback(
 	action: TradingActionFeedbackIdentity,
 	kind: TradingActionKind,
 	message: NonNullable<OrderQueueItem["message"]>,
+	facts?: Pick<OrderQueueItem, "acceptedCount" | "countMode" | "error" | "totalCount">,
 ): void {
 	const id = ensurePendingTradingActionFeedback(action, kind);
+	const update = { ...facts, message };
 	updateOrderQueueItem(
 		id,
-		getOrderQueueItem(id)?.status === "unconfirmed" ? { message } : { status: "unconfirmed", message },
+		getOrderQueueItem(id)?.status === "unconfirmed" ? update : { ...update, status: "unconfirmed" },
 	);
 }
 

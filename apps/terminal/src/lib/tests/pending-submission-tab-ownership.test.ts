@@ -235,6 +235,19 @@ describe.each(kinds)("pending $name submission ownership between tabs", ({ lockP
 			expect(isBlocked(other, submission.id)).toBe(false);
 		});
 
+		it("lets go of its own submission when it switched accounts before its lock was granted", async () => {
+			const storage = new MemoryStorage();
+			const sender = openTab(storage, USER_X);
+			const submission = sender.add();
+			sender.actions().serve({ env: "Mainnet", user: USER_Y });
+			const other = openTab(storage, USER_X);
+			await settle();
+
+			expect(isBlocked(sender, submission.id)).toBe(true);
+			expect(isBlocked(other, submission.id)).toBe(false);
+			expect(locks.holderCount(`${lockPrefix}${submission.id}`)).toBe(1);
+		});
+
 		it("does not take over a submission the sending tab settled, even before the other tab hears of it", async () => {
 			const storage = new MemoryStorage();
 			const sender = openTab(storage, USER_X);

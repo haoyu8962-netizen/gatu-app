@@ -3,7 +3,10 @@ import { useEffect, useRef } from "react";
 import { HL_ALL_DEXS } from "@/config/app";
 import { matchesTwapIntent, TWAP_RECONCILIATION_CONFIRMATION_WINDOW_MS, type TwapStateLike } from "@/domain/trade/twap";
 import { useHyperliquid, useSubscription } from "@/lib/hyperliquid";
-import { orderReconciliationError } from "@/lib/trade/order-reconciliation-feedback";
+import {
+	orderReconciliationError,
+	withdrawNotificationsSettledElsewhere,
+} from "@/lib/trade/order-reconciliation-feedback";
 import {
 	settleUnconfirmedTradingActionFeedback,
 	syncPendingTradingActionFeedback,
@@ -81,6 +84,7 @@ export function TwapReconciliation() {
 		{ user: address ?? "0x0000000000000000000000000000000000000000" },
 		{ enabled: !!address },
 	);
+	const queueIdsRef = useRef<ReadonlyMap<string, string>>(new Map());
 	const twapHistoryRef = useRef<TwapHistorySnapshot>(undefined);
 	useEffect(() => {
 		twapHistoryRef.current = twapHistory && {
@@ -124,10 +128,11 @@ export function TwapReconciliation() {
 				if (cancellation.phase === "unconfirmed") {
 					if (!wasReceivedAfter(activeTwapsReceivedAt, cancellation.monotonicUnconfirmedAt)) continue;
 					getPendingTradingActionActions().resolveTwapCancellation(cancellation.id);
-					updatePendingTradingActionFeedback(cancellation, "twap-cancel", {
-						status: "unconfirmed",
-						message: msg`TWAP termination was not confirmed. Review active TWAPs before retrying.`,
-					});
+					settleUnconfirmedTradingActionFeedback(
+						cancellation,
+						"twap-cancel",
+						msg`TWAP termination was not confirmed. Review active TWAPs before retrying.`,
+					);
 				}
 				continue;
 			}
@@ -138,6 +143,10 @@ export function TwapReconciliation() {
 	}, [activeTwaps, activeTwapsReceivedAt, activeTwapsStale, activeTwapsStatus, address, cancellations, env]);
 
 	useEffect(() => {
+		withdrawNotificationsSettledElsewhere(getPendingTwapActions().takeRemovedElsewhere(), queueIdsRef.current);
+		queueIdsRef.current = new Map(
+			submissions.map((submission) => [submission.id, submission.queueId ?? `reconcile-${submission.id}`]),
+		);
 		for (const submission of submissions) {
 			if (!activeSubmissionIds.has(submission.id)) ensureTwapSubmissionQueue(submission);
 		}
