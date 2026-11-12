@@ -198,10 +198,11 @@ export function OrderReconciliation() {
 			if (modification.phase === "unconfirmed") {
 				if (!wasReceivedAfter(openOrdersReceivedAt, modification.monotonicUnconfirmedAt)) continue;
 				getPendingTradingActionActions().resolveModification(modification.id);
-				updatePendingTradingActionFeedback(modification, "modify", {
-					status: "unconfirmed",
-					message: msg`The modification was not confirmed. Review the order before retrying.`,
-				});
+				settleUnconfirmedTradingActionFeedback(
+					modification,
+					"modify",
+					msg`The modification was not confirmed. Review the order before retrying.`,
+				);
 			}
 		}
 	}, [
@@ -220,7 +221,12 @@ export function OrderReconciliation() {
 		withdrawNotificationsSettledElsewhere(getPendingOrderActions().takeRemovedElsewhere(), queueIdsRef.current);
 		queueIdsRef.current = new Map(submissions.map((submission) => [submission.id, getSubmissionQueueId(submission)]));
 		for (const submission of submissions) {
-			if (!activeSubmissionIds.has(submission.id)) syncSubmissionQueue(submission);
+			if (!activeSubmissionIds.has(submission.id)) {
+				syncSubmissionQueue(submission);
+			} else if (!getPendingOrderActions().owns(submission.id)) {
+				releasePositionMarketCloseSession(submission);
+				showSubmissionUnconfirmed(submission);
+			}
 		}
 		const eligible = submissions.filter(
 			(submission) => submission.unconfirmedAt === undefined && !activeSubmissionIds.has(submission.id),
@@ -580,8 +586,20 @@ function ensureSubmissionQueue(submission: PendingOrderSubmission): string {
 	});
 }
 
+function showSubmissionUnconfirmed(submission: PendingOrderSubmission): void {
+	if (submission.unconfirmedAt === undefined) return;
+	const queueItem = getOrderQueueItem(getSubmissionQueueId(submission));
+	if (!queueItem || (queueItem.status !== "pending" && queueItem.status !== "confirming")) return;
+	updateOrderQueueItem(queueItem.id, {
+		status: "unconfirmed",
+		error: orderReconciliationError("status-unconfirmed"),
+		children: getSubmissionQueueChildren(submission),
+	});
+}
+
 function syncSubmissionQueue(submission: PendingOrderSubmission): void {
 	const queueId = ensureSubmissionQueue(submission);
+	showSubmissionUnconfirmed(submission);
 	const children = getSubmissionQueueChildren(submission);
 	if (JSON.stringify(getOrderQueueItem(queueId)?.children) !== JSON.stringify(children)) {
 		updateOrderQueueItem(queueId, { children });

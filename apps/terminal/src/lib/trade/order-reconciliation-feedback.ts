@@ -52,7 +52,7 @@ export function formatOrderReconciliationError(
 
 /**
  * Another tab took over these submissions and settled them. This tab never saw the result, so it
- * withdraws the notification it still shows as in progress instead of drawing an outcome.
+ * withdraws the notification it still shows as in progress or unconfirmed instead of drawing an outcome.
  */
 export function withdrawNotificationsSettledElsewhere(
 	ids: readonly string[],
@@ -61,6 +61,6 @@ export function withdrawNotificationsSettledElsewhere(
 	for (const id of ids) {
 		const queueId = queueIds.get(id) ?? `reconcile-${id}`;
 		const status = getOrderQueueItem(queueId)?.status;
-		if (status === "pending" || status === "confirming") removeOrderQueueItem(queueId);
+		if (status === "pending" || status === "confirming" || status === "unconfirmed") removeOrderQueueItem(queueId);
 	}
 }

@@ -149,6 +149,7 @@ export function TwapReconciliation() {
 		);
 		for (const submission of submissions) {
 			if (!activeSubmissionIds.has(submission.id)) ensureTwapSubmissionQueue(submission);
+			showTwapSubmissionUnconfirmed(submission);
 		}
 		const eligible = submissions.filter(
 			(submission) => submission.unconfirmedAt === undefined && !activeSubmissionIds.has(submission.id),
@@ -458,6 +459,16 @@ function completeTwapReconciliation(submission: PendingTwapSubmission, candidate
 				error: candidate.error ?? orderReconciliationError("twap-order-rejected"),
 			});
 	}
+}
+
+function showTwapSubmissionUnconfirmed(submission: PendingTwapSubmission): void {
+	if (submission.unconfirmedAt === undefined) return;
+	const queueItem = getOrderQueueItem(submission.queueId ?? `reconcile-${submission.id}`);
+	if (!queueItem || (queueItem.status !== "pending" && queueItem.status !== "confirming")) return;
+	updateOrderQueueItem(queueItem.id, {
+		status: "unconfirmed",
+		error: orderReconciliationError("twap-status-unconfirmed"),
+	});
 }
 
 function ensureTwapSubmissionQueue(submission: PendingTwapSubmission): string {

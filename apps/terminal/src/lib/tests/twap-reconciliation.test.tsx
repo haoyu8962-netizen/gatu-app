@@ -184,6 +184,31 @@ function installExclusiveLockManager(): void {
 	Object.defineProperty(window.navigator, "locks", { configurable: true, value: manager });
 }
 
+function installQueuedLockManager(): void {
+	const queues = new Map<string, Array<() => void>>();
+	const manager = {
+		request(name: string, _options: LockOptions, callback: (lock: Lock | null) => unknown) {
+			return new Promise((resolve) => {
+				const run = () => {
+					queues.set(name, queues.get(name) ?? []);
+					Promise.resolve()
+						.then(() => callback({ name, mode: "exclusive" } as Lock))
+						.then(resolve)
+						.finally(() => {
+							const next = queues.get(name)?.shift();
+							if (next) next();
+							else queues.delete(name);
+						});
+				};
+				const queue = queues.get(name);
+				if (queue) queue.push(run);
+				else run();
+			});
+		},
+	} as unknown as LockManager;
+	Object.defineProperty(window.navigator, "locks", { configurable: true, value: manager });
+}
+
 async function reservePendingSubmission(
 	submission: ReturnType<typeof addSubmission>,
 	expiresAt = submission.createdAt + TWAP_RECONCILIATION_CONFIRMATION_WINDOW_MS,
@@ -208,6 +233,14 @@ async function reservePendingSubmission(
 describe("TwapReconciliation", () => {
 	let container: HTMLDivElement;
 	let root: Root;
+	const otherTabs: Array<ReturnType<typeof createPendingTwapStore>> = [];
+
+	function openOtherTab() {
+		const otherTab = createPendingTwapStore(window.localStorage);
+		otherTab.getState().actions.serve({ env: "Mainnet", user: USER });
+		otherTabs.push(otherTab);
+		return otherTab;
+	}
 
 	beforeEach(() => {
 		vi.useFakeTimers();
@@ -235,6 +268,7 @@ describe("TwapReconciliation", () => {
 
 	afterEach(() => {
 		act(() => {
+			for (const otherTab of otherTabs.splice(0)) otherTab.getState().actions.serve(null);
 			for (const item of queueItems) queueActions?.removeOrder(item.id);
 		});
 		queueItems = [];
@@ -922,36 +956,14 @@ describe("TwapReconciliation", () => {
 	});
 
 	it("withdraws this tab's in-progress TWAP notification once the tab it handed over to settles it", async () => {
-		const queues = new Map<string, Array<() => void>>();
-		const manager = {
-			request(name: string, _options: LockOptions, callback: (lock: Lock | null) => unknown) {
-				return new Promise((resolve) => {
-					const run = () => {
-						queues.set(name, queues.get(name) ?? []);
-						Promise.resolve()
-							.then(() => callback({ name, mode: "exclusive" } as Lock))
-							.then(resolve)
-							.finally(() => {
-								const next = queues.get(name)?.shift();
-								if (next) next();
-								else queues.delete(name);
-							});
-					};
-					const queue = queues.get(name);
-					if (queue) queue.push(run);
-					else run();
-				});
-			},
-		} as unknown as LockManager;
-		Object.defineProperty(window.navigator, "locks", { configurable: true, value: manager });
+		installQueuedLockManager();
 		act(() => root.render(createReconciliation()));
 		const submission = addSubmission();
 		act(() => root.render(createReconciliation()));
 		expect(getOrderQueueItem(`reconcile-${submission.id}`)?.status).toBe("confirming");
 		const storageKey = Object.keys(window.localStorage).find((key) => key.endsWith(submission.id));
 		if (!storageKey) throw new Error("Expected persisted TWAP submission");
-		const otherTab = createPendingTwapStore(window.localStorage);
-		otherTab.getState().actions.serve({ env: "Mainnet", user: USER });
+		const otherTab = openOtherTab();
 
 		mocks.clientKey = "0x2222222222222222222222222222222222222222";
 		await act(async () => {
@@ -970,6 +982,86 @@ describe("TwapReconciliation", () => {
 		});
 
 		expect(getOrderQueueItem(`reconcile-${submission.id}`)).toBeUndefined();
+	});
+
+	async function handOverConfirmingTwap() {
+		installQueuedLockManager();
+		act(() => root.render(createReconciliation()));
+		const submission = addSubmission();
+		act(() => root.render(createReconciliation()));
+		const queueId = `reconcile-${submission.id}`;
+		expect(getOrderQueueItem(queueId)?.status).toBe("confirming");
+		const storageKey = Object.keys(window.localStorage).find((key) => key.endsWith(submission.id));
+		if (!storageKey) throw new Error("Expected persisted TWAP submission");
+		const otherTab = openOtherTab();
+		mocks.clientKey = "0x2222222222222222222222222222222222222222";
+		await act(async () => {
+			root.render(createReconciliation());
+			for (let index = 0; index < 5; index += 1) await Promise.resolve();
+		});
+		expect(otherTab.getState().actions.owns(submission.id)).toBe(true);
+		return { submission, queueId, storageKey, otherTab };
+	}
+
+	it("shows this tab's confirming TWAP notification as unconfirmed once the tab that took it over marks it unconfirmed", async () => {
+		const { submission, queueId, storageKey, otherTab } = await handOverConfirmingTwap();
+
+		expect(otherTab.getState().actions.markUnconfirmed(submission.id, Date.now())?.id).toBe(submission.id);
+		act(() => window.dispatchEvent(new StorageEvent("storage", { key: storageKey })));
+
+		expect(getPendingTwapActions().owns(submission.id)).toBe(false);
+		expect(getOrderQueueItem(queueId)).toMatchObject({
+			status: "unconfirmed",
+			error: { code: "twap-status-unconfirmed", kind: "order-reconciliation" },
+		});
+		expect(getOrderQueueItem(queueId)?.dismissed).toBeFalsy();
+	});
+
+	it("shows a hidden confirming TWAP notification again when the tab that took it over marks it unconfirmed, and does not reopen it once it is closed", async () => {
+		const { submission, queueId, storageKey, otherTab } = await handOverConfirmingTwap();
+		act(() => dismissOrderQueueItem(queueId));
+		expect(getOrderQueueItem(queueId)).toMatchObject({ status: "confirming", dismissed: true });
+
+		otherTab.getState().actions.markUnconfirmed(submission.id, Date.now());
+		act(() => window.dispatchEvent(new StorageEvent("storage", { key: storageKey })));
+		expect(getOrderQueueItem(queueId)).toMatchObject({ status: "unconfirmed", dismissed: false });
+		act(() => dismissOrderQueueItem(queueId));
+
+		mocks.clientKey = USER;
+		await act(async () => {
+			root.render(createReconciliation());
+			otherTab.getState().actions.serve(null);
+			for (let index = 0; index < 10; index += 1) await Promise.resolve();
+		});
+		expect(getPendingTwapActions().owns(submission.id)).toBe(true);
+		expect(getOrderQueueItem(queueId)).toMatchObject({ status: "unconfirmed", dismissed: true });
+
+		mocks.activeData = { dex: "", user: USER, states: [[71, createTwapState()]] };
+		await act(async () => {
+			root.render(createReconciliation());
+			for (let index = 0; index < 5; index += 1) await Promise.resolve();
+		});
+		expect(getOrderQueueItem(queueId)).toMatchObject({ status: "success", outcome: "twapStarted", dismissed: false });
+	});
+
+	it("shows a confirming TWAP notification as unconfirmed once another tab marks the submission unconfirmed when there are no Web Locks", () => {
+		Object.defineProperty(window.navigator, "locks", { configurable: true, value: undefined });
+		const submission = addSubmission();
+		act(() => root.render(createReconciliation()));
+		const queueId = `reconcile-${submission.id}`;
+		expect(getOrderQueueItem(queueId)?.status).toBe("confirming");
+		const storageKey = Object.keys(window.localStorage).find((key) => key.endsWith(submission.id));
+		if (!storageKey) throw new Error("Expected persisted TWAP submission");
+
+		const otherTab = createPendingTwapStore(window.localStorage);
+		expect(otherTab.getState().actions.markUnconfirmed(submission.id, Date.now())?.id).toBe(submission.id);
+		act(() => window.dispatchEvent(new StorageEvent("storage", { key: storageKey })));
+
+		expect(getOrderQueueItem(queueId)).toMatchObject({
+			status: "unconfirmed",
+			error: { code: "twap-status-unconfirmed", kind: "order-reconciliation" },
+		});
+		expect(getOrderQueueItem(queueId)?.dismissed).toBeFalsy();
 	});
 
 	it("keeps a hidden unconfirmed TWAP termination hidden when the TWAP is still active", async () => {

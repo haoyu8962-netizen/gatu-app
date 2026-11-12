@@ -30,6 +30,7 @@ import {
 	createPendingOrderStore,
 	getPendingOrderActions,
 	hasPendingOrderForAssets,
+	type PendingOrderOrigin,
 } from "@/stores/use-pending-order-store";
 import {
 	getPendingTradingActionActions,
@@ -372,7 +373,7 @@ describe("OrderReconciliation", () => {
 		expect(getPositionMarketCloseModal()).toBeNull();
 	});
 
-	it("releases the local lock while the wallet is disconnected", () => {
+	it("releases the local lock while the wallet is disconnected when there are no Web Locks", () => {
 		const submission = getPendingOrderActions().add({
 			env: "Mainnet",
 			user: USER,
@@ -448,6 +449,35 @@ describe("OrderReconciliation", () => {
 		expect(getOrderQueueItem(queueId)?.error).toBeUndefined();
 	});
 
+	it("shows a confirming notification as unconfirmed once another tab marks the submission unconfirmed when there are no Web Locks", () => {
+		const submission = getPendingOrderActions().add({
+			env: "Mainnet",
+			user: USER,
+			intentKey: "marked-elsewhere-without-locks",
+			children: [{ assetId: 73, cloid: "0x00000000000000000000000000000073" }],
+		});
+		act(() => root.render(createReconciliation()));
+		const queueId = `reconcile-${submission.id}`;
+		expect(getOrderQueueItem(queueId)?.status).toBe("confirming");
+
+		const otherTab = createPendingOrderStore(window.localStorage);
+		expect(otherTab.getState().actions.markUnconfirmed(submission.id, Date.now())?.unconfirmedAt).toBe(Date.now());
+		act(() => {
+			window.dispatchEvent(
+				new StorageEvent("storage", {
+					key: `${STORAGE_KEYS.PENDING_ORDERS}:submission:Mainnet:${USER}:${submission.id}`,
+				}),
+			);
+		});
+
+		expect(getOrderQueueItem(queueId)).toMatchObject({
+			status: "unconfirmed",
+			error: { code: "status-unconfirmed" },
+			children: [{ assetId: 73, status: "unknown" }],
+		});
+		expect(getOrderQueueItem(queueId)?.dismissed).toBeFalsy();
+	});
+
 	it("restores an old pending record without inventing market or size metadata", () => {
 		const submission = getPendingOrderActions().add({
 			env: "Mainnet",
@@ -520,7 +550,7 @@ describe("OrderReconciliation", () => {
 		expect(mocks.warningToast).not.toHaveBeenCalled();
 	});
 
-	it("keeps a late response scoped to the originating account after switching accounts", async () => {
+	it("keeps a late response scoped to the originating account after switching accounts when there are no Web Locks", async () => {
 		let settle!: (result: { status: "order"; order: { status: "filled" } }) => void;
 		mocks.infoOrderStatus.mockImplementationOnce(
 			() =>
@@ -1051,6 +1081,70 @@ describe("OrderReconciliation", () => {
 			"unconfirmed",
 			"The modification was not confirmed. Review the order before retrying.",
 		);
+	});
+
+	function claimUnconfirmedModification(oid: number) {
+		const now = Date.now();
+		const monotonicNow = performance.now();
+		const action = getPendingTradingActionActions().claimModification({
+			env: "Mainnet",
+			owner: USER,
+			oid,
+			originalSize: "2",
+			originalTriggerPx: "0",
+			originalLimitPx: "100",
+			expectedSize: "1",
+		});
+		if (!action) throw new Error("Expected modification claim");
+		getPendingTradingActionActions().markModificationRequestStarted(action.id, now - 2, monotonicNow - 2);
+		getPendingTradingActionActions().markModificationUnconfirmed(action.id, now - 1, monotonicNow - 1);
+		return { action, id: `pending-trading-action:${action.id}`, monotonicNow };
+	}
+
+	it("keeps a hidden unconfirmed modification hidden when a fresh snapshot shows the original order", () => {
+		const { action, id, monotonicNow } = claimUnconfirmedModification(48);
+		act(() => root.render(createReconciliation()));
+		expect(getOrderQueueItem(id)?.status).toBe("unconfirmed");
+		act(() => dismissOrderQueueItem(id));
+
+		mocks.openOrdersData = { orders: [{ oid: 48, sz: "2", triggerPx: "0" }] };
+		mocks.openOrdersMonotonicLastMessageAt = monotonicNow;
+		act(() => root.render(createReconciliation()));
+
+		expect(getPendingTradingActionSnapshot().modifications).toHaveLength(0);
+		expect(getOrderQueueItem(id)).toMatchObject({ status: "unconfirmed", dismissed: true });
+		expectActionFeedback(
+			action.id,
+			"unconfirmed",
+			"The modification was not confirmed. Review the order before retrying.",
+		);
+	});
+
+	it("shows a released modification as unconfirmed when its notification was not yet unconfirmed", () => {
+		const { id, monotonicNow } = claimUnconfirmedModification(49);
+		act(() => root.render(createReconciliation()));
+		act(() => dismissOrderQueueItem(id));
+		act(() => updateOrderQueueItem(id, { status: "confirming" }));
+
+		mocks.openOrdersData = { orders: [{ oid: 49, sz: "2", triggerPx: "0" }] };
+		mocks.openOrdersMonotonicLastMessageAt = monotonicNow;
+		act(() => root.render(createReconciliation()));
+
+		expect(getOrderQueueItem(id)).toMatchObject({ status: "unconfirmed", dismissed: false });
+	});
+
+	it("shows a hidden unconfirmed modification again once its order has left the open orders", () => {
+		const { action, id, monotonicNow } = claimUnconfirmedModification(50);
+		act(() => root.render(createReconciliation()));
+		act(() => dismissOrderQueueItem(id));
+
+		mocks.openOrdersData = { orders: [] };
+		mocks.openOrdersMonotonicLastMessageAt = monotonicNow;
+		act(() => root.render(createReconciliation()));
+
+		expect(getPendingTradingActionSnapshot().modifications).toHaveLength(0);
+		expect(getOrderQueueItem(id)).toMatchObject({ status: "unconfirmed", dismissed: false });
+		expectActionFeedback(action.id, "unconfirmed", "The modified order is no longer open.");
 	});
 
 	it("does not use a pre-unconfirmed snapshot to release a modification", () => {
@@ -1982,6 +2076,14 @@ describe("OrderReconciliation", () => {
 		const STORAGE_KEY = `${STORAGE_KEYS.PENDING_ORDERS}:submission:Mainnet:${USER}:${OTHER_TAB_ID}`;
 		const LOCK_NAME = `sairn-pending-order-owner-v1:${OTHER_TAB_ID}`;
 		const otherTabLocks = new Map<string, Array<() => void>>();
+		const otherTabs: Array<ReturnType<typeof createPendingOrderStore>> = [];
+
+		function openOtherTab() {
+			const otherTab = createPendingOrderStore(window.localStorage);
+			otherTab.getState().actions.serve({ env: "Mainnet", user: USER });
+			otherTabs.push(otherTab);
+			return otherTab;
+		}
 
 		function installLockManager() {
 			const manager = {
@@ -2010,7 +2112,7 @@ describe("OrderReconciliation", () => {
 			if (queue?.length) otherTabLocks.set(name, queue);
 		}
 
-		function writeOtherTabSubmission(present: boolean, unconfirmedAt?: number) {
+		function writeOtherTabSubmission(present: boolean, unconfirmedAt?: number, origin?: PendingOrderOrigin) {
 			if (present) {
 				window.localStorage.setItem(
 					STORAGE_KEY,
@@ -2019,6 +2121,7 @@ describe("OrderReconciliation", () => {
 						env: "Mainnet",
 						user: USER,
 						intentKey: "other-tab-order",
+						origin,
 						createdAt: Date.now(),
 						unconfirmedAt,
 						children: [{ assetId: 9, cloid: OTHER_TAB_CLOID, attempts: 0, nextCheckAt: Date.now() + 1_000 }],
@@ -2043,6 +2146,9 @@ describe("OrderReconciliation", () => {
 		});
 
 		afterEach(() => {
+			act(() => {
+				for (const otherTab of otherTabs.splice(0)) otherTab.getState().actions.serve(null);
+			});
 			window.localStorage.removeItem(STORAGE_KEY);
 			Object.defineProperty(window.navigator, "locks", { configurable: true, value: undefined });
 		});
@@ -2097,8 +2203,7 @@ describe("OrderReconciliation", () => {
 				children: [{ assetId: 11, cloid }],
 			});
 			const storageKey = `${STORAGE_KEYS.PENDING_ORDERS}:submission:Mainnet:${USER}:${submission.id}`;
-			const otherTab = createPendingOrderStore(window.localStorage);
-			otherTab.getState().actions.serve({ env: "Mainnet", user: USER });
+			const otherTab = openOtherTab();
 			await flush();
 			await act(() => vi.advanceTimersByTimeAsync(3_000));
 			expect(mocks.infoOrderStatus).toHaveBeenCalledWith({ user: USER, oid: cloid });
@@ -2132,8 +2237,7 @@ describe("OrderReconciliation", () => {
 			const storageKey = `${STORAGE_KEYS.PENDING_ORDERS}:submission:Mainnet:${USER}:${submission.id}`;
 			act(() => root.render(createReconciliation()));
 			expect(findQueueForAsset(13)?.status).toBe("confirming");
-			const otherTab = createPendingOrderStore(window.localStorage);
-			otherTab.getState().actions.serve({ env: "Mainnet", user: USER });
+			const otherTab = openOtherTab();
 
 			mocks.clientKey = "0x2222222222222222222222222222222222222222";
 			act(() => root.render(createReconciliation()));
@@ -2177,6 +2281,210 @@ describe("OrderReconciliation", () => {
 			act(() => root.render(createReconciliation()));
 			await flush();
 			expect(findQueueForAsset(15)).toMatchObject({ status: "success", outcome: "resting" });
+		});
+
+		function addMarketClose(assetId: number, cloid: `0x${string}`, sessionId: string) {
+			return getPendingOrderActions().add({
+				env: "Mainnet",
+				user: USER,
+				intentKey: `market-close-${assetId}`,
+				exclusiveAssetLock: true,
+				confirmationMode: "filled",
+				origin: { type: "positionMarketClose", sessionId },
+				children: [{ assetId, cloid }],
+			});
+		}
+
+		function storageKeyOf(submission: { id: string }) {
+			return `${STORAGE_KEYS.PENDING_ORDERS}:submission:Mainnet:${USER}:${submission.id}`;
+		}
+
+		it("releases the market close session once the wallet disconnects, without settling the order or timing it out", async () => {
+			act(() => root.render(createReconciliation()));
+			const sessionId = openReconcilingMarketCloseSession();
+			const submission = addMarketClose(16, "0x000000000000000000000000000000f1", sessionId);
+			act(() => root.render(createReconciliation()));
+			await flush();
+			expect(getPendingOrderActions().owns(submission.id)).toBe(true);
+			expect(getPositionMarketCloseModal()?.sessionId).toBe(sessionId);
+			expect(findQueueForAsset(16)?.status).toBe("confirming");
+
+			mocks.clientKey = "disconnected";
+			act(() => root.render(createReconciliation()));
+			await flush();
+
+			expect(getPendingOrderActions().owns(submission.id)).toBe(false);
+			expect(getPositionMarketCloseModal()).toBeNull();
+			expect(findQueueForAsset(16)?.status).toBe("confirming");
+			expect(hasPendingOrderForAssets("Mainnet", USER, [16])).toBe(true);
+
+			await act(() => vi.advanceTimersByTimeAsync(ORDER_RECONCILIATION_CONFIRMATION_WINDOW_MS));
+			expect(findQueueForAsset(16)?.status).toBe("confirming");
+			expect(window.localStorage.getItem(storageKeyOf(submission))).not.toBeNull();
+
+			const laterSessionId = openReconcilingMarketCloseSession();
+			mocks.clientKey = USER;
+			act(() => root.render(createReconciliation()));
+			await flush();
+
+			expect(getPendingOrderActions().owns(submission.id)).toBe(true);
+			expect(findQueueForAsset(16)).toMatchObject({ status: "unconfirmed", error: { code: "status-unconfirmed" } });
+			expect(getPositionMarketCloseModal()).toMatchObject({ sessionId: laterSessionId, phase: "reconciling" });
+			expect(mocks.infoOrderStatus).not.toHaveBeenCalled();
+			window.localStorage.removeItem(storageKeyOf(submission));
+			act(() => getPendingOrderActions().remove(submission.id));
+		});
+
+		it("releases the market close session when another tab takes the submission over and settles it", async () => {
+			const cloid = "0x000000000000000000000000000000f2" as const;
+			act(() => root.render(createReconciliation()));
+			const sessionId = openReconcilingMarketCloseSession();
+			const submission = addMarketClose(18, cloid, sessionId);
+			act(() => root.render(createReconciliation()));
+			await flush();
+			const otherTab = openOtherTab();
+
+			mocks.clientKey = "0x2222222222222222222222222222222222222222";
+			act(() => root.render(createReconciliation()));
+			await flush();
+			expect(otherTab.getState().actions.owns(submission.id)).toBe(true);
+			expect(getPositionMarketCloseModal()).toBeNull();
+			expect(findQueueForAsset(18)?.status).toBe("confirming");
+
+			expect(otherTab.getState().actions.resolve("Mainnet", USER, cloid, "filled")?.id).toBe(submission.id);
+			act(() => window.dispatchEvent(new StorageEvent("storage", { key: storageKeyOf(submission) })));
+			mocks.clientKey = USER;
+			act(() => root.render(createReconciliation()));
+			await flush();
+
+			expect(findQueueForAsset(18)).toBeUndefined();
+			expect(getPositionMarketCloseModal()).toBeNull();
+			expect(getPositionMarketCloseActions().open(POSITION, { owner: USER, env: "Mainnet" })).not.toBeNull();
+		});
+
+		it("keeps the market close session of a submission this tab is still sending after the account switches", async () => {
+			act(() => root.render(createReconciliation()));
+			const sessionId = openReconcilingMarketCloseSession();
+			getPositionMarketCloseActions().updatePhase(sessionId, "submitting");
+			const submission = addMarketClose(21, "0x000000000000000000000000000000f3", sessionId);
+			act(() => getPendingOrderActions().markActive(submission.id));
+			await flush();
+
+			mocks.clientKey = "0x2222222222222222222222222222222222222222";
+			act(() => root.render(createReconciliation()));
+			await flush();
+			expect(getPendingOrderActions().owns(submission.id)).toBe(true);
+			expect(getPositionMarketCloseModal()).toMatchObject({ sessionId, phase: "submitting" });
+
+			act(() => getPendingOrderActions().clearActive(submission.id));
+			await flush();
+			expect(getPendingOrderActions().owns(submission.id)).toBe(false);
+			expect(getPositionMarketCloseModal()).toBeNull();
+			window.localStorage.removeItem(storageKeyOf(submission));
+			act(() => getPendingOrderActions().remove(submission.id));
+		});
+
+		it("keeps this tab's market close session while another tab reconciles its own market close", async () => {
+			act(() => root.render(createReconciliation()));
+			const sessionId = openReconcilingMarketCloseSession();
+			act(() =>
+				writeOtherTabSubmission(true, undefined, { type: "positionMarketClose", sessionId: "other-tab-session" }),
+			);
+			await flush();
+
+			expect(getPendingOrderActions().owns(OTHER_TAB_ID)).toBe(false);
+			expect(getPositionMarketCloseModal()).toMatchObject({ sessionId, phase: "reconciling" });
+		});
+
+		async function handOverConfirmingOrder(assetId: number, cloid: `0x${string}`) {
+			act(() => root.render(createReconciliation()));
+			const submission = getPendingOrderActions().add({
+				env: "Mainnet",
+				user: USER,
+				intentKey: `handed-over-${assetId}`,
+				children: [{ assetId, cloid }],
+			});
+			act(() => root.render(createReconciliation()));
+			const queueId = `reconcile-${submission.id}`;
+			expect(getOrderQueueItem(queueId)?.status).toBe("confirming");
+			const otherTab = openOtherTab();
+			mocks.clientKey = "0x2222222222222222222222222222222222222222";
+			act(() => root.render(createReconciliation()));
+			await flush();
+			expect(otherTab.getState().actions.owns(submission.id)).toBe(true);
+			return { submission, queueId, otherTab };
+		}
+
+		it("shows this tab's confirming notification as unconfirmed once the tab that took the order over marks it unconfirmed", async () => {
+			const { submission, queueId, otherTab } = await handOverConfirmingOrder(19, "0x000000000000000000000000000000f4");
+
+			expect(otherTab.getState().actions.markUnconfirmed(submission.id, Date.now())?.id).toBe(submission.id);
+			act(() => window.dispatchEvent(new StorageEvent("storage", { key: storageKeyOf(submission) })));
+
+			expect(getPendingOrderActions().owns(submission.id)).toBe(false);
+			expect(getOrderQueueItem(queueId)).toMatchObject({
+				status: "unconfirmed",
+				error: { code: "status-unconfirmed" },
+				children: [{ assetId: 19, status: "unknown" }],
+			});
+			expect(getOrderQueueItem(queueId)?.dismissed).toBeFalsy();
+			window.localStorage.removeItem(storageKeyOf(submission));
+			act(() => getPendingOrderActions().remove(submission.id));
+		});
+
+		it("shows a hidden confirming notification again when the tab that took the order over marks it unconfirmed, and does not reopen it once it is closed", async () => {
+			const cloid = "0x000000000000000000000000000000f5" as const;
+			const { submission, queueId, otherTab } = await handOverConfirmingOrder(20, cloid);
+			act(() => dismissOrderQueueItem(queueId));
+			expect(getOrderQueueItem(queueId)).toMatchObject({ status: "confirming", dismissed: true });
+
+			otherTab.getState().actions.markUnconfirmed(submission.id, Date.now());
+			act(() => window.dispatchEvent(new StorageEvent("storage", { key: storageKeyOf(submission) })));
+			expect(getOrderQueueItem(queueId)).toMatchObject({ status: "unconfirmed", dismissed: false });
+			act(() => dismissOrderQueueItem(queueId));
+
+			mocks.clientKey = USER;
+			act(() => root.render(createReconciliation()));
+			await flush();
+			otherTab.getState().actions.serve(null);
+			await flush();
+			await flush();
+			expect(getPendingOrderActions().owns(submission.id)).toBe(true);
+			expect(getOrderQueueItem(queueId)).toMatchObject({ status: "unconfirmed", dismissed: true });
+
+			mocks.orderUpdatesData = [{ order: { cloid }, status: "open" }];
+			act(() => root.render(createReconciliation()));
+			expect(getOrderQueueItem(queueId)).toMatchObject({ status: "success", outcome: "resting", dismissed: false });
+		});
+
+		it("withdraws this tab's unconfirmed notification once the tab that took the order over settles it", async () => {
+			const cloid = "0x000000000000000000000000000000f6" as const;
+			const { submission, queueId, otherTab } = await handOverConfirmingOrder(23, cloid);
+			otherTab.getState().actions.markUnconfirmed(submission.id, Date.now());
+			act(() => window.dispatchEvent(new StorageEvent("storage", { key: storageKeyOf(submission) })));
+			expect(getOrderQueueItem(queueId)?.status).toBe("unconfirmed");
+
+			expect(otherTab.getState().actions.resolve("Mainnet", USER, cloid, "filled")?.id).toBe(submission.id);
+			act(() => window.dispatchEvent(new StorageEvent("storage", { key: storageKeyOf(submission) })));
+			mocks.clientKey = USER;
+			act(() => root.render(createReconciliation()));
+			await flush();
+
+			expect(getOrderQueueItem(queueId)).toBeUndefined();
+		});
+
+		it("leaves a notification that already shows a result alone when its record is marked unconfirmed elsewhere", async () => {
+			const { submission, queueId, otherTab } = await handOverConfirmingOrder(24, "0x000000000000000000000000000000f7");
+			act(() => {
+				updateOrderQueueItem(queueId, { status: "success", outcome: "resting" });
+			});
+
+			otherTab.getState().actions.markUnconfirmed(submission.id, Date.now());
+			act(() => window.dispatchEvent(new StorageEvent("storage", { key: storageKeyOf(submission) })));
+
+			expect(getOrderQueueItem(queueId)).toMatchObject({ status: "success", outcome: "resting" });
+			window.localStorage.removeItem(storageKeyOf(submission));
+			act(() => getPendingOrderActions().remove(submission.id));
 		});
 
 		it("settles a timed-out submission from a fill it already received once the closed tab's lock is free", async () => {
