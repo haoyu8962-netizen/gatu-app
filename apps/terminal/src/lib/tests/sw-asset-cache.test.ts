@@ -289,6 +289,11 @@ async function seedRelease(harness: Harness, assets: string[], extra = "") {
 	for (const path of assets) await harness.seed("assets-v11", path, typedAsset(path));
 }
 
+function localeCatalogMeta(localeCatalogs: string[]) {
+	const lists = { desktopOnly: [], mobileOnly: [], chartPrefetches: [], localeCatalogs };
+	return renderSurfacePreloadMeta(lists).join("");
+}
+
 async function seedWithFakeTimers(harness: Harness, assets: string[]) {
 	const seeding = seedRelease(harness, assets);
 	for (let index = 0; index < assets.length + 4; index += 1) await vi.advanceTimersByTimeAsync(1);
@@ -498,6 +503,11 @@ describe("service worker asset cache", () => {
 	it.each([
 		["a root file", "/manifest.json", {}],
 		["a TradingView bundle", "/charting_library/bundles/library.f5eaeb6901219f861981.js", {}],
+		[
+			"a TradingView font",
+			"/charting_library/bundles/EuclidCircular.be8f862db48c2976009f.woff2",
+			{ destination: "font" },
+		],
 		["another origin", "https://cdn.example/assets/index-A.js", {}],
 		["a query string", "/assets/index-A.js?v=2", {}],
 		["a precompressed sibling", "/assets/index-A.js.br", {}],
@@ -706,6 +716,95 @@ describe("service worker asset sync", () => {
 		harness.respond("/assets/index-C.js", () => asset("index C"));
 		await harness.navigate("/trade/BTC").settled();
 		expect(harness.cachedKeys("assets-v11")).toEqual(["/assets/index-B.js", "/assets/index-C.js"]);
+	});
+
+	it("keeps the locale catalogs the shell lists across releases and prefetches the renamed ones", async () => {
+		const harness = createHarness();
+		await seedRelease(harness, ["/assets/index-A.js"]);
+		harness.respond("/assets/messages-zh-A.js", () => asset("zh A"));
+		expect(await harness.load("/assets/messages-zh-A.js")).toBe("zh A");
+
+		harness.respond("/trade/BTC", () =>
+			shell(["/assets/index-B.js"], localeCatalogMeta(["messages-zh-A.js", "messages-ja-B.js"])),
+		);
+		harness.respond("/assets/index-B.js", () => asset("index B"));
+		harness.respond("/assets/messages-ja-B.js", () => asset("ja B"));
+		await harness.navigate("/trade/BTC").settled();
+		expect(harness.cachedKeys("assets-v11")).toEqual([
+			"/assets/index-A.js",
+			"/assets/index-B.js",
+			"/assets/messages-ja-B.js",
+			"/assets/messages-zh-A.js",
+		]);
+		expect(await harness.manifest()).toEqual([
+			"/assets/index-B.js",
+			"/assets/messages-ja-B.js",
+			"/assets/messages-zh-A.js",
+		]);
+
+		harness.respond("/trade/BTC", () =>
+			shell(["/assets/index-C.js"], localeCatalogMeta(["messages-zh-A.js", "messages-ja-B.js"])),
+		);
+		harness.respond("/assets/index-C.js", () => asset("index C"));
+		await harness.navigate("/trade/BTC").settled();
+		expect(harness.cachedKeys("assets-v11")).toEqual([
+			"/assets/index-B.js",
+			"/assets/index-C.js",
+			"/assets/messages-ja-B.js",
+			"/assets/messages-zh-A.js",
+		]);
+		expect(await harness.load("/assets/messages-zh-A.js")).toBe("zh A");
+		expect(await harness.load("/assets/messages-ja-B.js")).toBe("ja B");
+		expect(harness.requests("/assets/messages-zh-A.js")).toBe(1);
+		expect(harness.requests("/assets/messages-ja-B.js")).toBe(1);
+	});
+
+	it("keeps a renamed locale catalog of the previous release for one more release", async () => {
+		const harness = createHarness();
+		await seedRelease(harness, ["/assets/index-A.js"]);
+		harness.respond("/trade/BTC", () => shell(["/assets/index-B.js"], localeCatalogMeta(["messages-zh-B.js"])));
+		harness.respond("/assets/index-B.js", () => asset("index B"));
+		harness.respond("/assets/messages-zh-B.js", () => asset("zh B"));
+		await harness.navigate("/trade/BTC").settled();
+
+		harness.respond("/trade/BTC", () => shell(["/assets/index-C.js"], localeCatalogMeta(["messages-zh-C.js"])));
+		harness.respond("/assets/index-C.js", () => asset("index C"));
+		harness.respond("/assets/messages-zh-C.js", () => asset("zh C"));
+		await harness.navigate("/trade/BTC").settled();
+		expect(harness.cachedKeys("assets-v11")).toEqual([
+			"/assets/index-B.js",
+			"/assets/index-C.js",
+			"/assets/messages-zh-B.js",
+			"/assets/messages-zh-C.js",
+		]);
+		expect(await harness.load("/assets/messages-zh-B.js")).toBe("zh B");
+		expect(await harness.load("/assets/messages-zh-C.js")).toBe("zh C");
+		expect(harness.requests("/assets/messages-zh-B.js")).toBe(1);
+		expect(harness.requests("/assets/messages-zh-C.js")).toBe(1);
+
+		harness.respond("/trade/BTC", () => shell(["/assets/index-D.js"], localeCatalogMeta(["messages-zh-C.js"])));
+		harness.respond("/assets/index-D.js", () => asset("index D"));
+		await harness.navigate("/trade/BTC").settled();
+		expect(harness.cachedKeys("assets-v11")).toEqual([
+			"/assets/index-C.js",
+			"/assets/index-D.js",
+			"/assets/messages-zh-C.js",
+		]);
+	});
+
+	it.each([
+		["without a locale catalog list", ""],
+		["with an empty locale catalog list", localeCatalogMeta([])],
+	])("reconciles a shell %s from its links alone", async (_, extra) => {
+		const harness = createHarness();
+		await seedRelease(harness, ["/assets/index-A.js"]);
+		await harness.seed("assets-v11", "/assets/messages-zh-A.js", asset("zh A"));
+		harness.respond("/trade/BTC", () => shell(["/assets/index-B.js"], extra));
+		harness.respond("/assets/index-B.js", () => asset("index B"));
+		await harness.navigate("/trade/BTC").settled();
+		expect(harness.requestedAssets()).toEqual(["/assets/index-B.js"]);
+		expect(harness.cachedKeys("assets-v11")).toEqual(["/assets/index-A.js", "/assets/index-B.js"]);
+		expect(await harness.manifest()).toEqual(["/assets/index-B.js"]);
 	});
 
 	it("continues an incomplete sync on the next navigation", async () => {
@@ -935,6 +1034,12 @@ describe("service worker asset sync", () => {
 });
 
 describe("service worker shell asset list", () => {
+	const surfaceLists = {
+		desktopOnly: ["orders-history-tab-nC3GIRxZ.js", "history-tab-CkfmXa_T.js"],
+		mobileOnly: ["mobile-sheet-M1.js"],
+		chartPrefetches: ["/charting_library/bundles/runtime.4d986d07cb97d8edacba.js", "/tradingview-theme-dark.css"],
+		localeCatalogs: ["messages-CkHNHHnX.js", "messages-lmWX-UMQ.js"],
+	};
 	const realShell = [
 		'<link rel="modulepreload" href="/assets/index-BykY0ZKy.js"/>',
 		'<link rel="modulepreload" href="/assets/vendor-tanstack-router-Dxjx6Gvf.js"/>',
@@ -945,11 +1050,7 @@ describe("service worker shell asset list", () => {
 		'<link rel="manifest" href="/manifest.json"/>',
 		'<link rel="dns-prefetch" href="https://app.hyperliquid.xyz"/>',
 		...renderShellPreloadLinks({ files: ["app-toaster-BGuRiK0z.css", "chunk-Q1.js"], existingHrefs: new Set() }),
-		...renderSurfacePreloadMeta({
-			desktopOnly: ["orders-history-tab-nC3GIRxZ.js", "history-tab-CkfmXa_T.js"],
-			mobileOnly: ["mobile-sheet-M1.js"],
-			chartPrefetches: ["/charting_library/bundles/runtime.4d986d07cb97d8edacba.js", "/tradingview-theme-dark.css"],
-		}),
+		...renderSurfacePreloadMeta(surfaceLists),
 		'<script>window.x = \'<link rel="modulepreload" href="/assets/inline-only.js">\';</script>',
 		'<script type="module" async="" src="/assets/index-BykY0ZKy.js"></script>',
 	].join("");
@@ -963,13 +1064,15 @@ describe("service worker shell asset list", () => {
 		return { requested: harness.requestedAssets(), cached: harness.cachedKeys("assets-v11") };
 	}
 
-	it("prefetches the preloads, stylesheets, scripts and both surface lists of the shell, and nothing else", async () => {
+	it("prefetches the preloads, stylesheets, scripts, both surface lists and the locale catalogs of the shell, and nothing else", async () => {
 		const expected = [
 			"/assets/app-toaster-BGuRiK0z.css",
 			"/assets/chunk-Q1.js",
 			"/assets/history-tab-CkfmXa_T.js",
 			"/assets/index-BykY0ZKy.js",
 			"/assets/inter-latin-wght-normal-Dx4kXJAl.woff2",
+			"/assets/messages-CkHNHHnX.js",
+			"/assets/messages-lmWX-UMQ.js",
 			"/assets/mobile-sheet-M1.js",
 			"/assets/orders-history-tab-nC3GIRxZ.js",
 			"/assets/styles-BG9gMMIW.css",
@@ -1021,10 +1124,12 @@ describe("service worker shell asset list", () => {
 		expect(result.requested).toEqual(["/assets/real.js"]);
 	});
 
-	it("reads the same surface preload names that the build writes", () => {
-		for (const name of [SURFACE_PRELOAD_META.desktop, SURFACE_PRELOAD_META.mobile]) {
+	it("reads the same startup list names that the build writes", () => {
+		const { chart, ...startupLists } = SURFACE_PRELOAD_META;
+		expect(Object.keys(startupLists)).toEqual(["desktop", "mobile", "catalogs"]);
+		for (const name of Object.values(startupLists)) {
 			expect(serviceWorker).toContain(`"${name}"`);
 		}
-		expect(serviceWorker).not.toContain(`"${SURFACE_PRELOAD_META.chart}"`);
+		expect(serviceWorker).not.toContain(`"${chart}"`);
 	});
 });

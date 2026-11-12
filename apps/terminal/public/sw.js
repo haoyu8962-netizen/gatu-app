@@ -17,8 +17,9 @@ const ASSET_LOOKUP_TIMEOUT_MS = 1_500;
 const ASSET_MANIFEST = `asset-manifest-${CACHE_VERSION}`;
 const RELOAD_REQUEST_MODES = new Set(["reload", "no-cache", "no-store"]);
 const SHELL_ASSET_LINK_RELS = new Set(["modulepreload", "preload", "stylesheet"]);
-// The surface-specific startup lists written by scripts/inject-shell-preloads.mjs (SURFACE_PRELOAD_META).
-const SURFACE_PRELOAD_META_NAMES = new Set(["sairn-preload-desktop", "sairn-preload-mobile"]);
+// The startup lists written by scripts/inject-shell-preloads.mjs (SURFACE_PRELOAD_META): both surfaces, and the lazy
+// locale catalogs, one of which the startup gate waits for when the stored language is not English.
+const STARTUP_LIST_META_NAMES = new Set(["sairn-preload-desktop", "sairn-preload-mobile", "sairn-locale-catalogs"]);
 const PRECOMPRESSED_ASSET = /\.(?:br|gz|zst)$/;
 // The JavaScript MIME type essence matches of the HTML standard.
 const JAVASCRIPT_TYPES = new Set([
@@ -116,7 +117,8 @@ self.addEventListener("fetch", (event) => {
 		return;
 	}
 
-	if (request.destination === "font") {
+	// The TradingView package, its content-hashed fonts included, stays with the HTTP cache.
+	if (request.destination === "font" && !url.pathname.startsWith("/charting_library/")) {
 		event.respondWith(cacheFirst(request, FONT_CACHE, event));
 		return;
 	}
@@ -225,8 +227,8 @@ async function syncAssets() {
 // Reconciles the asset cache with the shell actually in the cache, never with a shell some navigation fetched. The
 // manifest lives in the asset cache itself, so it disappears with it: it lists the startup assets of the shell this
 // asset cache was last reconciled with. On first takeover it is just the first list seen, whose assets the page's own
-// loads store (the other layout's list is not guaranteed to be cached). It moves only after every listed asset is in
-// the cache, so an interrupted sync is simply done again by the next one.
+// loads store (the other layout's list and the locale catalogs of other languages are not guaranteed to be cached). It
+// moves only after every listed asset is in the cache, so an interrupted sync is simply done again by the next one.
 async function reconcileAssets(signal) {
 	const shellCache = await openCache(SHELL_CACHE);
 	if (!shellCache || signal.aborted) return;
@@ -443,7 +445,7 @@ function shellAssetUrls(html) {
 			add(attributes.get("src"));
 			index = scriptEnd(lower, index);
 			if (index < 0) break;
-		} else if (tag === "meta" && SURFACE_PRELOAD_META_NAMES.has(attributes.get("name"))) {
+		} else if (tag === "meta" && STARTUP_LIST_META_NAMES.has(attributes.get("name"))) {
 			for (const href of (attributes.get("content") ?? "").split(/\s+/)) add(href);
 		}
 	}
