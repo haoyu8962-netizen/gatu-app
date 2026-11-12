@@ -65,7 +65,8 @@ jobs:
       matrix:
         shard: [1, 2]
     name: Terminal browser regressions (${{ matrix.shard }}/2)
-    runs-on: ubuntu-latest
+    # Pinned: Playwright 1.59.1 cannot install Chromium on the ubuntu-26.04 image that ubuntu-latest became (2026-11-12).
+    runs-on: ubuntu-24.04
     # Before the brand surface and connected header suites a shard took about 13.5 minutes; with them it
     # outran 15 minutes (run 36889833960 was cancelled in the notification step, before the last two).
     timeout-minutes: 25

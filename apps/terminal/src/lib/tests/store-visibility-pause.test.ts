@@ -106,6 +106,24 @@ describe("visibility-pause for market streams", () => {
 		store.getState().releaseSubscription(key);
 	});
 
+	it("flushes what a store that attached while the page was hidden has buffered", async () => {
+		Object.defineProperty(document, "hidden", { value: true, configurable: true });
+		const store = createHyperliquidStore({ ssr: false, triggerReconnect: vi.fn() });
+		const key = marketKey("allMids");
+		const { subscribe } = createFakeSubscription();
+
+		store.getState().acquireSubscription(key, subscribe);
+		await new Promise<void>((r) => setTimeout(r, 0));
+		store.getState().setSubscriptionData(key, { mids: { BTC: "1" } });
+		expect(store.getState().subscriptions[key]?.data).toBeUndefined();
+
+		Object.defineProperty(document, "hidden", { value: false, configurable: true });
+		document.dispatchEvent(new Event("visibilitychange"));
+
+		expect(store.getState().subscriptions[key]?.data).toEqual({ mids: { BTC: "1" } });
+		store.getState().releaseSubscription(key);
+	});
+
 	it("keeps the transport connected after flushing on visible", async () => {
 		const triggerReconnect = vi.fn();
 		const store = createHyperliquidStore({ ssr: false, triggerReconnect });

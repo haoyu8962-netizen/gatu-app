@@ -118,6 +118,17 @@ jobs:
           src/lib/tests/seo.test.ts
           src/lib/tests/hyperliquid-resource-hints.test.ts
 
+      - name: Test WebSocket recovery after the page or the network returns
+        working-directory: apps/terminal
+        run: >-
+          pnpm exec vitest run --maxWorkers=1 --shard=${{ matrix.shard }}/2 --passWithNoTests
+          src/lib/tests/ws-transport-monitor.test.ts
+          src/lib/tests/store-resume.test.ts
+          src/lib/tests/store-visibility-pause.test.ts
+          src/lib/tests/l2-book-transport-pool.test.ts
+          src/lib/tests/l2-book-transport-pool-resume.test.ts
+          src/lib/tests/websocket-half-open-reconnect.test.ts
+
       - name: Test terminal interaction and mounting contracts
         working-directory: apps/terminal
         run: >-

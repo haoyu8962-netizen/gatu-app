@@ -37,6 +37,10 @@ export const WS_RELIABILITY_LIMITS = {
 		// neither market data nor the expected pong reached this client.
 		inactivityThresholdMs: 45_000,
 		checkIntervalMs: 5_000,
+		// How long a socket that looks open may stay silent after the page returns to the foreground
+		// and a heartbeat was sent. A phone suspends the page in the background, and the connection
+		// can die without a close event; a live one answers within a round trip.
+		resumeProbeTimeoutMs: 2_500,
 	},
 	staleness: {
 		checkIntervalMs: 5_000,

@@ -263,9 +263,12 @@ describe("store staleness integration", () => {
 		reportError?.(new Error("socket failed"));
 		expect(getStoreInternals(store).visibilityBuffer.has(key)).toBe(false);
 
+		expect(store.getState().subscriptions[key]).toMatchObject({ data: undefined, status: "error" });
+
 		Object.defineProperty(document, "hidden", { value: false, configurable: true });
 		document.dispatchEvent(new Event("visibilitychange"));
-		expect(store.getState().subscriptions[key]).toMatchObject({ data: undefined, status: "error" });
+		// The failed subscription is retried as soon as the page returns (ADR 0050); the dropped frame stays dropped.
+		expect(store.getState().subscriptions[key]).toMatchObject({ data: undefined, status: "subscribing" });
 		store.getState().releaseSubscription(key);
 	});
 
