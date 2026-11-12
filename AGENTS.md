@@ -104,8 +104,9 @@ This file contains durable project instructions for coding agents. Read `agent.m
 
 - [ADR 0050](docs/adr/0050-websocket-recovery-on-resume.md) and `docs/runtime-guardrails.md` §6 own the rules and their values. While subscription data is stale the page shows placeholders, so the time recovery takes is time the user sees no data.
 - Recovery starts when the page returns to the foreground or the network returns. It never waits for a periodic check, for a retry backoff or cooldown computed while the page was hidden or offline, or for a dead socket's `close` event.
-- A socket that still receives frames is never replaced because the page became visible: a quiet open socket is sent a heartbeat and replaced only when no frame follows.
-- Pooled order-book transports do not reconnect on their own. One that has been silent for its stream's staleness threshold is closed when the page or the network returns, and its consumers subscribe again through the pool's connection budget.
+- Liveness is proven only by a heartbeat answer (`{"channel":"pong"}`), never by other frames: a suspended phone can deliver frames the kernel buffered before the connection died. When the page or the network returns, an open shared socket that is not yet past the inactivity threshold is sent a heartbeat and replaced only when no answer follows; while the page is visible and online, a shared socket that stays quiet for the quiet-probe threshold is asked the same way. A socket that answers is never replaced because the page became visible.
+- Pooled order-book transports do not reconnect on their own. When the page or the network returns, one that has been silent for its stream's staleness threshold is closed, every other one is sent a heartbeat and closed when no answer follows (unless the page is hidden or offline again by then), and the consumers of a closed one subscribe again through the pool's connection budget.
+- Every compressed channel (`pac`, `sac`, `fastAssetCtxs`) decodes through `subscriptions/compact-asset-ctxs.ts`: a frame that fails to decode, or a listener that throws, ends the subscription through the ordinary failure path instead of leaving a stream that looks subscribed but delivers nothing. A browser without `DecompressionStream("deflate-raw")` subscribes to none of them, and its rows take their prices from the plain context channels.
 - `patches/@nktkas__rews@4.1.0.patch` makes `reconnect()` and `close()` act without the old socket's `close` event. Keep it, or its upstream equivalent, when `@nktkas/rews` or the SDK changes, and re-run `apps/terminal/tests/browser/websocket-half-open-probe.mjs`.
 - These rules change when data returns, never what counts as fresh: staleness thresholds, placeholders and every execution guard stay as they are.
 
@@ -332,7 +333,10 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/visibility.test.ts \
   src/lib/tests/l2-book-transport-pool.test.ts \
   src/lib/tests/l2-book-transport-pool-resume.test.ts \
-  src/lib/tests/websocket-half-open-reconnect.test.ts
+  src/lib/tests/websocket-half-open-reconnect.test.ts \
+  src/lib/tests/compact-asset-ctxs.test.ts \
+  src/lib/tests/use-markets-info-subscriptions.test.tsx \
+  src/lib/tests/orderbook-boot.test.ts
 
 # Recent trades
 pnpm --dir apps/terminal exec vitest run \

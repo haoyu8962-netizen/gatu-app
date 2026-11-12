@@ -1,4 +1,4 @@
-import type { ISubscription, ISubscriptionTransport } from "@nktkas/hyperliquid";
+import type { FastAssetCtxsWsEvent, ISubscription, ISubscriptionTransport } from "@nktkas/hyperliquid";
 import type { AllDexsAssetCtxsEvent, SpotAssetCtxsEvent } from "@nktkas/hyperliquid/api/subscription";
 import type { SubscribeFailureOptions } from "../types";
 import { inflateL2CompressedPayload, L2BookStreamError } from "./l2";
@@ -100,27 +100,29 @@ export function parseCompactPerpAssetCtxsDelta(value: unknown): CompactPerpAsset
 	});
 }
 
+function parseKeyedDelta<T extends object>(value: unknown, fields: readonly (keyof T & string)[]) {
+	if (!isRecord(value)) throw new L2BookStreamError("invalid_frame");
+	const delta: Record<string, Partial<T>> = {};
+	for (const [coin, entry] of Object.entries(value)) {
+		const ctx = readDelta<T>(entry, fields);
+		if (!ctx) throw new L2BookStreamError("invalid_frame");
+		delta[coin] = ctx;
+	}
+	return delta;
+}
+
 /**
  * Spot contexts are addressed by market name. A malformed entry still invalidates the whole frame:
  * dropping it would keep that market's previous values alive across later deltas, which is a silent
  * wrong number rather than a fallback.
  */
 export function parseCompactSpotAssetCtxsDelta(value: unknown): CompactSpotAssetCtxsDelta {
-	if (!isRecord(value)) throw new L2BookStreamError("invalid_frame");
-	const delta: CompactSpotAssetCtxsDelta = {};
-	for (const [coin, entry] of Object.entries(value)) {
-		const ctx = readDelta<CompactSpotAssetCtx>(entry, SPOT_FIELDS);
-		if (!ctx) throw new L2BookStreamError("invalid_frame");
-		delta[coin] = ctx;
-	}
+	const delta = parseKeyedDelta<CompactSpotAssetCtx>(value, SPOT_FIELDS);
 	if (Object.keys(delta).length === 0) throw new L2BookStreamError("invalid_frame");
 	return delta;
 }
 
-export async function decodeCompactAssetCtxs<C extends CompactAssetCtxsChannel>(
-	channel: C,
-	payload: unknown,
-): Promise<CompactAssetCtxsDelta<C>> {
+async function decodeCompressedJson<T>(payload: unknown, parse: (value: unknown) => T): Promise<T> {
 	if (typeof payload !== "string") throw new L2BookStreamError("invalid_frame");
 	const text = await inflateL2CompressedPayload(payload, COMPACT_ASSET_CTXS_CODEC_LIMITS);
 	let parsed: unknown;
@@ -129,9 +131,20 @@ export async function decodeCompactAssetCtxs<C extends CompactAssetCtxsChannel>(
 	} catch (error) {
 		throw new L2BookStreamError("invalid_json", { cause: error });
 	}
-	return (
-		channel === "pac" ? parseCompactPerpAssetCtxsDelta(parsed) : parseCompactSpotAssetCtxsDelta(parsed)
-	) as CompactAssetCtxsDelta<C>;
+	return parse(parsed);
+}
+
+function getCompactParser(
+	channel: CompactAssetCtxsChannel,
+): (value: unknown) => CompactPerpAssetCtxsDelta | CompactSpotAssetCtxsDelta {
+	return channel === "pac" ? parseCompactPerpAssetCtxsDelta : parseCompactSpotAssetCtxsDelta;
+}
+
+export function decodeCompactAssetCtxs<C extends CompactAssetCtxsChannel>(
+	channel: C,
+	payload: unknown,
+): Promise<CompactAssetCtxsDelta<C>> {
+	return decodeCompressedJson(payload, getCompactParser(channel)) as Promise<CompactAssetCtxsDelta<C>>;
 }
 
 export interface CompactAssetCtxsAccumulator<C extends CompactAssetCtxsChannel> {
@@ -219,7 +232,51 @@ export function subscribeCompactAssetCtxs<C extends CompactAssetCtxsChannel>(
 	options?: CompactAssetCtxsSubscribeOptions,
 	subscribeDisconnect?: CompactAssetCtxsDisconnectSubscriber,
 ): Promise<ISubscription> {
-	const accumulator = createCompactAssetCtxsAccumulator(channel);
+	return subscribeCompressedChannel(
+		transport,
+		channel,
+		getCompactParser(channel) as (value: unknown) => CompactAssetCtxsDelta<C>,
+		createCompactAssetCtxsAccumulator(channel),
+		listener,
+		options,
+		subscribeDisconnect,
+	);
+}
+
+/**
+ * `fastAssetCtxs` carries every market's mark and mid price compressed like `pac`, a complete snapshot
+ * first and then the changed markets, about once a second; the store merges them per market. The
+ * SDK's own decoder chains every frame on one promise, so a single frame that fails to decode, or a
+ * listener that throws, left the stream silent for good while it still looked subscribed. Here such a
+ * frame ends the subscription like any transport failure, and the store subscribes again for a fresh
+ * snapshot instead of skipping a delta.
+ */
+export function subscribeFastAssetCtxs(
+	transport: ISubscriptionTransport,
+	listener: (event: FastAssetCtxsWsEvent) => void,
+	options?: CompactAssetCtxsSubscribeOptions,
+	subscribeDisconnect?: CompactAssetCtxsDisconnectSubscriber,
+): Promise<ISubscription> {
+	return subscribeCompressedChannel(
+		transport,
+		"fastAssetCtxs",
+		(value) => parseKeyedDelta<FastAssetCtxsWsEvent[string]>(value, ["markPx", "midPx"]),
+		{ add: (delta) => delta, reset: () => {} },
+		listener,
+		options,
+		subscribeDisconnect,
+	);
+}
+
+function subscribeCompressedChannel<D, E>(
+	transport: ISubscriptionTransport,
+	channel: string,
+	parse: (value: unknown) => D,
+	accumulator: { add: (delta: D) => E; reset: () => void },
+	listener: (event: E) => void,
+	options?: CompactAssetCtxsSubscribeOptions,
+	subscribeDisconnect?: CompactAssetCtxsDisconnectSubscriber,
+): Promise<ISubscription> {
 	const pending: unknown[] = [];
 	let raw: ISubscription | undefined;
 	let confirmed = false;
@@ -256,7 +313,7 @@ export function subscribeCompactAssetCtxs<C extends CompactAssetCtxsChannel>(
 			while (pending.length > 0 && !stopped) {
 				const frame = pending.shift();
 				const frameGeneration = generation;
-				const delta = await decodeCompactAssetCtxs(channel, frame);
+				const delta = await decodeCompressedJson(frame, parse);
 				if (stopped || frameGeneration !== generation) continue;
 				listener(accumulator.add(delta));
 			}

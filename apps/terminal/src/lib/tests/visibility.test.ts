@@ -110,6 +110,38 @@ describe("visibility singleton", () => {
 		unsub();
 	});
 
+	it("stays hidden when a frozen page resumes in the background, so the later return is still announced", () => {
+		const listener = vi.fn();
+		const unsub = subscribeVisibility(listener);
+
+		Object.defineProperty(document, "hidden", { value: true, configurable: true });
+		document.dispatchEvent(new Event("visibilitychange"));
+		document.dispatchEvent(new Event("freeze"));
+		document.dispatchEvent(new Event("resume"));
+
+		expect(getVisibilityState()).toBe("hidden");
+		expect(listener).not.toHaveBeenCalledWith("visible");
+
+		Object.defineProperty(document, "hidden", { value: false, configurable: true });
+		document.dispatchEvent(new Event("visibilitychange"));
+
+		expect(listener).toHaveBeenLastCalledWith("visible");
+		expect(getVisibilityState()).toBe("visible");
+		unsub();
+	});
+
+	it("announces a page that resumes in the foreground", () => {
+		const listener = vi.fn();
+		const unsub = subscribeVisibility(listener);
+
+		document.dispatchEvent(new Event("freeze"));
+		expect(listener).toHaveBeenLastCalledWith("hidden");
+		document.dispatchEvent(new Event("resume"));
+
+		expect(listener).toHaveBeenLastCalledWith("visible");
+		unsub();
+	});
+
 	it("SSR no-op: returns visible and unsubscribe is safe when document is undefined", async () => {
 		vi.resetModules();
 		const originalDocument = globalThis.document;

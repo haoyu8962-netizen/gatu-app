@@ -160,6 +160,7 @@ export function useMarketsInfoInternal(options: UseMarketsInfoOptions = {}) {
 		data: allDexsCtxsEvent,
 		status: allDexsCtxsStatus,
 		isStale: isAllDexsCtxsStale,
+		lastMessageAt: allDexsCtxsLastMessageAt,
 	} = useSubscription("allDexsAssetCtxs", undefined, {
 		enabled: perpSubscriptionEnabled && !useCompactCtxs,
 		throttleMs: updateInterval,
@@ -168,6 +169,7 @@ export function useMarketsInfoInternal(options: UseMarketsInfoOptions = {}) {
 		data: spotCtxsEvent,
 		status: spotCtxsStatus,
 		isStale: isSpotCtxsStale,
+		lastMessageAt: spotCtxsLastMessageAt,
 	} = useSubscription("spotAssetCtxs", undefined, {
 		enabled: spotSubscriptionEnabled && !useCompactCtxs,
 		throttleMs: updateInterval,
@@ -178,7 +180,7 @@ export function useMarketsInfoInternal(options: UseMarketsInfoOptions = {}) {
 		isStale: isFastPriceStale,
 		lastMessageAt: fastPriceLastMessageAt,
 	} = useSubscription("fastAssetCtxs", undefined, {
-		enabled: fastPriceSubscriptionEnabled,
+		enabled: fastPriceSubscriptionEnabled && COMPACT_MARKET_CTXS_SUPPORTED,
 		maxStaleMs: LIVE_MARK_MAX_STALE_MS,
 	});
 
@@ -208,15 +210,27 @@ export function useMarketsInfoInternal(options: UseMarketsInfoOptions = {}) {
 			market: T,
 			context: C,
 			contextsLive: boolean,
+			contextReceivedAt: number | undefined,
 		): T & C & LiveMarketPriceFields => {
-			const price = resolveFastMarketPrice({
-				coin: market.name,
-				enabled: fastPriceSubscriptionEnabled,
-				data: fastAssetCtxs,
-				subscriptionStatus: fastPriceSubscriptionStatus,
-				isStale: isFastPriceStale,
-				lastMessageAt: fastPriceLastMessageAt,
-			});
+			const price = resolveFastMarketPrice(
+				COMPACT_MARKET_CTXS_SUPPORTED
+					? {
+							coin: market.name,
+							enabled: fastPriceSubscriptionEnabled,
+							data: fastAssetCtxs,
+							subscriptionStatus: fastPriceSubscriptionStatus,
+							isStale: isFastPriceStale,
+							lastMessageAt: fastPriceLastMessageAt,
+						}
+					: {
+							coin: market.name,
+							enabled: fastPriceSubscriptionEnabled,
+							data: context && { [market.name]: context },
+							subscriptionStatus: contextsLive ? "active" : "subscribing",
+							isStale: false,
+							lastMessageAt: contextReceivedAt,
+						},
+			);
 			return {
 				...market,
 				...context,
@@ -231,18 +245,23 @@ export function useMarketsInfoInternal(options: UseMarketsInfoOptions = {}) {
 		};
 
 		const perpMarketsInfo: PerpMarketInfo[] = markets.perp.map((market) =>
-			withLivePrice(market, perpCtxs?.[market.ctxIndex], perpContextsLive),
+			withLivePrice(market, perpCtxs?.[market.ctxIndex], perpContextsLive, allDexsCtxsLastMessageAt),
 		);
 
 		const spotMarketsInfo: SpotMarketInfo[] = markets.spot.map((market) =>
-			withLivePrice(market, spotCtxs?.[market.name], spotContextsLive),
+			withLivePrice(market, spotCtxs?.[market.name], spotContextsLive, spotCtxsLastMessageAt),
 		);
 
 		const builderPerpMarketsInfo: BuilderPerpMarketsInfo = { all: [] };
 
 		for (const market of markets.builderPerp) {
 			const dexCtxs = getDexCtxs(allDexsCtxs, market.dex);
-			const marketInfo: BuilderPerpMarketInfo = withLivePrice(market, dexCtxs?.[market.ctxIndex], perpContextsLive);
+			const marketInfo: BuilderPerpMarketInfo = withLivePrice(
+				market,
+				dexCtxs?.[market.ctxIndex],
+				perpContextsLive,
+				allDexsCtxsLastMessageAt,
+			);
 
 			builderPerpMarketsInfo.all.push(marketInfo);
 
@@ -268,6 +287,8 @@ export function useMarketsInfoInternal(options: UseMarketsInfoOptions = {}) {
 		spotCtxs,
 		perpContextsLive,
 		spotContextsLive,
+		allDexsCtxsLastMessageAt,
+		spotCtxsLastMessageAt,
 		fastPriceSubscriptionEnabled,
 		fastAssetCtxs,
 		fastPriceSubscriptionStatus,

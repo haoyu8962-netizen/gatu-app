@@ -20,10 +20,11 @@ const mocks = vi.hoisted(() => ({
 	responses: {} as Record<string, unknown>,
 	disableCompactMarketCtxs: vi.fn(),
 	compactDisabled: false,
+	decompressionSupported: true,
 }));
 
 vi.mock("@sairn/hl-react", () => ({
-	canUseL2Decompression: () => true,
+	canUseL2Decompression: () => mocks.decompressionSupported,
 	useHyperliquidTransport: () => ({ env: "Mainnet" }),
 	useSubscription: (...args: unknown[]) => {
 		mocks.useSubscription(...args);
@@ -295,6 +296,37 @@ describe("useMarketsInfoInternal subscription gate", () => {
 		mocks.useSubscription.mockClear();
 		renderProbe(false);
 		expectLatestSubscriptionState(false);
+	});
+
+	it("prices rows from the plain context channels without subscribing to fast prices when the browser cannot decompress", async () => {
+		mocks.decompressionSupported = false;
+		vi.resetModules();
+		const { useMarketsInfoInternal: useWithoutDecompression } = await import("@/lib/hyperliquid/hooks/useMarketsInfo");
+		mocks.decompressionSupported = true;
+		function UnsupportedProbe() {
+			captured = useWithoutDecompression({ alwaysSubscribeAll: true, subscriptionKeepAliveMs: 10_000 });
+			return null;
+		}
+		const receivedAt = Date.now();
+		mocks.responses.allDexsAssetCtxs = subscriptionResponse(
+			{ ctxs: [["", [BTC_PERP_CTX]]] },
+			{ lastMessageAt: receivedAt },
+		);
+		mocks.responses.spotAssetCtxs = subscriptionResponse([{ ...SPOT_CTX, coin: "@1" }], { isStale: true });
+
+		act(() => root.render(<UnsupportedProbe />));
+
+		const latest = latestSubscriptionOptions();
+		expect(latest.get("fastAssetCtxs")).toEqual({ enabled: false, maxStaleMs: 10_000 });
+		expect(latest.get("pac")).toMatchObject({ enabled: false });
+		expect(latest.get("allDexsAssetCtxs")).toMatchObject({ enabled: true });
+		expect(captured.getMarketByName("BTC")).toMatchObject({
+			markPx: "100000",
+			midPx: "100001",
+			markPriceStatus: "success",
+			markPriceReceivedAt: receivedAt,
+		});
+		expect(captured.getMarketByName("@1")?.markPriceStatus).not.toBe("success");
 	});
 
 	it("reports live perp contexts only for an active, fresh compact frame", () => {

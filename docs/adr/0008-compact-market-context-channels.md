@@ -28,3 +28,7 @@
 - 陈旧与载荷守卫按合并后的视图计量；若上游改变字段类型、首帧不再完整或删除应用读取的字段，校验失败会触发回退与上报，不会静默显示错数；新增字段被忽略。
 - 断线后 SDK 重新订阅，服务器再发一次全量快照。累积器订阅传输的断线事件（`CompactSubscriptionClient` 的 `subscribeDisconnect`，代次计数器）：断线时清空累积状态与待解码队列，丢弃旧代次的解码结果，因此每次重连都重新要求完整首帧（2026-09-15 对抗审查后加入；此前直接合并会让缺字段的重连快照从旧连接补齐而发现不了格式变化）。下架市场的旧条目不再跨连接残留。
 - 验证：单元测试覆盖解码形状、顺序、失败退订与回退；线上用 `tests/browser/ws-race.mjs` 对比 6 s 内收到的字符数。
+
+## 补记（2026-11-12）
+
+决策 3 写的「`fastAssetCtxs`（1 s 一帧、同样压缩）……不变」已不成立。SDK 自带的 `fastAssetCtxs` 解码把每帧接在一个 Promise 链上，一帧失败或监听器异常后之后的帧全部被跳过，订阅仍显示为活动；它也没有解压能力门控，不支持 `deflate-raw` 的浏览器上所有行的标记价一直是加载中，store 每 10–15 秒重订阅一次。现在 `CompactSubscriptionClient` 覆盖 `fastAssetCtxs`，与 `pac`/`sac` 共用本 ADR 的解码路径（字段校验只保留 `markPx`/`midPx`，没有累积器，按币种合并仍由 store 做）：坏帧或监听器异常时退订并经 `onError` 上报，store 重新订阅拿新快照，不进入本 ADR 的模块级回退（那是 `pac`/`sac` 换频道用的）。`useMarketsInfo` 只在支持解压时订阅 `fastAssetCtxs`；不支持时行价格取自普通频道 `allDexsAssetCtxs`/`spotAssetCtxs` 的上下文，频道活动、未过期且接收在 10 秒内才算 `success`。见 [ADR 0050 补记四](0050-websocket-recovery-on-resume.md)。

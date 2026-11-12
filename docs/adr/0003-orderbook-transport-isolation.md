@@ -164,3 +164,8 @@ test results remain dated in [review remediation](../terminal-review-remediation
 that record explicitly separates short browser observation from the opt-in
 WebSocket soak test. This retrospective review does not claim a fresh production
 connection, long-duration run or renewed verification of external SDK documents.
+
+## 补记（2026-11-12）：心跳判活与连接上限
+
+- 回到前台或网络恢复时，连接池对静默未达阈值的连接经 SDK 传输的 `socket` 发一次心跳（`probeLiveness`，与共享连接的监视器同一实现），2.5 秒内没有 `{"channel":"pong"}` 就关闭，使用者经连接池重新订阅。原因是手机挂起期间积压的 `l2Book` 帧会在恢复时先到、刷新计时，让死连接看起来新鲜。为此 `BookTransport` 多了一个可选的 `socket` 字段；没有它的传输（测试替身）按原规则只看订单簿帧。隔离键、连接预算、同一身份共享和「仍在收帧的连接不替换」都不变：探测不新建连接，只关闭没有应答的连接。详见 [ADR 0050 补记一](0050-websocket-recovery-on-resume.md)。
+- Hyperliquid 官方文档的上限：每个 IP 最多 10 条 WebSocket 连接、每分钟最多新建 30 条。本终端每个标签页最多 5 条（共享连接 1 条加本连接池 `MAX_CONNECTIONS` 4 条），两个标签页就到上限；本连接池的预算是每 60 秒 24 条（`MAX_NEW_CONNECTIONS`），单个标签页不会超过服务器的新建速率，多个标签页合起来可能超过。手机布局不再在进入交易路由时预热全深度连接（`lib/trade/orderbook-boot.ts`），少占一条。服务器拒绝时关闭原因以 `Cannot open more than` 开头，官方终端据此提示关闭其他标签页；本终端尚不识别，是否加提示待运营方决定（新增一类被动数据提示要先更新 `docs/mobile-data-presentation.md`）。

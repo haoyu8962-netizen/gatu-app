@@ -33,13 +33,17 @@ export const WS_RELIABILITY_LIMITS = {
 		maxChartLastBarEntries: 256,
 	},
 	transport: {
+		// The official terminal reconnects after 15s without any frame. A socket that quiet is sent a
+		// heartbeat instead, since a page with only low-frequency user streams can be that quiet and
+		// healthy, and is replaced only when the answer does not come.
+		quietProbeThresholdMs: 15_000,
 		// The SDK pings every 30s. A 45s all-message silence therefore means
 		// neither market data nor the expected pong reached this client.
 		inactivityThresholdMs: 45_000,
 		checkIntervalMs: 5_000,
-		// How long a socket that looks open may stay silent after the page returns to the foreground
-		// and a heartbeat was sent. A phone suspends the page in the background, and the connection
-		// can die without a close event; a live one answers within a round trip.
+		// How long a heartbeat may stay unanswered, after the page returns to the foreground or the
+		// socket went quiet. A phone suspends the page in the background, and the connection can die
+		// without a close event; a live one answers within a round trip.
 		resumeProbeTimeoutMs: 2_500,
 	},
 	staleness: {

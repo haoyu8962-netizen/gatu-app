@@ -3,10 +3,13 @@ import { type FrameReceipt, markFrameReceivedAt, receiveFrameNow } from "../inte
 import { getNetworkState, subscribeNetworkStatus } from "../internal/websocket/network-status";
 import { WS_RELIABILITY_LIMITS } from "../internal/websocket/reliability";
 import { getReceiptAgeMs } from "../internal/websocket/staleness";
+import { type ProbedWebSocket, probeLiveness } from "../internal/websocket/transport-monitor";
 import { getVisibilityState, subscribeVisibility } from "../internal/websocket/visibility";
 
 interface BookTransport extends ISubscriptionTransport {
 	close(): void;
+	/** The SDK `WebSocketTransport` socket; without it a transport is judged by its book frames alone. */
+	socket?: ProbedWebSocket;
 }
 
 interface BookPayload {
@@ -89,14 +92,20 @@ export function createL2BookTransportPool(createTransport: (isTestnet: boolean) 
 	// one that died without a close event would otherwise stay silent until the SDK keep-alive gives
 	// up on it, up to forty seconds after the page is back. A transport that has delivered no book
 	// frame for as long as its stream may stay quiet is closed when the page or the network returns;
-	// its consumers fail and subscribe again on a new connection. A book that kept receiving frames
-	// in a background tab is left alone. Heartbeat answers and confirmations do not count: a
-	// connection that carries no book data is not worth keeping either.
+	// its consumers fail and subscribe again on a new connection. Heartbeat answers and confirmations
+	// do not count there: a connection that carries no book data is not worth keeping either. Every
+	// other transport is sent a heartbeat and closed when no answer follows, because book frames the
+	// kernel buffered while the page was suspended can arrive first and make a dead one look fresh.
+	// A heartbeat that times out while the page is hidden again, or offline, closes nothing.
 	function closeSilentTransports() {
 		if (getNetworkState() === "offline") return;
 		for (const [key, entry] of [...entries]) {
 			const { receivedAt, monotonicReceivedAt } = entry.lastFrame;
 			if (getReceiptAgeMs(receivedAt, monotonicReceivedAt) >= getSilenceLimitMs(entry)) remove(key, entry);
+			else if (entry.transport.socket)
+				probeLiveness(entry.transport.socket, WS_RELIABILITY_LIMITS.transport.resumeProbeTimeoutMs, (alive) => {
+					if (!alive && getVisibilityState() === "visible" && getNetworkState() === "online") remove(key, entry);
+				});
 		}
 	}
 

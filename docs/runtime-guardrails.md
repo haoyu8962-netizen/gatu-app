@@ -765,9 +765,15 @@ transport. Adding account subscriptions must not disturb market subscriptions.
   - `transport-monitor.ts` (the shared socket): a socket that is not open has its
     backoff skipped; an open socket that has been silent for the inactivity
     threshold is replaced at once; any other open socket is sent a heartbeat and
-    replaced only if no frame arrives within `resumeProbeTimeoutMs`. A socket
-    that keeps receiving frames is never replaced because the page became
+    replaced only if no heartbeat answer (`{"channel":"pong"}`) arrives within
+    `resumeProbeTimeoutMs`. Other frames do not count as the answer: a phone
+    that was suspended can deliver frames the kernel buffered before the
+    connection died, and they arrive before or right after the visibility
+    event. A socket that answers is never replaced because the page became
     visible: a desktop tab switch must not reset every stream and the chart.
+    `probeLiveness` is the one implementation of the heartbeat, shared with the
+    order-book pool; it recognises the answer with a length and substring test,
+    not a JSON parse of every frame, and the SDK keep-alive's own answers count.
   - `store.ts`: a subscription waiting out its retry backoff or its cooldown
     retries at once, and its failure count starts over, as it does when a
     cooldown ends: a retry that fails backs off from the first delay instead of
@@ -778,7 +784,11 @@ transport. Adding account subscriptions must not disturb market subscriptions.
     no `l2Book` frame for its stream's staleness threshold is closed, and its
     consumers subscribe again on a new connection inside the pool's connection
     budget. An `l2Book` frame for any coin on the connection counts; heartbeat
-    answers and subscription confirmations do not.
+    answers and subscription confirmations do not. Every other transport is
+    sent a heartbeat through its SDK socket and closed when no answer arrives
+    within `resumeProbeTimeoutMs`, because buffered book frames can make a dead
+    connection look fresh at that moment; a heartbeat that runs out while the
+    page is hidden again or offline closes nothing.
   - `patches/@nktkas__rews@4.1.0.patch`: `reconnect()` and `close()` do not wait
     for the old socket's `close` event, which Chromium fires for a half-open
     connection only after sixty seconds. Never add a path that waits for a
@@ -787,6 +797,37 @@ transport. Adding account subscriptions must not disturb market subscriptions.
   real engines. Re-run it, and `websocket-half-open-reconnect.test.ts`, when
   `@nktkas/rews` or the SDK changes: the patch is pinned to rews 4.1.0, and pnpm
   refuses to install when it no longer applies.
+- While the page stays visible and online, the shared socket is checked every
+  `checkIntervalMs`: one that has received no frame for `quietProbeThresholdMs`
+  (15 seconds, the silence after which the official terminal reconnects) is
+  sent one heartbeat and replaced only when no answer follows; a second probe is
+  not sent while one is pending. The 45-second `inactivityThresholdMs` remains
+  a backstop that replaces the socket without asking. A quiet page with only
+  low-frequency user streams therefore sends a heartbeat about every fifteen to
+  twenty seconds, in addition to the SDK keep-alive every thirty.
+- `visibility.ts` takes the page's state from `document.hidden` on `resume`:
+  Chromium can unfreeze a page that is still in the background, and marking it
+  visible then would swallow the real return, so no resume recovery would run.
+- Compressed channels (`pac`, `sac`, `fastAssetCtxs`) decode through
+  `subscriptions/compact-asset-ctxs.ts`, which `CompactSubscriptionClient` uses
+  in place of the SDK decoder for `fastAssetCtxs`: the SDK chains every frame on
+  one promise, so one frame that failed to decode, or a listener that threw,
+  left the stream silent while it still looked subscribed. A failing frame now
+  ends the subscription through `onError`, and the store subscribes again for a
+  fresh snapshot. A browser without `DecompressionStream("deflate-raw")`
+  subscribes to none of the three; `useMarketsInfo` then prices each row from
+  its plain `allDexsAssetCtxs` / `spotAssetCtxs` context while that channel is
+  active and fresh (receipt within `LIVE_MARK_MAX_STALE_MS`, as for fast prices).
+- Hyperliquid limits each IP address to 10 WebSocket connections and 30 new
+  connections a minute. One terminal tab holds at most five: the shared socket
+  and four pooled order-book transports, so two tabs reach the limit; the pool
+  itself opens at most 24 a minute. The phone layout does not warm a full-depth
+  order-book connection at startup (`lib/trade/orderbook-boot.ts`), because its
+  trade page reads the compact book. The official terminal tells the user to
+  close other tabs when the server refuses a connection with a reason starting
+  `Cannot open more than`; this terminal does not recognise that reason yet,
+  and a notice for it is a new category of passive data notice that
+  `docs/mobile-data-presentation.md` would have to admit first.
 
 ### Important Files
 

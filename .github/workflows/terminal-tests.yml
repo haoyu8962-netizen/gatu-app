@@ -125,6 +125,7 @@ jobs:
           src/lib/tests/ws-transport-monitor.test.ts
           src/lib/tests/store-resume.test.ts
           src/lib/tests/store-visibility-pause.test.ts
+          src/lib/tests/visibility.test.ts
           src/lib/tests/l2-book-transport-pool.test.ts
           src/lib/tests/l2-book-transport-pool-resume.test.ts
           src/lib/tests/websocket-half-open-reconnect.test.ts

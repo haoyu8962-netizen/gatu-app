@@ -634,6 +634,18 @@ changes, not evidence that a build has been deployed or accepted on real devices
   tabs does not reset the chart. Opening the terminal in a background tab no longer leaves market
   data blank until the next update. Not yet confirmed on a phone, and the white screen that iOS
   shows before the page appears is not addressed by this change (ADR 0050).
+- A connection that died while the phone was in the background is no longer mistaken for a live one
+  because data held back during the suspension arrives first: the terminal now waits for the
+  server's answer to a heartbeat, both on the main connection and on order-book connections, and
+  replaces the connection within a few seconds when it does not come. While the page stays open, a
+  connection that has been quiet for fifteen seconds is checked the same way, as on the official
+  terminal, instead of waiting forty-five seconds. Pages that Chrome unfreezes while still in the
+  background now recover when they are actually shown. Not yet confirmed on a phone (ADR 0050).
+- Live mark and mid prices for the market list no longer stop for good after one damaged update; the
+  stream restarts from a fresh snapshot. Browsers that cannot decompress the compact channels no
+  longer subscribe to them in a loop and show list prices from the regular market data instead.
+- On a phone, opening a trade page no longer opens an extra order-book connection that the phone
+  layout does not use, which leaves more room under the exchange's per-address connection limit.
 - A cross order larger than the account can open now shows a liquidation price. This covers a new
   position or an add to a position in the same direction, including from an empty account or when the
   fee would use up the equity. As on the official terminal, the estimate assumes the account is topped
