@@ -276,6 +276,21 @@ export function createHyperliquidStore(initialConfig: HyperliquidConfig): Hyperl
 		});
 	}
 
+	// A subscription that failed while the page was hidden or offline waits out a backoff of up to
+	// five seconds, or the thirty-second cooldown, before it tries again. Those waits protect the
+	// server from a retry storm; they are not meant to keep a returning user looking at placeholders.
+	// The failures counted so far say nothing about the connection the user came back to, so the
+	// count starts over, as it does when a cooldown ends: a retry that fails here backs off from the
+	// first delay instead of opening a new cooldown.
+	function retryWaitingSubscriptions(): void {
+		if (getNetworkState() === "offline") return;
+		for (const runtime of [...subscriptionRuntime.values()]) {
+			if (runtime.refCount <= 0 || (!runtime.reconnectTimer && !runtime.cooldownTimer)) continue;
+			runtime.reconnectAttempts = 0;
+			runtime.recoverStale?.();
+		}
+	}
+
 	function shouldPauseKey(key: string): boolean {
 		const runtime = subscriptionRuntime.get(key);
 		if (runtime?.pauseWhenHidden !== undefined) return runtime.pauseWhenHidden;
@@ -368,6 +383,7 @@ export function createHyperliquidStore(initialConfig: HyperliquidConfig): Hyperl
 				});
 				flushVisibilityBuffer(store);
 				recoverFreshSnapshots(store, expiredSnapshotKeys);
+				retryWaitingSubscriptions();
 			}
 		});
 
@@ -382,8 +398,12 @@ export function createHyperliquidStore(initialConfig: HyperliquidConfig): Hyperl
 					recordRecoveryEvent("network-resume", "reconnect", []);
 					safelyTriggerReconnect(triggerReconnect);
 				}
+				retryWaitingSubscriptions();
 			}
 		});
+		// A store that attaches while the page is already hidden (a tab opened in the background) sees
+		// no hidden event, and would otherwise never flush what it buffers until then.
+		wasHidden = getVisibilityState() === "hidden";
 		wasOffline = getNetworkState() === "offline";
 		if (wasOffline) markRetainedFreshSnapshotsStale(store);
 		detachDisconnect = subscribeDisconnect?.(() => {

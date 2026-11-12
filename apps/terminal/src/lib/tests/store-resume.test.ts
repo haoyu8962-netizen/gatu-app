@@ -16,6 +16,7 @@ describe("store-driven resume via singletons", () => {
 	});
 
 	afterEach(() => {
+		vi.restoreAllMocks();
 		vi.useRealTimers();
 		Object.defineProperty(document, "hidden", { value: false, configurable: true });
 		Object.defineProperty(navigator, "onLine", { value: true, configurable: true });
@@ -252,6 +253,175 @@ describe("store-driven resume via singletons", () => {
 		document.dispatchEvent(new Event("visibilitychange"));
 		expect(store.getState().subscriptions[key]?.data).toBeUndefined();
 
+		store.getState().releaseSubscription(key);
+	});
+
+	function setHidden(hidden: boolean) {
+		Object.defineProperty(document, "hidden", { value: hidden, configurable: true });
+		document.dispatchEvent(new Event("visibilitychange"));
+	}
+
+	function createFlakySubscription() {
+		const state = { failing: true };
+		const subscribe = vi.fn(async () => {
+			if (state.failing) throw new Error("connection unavailable");
+			return { unsubscribe: async () => {} };
+		});
+		return { state, subscribe };
+	}
+
+	it("retries a subscription that is waiting out its backoff as soon as the page returns", async () => {
+		vi.useFakeTimers({ now: 0 });
+		vi.spyOn(Math, "random").mockReturnValue(0);
+		const store = createHyperliquidStore({ ssr: false, triggerReconnect: vi.fn() });
+		const { state, subscribe } = createFlakySubscription();
+		const key = "test:backoff-resume";
+
+		store.getState().acquireSubscription(key, subscribe);
+		setHidden(true);
+		await vi.advanceTimersByTimeAsync(8_000);
+		const attemptsWhileHidden = subscribe.mock.calls.length;
+		expect(attemptsWhileHidden).toBe(6);
+		expect(store.getState().subscriptions[key]?.status).toBe("error");
+
+		state.failing = false;
+		setHidden(false);
+		await vi.advanceTimersByTimeAsync(0);
+
+		expect(subscribe).toHaveBeenCalledTimes(attemptsWhileHidden + 1);
+		expect(store.getState().subscriptions[key]?.status).toBe("active");
+		await vi.advanceTimersByTimeAsync(10_000);
+		expect(subscribe).toHaveBeenCalledTimes(attemptsWhileHidden + 1);
+		store.getState().releaseSubscription(key);
+	});
+
+	it("ends the reconnect cooldown when the page returns", async () => {
+		vi.useFakeTimers({ now: 0 });
+		vi.spyOn(Math, "random").mockReturnValue(0);
+		const store = createHyperliquidStore({ ssr: false, triggerReconnect: vi.fn() });
+		const { state, subscribe } = createFlakySubscription();
+		const key = "test:cooldown-resume";
+
+		store.getState().acquireSubscription(key, subscribe);
+		setHidden(true);
+		await vi.advanceTimersByTimeAsync(90_000);
+		const attemptsWhileHidden = subscribe.mock.calls.length;
+		expect(String(store.getState().subscriptions[key]?.error)).toContain("Reconnect cooldown active");
+
+		state.failing = false;
+		setHidden(false);
+		await vi.advanceTimersByTimeAsync(0);
+
+		expect(subscribe).toHaveBeenCalledTimes(attemptsWhileHidden + 1);
+		expect(store.getState().subscriptions[key]).toMatchObject({ status: "active", error: undefined });
+		store.getState().releaseSubscription(key);
+	});
+
+	it("backs off from the first delay, not into a new cooldown, when the retry on return fails", async () => {
+		vi.useFakeTimers({ now: 0 });
+		vi.spyOn(Math, "random").mockReturnValue(0);
+		const store = createHyperliquidStore({ ssr: false, triggerReconnect: vi.fn() });
+		const { subscribe } = createFlakySubscription();
+		const key = "test:cooldown-resume-still-failing";
+
+		store.getState().acquireSubscription(key, subscribe);
+		setHidden(true);
+		await vi.advanceTimersByTimeAsync(90_000);
+		const attemptsWhileHidden = subscribe.mock.calls.length;
+		expect(String(store.getState().subscriptions[key]?.error)).toContain("Reconnect cooldown active");
+
+		setHidden(false);
+		await vi.advanceTimersByTimeAsync(0);
+		expect(subscribe).toHaveBeenCalledTimes(attemptsWhileHidden + 1);
+
+		await vi.advanceTimersByTimeAsync(250);
+		expect(subscribe).toHaveBeenCalledTimes(attemptsWhileHidden + 2);
+		expect(String(store.getState().subscriptions[key]?.error)).not.toContain("Reconnect cooldown active");
+		store.getState().releaseSubscription(key);
+	});
+
+	it("starts the backoff over when the retry on return fails", async () => {
+		vi.useFakeTimers({ now: 0 });
+		vi.spyOn(Math, "random").mockReturnValue(0);
+		const store = createHyperliquidStore({ ssr: false, triggerReconnect: vi.fn() });
+		const { subscribe } = createFlakySubscription();
+		const key = "test:backoff-resume-still-failing";
+
+		store.getState().acquireSubscription(key, subscribe);
+		setHidden(true);
+		await vi.advanceTimersByTimeAsync(8_000);
+		const attemptsWhileHidden = subscribe.mock.calls.length;
+
+		setHidden(false);
+		await vi.advanceTimersByTimeAsync(0);
+		expect(subscribe).toHaveBeenCalledTimes(attemptsWhileHidden + 1);
+
+		await vi.advanceTimersByTimeAsync(249);
+		expect(subscribe).toHaveBeenCalledTimes(attemptsWhileHidden + 1);
+		await vi.advanceTimersByTimeAsync(1);
+		expect(subscribe).toHaveBeenCalledTimes(attemptsWhileHidden + 2);
+		store.getState().releaseSubscription(key);
+	});
+
+	it("retries a waiting subscription as soon as the network returns", async () => {
+		vi.useFakeTimers({ now: 0 });
+		vi.spyOn(Math, "random").mockReturnValue(0);
+		const triggerReconnect = vi.fn();
+		const store = createHyperliquidStore({ ssr: false, triggerReconnect });
+		const { state, subscribe } = createFlakySubscription();
+		const key = "test:backoff-online";
+
+		store.getState().acquireSubscription(key, subscribe);
+		Object.defineProperty(navigator, "onLine", { value: false, configurable: true });
+		window.dispatchEvent(new Event("offline"));
+		await vi.advanceTimersByTimeAsync(8_000);
+		const attemptsWhileOffline = subscribe.mock.calls.length;
+
+		state.failing = false;
+		Object.defineProperty(navigator, "onLine", { value: true, configurable: true });
+		window.dispatchEvent(new Event("online"));
+		await vi.advanceTimersByTimeAsync(0);
+
+		expect(triggerReconnect).toHaveBeenCalledOnce();
+		expect(subscribe).toHaveBeenCalledTimes(attemptsWhileOffline + 1);
+		expect(store.getState().subscriptions[key]?.status).toBe("active");
+		store.getState().releaseSubscription(key);
+	});
+
+	it("keeps the backoff when the page returns while the network is still offline", async () => {
+		vi.useFakeTimers({ now: 0 });
+		vi.spyOn(Math, "random").mockReturnValue(0);
+		const store = createHyperliquidStore({ ssr: false, triggerReconnect: vi.fn() });
+		const { subscribe } = createFlakySubscription();
+		const key = "test:backoff-offline-resume";
+
+		store.getState().acquireSubscription(key, subscribe);
+		setHidden(true);
+		Object.defineProperty(navigator, "onLine", { value: false, configurable: true });
+		window.dispatchEvent(new Event("offline"));
+		await vi.advanceTimersByTimeAsync(8_000);
+		const attemptsWhileHidden = subscribe.mock.calls.length;
+
+		setHidden(false);
+		await vi.advanceTimersByTimeAsync(0);
+
+		expect(subscribe).toHaveBeenCalledTimes(attemptsWhileHidden);
+		store.getState().releaseSubscription(key);
+	});
+
+	it("leaves an active subscription untouched when the page returns", async () => {
+		const store = createHyperliquidStore({ ssr: false, triggerReconnect: vi.fn() });
+		const subscribe = vi.fn(createFakeSubscription().subscribe);
+		const key = "test:active-resume";
+
+		store.getState().acquireSubscription(key, subscribe);
+		await new Promise<void>((resolve) => setTimeout(resolve, 0));
+		setHidden(true);
+		setHidden(false);
+		await new Promise<void>((resolve) => setTimeout(resolve, 0));
+
+		expect(subscribe).toHaveBeenCalledOnce();
+		expect(store.getState().subscriptions[key]?.status).toBe("active");
 		store.getState().releaseSubscription(key);
 	});
 

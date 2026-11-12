@@ -1,0 +1,33 @@
+diff --git a/esm/mod.js b/esm/mod.js
+index 9bec45b2be516b80ce3f360696aaf9adc347e3e9..3366b50bd701090aebf1f27a7999387c9504b4b9 100644
+--- a/esm/mod.js
++++ b/esm/mod.js
+@@ -389,19 +389,16 @@
+       });
+     });
+   }
+-  /** Close the current socket and settle its lifecycle if it was still connecting. */ _dropSocket(code, reason) {
+-    const wasConnecting = this._socket?.readyState === ReconnectingWebSocket.CONNECTING;
++  /** Close the current socket and settle its lifecycle without waiting for its close event. */ _dropSocket(code, reason) {
+     this._socket?.close(code, reason);
+-    // HACK (nodejs/undici#3546):
+-    // Node.js <24, Bun, and React Native skip the close event when close() is called
+-    // during CONNECTING — settle directly.
+-    if (wasConnecting) {
+-      this._settleLifecycle?.({
+-        code: 1006,
+-        reason: "",
+-        wasClean: false
+-      });
+-    }
++    // PATCH (sairn): settle directly in every state. A browser fires the close event of a
++    // half-open connection only after its closing-handshake timeout (60 s in Chromium), and until
++    // then reconnect() opened no replacement and close() dispatched no final close event.
++    this._settleLifecycle?.({
++      code: 1006,
++      reason: "",
++      wasClean: false
++    });
+   }
+   /** Permanently terminate the instance and clean up resources. */ _terminate(code, cause) {
+     if (this.terminationSignal.aborted) return;

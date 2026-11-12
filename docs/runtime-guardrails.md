@@ -756,11 +756,44 @@ transport. Adding account subscriptions must not disturb market subscriptions.
   the clock is set back, their confirmation windows and reservations extend
   until a WebSocket result arrives or the wall clock catches up; they never
   confirm early ([ADR 0022](adr/0022-subscription-staleness-monotonic-clock.md)).
+- Recovery starts when the page returns to the foreground or the network
+  returns, not on the next timer ([ADR 0050](adr/0050-websocket-recovery-on-resume.md)).
+  A phone suspends a hidden page, so timers stop and a connection can be closed,
+  dead without a close event, or sleeping out a backoff; while the data is stale
+  the page shows placeholders, so every second of recovery is a second without
+  data. Four rules, each with its own owner:
+  - `transport-monitor.ts` (the shared socket): a socket that is not open has its
+    backoff skipped; an open socket that has been silent for the inactivity
+    threshold is replaced at once; any other open socket is sent a heartbeat and
+    replaced only if no frame arrives within `resumeProbeTimeoutMs`. A socket
+    that keeps receiving frames is never replaced because the page became
+    visible: a desktop tab switch must not reset every stream and the chart.
+  - `store.ts`: a subscription waiting out its retry backoff or its cooldown
+    retries at once, and its failure count starts over, as it does when a
+    cooldown ends: a retry that fails backs off from the first delay instead of
+    opening a new cooldown. The waits still apply between attempts while the
+    page stays visible. A store that attaches while the page is hidden records
+    that state, so it flushes its buffer when the page first becomes visible.
+  - `l2-book-transport-pool.ts`: a pooled order-book transport that has received
+    no `l2Book` frame for its stream's staleness threshold is closed, and its
+    consumers subscribe again on a new connection inside the pool's connection
+    budget. An `l2Book` frame for any coin on the connection counts; heartbeat
+    answers and subscription confirmations do not.
+  - `patches/@nktkas__rews@4.1.0.patch`: `reconnect()` and `close()` do not wait
+    for the old socket's `close` event, which Chromium fires for a half-open
+    connection only after sixty seconds. Never add a path that waits for a
+    browser `close` event before opening a replacement.
+  `apps/terminal/tests/browser/websocket-half-open-probe.mjs` measures both in
+  real engines. Re-run it, and `websocket-half-open-reconnect.test.ts`, when
+  `@nktkas/rews` or the SDK changes: the patch is pinned to rews 4.1.0, and pnpm
+  refuses to install when it no longer applies.
 
 ### Important Files
 
 - `packages/hl-react/src/internal/websocket/*`
 - `packages/hl-react/src/store.ts`
+- `packages/hl-react/src/subscriptions/l2-book-transport-pool.ts`
+- `patches/@nktkas__rews@4.1.0.patch`
 - `packages/hl-react/src/registries/subscription.ts`
 - `apps/terminal/src/hooks/account/*`
 - `apps/terminal/src/components/trade/orderbook/*`
@@ -1250,6 +1283,10 @@ Before merging any change that touches the areas above:
 - Clearing mobile orderbook/chart to an empty skeleton during ordinary symbol
   switches.
 - Hiding mobile UI state behind full route reloads.
+- Waiting for a timer, a backoff or a dead socket's `close` event before
+  recovering market data after the page or the network returns.
+- Reconnecting a socket that still receives frames because the tab became
+  visible.
 - Treating Privy authentication as proof that the expected signing wallet is
   active.
 - Rendering the application wallet drawer underneath a Privy modal.

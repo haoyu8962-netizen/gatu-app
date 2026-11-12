@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 import test from "node:test";
 import { captureWorklog, publicEvent, redact } from "./capture-worklog.mjs";
-import { loadMemory, parseRecord, renderIndex, updateIndex } from "./work-memory.mjs";
+import { loadMemory, parseRecord, renderIndex, updateIndex, verifyCommits } from "./work-memory.mjs";
 
 function record(overrides = {}) {
 	return {
@@ -76,16 +76,27 @@ test("metadata requires real dates, matching file identity and verification sect
 	assert.throws(() => parseRecord(document({ ...data, sources: [] }), `${data.id}.md`), /evidence/);
 });
 
-test("index is deterministic, sorted and detects edits after generation", async (t) => {
+test("index is deterministic and sorted, and the check never reads the local index", async (t) => {
 	const { repo, metadata, save } = await fixture(t);
+	const index = resolve(repo, "docs/work-memory/INDEX.md");
 	await save({ ...metadata, id: "2026-09-11-previous", date: "2026-09-11" });
-	await updateIndex(repo);
 	await updateIndex(repo, true);
+	await updateIndex(repo);
 	const model = await loadMemory(repo);
+	assert.equal(await readFile(index, "utf8"), renderIndex(model));
 	assert.equal(renderIndex(model), renderIndex({ ...model, records: [...model.records].reverse() }));
 	await save({ ...metadata, summary: "修正后的结论" });
-	await assert.rejects(updateIndex(repo, true), /stale/);
+	await updateIndex(repo, true);
 	await updateIndex(repo);
+	assert.match(await readFile(index, "utf8"), /修正后的结论/);
+});
+
+test("the check fails while the index is tracked by Git", async (t) => {
+	const { repo } = await fixture(t);
+	await updateIndex(repo);
+	execFileSync("git", ["add", "docs/work-memory/INDEX.md"], { cwd: repo });
+	await assert.rejects(updateIndex(repo, true), /INDEX\.md must not be tracked/);
+	execFileSync("git", ["rm", "--cached", "--quiet", "docs/work-memory/INDEX.md"], { cwd: repo });
 	await updateIndex(repo, true);
 });
 
@@ -96,7 +107,48 @@ test("unknown topics, missing files and nonexistent commits fail validation", as
 	await save({ ...metadata, sources: [{ path: "docs/missing.md" }] });
 	await assert.rejects(loadMemory(repo), /ENOENT/);
 	await save({ ...metadata, baseCommit: "deadbeef" });
-	await assert.rejects(loadMemory(repo));
+	await assert.rejects(loadMemory(repo), new RegExp(`${metadata.id}: unknown commit deadbeef`));
+	const tree = execFileSync("git", ["rev-parse", "HEAD^{tree}"], { cwd: repo, encoding: "utf8" }).trim();
+	const blob = execFileSync("git", ["rev-parse", "HEAD:docs/current.md"], { cwd: repo, encoding: "utf8" }).trim();
+	for (const object of [tree, blob]) {
+		await save({ ...metadata, commits: [object] });
+		await assert.rejects(loadMemory(repo), new RegExp(`${metadata.id}: unknown commit ${object}`));
+	}
+	await save(metadata);
+	await loadMemory(repo);
+});
+
+test("an annotated tag peels to its commit, and a failure names the record that cites the reference", async (t) => {
+	const { repo, metadata, save } = await fixture(t);
+	execFileSync(
+		"git",
+		[
+			"-c",
+			"user.name=Memory Test",
+			"-c",
+			"user.email=memory@example.invalid",
+			"-c",
+			"tag.gpgSign=false",
+			"tag",
+			"-a",
+			"fixture-tag",
+			"-m",
+			"fixture tag",
+		],
+		{ cwd: repo },
+	);
+	const tag = execFileSync("git", ["rev-parse", "fixture-tag"], { cwd: repo, encoding: "utf8" }).trim();
+	await save({ ...metadata, commits: [tag] });
+	await loadMemory(repo);
+	await save({ ...metadata, id: "2026-09-13-other", date: "2026-09-13", commits: ["deadbeef"] });
+	await assert.rejects(loadMemory(repo), /2026-09-13-other: unknown commit deadbeef/);
+});
+
+test("commit verification reads more output than the default 1 MiB buffer", async (t) => {
+	const { repo } = await fixture(t);
+	const owners = new Map();
+	for (let index = 0; index < 25_000; index += 1) owners.set(index.toString(16).padStart(40, "f"), "2026-09-12-bulk");
+	assert.throws(() => verifyCommits(repo, owners), new RegExp(`2026-09-12-bulk: unknown commit ${"f".repeat(39)}0`));
 });
 
 test("duplicate topic IDs, escaping symlinks and non-HTTPS evidence fail", async (t) => {

@@ -624,6 +624,16 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Fixed
 
+- Reopening the terminal after it sat in the background brings prices, the order book and account
+  data back sooner. The terminal now checks its connections the moment the page is shown again,
+  or the network returns, instead of up to five seconds later; it retries at once instead of
+  finishing a wait of up to thirty seconds left over from attempts that failed in the background;
+  and it replaces an order-book connection that went silent instead of leaving it for up to forty
+  seconds. In Chrome and other Chromium browsers a dead connection is replaced immediately instead
+  of after up to a minute. A connection that is still receiving data is left alone, so switching
+  tabs does not reset the chart. Opening the terminal in a background tab no longer leaves market
+  data blank until the next update. Not yet confirmed on a phone, and the white screen that iOS
+  shows before the page appears is not addressed by this change (ADR 0050).
 - A cross order larger than the account can open now shows a liquidation price. This covers a new
   position or an add to a position in the same direction, including from an empty account or when the
   fee would use up the equity. As on the official terminal, the estimate assumes the account is topped
