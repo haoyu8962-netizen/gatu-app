@@ -148,7 +148,7 @@ export function settlePartialOrderCancellation(
 	};
 	const actions = getPendingTradingActionActions();
 	actions.narrowOrderCancellation(action.id, canceledOids, partialResult);
-	actions.markOrderCancellationAwaiting(action.id);
+	actions.markOrderCancellationAccepted(action.id);
 	updatePendingTradingActionFeedback(action, "cancel", {
 		status: "partial",
 		...getPartialCancellationFeedback(partialResult),

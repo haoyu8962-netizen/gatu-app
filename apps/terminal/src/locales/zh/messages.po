@@ -3687,6 +3687,10 @@ msgstr "已成交"
 msgid "Filled (quantity unverified)"
 msgstr "已成交（数量待核对）"
 
+#: src/components/trade/order-reconciliation.tsx
+msgid "Filled before it could be canceled. Check your positions."
+msgstr "撤销前已成交，请核对仓位。"
+
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Filter by {label}"
 msgstr "按 {label} 筛选"
@@ -9250,6 +9254,10 @@ msgstr "委托在本次修改确认前已发生变化。重试前请检查最新
 msgid "The order could not immediately match any resting orders."
 msgstr "订单无法立即与任何挂单成交。"
 
+#: src/components/trade/order-reconciliation.tsx
+msgid "The order is no longer open. Check your fills before retrying."
+msgstr "订单已不在当前委托中。重试前请核对成交记录。"
+
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #~ msgid "The order is still being confirmed."
 #~ msgstr "订单仍在确认中。"
@@ -10497,9 +10505,17 @@ msgstr "TWAP 成交记录"
 msgid "TWAP finished"
 msgstr "TWAP 已完成"
 
+#: src/components/trade/twap-reconciliation.tsx
+msgid "TWAP finished before it could be terminated."
+msgstr "TWAP 在终止前已完成。"
+
 #: src/components/trade/positions/twap-history-table.tsx
 msgid "TWAP history"
 msgstr "TWAP 历史"
+
+#: src/components/trade/twap-reconciliation.tsx
+msgid "TWAP is no longer active. Check TWAP history before retrying."
+msgstr "TWAP 已不在运行中。重试前请查看 TWAP 历史。"
 
 #: src/lib/errors/definitions/twap.ts
 #: src/lib/trade/order-submission-feedback.ts

@@ -1,4 +1,5 @@
 import { msg } from "@lingui/core/macro";
+import type { InfoClient } from "@nktkas/hyperliquid";
 import { useEffect, useRef } from "react";
 import { HL_ALL_DEXS } from "@/config/app";
 import { isPartialIocExecutionForOrder } from "@/domain/trade/order-execution-summary";
@@ -37,12 +38,17 @@ import {
 import {
 	getNextTradingActionExpiryDelayMs,
 	getPendingTradingActionActions,
+	getPendingTradingActionSnapshot,
+	type PendingOrderCancellation,
+	type PendingOrderModification,
 	usePendingOrderCancellations,
 	usePendingOrderModifications,
 	wasReceivedAfter,
 } from "@/stores/use-pending-trading-action-store";
 
 const RECONCILIATION_TICK_MS = 3_000;
+const CANCELLATION_STATUS_LOOKUP_LIMIT = 10;
+const verifyingCancellationIds = new Set<string>();
 
 export function OrderReconciliation() {
 	const { clientKey, env, info } = useHyperliquid();
@@ -121,28 +127,13 @@ export function OrderReconciliation() {
 				});
 				continue;
 			}
+			if (!cancellation.accepted) {
+				for (const oid of cancellation.oids) activeCancellationOids.add(oid);
+				void verifyCancellation(cancellation, info);
+				continue;
+			}
 			for (const oid of cancellation.oids) completedCancellationOids.add(oid);
-			getPendingTradingActionActions().confirmOrderCancellation(cancellation.id);
-			for (const modification of modifications) {
-				if (
-					modification.env === cancellation.env &&
-					modification.owner === cancellation.owner &&
-					cancellation.oids.includes(modification.oid)
-				) {
-					updatePendingTradingActionFeedback(modification, "modify", {
-						status: "canceled",
-						message: msg`The modified order was canceled.`,
-					});
-				}
-			}
-			if (cancellation.partialResult) {
-				confirmPartialCancellationFeedback({ ...cancellation, partialResult: cancellation.partialResult });
-			} else {
-				updatePendingTradingActionFeedback(cancellation, "cancel", {
-					status: "success",
-					message: msg`Canceled`,
-				});
-			}
+			completeCancellation(cancellation, modifications);
 		}
 
 		for (const modification of modifications) {
@@ -202,6 +193,7 @@ export function OrderReconciliation() {
 		address,
 		cancellations,
 		env,
+		info,
 		modifications,
 		openOrdersEvent,
 		openOrdersReceivedAt,
@@ -306,6 +298,80 @@ export function OrderReconciliation() {
 type AwaitingTradingAction =
 	| ReturnType<typeof usePendingOrderModifications>[number]
 	| ReturnType<typeof usePendingOrderCancellations>[number];
+
+function completeCancellation(
+	cancellation: PendingOrderCancellation,
+	modifications: readonly PendingOrderModification[],
+): void {
+	getPendingTradingActionActions().confirmOrderCancellation(cancellation.id);
+	for (const modification of modifications) {
+		if (
+			modification.env === cancellation.env &&
+			modification.owner === cancellation.owner &&
+			cancellation.oids.includes(modification.oid)
+		) {
+			updatePendingTradingActionFeedback(modification, "modify", {
+				status: "canceled",
+				message: msg`The modified order was canceled.`,
+			});
+		}
+	}
+	if (cancellation.partialResult) {
+		confirmPartialCancellationFeedback({ ...cancellation, partialResult: cancellation.partialResult });
+	} else {
+		updatePendingTradingActionFeedback(cancellation, "cancel", { status: "success", message: msg`Canceled` });
+	}
+}
+
+/**
+ * An order that left the open orders after a cancel the exchange never confirmed may have filled
+ * instead. One `orderStatus` lookup per order (weight 2, at most ten, never retried) decides: only
+ * canceled statuses for every order report Canceled, a fill is reported as such, anything else stays
+ * neutral.
+ */
+async function verifyCancellation(cancellation: PendingOrderCancellation, info: InfoClient): Promise<void> {
+	if (verifyingCancellationIds.has(cancellation.id)) return;
+	verifyingCancellationIds.add(cancellation.id);
+	const statuses = await Promise.all(
+		cancellation.oids.slice(0, CANCELLATION_STATUS_LOOKUP_LIMIT).map((oid) =>
+			info.orderStatus({ user: cancellation.owner as `0x${string}`, oid }).then(
+				(result) => (result.status === "order" ? result.order.status : undefined),
+				() => undefined,
+			),
+		),
+	);
+	verifyingCancellationIds.delete(cancellation.id);
+	const snapshot = getPendingTradingActionSnapshot();
+	const current = snapshot.orderCancellations.find((action) => action.id === cancellation.id);
+	if (!current) return;
+	const canceledCount = statuses.filter((status) => status && isCanceledOrderStatus(status)).length;
+	if (canceledCount === current.oids.length) {
+		completeCancellation(current, snapshot.modifications);
+		return;
+	}
+	getPendingTradingActionActions().releaseOrderCancellation(current.id);
+	if (!statuses.includes("filled")) {
+		updatePendingTradingActionFeedback(current, "cancel", {
+			status: "unconfirmed",
+			message: msg`The order is no longer open. Check your fills before retrying.`,
+		});
+		return;
+	}
+	const message = msg`Filled before it could be canceled. Check your positions.`;
+	updatePendingTradingActionFeedback(
+		current,
+		"cancel",
+		canceledCount === 0
+			? { status: "failed", message }
+			: {
+					status: "partial",
+					message,
+					acceptedCount: canceledCount,
+					totalCount: current.oids.length,
+					countMode: "canceled",
+				},
+	);
+}
 
 function markExpiredTradingActions(actions: AwaitingTradingAction[], now: number, monotonicNow: number): void {
 	for (const action of actions) {

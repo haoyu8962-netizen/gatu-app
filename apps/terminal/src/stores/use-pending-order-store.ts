@@ -8,6 +8,7 @@ import {
 	type OrderProcessingStatus,
 	type TrackedOrderChild,
 } from "@/domain/trade/order-tracking";
+import { shareSubmissionsBetweenTabs } from "@/lib/trade/pending-submission-tab-ownership";
 import { z } from "@/lib/zod";
 import type { OrderQueueMetadata } from "@/stores/use-order-queue-store";
 
@@ -352,6 +353,7 @@ export function createPendingOrderStore(storage: PendingOrderStorage | null = ge
 					createdAt: now,
 					children: input.children.map((child) => ({ ...child, attempts: 0, nextCheckAt: now + 1_000 })),
 				};
+				claimSubmission(submission.id);
 				set(() => {
 					const current = readPersistedPendingOrders(storage);
 					if (!current) throw new PendingOrderPersistenceError();
@@ -537,6 +539,9 @@ export function createPendingOrderStore(storage: PendingOrderStorage | null = ge
 		});
 	}
 
+	const claimSubmission = shareSubmissionsBetweenTabs(store, "sairn-pending-order-owner-v1:", (id) =>
+		(readPersistedPendingOrders(storage) ?? store.getState().submissions).some((submission) => submission.id === id),
+	);
 	return store;
 }
 

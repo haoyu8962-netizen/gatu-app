@@ -652,7 +652,7 @@ describe("TwapReconciliation", () => {
 		});
 		if (!cancellation) throw new Error("Expected TWAP cancellation claim");
 		getPendingTradingActionActions().markTwapCancellationRequestStarted(cancellation.id, now - 2, monotonicNow - 2);
-		getPendingTradingActionActions().markTwapCancellationUnconfirmed(cancellation.id, now - 1, monotonicNow - 1);
+		getPendingTradingActionActions().markTwapCancellationAccepted(cancellation.id, now - 1, monotonicNow - 1);
 		mocks.activeLastMessageAt = now;
 		mocks.activeMonotonicLastMessageAt = monotonicNow;
 
@@ -697,7 +697,7 @@ describe("TwapReconciliation", () => {
 		});
 		if (!cancellation) throw new Error("Expected TWAP cancellation claim");
 		getPendingTradingActionActions().markTwapCancellationRequestStarted(cancellation.id);
-		getPendingTradingActionActions().markTwapCancellationAwaiting(cancellation.id);
+		getPendingTradingActionActions().markTwapCancellationAccepted(cancellation.id);
 
 		vi.setSystemTime(Date.now() - 60 * 60_000);
 		await act(() => vi.advanceTimersByTimeAsync(1_000));
@@ -722,7 +722,7 @@ describe("TwapReconciliation", () => {
 		});
 		if (!cancellation) throw new Error("Expected TWAP cancellation claim");
 		getPendingTradingActionActions().markTwapCancellationRequestStarted(cancellation.id);
-		getPendingTradingActionActions().markTwapCancellationAwaiting(cancellation.id);
+		getPendingTradingActionActions().markTwapCancellationAccepted(cancellation.id);
 		act(() => root.render(createReconciliation()));
 
 		vi.setSystemTime(Date.now() - 60 * 60_000);
@@ -788,7 +788,7 @@ describe("TwapReconciliation", () => {
 		});
 		if (!cancellation) throw new Error("Expected TWAP cancellation claim");
 		getPendingTradingActionActions().markTwapCancellationRequestStarted(cancellation.id, now - 2, monotonicNow - 2);
-		getPendingTradingActionActions().markTwapCancellationUnconfirmed(cancellation.id, now - 1, monotonicNow - 1);
+		getPendingTradingActionActions().markTwapCancellationAccepted(cancellation.id, now - 1, monotonicNow - 1);
 		mocks.activeLastMessageAt = now;
 		mocks.activeMonotonicLastMessageAt = monotonicNow;
 		Object.defineProperty(window.navigator, "locks", { configurable: true, value: undefined });
@@ -819,7 +819,7 @@ describe("TwapReconciliation", () => {
 		});
 		if (!cancellation) throw new Error("Expected TWAP cancellation claim");
 		getPendingTradingActionActions().markTwapCancellationRequestStarted(cancellation.id, now - 2, monotonicNow - 2);
-		getPendingTradingActionActions().markTwapCancellationUnconfirmed(cancellation.id, now - 1, monotonicNow - 1);
+		getPendingTradingActionActions().markTwapCancellationAccepted(cancellation.id, now - 1, monotonicNow - 1);
 		mocks.activeLastMessageAt = now;
 		mocks.activeMonotonicLastMessageAt = monotonicNow;
 		Object.defineProperty(window.navigator, "locks", { configurable: true, value: undefined });
@@ -850,6 +850,11 @@ describe("TwapReconciliation", () => {
 		if (!cancellation) throw new Error("Expected TWAP cancellation claim");
 		getPendingTradingActionActions().markTwapCancellationRequestStarted(cancellation.id, now - 2, monotonicNow - 2);
 		getPendingTradingActionActions().markTwapCancellationUnconfirmed(cancellation.id, now - 1, monotonicNow - 1);
+		mocks.historyData = {
+			user: USER,
+			isSnapshot: true,
+			history: [{ twapId: 63, time: now, state: createTwapState(), status: { status: "terminated" } }],
+		};
 		mocks.activeLastMessageAt = now;
 		mocks.activeMonotonicLastMessageAt = monotonicNow;
 		Object.defineProperty(window.navigator, "locks", { configurable: true, value: undefined });
@@ -866,5 +871,94 @@ describe("TwapReconciliation", () => {
 		]);
 		expect(mocks.successToast).not.toHaveBeenCalled();
 		expect(vi.getTimerCount()).toBe(0);
+	});
+	it("leaves another tab's in-flight TWAP to that tab and takes it over once that tab is gone", async () => {
+		const otherTabId = "other-tab-twap";
+		const lockName = `sairn-pending-twap-owner-v1:${otherTabId}`;
+		let releaseOtherTab: (() => void) | undefined;
+		const waiting: Array<() => void> = [];
+		const manager = {
+			request(name: string, _options: LockOptions, callback: (lock: Lock | null) => unknown) {
+				const run = () => Promise.resolve(callback({ name, mode: "exclusive" } as Lock));
+				if (name !== lockName || !releaseOtherTab) return run();
+				return new Promise((resolve) => waiting.push(() => resolve(run())));
+			},
+		} as unknown as LockManager;
+		releaseOtherTab = () => {
+			releaseOtherTab = undefined;
+			waiting.shift()?.();
+		};
+		Object.defineProperty(window.navigator, "locks", { configurable: true, value: manager });
+		const template = addSubmission();
+		const templateKey = Object.keys(window.localStorage).find((key) => key.endsWith(template.id));
+		if (!templateKey) throw new Error("Expected persisted TWAP submission");
+		const otherTabKey = templateKey.replace(template.id, otherTabId);
+		const otherTabRecord = JSON.stringify({ ...template, id: otherTabId, queueId: undefined });
+		act(() => getPendingTwapActions().remove(template.id));
+		act(() => root.render(createReconciliation()));
+
+		act(() => {
+			window.localStorage.setItem(otherTabKey, otherTabRecord);
+			window.dispatchEvent(new StorageEvent("storage", { key: otherTabKey }));
+		});
+		await act(async () => {
+			await Promise.resolve();
+		});
+		expect(getOrderQueueItem(`reconcile-${otherTabId}`)).toBeUndefined();
+
+		await act(async () => {
+			releaseOtherTab?.();
+			for (let index = 0; index < 5; index += 1) await Promise.resolve();
+		});
+		expect(getOrderQueueItem(`reconcile-${otherTabId}`)).toMatchObject({ owner: USER, status: "confirming" });
+	});
+
+	describe("a TWAP termination whose outcome the exchange did not confirm", () => {
+		async function settleUnconfirmedTermination(twapId: number, status?: "terminated" | "finished" | "activated") {
+			const now = Date.now();
+			const monotonicNow = performance.now();
+			const cancellation = getPendingTradingActionActions().claimTwapCancellation({
+				env: "Mainnet",
+				owner: USER,
+				twapId,
+				assetId: 7,
+			});
+			if (!cancellation) throw new Error("Expected TWAP cancellation claim");
+			getPendingTradingActionActions().markTwapCancellationRequestStarted(cancellation.id, now - 2, monotonicNow - 2);
+			getPendingTradingActionActions().markTwapCancellationUnconfirmed(cancellation.id, now - 1, monotonicNow - 1);
+			if (status) {
+				mocks.historyData = {
+					user: USER,
+					isSnapshot: true,
+					history: [{ twapId, time: now, state: createTwapState(), status: { status } }],
+				};
+			}
+			mocks.activeLastMessageAt = now;
+			mocks.activeMonotonicLastMessageAt = monotonicNow;
+			await act(async () => {
+				root.render(createReconciliation());
+				await Promise.resolve();
+				await Promise.resolve();
+			});
+			expect(getPendingTradingActionSnapshot().twapCancellations).toHaveLength(0);
+			return cancellation;
+		}
+
+		it("reports Terminated when the TWAP history shows the termination", async () => {
+			const cancellation = await settleUnconfirmedTermination(90, "terminated");
+			expectActionFeedback(cancellation.id, "success", "Terminated");
+		});
+
+		it("reports a TWAP that finished instead of being terminated", async () => {
+			const cancellation = await settleUnconfirmedTermination(91, "finished");
+			expectActionFeedback(cancellation.id, "failed", "TWAP finished before it could be terminated.");
+		});
+
+		it("stays neutral while the TWAP history does not show how the TWAP ended", async () => {
+			const missing = await settleUnconfirmedTermination(92);
+			expectActionFeedback(missing.id, "unconfirmed", "TWAP is no longer active. Check TWAP history before retrying.");
+			const stale = await settleUnconfirmedTermination(93, "activated");
+			expectActionFeedback(stale.id, "unconfirmed", "TWAP is no longer active. Check TWAP history before retrying.");
+		});
 	});
 });

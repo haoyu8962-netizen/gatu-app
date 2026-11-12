@@ -3687,6 +3687,10 @@ msgstr "منفذ"
 msgid "Filled (quantity unverified)"
 msgstr "تم التنفيذ (لم يتم التحقق من الكمية)"
 
+#: src/components/trade/order-reconciliation.tsx
+msgid "Filled before it could be canceled. Check your positions."
+msgstr "نُفِّذ قبل أن يتسنى إلغاؤه. راجع مراكزك."
+
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Filter by {label}"
 msgstr "تصفية حسب {label}"
@@ -9250,6 +9254,10 @@ msgstr "تغيّر الأمر قبل تأكيد التعديل المطلوب. �
 msgid "The order could not immediately match any resting orders."
 msgstr "تعذّر مطابقة الأمر فورًا مع أي أوامر قائمة."
 
+#: src/components/trade/order-reconciliation.tsx
+msgid "The order is no longer open. Check your fills before retrying."
+msgstr "لم يعد الأمر مفتوحًا. راجع عمليات التنفيذ قبل إعادة المحاولة."
+
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #~ msgid "The order is still being confirmed."
 #~ msgstr "لا يزال تأكيد الأمر جارياً."
@@ -10497,9 +10505,17 @@ msgstr "سجل تنفيذات TWAP"
 msgid "TWAP finished"
 msgstr "اكتمل TWAP"
 
+#: src/components/trade/twap-reconciliation.tsx
+msgid "TWAP finished before it could be terminated."
+msgstr "اكتمل TWAP قبل أن يتسنى إنهاؤه."
+
 #: src/components/trade/positions/twap-history-table.tsx
 msgid "TWAP history"
 msgstr "سجل TWAP"
+
+#: src/components/trade/twap-reconciliation.tsx
+msgid "TWAP is no longer active. Check TWAP history before retrying."
+msgstr "لم يعد TWAP نشطًا. راجع سجل TWAP قبل إعادة المحاولة."
 
 #: src/lib/errors/definitions/twap.ts
 #: src/lib/trade/order-submission-feedback.ts

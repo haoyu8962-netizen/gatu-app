@@ -166,7 +166,7 @@ export function useTwapCancel() {
 				}
 				return;
 			}
-			getPendingTradingActionActions().markTwapCancellationAwaiting(action.id);
+			getPendingTradingActionActions().markTwapCancellationAccepted(action.id);
 			syncPendingTradingActionFeedback({ ...action, phase: "awaiting" }, "twap-cancel");
 		} catch (error) {
 			if (execution.guardPasses >= 2 && isAmbiguousOrderRequestError(error)) {

@@ -3313,6 +3313,10 @@ msgstr "約定済み"
 msgid "Filled (quantity unverified)"
 msgstr "約定済み（数量未確認）"
 
+#: src/components/trade/order-reconciliation.tsx
+msgid "Filled before it could be canceled. Check your positions."
+msgstr "キャンセル前に約定しました。ポジションを確認してください。"
+
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Filter by {label}"
 msgstr "{label} で絞り込み"
@@ -8297,6 +8301,10 @@ msgstr "変更要求が確認される前に注文が変更されました。再
 msgid "The order could not immediately match any resting orders."
 msgstr "この注文は既存の注文と即座に約定できませんでした。"
 
+#: src/components/trade/order-reconciliation.tsx
+msgid "The order is no longer open. Check your fills before retrying."
+msgstr "注文はすでに未約定ではありません。再試行する前に約定履歴を確認してください。"
+
 #: src/lib/errors/exchange-error-text.ts
 msgid "The order price is too far from the oracle price."
 msgstr "注文価格がオラクル価格から離れすぎています。"
@@ -9331,9 +9339,17 @@ msgstr "TWAP 約定履歴"
 msgid "TWAP finished"
 msgstr "TWAP が完了しました"
 
+#: src/components/trade/twap-reconciliation.tsx
+msgid "TWAP finished before it could be terminated."
+msgstr "TWAP は終了する前に完了しました。"
+
 #: src/components/trade/positions/twap-history-table.tsx
 msgid "TWAP history"
 msgstr "TWAP 履歴"
+
+#: src/components/trade/twap-reconciliation.tsx
+msgid "TWAP is no longer active. Check TWAP history before retrying."
+msgstr "TWAP はすでに稼働していません。再試行する前に TWAP 履歴を確認してください。"
 
 #: src/lib/errors/definitions/twap.ts
 #: src/lib/trade/order-submission-feedback.ts

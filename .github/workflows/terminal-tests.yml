@@ -333,6 +333,8 @@ jobs:
           src/lib/tests/open-order-cancel.test.ts
           src/lib/tests/pending-trading-action-store.test.ts
           src/lib/tests/order-reconciliation.test.tsx
+          src/lib/tests/twap-reconciliation.test.tsx
+          src/lib/tests/pending-submission-tab-ownership.test.ts
           src/lib/tests/spot-swap-modal.test.tsx
           src/lib/tests/account-mode-modal.test.tsx
           src/lib/tests/use-asset-leverage.test.tsx

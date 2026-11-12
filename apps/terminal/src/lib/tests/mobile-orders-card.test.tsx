@@ -776,7 +776,10 @@ describe("MobileOrdersTab disclosure card", () => {
 			await Promise.resolve();
 		});
 		expect(document.body.textContent).not.toContain("Cancel All Orders");
-		expect(getPendingTradingActionSnapshot().orderCancellations[0]?.phase).toBe("awaiting");
+		expect(getPendingTradingActionSnapshot().orderCancellations[0]).toMatchObject({
+			phase: "awaiting",
+			accepted: true,
+		});
 		expect(mocks.toastSuccess).not.toHaveBeenCalled();
 		expect(queueItems.at(-1)).toMatchObject({ status: "confirming" });
 		expect(mocks.toastError).not.toHaveBeenCalled();
@@ -806,6 +809,7 @@ describe("MobileOrdersTab disclosure card", () => {
 		expect(mocks.toastWarning).not.toHaveBeenCalled();
 		expect(queueItems.at(-1)).toMatchObject({ status: "confirming" });
 		expect(getPendingTradingActionSnapshot().orderCancellations[0]?.phase).toBe("awaiting");
+		expect(getPendingTradingActionSnapshot().orderCancellations[0]?.accepted).toBeUndefined();
 	});
 
 	it("cancels all standard and outcome orders with their exact action asset IDs", () => {

@@ -3687,6 +3687,10 @@ msgstr "पूर्ण"
 msgid "Filled (quantity unverified)"
 msgstr "निष्पादित (मात्रा सत्यापित नहीं)"
 
+#: src/components/trade/order-reconciliation.tsx
+msgid "Filled before it could be canceled. Check your positions."
+msgstr "रद्द होने से पहले ही भर गया। अपनी पोज़िशन जाँचें।"
+
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Filter by {label}"
 msgstr "{label} के अनुसार फ़िल्टर करें"
@@ -9250,6 +9254,10 @@ msgstr "अनुरोधित संशोधन की पुष्टि �
 msgid "The order could not immediately match any resting orders."
 msgstr "ऑर्डर तुरंत किसी भी मौजूदा ऑर्डर से मैच नहीं हो सका।"
 
+#: src/components/trade/order-reconciliation.tsx
+msgid "The order is no longer open. Check your fills before retrying."
+msgstr "ऑर्डर अब खुला नहीं है। फिर प्रयास करने से पहले अपने फ़िल जाँचें।"
+
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #~ msgid "The order is still being confirmed."
 #~ msgstr "ऑर्डर की पुष्टि अभी जारी है।"
@@ -10497,9 +10505,17 @@ msgstr "TWAP निष्पादन इतिहास"
 msgid "TWAP finished"
 msgstr "TWAP पूरा हुआ"
 
+#: src/components/trade/twap-reconciliation.tsx
+msgid "TWAP finished before it could be terminated."
+msgstr "TWAP समाप्त किए जाने से पहले ही पूरा हो गया।"
+
 #: src/components/trade/positions/twap-history-table.tsx
 msgid "TWAP history"
 msgstr "TWAP इतिहास"
+
+#: src/components/trade/twap-reconciliation.tsx
+msgid "TWAP is no longer active. Check TWAP history before retrying."
+msgstr "TWAP अब सक्रिय नहीं है। फिर प्रयास करने से पहले TWAP इतिहास जाँचें।"
 
 #: src/lib/errors/definitions/twap.ts
 #: src/lib/trade/order-submission-feedback.ts
