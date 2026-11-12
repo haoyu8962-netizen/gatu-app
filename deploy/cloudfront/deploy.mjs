@@ -30,6 +30,8 @@ const HASHED_CHART_ENTRY = /^charting_library\/charting_library\.[0-9a-f]{16}\.j
 const MIN_SHELL_PRELOADS = 20;
 /** Surface-specific preload lists the bootstrap entry reads; written by scripts/inject-shell-preloads.mjs. */
 const SURFACE_PRELOAD_META_NAMES = ["sairn-preload-desktop", "sairn-preload-mobile", "sairn-chart-prefetch"];
+/** The lazy locale catalogs the service worker keeps with the startup assets (ADR 0052). */
+const LOCALE_CATALOG_META_NAME = "sairn-locale-catalogs";
 
 /** Cache policy for one object in the public directory; `null` means the file is not uploaded. */
 export function objectCacheControl(relativePath) {
@@ -98,7 +100,7 @@ export const BUILD_META_KEY = "build-meta.json";
  * command, so a run never writes the shell before the metadata.
  */
 export const SYNC_STAGES = Object.freeze({
-	immutable: "files classified immutable by path (sync: skipped when already in the bucket)",
+	immutable: "files classified immutable by path (sync: skipped when the copy in the bucket has the same size and is not older)",
 	mutable: "other files that are not HTML (always uploaded)",
 	pages: "HTML pages other than the shell (always uploaded)",
 	buildMeta: BUILD_META_KEY,
@@ -114,6 +116,20 @@ export function assertFilterSafeKeys(files) {
 	if (unsafe.length > 0) {
 		throw new Error(
 			`${unsafe.length} file name(s) contain a character the AWS CLI reads as a filter wildcard (* ? [ ]): ${unsafe.join(", ")}. A filter for them could skip the file or match others, so nothing was uploaded; rename them in the build`,
+		);
+	}
+}
+
+/**
+ * The AWS CLI joins every filter to the absolute path of the source directory before matching, so a
+ * wildcard character in that path changes what `--exclude "*"` and each `--include` match: with a
+ * pair of brackets in a directory name nothing is excluded and every command uploads every file.
+ */
+export function assertFilterSafeDirectory(publicDir) {
+	const directory = resolve(publicDir);
+	if (FILTER_WILDCARDS.test(directory)) {
+		throw new Error(
+			`The build directory ${directory} has a character the AWS CLI reads as a filter wildcard (* ? [ ]) in its absolute path. The CLI joins every --include and --exclude filter to that path, so a command could upload files that belong to another command, the shell with the immutable cache policy among them; nothing was uploaded. Build or copy the release into a directory whose absolute path has none of these characters`,
 		);
 	}
 }
@@ -139,12 +155,13 @@ function singleFileCommand({ publicDir, bucket, key }) {
 }
 
 /**
- * The ordered upload as `{ stage, command }` steps. Each `--include` is a file key, and keys that
- * contain a filter wildcard are refused before any command is built, so every filter matches exactly
- * its own file. No command touches objects from another release and none deletes anything: viewers
- * holding an older shell keep working until their next navigation.
+ * The ordered upload as `{ stage, command }` steps. Each `--include` is a file key, and a build
+ * directory or a key that contains a filter wildcard is refused before any command is built, so
+ * every filter matches exactly its own file. No command touches objects from another release and
+ * none deletes anything: viewers holding an older shell keep working until their next navigation.
  */
 export function buildSyncPlan({ publicDir, bucket, files }) {
+	assertFilterSafeDirectory(publicDir);
 	const { early, late } = planUpload(files);
 	assertFilterSafeKeys([...early, ...late].map((item) => item.file));
 	const steps = [];
@@ -184,14 +201,31 @@ export function describeSyncFailure({ plan, failedIndex, bucket }) {
 	const completedStages = stageNames(plan.slice(0, failedIndex).filter((step) => !remainingStages.has(step.stage)));
 	const partlyDone = plan.slice(0, failedIndex).some((step) => step.stage === failed.stage);
 	const laterStages = stageNames(plan.slice(failedIndex + 1).filter((step) => step.stage !== failed.stage));
+	const notRun = plan.slice(failedIndex + 1).filter((step) => step.stage === failed.stage).length;
 	return [
 		`The upload to s3://${bucket} stopped at command ${failedIndex + 1} of ${plan.length}, stage "${SYNC_STAGES[failed.stage]}".`,
 		completedStages.length > 0 ? `Stages that returned success in this run: ${completedStages.join(", ")}.` : "No stage returned success in this run.",
 		`${partlyDone ? "Earlier commands of the same stage returned success. " : ""}The objects of the failed command are in an unknown state: each is absent, unchanged or this build's, never a partial write.`,
+		...(notRun > 0 ? [`${notRun} later command${notRun === 1 ? "" : "s"} of the same stage did not run.`] : []),
 		laterStages.length > 0 ? `This run did not write the later stages: ${laterStages.join(", ")}.` : "No stage comes after it.",
 		"This command does not know what the bucket held before this run: an earlier interrupted run may already have written some of these files.",
 		"Run the same sync again unchanged, then verify.",
 	].join(" ");
+}
+
+const CAUSE_DETAIL_LIMIT = 200;
+
+/**
+ * Why a plan command failed, in one short line. A failed `execFileSync` carries the whole command
+ * line in its message, which for the first sync is one `--include` per content-hashed file; the
+ * command was already printed before it ran, so only its verb, source and target are repeated.
+ */
+function describeCommandFailure(command, error) {
+	const head = `aws ${command.slice(0, 4).join(" ")}`;
+	if (typeof error?.status === "number") return `${head} exited with code ${error.status}; the aws output above this message has the reason`;
+	if (typeof error?.signal === "string") return `${head} was ended by ${error.signal}`;
+	const [detail] = (error instanceof Error ? error.message : String(error)).split("\n", 1);
+	return `${head}: ${detail.length > CAUSE_DETAIL_LIMIT ? `${detail.slice(0, CAUSE_DETAIL_LIMIT)}…` : detail}`;
 }
 
 /** Runs the plan in order and stops at the first failure with a description of what this run wrote. */
@@ -200,8 +234,7 @@ export function runSyncPlan({ plan, bucket, run }) {
 		try {
 			run(step.command);
 		} catch (error) {
-			const cause = error instanceof Error ? error.message : String(error);
-			throw new Error(`${describeSyncFailure({ plan, failedIndex: index, bucket })}\nCause: ${cause}`);
+			throw new Error(`${describeSyncFailure({ plan, failedIndex: index, bucket })}\nCause: ${describeCommandFailure(step.command, error)}`);
 		}
 	}
 }
@@ -725,6 +758,13 @@ export async function verifyDeployment({ origin, publicDir, network, fetchImpl =
 		for (const name of SURFACE_PRELOAD_META_NAMES) {
 			expect(shell.toString("utf8").includes(`<meta name="${name}" content="`), `the local shell has no ${name} metadata`);
 		}
+		// Builds before the service worker's asset cache have no such list; one that has it must name real files.
+		const catalogs = new RegExp(`<meta name="${LOCALE_CATALOG_META_NAME}" content="([^"]*)"`).exec(shell.toString("utf8"));
+		if (catalogs) {
+			const listed = catalogs[1].split(" ").filter(Boolean);
+			expect(listed.length > 0, `the local shell lists no locale catalogs in ${LOCALE_CATALOG_META_NAME}`);
+			for (const href of listed) expect(existsSync(join(publicDir, href.slice(1))), `${href} is not in the local build`);
+		}
 		return `${hrefs.length} links`;
 	});
 	await check("inline scripts are allowed by the edge policy", async () => {
@@ -1036,6 +1076,7 @@ export function releaseStatic({
 	log = console.log,
 	warn = console.warn,
 }) {
+	assertFilterSafeDirectory(publicDir);
 	if (!existsSync(join(publicDir, SHELL_KEY))) throw new Error(`No ${SHELL_KEY} in ${publicDir}; run pnpm build first`);
 	const gates = evaluateReleaseGates({ buildMeta: JSON.parse(readFileSync(join(publicDir, BUILD_META_KEY), "utf8")), acknowledged });
 	log(`release gates: ${describeGateState(gates.state)}`);
@@ -1178,7 +1219,7 @@ async function main() {
 			break;
 		}
 		default:
-			console.error("usage: node deploy/cloudfront/deploy.mjs <sync|reupload|invalidate|aliases|lambda|check-lambda|functions|verify> [--execute] [--bucket B] [--only PREFIX]... [--alias HOST]... [--certificate-arn ARN] [--distribution ID] [--function-name F] [--lambda-dir DIR] [--lambda-entry index.mjs] [--skip-probe] [--functions-dir DIR] [--public-dir DIR] [--origin URL] [--network mainnet|testnet] [--allow-sponsored-mainnet-deposits] [--allow-mobile-pairing]");
+			console.error("usage: node deploy/cloudfront/deploy.mjs <sync|reupload|invalidate|aliases|lambda|check-lambda|functions|verify> [--execute] [--bucket B] [--only PREFIX]... [--alias HOST]... [--certificate-arn ARN] [--distribution ID] [--function-name F] [--lambda-dir DIR] [--lambda-entry index.mjs] [--skip-probe] [--functions-dir DIR] [--public-dir DIR] [--origin URL] [--network mainnet|testnet] [--allow-sponsored-mainnet-deposits] [--allow-mobile-pairing] [--allow-mainnet-card-funding] [--profile NAME]");
 			process.exit(2);
 	}
 }

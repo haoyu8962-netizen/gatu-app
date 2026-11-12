@@ -1,8 +1,9 @@
 import assert from "node:assert/strict";
-import { spawnSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, statSync, symlinkSync, utimesSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import test from "node:test";
 import { cspHash } from "../../scripts/collect-inline-script-hashes.mjs";
 import { parseScriptHashes } from "./function-code.mjs";
@@ -174,9 +175,9 @@ test("the release markers are compared by content, so a skipped upload of the sa
 /** Claims that only the state before the run could justify; a failure report must never make them. */
 const UNKNOWABLE_CLAIMS = /\bstill\b|previous release|already reports|serves|partly written/i;
 
-function failAt(plan, stage, { write } = {}) {
+function failAt(plan, stage, { write, offset = 0 } = {}) {
 	const ran = [];
-	const failedIndex = plan.findIndex((step) => step.stage === stage);
+	const failedIndex = plan.findIndex((step) => step.stage === stage) + offset;
 	let message;
 	assert.throws(
 		() =>
@@ -210,7 +211,8 @@ test("an interrupted upload reports only what this run did and never writes the 
 	assert.match(early.message, /each is absent, unchanged or this build's, never a partial write/);
 	assert.match(early.message, /This run did not write the later stages: .*"build-meta\.json".*"_shell\.html"/);
 	assert.match(early.message, /does not know what the bucket held before this run/);
-	assert.match(early.message, /Run the same sync again unchanged, then verify\.\nCause: Failed to connect to proxy URL$/);
+	assert.match(early.message, /Run the same sync again unchanged, then verify\.\nCause: aws s3 cp \/out s3:\/\/b: Failed to connect to proxy URL$/);
+	assert.doesNotMatch(early.message, /of the same stage did not run/, "the only command of its stage leaves none behind");
 	assert.ok(!early.ran.flat().includes("s3://b/_shell.html") && !early.ran.flat().includes("s3://b/build-meta.json"));
 	const meta = failAt(plan, "buildMeta");
 	assert.match(meta.message, /stage "build-meta\.json"/);
@@ -243,6 +245,91 @@ test("an interrupted upload reports only what this run did and never writes the 
 	const ran = [];
 	runSyncPlan({ plan, bucket: "b", run: (command) => ran.push(command) });
 	assert.deepEqual(ran, plan.map((step) => step.command));
+});
+
+test("a failure before the last command of a stage says how many commands of that stage did not run", () => {
+	const plan = buildSyncPlan({ publicDir: "/out", bucket: "b", files: ["_shell.html", "assets/a.js", "build-meta.json", "manifest.json", "sw.js"] });
+	assert.deepEqual(
+		plan.map((step) => step.stage),
+		["immutable", "mutable", "mutable", "buildMeta", "retiredPages", "retiredPages", "retiredPages", "retiredPages", "retiredPages", "retiredPages", "shell"],
+	);
+	const first = failAt(plan, "mutable");
+	assert.deepEqual(first.ran, [plan[0].command], "the sw.js command of the same stage never ran");
+	assert.equal(
+		first.message,
+		[
+			'The upload to s3://b stopped at command 2 of 11, stage "other files that are not HTML (always uploaded)".',
+			'Stages that returned success in this run: "files classified immutable by path (sync: skipped when the copy in the bucket has the same size and is not older)".',
+			"The objects of the failed command are in an unknown state: each is absent, unchanged or this build's, never a partial write.",
+			"1 later command of the same stage did not run.",
+			'This run did not write the later stages: "build-meta.json", "retired legal page copies of this shell", "_shell.html".',
+			"This command does not know what the bucket held before this run: an earlier interrupted run may already have written some of these files.",
+			"Run the same sync again unchanged, then verify.\nCause: aws s3 cp /out s3://b: Failed to connect to proxy URL",
+		].join(" "),
+	);
+	const second = failAt(plan, "mutable", { offset: 1 });
+	assert.match(second.message, /stopped at command 3 of 11/);
+	assert.match(second.message, /Earlier commands of the same stage returned success\. The objects of the failed command are in an unknown state/);
+	assert.doesNotMatch(second.message, /of the same stage did not run/);
+	const thirdRetired = failAt(plan, "retiredPages", { offset: 2 });
+	assert.match(thirdRetired.message, /stopped at command 7 of 11/);
+	assert.match(thirdRetired.message, /never a partial write\. 3 later commands of the same stage did not run\. This run did not write the later stages: "_shell\.html"\./);
+	assert.doesNotMatch(failAt(plan, "retiredPages", { offset: 5 }).message, /of the same stage did not run/);
+	assert.doesNotMatch(failAt(plan, "shell").message, /of the same stage did not run/);
+	for (const { message } of [first, second, thirdRetired]) assert.doesNotMatch(message, UNKNOWABLE_CLAIMS);
+});
+
+test("the cause of a failed upload names the command and its exit code, never the whole command line", () => {
+	const assets = Array.from({ length: 1_616 }, (_, index) => `assets/chunk-${String(index).padStart(4, "0")}-0123456789abcdef0123456789abcdef.js`);
+	const plan = buildSyncPlan({ publicDir: "/out/public", bucket: "b", files: ["_shell.html", "build-meta.json", "sw.js", ...assets] });
+	const [immutable] = plan;
+	assert.ok(immutable.command.join(" ").length > 100_000, "the first sync carries one --include per content-hashed file");
+	function messageOf(run) {
+		let message;
+		assert.throws(
+			() => runSyncPlan({ plan, bucket: "b", run }),
+			(error) => {
+				message = error.message;
+				return true;
+			},
+		);
+		return message;
+	}
+	function assertShort(message) {
+		assert.ok(message.length < 1_000, `the whole failure message has ${message.length} characters`);
+		assert.ok(message.split("--include").length - 1 < 10 && !message.includes(assets.at(-1)), "the list of 1,616 includes is not repeated");
+		assert.equal(message.split("\n").length, 2);
+	}
+	function assertNoFilters(message) {
+		assert.ok(!message.includes("--include") && !message.includes("--exclude") && !message.includes(assets[0]), "no filter of the command line is repeated");
+	}
+
+	const exited = messageOf((command) => execFileSync(process.execPath, ["-e", "process.exit(3)", "--", ...command], { stdio: "ignore" }));
+	assertShort(exited);
+	assertNoFilters(exited);
+	assert.match(exited, /\nCause: aws s3 sync \/out\/public s3:\/\/b exited with code 3; the aws output above this message has the reason$/);
+
+	const killed = messageOf((command) => execFileSync(process.execPath, ["-e", "process.kill(process.pid, 'SIGKILL')", "--", ...command], { stdio: "ignore" }));
+	assertShort(killed);
+	assertNoFilters(killed);
+	assert.match(killed, /\nCause: aws s3 sync \/out\/public s3:\/\/b was ended by SIGKILL$/);
+
+	const other = messageOf((command) => {
+		throw new Error(`Command failed: aws ${command.join(" ")}\nsecond line`);
+	});
+	assertShort(other);
+	assert.equal(other.split("\n")[1], `Cause: aws s3 sync /out/public s3://b: ${`Command failed: aws ${immutable.command.join(" ")}`.slice(0, 200)}…`);
+
+	const twoLines = messageOf(() => {
+		throw new Error("first line\nsecond line");
+	});
+	assert.equal(twoLines.split("\n").length, 2);
+	assert.match(twoLines, /\nCause: aws s3 sync \/out\/public s3:\/\/b: first line$/);
+
+	const thrownValue = messageOf(() => {
+		throw "proxy closed the connection";
+	});
+	assert.match(thrownValue, /\nCause: aws s3 sync \/out\/public s3:\/\/b: proxy closed the connection$/);
 });
 
 test("a failure report stays true when the failed command wrote its object and when an earlier run stopped later", () => {
@@ -285,6 +372,48 @@ test("a file name with a filter wildcard is refused before any command is built"
 	assert.throws(() => buildSyncPlan({ publicDir: "/out", bucket: "b", files: ["_shell.html", "x*.css", "y?.png"] }), /2 file name\(s\).*x\*\.css, y\?\.png/);
 	assert.doesNotThrow(() => buildSyncPlan({ publicDir: "/out", bucket: "b", files: ["_shell.html", "assets/a.js.br", "assets/historicalOrders._address-Dw7jPxv9.js"] }));
 	assert.doesNotThrow(() => buildSyncPlan({ publicDir: "/out", bucket: "b", files: ["_shell.html", "assets/a*.js.br"] }), "a precompressed sibling is never uploaded");
+});
+
+test("a build directory whose absolute path holds a filter wildcard is refused before any command is built or run", () => {
+	const files = ["_shell.html", "build-meta.json", "assets/ok.js"];
+	for (const publicDir of [
+		"/Users/op/releases [p42]/apps/terminal/.output/public",
+		"/Users/op/rel[eases/p]42/apps/terminal/.output/public",
+		"/out/a*b/public",
+		"/out/a?b/public",
+		"/out/a[b/public",
+		"/out/a]b/public",
+		"releases [p42]/public",
+		"/out/releases/public [old]",
+		"/out/public[1]",
+	]) {
+		assert.throws(
+			() => buildSyncPlan({ publicDir, bucket: "b", files }),
+			(error) =>
+				error.message.includes(`The build directory ${resolve(publicDir)} has a character the AWS CLI reads as a filter wildcard (* ? [ ])`) &&
+				/nothing was uploaded/.test(error.message) &&
+				/a directory whose absolute path has none of these characters/.test(error.message),
+			publicDir,
+		);
+	}
+	assert.doesNotThrow(() => buildSyncPlan({ publicDir: "/Users/op/我的项目/gatu-release-p42/apps/terminal/.output/public", bucket: "b", files }));
+
+	const parent = join(mkdtempSync(join(tmpdir(), "sairn-cf-dir-")), "releases [p42]");
+	mkdirSync(parent);
+	const cwd = process.cwd();
+	process.chdir(parent);
+	try {
+		assert.throws(() => buildSyncPlan({ publicDir: "public", bucket: "b", files }), /filter wildcard/, "the CLI resolves a relative directory against the working directory");
+	} finally {
+		process.chdir(cwd);
+	}
+
+	const publicDir = createPublicDir(parent);
+	for (const execute of [true, false]) {
+		const harness = staticHarness({ publicDir });
+		assert.throws(() => releaseStatic({ ...harness.options, execute }), /The build directory .* has a character the AWS CLI reads as a filter wildcard/);
+		assert.deepEqual(harness.events, [], "nothing is checked, printed as a command or uploaded");
+	}
 });
 
 function staticHarness({ publicDir = createPublicDir(), files, readObject } = {}) {
@@ -378,8 +507,8 @@ test("a build that carries source maps is refused", () => {
  * Models the two AWS CLI upload commands the release uses against an in-memory bucket. `s3 sync`
  * uploads a file only when the key is missing, the sizes differ or the local file is newer than the
  * object (the CLI's default comparison); `s3 cp` always uploads. Each `--include` is read as the
- * exact key it names, which holds for real filters only because `buildSyncPlan` refuses keys that
- * contain a wildcard character (`* ? [ ]`).
+ * exact key it names, which holds for real filters only because `buildSyncPlan` refuses keys, and a
+ * build directory, that contain a wildcard character (`* ? [ ]`).
  */
 function createFakeBucket(objects = {}) {
 	const bucket = new Map(Object.entries(objects));
@@ -718,8 +847,8 @@ const GATES_OFF = {
 const BUILD_META = { commit: "abc", release: "r1", ...GATES_OFF };
 const REPORT_ONLY_HEADER = `default-src 'self'; img-src 'self' data: https://app.hyperliquid.xyz; script-src 'self' 'report-sample' '${THEME_HASH}'; report-uri https://reports.example/`;
 
-function createPublicDir() {
-	const dir = mkdtempSync(join(tmpdir(), "sairn-cf-verify-"));
+function createPublicDir(parent = tmpdir()) {
+	const dir = mkdtempSync(join(parent, "sairn-cf-verify-"));
 	mkdirSync(join(dir, "assets"), { recursive: true });
 	for (const href of SHELL_PRELOADS) writeFileSync(join(dir, href.slice(1)), "js");
 	writeFileSync(join(dir, "_shell.html"), SHELL_HTML);
@@ -799,6 +928,34 @@ test("verification passes when the edge serves the build with the expected heade
 	assert.equal(results.find((result) => result.name === "legal pages match the build")?.detail, "6 shell, 0 standalone");
 	assert.equal(results.find((result) => result.name.startsWith("signed lambda post"))?.detail, "status allowed");
 	assert.equal(results.find((result) => result.name === "build metadata parity")?.detail, "abc / r1 / sponsored-mainnet-deposits=off mobile-pairing=off mainnet-card-funding=off");
+});
+
+test("a shell that lists locale catalogs must list files of the local build, and an older shell without the list still verifies", async () => {
+	async function run(catalogMeta) {
+		const publicDir = createPublicDir();
+		writeFileSync(join(publicDir, "assets", "messages-zh.js"), "js");
+		writeFileSync(join(publicDir, "_shell.html"), SHELL_HTML.replace("</head>", `${catalogMeta}</head>`));
+		const results = await verifyDeployment({
+			origin: "https://app.sairn.ai",
+			publicDir,
+			network: "mainnet",
+			fetchImpl: fakeFetch({
+				[SHELL_PRELOADS.at(-1)]: { body: "js", headers: { "cache-control": IMMUTABLE_CACHE_CONTROL } },
+				"*": { status: 404, body: "missing" },
+			}),
+		});
+		return results.find((result) => result.name === "shell preloads the startup closure");
+	}
+	const meta = (content) => `<meta name="sairn-locale-catalogs" content="${content}"/>`;
+
+	assert.equal((await run("")).ok, true);
+	assert.equal((await run(meta("/assets/messages-zh.js"))).ok, true);
+	const empty = await run(meta(""));
+	assert.equal(empty.ok, false);
+	assert.match(empty.detail, /lists no locale catalogs in sairn-locale-catalogs/);
+	const missing = await run(meta("/assets/messages-zh.js /assets/messages-ja.js"));
+	assert.equal(missing.ok, false);
+	assert.match(missing.detail, /\/assets\/messages-ja\.js is not in the local build/);
 });
 
 test("verifying a rollback checks each legal page against the page the build ships", async () => {
@@ -1038,6 +1195,17 @@ test("a release fills the committed function with the build's hashes and keeps t
 	assert.deepEqual(parseScriptHashes(migrated.code), { current: [A], previous: [] });
 	assert.throws(() => prepareResponseFunction({ committedCode: committed, buildHashes: [] }), /no inline scripts/);
 	assert.ok(releaseFunctionPath("/repo/apps/terminal/.output/public").endsWith(join(".output", "edge", "terminal-response.js")));
+});
+
+test("the usage text lists every option the script reads, and nothing else", () => {
+	const script = fileURLToPath(new URL("./deploy.mjs", import.meta.url));
+	const parsed = [...readFileSync(script, "utf8").matchAll(/^\t\t\tcase "(--[a-z-]+)":$/gm)].map((match) => match[1]);
+	assert.ok(parsed.includes("--bucket") && parsed.includes("--profile") && parsed.includes("--allow-mainnet-card-funding"), "the option cases were found in the source");
+	const result = spawnSync(process.execPath, [script, "help"], { encoding: "utf8", env: { ...process.env, AWS_PROFILE: "usage-test" } });
+	assert.equal(result.status, 2, result.stderr);
+	assert.match(result.stderr, /^usage: node deploy\/cloudfront\/deploy\.mjs </);
+	const listed = [...result.stderr.matchAll(/\[(--[a-z-]+)[ \]]/g)].map((match) => match[1]);
+	assert.deepEqual([...listed].sort(), [...parsed].sort());
 });
 
 test("every aws command runs as the release profile unless one is chosen explicitly", () => {
