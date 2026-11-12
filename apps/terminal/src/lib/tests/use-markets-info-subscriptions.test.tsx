@@ -21,10 +21,15 @@ const mocks = vi.hoisted(() => ({
 	disableCompactMarketCtxs: vi.fn(),
 	compactDisabled: false,
 	decompressionSupported: true,
+	LockedError: class FastAssetCtxsLockedError extends Error {},
+	reportFastMarketPricesFallback: vi.fn(),
 }));
 
 vi.mock("@sairn/hl-react", () => ({
 	canUseL2Decompression: () => mocks.decompressionSupported,
+	get FastAssetCtxsLockedError() {
+		return mocks.LockedError;
+	},
 	useHyperliquidTransport: () => ({ env: "Mainnet" }),
 	useSubscription: (...args: unknown[]) => {
 		mocks.useSubscription(...args);
@@ -38,6 +43,7 @@ vi.mock("@sairn/hl-react", () => ({
 
 vi.mock("@/lib/hyperliquid/markets/market-ctxs-fallback", () => ({
 	isCompactMarketCtxsDisabled: () => mocks.compactDisabled,
+	reportFastMarketPricesFallback: mocks.reportFastMarketPricesFallback,
 	disableCompactMarketCtxs: (error: unknown) => {
 		mocks.compactDisabled = true;
 		mocks.disableCompactMarketCtxs(error);
@@ -160,6 +166,7 @@ describe("useMarketsInfoInternal subscription gate", () => {
 		root = createRoot(container);
 		mocks.useSubscription.mockReset();
 		mocks.disableCompactMarketCtxs.mockReset();
+		mocks.reportFastMarketPricesFallback.mockReset();
 		mocks.compactDisabled = false;
 		for (const key of Object.keys(mocks.responses)) delete mocks.responses[key];
 		mocks.fastPriceSubscription.data = undefined;
@@ -354,11 +361,23 @@ describe("useMarketsInfoInternal subscription gate", () => {
 		expect(captured.getMarketByName("BTC")?.markPriceStatus).not.toBe("success");
 	});
 
-	it("stops subscribing to fast prices after their first error", () => {
-		renderProbe(true);
+	it("keeps subscribing to fast prices through an ordinary failure", () => {
 		mocks.fastPriceSubscription.status = "error";
-		mocks.fastPriceSubscription.error = new Error("bad frame");
+		mocks.fastPriceSubscription.error = new Error("request timed out");
 		renderProbe(true);
+		renderProbe(true);
+
+		expectLatestSubscriptionState(true);
+		expect(mocks.reportFastMarketPricesFallback).not.toHaveBeenCalled();
+	});
+
+	it("stops subscribing to fast prices once they are locked on their connection", () => {
+		renderProbe(true);
+		const error = new mocks.LockedError("locked");
+		mocks.fastPriceSubscription.status = "error";
+		mocks.fastPriceSubscription.error = error;
+		renderProbe(true);
+		expect(mocks.reportFastMarketPricesFallback).toHaveBeenCalledExactlyOnceWith(error);
 
 		const latest = latestSubscriptionOptions();
 		expect(latest.get("fastAssetCtxs")).toEqual({ enabled: false, maxStaleMs: 10_000 });

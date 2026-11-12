@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import type { ISubscription, SubscriptionOptions as SdkSubscriptionOptions } from "@nktkas/hyperliquid";
-import type { CompactSubscriptionClient } from "@sairn/hl-react";
+import { type CompactSubscriptionClient, FastAssetCtxsLockedError } from "@sairn/hl-react";
 import { HyperliquidContext, type HyperliquidContextValue, HyperliquidStoreContext } from "@sairn/hl-react/provider";
 import { createHyperliquidStore, type HyperliquidStore } from "@sairn/hl-react/store";
 import { act, type ReactNode } from "react";
@@ -13,6 +13,9 @@ vi.mock("@sairn/hl-react", async (importOriginal) => ({
 	...(await importOriginal<typeof import("@sairn/hl-react")>()),
 	canUseL2Decompression: () => true,
 }));
+
+const reportClientError = vi.hoisted(() => vi.fn());
+vi.mock("@/lib/error-reporting/client", () => ({ reportClientError }));
 
 vi.mock("@/lib/hyperliquid/markets/use-markets", () => ({
 	useMarkets: () => ({
@@ -84,6 +87,7 @@ describe("market rows when the fast price stream fails", () => {
 	let captured: ReturnType<typeof useMarketsInfoInternal>;
 
 	beforeEach(() => {
+		reportClientError.mockReset();
 		vi.useFakeTimers({ now: 1_000_000 });
 		vi.spyOn(Math, "random").mockReturnValue(0);
 		Object.defineProperty(document, "hidden", { value: false, configurable: true });
@@ -156,12 +160,15 @@ describe("market rows when the fast price stream fails", () => {
 		expect(captured.getMarketByName("BTC")).toMatchObject({ markPx: "100010", markPriceStatus: "success" });
 
 		await act(async () => {
-			fast.options[0]?.onError?.(new Error("bad frame"));
+			fast.options[0]?.onError?.(new FastAssetCtxsLockedError("invalid_frame"));
 			await vi.advanceTimersByTimeAsync(0);
 		});
 
 		expect(pac.subscribe).toHaveBeenCalledTimes(2);
 		expect(captured.getMarketByName("BTC")?.markPriceStatus).not.toBe("success");
+		expect(reportClientError).toHaveBeenCalledExactlyOnceWith(expect.any(FastAssetCtxsLockedError), {
+			kind: "market_ctxs_fast_fallback",
+		});
 
 		await emit(pac, [["", [{ ...BTC_CTX, markPx: "100020" }]]]);
 		expect(captured.getMarketByName("BTC")).toMatchObject({ markPx: "100020", markPriceStatus: "success" });
@@ -170,5 +177,40 @@ describe("market rows when the fast price stream fails", () => {
 		expect(captured.getMarketByName("BTC")).toMatchObject({ markPx: "100030", markPriceStatus: "success" });
 		expect(pac.subscribe).toHaveBeenCalledTimes(2);
 		expect(fast.subscribe).toHaveBeenCalledOnce();
+	});
+
+	it("keeps fast prices through a lost connection and takes them again after the store's retry", async () => {
+		act(() => root.render(<Wrapper>{<Probe />}</Wrapper>));
+		await act(() => vi.advanceTimersByTimeAsync(0));
+		await emit(pac, [["", [BTC_CTX]]]);
+		await emit(fast, { BTC: { markPx: "100010" } });
+
+		await act(async () => {
+			fast.options[0]?.onError?.(new Error("connection closed"));
+			await vi.advanceTimersByTimeAsync(0);
+		});
+		expect(captured.getMarketByName("BTC")?.markPriceStatus).not.toBe("success");
+
+		await act(() => vi.advanceTimersByTimeAsync(1_000));
+		expect(fast.subscribe).toHaveBeenCalledTimes(2);
+		await emit(fast, { BTC: { markPx: "100040" } });
+
+		expect(captured.getMarketByName("BTC")).toMatchObject({ markPx: "100040", markPriceStatus: "success" });
+		expect(pac.subscribe).toHaveBeenCalledOnce();
+		expect(reportClientError).not.toHaveBeenCalled();
+	});
+
+	it("retries a fast price request that timed out instead of falling back", async () => {
+		fast.subscribe.mockRejectedValueOnce(new Error("request timed out"));
+		act(() => root.render(<Wrapper>{<Probe />}</Wrapper>));
+		await act(() => vi.advanceTimersByTimeAsync(0));
+		await emit(pac, [["", [BTC_CTX]]]);
+
+		await act(() => vi.advanceTimersByTimeAsync(1_000));
+		expect(fast.subscribe).toHaveBeenCalledTimes(2);
+		await emit(fast, { BTC: { markPx: "100050" } });
+
+		expect(captured.getMarketByName("BTC")).toMatchObject({ markPx: "100050", markPriceStatus: "success" });
+		expect(pac.subscribe).toHaveBeenCalledOnce();
 	});
 });

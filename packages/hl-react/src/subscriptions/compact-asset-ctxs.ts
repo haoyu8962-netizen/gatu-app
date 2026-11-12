@@ -246,6 +246,15 @@ export function subscribeCompactAssetCtxs<C extends CompactAssetCtxsChannel>(
 const failedFastTransports = new WeakSet<ISubscriptionTransport>();
 
 /**
+ * The failure that locked `fastAssetCtxs` on its transport, and the rejection of every later subscription
+ * there. Only this error means a retry cannot help; a consumer may fall back for good on it, while any
+ * other error (a refused or timed-out request, a lost connection) is left to the store's retries.
+ */
+export class FastAssetCtxsLockedError extends L2BookStreamError {
+	override readonly name = "FastAssetCtxsLockedError";
+}
+
+/**
  * `fastAssetCtxs` carries every market's mark and mid price compressed like `pac`, a complete snapshot
  * first and then the changed markets, about once a second; the store merges them per market. The
  * SDK's own decoder chains every frame on one promise, so a single frame that fails to decode, or a
@@ -265,7 +274,7 @@ export function subscribeFastAssetCtxs(
 	options?: CompactAssetCtxsSubscribeOptions,
 	subscribeDisconnect?: CompactAssetCtxsDisconnectSubscriber,
 ): Promise<ISubscription> {
-	if (failedFastTransports.has(transport)) return Promise.reject(new L2BookStreamError("invalid_frame"));
+	if (failedFastTransports.has(transport)) return Promise.reject(new FastAssetCtxsLockedError("invalid_frame"));
 	return subscribeCompressedChannel(
 		transport,
 		"fastAssetCtxs",
@@ -273,7 +282,10 @@ export function subscribeFastAssetCtxs(
 		{
 			add: (delta) => delta,
 			reset: () => {},
-			fail: () => failedFastTransports.add(transport),
+			fail: (error) => {
+				failedFastTransports.add(transport);
+				return new FastAssetCtxsLockedError(error.code, { cause: error });
+			},
 		},
 		listener,
 		options,
@@ -285,7 +297,11 @@ function subscribeCompressedChannel<D, E>(
 	transport: ISubscriptionTransport,
 	channel: string,
 	parse: (value: unknown) => D,
-	accumulator: { add: (delta: D) => E; reset: () => void; fail?: () => void },
+	accumulator: {
+		add: (delta: D) => E;
+		reset: () => void;
+		fail?: (error: L2BookStreamError) => L2BookStreamError;
+	},
 	listener: (event: E) => void,
 	options?: CompactAssetCtxsSubscribeOptions,
 	subscribeDisconnect?: CompactAssetCtxsDisconnectSubscriber,
@@ -314,7 +330,7 @@ function subscribeCompressedChannel<D, E>(
 	const fail = (error: unknown) => {
 		if (stopped) return;
 		failure = toStreamError(error);
-		accumulator.fail?.();
+		failure = accumulator.fail?.(failure) ?? failure;
 		stop();
 		if (!confirmed) return;
 		void raw?.unsubscribe().catch(() => {});

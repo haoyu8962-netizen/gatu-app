@@ -18,3 +18,15 @@ export function disableCompactMarketCtxs(error: unknown): void {
 	fallbackReported = true;
 	reportClientError(error, { kind: "market_ctxs_compact_fallback" });
 }
+
+let fastFallbackReported = false;
+
+/**
+ * Reports, once per page, that `fastAssetCtxs` was locked on its connection and the market rows took
+ * their prices from the context channels instead.
+ */
+export function reportFastMarketPricesFallback(error: unknown): void {
+	if (fastFallbackReported) return;
+	fastFallbackReported = true;
+	reportClientError(error, { kind: "market_ctxs_fast_fallback" });
+}

@@ -644,8 +644,9 @@ changes, not evidence that a build has been deployed or accepted on real devices
   Chrome unfreezes while still in the background now recover when they are actually shown. Not yet
   confirmed on a phone (ADR 0050).
 - Live mark and mid prices for the market list no longer stop silently after one damaged update.
-  If that stream fails, the list switches to prices from the regular market data instead of
-  retrying it endlessly; the list prices are briefly blank while that data reloads once. Browsers
+  If that stream delivers data the terminal cannot read, the list switches to prices from the regular
+  market data instead of retrying it endlessly, and the list prices are briefly blank while that
+  data reloads once. A brief connection problem is retried as before and the live prices come back. Browsers
   that cannot decompress the compact channels use those prices from the start. These prices count
   as current only while the data is about ten seconds old or newer.
 - On a phone, opening a trade page no longer opens an extra order-book connection that the phone

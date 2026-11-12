@@ -3,6 +3,7 @@ import {
 	type CompactPerpAssetCtxsEvent,
 	type CompactSpotAssetCtxsEvent,
 	canUseL2Decompression,
+	FastAssetCtxsLockedError,
 	type PerpMarket,
 	type SpotMarket,
 	type SubscriptionStatus,
@@ -21,7 +22,11 @@ import { useExchangeScope } from "@/providers/exchange-scope";
 import { useSelectedMarket } from "@/stores/use-market-store";
 import type { DexAssetCtx, SpotAssetCtx, SpotAssetCtxs } from "@/types/hyperliquid";
 import { getMarketApiCoin, getSpotMarketApiCoin } from "../market-identity";
-import { disableCompactMarketCtxs, isCompactMarketCtxsDisabled } from "../markets/market-ctxs-fallback";
+import {
+	disableCompactMarketCtxs,
+	isCompactMarketCtxsDisabled,
+	reportFastMarketPricesFallback,
+} from "../markets/market-ctxs-fallback";
 import { useMarkets } from "../markets/use-markets";
 import { useMarketsInfoContext } from "./MarketsInfoProvider";
 
@@ -202,7 +207,9 @@ export function useMarketsInfoInternal(options: UseMarketsInfoOptions = {}) {
 	}, [compactPerpError, compactSpotError]);
 
 	useEffect(() => {
-		if (fastPriceError != null) setFastPricesFailed(true);
+		if (!(fastPriceError instanceof FastAssetCtxsLockedError)) return;
+		reportFastMarketPricesFallback(fastPriceError);
+		setFastPricesFailed(true);
 	}, [fastPriceError]);
 
 	const allDexsCtxs = compactPerpCtxs ?? allDexsCtxsEvent?.ctxs;

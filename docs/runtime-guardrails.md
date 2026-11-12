@@ -829,8 +829,14 @@ transport. Adding account subscriptions must not disturb market subscriptions.
   therefore locks the channel on that transport: later subscriptions on it are
   rejected without reaching the server, the store backs off normally, nothing
   clears the lock, and a new transport (a reload or another network) starts
-  clean. `useMarketsInfo` stops subscribing to `fastAssetCtxs` for the life of
-  the hook after its first error. A browser without
+  clean. The locking failure and every later rejection are a
+  `FastAssetCtxsLockedError` (exported from `@sairn/hl-react`; the store keeps
+  the original error object). `useMarketsInfo` stops subscribing to
+  `fastAssetCtxs` for the life of the hook only on that error, and reports it
+  once per page as `market_ctxs_fast_fallback`. Any other error (a refused or
+  timed-out request, a lost connection) is transient: the store retries with
+  its own backoff, fast prices return when it recovers, and rows show
+  placeholders meanwhile instead of switching to context prices. A browser without
   `DecompressionStream("deflate-raw")` subscribes to none of the three. Without
   fast prices, `useMarketsInfo` prices each row from its own context (`pac` /
   `sac` or `allDexsAssetCtxs` / `spotAssetCtxs`, with the receipt time of the

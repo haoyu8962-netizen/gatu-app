@@ -13,6 +13,7 @@ export const CLIENT_ERROR_KINDS = [
 	"react_recoverable",
 	"orderbook_l2_fallback",
 	"market_ctxs_compact_fallback",
+	"market_ctxs_fast_fallback",
 	"legal_status_check",
 	"deposit_submission",
 	"window_error",

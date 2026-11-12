@@ -2,8 +2,8 @@ import zlib from "node:zlib";
 import type { ISubscriptionTransport } from "@nktkas/hyperliquid";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createHyperliquidStore } from "../../../../../packages/hl-react/src/store";
+import { FastAssetCtxsLockedError } from "../../../../../packages/hl-react/src/subscriptions/compact-asset-ctxs";
 import { CompactSubscriptionClient } from "../../../../../packages/hl-react/src/subscriptions/compact-subscription-client";
-import { L2BookStreamError } from "../../../../../packages/hl-react/src/subscriptions/l2";
 
 const KEY = JSON.stringify(["hl", "subscription", "fastAssetCtxs", {}]);
 const BAD_FRAME = "!!not base64!!";
@@ -31,7 +31,7 @@ function createClient(transport: ReturnType<typeof createTransport>) {
 }
 
 async function expectLocked(transport: ReturnType<typeof createTransport>) {
-	await expect(createClient(transport).fastAssetCtxs(vi.fn())).rejects.toBeInstanceOf(L2BookStreamError);
+	await expect(createClient(transport).fastAssetCtxs(vi.fn())).rejects.toBeInstanceOf(FastAssetCtxsLockedError);
 	expect(transport.subscribe).toHaveBeenCalledOnce();
 }
 
@@ -73,6 +73,7 @@ describe("a fast price stream that fails", () => {
 		await createClient(transport).fastAssetCtxs(listener, { onError });
 		await vi.advanceTimersByTimeAsync(0);
 		await vi.waitFor(() => expect(onError).toHaveBeenCalledOnce());
+		expect(onError.mock.calls[0]?.[0]).toBeInstanceOf(FastAssetCtxsLockedError);
 
 		await expectLocked(transport);
 	});
@@ -84,6 +85,7 @@ describe("a fast price stream that fails", () => {
 		await createClient(transport).fastAssetCtxs(vi.fn(), { onError });
 		await vi.advanceTimersByTimeAsync(0);
 		await vi.waitFor(() => expect(onError).toHaveBeenCalledOnce());
+		expect(onError.mock.calls[0]?.[0]).toBeInstanceOf(FastAssetCtxsLockedError);
 
 		await expectLocked(transport);
 	});
@@ -118,7 +120,20 @@ describe("a fast price stream that fails", () => {
 		healthy?.(new CustomEvent("fastAssetCtxs", { detail: encode({ BTC: { markPx: "1" } }) }));
 		await vi.waitFor(() => expect(healthyListener).toHaveBeenCalledOnce());
 
-		await expect(client.fastAssetCtxs(vi.fn())).rejects.toBeInstanceOf(L2BookStreamError);
+		await expect(client.fastAssetCtxs(vi.fn())).rejects.toBeInstanceOf(FastAssetCtxsLockedError);
+		expect(transport.subscribe).toHaveBeenCalledTimes(2);
+	});
+
+	it("passes a transport failure through without locking the channel", async () => {
+		const transport = createTransport(() => []);
+		const transportError = new Error("connection closed");
+		transport.subscribe.mockImplementationOnce(async () => {
+			throw transportError;
+		});
+		const client = createClient(transport);
+
+		await expect(client.fastAssetCtxs(vi.fn())).rejects.toBe(transportError);
+		await expect(client.fastAssetCtxs(vi.fn())).resolves.toBeDefined();
 		expect(transport.subscribe).toHaveBeenCalledTimes(2);
 	});
 });
