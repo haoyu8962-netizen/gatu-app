@@ -65,7 +65,8 @@ describe("root provider startup split", () => {
 		expect(appRuntimeSource).toContain("<StartupReadyGate fallback={fallback}>");
 		expect(appRuntimeSource).toContain("<Outlet />");
 		expect(rootRouteSource).toContain("i18n.locale === getPersistedLocale()");
-		expect(rootRouteSource).toContain("i18nReady.finally(() =>");
+		expect(rootRouteSource).toContain("i18nReady.finally(settleLocale);");
+		expect(rootRouteSource).toContain("setTimeout(settleLocale, LOCALE_CATALOG_READY_TIMEOUT_MS)");
 		expect(rootRouteSource).toContain("return <>{ready ? children : fallback}</>");
 	});
 

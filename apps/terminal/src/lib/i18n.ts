@@ -86,6 +86,12 @@ export async function dynamicActivate(locale: string): Promise<boolean> {
 	return true;
 }
 
+// How long the startup gate waits for the persisted catalog before revealing in English: the same
+// cap as the startup fonts (FONT_READY_TIMEOUT_MS), so a stalled catalog request never leaves the page
+// blank longer than a stalled font does. A catalog that arrives later still activates and the live
+// translations switch in place.
+export const LOCALE_CATALOG_READY_TIMEOUT_MS = 3000;
+
 // Boot: activate English synchronously (the only eagerly-bundled catalog) so the app always has an
 // active catalog, then restore the persisted language. `i18nReady` resolves once the persisted
 // catalog is active so the UI can gate its first render on it — no flash of English / RTL jump for
