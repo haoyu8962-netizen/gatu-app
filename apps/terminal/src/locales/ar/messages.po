@@ -416,6 +416,7 @@ msgstr "الوصول مقيّد"
 #: src/components/trade/positions/send-modal.tsx
 #: src/config/nav.tsx
 #: src/config/trade-panel-labels.ts
+#: src/routes/mobile-agent-sync.tsx
 msgid "Account"
 msgstr "الحساب"
 
@@ -3495,6 +3496,7 @@ msgstr "فشل النسخ"
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/trade-panel.tsx
 #: src/config/ui-text.ts
+#: src/lib/errors/action-error.ts
 msgid "Failed to enable trading"
 msgstr "فشل تفعيل التداول"
 
@@ -3686,6 +3688,10 @@ msgstr "منفذ"
 #: src/components/trade/tradebox/order-toast.tsx
 msgid "Filled (quantity unverified)"
 msgstr "تم التنفيذ (لم يتم التحقق من الكمية)"
+
+#: src/components/trade/order-reconciliation.tsx
+msgid "Filled before it could be canceled. Check your positions."
+msgstr "نُفِّذ الأمر قبل أن يتسنى إلغاؤه. راجع مراكزك."
 
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Filter by {label}"
@@ -4232,6 +4238,10 @@ msgstr "مهم: أرسل إلى هذا العنوان USDC الأصلي على A
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #~ msgid "Important: this address can only receive native USDC on Arbitrum. Do not send USDC.e or assets from other networks. Minimum deposit is {minimumDeposit}."
 #~ msgstr "مهم: يمكن لهذا العنوان استقبال USDC الأصلي على Arbitrum فقط. لا ترسل USDC.e أو أصولاً من شبكات أخرى. الحد الأدنى للإيداع هو {minimumDeposit}."
+
+#: src/routes/mobile-agent-sync.tsx
+msgid "Importing replaces the current trading session on this phone."
+msgstr "يؤدي الاستيراد إلى استبدال جلسة التداول الحالية على هذا الهاتف."
 
 #: src/components/staking/staking-view.tsx
 #: src/components/staking/staking-view.tsx
@@ -9093,6 +9103,7 @@ msgid "The cancellation response could not be confirmed. Refresh open orders bef
 msgstr "تعذر تأكيد استجابة الإلغاء. حدّث الأوامر المفتوحة قبل إعادة المحاولة."
 
 #: src/components/trade/order-reconciliation.tsx
+#: src/components/trade/order-reconciliation.tsx
 msgid "The cancellation was not confirmed. Review open orders before retrying."
 msgstr "لم يُؤكد الإلغاء. راجع الأوامر المفتوحة قبل إعادة المحاولة."
 
@@ -9249,6 +9260,10 @@ msgstr "تغيّر الأمر قبل تأكيد التعديل المطلوب. �
 #: src/lib/errors/exchange-error-text.ts
 msgid "The order could not immediately match any resting orders."
 msgstr "تعذّر مطابقة الأمر فورًا مع أي أوامر قائمة."
+
+#: src/components/trade/order-reconciliation.tsx
+msgid "The order is no longer open. Check your fills before retrying."
+msgstr "لم يعد الأمر مفتوحًا. راجع عمليات التنفيذ قبل إعادة المحاولة."
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #~ msgid "The order is still being confirmed."
@@ -10497,9 +10512,17 @@ msgstr "سجل تنفيذات TWAP"
 msgid "TWAP finished"
 msgstr "اكتمل TWAP"
 
+#: src/components/trade/twap-reconciliation.tsx
+msgid "TWAP finished before it could be terminated."
+msgstr "اكتمل TWAP قبل أن يتسنى إنهاؤه."
+
 #: src/components/trade/positions/twap-history-table.tsx
 msgid "TWAP history"
 msgstr "سجل TWAP"
+
+#: src/components/trade/twap-reconciliation.tsx
+msgid "TWAP is no longer active. Check TWAP history before retrying."
+msgstr "لم يعد TWAP نشطًا. راجع سجل TWAP قبل إعادة المحاولة."
 
 #: src/lib/errors/definitions/twap.ts
 #: src/lib/trade/order-submission-feedback.ts
@@ -10576,6 +10599,7 @@ msgstr "الفائدة المفتوحة ثنائية الجانب: مجموع ا
 msgid "Type"
 msgstr "النوع"
 
+#: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/positions/send-modal.tsx
 msgid "Unable to check the destination address. Nothing was sent."
 msgstr "تعذّر التحقق من عنوان الوجهة. لم يُرسل أي شيء."

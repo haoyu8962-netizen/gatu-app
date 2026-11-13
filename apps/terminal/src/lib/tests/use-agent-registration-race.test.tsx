@@ -1,6 +1,10 @@
 // @vitest-environment jsdom
 
 import {
+	ExchangeActionDeadlineError,
+	startExchangeActionDeadline,
+} from "@sairn/hl-react/internal/exchange/request-scheduler";
+import {
 	type AgentApprovalMutateAsync,
 	type AgentApprovalOptions,
 	HyperliquidAgentApprovalProvider,
@@ -393,6 +397,111 @@ describe("useAgentRegistration logout races", () => {
 				signal: expect.any(AbortSignal),
 			}),
 		);
+		expect(testState.approveAgent).not.toHaveBeenCalled();
+	});
+
+	it("does not ask for an Agent approval when the status check before it outlasts the action limit", async () => {
+		testState.refetchAgent.mockImplementationOnce(
+			() =>
+				new Promise((resolve) =>
+					setTimeout(
+						() =>
+							resolve({
+								isAgentReady: false,
+								isBuilderFeeReady: true,
+								isReady: false,
+								needsAgent: true,
+								needsBuilderFee: false,
+								signaturesRequired: 1,
+							}),
+						60_000,
+					),
+				),
+		);
+
+		await act(async () => {
+			root.render(createElement(QueryClientProvider, { client: queryClient }, createElement(RegistrationButton)));
+		});
+		act(() => {
+			container.querySelector("button")?.click();
+		});
+		await flushMicrotasks();
+		await act(async () => {
+			await vi.advanceTimersByTimeAsync(60_000);
+		});
+
+		await expect(registrationPromise).rejects.toBeInstanceOf(ExchangeActionDeadlineError);
+		expect(testState.approveAgent).not.toHaveBeenCalled();
+		expect(window.localStorage.getItem(AGENT_STORAGE_KEY)).toBeNull();
+	});
+
+	it("removes the saved candidate and asks for nothing when a wait after the check outlasts the limit", async () => {
+		testState.refetchAgent.mockImplementationOnce(
+			() =>
+				new Promise((resolve) =>
+					setTimeout(
+						() =>
+							resolve({
+								isAgentReady: false,
+								isBuilderFeeReady: true,
+								isReady: false,
+								needsAgent: true,
+								needsBuilderFee: false,
+								signaturesRequired: 1,
+							}),
+						14_000,
+					),
+				),
+		);
+		const setItem = Storage.prototype.setItem;
+		let waited = false;
+		const storageSpy = vi.spyOn(Storage.prototype, "setItem").mockImplementation(function (
+			this: Storage,
+			key: string,
+			value: string,
+		) {
+			setItem.call(this, key, value);
+			if (!waited && key === AGENT_STORAGE_KEY && value.includes("approvalPendingAtMs")) {
+				waited = true;
+				vi.setSystemTime(Date.now() + 46_000);
+			}
+		});
+
+		await act(async () => {
+			root.render(createElement(QueryClientProvider, { client: queryClient }, createElement(RegistrationButton)));
+		});
+		act(() => {
+			container.querySelector("button")?.click();
+		});
+		await flushMicrotasks();
+		await act(async () => {
+			await vi.advanceTimersByTimeAsync(14_000);
+		});
+		await flushMicrotasks();
+		storageSpy.mockRestore();
+
+		expect(waited).toBe(true);
+		await expect(registrationPromise).rejects.toBeInstanceOf(ExchangeActionDeadlineError);
+		expect(testState.approveAgent).not.toHaveBeenCalled();
+		expect(window.localStorage.getItem(AGENT_STORAGE_KEY)).toBeNull();
+		expect(window.sessionStorage.getItem(AGENT_STORAGE_KEY)).toBeNull();
+	});
+
+	it("uses the deadline of the authorization that started it instead of its own", async () => {
+		registrationOptions = { deadline: startExchangeActionDeadline() };
+		await act(async () => {
+			await vi.advanceTimersByTimeAsync(16_000);
+		});
+
+		await act(async () => {
+			root.render(createElement(QueryClientProvider, { client: queryClient }, createElement(RegistrationButton)));
+		});
+		act(() => {
+			container.querySelector("button")?.click();
+		});
+		await flushMicrotasks();
+
+		await expect(registrationPromise).rejects.toBeInstanceOf(ExchangeActionDeadlineError);
 		expect(testState.approveAgent).not.toHaveBeenCalled();
 	});
 

@@ -1,4 +1,8 @@
 import { useLingui } from "@lingui/react/macro";
+import {
+	assertExchangeSigningDeadline,
+	startExchangeActionDeadline,
+} from "@sairn/hl-react/internal/exchange/request-scheduler";
 import { type MutableRefObject, useEffect, useRef, useState } from "react";
 import { HL_ALL_DEXS } from "@/config/app";
 import type { ExchangeOrder } from "@/config/trade";
@@ -164,6 +168,7 @@ export function usePositionCloseAllSubmit(snapshot: PositionCloseAllSnapshot) {
 	const trackedOrder = useTrackedOrder({ executionGuard: assertExecutionContext });
 
 	async function submit(): Promise<PositionCloseAllSubmitOutcome> {
+		const deadline = startExchangeActionDeadline();
 		if (phaseRef.current !== "idle") return { state: "blocked" };
 		const lifecycleEpoch = lifecycleRef.current.epoch;
 		assertLifecycleActive(lifecycleEpoch);
@@ -231,6 +236,7 @@ export function usePositionCloseAllSubmit(snapshot: PositionCloseAllSnapshot) {
 						grouping: "na",
 					};
 					assertLifecycleActive(lifecycleEpoch);
+					assertExchangeSigningDeadline(deadline);
 					setPhase("submitting");
 					let positionsClosed = false;
 

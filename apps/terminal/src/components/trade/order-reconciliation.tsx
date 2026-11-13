@@ -1,4 +1,5 @@
 import { msg } from "@lingui/core/macro";
+import type { InfoClient } from "@nktkas/hyperliquid";
 import { useEffect, useRef } from "react";
 import { HL_ALL_DEXS } from "@/config/app";
 import { isPartialIocExecutionForOrder } from "@/domain/trade/order-execution-summary";
@@ -12,10 +13,14 @@ import {
 import { useHyperliquid, useSubscription } from "@/lib/hyperliquid";
 import { toBig } from "@/lib/trade/numbers";
 import { releaseOrderAssetReservations } from "@/lib/trade/order-asset-lock";
-import { orderReconciliationError } from "@/lib/trade/order-reconciliation-feedback";
+import {
+	orderReconciliationError,
+	withdrawNotificationsSettledElsewhere,
+} from "@/lib/trade/order-reconciliation-feedback";
 import {
 	confirmPartialCancellationFeedback,
 	getPartialCancellationFeedback,
+	settleUnconfirmedTradingActionFeedback,
 	syncPendingTradingActionFeedback,
 	updatePendingTradingActionFeedback,
 } from "@/lib/trade/pending-trading-action-feedback";
@@ -37,12 +42,19 @@ import {
 import {
 	getNextTradingActionExpiryDelayMs,
 	getPendingTradingActionActions,
+	getPendingTradingActionSnapshot,
+	type PendingOrderCancellation,
+	type PendingOrderModification,
 	usePendingOrderCancellations,
 	usePendingOrderModifications,
 	wasReceivedAfter,
 } from "@/stores/use-pending-trading-action-store";
 
 const RECONCILIATION_TICK_MS = 3_000;
+const CANCELLATION_STATUS_LOOKUP_LIMIT = 10;
+const verifyingCancellationIds = new Set<string>();
+
+type OpenOrderIds = { env: string; owner: string; oids: ReadonlySet<number> } | undefined;
 
 export function OrderReconciliation() {
 	const { clientKey, env, info } = useHyperliquid();
@@ -52,6 +64,8 @@ export function OrderReconciliation() {
 	const modifications = usePendingOrderModifications();
 	const cancellations = usePendingOrderCancellations();
 	const pollingRef = useRef(false);
+	const openOrderIdsRef = useRef<OpenOrderIds>(undefined);
+	const queueIdsRef = useRef<ReadonlyMap<string, string>>(new Map());
 	const normalizedAddress = address?.toLowerCase();
 	const hasCurrentTradingAction =
 		!!normalizedAddress &&
@@ -71,6 +85,11 @@ export function OrderReconciliation() {
 		{ user: address ?? "0x0000000000000000000000000000000000000000", dex: HL_ALL_DEXS },
 		{ enabled: hasCurrentTradingAction },
 	);
+
+	useEffect(() => {
+		getPendingOrderActions().serve(normalizedAddress ? { env, user: normalizedAddress } : null);
+		return () => getPendingOrderActions().serve(null);
+	}, [env, normalizedAddress]);
 
 	useEffect(() => {
 		for (const modification of modifications) syncPendingTradingActionFeedback(modification, "modify");
@@ -97,6 +116,7 @@ export function OrderReconciliation() {
 		if (!address || openOrdersStatus !== "active" || openOrdersStale || !openOrdersEvent) return;
 		const owner = address.toLowerCase();
 		const openOrders = openOrdersEvent.orders;
+		openOrderIdsRef.current = { env, owner, oids: new Set(openOrders.map((order) => order.oid)) };
 		const completedCancellationOids = new Set<number>();
 		const activeCancellationOids = new Set<number>();
 		for (const cancellation of cancellations) {
@@ -114,35 +134,21 @@ export function OrderReconciliation() {
 					continue;
 				}
 				getPendingTradingActionActions().releaseOrderCancellation(cancellation.id);
-				updatePendingTradingActionFeedback(cancellation, "cancel", {
-					status: "unconfirmed",
-					message: msg`The cancellation was not confirmed. Review open orders before retrying.`,
-					...(cancellation.partialResult ? getPartialCancellationFeedback(cancellation.partialResult) : {}),
-				});
+				settleUnconfirmedTradingActionFeedback(
+					cancellation,
+					"cancel",
+					msg`The cancellation was not confirmed. Review open orders before retrying.`,
+					cancellation.partialResult && getPartialCancellationFeedback(cancellation.partialResult),
+				);
+				continue;
+			}
+			if (!cancellation.accepted) {
+				for (const oid of cancellation.oids) activeCancellationOids.add(oid);
+				void verifyCancellation(cancellation, info, () => openOrderIdsRef.current);
 				continue;
 			}
 			for (const oid of cancellation.oids) completedCancellationOids.add(oid);
-			getPendingTradingActionActions().confirmOrderCancellation(cancellation.id);
-			for (const modification of modifications) {
-				if (
-					modification.env === cancellation.env &&
-					modification.owner === cancellation.owner &&
-					cancellation.oids.includes(modification.oid)
-				) {
-					updatePendingTradingActionFeedback(modification, "modify", {
-						status: "canceled",
-						message: msg`The modified order was canceled.`,
-					});
-				}
-			}
-			if (cancellation.partialResult) {
-				confirmPartialCancellationFeedback({ ...cancellation, partialResult: cancellation.partialResult });
-			} else {
-				updatePendingTradingActionFeedback(cancellation, "cancel", {
-					status: "success",
-					message: msg`Canceled`,
-				});
-			}
+			completeCancellation(cancellation, modifications);
 		}
 
 		for (const modification of modifications) {
@@ -192,16 +198,18 @@ export function OrderReconciliation() {
 			if (modification.phase === "unconfirmed") {
 				if (!wasReceivedAfter(openOrdersReceivedAt, modification.monotonicUnconfirmedAt)) continue;
 				getPendingTradingActionActions().resolveModification(modification.id);
-				updatePendingTradingActionFeedback(modification, "modify", {
-					status: "unconfirmed",
-					message: msg`The modification was not confirmed. Review the order before retrying.`,
-				});
+				settleUnconfirmedTradingActionFeedback(
+					modification,
+					"modify",
+					msg`The modification was not confirmed. Review the order before retrying.`,
+				);
 			}
 		}
 	}, [
 		address,
 		cancellations,
 		env,
+		info,
 		modifications,
 		openOrdersEvent,
 		openOrdersReceivedAt,
@@ -210,8 +218,15 @@ export function OrderReconciliation() {
 	]);
 
 	useEffect(() => {
+		withdrawNotificationsSettledElsewhere(getPendingOrderActions().takeRemovedElsewhere(), queueIdsRef.current);
+		queueIdsRef.current = new Map(submissions.map((submission) => [submission.id, getSubmissionQueueId(submission)]));
 		for (const submission of submissions) {
-			if (!activeSubmissionIds.has(submission.id)) syncSubmissionQueue(submission);
+			if (!activeSubmissionIds.has(submission.id)) {
+				syncSubmissionQueue(submission);
+			} else if (!getPendingOrderActions().owns(submission.id)) {
+				releasePositionMarketCloseSession(submission);
+				showSubmissionUnconfirmed(submission);
+			}
 		}
 		const eligible = submissions.filter(
 			(submission) => submission.unconfirmedAt === undefined && !activeSubmissionIds.has(submission.id),
@@ -245,11 +260,17 @@ export function OrderReconciliation() {
 					submission.user === address.toLowerCase() &&
 					submission.children.some((child) => child.cloid.toLowerCase() === update.order.cloid?.toLowerCase()),
 			);
-			if (!matchingSubmission || isPendingOrderSubmissionActive(matchingSubmission.id)) continue;
+			if (
+				!matchingSubmission ||
+				activeSubmissionIds.has(matchingSubmission.id) ||
+				isPendingOrderSubmissionActive(matchingSubmission.id)
+			) {
+				continue;
+			}
 			const completed = getPendingOrderActions().resolve(env, address, update.order.cloid, update.status);
 			if (completed) completeReconciliation(completed);
 		}
-	}, [address, env, orderUpdates, submissions]);
+	}, [activeSubmissionIds, address, env, orderUpdates, submissions]);
 
 	useEffect(() => {
 		if (!address) return;
@@ -268,9 +289,9 @@ export function OrderReconciliation() {
 						!activeSubmissionIds.has(submission.id),
 				)
 				.flatMap((submission) =>
-					submission.children.filter(
-						(child) => !isOrderStatusFinalForSubmission(submission, child.status) && child.nextCheckAt <= now,
-					),
+					submission.children
+						.filter((child) => !isOrderStatusFinalForSubmission(submission, child.status) && child.nextCheckAt <= now)
+						.map((child) => ({ ...child, submissionId: submission.id })),
 				)
 				.slice(0, ORDER_RECONCILIATION_POLL_LIMIT);
 			if (due.length === 0) return;
@@ -282,7 +303,7 @@ export function OrderReconciliation() {
 						getPendingOrderActions().markChecked(child.cloid, now);
 						try {
 							const result = await info.orderStatus({ user, oid: child.cloid });
-							if (result.status !== "order") return;
+							if (result.status !== "order" || !getPendingOrderActions().owns(child.submissionId)) return;
 							const completed = getPendingOrderActions().resolve(env, user, child.cloid, result.order.status);
 							if (completed) completeReconciliation(completed);
 						} catch {
@@ -306,6 +327,91 @@ export function OrderReconciliation() {
 type AwaitingTradingAction =
 	| ReturnType<typeof usePendingOrderModifications>[number]
 	| ReturnType<typeof usePendingOrderCancellations>[number];
+
+function completeCancellation(
+	cancellation: PendingOrderCancellation,
+	modifications: readonly PendingOrderModification[],
+): void {
+	getPendingTradingActionActions().confirmOrderCancellation(cancellation.id);
+	for (const modification of modifications) {
+		if (
+			modification.env === cancellation.env &&
+			modification.owner === cancellation.owner &&
+			cancellation.oids.includes(modification.oid)
+		) {
+			updatePendingTradingActionFeedback(modification, "modify", {
+				status: "canceled",
+				message: msg`The modified order was canceled.`,
+			});
+		}
+	}
+	if (cancellation.partialResult) {
+		confirmPartialCancellationFeedback({ ...cancellation, partialResult: cancellation.partialResult });
+	} else {
+		updatePendingTradingActionFeedback(cancellation, "cancel", { status: "success", message: msg`Canceled` });
+	}
+}
+
+/**
+ * An order that left the open orders after a cancel the exchange never confirmed may have filled
+ * instead. One `orderStatus` lookup per order (weight 2, at most ten, never retried) decides: only
+ * canceled statuses for every order report Canceled, a fill is reported as such, anything else stays
+ * neutral.
+ */
+async function verifyCancellation(
+	cancellation: PendingOrderCancellation,
+	info: InfoClient,
+	readOpenOrderIds: () => OpenOrderIds,
+): Promise<void> {
+	if (verifyingCancellationIds.has(cancellation.id)) return;
+	verifyingCancellationIds.add(cancellation.id);
+	const statuses = await Promise.all(
+		cancellation.oids.slice(0, CANCELLATION_STATUS_LOOKUP_LIMIT).map((oid) =>
+			info.orderStatus({ user: cancellation.owner as `0x${string}`, oid }).then(
+				(result) => (result.status === "order" ? result.order.status : undefined),
+				() => undefined,
+			),
+		),
+	);
+	verifyingCancellationIds.delete(cancellation.id);
+	const snapshot = getPendingTradingActionSnapshot();
+	const current = snapshot.orderCancellations.find((action) => action.id === cancellation.id);
+	const openOrderIds = readOpenOrderIds();
+	if (
+		!current ||
+		(openOrderIds?.env === current.env &&
+			openOrderIds.owner === current.owner &&
+			current.oids.some((oid) => openOrderIds.oids.has(oid)))
+	) {
+		return;
+	}
+	const total = current.oids.length;
+	const canceledCount = statuses.filter((status) => status && isCanceledOrderStatus(status)).length;
+	const filledCount = statuses.filter((status) => status === "filled").length;
+	if (canceledCount === total) {
+		completeCancellation(current, snapshot.modifications);
+		return;
+	}
+	getPendingTradingActionActions().releaseOrderCancellation(current.id);
+	if (canceledCount + filledCount < total) {
+		settleUnconfirmedTradingActionFeedback(
+			current,
+			"cancel",
+			statuses.some((status) => status === "open" || status === "triggered")
+				? msg`The cancellation was not confirmed. Review open orders before retrying.`
+				: msg`The order is no longer open. Check your fills before retrying.`,
+		);
+		return;
+	}
+	const message = msg`Filled before it could be canceled. Check your positions.`;
+	updatePendingTradingActionFeedback(
+		current,
+		"cancel",
+		canceledCount === 0
+			? { status: "failed", message }
+			: { status: "partial", message, acceptedCount: canceledCount, totalCount: total, countMode: "canceled" },
+	);
+}
 
 function markExpiredTradingActions(actions: AwaitingTradingAction[], now: number, monotonicNow: number): void {
 	for (const action of actions) {
@@ -480,8 +586,20 @@ function ensureSubmissionQueue(submission: PendingOrderSubmission): string {
 	});
 }
 
+function showSubmissionUnconfirmed(submission: PendingOrderSubmission): void {
+	if (submission.unconfirmedAt === undefined) return;
+	const queueItem = getOrderQueueItem(getSubmissionQueueId(submission));
+	if (!queueItem || (queueItem.status !== "pending" && queueItem.status !== "confirming")) return;
+	updateOrderQueueItem(queueItem.id, {
+		status: "unconfirmed",
+		error: orderReconciliationError("status-unconfirmed"),
+		children: getSubmissionQueueChildren(submission),
+	});
+}
+
 function syncSubmissionQueue(submission: PendingOrderSubmission): void {
 	const queueId = ensureSubmissionQueue(submission);
+	showSubmissionUnconfirmed(submission);
 	const children = getSubmissionQueueChildren(submission);
 	if (JSON.stringify(getOrderQueueItem(queueId)?.children) !== JSON.stringify(children)) {
 		updateOrderQueueItem(queueId, { children });

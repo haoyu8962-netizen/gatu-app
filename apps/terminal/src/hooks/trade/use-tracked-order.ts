@@ -1,4 +1,9 @@
 import type { ExchangeExecutionGuard } from "@sairn/hl-react";
+import {
+	assertExchangeSigningDeadline,
+	type ExchangeSigningDeadlineSlot,
+	startExchangeActionDeadline,
+} from "@sairn/hl-react/internal/exchange/request-scheduler";
 import { useRef, useState } from "react";
 import { doesOrderBatchMatchRiskContext, type OrderRiskContext } from "@/domain/trade/order-risk-context";
 import {
@@ -33,6 +38,8 @@ import {
 
 interface SubmitOptions {
 	assetLockLease?: OrderAssetLockLease;
+	/** The confirming click's deadline (ADR 0053); without one the call itself starts it. */
+	deadline?: ExchangeSigningDeadlineSlot;
 	queueId?: string;
 	riskContext: OrderRiskContext;
 	exclusiveAssetLock?: boolean;
@@ -70,6 +77,7 @@ export function useTrackedOrder(options: UseTrackedOrderOptions = {}) {
 	}
 
 	async function submitOrderOnce(params: TrackedOrderParams, options: SubmitOptions): Promise<TrackedOrderResult> {
+		const deadline = options.deadline ?? startExchangeActionDeadline();
 		if (clientKey === "disconnected") throw orderSubmissionFeedbackCause("no-active-account");
 		if (!doesOrderBatchMatchRiskContext(params.orders, options.riskContext)) {
 			throw orderSubmissionFeedbackCause("market-context-mismatch");
@@ -82,6 +90,7 @@ export function useTrackedOrder(options: UseTrackedOrderOptions = {}) {
 		const lockIdentity = { env, owner: user, assetIds } as const;
 
 		async function submitWithLease(lease: OrderAssetLockLease): Promise<TrackedOrderResult> {
+			assertExchangeSigningDeadline(deadline);
 			if (!doesOrderAssetLockLeaseCover(lease, lockIdentity)) {
 				throw orderSubmissionFeedbackCause("coordination-unavailable");
 			}

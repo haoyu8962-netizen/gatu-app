@@ -111,6 +111,21 @@ function installExclusiveLockManager(): void {
 	Object.defineProperty(window.navigator, "locks", { configurable: true, value: manager });
 }
 
+function installDelayedAvailableLockManager(): { grant: () => void } {
+	let grant = () => {};
+	const granted = new Promise<void>((resolve) => {
+		grant = resolve;
+	});
+	const manager = {
+		async request<T>(name: string, _options: LockOptions, callback: (lock: Lock | null) => T | PromiseLike<T>) {
+			await granted;
+			return callback({ name, mode: "exclusive" } as Lock);
+		},
+	} as unknown as LockManager;
+	Object.defineProperty(window.navigator, "locks", { configurable: true, value: manager });
+	return { grant };
+}
+
 describe("useTrackedTwapOrder", () => {
 	let container: HTMLDivElement;
 	let root: Root;
@@ -565,5 +580,43 @@ describe("useTrackedTwapOrder", () => {
 		expect(mocks.mutateAsync).toHaveBeenCalledWith(createParams(23));
 		expect(mocks.mutateAsync.mock.calls[0]?.[0]).not.toHaveProperty("details");
 		expect(addSpy.mock.calls[0]?.[0].intent).toMatchObject({ assetId: 23, stopPx: null, trigger: null });
+	});
+	describe("click deadline inside the asset lock (ADR 0053)", () => {
+		afterEach(() => {
+			vi.useRealTimers();
+		});
+
+		it.each([
+			[16_000, 0],
+			[14_000, 1],
+		])("when the asset lock is granted %i ms after the call, queues the TWAP %i times", async (waitMs, calls) => {
+			vi.useFakeTimers({ toFake: ["Date"] });
+			const lock = installDelayedAvailableLockManager();
+			mocks.mutateAsync.mockResolvedValue({
+				status: "ok",
+				response: { type: "twapOrder", data: { status: { running: { twapId: 9 } } } },
+			});
+			if (!hookValue) throw new Error("Expected tracked TWAP hook");
+
+			const submission = hookValue.submitTwap(createParams(41), { coin: "BTC", riskContext: CROSS_PERP_RISK_CONTEXT });
+			const settled = submission.then(
+				(value) => ({ value }),
+				(error: unknown) => ({ error }),
+			);
+			vi.setSystemTime(Date.now() + waitMs);
+			lock.grant();
+			let outcome: Awaited<typeof settled> | undefined;
+			await act(async () => {
+				outcome = await settled;
+			});
+
+			expect(mocks.mutateAsync).toHaveBeenCalledTimes(calls);
+			if (calls === 0) {
+				expect(outcome).toMatchObject({ error: { name: "ExchangeActionDeadlineError" } });
+				expect(hasPendingTwapForAsset("Mainnet", USER, 41)).toBe(false);
+			} else {
+				expect(outcome).not.toHaveProperty("error");
+			}
+		});
 	});
 });

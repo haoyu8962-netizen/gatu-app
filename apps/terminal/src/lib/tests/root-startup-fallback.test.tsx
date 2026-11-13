@@ -33,6 +33,7 @@ vi.mock("@/lib/hyperliquid/hooks/MarketsInfoProvider", () => ({
 	MarketsInfoProvider: ({ children }: { children: ReactNode }) => children,
 }));
 vi.mock("@/lib/i18n", () => ({
+	LOCALE_CATALOG_READY_TIMEOUT_MS: 3000,
 	getPersistedLocale: () => "zh",
 	i18nReady: {
 		finally: (callback: () => void) => {
@@ -171,5 +172,37 @@ it("keeps /trade/BTC empty until the persisted locale and the startup fonts are 
 	} finally {
 		act(() => root.unmount());
 		Reflect.deleteProperty(document, "fonts");
+	}
+});
+
+it("reveals /trade/BTC in English when the persisted catalog does not arrive within its cap, and keeps it revealed when it does", () => {
+	vi.useFakeTimers();
+	state.pathname = "/trade/BTC";
+	state.gateReady = true;
+	state.runtimeReady = true;
+	const host = document.createElement("div");
+	const root = createRoot(host);
+	try {
+		act(() => root.render(<RootComponent />));
+		expect(host.innerHTML).toBe(renderToString(<StartupFallback />));
+		act(() => {
+			vi.advanceTimersByTime(2999);
+		});
+		expect(host.innerHTML).toBe(renderToString(<StartupFallback />));
+		act(() => {
+			vi.advanceTimersByTime(1);
+		});
+		expect(i18n.locale).toBe("en");
+		expect(host.textContent).toBe("交易");
+		const revealed = host.firstElementChild;
+		act(() => {
+			i18n.loadAndActivate({ locale: "zh", messages: {} });
+			state.finishLocale();
+		});
+		expect(host.textContent).toBe("交易");
+		expect(host.firstElementChild).toBe(revealed);
+	} finally {
+		act(() => root.unmount());
+		vi.useRealTimers();
 	}
 });

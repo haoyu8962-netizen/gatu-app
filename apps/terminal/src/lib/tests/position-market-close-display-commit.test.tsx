@@ -17,6 +17,7 @@ import {
 import { type OrderQueueItem, removeOrderQueueItem, useOrderQueue } from "@/stores/use-order-queue-store";
 import { getPendingOrderActions } from "@/stores/use-pending-order-store";
 import { getPendingTwapActions } from "@/stores/use-pending-twap-store";
+import { feedbackErrorText } from "./harness/order-feedback";
 import { createI18nRoot } from "./harness/react";
 
 const USER = "0x1111111111111111111111111111111111111111" as const;
@@ -196,7 +197,7 @@ describe("market close: the size shown at the click bounds the size that is sent
 	let container: HTMLDivElement;
 	let root: Root;
 
-	function renderDialog() {
+	function renderDialog(withSubmitHost = true) {
 		act(() =>
 			root.render(
 				createElement(
@@ -204,7 +205,7 @@ describe("market close: the size shown at the click bounds the size that is sent
 					null,
 					createElement(QueueProbe),
 					createElement(PositionMarketCloseModal),
-					createElement(PositionMarketCloseSubmitHost),
+					withSubmitHost ? createElement(PositionMarketCloseSubmitHost) : null,
 				),
 			),
 		);
@@ -226,7 +227,7 @@ describe("market close: the size shown at the click bounds the size that is sent
 		return mocks.executeOrder.mock.calls.map((call) => (call[0] as OrderParams).orders[0]?.s ?? "");
 	}
 
-	function openDialog(intent: PositionCloseSizingIntent): string {
+	function openDialog(intent: PositionCloseSizingIntent, withSubmitHost = true): string {
 		let sessionId: string | null = null;
 		act(() => {
 			sessionId = getPositionMarketCloseActions().open(positionRef, { owner: USER, env: "Mainnet" });
@@ -234,7 +235,7 @@ describe("market close: the size shown at the click bounds the size that is sent
 		if (!sessionId) throw new Error("Expected market close session");
 		const openedSessionId: string = sessionId;
 		act(() => getPositionMarketCloseActions().setSizingIntent(openedSessionId, intent));
-		renderDialog();
+		renderDialog(withSubmitHost);
 		return openedSessionId;
 	}
 
@@ -425,5 +426,127 @@ describe("market close: the size shown at the click bounds the size that is sent
 
 		expect(getSentSizes()).toEqual(["2.6"]);
 		expect(mocks.toastError).not.toHaveBeenCalled();
+	});
+
+	describe("when the fresh snapshot returns long after the click", () => {
+		async function confirmAndWaitForSnapshot(waitMs: number): Promise<void> {
+			const respondWithAccount = mocks.clearinghouseState.getMockImplementation();
+			const respondWithMarket = mocks.metaAndAssetCtxs.getMockImplementation();
+			mocks.clearinghouseState.mockImplementation(async (...args: unknown[]) => {
+				await new Promise<void>((resolve) => setTimeout(resolve, waitMs));
+				return respondWithAccount?.(...args);
+			});
+			mocks.metaAndAssetCtxs.mockImplementation(async (...args: unknown[]) => {
+				await new Promise<void>((resolve) => setTimeout(resolve, waitMs));
+				return respondWithMarket?.(...args);
+			});
+
+			await act(async () => {
+				getSubmitButton().click();
+				await vi.advanceTimersByTimeAsync(0);
+			});
+			expect(getPositionMarketCloseModal()).toMatchObject({ presentation: "dismissed", phase: "validating" });
+			expect(mocks.clearinghouseState).toHaveBeenCalledOnce();
+			expect(mocks.mutateOrder).not.toHaveBeenCalled();
+
+			const wallClock = Date.now();
+			const monotonicClock = performance.now();
+			await act(async () => {
+				await vi.advanceTimersByTimeAsync(waitMs);
+			});
+			expect(Date.now() - wallClock).toBe(waitMs);
+			expect(performance.now() - monotonicClock).toBe(waitMs);
+		}
+
+		beforeEach(() => {
+			vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "Date", "performance"] });
+		});
+
+		afterEach(() => {
+			vi.useRealTimers();
+		});
+
+		it("sends nothing and says so when the snapshot takes 16 seconds", async () => {
+			openDialog({ kind: "max" });
+			expect(getShownCloseSize()).toBe("2.500");
+
+			await confirmAndWaitForSnapshot(16_000);
+
+			expect(mocks.mutateOrder).not.toHaveBeenCalled();
+			expect(getSentSizes()).toEqual([]);
+			expect(getPositionMarketCloseModal()).toBeNull();
+			expect(queueItems).toHaveLength(1);
+			expect(queueItems[0]).toMatchObject({ status: "failed", children: [{ market: COIN, status: "rejected" }] });
+			expect(feedbackErrorText(queueItems[0])).toBe(
+				"The checks before this request took too long. Nothing was signed or sent. Try again.",
+			);
+			expect(mocks.toastError).not.toHaveBeenCalled();
+		});
+
+		async function confirmBeforeTheSubmitHostMounts(hostDelayMs: number, snapshotMs: number): Promise<void> {
+			const respondWithAccount = mocks.clearinghouseState.getMockImplementation();
+			const respondWithMarket = mocks.metaAndAssetCtxs.getMockImplementation();
+			mocks.clearinghouseState.mockImplementation(async (...args: unknown[]) => {
+				await new Promise<void>((resolve) => setTimeout(resolve, snapshotMs));
+				return respondWithAccount?.(...args);
+			});
+			mocks.metaAndAssetCtxs.mockImplementation(async (...args: unknown[]) => {
+				await new Promise<void>((resolve) => setTimeout(resolve, snapshotMs));
+				return respondWithMarket?.(...args);
+			});
+
+			await act(async () => {
+				getSubmitButton().click();
+				await vi.advanceTimersByTimeAsync(hostDelayMs);
+			});
+			expect(getPositionMarketCloseModal()).toMatchObject({ presentation: "dismissed", phase: "validating" });
+			expect(mocks.clearinghouseState).not.toHaveBeenCalled();
+
+			renderDialog();
+			await act(async () => {
+				await vi.advanceTimersByTimeAsync(0);
+			});
+			expect(mocks.clearinghouseState).toHaveBeenCalledOnce();
+			await act(async () => {
+				await vi.advanceTimersByTimeAsync(snapshotMs);
+			});
+		}
+
+		it("counts the wait for the submit host from the confirming click", async () => {
+			openDialog({ kind: "max" }, false);
+			expect(getShownCloseSize()).toBe("2.500");
+
+			await confirmBeforeTheSubmitHostMounts(4_900, 11_000);
+
+			expect(mocks.mutateOrder).not.toHaveBeenCalled();
+			expect(getSentSizes()).toEqual([]);
+			expect(queueItems).toHaveLength(1);
+			expect(queueItems[0]).toMatchObject({ status: "failed", children: [{ market: COIN, status: "rejected" }] });
+			expect(feedbackErrorText(queueItems[0])).toBe(
+				"The checks before this request took too long. Nothing was signed or sent. Try again.",
+			);
+		});
+
+		it("still sends once when the submit host and the snapshot together take 14 seconds", async () => {
+			openDialog({ kind: "max" }, false);
+
+			await confirmBeforeTheSubmitHostMounts(4_900, 9_100);
+
+			expect(getSentSizes()).toEqual(["2.5"]);
+			expect(queueItems[0]).toMatchObject({ status: "success", outcome: "filled", size: "2.5" });
+		});
+
+		it("still sends the size shown once when the snapshot takes 14 seconds", async () => {
+			openDialog({ kind: "max" });
+			expect(getShownCloseSize()).toBe("2.500");
+
+			await confirmAndWaitForSnapshot(14_000);
+
+			expect(mocks.guardCalls).toBe(2);
+			expect(getSentSizes()).toEqual(["2.5"]);
+			expect(getPositionMarketCloseModal()).toBeNull();
+			expect(queueItems).toHaveLength(1);
+			expect(queueItems[0]).toMatchObject({ status: "success", outcome: "filled", size: "2.5" });
+		});
 	});
 });

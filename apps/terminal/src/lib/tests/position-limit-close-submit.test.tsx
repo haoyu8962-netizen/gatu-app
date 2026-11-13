@@ -9,6 +9,8 @@ import {
 	type PositionLimitCloseTarget,
 	usePositionLimitCloseSubmit,
 } from "@/hooks/trade/use-position-limit-close-submit";
+import { getNumberFormatters } from "@/lib/format";
+import { getOrderNotificationCopy } from "@/lib/trade/order-notification-copy";
 import { type OrderQueueItem, removeOrderQueueItem, useOrderQueue } from "@/stores/use-order-queue-store";
 import { createExchangeHarness } from "./harness/hyperliquid-exchange";
 import { createI18nRoot } from "./harness/react";
@@ -257,6 +259,7 @@ describe("usePositionLimitCloseSubmit", () => {
 			},
 			{
 				confirmationMode: "accepted",
+				deadline: { current: expect.objectContaining({ deadlineMs: 15_000 }) },
 				exclusiveAssetLock: false,
 				queueId: queueItems[0]?.id,
 				onResponse: expect.any(Function),
@@ -474,5 +477,106 @@ describe("usePositionLimitCloseSubmit", () => {
 			expect.objectContaining({ message: expect.stringContaining("Trading data changed") }),
 		);
 		expect(currentHook().phase).toBe("idle");
+	});
+
+	describe("when the fresh position returns long after the confirming click", () => {
+		const NOT_SENT = "The checks before this request took too long. Nothing was signed or sent. Try again.";
+		let snapshotDelayMs = 0;
+
+		async function waitForSnapshot(): Promise<void> {
+			if (snapshotDelayMs > 0) await new Promise<void>((resolve) => setTimeout(resolve, snapshotDelayMs));
+		}
+
+		async function submitAndWait(waitMs: number): Promise<unknown> {
+			let submission!: Promise<unknown>;
+			await act(async () => {
+				submission = currentHook()
+					.submit({ price: "123.45", size: "1.234" })
+					.catch((error: unknown) => error);
+				await vi.advanceTimersByTimeAsync(0);
+			});
+			expect(currentHook().phase).toBe("validating");
+			expect(queueItems).toHaveLength(1);
+			expect(queueItems[0]).toMatchObject({ status: "pending" });
+			expect(mocks.submitOrder).not.toHaveBeenCalled();
+
+			const wallClock = Date.now();
+			const monotonicClock = performance.now();
+			let settled: unknown;
+			await act(async () => {
+				await vi.advanceTimersByTimeAsync(waitMs);
+				settled = await submission;
+			});
+			expect(Date.now() - wallClock).toBe(waitMs);
+			expect(performance.now() - monotonicClock).toBe(waitMs);
+			return settled;
+		}
+
+		beforeEach(() => {
+			vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "Date", "performance"] });
+			snapshotDelayMs = 0;
+			const respondWithAccount = mocks.clearinghouseState.getMockImplementation();
+			const respondWithMarket = mocks.metaAndAssetCtxs.getMockImplementation();
+			mocks.clearinghouseState.mockImplementation(async (...args: unknown[]) => {
+				await waitForSnapshot();
+				return respondWithAccount?.(...args);
+			});
+			mocks.metaAndAssetCtxs.mockImplementation(async (...args: unknown[]) => {
+				await waitForSnapshot();
+				return respondWithMarket?.(...args);
+			});
+		});
+
+		afterEach(() => {
+			vi.useRealTimers();
+		});
+
+		it("submits nothing and reports a definite failure when the position takes 16 seconds", async () => {
+			snapshotDelayMs = 16_000;
+			const failure = await submitAndWait(16_000);
+
+			expect(failure).toMatchObject({ name: "ExchangeActionDeadlineError" });
+			expect(mocks.clearinghouseState).toHaveBeenCalledOnce();
+			expect(mocks.submitOrder).not.toHaveBeenCalled();
+			expect(queueItems).toHaveLength(1);
+			const failed = queueItems[0];
+			if (!failed) throw new Error("Expected the limit close notification");
+			expect(failed).toMatchObject({
+				status: "failed",
+				size: "1.234",
+				price: "123.45",
+				children: [{ assetId: ASSET_ID, market: COIN, status: "rejected" }],
+			});
+			expect(getOrderNotificationCopy(failed, (descriptor) => i18n._(descriptor), getNumberFormatters()).error).toBe(
+				NOT_SENT,
+			);
+			expect(currentHook()).toMatchObject({ phase: "idle", isPending: false, isReconciling: false, error: NOT_SENT });
+
+			snapshotDelayMs = 0;
+			let retryState: string | undefined;
+			await act(async () => {
+				retryState = (await currentHook().submit({ price: "123.45", size: "1.234" })).state;
+			});
+			expect(retryState).toBe("confirmed");
+			expect(mocks.submitOrder).toHaveBeenCalledOnce();
+		});
+
+		it("still submits the limit close once when the position takes 14 seconds", async () => {
+			snapshotDelayMs = 14_000;
+			const outcome = await submitAndWait(14_000);
+
+			expect(outcome).toMatchObject({ state: "confirmed" });
+			expect(mocks.submitOrder).toHaveBeenCalledOnce();
+			expect(mocks.submitOrder.mock.calls[0]?.[0]).toMatchObject({
+				grouping: "na",
+				orders: [{ a: ASSET_ID, b: false, p: "123.45", s: "1.234", r: true }],
+			});
+			const handedOver = mocks.submitOrder.mock.calls[0]?.[1]?.deadline?.current;
+			expect(handedOver).toMatchObject({ deadlineMs: 15_000 });
+			expect(Date.now() - handedOver.queuedAt).toBeGreaterThanOrEqual(14_000);
+			expect(queueItems).toHaveLength(1);
+			expect(queueItems[0]).toMatchObject({ status: "success", size: "1.234", price: "123.45" });
+			expect(currentHook()).toMatchObject({ phase: "idle", isPending: false, error: null });
+		});
 	});
 });

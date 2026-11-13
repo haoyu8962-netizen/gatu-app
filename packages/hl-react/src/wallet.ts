@@ -1,5 +1,6 @@
 import type { AbstractViemJsonRpcAccount, AbstractWallet } from "@nktkas/hyperliquid/signing";
-import type { Account, WalletClient } from "viem";
+import { type Account, recoverTypedDataAddress, type WalletClient } from "viem";
+import { WalletAccountMismatchError } from "./errors";
 
 type SignTypedDataParams = Parameters<AbstractViemJsonRpcAccount["signTypedData"]>[0];
 
@@ -40,6 +41,30 @@ export function walletClientMatchesAddress(walletClient: unknown, expectedAddres
 	return !!walletAddress && !!expected && walletAddress === expected;
 }
 
+/**
+ * Hyperliquid executes an owner action for the address it recovers from the signature, so a wallet that signed
+ * with another account (or returned a contract-wallet signature) must never reach the exchange.
+ */
+export async function assertTypedDataSignedBy(
+	typedData: SignTypedDataParams,
+	signature: `0x${string}`,
+	expectedAddress: string,
+): Promise<void> {
+	let recovered: string;
+	try {
+		recovered = await recoverTypedDataAddress({
+			domain: typedData.domain,
+			types: typedData.types,
+			primaryType: typedData.primaryType,
+			message: typedData.message,
+			signature,
+		} as Parameters<typeof recoverTypedDataAddress>[0]);
+	} catch {
+		throw new WalletAccountMismatchError();
+	}
+	if (normalizeAddress(recovered) !== normalizeAddress(expectedAddress)) throw new WalletAccountMismatchError();
+}
+
 export function toHyperliquidWallet(
 	walletClient: unknown,
 	expectedAddress?: `0x${string}` | null,
@@ -51,13 +76,15 @@ export function toHyperliquidWallet(
 		if (!account) return null;
 		return {
 			signTypedData: async (params: SignTypedDataParams) => {
-				return client.signTypedData({
+				const signature = await client.signTypedData({
 					account,
 					domain: params.domain as Parameters<WalletClient["signTypedData"]>[0]["domain"],
 					types: params.types as Parameters<WalletClient["signTypedData"]>[0]["types"],
 					primaryType: params.primaryType,
 					message: params.message,
 				});
+				await assertTypedDataSignedBy(params, signature, account);
+				return signature;
 			},
 			getAddresses: () => Promise.resolve([account]),
 			getChainId: () => client.getChainId(),
@@ -75,13 +102,15 @@ export function toHyperliquidWallet(
 	return {
 		address: accountAddress,
 		signTypedData: async (params: SignTypedDataParams) => {
-			return client.signTypedData({
+			const signature = await client.signTypedData({
 				account: client.account ?? accountAddress,
 				domain: params.domain as Parameters<WalletClient["signTypedData"]>[0]["domain"],
 				types: params.types as Parameters<WalletClient["signTypedData"]>[0]["types"],
 				primaryType: params.primaryType,
 				message: params.message,
 			});
+			await assertTypedDataSignedBy(params, signature, accountAddress);
+			return signature;
 		},
 	};
 }

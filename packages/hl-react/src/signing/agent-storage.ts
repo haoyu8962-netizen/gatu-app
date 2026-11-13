@@ -34,26 +34,30 @@ const nonMobileMetadataSchema = {
 	importedAtMs: z.never().optional(),
 };
 
+const localRegistrationAgentWalletSchema = agentKeySchema
+	.extend({
+		source: z.literal("local-registration"),
+		approvalPendingAtMs: z.number().int().positive().safe().optional(),
+		approvalSubmissionStartedAtMs: z.number().int().positive().safe().optional(),
+		...nonMobileMetadataSchema,
+	})
+	.strict();
+
+const mobileSyncAgentWalletSchema = agentKeySchema
+	.extend({
+		source: z.literal("mobile-sync"),
+		approvalPendingAtMs: z.never().optional(),
+		approvalSubmissionStartedAtMs: z.never().optional(),
+		agentNameBase: z.literal(MOBILE_AGENT_NAME_BASE),
+		agentName: z.string().min(1),
+		agentValidUntilMs: z.number().int().positive().safe(),
+		importedAtMs: z.number().int().positive().safe(),
+	})
+	.strict();
+
 const sourcedAgentWalletSchema = z.discriminatedUnion("source", [
-	agentKeySchema
-		.extend({
-			source: z.literal("local-registration"),
-			approvalPendingAtMs: z.number().int().positive().safe().optional(),
-			approvalSubmissionStartedAtMs: z.number().int().positive().safe().optional(),
-			...nonMobileMetadataSchema,
-		})
-		.strict(),
-	agentKeySchema
-		.extend({
-			source: z.literal("mobile-sync"),
-			approvalPendingAtMs: z.never().optional(),
-			approvalSubmissionStartedAtMs: z.never().optional(),
-			agentNameBase: z.literal(MOBILE_AGENT_NAME_BASE),
-			agentName: z.string().min(1),
-			agentValidUntilMs: z.number().int().positive().safe(),
-			importedAtMs: z.number().int().positive().safe(),
-		})
-		.strict(),
+	localRegistrationAgentWalletSchema,
+	mobileSyncAgentWalletSchema,
 ]);
 
 const legacyLocalAgentWalletSchema = agentKeySchema
@@ -93,9 +97,45 @@ const agentWalletSchema = z
 		}
 	});
 
+// Every field this version validates. A newer version may add others: they are kept and written
+// back unchanged, never a reason to discard the key, while the fields listed here stay strict.
+const KNOWN_AGENT_RECORD_FIELDS = new Set<string>([
+	...Object.keys(localRegistrationAgentWalletSchema.shape),
+	...Object.keys(mobileSyncAgentWalletSchema.shape),
+	...Object.keys(legacyLocalAgentWalletSchema.shape),
+]);
+
+type UnknownAgentRecordFields = Record<string, unknown>;
+
+interface StoredAgentRecord {
+	agent: AgentWallet;
+	unknownFields: UnknownAgentRecordFields;
+}
+
+function parseStoredAgentRecord(value: unknown): StoredAgentRecord | null {
+	if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+	const entries = Object.entries(value);
+	const canonical = agentWalletSchema.safeParse(
+		Object.fromEntries(entries.filter(([field]) => KNOWN_AGENT_RECORD_FIELDS.has(field))),
+	);
+	if (!canonical.success) return null;
+	return {
+		agent: canonical.data,
+		unknownFields: Object.fromEntries(entries.filter(([field]) => !KNOWN_AGENT_RECORD_FIELDS.has(field))),
+	};
+}
+
 function parseAgentWallet(value: unknown): AgentWallet | null {
-	const canonical = agentWalletSchema.safeParse(value);
-	return canonical.success ? canonical.data : null;
+	return parseStoredAgentRecord(value)?.agent ?? null;
+}
+
+function serializeAgentRecord(agent: AgentWallet, unknownFields: UnknownAgentRecordFields): string {
+	return JSON.stringify({ ...unknownFields, ...agent });
+}
+
+function unknownFieldsToKeep(previous: StoredAgentRecord | null, next: AgentWallet): UnknownAgentRecordFields {
+	if (!previous || previous.agent.privateKey !== next.privateKey || previous.agent.source !== next.source) return {};
+	return previous.unknownFields;
 }
 
 export type AgentWalletMetadata = Omit<AgentWallet, "privateKey" | "publicKey">;
@@ -277,14 +317,18 @@ function isAgentRegistrationSessionUsable(raw: string | null, agent?: AgentWalle
 	);
 }
 
-function readStoredAgentRecord(env: HyperliquidEnv, userAddress: string): AgentWallet | null {
+function readStoredAgentRecordWithFields(env: HyperliquidEnv, userAddress: string): StoredAgentRecord | null {
 	try {
 		const records = readStoredAgentRecords(env, userAddress);
 		const raw = records ? getPreferredStoredAgentRaw(records) : null;
-		return raw ? parseAgentWallet(JSON.parse(raw)) : null;
+		return raw ? parseStoredAgentRecord(JSON.parse(raw)) : null;
 	} catch {
 		return null;
 	}
+}
+
+function readStoredAgentRecord(env: HyperliquidEnv, userAddress: string): AgentWallet | null {
+	return readStoredAgentRecordWithFields(env, userAddress)?.agent ?? null;
 }
 
 /** @internal — used by the registration lock to revalidate cleanup targets. */
@@ -389,7 +433,7 @@ export function hasInvalidAgentStorageRecord(env: HyperliquidEnv, userAddress: s
 		const records = readStoredAgentRecords(env, userAddress);
 		const raw = records ? getPreferredStoredAgentRaw(records) : null;
 		if (!raw) return false;
-		return !agentWalletSchema.safeParse(JSON.parse(raw)).success;
+		return parseStoredAgentRecord(JSON.parse(raw)) === null;
 	} catch {
 		const records = readStoredAgentRecords(env, userAddress);
 		return records ? getPreferredStoredAgentRaw(records) !== null : false;
@@ -406,18 +450,19 @@ export function writeAgentToStorage(
 ): void {
 	if (typeof window === "undefined") return;
 
-	const previous = readStoredAgentRecord(env, userAddress);
+	const previousRecord = readStoredAgentRecordWithFields(env, userAddress);
+	const previous = previousRecord?.agent ?? null;
 	try {
 		const key = getStorageKey(env, userAddress);
 		const scope = options.scope ?? "local";
 		const storage = getAgentStorage(scope);
 		if (!storage) return;
-		const data: AgentWallet = {
+		const data: AgentWallet = agentWalletSchema.parse({
 			privateKey: privateKeySchema.parse(privateKey),
 			publicKey: publicKeySchema.parse(publicKey),
 			...metadata,
-		};
-		storage.setItem(key, JSON.stringify(agentWalletSchema.parse(data)));
+		});
+		storage.setItem(key, serializeAgentRecord(data, unknownFieldsToKeep(previousRecord, data)));
 		getAgentStorage(scope === "local" ? "session" : "local")?.removeItem(key);
 		if (previous?.privateKey !== data.privateKey) {
 			invalidateExchangeRequestIdentity(env, userAddress, undefined, "agent");
@@ -446,7 +491,8 @@ export function writeAgentToStorageAndVerify(
 		return { status: "failed", reason: "storage_unavailable" };
 	}
 
-	const previous = readStoredAgentRecord(env, userAddress);
+	const previousRecord = readStoredAgentRecordWithFields(env, userAddress);
+	const previous = previousRecord?.agent ?? null;
 	let expected: AgentWallet;
 	try {
 		expected = agentWalletSchema.parse({
@@ -466,16 +512,22 @@ export function writeAgentToStorageAndVerify(
 	const storage = getAgentStorage(scope);
 	if (!storage) return { status: "failed", reason: "storage_unavailable" };
 	const alternateStorage = getAgentStorage(scope === "local" ? "session" : "local");
+	const unknownFields = unknownFieldsToKeep(previousRecord, expected);
 	try {
-		storage.setItem(key, JSON.stringify(expected));
+		storage.setItem(key, serializeAgentRecord(expected, unknownFields));
 	} catch {
 		return { status: "failed", reason: "write_failed" };
 	}
 
 	try {
 		const raw = storage.getItem(key);
-		const actual = raw ? parseAgentWallet(JSON.parse(raw)) : null;
-		if (!actual || JSON.stringify(actual) !== JSON.stringify(expected)) {
+		const actualRecord = raw ? parseStoredAgentRecord(JSON.parse(raw)) : null;
+		const actual = actualRecord?.agent ?? null;
+		if (
+			!actual ||
+			JSON.stringify(actual) !== JSON.stringify(expected) ||
+			JSON.stringify(actualRecord?.unknownFields) !== JSON.stringify(unknownFields)
+		) {
 			storage.removeItem(key);
 			invalidateExchangeRequestIdentity(env, userAddress, undefined, "agent");
 			invalidateSnapshotKey(key);

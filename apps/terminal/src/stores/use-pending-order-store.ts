@@ -8,6 +8,11 @@ import {
 	type OrderProcessingStatus,
 	type TrackedOrderChild,
 } from "@/domain/trade/order-tracking";
+import {
+	type PendingSubmissionIdentity,
+	type PendingSubmissionSharing,
+	shareSubmissionsBetweenTabs,
+} from "@/lib/trade/pending-submission-tab-ownership";
 import { z } from "@/lib/zod";
 import type { OrderQueueMetadata } from "@/stores/use-order-queue-store";
 
@@ -163,6 +168,12 @@ interface PendingOrderStore {
 		add: (input: AddPendingOrderInput) => PendingOrderSubmission;
 		updateFeedback: (id: string, feedback: OrderQueueMetadata) => void;
 		markActive: (id: string) => void;
+		/** The owner and network this tab can reconcile now, or null while it cannot reconcile any. */
+		serve: (identity: PendingSubmissionIdentity | null) => void;
+		/** Whether this tab still reconciles the submission: an asynchronous step checks it before writing. */
+		owns: (id: string) => boolean;
+		/** Submissions that left the store while another tab reconciled them, each reported once. */
+		takeRemovedElsewhere: () => string[];
 		clearActive: (id: string) => void;
 		remove: (id: string) => void;
 		markChecked: (cloid: string, checkedAt: number) => void;
@@ -352,6 +363,7 @@ export function createPendingOrderStore(storage: PendingOrderStorage | null = ge
 					createdAt: now,
 					children: input.children.map((child) => ({ ...child, attempts: 0, nextCheckAt: now + 1_000 })),
 				};
+				sharing.claim(submission.id);
 				set(() => {
 					const current = readPersistedPendingOrders(storage);
 					if (!current) throw new PendingOrderPersistenceError();
@@ -380,6 +392,9 @@ export function createPendingOrderStore(storage: PendingOrderStorage | null = ge
 					return { submissions: mergeMutationWithPersistedSnapshot(storage, submissions, [next]) };
 				});
 			},
+			serve: (identity) => sharing.serve(identity),
+			owns: (id) => sharing.owns(id),
+			takeRemovedElsewhere: () => sharing.takeRemovedElsewhere(),
 			markActive: (id) => {
 				set((state) => ({ activeSubmissionIds: new Set(state.activeSubmissionIds).add(id) }));
 			},
@@ -537,6 +552,9 @@ export function createPendingOrderStore(storage: PendingOrderStorage | null = ge
 		});
 	}
 
+	const sharing: PendingSubmissionSharing = shareSubmissionsBetweenTabs(store, "sairn-pending-order-owner-v1:", (id) =>
+		(readPersistedPendingOrders(storage) ?? store.getState().submissions).some((submission) => submission.id === id),
+	);
 	return store;
 }
 

@@ -1,4 +1,8 @@
 import { msg } from "@lingui/core/macro";
+import {
+	assertExchangeSigningDeadline,
+	startExchangeActionDeadline,
+} from "@sairn/hl-react/internal/exchange/request-scheduler";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 import { accountLedgerQueryKey } from "@/hooks/trade/use-account-ledger";
@@ -142,6 +146,7 @@ export function useReferralActions({ refetchReferral, refreshAfterAction }: Inpu
 	const isPending = setReferrer.isPending || registerReferrer.isPending || claimRewards.isPending;
 
 	async function submit(action: ReferralAction, code?: string): Promise<void> {
+		const deadline = startExchangeActionDeadline();
 		const startIdentity = identity;
 		if (pendingIdentityRef.current) {
 			throw new LocalizedActionError(
@@ -177,6 +182,7 @@ export function useReferralActions({ refetchReferral, refreshAfterAction }: Inpu
 
 			let mutationError: unknown;
 			try {
+				assertExchangeSigningDeadline(deadline);
 				if (action === "apply") {
 					await setReferrer.mutateAsync({ code: code as string });
 				} else if (action === "create") {

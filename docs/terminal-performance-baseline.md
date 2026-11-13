@@ -433,6 +433,119 @@ The sixth round (commit `4af147fd`) changed one classification function in the d
 3,286,638 in total (+16), 1,626,663 static trade startup, 117,769 mobile and 201,070 desktop, with the desktop runtime
 increment 918 bytes under its allowance. Later commits on the branch change tests and documents only.
 
+## Second-wave defect fixes total and static-startup re-baseline (2026-11-12)
+
+The second wave of fixes from the same review (branch `claude/second-wave-fixes`, on top of the first-wave
+integration) adds code that every session runs: the signer-address check after an owner signature (viem's
+`recoverTypedDataAddress`), the entry watchdog script and the bounded locale-catalog wait, cross-window settings
+merging, the store's transport status and sibling-key snapshot reuse, and the nonce and Agent record handling.
+
+Same setup as the next section (fixed identity, Node 22.15.0, pairing off, no `.env.local`); the base is the first
+wave's head build recorded there, the head is this branch's working tree after its last code change.
+
+| Metric | First wave | Second wave | Change |
+| --- | ---: | ---: | ---: |
+| Client chunks | 449 | 450 | +1 |
+| All client JS + CSS | 3,381,009 | 3,384,536 | +3,527 |
+| Static trade startup | 1,656,513 | 1,659,418 | +2,905 |
+| Mobile runtime increment | 119,724 | 119,734 | +10 |
+| Desktop runtime increment | 204,451 | 204,621 | +170 |
+| `trade-terminal-page` | 127,788 | 127,813 | +25 |
+| `api-wallet` | 18,394 | 18,413 | +19 |
+| `staking` | 24,456 | 24,455 | −1 |
+| `vaults-page` | 30,638 | 30,636 | −2 |
+
+Before the change the build exceeded the static-startup allowance by 951. Baselines raised by the measured growth,
+allowances unchanged: all client JS + CSS to 3,381,270, static trade startup to 1,651,372. A per-chunk comparison was
+not made for this step. Room left in the pairing-off protocol build is the same as after the first wave: 6,734 for the
+total and 1,954 for static trade startup; 846 for the mobile runtime increment.
+
+## First-wave defect fixes total, static-startup and vault-page re-baseline (2026-11-12)
+
+The first wave of fixes from the [global defect review](work-memory/sessions/2026-11-12-global-defect-review.md) was
+merged as one integration branch ([task record](work-memory/sessions/2026-11-12-first-wave-fix-integration.md)). Most
+of what it adds runs in every session, so it sits in static trade startup:
+
+- the request scheduler's start deadline, the wallet guard, the one-shot legal re-check and the click deadlines of the
+  application workflows ([ADR 0053](adr/0053-exchange-action-start-deadline.md));
+- cancel outcomes verified through `orderStatus` and `userTwapHistory`, and per-record tab ownership of pending
+  orders and TWAPs ([ADR 0019](adr/0019-global-trading-notifications.md) addendum);
+- heartbeat-only liveness, the quiet probe and the terminal's own `fastAssetCtxs` decoder
+  ([ADR 0050](adr/0050-websocket-recovery-on-resume.md) addendum);
+- new and changed messages in the English catalog.
+
+The service worker ([ADR 0052](adr/0052-service-worker-startup-asset-cache.md)) and the release script
+([ADR 0051](adr/0051-release-script-rollback-and-lambda-probe.md)) are not part of the client bundle.
+
+Measurement setup:
+
+- Base: `dev` `810a45db`, exported with `git archive` into a scratch directory outside the repository and installed
+  there (`CI=true pnpm install --frozen-lockfile --prefer-offline`; only the `lefthook install` step of `prepare`
+  failed, because the directory is not a Git checkout). Its readings equal the head column of the next section byte
+  for byte.
+- Head: the integration branch's working tree after the last code change of the task, built in the task worktree.
+- Both without `.env.local`, with Node 22.15.0 and pnpm 10.21.0, `NITRO_PRESET=node-server`,
+  `VITE_MOBILE_PAIRING_ENABLED=false` and the fixed identity of the reproduction protocol.
+- Pairing on was not measured.
+- The budget lines of both builds and the per-chunk comparison are kept in the Git-ignored
+  `.worklog/2026-11-12/first-wave-fix-integration/`.
+
+| Metric | `810a45db` | Integration | Change |
+| --- | ---: | ---: | ---: |
+| Client chunks (no circular static imports) | 450 | 449 | −1 |
+| All client JS + CSS | 3,376,264 | 3,381,009 | +4,745 |
+| Static trade startup (103 and 102 assets) | 1,652,526 | 1,656,513 | +3,987 |
+| Mobile runtime increment (15 assets) | 119,772 | 119,724 | −48 |
+| Desktop runtime increment (30 assets) | 204,602 | 204,451 | −151 |
+| `trade-terminal-page` | 127,810 | 127,788 | −22 |
+| `token-selector-popup` | 15,373 | 15,363 | −10 |
+| `api-wallet` | 18,294 | 18,394 | +100 |
+| `fundingHistory._address` | 6,848 | 6,846 | −2 |
+| `tradeHistory._address` | 7,379 | 7,376 | −3 |
+| `historicalOrders._address` | 8,148 | 8,141 | −7 |
+| `leaderboard` | 12,082 | 12,059 | −23 |
+| `staking` | 24,378 | 24,456 | +78 |
+| `vaults-page` | 30,534 | 30,638 | +104 |
+| `fundingComparison` | 10,524 | 10,523 | −1 |
+| `funding-history-panel` | 9,364 | 9,367 | +3 |
+
+Grouped by chunk name without its content hash (gzip level 9 of each file, so the figures differ slightly from the
+budget script's), 27 of 440 names change by 20 bytes or more. One shared chunk is named after a different module
+(`use-mobile` 227,132 becomes `deposit-execution-state` 226,813, −319 together) and `layout` (271) is folded into
+another chunk. The growth is in `vendor-tanstack-router` +2,059, the chunk that holds `hl-react`; `client-root`
++1,066, which mounts the order and TWAP reconciliation hosts; `use-pending-order-store` +740 and
+`use-pending-twap-store` +110; `messages` (the English catalog) +471; then `order-reconciliation-feedback` +113,
+`vaults-page` +109, `position-dialog-host` +103, `api-wallet` +99, `index` +99, `staking` +82 and smaller ones. The
+other 254 changed names move by less than 20 bytes each, +1 together.
+
+Before the change, the head build failed the budget: static trade startup read +12,033 against the previous baseline
+of 1,644,480, 2,033 over its allowance.
+
+Change to the baselines, each by the measured growth, allowances unchanged:
+
+- all client JS + CSS: +4,745, to 3,377,743;
+- static trade startup: +3,987, to 1,648,467;
+- `vaults-page`: +104, to 27,880.
+
+Why the total and `vaults-page` too, although only static trade startup failed: the pairing-off protocol build would
+keep 1,989 bytes of total allowance, while release builds of one code state have read about 2,800 to 3,300 more than
+the protocol build (pairing on, production `.env.local`; see the p37 section), so the next release precheck would
+fail; and `vaults-page` would keep 138 bytes, under the 200 the precheck rule requires
+([agent handbook](agent-handbook.md), section 8).
+
+Room left against the new baselines, from the readings above, not measured in the release configuration:
+
+- pairing-off protocol build: 6,734 for the total, 1,954 for static trade startup, 856 for the mobile runtime
+  increment, 8,232 for the desktop runtime increment, 378 for `trade-terminal-page`, 242 for `vaults-page`,
+  1,175 for `staking`, 1,573 for `api-wallet`;
+- the mobile runtime increment was already at +9,192 of 10,000 on `dev` and is not changed by this work; it has the
+  least room of the unchanged budgets.
+
+After the re-baseline, the remaining steps of the build chain were run on the same output (chunk cycles, budget,
+`inject-shell-preloads`, `collect-inline-script-hashes`) and passed; the shell lists 117 shared startup assets, 15
+desktop-only assets and 6 lazy locale catalogs. `perf:startup` read 37 chunks and 1,293,030 gzip bytes for the
+`client-root` static closure.
+
 ## WebSocket recovery static-startup re-baseline (2026-11-12)
 
 [ADR 0050](adr/0050-websocket-recovery-on-resume.md) makes market data recover as soon as the page returns to the

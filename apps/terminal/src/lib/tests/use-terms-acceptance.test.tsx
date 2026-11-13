@@ -7,9 +7,11 @@ import { useTermsAcceptance } from "@sairn/hl-react/signing/use-terms-acceptance
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
+import { privateKeyToAccount } from "viem/accounts";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const OWNER = "0x1111111111111111111111111111111111111111" as const;
+const OWNER_ACCOUNT = privateKeyToAccount(`0x${"0".repeat(63)}1`);
+const OWNER = OWNER_ACCOUNT.address.toLowerCase() as `0x${string}`;
 const OTHER_OWNER = "0x2222222222222222222222222222222222222222" as const;
 const RAW_SIGNATURE = `0x${"11".repeat(64)}1b` as const;
 type UseTermsAcceptance = typeof useTermsAcceptance;
@@ -89,7 +91,9 @@ describe("useTermsAcceptance wallet resolution", () => {
 		testState.request.mockReset();
 		testState.request.mockResolvedValue(null);
 		testState.walletSignTypedData.mockReset();
-		testState.walletSignTypedData.mockResolvedValue(RAW_SIGNATURE);
+		testState.walletSignTypedData.mockImplementation((typedData: Parameters<typeof OWNER_ACCOUNT.signTypedData>[0]) =>
+			OWNER_ACCOUNT.signTypedData(typedData),
+		);
 	});
 
 	afterEach(() => {
@@ -121,6 +125,23 @@ describe("useTermsAcceptance wallet resolution", () => {
 		} finally {
 			testState.connectionChainId = 42161;
 		}
+	});
+
+	it("never submits a terms acceptance the default wallet client signed with another account", async () => {
+		const otherAccount = privateKeyToAccount(`0x${"0".repeat(63)}2`);
+		testState.walletSignTypedData.mockImplementation((typedData: Parameters<typeof otherAccount.signTypedData>[0]) =>
+			otherAccount.signTypedData(typedData),
+		);
+		const hook = renderHook();
+
+		await act(async () => {
+			await expect(hook.mutateAsync()).rejects.toMatchObject({
+				cause: expect.objectContaining({ name: "WalletAccountMismatchError" }),
+			});
+		});
+
+		expect(testState.walletSignTypedData).toHaveBeenCalledOnce();
+		expect(testState.request).not.toHaveBeenCalled();
 	});
 
 	it("uses a resolved wallet instead of the default Wagmi client", async () => {

@@ -7,6 +7,7 @@ import {
 	HttpRequestError,
 	type MaxMarketOrderNtlsResponse,
 } from "@nktkas/hyperliquid";
+import { ExchangeActionDeadlineError } from "@sairn/hl-react/internal/exchange/request-scheduler";
 import { act, type ComponentProps, createElement, type ReactNode } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -1619,6 +1620,189 @@ describe("PositionTpSlModal live data", () => {
 		await act(async () => getButton(container, "Confirm").click());
 		await vi.waitFor(() => expect(testState.placeOrder).toHaveBeenCalledTimes(2));
 		expect(lastQueueItem()?.status).toBe("success");
+	});
+
+	describe("when a request would be sent long after the click", () => {
+		const NOT_SENT = "The checks before this request took too long. Nothing was signed or sent. Try again.";
+		const REPLACEMENT_NOT_PLACED = "The existing TP/SL was cancelled, but the new TP/SL was not placed.";
+
+		beforeEach(() => {
+			vi.useFakeTimers();
+		});
+
+		afterEach(() => {
+			vi.useRealTimers();
+		});
+
+		function resolveAfter<T>(ms: number, value: () => T) {
+			return () => new Promise<T>((resolve) => setTimeout(() => resolve(value()), ms));
+		}
+
+		async function advance(ms: number) {
+			await act(async () => {
+				await vi.advanceTimersByTimeAsync(ms);
+			});
+		}
+
+		function readClocks() {
+			return { wall: Date.now(), monotonic: performance.now() };
+		}
+
+		function elapsedSince(clickedAt: ReturnType<typeof readClocks>) {
+			return { wall: Date.now() - clickedAt.wall, monotonic: performance.now() - clickedAt.monotonic };
+		}
+
+		// The mark stream keeps delivering while the workflow waits, so only the age of the click can stop it.
+		function deliverFreshMark(onOpenChange: (open: boolean) => void) {
+			testState.markReceivedAt = Date.now();
+			act(() => {
+				root.render(modalElement({ ...positionRef }, onOpenChange));
+			});
+		}
+
+		async function confirmTakeProfit() {
+			act(() => setInputValue(getInput(container, "Take Profit"), "27500"));
+			const clickedAt = readClocks();
+			await act(async () => getButton(container, "Confirm").click());
+			return clickedAt;
+		}
+
+		async function retryInNewSession() {
+			testState.markReceivedAt = Date.now();
+			act(() => {
+				root.render(modalElement(positionRef, vi.fn(), "tpsl-2"));
+			});
+			await confirmTakeProfit();
+			await advance(0);
+		}
+
+		it.each([
+			{ change: "replacing an existing TP", orders: [openOrder()], retryCancels: 1 },
+			{ change: "adding a first TP", orders: [], retryCancels: 0 },
+		])(
+			"sends nothing when the lock-time snapshot arrives 16 seconds after the click, $change",
+			async ({ orders, retryCancels }) => {
+				testState.orders = orders;
+				testState.frontendOpenOrders.mockImplementationOnce(resolveAfter(16_000, () => testState.orders));
+				const onOpenChange = renderModal();
+
+				const clickedAt = await confirmTakeProfit();
+				await advance(12_000);
+				deliverFreshMark(onOpenChange);
+				expect(onOpenChange).not.toHaveBeenCalled();
+				await advance(4_000);
+
+				expect(elapsedSince(clickedAt).wall).toBeGreaterThanOrEqual(16_000);
+				expect(elapsedSince(clickedAt).monotonic).toBeGreaterThanOrEqual(16_000);
+				expect(testState.frontendOpenOrders).toHaveBeenCalledOnce();
+				expect(testState.cancelOrders).not.toHaveBeenCalled();
+				expect(testState.placeOrder).not.toHaveBeenCalled();
+				expect(testState.trackedOrderOptions).toHaveLength(0);
+				expect(onOpenChange).toHaveBeenCalledWith(false);
+				expectDismissedWith("failed", NOT_SENT);
+				expect(lastQueueItem()?.message).toBeUndefined();
+
+				await retryInNewSession();
+				expect(testState.cancelOrders).toHaveBeenCalledTimes(retryCancels);
+				expect(testState.placeOrder).toHaveBeenCalledOnce();
+				expect(lastQueueItem()?.status).toBe("success");
+			},
+		);
+
+		it("still places the replacement when the cancel itself completes 16 seconds after the click", async () => {
+			testState.orders = [openOrder()];
+			testState.cancelOrders.mockImplementationOnce(
+				resolveAfter(16_000, () => ({
+					status: "ok",
+					response: { type: "cancel", data: { statuses: ["success"] } },
+				})),
+			);
+			const onOpenChange = renderModal();
+
+			const clickedAt = await confirmTakeProfit();
+			expect(testState.cancelOrders).toHaveBeenCalledExactlyOnceWith({ cancels: [{ a: positionRef.assetId, o: 7 }] });
+			await advance(12_000);
+			deliverFreshMark(onOpenChange);
+			expect(onOpenChange).not.toHaveBeenCalled();
+			await advance(4_000);
+
+			expect(elapsedSince(clickedAt).wall).toBeGreaterThanOrEqual(16_000);
+			expect(elapsedSince(clickedAt).monotonic).toBeGreaterThanOrEqual(16_000);
+			expect(testState.cancelOrders).toHaveBeenCalledOnce();
+			expect(testState.placeOrder).toHaveBeenCalledOnce();
+			expect(onOpenChange).toHaveBeenCalledWith(false);
+			expect(lastQueueItem()?.status).toBe("success");
+		});
+
+		it("reports the cancelled TP/SL when the exchange scheduler refuses the replacement as too old", async () => {
+			testState.orders = [openOrder()];
+			testState.placeOrder.mockRejectedValueOnce(new ExchangeActionDeadlineError());
+			const onOpenChange = renderModal();
+
+			await confirmTakeProfit();
+			await advance(0);
+
+			expect(testState.cancelOrders).toHaveBeenCalledExactlyOnceWith({ cancels: [{ a: positionRef.assetId, o: 7 }] });
+			expect(testState.placeOrder).toHaveBeenCalledOnce();
+			expect(onOpenChange).toHaveBeenCalledWith(false);
+			expect(container.querySelector('[data-testid="position-risk-dialog"]')).toBeNull();
+			expect(lastQueueItem()?.status).toBe("failed");
+			expect(i18n._(lastQueueItem()?.message as MessageDescriptor)).toBe(REPLACEMENT_NOT_PLACED);
+			expect(lastQueueItem()?.error).toBeUndefined();
+			expect(lastQueueMessage()).toBe("");
+
+			testState.orders = [];
+			await retryInNewSession();
+			expect(testState.cancelOrders).toHaveBeenCalledOnce();
+			expect(testState.placeOrder).toHaveBeenCalledTimes(2);
+			expect(lastQueueItem()?.status).toBe("success");
+		});
+
+		it("says nothing was sent when the exchange scheduler refuses a first TP as too old", async () => {
+			testState.placeOrder.mockRejectedValueOnce(new ExchangeActionDeadlineError());
+			const onOpenChange = renderModal();
+
+			await confirmTakeProfit();
+			await advance(0);
+
+			expect(testState.cancelOrders).not.toHaveBeenCalled();
+			expect(testState.placeOrder).toHaveBeenCalledOnce();
+			expect(onOpenChange).toHaveBeenCalledWith(false);
+			expectDismissedWith("failed", NOT_SENT);
+			expect(lastQueueItem()?.message).toBeUndefined();
+
+			await retryInNewSession();
+			expect(testState.placeOrder).toHaveBeenCalledTimes(2);
+			expect(lastQueueItem()?.status).toBe("success");
+		});
+
+		it("still cancels and places once when the lock-time snapshot arrives 14 seconds after the click", async () => {
+			testState.orders = [openOrder()];
+			testState.frontendOpenOrders.mockImplementationOnce(resolveAfter(14_000, () => testState.orders));
+			const onOpenChange = renderModal();
+
+			const clickedAt = await confirmTakeProfit();
+			await advance(12_000);
+			deliverFreshMark(onOpenChange);
+			expect(testState.cancelOrders).not.toHaveBeenCalled();
+			await advance(2_000);
+
+			expect(elapsedSince(clickedAt).wall).toBeGreaterThanOrEqual(14_000);
+			expect(elapsedSince(clickedAt).monotonic).toBeGreaterThanOrEqual(14_000);
+			expect(elapsedSince(clickedAt).wall).toBeLessThan(15_000);
+			expect(elapsedSince(clickedAt).monotonic).toBeLessThan(15_000);
+			expect(testState.cancelOrders).toHaveBeenCalledExactlyOnceWith({ cancels: [{ a: positionRef.assetId, o: 7 }] });
+			expect(testState.placeOrder).toHaveBeenCalledExactlyOnceWith({
+				grouping: "positionTpsl",
+				orders: [expect.objectContaining({ a: positionRef.assetId, r: true })],
+			});
+			expect(testState.cancelOrders.mock.invocationCallOrder[0]).toBeLessThan(
+				testState.placeOrder.mock.invocationCallOrder[0],
+			);
+			expect(onOpenChange).toHaveBeenCalledWith(false);
+			expect(lastQueueItem()?.status).toBe("success");
+			expect(lastQueueItem()?.error).toBeUndefined();
+		});
 	});
 
 	it("replaces an existing position TP without the unsafe batch-modify flag", async () => {

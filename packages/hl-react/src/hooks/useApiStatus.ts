@@ -4,7 +4,7 @@ import { useConfig, useHyperliquidStore, useHyperliquidTransport } from "../tran
 
 const HTTP_STATUS_INTERVAL_MS = 60_000;
 
-export type ApiStatus = "idle" | "connecting" | "connected" | "error";
+export type ApiStatus = "idle" | "connecting" | "connected" | "error" | "offline";
 
 export type ApiStatusResult = {
 	status: ApiStatus;
@@ -34,19 +34,23 @@ export function useApiStatus(): ApiStatusResult {
 
 	const wsStatus = useHyperliquidStore((state) => state.wsStatus);
 	const wsError = useHyperliquidStore((state) => state.wsError);
+	const transportStatus = useHyperliquidStore((state) => state.transportStatus);
 
 	const httpOk = httpQueryStatus === "success";
 	const httpChecking = fetchStatus === "fetching";
 	const httpError_ = httpQueryStatus === "error";
 
-	const wsOk = wsStatus === "open";
-	const wsConnecting = wsStatus === "connecting";
+	const wsOk = wsStatus === "open" && transportStatus === "open";
+	const wsConnecting = wsStatus === "connecting" || transportStatus === "reconnecting";
 	const wsError_ = wsStatus === "error";
 
 	let status: ApiStatus;
 	let error: unknown;
 
-	if (httpError_ || wsError_) {
+	if (transportStatus === "offline") {
+		status = "offline";
+		error = undefined;
+	} else if (httpError_ || wsError_) {
 		status = "error";
 		error = httpError ?? wsError;
 	} else if (httpOk && wsOk) {

@@ -3,6 +3,10 @@
 import { createHash } from "node:crypto";
 import { i18n } from "@lingui/core";
 import { ApiRequestError } from "@nktkas/hyperliquid";
+import {
+	type ExchangeSigningDeadlineSlot,
+	hasExchangeActionDeadlinePassed,
+} from "@sairn/hl-react/internal/exchange/request-scheduler";
 import { act } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -39,6 +43,7 @@ const mocks = vi.hoisted(() => ({
 	env: "Mainnet" as "Mainnet" | "Testnet",
 	exchangeGuard: null as null | ((params: { vaultAddress: `0x${string}`; isDeposit: boolean; usd: number }) => void),
 	exchangeMutate: vi.fn(),
+	exchangeSubmit: vi.fn(),
 	failBeforeSdkBoundary: null as Error | null,
 	geoRetry: vi.fn(),
 	history: vi.fn(),
@@ -90,6 +95,7 @@ vi.mock("@/lib/hyperliquid", () => ({
 		mocks.exchangeGuard = options.executionGuard;
 		return {
 			mutateAsync: async (params: { vaultAddress: `0x${string}`; isDeposit: boolean; usd: number }) => {
+				mocks.exchangeSubmit(params);
 				options.executionGuard?.(params);
 				if (mocks.failBeforeSdkBoundary) throw mocks.failBeforeSdkBoundary;
 				options.executionGuard?.(params);
@@ -178,6 +184,7 @@ describe("useVaultActionController", () => {
 		};
 		mocks.agentRegister.mockReset();
 		mocks.agentRefetch.mockReset().mockResolvedValue({ isSignerReady: true, needsAgent: false });
+		mocks.exchangeSubmit.mockReset();
 		mocks.exchangeMutate.mockReset().mockImplementation(async () => {
 			expect(getFundsActionMarkers()).toHaveLength(1);
 			return { status: "ok", response: { type: "default" } };
@@ -700,7 +707,8 @@ describe("useVaultActionController", () => {
 		mocks.agentRegister.mockResolvedValueOnce(agentAddress);
 		await act(async () => current().requestAction("deposit"));
 
-		expect(mocks.agentRegister).toHaveBeenCalledWith({ persistConnection: true });
+		expect(mocks.agentRegister).toHaveBeenCalledOnce();
+		expect(mocks.agentRegister).toHaveBeenCalledWith({ persistConnection: true, deadline: expect.any(Object) });
 		expect(mocks.agentRefetch).toHaveBeenNthCalledWith(2, agentAddress);
 		expect(current().action?.state.stage).toBe("input");
 	});
@@ -1245,6 +1253,166 @@ describe("useVaultActionController", () => {
 
 		expect(current().action).toBeNull();
 		expect(getFundsActionMarkers()).toHaveLength(1);
+	});
+
+	describe("when the checks before a signature finish long after the click", () => {
+		const NOT_SENT = "The checks before this request took too long. Nothing was signed or sent. Try again.";
+		const AGENT = "0x4444444444444444444444444444444444444444" as const;
+
+		beforeEach(() => {
+			vi.useFakeTimers();
+		});
+
+		const LEGAL_ALLOWED = {
+			data: { acceptedTerms: true, userAllowed: true, canPerformActions: true },
+			error: null,
+		};
+		const LOCATION_ALLOWED = { data: { tradeRestricted: false, country: "SG", proxy: false }, error: null };
+		const AGENT_MISSING = { isSignerReady: false, needsAgent: true };
+
+		function resolveAfter<T>(ms: number, value: T) {
+			return () =>
+				new Promise<T>((resolve) => {
+					setTimeout(() => resolve(value), ms);
+				});
+		}
+
+		function delayLegalCheck(ms: number) {
+			mocks.legalRefetch.mockImplementationOnce(resolveAfter(ms, LEGAL_ALLOWED));
+		}
+
+		const SLOW_CHECKS_BEFORE_AGENT_APPROVAL = [
+			{
+				check: "legal",
+				delay: (ms: number) => {
+					delayLegalCheck(ms);
+					mocks.agentRefetch.mockResolvedValueOnce(AGENT_MISSING);
+				},
+			},
+			{
+				check: "location",
+				delay: (ms: number) => {
+					mocks.geoRetry.mockImplementationOnce(resolveAfter(ms, LOCATION_ALLOWED));
+					mocks.agentRefetch.mockResolvedValueOnce(AGENT_MISSING);
+				},
+			},
+			{
+				check: "signer",
+				delay: (ms: number) => {
+					mocks.agentRefetch.mockImplementationOnce(resolveAfter(ms, AGENT_MISSING));
+				},
+			},
+		];
+
+		async function runFor(ms: number, start: () => Promise<void>) {
+			const wallClock = Date.now();
+			const monotonicClock = performance.now();
+			let pending!: Promise<void>;
+			act(() => {
+				pending = start();
+			});
+			await act(async () => {
+				await vi.advanceTimersByTimeAsync(ms);
+				await pending;
+			});
+			expect(Date.now() - wallClock).toBeGreaterThanOrEqual(ms);
+			expect(performance.now() - monotonicClock).toBeGreaterThanOrEqual(ms);
+		}
+
+		it("signs nothing and ends as a definite failure when the fresh checks return 16 seconds after Confirm", async () => {
+			await openAndReview();
+			delayLegalCheck(16_000);
+			await runFor(16_000, () => current().confirm());
+
+			expect(mocks.exchangeSubmit).not.toHaveBeenCalled();
+			expect(mocks.exchangeMutate).not.toHaveBeenCalled();
+			expect(current().action).toMatchObject({ state: { stage: "done", result: "apiError" } });
+			expect(vaultErrorText()).toBe(NOT_SENT);
+			expect(getFundsActionMarkers()).toHaveLength(0);
+			expect(mocks.history).toHaveBeenCalledOnce();
+
+			act(() => current().retry());
+			await runFor(0, () => current().confirm());
+
+			expect(mocks.exchangeSubmit).toHaveBeenCalledOnce();
+			expect(current().action).toMatchObject({ state: { stage: "done", result: "success" } });
+			expect(getFundsActionMarkers()).toHaveLength(0);
+		});
+
+		it("signs the transfer once when the fresh checks return 14 seconds after Confirm", async () => {
+			await openAndReview();
+			delayLegalCheck(14_000);
+			await runFor(14_000, () => current().confirm());
+
+			expect(mocks.exchangeSubmit).toHaveBeenCalledOnce();
+			expect(mocks.exchangeMutate).toHaveBeenCalledOnce();
+			expect(mocks.exchangeMutate).toHaveBeenCalledWith({ vaultAddress: VAULT, isDeposit: true, usd: 5_000_000 });
+			expect(current().action).toMatchObject({ state: { stage: "done", result: "success" } });
+			expect(getFundsActionMarkers()).toHaveLength(0);
+		});
+
+		it.each(SLOW_CHECKS_BEFORE_AGENT_APPROVAL)(
+			"starts no Agent approval and reports nothing was sent when the $check check returns 16 seconds after the click",
+			async ({ delay }) => {
+				delay(16_000);
+				await runFor(16_000, () => current().requestAction("deposit"));
+
+				expect(mocks.agentRegister).not.toHaveBeenCalled();
+				expect(mocks.legalRefetch).toHaveBeenCalledOnce();
+				expect(mocks.geoRetry).toHaveBeenCalledOnce();
+				expect(mocks.agentRefetch).toHaveBeenCalledOnce();
+				expect(mocks.toastError).toHaveBeenCalledOnce();
+				expect(mocks.toastError).toHaveBeenCalledWith(NOT_SENT);
+				expect(current().action).toBeNull();
+
+				mocks.agentRefetch.mockResolvedValueOnce(AGENT_MISSING);
+				mocks.agentRegister.mockResolvedValueOnce(AGENT);
+				await runFor(0, () => current().requestAction("deposit"));
+
+				expect(mocks.agentRegister).toHaveBeenCalledOnce();
+				expect(mocks.toastError).toHaveBeenCalledOnce();
+				expect(current().action?.state.stage).toBe("input");
+			},
+		);
+
+		it.each(SLOW_CHECKS_BEFORE_AGENT_APPROVAL)(
+			"hands the click's own deadline to the Agent approval when the $check check returns 14 seconds after the click",
+			async ({ delay }) => {
+				let expiredWhenRegistered: boolean | null = null;
+				mocks.agentRegister.mockImplementationOnce(async (options: { deadline?: ExchangeSigningDeadlineSlot }) => {
+					if (options.deadline) expiredWhenRegistered = hasExchangeActionDeadlinePassed(options.deadline);
+					return AGENT;
+				});
+				delay(14_000);
+				await runFor(14_000, () => current().requestAction("deposit"));
+
+				expect(mocks.agentRegister).toHaveBeenCalledOnce();
+				expect(mocks.agentRegister).toHaveBeenCalledWith({ persistConnection: true, deadline: expect.any(Object) });
+				expect(expiredWhenRegistered).toBe(false);
+				expect(mocks.agentRefetch).toHaveBeenNthCalledWith(2, AGENT);
+				expect(mocks.toastError).not.toHaveBeenCalled();
+				expect(current().action?.state.stage).toBe("input");
+
+				const { deadline } = mocks.agentRegister.mock.calls[0][0] as { deadline: ExchangeSigningDeadlineSlot };
+				act(() => {
+					vi.advanceTimersByTime(999);
+				});
+				expect(hasExchangeActionDeadlinePassed(deadline)).toBe(false);
+				act(() => {
+					vi.advanceTimersByTime(1);
+				});
+				expect(hasExchangeActionDeadlinePassed(deadline)).toBe(true);
+			},
+		);
+
+		it("still opens the amount step after slow eligibility checks when no approval has to be signed", async () => {
+			delayLegalCheck(16_000);
+			await runFor(16_000, () => current().requestAction("deposit"));
+
+			expect(mocks.agentRegister).not.toHaveBeenCalled();
+			expect(mocks.toastError).not.toHaveBeenCalled();
+			expect(current().action?.state.stage).toBe("input");
+		});
 	});
 
 	async function openAndReview(action: "deposit" | "withdraw" = "deposit") {

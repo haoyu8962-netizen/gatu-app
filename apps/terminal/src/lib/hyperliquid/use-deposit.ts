@@ -3,6 +3,11 @@ import { type ConnectedWallet, useWallets } from "@privy-io/react-auth";
 import { useSmartWallets } from "@privy-io/react-auth/smart-wallets";
 import { getInfoClient as getSdkInfoClient } from "@sairn/hl-react";
 import { runWithFundsActionLock } from "@sairn/hl-react/internal/exchange/funds-action-lock";
+import {
+	ExchangeActionDeadlineError,
+	type ExchangeSigningDeadlineSlot,
+	hasExchangeActionDeadlinePassed,
+} from "@sairn/hl-react/internal/exchange/request-scheduler";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type {
 	Account,
@@ -114,6 +119,12 @@ interface ValidationResult {
 export interface DepositReview {
 	expectedBalanceRaw?: bigint;
 	expectedCctpMaxFeeRaw?: bigint;
+	/**
+	 * Started at the click of a manual deposit (ADR 0053). The dialog checks it for every wallet before
+	 * calling `deposit`; inside `deposit` only the embedded wallet is held to it, because it signs
+	 * without a prompt while an external wallet asks the user again before anything is signed.
+	 */
+	deadline?: ExchangeSigningDeadlineSlot;
 }
 
 export interface UseDepositResult {
@@ -1342,6 +1353,9 @@ export function useDeposit({
 					if (provider) await assertDepositChainStillActive(provider, cctpDepositConfig);
 					if (executionScope === "automatic") {
 						await verifyFreshLegalAction({ env: cctpTrackingEnv, owner: ready.address });
+					}
+					if (mode === "smart" && review?.deadline && hasExchangeActionDeadlinePassed(review.deadline)) {
+						throw new ExchangeActionDeadlineError();
 					}
 					const authorizationSignature = await ready.walletClient.signTypedData({
 						account: ready.address,

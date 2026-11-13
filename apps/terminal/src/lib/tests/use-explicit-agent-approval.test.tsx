@@ -2,6 +2,7 @@
 
 import { createHash } from "node:crypto";
 import { i18n } from "@lingui/core";
+import { ExchangeActionDeadlineError } from "@sairn/hl-react/internal/exchange/request-scheduler";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
@@ -594,6 +595,41 @@ describe("useExplicitAgentApproval", () => {
 		);
 		expect(testState.createPrivyAgentSigner).not.toHaveBeenCalled();
 		expect(testState.clientApproveAgent).not.toHaveBeenCalled();
+	});
+
+	it("does not create a signer or dispatch once the trading-connection deadline has passed", async () => {
+		const hook = await renderApprovalHook();
+		const deadline = {
+			current: { queuedAt: Date.now() - 20_000, queuedAtMonotonic: performance.now() - 20_000, deadlineMs: 15_000 },
+		};
+
+		await expect(hook.mutateAsync({ agentAddress: AGENT, agentName: "Mobile" }, { deadline })).rejects.toBeInstanceOf(
+			ExchangeActionDeadlineError,
+		);
+
+		expect(testState.createPrivyAgentSigner).not.toHaveBeenCalled();
+		expect(testState.signTypedData).not.toHaveBeenCalled();
+		expect(testState.clientApproveAgent).not.toHaveBeenCalled();
+	});
+
+	it("binds the approval client to the click deadline and reports a late signature as the deadline error", async () => {
+		const hook = await renderApprovalHook();
+		const deadline = {
+			current: { queuedAt: Date.now(), queuedAtMonotonic: performance.now(), deadlineMs: 15_000 },
+		};
+		testState.clientApproveAgent.mockRejectedValueOnce(
+			Object.assign(new Error("Failed to sign typed data"), {
+				name: "AbstractWalletError",
+				cause: new ExchangeActionDeadlineError(),
+			}),
+		);
+
+		await expect(hook.mutateAsync({ agentAddress: AGENT, agentName: "Mobile" }, { deadline })).rejects.toBeInstanceOf(
+			ExchangeActionDeadlineError,
+		);
+
+		expect(testState.createExchangeClient).toHaveBeenCalledOnce();
+		expect(testState.createExchangeClient.mock.calls[0]?.[4]).toBe(deadline);
 	});
 
 	it("does not create a signer or dispatch when already aborted", async () => {

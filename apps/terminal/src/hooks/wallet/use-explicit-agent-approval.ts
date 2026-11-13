@@ -3,6 +3,10 @@ import { msg } from "@lingui/core/macro";
 import type { AbstractWallet } from "@nktkas/hyperliquid/signing";
 import { useSignTypedData } from "@privy-io/react-auth";
 import { useConnectionWalletClient } from "@sairn/hl-react";
+import {
+	assertExchangeSigningDeadline,
+	unwrapExchangeSigningDeadline,
+} from "@sairn/hl-react/internal/exchange/request-scheduler";
 import { useQueryClient } from "@tanstack/react-query";
 import { useLayoutEffect, useRef, useState } from "react";
 import { isAddress, type WalletClient } from "viem";
@@ -174,6 +178,7 @@ export function useExplicitAgentApproval(): ExplicitAgentApproval {
 				}
 			};
 			const guarded = await startAgentRegistrationExecution(registrationLease, canSubmit, () => {
+				if (options.deadline) assertExchangeSigningDeadline(options.deadline);
 				const beforeSubmit = async () => {
 					assertApprovalSessionCurrent();
 					if (enforceLegalActions) {
@@ -230,8 +235,10 @@ export function useExplicitAgentApproval(): ExplicitAgentApproval {
 						return await submission.execution;
 					},
 				};
-				const client = createExchangeClient(signer, env === "Testnet", undefined, transport);
-				return client.approveAgent(params, options.signal ? { signal: options.signal } : undefined);
+				const client = createExchangeClient(signer, env === "Testnet", undefined, transport, options.deadline);
+				return client
+					.approveAgent(params, options.signal ? { signal: options.signal } : undefined)
+					.catch(unwrapExchangeSigningDeadline);
 			});
 			if (guarded.status === "invalidated") {
 				throw createActionError("identity-changed");

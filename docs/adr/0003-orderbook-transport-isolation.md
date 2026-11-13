@@ -164,3 +164,8 @@ test results remain dated in [review remediation](../terminal-review-remediation
 that record explicitly separates short browser observation from the opt-in
 WebSocket soak test. This retrospective review does not claim a fresh production
 connection, long-duration run or renewed verification of external SDK documents.
+
+## 补记（2026-11-12）：心跳判活与连接上限
+
+- 回到前台或网络恢复时，连接池对静默未达阈值、已打开的连接经 SDK 传输的 `socket` 发一次心跳（还在握手的连接不探测，交给连接超时与静默阈值；隐藏、离线、移除或新探测会取消旧探测）（`probeLiveness`，与共享连接的监视器同一实现），2.5 秒内没有 `{"channel":"pong"}` 就关闭，使用者经连接池重新订阅。原因是手机挂起期间积压的 `l2Book` 帧会在恢复时先到、刷新计时，让死连接看起来新鲜。为此 `BookTransport` 多了一个可选的 `socket` 字段（含 `readyState`）；没有它的传输（测试替身）按原规则只看订单簿帧。隔离键、连接预算和同一身份共享不变，探测不新建连接。原先「仍在收帧的连接不替换」的契约被「及时应答心跳的连接保留」取代：业务帧不能阻止探测超时，持续收订单簿帧、但 2.5 秒内没有 `pong` 的连接也会被关闭。详见 [ADR 0050 补记一](0050-websocket-recovery-on-resume.md)。
+- Hyperliquid 官方文档的上限：每个 IP 最多 10 条 WebSocket 连接、每分钟最多新建 30 条。本终端每个标签页最多 5 条（共享连接 1 条加本连接池 `MAX_CONNECTIONS` 4 条），两个标签页就到上限；本连接池的预算是每 60 秒 24 条（`MAX_NEW_CONNECTIONS`），只约束订单簿连接：共享连接的 `socket.reconnect()` 与 SDK 自己的重连循环不走这个预算，所以这里不保证单个标签页每分钟新建的连接不超过服务器的 30 条，多个标签页合起来更可能超过。手机布局不再在进入交易路由时预热全深度连接（`lib/trade/orderbook-boot.ts`），少占一条。服务器拒绝时关闭原因以 `Cannot open more than` 开头，官方终端据此提示关闭其他标签页；本终端尚不识别，是否加提示待运营方决定（新增一类被动数据提示要先更新 `docs/mobile-data-presentation.md`）。

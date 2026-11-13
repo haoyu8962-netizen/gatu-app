@@ -26,6 +26,7 @@ function createServiceWorkerHarness({
 }: ServiceWorkerHarnessOptions) {
 	const listeners = new Map<string, (event: Record<string, unknown>) => void>();
 	const self = {
+		location: { origin: "https://app.sairn.ai" },
 		addEventListener: (type: string, listener: (event: Record<string, unknown>) => void) => {
 			listeners.set(type, listener);
 		},
@@ -56,9 +57,12 @@ describe("TradingView asset cache policy", () => {
 	});
 
 	it("leaves TradingView delivery to HTTP caching and immediately updates the service worker", () => {
-		expect(serviceWorker).toContain('const CACHE_VERSION = "v10"');
+		expect(serviceWorker).toContain('const CACHE_VERSION = "v11"');
 		expect(serviceWorker).not.toContain("CHARTING_CACHE");
-		expect(serviceWorker).not.toContain('url.pathname.startsWith("/charting_library/")');
+		expect(serviceWorker.split('url.pathname.startsWith("/charting_library/")')).toHaveLength(2);
+		expect(serviceWorker).toContain(
+			'if (request.destination === "font" && !url.pathname.startsWith("/charting_library/")) {',
+		);
 		expect(rootRoute).toContain('scope: "/", updateViaCache: "none"');
 		expect(rootRoute).toContain(".catch(() => undefined)");
 		expect(viteConfig).toMatch(/'\/sw\.js'[\s\S]*?'cache-control': 'no-store'/);
@@ -75,7 +79,7 @@ describe("TradingView asset cache policy", () => {
 		expect(viteConfig).toMatch(/'\/join\/\*\*': \{[\s\S]*?headers: referralJoinHeaders/);
 	});
 
-	it("deletes only retired managed caches, the retired document cache included, when v10 activates", async () => {
+	it("deletes only retired managed caches, the v10 caches included, when v11 activates", async () => {
 		const deleted: string[] = [];
 		const listeners = createServiceWorkerHarness({
 			caches: {
@@ -88,6 +92,11 @@ describe("TradingView asset cache policy", () => {
 						"fonts-v10",
 						"icons-v10",
 						"shell-v10",
+						"assets-v10",
+						"assets-v11",
+						"fonts-v11",
+						"icons-v11",
+						"shell-v11",
 						"unrelated-cache",
 					]),
 				delete: (key: string) => {
@@ -106,7 +115,16 @@ describe("TradingView asset cache policy", () => {
 		});
 		await activation;
 
-		expect(deleted).toEqual(["charting-v7", "fonts-v7", "shell-v9", "documents-v9"]);
+		expect(deleted).toEqual([
+			"charting-v7",
+			"fonts-v7",
+			"shell-v9",
+			"documents-v9",
+			"fonts-v10",
+			"icons-v10",
+			"shell-v10",
+			"assets-v10",
+		]);
 	});
 
 	it("claims clients and finishes activation when CacheStorage stalls", async () => {
@@ -133,7 +151,12 @@ describe("TradingView asset cache policy", () => {
 		await expect(activation).resolves.toBeUndefined();
 	});
 
-	it("does not intercept TradingView requests", () => {
+	it.each([
+		["the loader", "/charting_library/charting_library.js", "script"],
+		["a content-hashed bundle", "/charting_library/bundles/library.f5eaeb6901219f861981.js", "script"],
+		["a content-hashed stylesheet", "/charting_library/bundles/9662.03109f673cda5962c847.css", "style"],
+		["a content-hashed font", "/charting_library/bundles/EuclidCircular.be8f862db48c2976009f.woff2", "font"],
+	])("does not intercept a TradingView request for %s", (_, path, destination) => {
 		let intercepted = false;
 		const listeners = createServiceWorkerHarness({
 			caches: {},
@@ -143,12 +166,15 @@ describe("TradingView asset cache policy", () => {
 		listeners.get("fetch")?.({
 			request: {
 				method: "GET",
-				url: "https://app.sairn.ai/charting_library/charting_library.js",
-				destination: "script",
+				url: `https://app.sairn.ai${path}`,
+				destination,
+				headers: { has: () => false },
 			},
-			respondWith: () => {
+			respondWith: (response: Promise<unknown>) => {
 				intercepted = true;
+				Promise.resolve(response).catch(() => undefined);
 			},
+			waitUntil: () => undefined,
 		});
 
 		expect(intercepted).toBe(false);

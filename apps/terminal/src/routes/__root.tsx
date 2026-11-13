@@ -8,9 +8,10 @@ import { NotFoundPage } from "@/components/pages/not-found-page";
 import { RouterErrorPage } from "@/components/pages/router-error-page";
 import { StartupFallback } from "@/components/startup-fallback";
 import { isRtlLocale } from "@/config/i18n";
+import { getBootstrapEntryWatchdogScript } from "@/lib/bootstrap-error-page";
 import { areFontsReady, STARTUP_FONT_SPECS, waitForFonts } from "@/lib/fonts/font-readiness";
 import { MarketsInfoProvider } from "@/lib/hyperliquid/hooks/MarketsInfoProvider";
-import { getPersistedLocale, i18nReady } from "@/lib/i18n";
+import { getPersistedLocale, i18nReady, LOCALE_CATALOG_READY_TIMEOUT_MS } from "@/lib/i18n";
 import { buildRootHead } from "@/lib/seo";
 import { getDocumentThemeColor, THEME_BOOTSTRAP_SCRIPT } from "@/lib/theme-color";
 import { useClientRuntimeReady } from "@/providers/client-runtime";
@@ -22,6 +23,7 @@ import interLatinWoff2 from "@fontsource-variable/inter/files/inter-latin-wght-n
 import appCss from "../styles.css?url";
 
 const FONT_PRELOAD_URLS = [interLatinWoff2, ibmPlexSansLatinWoff2];
+const BOOTSTRAP_ENTRY_WATCHDOG_SCRIPT = getBootstrapEntryWatchdogScript();
 
 let serviceWorkerRegistration: Promise<ServiceWorkerRegistration | undefined> | undefined;
 
@@ -86,7 +88,9 @@ function AppRuntime({ fallback }: { fallback: React.ReactNode }) {
 // Gates first render until the persisted language's catalog is active and the preloaded startup
 // fonts are usable, so the page renders ONCE in the persisted locale with final text metrics — no
 // flash of English / LTR→RTL jump while the lazy catalog loads, and no fallback-font reflow when the
-// webfonts arrive. The font wait is capped at FONT_READY_TIMEOUT_MS, matching font-display: block.
+// webfonts arrive. The font wait is capped at FONT_READY_TIMEOUT_MS, matching font-display: block, and
+// the catalog wait at LOCALE_CATALOG_READY_TIMEOUT_MS: past it the page reveals in English and the
+// catalog, when it arrives, switches the mounted page in place.
 function StartupReadyGate({ children, fallback }: { children: React.ReactNode; fallback: React.ReactNode }) {
 	const [ready, setReady] = useState(() => i18n.locale === getPersistedLocale() && areFontsReady(STARTUP_FONT_SPECS));
 	useEffect(() => {
@@ -94,14 +98,18 @@ function StartupReadyGate({ children, fallback }: { children: React.ReactNode; f
 		let active = true;
 		let localeReady = i18n.locale === getPersistedLocale();
 		let fontsReady = areFontsReady(STARTUP_FONT_SPECS);
+		let localeTimer: ReturnType<typeof setTimeout> | undefined;
 		const reveal = () => {
 			if (active && localeReady && fontsReady) setReady(true);
 		};
 		if (!localeReady) {
-			i18nReady.finally(() => {
+			const settleLocale = () => {
+				clearTimeout(localeTimer);
 				localeReady = true;
 				reveal();
-			});
+			};
+			i18nReady.finally(settleLocale);
+			localeTimer = setTimeout(settleLocale, LOCALE_CATALOG_READY_TIMEOUT_MS);
 		}
 		if (!fontsReady) {
 			waitForFonts(STARTUP_FONT_SPECS).then(() => {
@@ -112,6 +120,7 @@ function StartupReadyGate({ children, fallback }: { children: React.ReactNode; f
 		reveal();
 		return () => {
 			active = false;
+			clearTimeout(localeTimer);
 		};
 	}, [ready]);
 	return <>{ready ? children : fallback}</>;
@@ -128,6 +137,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 			<head>
 				<HeadContent />
 				<script suppressHydrationWarning>{THEME_BOOTSTRAP_SCRIPT}</script>
+				<script suppressHydrationWarning>{BOOTSTRAP_ENTRY_WATCHDOG_SCRIPT}</script>
 				<link rel="stylesheet" href={appCss} precedence="default" />
 			</head>
 			<body>

@@ -1,5 +1,6 @@
 import type { MessageDescriptor } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
+import { getOrderQueueItem, removeOrderQueueItem } from "@/stores/use-order-queue-store";
 
 export type OrderReconciliationErrorCode =
 	| "accepted-orders-canceled"
@@ -46,5 +47,20 @@ export function formatOrderReconciliationError(
 			return translate(twapOrderRejectedMessage);
 		case "twap-status-unconfirmed":
 			return translate(twapStatusUnconfirmedMessage);
+	}
+}
+
+/**
+ * Another tab took over these submissions and settled them. This tab never saw the result, so it
+ * withdraws the notification it still shows as in progress or unconfirmed instead of drawing an outcome.
+ */
+export function withdrawNotificationsSettledElsewhere(
+	ids: readonly string[],
+	queueIds: ReadonlyMap<string, string>,
+): void {
+	for (const id of ids) {
+		const queueId = queueIds.get(id) ?? `reconcile-${id}`;
+		const status = getOrderQueueItem(queueId)?.status;
+		if (status === "pending" || status === "confirming" || status === "unconfirmed") removeOrderQueueItem(queueId);
 	}
 }

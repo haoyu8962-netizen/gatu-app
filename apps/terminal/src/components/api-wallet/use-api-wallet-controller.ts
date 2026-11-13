@@ -1,6 +1,7 @@
 import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
 import { useActiveAgentOwner } from "@sairn/hl-react";
+import { startExchangeActionDeadline } from "@sairn/hl-react/internal/exchange/request-scheduler";
 import { useEffect, useRef, useState } from "react";
 import type { Address, Hex } from "viem";
 import { useMasterWalletActionReason } from "@/hooks/trade/use-master-wallet-action-reason";
@@ -239,6 +240,7 @@ export function useApiWalletController({
 	}
 
 	async function confirmAction(): Promise<void> {
+		const deadline = startExchangeActionDeadline();
 		const current = activeActionRef.current;
 		if (!current || current.isPreflighting) return;
 		if (!actionIdentityIsCurrent(current, identityKeyRef.current)) return;
@@ -316,6 +318,7 @@ export function useApiWalletController({
 			await approvalMutation.mutateAsync(getApprovalParameters(current), {
 				signal: lease.abortController.signal,
 				applicationReview: "confirmed",
+				deadline,
 			});
 			if (!executionIsCurrent(lease)) return;
 			const awaiting = activeActionRef.current;
@@ -659,7 +662,9 @@ function isCurrentIdentityOperable(
 
 function isDeterministicApprovalError(error: unknown): boolean {
 	if (!(error instanceof Error)) return false;
-	return error.name === "ApiRequestError" || error.name === "ValidationError";
+	return (
+		error.name === "ApiRequestError" || error.name === "ValidationError" || error.name === "ExchangeActionDeadlineError"
+	);
 }
 
 function createIdentityKey(

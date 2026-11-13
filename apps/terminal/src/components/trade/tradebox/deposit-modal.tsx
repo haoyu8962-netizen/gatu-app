@@ -1,4 +1,9 @@
 import { Trans, useLingui } from "@lingui/react/macro";
+import {
+	assertExchangeSigningDeadline,
+	hasExchangeActionDeadlinePassed,
+	startExchangeActionDeadline,
+} from "@sairn/hl-react/internal/exchange/request-scheduler";
 import { Button } from "@sairn/ui";
 import { useQueryClient } from "@tanstack/react-query";
 import { Suspense, useEffect, useLayoutEffect, useRef, useState } from "react";
@@ -847,6 +852,7 @@ export function DepositModal({ onSurfaceChange }: Props) {
 	}
 
 	async function handleDepositSubmit() {
+		const deadline = startExchangeActionDeadline();
 		if (
 			!depositAvailability.available ||
 			!depositValidation.valid ||
@@ -905,9 +911,11 @@ export function DepositModal({ onSurfaceChange }: Props) {
 				}
 			}
 			if (!isCurrentPreflight()) return;
+			assertExchangeSigningDeadline(deadline);
 			await deposit(reviewedDepositAmount, {
 				expectedBalanceRaw: isEmbeddedDeposit ? reviewedDepositAmountRaw : undefined,
 				expectedCctpMaxFeeRaw: displayedCctpDepositFeeQuery.calculation?.maxFeeRaw,
+				deadline,
 			});
 		} catch {
 			if (isCurrentPreflight()) setDepositRoutingPreflightErrorCode("unavailable");
@@ -933,6 +941,7 @@ export function DepositModal({ onSurfaceChange }: Props) {
 	}
 
 	async function handleWithdrawSubmit() {
+		const deadline = startExchangeActionDeadline();
 		if (!canSubmitWithdraw || !walletAddress || withdrawalRouteFee === null) return;
 		const destination = requiresWithdrawDestination ? normalizedWithdrawDestination : walletAddress;
 		if (!isAddress(destination)) return;
@@ -958,6 +967,9 @@ export function DepositModal({ onSurfaceChange }: Props) {
 		const reportPreflightFailure = (code: FundsActionFeedbackCode) => {
 			assertWithdrawalPreflightCurrent(attempt);
 			setWithdrawalPreflightFeedback({ contextIdentity: attempt.contextIdentity, code });
+		};
+		const assertSubmitDeadline = () => {
+			if (hasExchangeActionDeadlinePassed(deadline)) throw fundsActionFeedbackCause("withdrawal-conditions-changed");
 		};
 		try {
 			const expectedWithdrawalRoute = routedWithdrawalRoute;
@@ -1060,6 +1072,7 @@ export function DepositModal({ onSurfaceChange }: Props) {
 					};
 					if (expectedWithdrawalRoute === "arbitrum-cctp") {
 						if (!cctpPreTransferReview) throw new PreTransferCheckExecutionError("unavailable");
+						assertSubmitDeadline();
 						mutationStarted = true;
 						await cctpWithdrawal.mutateAsync(
 							buildCctpWithdrawalParameters({
@@ -1071,6 +1084,7 @@ export function DepositModal({ onSurfaceChange }: Props) {
 						mutationSucceeded = true;
 						return;
 					}
+					assertSubmitDeadline();
 					mutationStarted = true;
 					await legacyWithdrawal.mutateAsync({ destination, amount: reviewedAmount });
 					mutationSucceeded = true;

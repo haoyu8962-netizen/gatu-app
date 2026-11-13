@@ -1280,4 +1280,118 @@ describe("usePositionMarketCloseSubmit", () => {
 		expect(getPositionMarketCloseModal()).toBeNull();
 		expect(queueErrorMessages().at(-1)).toBe(localizedMessage("trading-data-changed"));
 	});
+
+	describe("when the fresh snapshot returns long after the confirming click", () => {
+		const NOT_SENT = "The checks before this request took too long. Nothing was signed or sent. Try again.";
+		let snapshotDelayMs = 0;
+		let heldLocks = new Set<string>();
+
+		async function waitForSnapshot(): Promise<void> {
+			if (snapshotDelayMs > 0) await new Promise<void>((resolve) => setTimeout(resolve, snapshotDelayMs));
+		}
+
+		async function confirmAndWait(sessionId: string, waitMs: number): Promise<void> {
+			let submission!: Promise<void>;
+			await act(async () => {
+				submission = submitConfirmed(sessionId, { dismissFutureConfirmation: true });
+				await vi.advanceTimersByTimeAsync(0);
+			});
+			expect(getPositionMarketCloseModal()).toMatchObject({ sessionId, phase: "validating" });
+			expect(queueItems).toHaveLength(1);
+			expect(queueItems[0]).toMatchObject({ status: "pending" });
+			expect(heldLocks.size).toBe(1);
+			expect(mocks.mutateOrder).not.toHaveBeenCalled();
+
+			const wallClock = Date.now();
+			const monotonicClock = performance.now();
+			await act(async () => {
+				await vi.advanceTimersByTimeAsync(waitMs);
+				await submission;
+			});
+			expect(Date.now() - wallClock).toBe(waitMs);
+			expect(performance.now() - monotonicClock).toBe(waitMs);
+		}
+
+		beforeEach(() => {
+			vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "Date", "performance"] });
+			snapshotDelayMs = 0;
+			heldLocks = new Set();
+			mocks.lockRequest.mockImplementation(
+				async (
+					name: string,
+					_options: LockOptions,
+					callback: (lock: Lock | null) => unknown | PromiseLike<unknown>,
+				) => {
+					if (heldLocks.has(name)) return callback(null);
+					heldLocks.add(name);
+					try {
+						return await callback({ name, mode: "exclusive" } as Lock);
+					} finally {
+						heldLocks.delete(name);
+					}
+				},
+			);
+			const respondWithAccount = mocks.clearinghouseState.getMockImplementation();
+			const respondWithMarket = mocks.metaAndAssetCtxs.getMockImplementation();
+			mocks.clearinghouseState.mockImplementation(async (...args: unknown[]) => {
+				await waitForSnapshot();
+				return respondWithAccount?.(...args);
+			});
+			mocks.metaAndAssetCtxs.mockImplementation(async (...args: unknown[]) => {
+				await waitForSnapshot();
+				return respondWithMarket?.(...args);
+			});
+		});
+
+		afterEach(() => {
+			vi.useRealTimers();
+		});
+
+		it("sends nothing and reports a definite failure when the snapshot takes 16 seconds", async () => {
+			snapshotDelayMs = 16_000;
+			await confirmAndWait(openSession(), 16_000);
+
+			expect(mocks.clearinghouseState).toHaveBeenCalledOnce();
+			expect(mocks.mutateOrder).not.toHaveBeenCalled();
+			expect(mocks.executeOrder).not.toHaveBeenCalled();
+			expect(heldLocks.size).toBe(0);
+			expect(hasPendingOrderForAssets("Mainnet", USER, [ASSET_ID])).toBe(false);
+			expect(getPositionMarketCloseModal()).toBeNull();
+			expect(readPositionMarketCloseConfirmationPreference({ owner: USER, env: "Mainnet" })).toBe("required");
+			expect(mocks.toastWarning).not.toHaveBeenCalled();
+			expect(queueItems).toHaveLength(1);
+			expect(queueItems[0]).toMatchObject({
+				operation: "market-close",
+				status: "failed",
+				acceptedCount: 0,
+				totalCount: 1,
+				children: [{ assetId: ASSET_ID, market: COIN, status: "rejected" }],
+			});
+			expect(queueErrorMessages()).toEqual([NOT_SENT]);
+
+			snapshotDelayMs = 0;
+			const retrySessionId = openSession();
+			await act(async () => {
+				await submitConfirmed(retrySessionId);
+			});
+			expect(mocks.executeOrder).toHaveBeenCalledOnce();
+			expect(queueItems.at(-1)).toMatchObject({ status: "success", outcome: "filled" });
+			expect(getPositionMarketCloseModal()).toBeNull();
+		});
+
+		it("still sends the close once when the snapshot takes 14 seconds", async () => {
+			snapshotDelayMs = 14_000;
+			await confirmAndWait(openSession(), 14_000);
+
+			expect(mocks.executeOrder).toHaveBeenCalledOnce();
+			const submitted = mocks.executeOrder.mock.calls[0]?.[0] as OrderParams;
+			expect(submitted.orders[0]).toMatchObject({ a: ASSET_ID, b: false, p: "99.5", s: "2.5", r: true });
+			expect(heldLocks.size).toBe(0);
+			expect(getPositionMarketCloseModal()).toBeNull();
+			expect(readPositionMarketCloseConfirmationPreference({ owner: USER, env: "Mainnet" })).toBe("dismissed");
+			expect(queueItems).toHaveLength(1);
+			expect(queueItems[0]).toMatchObject({ status: "success", outcome: "filled", size: "2.5" });
+			expect(queueErrorMessages()).toEqual([]);
+		});
+	});
 });

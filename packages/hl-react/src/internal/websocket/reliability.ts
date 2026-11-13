@@ -33,13 +33,21 @@ export const WS_RELIABILITY_LIMITS = {
 		maxChartLastBarEntries: 256,
 	},
 	transport: {
+		// The official terminal reconnects after 15s without any frame. A socket that quiet is sent a
+		// heartbeat instead, since a page with only low-frequency user streams can be that quiet and
+		// healthy, and is replaced only when the answer does not come.
+		quietProbeThresholdMs: 15_000,
+		// The answer time for that heartbeat. Wider than the resume probe below: nobody is waiting on a
+		// placeholder yet, and a cellular round trip that occasionally exceeds 2.5s should not replace a
+		// healthy socket. Worst case from the last frame to a reconnect: 15s + one check interval + 5s.
+		quietProbeTimeoutMs: 5_000,
 		// The SDK pings every 30s. A 45s all-message silence therefore means
 		// neither market data nor the expected pong reached this client.
 		inactivityThresholdMs: 45_000,
 		checkIntervalMs: 5_000,
-		// How long a socket that looks open may stay silent after the page returns to the foreground
-		// and a heartbeat was sent. A phone suspends the page in the background, and the connection
-		// can die without a close event; a live one answers within a round trip.
+		// How long a heartbeat may stay unanswered after the page or the network returns, while the
+		// user is looking at placeholders. A phone suspends the page in the background, and the connection can die
+		// without a close event; a live one answers within a round trip.
 		resumeProbeTimeoutMs: 2_500,
 	},
 	staleness: {
@@ -182,6 +190,18 @@ export function getSdkReconnectionDelayMs(attempt: number): number {
 export function getSubscriptionMethodForKey(key: string): string | undefined {
 	const parsed = parseKey(key);
 	return parsed?.method;
+}
+
+// A `refreshKey` is appended to the key as a fifth element `{ refreshKey }`; the base key is the
+// method and parameters alone, which is what the SDK shares one server subscription by.
+export function getSubscriptionBaseKey(key: string): string | undefined {
+	try {
+		const parsed = JSON.parse(key) as unknown;
+		if (!Array.isArray(parsed) || parsed.length < 4) return undefined;
+		return JSON.stringify(parsed.slice(0, 4));
+	} catch {
+		return undefined;
+	}
 }
 
 export function getStalenessThresholdForKey(key: string): number | null {

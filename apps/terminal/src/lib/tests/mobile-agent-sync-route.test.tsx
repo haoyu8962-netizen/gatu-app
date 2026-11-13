@@ -29,6 +29,7 @@ const testState = vi.hoisted(() => ({
 	infoExtraAgents: vi.fn(),
 	persistAgentForRegistration: vi.fn(),
 	pwaCapability: "unsupported" as "browser-prompt" | "ios-instructions" | "installed" | "unsupported",
+	sessionMode: "disconnected" as "wallet" | "agent-only" | "disconnected",
 	verifyAgentRegistrationOrRemove: vi.fn(),
 }));
 
@@ -76,6 +77,7 @@ vi.mock("@/config/mobile-pairing", () => ({
 vi.mock("@/lib/hyperliquid", () => ({
 	useHyperliquid: () => ({
 		env: "Mainnet",
+		sessionMode: testState.sessionMode,
 		info: {
 			extraAgents: testState.infoExtraAgents,
 		},
@@ -102,11 +104,19 @@ async function flushAsyncWork(times = 8) {
 	}
 }
 
-function createLink({ env = "Mainnet", nowMs = NOW_MS }: { env?: "Mainnet" | "Testnet"; nowMs?: number } = {}) {
+function createLink({
+	env = "Mainnet",
+	nowMs = NOW_MS,
+	userAddress = USER_ADDRESS,
+}: {
+	env?: "Mainnet" | "Testnet";
+	nowMs?: number;
+	userAddress?: `0x${string}`;
+} = {}) {
 	return createMobileAgentSyncUrl({
 		appOrigin: window.location.origin,
 		env,
-		userAddress: USER_ADDRESS,
+		userAddress,
 		agentPrivateKey: AGENT_PRIVATE_KEY,
 		agentValidUntilMs: nowMs + 30 * 24 * 60 * 60 * 1000,
 		nowMs,
@@ -131,6 +141,7 @@ describe("mobile agent sync route", () => {
 		vi.spyOn(Date, "now").mockReturnValue(NOW_MS + 5_000);
 		testState.importEnabled = true;
 		testState.pwaCapability = "unsupported";
+		testState.sessionMode = "disconnected";
 		testState.infoExtraAgents.mockReset();
 		testState.infoExtraAgents.mockResolvedValue([approvedRemoteAgent()]);
 		testState.captureAgentRegistrationEpoch.mockReset();
@@ -168,6 +179,63 @@ describe("mobile agent sync route", () => {
 	function linkHash(link: { url: string }) {
 		return new URL(link.url).hash;
 	}
+
+	function displayedAccounts() {
+		return [...container.querySelectorAll('[data-slot="mobile-sync-account"]')].map((node) => node.textContent);
+	}
+
+	it("shows the account the key belongs to and the same account that the import writes", async () => {
+		const otherOwner = "0x2222222222222222222222222222222222222abc" as const;
+		testState.captureAgentRegistrationEpoch.mockImplementation(async (env: string, owner: string) => ({
+			status: "ready",
+			epoch: { ...REGISTRATION_EPOCH, env, owner },
+		}));
+		testState.infoExtraAgents.mockImplementation(async ({ user }: { user: string }) =>
+			user === otherOwner ? [approvedRemoteAgent()] : [],
+		);
+		renderRoute(linkHash(createLink({ userAddress: otherOwner })));
+
+		expect(container.textContent).toContain("Account");
+		const [shownBeforeImport] = displayedAccounts();
+		expect(displayedAccounts()).toHaveLength(1);
+
+		act(() => findButton(container, "Import")?.click());
+		await flushAsyncWork();
+
+		expect(container.textContent).toContain("Phone access ready");
+		const writtenEpoch = testState.persistAgentForRegistration.mock.calls[0]?.[0] as { owner: string };
+		const activatedEpoch = testState.activateAgentOwnerForRegistration.mock.calls[0]?.[0] as { owner: string };
+		expect(shownBeforeImport).toBe(writtenEpoch.owner);
+		expect(shownBeforeImport).toBe(activatedEpoch.owner);
+		expect(shownBeforeImport).toBe(otherOwner);
+		expect(displayedAccounts()).toEqual([writtenEpoch.owner]);
+	});
+
+	it("warns before Import only when this phone already has a trading session", async () => {
+		const notice = "Importing replaces the current trading session on this phone.";
+		renderRoute(linkHash(createLink()));
+		expect(container.textContent).not.toContain(notice);
+
+		for (const mode of ["wallet", "agent-only"] as const) {
+			act(() => root.unmount());
+			root = createI18nRoot(container);
+			testState.sessionMode = mode;
+			renderRoute(linkHash(createLink()));
+			expect(container.textContent).toContain(notice);
+		}
+
+		act(() => findButton(container, "Import")?.click());
+		await flushAsyncWork();
+		expect(container.textContent).toContain("Phone access ready");
+		expect(container.textContent).not.toContain(notice);
+	});
+
+	it("shows neither the account nor the warning without a loaded QR", async () => {
+		testState.sessionMode = "wallet";
+		renderRoute(null);
+		expect(displayedAccounts()).toEqual([]);
+		expect(container.textContent).not.toContain("Importing replaces");
+	});
 
 	it("scrubs the fragment before the first paint and waits for an explicit Import", async () => {
 		renderRoute(linkHash(createLink()));

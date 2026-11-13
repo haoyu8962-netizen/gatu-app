@@ -1,5 +1,9 @@
 import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
+import {
+	assertExchangeSigningDeadline,
+	startExchangeActionDeadline,
+} from "@sairn/hl-react/internal/exchange/request-scheduler";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { zeroAddress } from "viem";
@@ -397,6 +401,7 @@ export function useVaultActionController({
 	}
 
 	async function requestAction(action: VaultFundsAction): Promise<void> {
+		const deadline = startExchangeActionDeadline();
 		const startRoute = routeIdentityRef.current;
 		if (
 			!actionAvailability[action].available ||
@@ -444,8 +449,10 @@ export function useVaultActionController({
 			let requirements = await tradingStatus.refetchSigner();
 			assertVaultRequestCurrent(requestLease, requestLeaseRef.current, routeIdentityRef.current, mountedRef.current);
 			if (requirements.needsAgent) {
+				assertExchangeSigningDeadline(deadline);
 				const registeredAgent = await agentRegistration.register({
 					persistConnection: readPersistTradingConnection(),
+					deadline,
 				});
 				assertVaultRequestCurrent(requestLease, requestLeaseRef.current, routeIdentityRef.current, mountedRef.current);
 				requirements = await tradingStatus.refetchSigner(registeredAgent);
@@ -504,6 +511,7 @@ export function useVaultActionController({
 	}
 
 	async function confirm(): Promise<void> {
+		const deadline = startExchangeActionDeadline();
 		const current = actionRef.current;
 		if (
 			!current ||
@@ -688,6 +696,7 @@ export function useVaultActionController({
 
 			let mutationError: unknown;
 			try {
+				assertExchangeSigningDeadline(deadline);
 				await vaultTransfer.mutateAsync({
 					vaultAddress: startRoute.vaultAddress,
 					isDeposit: current.action === "deposit",

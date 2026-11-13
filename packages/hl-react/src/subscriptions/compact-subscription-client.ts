@@ -1,10 +1,16 @@
-import { type ISubscription, SubscriptionClient, type SubscriptionConfig } from "@nktkas/hyperliquid";
+import {
+	type FastAssetCtxsWsEvent,
+	type ISubscription,
+	SubscriptionClient,
+	type SubscriptionConfig,
+} from "@nktkas/hyperliquid";
 import {
 	type CompactAssetCtxsDisconnectSubscriber,
 	type CompactAssetCtxsSubscribeOptions,
 	type CompactPerpAssetCtxsEvent,
 	type CompactSpotAssetCtxsEvent,
 	subscribeCompactAssetCtxs,
+	subscribeFastAssetCtxs,
 } from "./compact-asset-ctxs";
 
 export interface CompactSubscriptionConfig extends SubscriptionConfig {
@@ -43,5 +49,12 @@ export class CompactSubscriptionClient extends SubscriptionClient<CompactSubscri
 			options,
 			this.config_.subscribeDisconnect,
 		);
+	}
+
+	override fastAssetCtxs(
+		listener: (data: FastAssetCtxsWsEvent) => void,
+		options?: CompactAssetCtxsSubscribeOptions,
+	): Promise<ISubscription> {
+		return subscribeFastAssetCtxs(this.config_.transport, listener, options, this.config_.subscribeDisconnect);
 	}
 }

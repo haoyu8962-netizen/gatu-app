@@ -775,4 +775,116 @@ describe("usePositionCloseAllSubmit", () => {
 		});
 		expect(mocks.clearinghouseState).toHaveBeenCalledTimes(refreshCount);
 	});
+
+	describe("when the fresh snapshots return long after the confirmation click", () => {
+		const NOT_SENT = "The checks before this request took too long. Nothing was signed or sent. Try again.";
+		let snapshotDelayMs = 0;
+		let heldLocks = new Set<string>();
+
+		beforeEach(() => {
+			vi.useFakeTimers();
+			snapshotDelayMs = 0;
+			heldLocks = new Set();
+			mocks.lockRequest.mockImplementation(
+				async (
+					name: string,
+					_options: LockOptions,
+					callback: (lock: Lock | null) => unknown | PromiseLike<unknown>,
+				) => {
+					heldLocks.add(name);
+					try {
+						return await callback({ name, mode: "exclusive" } as Lock);
+					} finally {
+						heldLocks.delete(name);
+					}
+				},
+			);
+			for (const request of [mocks.clearinghouseState, mocks.metaAndAssetCtxs]) {
+				const respond = request.getMockImplementation();
+				request.mockImplementation(async (params: { dex: string }) => {
+					if (!mocks.orderSubmitted && snapshotDelayMs > 0) {
+						await new Promise<void>((resolve) => setTimeout(resolve, snapshotDelayMs));
+					}
+					return respond?.(params);
+				});
+			}
+		});
+
+		afterEach(() => {
+			vi.useRealTimers();
+		});
+
+		it("sends no close order and reports a definite failure when they take 16 seconds", async () => {
+			snapshotDelayMs = 16_000;
+			let submission!: Promise<unknown>;
+			await act(async () => {
+				submission = currentHook()
+					.submit()
+					.catch((error: unknown) => error);
+			});
+			expect(queueItems[0]).toMatchObject({ status: "pending" });
+			expect(heldLocks.size).toBe(2);
+
+			let failure: unknown;
+			await act(async () => {
+				await vi.advanceTimersByTimeAsync(16_000);
+				failure = await submission;
+			});
+
+			expect(failure).toMatchObject({ name: "ExchangeActionDeadlineError" });
+			expect(mocks.mutateOrder).not.toHaveBeenCalled();
+			expect(mocks.executeOrder).not.toHaveBeenCalled();
+			expect(heldLocks.size).toBe(0);
+			expect(hasPendingOrderForAssets("Mainnet", USER, [MAIN_ASSET_ID, BUILDER_ASSET_ID])).toBe(false);
+			expect(queueItems).toHaveLength(1);
+			const failed = queueItems[0];
+			if (!failed) throw new Error("Expected the close-all notification");
+			expect(failed).toMatchObject({
+				status: "failed",
+				children: [
+					{ market: MAIN_COIN, status: "rejected" },
+					{ market: BUILDER_COIN, status: "rejected" },
+				],
+			});
+			expect(getOrderNotificationCopy(failed, (descriptor) => i18n._(descriptor), getNumberFormatters())).toMatchObject(
+				{ summary: "Close All Positions · Failed", error: NOT_SENT },
+			);
+			expect(currentHook()).toMatchObject({ phase: "idle", isPartial: false, isReconciling: false, error: NOT_SENT });
+
+			snapshotDelayMs = 0;
+			let retry: Awaited<ReturnType<ReturnType<typeof usePositionCloseAllSubmit>["submit"]>> | undefined;
+			await act(async () => {
+				retry = await currentHook().submit();
+			});
+			expect(retry?.state).toBe("confirmed");
+			expect(mocks.executeOrder).toHaveBeenCalledOnce();
+		});
+
+		it("still submits the batch once when they take 14 seconds", async () => {
+			snapshotDelayMs = 14_000;
+			let submission!: ReturnType<ReturnType<typeof usePositionCloseAllSubmit>["submit"]>;
+			await act(async () => {
+				submission = currentHook().submit();
+			});
+			expect(mocks.mutateOrder).not.toHaveBeenCalled();
+
+			let outcome: Awaited<typeof submission> | undefined;
+			await act(async () => {
+				await vi.advanceTimersByTimeAsync(14_000);
+				outcome = await submission;
+			});
+
+			expect(outcome?.state).toBe("confirmed");
+			expect(mocks.executeOrder).toHaveBeenCalledOnce();
+			expect(heldLocks.size).toBe(0);
+			expect(queueItems).toHaveLength(1);
+			expect(queueItems[0]).toMatchObject({
+				status: "success",
+				acceptedCount: 2,
+				totalCount: 2,
+				positionsClosed: true,
+			});
+			expect(currentHook()).toMatchObject({ phase: "idle", error: null });
+		});
+	});
 });

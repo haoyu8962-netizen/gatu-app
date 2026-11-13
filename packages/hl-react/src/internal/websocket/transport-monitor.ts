@@ -6,9 +6,6 @@ import { getVisibilityState, subscribeVisibility } from "./visibility";
 
 type SocketEventName = "open" | "close" | "error" | "message";
 const SOCKET_OPEN = 1;
-// Hyperliquid's heartbeat request, the frame the SDK keep-alive sends. The server answers
-// `{"channel":"pong"}`, which reaches the monitor as an ordinary message.
-const LIVENESS_PROBE_FRAME = '{"method":"ping"}';
 
 export interface MonitoredWebSocket {
 	readonly readyState: number;
@@ -18,11 +15,56 @@ export interface MonitoredWebSocket {
 	send(data: string): void;
 }
 
+export type ProbedWebSocket = Pick<MonitoredWebSocket, "addEventListener" | "removeEventListener" | "send">;
+
+// Only frames short enough to be a heartbeat answer are parsed, so market data is never parsed here.
+function isPongFrame(data: unknown): boolean {
+	if (typeof data !== "string" || data.length > 40) return false;
+	try {
+		return JSON.parse(data)?.channel === "pong";
+	} catch {
+		return false;
+	}
+}
+
+/**
+ * Sends Hyperliquid's heartbeat request, the frame the SDK keep-alive also sends, and settles alive
+ * when a heartbeat answer (`{"channel":"pong"}`, answering this request or the SDK's) arrives within
+ * `timeoutMs`, dead otherwise. Other frames do not count: a phone that was suspended can deliver frames
+ * the kernel buffered before the connection died, and those prove nothing about the connection now.
+ * Returns a function that abandons the probe without settling it.
+ */
+export function probeLiveness(
+	socket: ProbedWebSocket,
+	timeoutMs: number,
+	onSettle: (alive: boolean) => void,
+): () => void {
+	const handleMessage = (event: Event) => {
+		if (isPongFrame((event as MessageEvent).data)) settle(true);
+	};
+	const timer = setTimeout(settle, timeoutMs, false);
+	function stop() {
+		clearTimeout(timer);
+		socket.removeEventListener("message", handleMessage);
+	}
+	function settle(alive: boolean) {
+		stop();
+		onSettle(alive);
+	}
+	socket.addEventListener("message", handleMessage);
+	try {
+		socket.send('{"method":"ping"}');
+	} catch {}
+	return stop;
+}
+
 type VisibilityState = "visible" | "hidden";
 type NetworkState = "online" | "offline";
 type StateSubscriber<T> = (listener: (state: T) => void) => () => void;
 
 export interface WsTransportMonitorOptions {
+	quietProbeThresholdMs?: number;
+	quietProbeTimeoutMs?: number;
 	inactivityThresholdMs?: number;
 	checkIntervalMs?: number;
 	resumeProbeTimeoutMs?: number;
@@ -44,9 +86,12 @@ export function createWsTransportMonitor(
 ): WsTransportMonitor {
 	const listeners = new Set<(generation: number) => void>();
 	const disconnectListeners = new Set<() => void>();
-	const inactivityThresholdMs = options.inactivityThresholdMs ?? WS_RELIABILITY_LIMITS.transport.inactivityThresholdMs;
-	const checkIntervalMs = options.checkIntervalMs ?? WS_RELIABILITY_LIMITS.transport.checkIntervalMs;
-	const resumeProbeTimeoutMs = options.resumeProbeTimeoutMs ?? WS_RELIABILITY_LIMITS.transport.resumeProbeTimeoutMs;
+	const limits = WS_RELIABILITY_LIMITS.transport;
+	const quietProbeThresholdMs = options.quietProbeThresholdMs ?? limits.quietProbeThresholdMs;
+	const quietProbeTimeoutMs = options.quietProbeTimeoutMs ?? limits.quietProbeTimeoutMs;
+	const inactivityThresholdMs = options.inactivityThresholdMs ?? limits.inactivityThresholdMs;
+	const checkIntervalMs = options.checkIntervalMs ?? limits.checkIntervalMs;
+	const resumeProbeTimeoutMs = options.resumeProbeTimeoutMs ?? limits.resumeProbeTimeoutMs;
 	const readVisibility = options.getVisibilityState ?? getVisibilityState;
 	const readNetwork = options.getNetworkState ?? getNetworkState;
 	const watchVisibility = options.subscribeVisibility ?? subscribeVisibility;
@@ -59,22 +104,21 @@ export function createWsTransportMonitor(
 	let generation = 0;
 	let lastActivity: FrameReceipt = { receivedAt: 0, monotonicReceivedAt: 0 };
 	let checkTimer: ReturnType<typeof setInterval> | undefined;
-	let resumeProbeTimer: ReturnType<typeof setTimeout> | undefined;
+	let stopProbe: (() => void) | undefined;
 	let detachVisibility: (() => void) | undefined;
 	let detachNetwork: (() => void) | undefined;
 	let wasHidden = false;
 	let wasOffline = false;
 
-	const clearResumeProbe = () => {
-		if (resumeProbeTimer === undefined) return;
-		clearTimeout(resumeProbeTimer);
-		resumeProbeTimer = undefined;
+	const clearProbe = () => {
+		stopProbe?.();
+		stopProbe = undefined;
 	};
 
 	const requestReconnect = () => {
 		if (!attached || reconnectRequested || socket.readyState !== SOCKET_OPEN) return;
 		reconnectRequested = true;
-		clearResumeProbe();
+		clearProbe();
 		try {
 			socket.reconnect();
 		} catch {
@@ -82,6 +126,15 @@ export function createWsTransportMonitor(
 			return;
 		}
 		markDisconnected();
+	};
+
+	// A live socket answers a heartbeat within a round trip, so a quiet but healthy connection survives.
+	const startProbe = (timeoutMs: number) => {
+		clearProbe();
+		stopProbe = probeLiveness(socket, timeoutMs, (alive) => {
+			stopProbe = undefined;
+			if (!alive) requestReconnect();
+		});
 	};
 
 	const getSilenceMs = () => getReceiptAgeMs(lastActivity.receivedAt, lastActivity.monotonicReceivedAt);
@@ -100,20 +153,8 @@ export function createWsTransportMonitor(
 			} catch {}
 			return;
 		}
-		if (getSilenceMs() >= inactivityThresholdMs) {
-			requestReconnect();
-			return;
-		}
-		// Silent for less than the inactivity threshold: a live socket answers a heartbeat within a
-		// round trip, so a quiet but healthy connection survives the return to the foreground.
-		clearResumeProbe();
-		try {
-			socket.send(LIVENESS_PROBE_FRAME);
-		} catch {}
-		resumeProbeTimer = setTimeout(() => {
-			resumeProbeTimer = undefined;
-			requestReconnect();
-		}, resumeProbeTimeoutMs);
+		if (getSilenceMs() >= inactivityThresholdMs) requestReconnect();
+		else startProbe(resumeProbeTimeoutMs);
 	};
 
 	const markDisconnected = () => {
@@ -143,12 +184,11 @@ export function createWsTransportMonitor(
 	};
 
 	const handleDisconnect: EventListener = () => {
-		clearResumeProbe();
+		clearProbe();
 		markDisconnected();
 	};
 
 	const handleMessage: EventListener = () => {
-		clearResumeProbe();
 		lastActivity = receiveFrameNow();
 	};
 
@@ -168,30 +208,33 @@ export function createWsTransportMonitor(
 		socket.addEventListener("message", handleMessage);
 
 		checkTimer = setInterval(() => {
-			if (wasHidden || wasOffline || socket.readyState !== SOCKET_OPEN) return;
+			if (wasHidden || wasOffline || stopProbe || socket.readyState !== SOCKET_OPEN) return;
 			// The larger of the wall-clock and monotonic ages, so setting the system clock back cannot
-			// keep a silent socket looking active (ADR 0022).
-			if (getSilenceMs() < inactivityThresholdMs) return;
-			requestReconnect();
+			// keep a silent socket looking active (ADR 0022). A quiet socket is asked for a heartbeat,
+			// as the official terminal checks for fifteen seconds of silence; only the backstop
+			// threshold replaces it without asking.
+			const silenceMs = getSilenceMs();
+			if (silenceMs >= inactivityThresholdMs) requestReconnect();
+			else if (silenceMs >= quietProbeThresholdMs) startProbe(quietProbeTimeoutMs);
 		}, checkIntervalMs);
 
 		detachVisibility = watchVisibility((state) => {
 			if (state === "hidden") {
 				wasHidden = true;
-				clearResumeProbe();
+				clearProbe();
 				return;
 			}
 			if (!wasHidden) return;
 			wasHidden = false;
-			// Returning to the foreground does not imply a broken socket, so a socket that still
-			// receives frames is left alone; only one that proves dead or silent is replaced.
+			// Returning to the foreground does not imply a broken socket, so a socket that answers the
+			// heartbeat is left alone; only one that proves dead or silent is replaced.
 			recoverAfterResume();
 		});
 
 		detachNetwork = watchNetwork((state) => {
 			if (state === "offline") {
 				wasOffline = true;
-				clearResumeProbe();
+				clearProbe();
 				return;
 			}
 			if (!wasOffline) return;
@@ -209,7 +252,7 @@ export function createWsTransportMonitor(
 		socket.removeEventListener("message", handleMessage);
 		if (checkTimer) clearInterval(checkTimer);
 		checkTimer = undefined;
-		clearResumeProbe();
+		clearProbe();
 		detachVisibility?.();
 		detachVisibility = undefined;
 		detachNetwork?.();

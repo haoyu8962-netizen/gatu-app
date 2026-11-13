@@ -27,6 +27,7 @@ export function getRootProviderContext() {
 				retry: shouldRetryQuery,
 				retryDelay: getQueryRetryDelayMs,
 			},
+			mutations: { networkMode: "always" },
 		},
 	});
 	return { queryClient };

@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 
 import { HttpRequestError } from "@nktkas/hyperliquid";
+import { startExchangeActionDeadline } from "@sairn/hl-react/internal/exchange/request-scheduler";
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -104,6 +105,21 @@ function installExclusiveLockManager(): void {
 		},
 	} as unknown as LockManager;
 	Object.defineProperty(window.navigator, "locks", { configurable: true, value: manager });
+}
+
+function installDelayedAvailableLockManager(): { grant: () => void } {
+	let grant = () => {};
+	const granted = new Promise<void>((resolve) => {
+		grant = resolve;
+	});
+	const manager = {
+		async request<T>(name: string, _options: LockOptions, callback: (lock: Lock | null) => T | PromiseLike<T>) {
+			await granted;
+			return callback({ name, mode: "exclusive" } as Lock);
+		},
+	} as unknown as LockManager;
+	Object.defineProperty(window.navigator, "locks", { configurable: true, value: manager });
+	return { grant };
 }
 
 describe("useTrackedOrder", () => {
@@ -703,5 +719,62 @@ describe("useTrackedOrder", () => {
 
 		expect(mutateAsync).not.toHaveBeenCalled();
 		expect(hasPendingOrderForAssets("Mainnet", "0x1111111111111111111111111111111111111111", [18])).toBe(false);
+	});
+	describe("click deadline inside the asset lock (ADR 0053)", () => {
+		afterEach(() => {
+			vi.useRealTimers();
+		});
+
+		it.each([
+			[16_000, 0],
+			[14_000, 1],
+		])("when the asset lock is granted %i ms after the call, queues the order %i times", async (waitMs, calls) => {
+			vi.useFakeTimers({ toFake: ["Date"] });
+			const lock = installDelayedAvailableLockManager();
+			mutateAsync.mockResolvedValue({
+				status: "ok",
+				response: { type: "order", data: { statuses: [{ resting: { oid: 1 } }] } },
+			});
+			if (!hookValue) throw new Error("Expected tracked order hook");
+
+			const submission = hookValue.submitOrder(createParams(31), CROSS_PERP_SUBMIT_OPTIONS);
+			const settled = submission.then(
+				(value) => ({ value }),
+				(error: unknown) => ({ error }),
+			);
+			vi.setSystemTime(Date.now() + waitMs);
+			lock.grant();
+			let outcome: Awaited<typeof settled> | undefined;
+			await act(async () => {
+				outcome = await settled;
+			});
+
+			expect(mutateAsync).toHaveBeenCalledTimes(calls);
+			if (calls === 0) {
+				expect(outcome).toMatchObject({ error: { name: "ExchangeActionDeadlineError" } });
+				expect(hasPendingOrderForAssets("Mainnet", "0x1111111111111111111111111111111111111111", [31])).toBe(false);
+			} else {
+				expect(outcome).toMatchObject({ value: { state: "confirmed" } });
+			}
+		});
+
+		it("holds the order to the caller's deadline instead of starting a new one", async () => {
+			mutateAsync.mockResolvedValue({
+				status: "ok",
+				response: { type: "order", data: { statuses: [{ resting: { oid: 1 } }] } },
+			});
+			if (!hookValue) throw new Error("Expected tracked order hook");
+			const deadline = startExchangeActionDeadline();
+			if (deadline.current) deadline.current.queuedAt -= 16_000;
+
+			await act(async () => {
+				await expect(
+					hookValue?.submitOrder(createParams(32), { ...CROSS_PERP_SUBMIT_OPTIONS, deadline }),
+				).rejects.toMatchObject({ name: "ExchangeActionDeadlineError" });
+			});
+
+			expect(mutateAsync).not.toHaveBeenCalled();
+			expect(hasPendingOrderForAssets("Mainnet", "0x1111111111111111111111111111111111111111", [32])).toBe(false);
+		});
 	});
 });

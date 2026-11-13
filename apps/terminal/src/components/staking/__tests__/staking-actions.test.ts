@@ -129,6 +129,13 @@ describe("staking action safety", () => {
 		validationError.name = "ValidationError";
 		expect(classifyStakingActionError(validationError, true)).toBe("apiError");
 		expect(classifyStakingActionError(new Error("transport disconnected"), true)).toBe("unknown");
+		const deadlineError = Object.assign(new Error("deadline"), { name: "ExchangeActionDeadlineError" });
+		expect(classifyStakingActionError(deadlineError, true)).toBe("preflight");
+		expect(decideStakingActionError(deadlineError, true)).toEqual({
+			result: "apiError",
+			clearMarker: true,
+			reconcile: false,
+		});
 		expect(decideStakingActionError({ code: 4001 }, true)).toEqual({
 			result: "rejected",
 			clearMarker: true,

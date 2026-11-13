@@ -5,7 +5,12 @@ import { act, createElement, Fragment } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { OrderReconciliation } from "@/components/trade/order-reconciliation";
-import { ORDER_RECONCILIATION_CONFIRMATION_WINDOW_MS, type OrderProcessingStatus } from "@/domain/trade/order-tracking";
+import { STORAGE_KEYS } from "@/config/app";
+import {
+	ORDER_RECONCILIATION_CONFIRMATION_WINDOW_MS,
+	ORDER_RECONCILIATION_MAX_AGE_MS,
+	type OrderProcessingStatus,
+} from "@/domain/trade/order-tracking";
 import { settlePartialOrderCancellation } from "@/lib/trade/pending-trading-action-feedback";
 import {
 	getPositionMarketCloseActions,
@@ -17,10 +22,16 @@ import {
 	dismissOrderQueueItem,
 	getOrderQueueItem,
 	type OrderQueueItem,
+	updateOrderQueueItem,
 	useOrderQueue,
 	useOrderQueueActions,
 } from "@/stores/use-order-queue-store";
-import { getPendingOrderActions, hasPendingOrderForAssets } from "@/stores/use-pending-order-store";
+import {
+	createPendingOrderStore,
+	getPendingOrderActions,
+	hasPendingOrderForAssets,
+	type PendingOrderOrigin,
+} from "@/stores/use-pending-order-store";
 import {
 	getPendingTradingActionActions,
 	getPendingTradingActionSnapshot,
@@ -62,6 +73,7 @@ const POSITION: PositionMarketCloseRef = {
 };
 const mocks = vi.hoisted(() => ({
 	clientKey: "0x1111111111111111111111111111111111111111",
+	env: "Mainnet" as "Mainnet" | "Testnet",
 	infoOrderStatus: vi.fn(),
 	successToast: vi.fn(),
 	warningToast: vi.fn(),
@@ -87,7 +99,7 @@ vi.mock("sonner", () => ({
 }));
 
 vi.mock("@/lib/hyperliquid", () => ({
-	useHyperliquid: () => ({ clientKey: mocks.clientKey, env: "Mainnet", info: { orderStatus: mocks.infoOrderStatus } }),
+	useHyperliquid: () => ({ clientKey: mocks.clientKey, env: mocks.env, info: { orderStatus: mocks.infoOrderStatus } }),
 	useSubscription: (method: string) =>
 		method === "openOrders"
 			? {
@@ -131,6 +143,7 @@ describe("OrderReconciliation", () => {
 		mocks.errorToast.mockReset();
 		mocks.dismissToast.mockReset();
 		mocks.clientKey = USER;
+		mocks.env = "Mainnet";
 		mocks.orderUpdatesData = undefined;
 		mocks.openOrdersData = undefined;
 		mocks.openOrdersLastMessageAt = undefined;
@@ -360,7 +373,7 @@ describe("OrderReconciliation", () => {
 		expect(getPositionMarketCloseModal()).toBeNull();
 	});
 
-	it("releases the local lock while the wallet is disconnected", () => {
+	it("releases the local lock while the wallet is disconnected when there are no Web Locks", () => {
 		const submission = getPendingOrderActions().add({
 			env: "Mainnet",
 			user: USER,
@@ -436,6 +449,35 @@ describe("OrderReconciliation", () => {
 		expect(getOrderQueueItem(queueId)?.error).toBeUndefined();
 	});
 
+	it("shows a confirming notification as unconfirmed once another tab marks the submission unconfirmed when there are no Web Locks", () => {
+		const submission = getPendingOrderActions().add({
+			env: "Mainnet",
+			user: USER,
+			intentKey: "marked-elsewhere-without-locks",
+			children: [{ assetId: 73, cloid: "0x00000000000000000000000000000073" }],
+		});
+		act(() => root.render(createReconciliation()));
+		const queueId = `reconcile-${submission.id}`;
+		expect(getOrderQueueItem(queueId)?.status).toBe("confirming");
+
+		const otherTab = createPendingOrderStore(window.localStorage);
+		expect(otherTab.getState().actions.markUnconfirmed(submission.id, Date.now())?.unconfirmedAt).toBe(Date.now());
+		act(() => {
+			window.dispatchEvent(
+				new StorageEvent("storage", {
+					key: `${STORAGE_KEYS.PENDING_ORDERS}:submission:Mainnet:${USER}:${submission.id}`,
+				}),
+			);
+		});
+
+		expect(getOrderQueueItem(queueId)).toMatchObject({
+			status: "unconfirmed",
+			error: { code: "status-unconfirmed" },
+			children: [{ assetId: 73, status: "unknown" }],
+		});
+		expect(getOrderQueueItem(queueId)?.dismissed).toBeFalsy();
+	});
+
 	it("restores an old pending record without inventing market or size metadata", () => {
 		const submission = getPendingOrderActions().add({
 			env: "Mainnet",
@@ -508,7 +550,7 @@ describe("OrderReconciliation", () => {
 		expect(mocks.warningToast).not.toHaveBeenCalled();
 	});
 
-	it("keeps a late response scoped to the originating account after switching accounts", async () => {
+	it("keeps a late response scoped to the originating account after switching accounts when there are no Web Locks", async () => {
 		let settle!: (result: { status: "order"; order: { status: "filled" } }) => void;
 		mocks.infoOrderStatus.mockImplementationOnce(
 			() =>
@@ -1041,6 +1083,70 @@ describe("OrderReconciliation", () => {
 		);
 	});
 
+	function claimUnconfirmedModification(oid: number) {
+		const now = Date.now();
+		const monotonicNow = performance.now();
+		const action = getPendingTradingActionActions().claimModification({
+			env: "Mainnet",
+			owner: USER,
+			oid,
+			originalSize: "2",
+			originalTriggerPx: "0",
+			originalLimitPx: "100",
+			expectedSize: "1",
+		});
+		if (!action) throw new Error("Expected modification claim");
+		getPendingTradingActionActions().markModificationRequestStarted(action.id, now - 2, monotonicNow - 2);
+		getPendingTradingActionActions().markModificationUnconfirmed(action.id, now - 1, monotonicNow - 1);
+		return { action, id: `pending-trading-action:${action.id}`, monotonicNow };
+	}
+
+	it("keeps a hidden unconfirmed modification hidden when a fresh snapshot shows the original order", () => {
+		const { action, id, monotonicNow } = claimUnconfirmedModification(48);
+		act(() => root.render(createReconciliation()));
+		expect(getOrderQueueItem(id)?.status).toBe("unconfirmed");
+		act(() => dismissOrderQueueItem(id));
+
+		mocks.openOrdersData = { orders: [{ oid: 48, sz: "2", triggerPx: "0" }] };
+		mocks.openOrdersMonotonicLastMessageAt = monotonicNow;
+		act(() => root.render(createReconciliation()));
+
+		expect(getPendingTradingActionSnapshot().modifications).toHaveLength(0);
+		expect(getOrderQueueItem(id)).toMatchObject({ status: "unconfirmed", dismissed: true });
+		expectActionFeedback(
+			action.id,
+			"unconfirmed",
+			"The modification was not confirmed. Review the order before retrying.",
+		);
+	});
+
+	it("shows a released modification as unconfirmed when its notification was not yet unconfirmed", () => {
+		const { id, monotonicNow } = claimUnconfirmedModification(49);
+		act(() => root.render(createReconciliation()));
+		act(() => dismissOrderQueueItem(id));
+		act(() => updateOrderQueueItem(id, { status: "confirming" }));
+
+		mocks.openOrdersData = { orders: [{ oid: 49, sz: "2", triggerPx: "0" }] };
+		mocks.openOrdersMonotonicLastMessageAt = monotonicNow;
+		act(() => root.render(createReconciliation()));
+
+		expect(getOrderQueueItem(id)).toMatchObject({ status: "unconfirmed", dismissed: false });
+	});
+
+	it("shows a hidden unconfirmed modification again once its order has left the open orders", () => {
+		const { action, id, monotonicNow } = claimUnconfirmedModification(50);
+		act(() => root.render(createReconciliation()));
+		act(() => dismissOrderQueueItem(id));
+
+		mocks.openOrdersData = { orders: [] };
+		mocks.openOrdersMonotonicLastMessageAt = monotonicNow;
+		act(() => root.render(createReconciliation()));
+
+		expect(getPendingTradingActionSnapshot().modifications).toHaveLength(0);
+		expect(getOrderQueueItem(id)).toMatchObject({ status: "unconfirmed", dismissed: false });
+		expectActionFeedback(action.id, "unconfirmed", "The modified order is no longer open.");
+	});
+
 	it("does not use a pre-unconfirmed snapshot to release a modification", () => {
 		const now = Date.now();
 		const monotonicNow = performance.now();
@@ -1193,7 +1299,7 @@ describe("OrderReconciliation", () => {
 		});
 		if (!cancellation) throw new Error("Expected cancellation claim");
 		getPendingTradingActionActions().markOrderCancellationRequestStarted(cancellation.id, now - 2, monotonicNow - 2);
-		getPendingTradingActionActions().markOrderCancellationAwaiting(cancellation.id, now - 1, monotonicNow - 1);
+		getPendingTradingActionActions().markOrderCancellationAccepted(cancellation.id, now - 1, monotonicNow - 1);
 		mocks.openOrdersData = { orders: [] };
 		mocks.openOrdersLastMessageAt = now;
 		mocks.openOrdersMonotonicLastMessageAt = monotonicNow;
@@ -1319,7 +1425,7 @@ describe("OrderReconciliation", () => {
 		});
 		if (!cancellation) throw new Error("Expected cancellation claim");
 		getPendingTradingActionActions().markOrderCancellationRequestStarted(cancellation.id, now - 1, monotonicNow - 1);
-		getPendingTradingActionActions().markOrderCancellationAwaiting(cancellation.id, now, monotonicNow);
+		getPendingTradingActionActions().markOrderCancellationAccepted(cancellation.id, now, monotonicNow);
 		act(() => root.render(createReconciliation()));
 
 		act(() => vi.advanceTimersByTime(TRADING_ACTION_CONFIRMATION_TIMEOUT_MS));
@@ -1344,7 +1450,7 @@ describe("OrderReconciliation", () => {
 		});
 		if (!cancellation) throw new Error("Expected cancellation claim");
 		getPendingTradingActionActions().markOrderCancellationRequestStarted(cancellation.id);
-		getPendingTradingActionActions().markOrderCancellationAwaiting(cancellation.id);
+		getPendingTradingActionActions().markOrderCancellationAccepted(cancellation.id);
 		act(() => root.render(createReconciliation()));
 
 		vi.setSystemTime(Date.now() - 60 * 60_000);
@@ -1570,5 +1676,859 @@ describe("OrderReconciliation", () => {
 		expect(mocks.errorToast).not.toHaveBeenCalled();
 		expect(getOrderQueueItem(`pending-trading-action:${action.id}`)?.owner).toBe(USER);
 		timeoutSpy.mockRestore();
+	});
+	describe("a cancellation whose outcome the exchange did not confirm", () => {
+		const FILLED_BEFORE_CANCEL = "Filled before it could be canceled. Check your positions.";
+		const NO_LONGER_OPEN = "The order is no longer open. Check your fills before retrying.";
+		const NOT_CONFIRMED_REVIEW_OPEN_ORDERS = "The cancellation was not confirmed. Review open orders before retrying.";
+
+		function claimUnconfirmedCancellation(oids: number[], phase: "awaiting" | "unconfirmed") {
+			const now = Date.now();
+			const monotonicNow = performance.now();
+			const cancellation = getPendingTradingActionActions().claimOrderCancellation({
+				env: "Mainnet",
+				owner: USER,
+				oids,
+			});
+			if (!cancellation) throw new Error("Expected cancellation claim");
+			const actions = getPendingTradingActionActions();
+			actions.markOrderCancellationRequestStarted(cancellation.id, now - 2, monotonicNow - 2);
+			if (phase === "awaiting") actions.markOrderCancellationAwaiting(cancellation.id, now - 1, monotonicNow - 1);
+			else actions.markOrderCancellationUnconfirmed(cancellation.id, now - 1, monotonicNow - 1);
+			mocks.openOrdersData = { orders: [] };
+			mocks.openOrdersLastMessageAt = now;
+			mocks.openOrdersMonotonicLastMessageAt = monotonicNow;
+			return cancellation;
+		}
+
+		function orderStatus(status: OrderProcessingStatus) {
+			return { status: "order", order: { status } };
+		}
+
+		async function renderAndSettle() {
+			await act(async () => {
+				root.render(createReconciliation());
+				for (let index = 0; index < 5; index += 1) await Promise.resolve();
+			});
+		}
+
+		it("reports an order that filled instead of being canceled as a failed cancellation", async () => {
+			mocks.infoOrderStatus.mockResolvedValue(orderStatus("filled"));
+			const cancellation = claimUnconfirmedCancellation([80], "awaiting");
+
+			await renderAndSettle();
+
+			expect(mocks.infoOrderStatus).toHaveBeenCalledExactlyOnceWith({ user: USER, oid: 80 });
+			expect(getPendingTradingActionSnapshot().orderCancellations).toEqual([]);
+			expectActionFeedback(cancellation.id, "failed", FILLED_BEFORE_CANCEL);
+		});
+
+		it("reports Canceled once the order status confirms a timed-out cancellation", async () => {
+			mocks.infoOrderStatus.mockResolvedValue(orderStatus("canceled"));
+			const cancellation = claimUnconfirmedCancellation([81], "unconfirmed");
+
+			await renderAndSettle();
+
+			expect(getPendingTradingActionSnapshot().orderCancellations).toEqual([]);
+			expectActionFeedback(cancellation.id, "success", "Canceled");
+		});
+
+		it("counts the canceled orders of a batch in which another order filled", async () => {
+			mocks.infoOrderStatus.mockImplementation(({ oid }: { oid: number }) =>
+				Promise.resolve(orderStatus(oid === 82 ? "filled" : "reduceOnlyCanceled")),
+			);
+			const cancellation = claimUnconfirmedCancellation([82, 83], "unconfirmed");
+
+			await renderAndSettle();
+
+			expect(getOrderQueueItem(`pending-trading-action:${cancellation.id}`)).toMatchObject({
+				status: "partial",
+				acceptedCount: 1,
+				totalCount: 2,
+				countMode: "canceled",
+			});
+			expectActionFeedback(cancellation.id, "partial", FILLED_BEFORE_CANCEL);
+		});
+
+		it("stays neutral when the order status cannot be read, and asks only once", async () => {
+			let fail!: (error: Error) => void;
+			mocks.infoOrderStatus.mockReturnValue(
+				new Promise((_resolve, reject) => {
+					fail = reject;
+				}),
+			);
+			const cancellation = claimUnconfirmedCancellation([84], "unconfirmed");
+
+			await renderAndSettle();
+			mocks.openOrdersMonotonicLastMessageAt = performance.now() + 1;
+			await renderAndSettle();
+			await act(async () => {
+				fail(new Error("network"));
+				for (let index = 0; index < 5; index += 1) await Promise.resolve();
+			});
+
+			expect(mocks.infoOrderStatus).toHaveBeenCalledTimes(1);
+			expect(getPendingTradingActionSnapshot().orderCancellations).toEqual([]);
+			expectActionFeedback(cancellation.id, "unconfirmed", NO_LONGER_OPEN);
+		});
+
+		it("does not call an order canceled when its status is unknown or still open", async () => {
+			mocks.infoOrderStatus.mockResolvedValueOnce({ status: "unknownOid" }).mockResolvedValueOnce(orderStatus("open"));
+			const unknown = claimUnconfirmedCancellation([85], "unconfirmed");
+			const open = claimUnconfirmedCancellation([86], "unconfirmed");
+
+			await renderAndSettle();
+
+			expectActionFeedback(unknown.id, "unconfirmed", NO_LONGER_OPEN);
+			expectActionFeedback(open.id, "unconfirmed", NOT_CONFIRMED_REVIEW_OPEN_ORDERS);
+		});
+
+		it("never calls a triggered order canceled or filled", async () => {
+			mocks.infoOrderStatus.mockResolvedValue(orderStatus("triggered"));
+			const cancellation = claimUnconfirmedCancellation([89], "unconfirmed");
+
+			await renderAndSettle();
+
+			expectActionFeedback(cancellation.id, "unconfirmed", NOT_CONFIRMED_REVIEW_OPEN_ORDERS);
+		});
+
+		it.each([
+			{ name: "a fill and a failed lookup", oids: [90, 91], statuses: ["filled", "error"] },
+			{
+				name: "a fill, a cancel and an unknown order",
+				oids: [92, 93, 94],
+				statuses: ["filled", "canceled", "unknownOid"],
+			},
+			{
+				name: "a fill among ten looked-up orders and an eleventh never looked up",
+				oids: Array.from({ length: 11 }, (_, index) => 120 + index),
+				statuses: ["filled", ...Array<string>(10).fill("canceled")],
+			},
+		])("stays neutral for $name instead of reporting a failed batch", async ({ oids, statuses }) => {
+			mocks.infoOrderStatus.mockImplementation(({ oid }: { oid: number }) => {
+				const status = statuses[oids.indexOf(oid)];
+				if (status === "error") return Promise.reject(new Error("network"));
+				if (status === "unknownOid") return Promise.resolve({ status: "unknownOid" });
+				return Promise.resolve(orderStatus(status as OrderProcessingStatus));
+			});
+			const cancellation = claimUnconfirmedCancellation(oids, "unconfirmed");
+
+			await renderAndSettle();
+
+			expect(getOrderQueueItem(`pending-trading-action:${cancellation.id}`)).toMatchObject({ status: "unconfirmed" });
+			expectActionFeedback(cancellation.id, "unconfirmed", NO_LONGER_OPEN);
+		});
+
+		it("reports every order filled as a failed cancellation", async () => {
+			mocks.infoOrderStatus.mockResolvedValue(orderStatus("filled"));
+			const cancellation = claimUnconfirmedCancellation([95, 96], "unconfirmed");
+
+			await renderAndSettle();
+
+			expectActionFeedback(cancellation.id, "failed", FILLED_BEFORE_CANCEL);
+		});
+
+		it("draws no conclusion when the order is back in the open orders by the time the lookup returns", async () => {
+			let answer!: (value: unknown) => void;
+			mocks.infoOrderStatus.mockReturnValue(
+				new Promise((resolve) => {
+					answer = resolve;
+				}),
+			);
+			const cancellation = claimUnconfirmedCancellation([97], "awaiting");
+			await renderAndSettle();
+
+			mocks.openOrdersData = { orders: [{ oid: 97, sz: "1", triggerPx: "0" }] };
+			mocks.openOrdersMonotonicLastMessageAt = performance.now() + 1;
+			await renderAndSettle();
+			await act(async () => {
+				answer(orderStatus("open"));
+				for (let index = 0; index < 5; index += 1) await Promise.resolve();
+			});
+
+			expect(getPendingTradingActionSnapshot().orderCancellations).toMatchObject([{ id: cancellation.id }]);
+			expect(getOrderQueueItem(`pending-trading-action:${cancellation.id}`)?.status).toBe("confirming");
+		});
+
+		it("ignores open orders of another network when deciding whether the order came back", async () => {
+			let answer!: (value: unknown) => void;
+			mocks.infoOrderStatus.mockReturnValue(
+				new Promise((resolve) => {
+					answer = resolve;
+				}),
+			);
+			const cancellation = claimUnconfirmedCancellation([101], "unconfirmed");
+			await renderAndSettle();
+
+			mocks.env = "Testnet";
+			mocks.openOrdersData = { orders: [{ oid: 101, sz: "1", triggerPx: "0" }] };
+			mocks.openOrdersMonotonicLastMessageAt = performance.now() + 1;
+			await renderAndSettle();
+			await act(async () => {
+				answer(orderStatus("canceled"));
+				for (let index = 0; index < 5; index += 1) await Promise.resolve();
+			});
+
+			expectActionFeedback(cancellation.id, "success", "Canceled");
+		});
+
+		it("turns a confirming cancellation unconfirmed when the lookup brings no result", async () => {
+			mocks.infoOrderStatus.mockRejectedValue(new Error("network"));
+			const cancellation = claimUnconfirmedCancellation([103], "awaiting");
+
+			await renderAndSettle();
+
+			expect(getOrderQueueItem(`pending-trading-action:${cancellation.id}`)).toMatchObject({
+				status: "unconfirmed",
+				dismissed: false,
+			});
+			expectActionFeedback(cancellation.id, "unconfirmed", NO_LONGER_OPEN);
+		});
+
+		it("keeps a hidden unconfirmed cancellation hidden when the order is still open", async () => {
+			const now = Date.now();
+			const monotonicNow = performance.now();
+			const cancellation = getPendingTradingActionActions().claimOrderCancellation({
+				env: "Mainnet",
+				owner: USER,
+				oids: [104],
+			});
+			if (!cancellation) throw new Error("Expected cancellation claim");
+			getPendingTradingActionActions().markOrderCancellationRequestStarted(cancellation.id, now - 2, monotonicNow - 2);
+			getPendingTradingActionActions().markOrderCancellationUnconfirmed(cancellation.id, now - 1, monotonicNow - 1);
+			const id = `pending-trading-action:${cancellation.id}`;
+			act(() => root.render(createReconciliation()));
+			expect(getOrderQueueItem(id)?.status).toBe("unconfirmed");
+			act(() => dismissOrderQueueItem(id));
+
+			mocks.openOrdersData = { orders: [{ oid: 104, sz: "1", triggerPx: "0" }] };
+			mocks.openOrdersMonotonicLastMessageAt = monotonicNow;
+			act(() => root.render(createReconciliation()));
+
+			expect(getPendingTradingActionSnapshot().orderCancellations).toEqual([]);
+			expect(getOrderQueueItem(id)).toMatchObject({ status: "unconfirmed", dismissed: true });
+			expectActionFeedback(cancellation.id, "unconfirmed", NOT_CONFIRMED_REVIEW_OPEN_ORDERS);
+		});
+
+		it("shows a still-open cancellation as unconfirmed when its notification was not yet unconfirmed", async () => {
+			const now = Date.now();
+			const monotonicNow = performance.now();
+			const cancellation = getPendingTradingActionActions().claimOrderCancellation({
+				env: "Mainnet",
+				owner: USER,
+				oids: [105],
+			});
+			if (!cancellation) throw new Error("Expected cancellation claim");
+			getPendingTradingActionActions().markOrderCancellationRequestStarted(cancellation.id, now - 2, monotonicNow - 2);
+			getPendingTradingActionActions().markOrderCancellationUnconfirmed(cancellation.id, now - 1, monotonicNow - 1);
+			const id = `pending-trading-action:${cancellation.id}`;
+			act(() => root.render(createReconciliation()));
+			act(() => dismissOrderQueueItem(id));
+			act(() => updateOrderQueueItem(id, { status: "confirming" }));
+
+			mocks.openOrdersData = { orders: [{ oid: 105, sz: "1", triggerPx: "0" }] };
+			mocks.openOrdersMonotonicLastMessageAt = monotonicNow;
+			act(() => root.render(createReconciliation()));
+
+			expect(getOrderQueueItem(id)).toMatchObject({ status: "unconfirmed", dismissed: false });
+		});
+
+		it("keeps the counts and rejection of a partly accepted batch whose canceled order is still open", async () => {
+			const now = Date.now();
+			const monotonicNow = performance.now();
+			const rejection = "Order was never placed, already canceled, or filled.";
+			const cancellation = getPendingTradingActionActions().claimOrderCancellation({
+				env: "Mainnet",
+				owner: USER,
+				oids: [106, 107],
+			});
+			if (!cancellation) throw new Error("Expected cancellation claim");
+			getPendingTradingActionActions().markOrderCancellationRequestStarted(cancellation.id, now - 3, monotonicNow - 3);
+			settlePartialOrderCancellation(cancellation, [106, 107], {
+				status: "partial",
+				totalCount: 2,
+				acceptedIndexes: [0],
+				errors: [{ index: 1, text: rejection }],
+			});
+			getPendingTradingActionActions().markOrderCancellationUnconfirmed(cancellation.id, now - 1, monotonicNow - 1);
+			const id = `pending-trading-action:${cancellation.id}`;
+			act(() => root.render(createReconciliation()));
+			act(() => updateOrderQueueItem(id, { status: "confirming" }));
+
+			mocks.openOrdersData = { orders: [{ oid: 106, sz: "1", triggerPx: "0" }] };
+			mocks.openOrdersMonotonicLastMessageAt = monotonicNow;
+			act(() => root.render(createReconciliation()));
+
+			expect(getPendingTradingActionSnapshot().orderCancellations).toEqual([]);
+			expect(getOrderQueueItem(id)).toMatchObject({
+				status: "unconfirmed",
+				acceptedCount: 1,
+				totalCount: 2,
+				countMode: "canceled",
+				error: { kind: "exchange-error", entries: [{ index: 1, text: rejection }] },
+			});
+		});
+
+		it("keeps a hidden unconfirmed cancellation hidden when the lookup brings no result", async () => {
+			let fail!: (error: Error) => void;
+			mocks.infoOrderStatus.mockReturnValue(
+				new Promise((_resolve, reject) => {
+					fail = reject;
+				}),
+			);
+			const cancellation = claimUnconfirmedCancellation([102], "unconfirmed");
+			const id = `pending-trading-action:${cancellation.id}`;
+			await renderAndSettle();
+			expect(getOrderQueueItem(id)?.status).toBe("unconfirmed");
+			act(() => dismissOrderQueueItem(id));
+
+			await act(async () => {
+				fail(new Error("network"));
+				for (let index = 0; index < 5; index += 1) await Promise.resolve();
+			});
+
+			expect(getPendingTradingActionSnapshot().orderCancellations).toEqual([]);
+			expect(getOrderQueueItem(id)).toMatchObject({ status: "unconfirmed", dismissed: true });
+			expectActionFeedback(cancellation.id, "unconfirmed", NO_LONGER_OPEN);
+		});
+
+		it("does not bring back the notification of a cancellation that ended while its lookup was running", async () => {
+			let answer!: (value: unknown) => void;
+			mocks.infoOrderStatus.mockReturnValue(
+				new Promise((resolve) => {
+					answer = resolve;
+				}),
+			);
+			const cancellation = claimUnconfirmedCancellation([98], "unconfirmed");
+			await renderAndSettle();
+
+			act(() => {
+				getPendingTradingActionActions().reset();
+				queueActions?.removeOrder(`pending-trading-action:${cancellation.id}`);
+			});
+			await act(async () => {
+				answer(orderStatus("canceled"));
+				for (let index = 0; index < 5; index += 1) await Promise.resolve();
+			});
+
+			expect(getOrderQueueItem(`pending-trading-action:${cancellation.id}`)).toBeUndefined();
+		});
+
+		it("looks up at most ten orders of a large batch and does not conclude for the rest", async () => {
+			mocks.infoOrderStatus.mockResolvedValue(orderStatus("canceled"));
+			const oids = Array.from({ length: 12 }, (_, index) => 100 + index);
+			const cancellation = claimUnconfirmedCancellation(oids, "unconfirmed");
+
+			await renderAndSettle();
+
+			expect(mocks.infoOrderStatus).toHaveBeenCalledTimes(10);
+			expectActionFeedback(cancellation.id, "unconfirmed", NO_LONGER_OPEN);
+		});
+
+		it("does not tell a pending modification that its filled order was canceled", async () => {
+			const now = Date.now();
+			const monotonicNow = performance.now();
+			mocks.infoOrderStatus.mockResolvedValue(orderStatus("filled"));
+			const modification = getPendingTradingActionActions().claimModification({
+				env: "Mainnet",
+				owner: USER,
+				oid: 87,
+				originalSize: "2",
+				originalTriggerPx: "0",
+				originalLimitPx: "100",
+				expectedSize: "1",
+			});
+			if (!modification) throw new Error("Expected modification claim");
+			getPendingTradingActionActions().markModificationRequestStarted(modification.id, now - 4, monotonicNow - 4);
+			getPendingTradingActionActions().markModificationUnconfirmed(modification.id, now - 3, monotonicNow - 3);
+			claimUnconfirmedCancellation([87], "unconfirmed");
+
+			await renderAndSettle();
+
+			expect(getPendingTradingActionSnapshot().modifications).toEqual([]);
+			expectActionFeedback(modification.id, "unconfirmed", "The modified order is no longer open.");
+		});
+
+		it("keeps reporting an accepted cancellation as Canceled without a status lookup", () => {
+			const now = Date.now();
+			const monotonicNow = performance.now();
+			const cancellation = getPendingTradingActionActions().claimOrderCancellation({
+				env: "Mainnet",
+				owner: USER,
+				oids: [88],
+			});
+			if (!cancellation) throw new Error("Expected cancellation claim");
+			getPendingTradingActionActions().markOrderCancellationRequestStarted(cancellation.id, now - 2, monotonicNow - 2);
+			getPendingTradingActionActions().markOrderCancellationAccepted(cancellation.id, now - 1, monotonicNow - 1);
+			mocks.openOrdersData = { orders: [] };
+			mocks.openOrdersLastMessageAt = now;
+			mocks.openOrdersMonotonicLastMessageAt = monotonicNow;
+
+			act(() => root.render(createReconciliation()));
+
+			expect(mocks.infoOrderStatus).not.toHaveBeenCalled();
+			expectActionFeedback(cancellation.id, "success", "Canceled");
+		});
+	});
+	describe("a submission recorded by another tab", () => {
+		const OTHER_TAB_ID = "other-tab-submission";
+		const OTHER_TAB_CLOID = "0x000000000000000000000000000000aa" as const;
+		const STORAGE_KEY = `${STORAGE_KEYS.PENDING_ORDERS}:submission:Mainnet:${USER}:${OTHER_TAB_ID}`;
+		const LOCK_NAME = `sairn-pending-order-owner-v1:${OTHER_TAB_ID}`;
+		const otherTabLocks = new Map<string, Array<() => void>>();
+		const otherTabs: Array<ReturnType<typeof createPendingOrderStore>> = [];
+
+		function openOtherTab() {
+			const otherTab = createPendingOrderStore(window.localStorage);
+			otherTab.getState().actions.serve({ env: "Mainnet", user: USER });
+			otherTabs.push(otherTab);
+			return otherTab;
+		}
+
+		function installLockManager() {
+			const manager = {
+				request(name: string, _options: LockOptions, callback: (lock: Lock | null) => unknown) {
+					return new Promise((resolve) => {
+						const run = () => {
+							otherTabLocks.set(name, []);
+							Promise.resolve()
+								.then(() => callback({ name, mode: "exclusive" } as Lock))
+								.then(resolve)
+								.finally(() => releaseLock(name));
+						};
+						const queue = otherTabLocks.get(name);
+						if (queue) queue.push(run);
+						else run();
+					});
+				},
+			} as unknown as LockManager;
+			Object.defineProperty(window.navigator, "locks", { configurable: true, value: manager });
+		}
+
+		function releaseLock(name: string) {
+			const queue = otherTabLocks.get(name);
+			otherTabLocks.delete(name);
+			queue?.shift()?.();
+			if (queue?.length) otherTabLocks.set(name, queue);
+		}
+
+		function writeOtherTabSubmission(present: boolean, unconfirmedAt?: number, origin?: PendingOrderOrigin) {
+			if (present) {
+				window.localStorage.setItem(
+					STORAGE_KEY,
+					JSON.stringify({
+						id: OTHER_TAB_ID,
+						env: "Mainnet",
+						user: USER,
+						intentKey: "other-tab-order",
+						origin,
+						createdAt: Date.now(),
+						unconfirmedAt,
+						children: [{ assetId: 9, cloid: OTHER_TAB_CLOID, attempts: 0, nextCheckAt: Date.now() + 1_000 }],
+					}),
+				);
+			} else {
+				window.localStorage.removeItem(STORAGE_KEY);
+			}
+			window.dispatchEvent(new StorageEvent("storage", { key: STORAGE_KEY }));
+		}
+
+		async function flush() {
+			await act(async () => {
+				for (let index = 0; index < 5; index += 1) await Promise.resolve();
+			});
+		}
+
+		beforeEach(() => {
+			otherTabLocks.clear();
+			installLockManager();
+			otherTabLocks.set(LOCK_NAME, []);
+		});
+
+		afterEach(() => {
+			act(() => {
+				for (const otherTab of otherTabs.splice(0)) otherTab.getState().actions.serve(null);
+			});
+			window.localStorage.removeItem(STORAGE_KEY);
+			Object.defineProperty(window.navigator, "locks", { configurable: true, value: undefined });
+		});
+
+		it("leaves no notification behind once the sending tab settles its submission", async () => {
+			act(() => root.render(createReconciliation()));
+			act(() => writeOtherTabSubmission(true));
+			await flush();
+			mocks.orderUpdatesData = [{ order: { cloid: OTHER_TAB_CLOID }, status: "open" }];
+			act(() => root.render(createReconciliation()));
+			await act(() => vi.advanceTimersByTimeAsync(3_000));
+
+			expect(findQueueForAsset(9)).toBeUndefined();
+			expect(mocks.infoOrderStatus).not.toHaveBeenCalled();
+			expect(hasPendingOrderForAssets("Mainnet", USER, [9])).toBe(true);
+
+			window.localStorage.removeItem(STORAGE_KEY);
+			releaseLock(LOCK_NAME);
+			await flush();
+			expect(findQueueForAsset(9)).toBeUndefined();
+			act(() => writeOtherTabSubmission(false));
+			await flush();
+			expect(findQueueForAsset(9)).toBeUndefined();
+		});
+
+		it("takes over the submission of a tab that closed before settling it", async () => {
+			act(() => root.render(createReconciliation()));
+			act(() => writeOtherTabSubmission(true));
+			await flush();
+			expect(findQueueForAsset(9)).toBeUndefined();
+
+			releaseLock(LOCK_NAME);
+			await flush();
+
+			expect(findQueueForAsset(9)).toMatchObject({ owner: USER, env: "Mainnet", status: "confirming" });
+			expect(otherTabLocks.has(LOCK_NAME)).toBe(true);
+		});
+
+		it("does not settle a lookup that returns after this tab handed the submission to another tab", async () => {
+			let answer!: (value: unknown) => void;
+			mocks.infoOrderStatus.mockReturnValue(
+				new Promise((resolve) => {
+					answer = resolve;
+				}),
+			);
+			const cloid = "0x000000000000000000000000000000bb" as const;
+			act(() => root.render(createReconciliation()));
+			const submission = getPendingOrderActions().add({
+				env: "Mainnet",
+				user: USER,
+				intentKey: "handed-over-order",
+				children: [{ assetId: 11, cloid }],
+			});
+			const storageKey = `${STORAGE_KEYS.PENDING_ORDERS}:submission:Mainnet:${USER}:${submission.id}`;
+			const otherTab = openOtherTab();
+			await flush();
+			await act(() => vi.advanceTimersByTimeAsync(3_000));
+			expect(mocks.infoOrderStatus).toHaveBeenCalledWith({ user: USER, oid: cloid });
+			expect(otherTab.getState().actions.owns(submission.id)).toBe(false);
+
+			mocks.clientKey = "0x2222222222222222222222222222222222222222";
+			act(() => root.render(createReconciliation()));
+			await flush();
+			expect(otherTab.getState().actions.owns(submission.id)).toBe(true);
+
+			await act(async () => {
+				answer({ status: "order", order: { status: "filled" } });
+				for (let index = 0; index < 5; index += 1) await Promise.resolve();
+			});
+
+			expect(window.localStorage.getItem(storageKey)).not.toBeNull();
+			expect(findQueueForAsset(11)?.status).not.toBe("success");
+			window.localStorage.removeItem(storageKey);
+			act(() => getPendingOrderActions().remove(submission.id));
+		});
+
+		it("withdraws this tab's in-progress notification once the tab it handed over to settles the order", async () => {
+			const cloid = "0x000000000000000000000000000000dd" as const;
+			act(() => root.render(createReconciliation()));
+			const submission = getPendingOrderActions().add({
+				env: "Mainnet",
+				user: USER,
+				intentKey: "settled-elsewhere-order",
+				children: [{ assetId: 13, cloid }],
+			});
+			const storageKey = `${STORAGE_KEYS.PENDING_ORDERS}:submission:Mainnet:${USER}:${submission.id}`;
+			act(() => root.render(createReconciliation()));
+			expect(findQueueForAsset(13)?.status).toBe("confirming");
+			const otherTab = openOtherTab();
+
+			mocks.clientKey = "0x2222222222222222222222222222222222222222";
+			act(() => root.render(createReconciliation()));
+			await flush();
+			expect(otherTab.getState().actions.owns(submission.id)).toBe(true);
+
+			const settled = otherTab.getState().actions.resolve("Mainnet", USER, cloid, "filled");
+			expect(settled?.children[0]?.status).toBe("filled");
+			expect(window.localStorage.getItem(storageKey)).toBeNull();
+			act(() => window.dispatchEvent(new StorageEvent("storage", { key: storageKey })));
+			mocks.clientKey = USER;
+			act(() => root.render(createReconciliation()));
+			await flush();
+
+			expect(findQueueForAsset(13)).toBeUndefined();
+			expect(hasPendingOrderForAssets("Mainnet", USER, [13])).toBe(false);
+		});
+
+		it("keeps the notification of a submission this tab removes or settles itself", async () => {
+			const cloid = "0x000000000000000000000000000000ee" as const;
+			act(() => root.render(createReconciliation()));
+			const removed = getPendingOrderActions().add({
+				env: "Mainnet",
+				user: USER,
+				intentKey: "removed-here-order",
+				children: [{ assetId: 14, cloid: "0x000000000000000000000000000000ef" }],
+			});
+			act(() => root.render(createReconciliation()));
+			expect(findQueueForAsset(14)?.status).toBe("confirming");
+			act(() => getPendingOrderActions().remove(removed.id));
+			await flush();
+			expect(findQueueForAsset(14)?.status).toBe("confirming");
+
+			getPendingOrderActions().add({
+				env: "Mainnet",
+				user: USER,
+				intentKey: "settled-here-order",
+				children: [{ assetId: 15, cloid }],
+			});
+			mocks.orderUpdatesData = [{ order: { cloid }, status: "open" }];
+			act(() => root.render(createReconciliation()));
+			await flush();
+			expect(findQueueForAsset(15)).toMatchObject({ status: "success", outcome: "resting" });
+		});
+
+		function addMarketClose(assetId: number, cloid: `0x${string}`, sessionId: string) {
+			return getPendingOrderActions().add({
+				env: "Mainnet",
+				user: USER,
+				intentKey: `market-close-${assetId}`,
+				exclusiveAssetLock: true,
+				confirmationMode: "filled",
+				origin: { type: "positionMarketClose", sessionId },
+				children: [{ assetId, cloid }],
+			});
+		}
+
+		function storageKeyOf(submission: { id: string }) {
+			return `${STORAGE_KEYS.PENDING_ORDERS}:submission:Mainnet:${USER}:${submission.id}`;
+		}
+
+		it("releases the market close session once the wallet disconnects, without settling the order or timing it out", async () => {
+			act(() => root.render(createReconciliation()));
+			const sessionId = openReconcilingMarketCloseSession();
+			const submission = addMarketClose(16, "0x000000000000000000000000000000f1", sessionId);
+			act(() => root.render(createReconciliation()));
+			await flush();
+			expect(getPendingOrderActions().owns(submission.id)).toBe(true);
+			expect(getPositionMarketCloseModal()?.sessionId).toBe(sessionId);
+			expect(findQueueForAsset(16)?.status).toBe("confirming");
+
+			mocks.clientKey = "disconnected";
+			act(() => root.render(createReconciliation()));
+			await flush();
+
+			expect(getPendingOrderActions().owns(submission.id)).toBe(false);
+			expect(getPositionMarketCloseModal()).toBeNull();
+			expect(findQueueForAsset(16)?.status).toBe("confirming");
+			expect(hasPendingOrderForAssets("Mainnet", USER, [16])).toBe(true);
+
+			await act(() => vi.advanceTimersByTimeAsync(ORDER_RECONCILIATION_CONFIRMATION_WINDOW_MS));
+			expect(findQueueForAsset(16)?.status).toBe("confirming");
+			expect(window.localStorage.getItem(storageKeyOf(submission))).not.toBeNull();
+
+			const laterSessionId = openReconcilingMarketCloseSession();
+			mocks.clientKey = USER;
+			act(() => root.render(createReconciliation()));
+			await flush();
+
+			expect(getPendingOrderActions().owns(submission.id)).toBe(true);
+			expect(findQueueForAsset(16)).toMatchObject({ status: "unconfirmed", error: { code: "status-unconfirmed" } });
+			expect(getPositionMarketCloseModal()).toMatchObject({ sessionId: laterSessionId, phase: "reconciling" });
+			expect(mocks.infoOrderStatus).not.toHaveBeenCalled();
+			window.localStorage.removeItem(storageKeyOf(submission));
+			act(() => getPendingOrderActions().remove(submission.id));
+		});
+
+		it("releases the market close session when another tab takes the submission over and settles it", async () => {
+			const cloid = "0x000000000000000000000000000000f2" as const;
+			act(() => root.render(createReconciliation()));
+			const sessionId = openReconcilingMarketCloseSession();
+			const submission = addMarketClose(18, cloid, sessionId);
+			act(() => root.render(createReconciliation()));
+			await flush();
+			const otherTab = openOtherTab();
+
+			mocks.clientKey = "0x2222222222222222222222222222222222222222";
+			act(() => root.render(createReconciliation()));
+			await flush();
+			expect(otherTab.getState().actions.owns(submission.id)).toBe(true);
+			expect(getPositionMarketCloseModal()).toBeNull();
+			expect(findQueueForAsset(18)?.status).toBe("confirming");
+
+			expect(otherTab.getState().actions.resolve("Mainnet", USER, cloid, "filled")?.id).toBe(submission.id);
+			act(() => window.dispatchEvent(new StorageEvent("storage", { key: storageKeyOf(submission) })));
+			mocks.clientKey = USER;
+			act(() => root.render(createReconciliation()));
+			await flush();
+
+			expect(findQueueForAsset(18)).toBeUndefined();
+			expect(getPositionMarketCloseModal()).toBeNull();
+			expect(getPositionMarketCloseActions().open(POSITION, { owner: USER, env: "Mainnet" })).not.toBeNull();
+		});
+
+		it("keeps the market close session of a submission this tab is still sending after the account switches", async () => {
+			act(() => root.render(createReconciliation()));
+			const sessionId = openReconcilingMarketCloseSession();
+			getPositionMarketCloseActions().updatePhase(sessionId, "submitting");
+			const submission = addMarketClose(21, "0x000000000000000000000000000000f3", sessionId);
+			act(() => getPendingOrderActions().markActive(submission.id));
+			await flush();
+
+			mocks.clientKey = "0x2222222222222222222222222222222222222222";
+			act(() => root.render(createReconciliation()));
+			await flush();
+			expect(getPendingOrderActions().owns(submission.id)).toBe(true);
+			expect(getPositionMarketCloseModal()).toMatchObject({ sessionId, phase: "submitting" });
+
+			act(() => getPendingOrderActions().clearActive(submission.id));
+			await flush();
+			expect(getPendingOrderActions().owns(submission.id)).toBe(false);
+			expect(getPositionMarketCloseModal()).toBeNull();
+			window.localStorage.removeItem(storageKeyOf(submission));
+			act(() => getPendingOrderActions().remove(submission.id));
+		});
+
+		it("keeps this tab's market close session while another tab reconciles its own market close", async () => {
+			act(() => root.render(createReconciliation()));
+			const sessionId = openReconcilingMarketCloseSession();
+			act(() =>
+				writeOtherTabSubmission(true, undefined, { type: "positionMarketClose", sessionId: "other-tab-session" }),
+			);
+			await flush();
+
+			expect(getPendingOrderActions().owns(OTHER_TAB_ID)).toBe(false);
+			expect(getPositionMarketCloseModal()).toMatchObject({ sessionId, phase: "reconciling" });
+		});
+
+		async function handOverConfirmingOrder(assetId: number, cloid: `0x${string}`) {
+			act(() => root.render(createReconciliation()));
+			const submission = getPendingOrderActions().add({
+				env: "Mainnet",
+				user: USER,
+				intentKey: `handed-over-${assetId}`,
+				children: [{ assetId, cloid }],
+			});
+			act(() => root.render(createReconciliation()));
+			const queueId = `reconcile-${submission.id}`;
+			expect(getOrderQueueItem(queueId)?.status).toBe("confirming");
+			const otherTab = openOtherTab();
+			mocks.clientKey = "0x2222222222222222222222222222222222222222";
+			act(() => root.render(createReconciliation()));
+			await flush();
+			expect(otherTab.getState().actions.owns(submission.id)).toBe(true);
+			return { submission, queueId, otherTab };
+		}
+
+		it("shows this tab's confirming notification as unconfirmed once the tab that took the order over marks it unconfirmed", async () => {
+			const { submission, queueId, otherTab } = await handOverConfirmingOrder(19, "0x000000000000000000000000000000f4");
+
+			expect(otherTab.getState().actions.markUnconfirmed(submission.id, Date.now())?.id).toBe(submission.id);
+			act(() => window.dispatchEvent(new StorageEvent("storage", { key: storageKeyOf(submission) })));
+
+			expect(getPendingOrderActions().owns(submission.id)).toBe(false);
+			expect(getOrderQueueItem(queueId)).toMatchObject({
+				status: "unconfirmed",
+				error: { code: "status-unconfirmed" },
+				children: [{ assetId: 19, status: "unknown" }],
+			});
+			expect(getOrderQueueItem(queueId)?.dismissed).toBeFalsy();
+			window.localStorage.removeItem(storageKeyOf(submission));
+			act(() => getPendingOrderActions().remove(submission.id));
+		});
+
+		it("shows a hidden confirming notification again when the tab that took the order over marks it unconfirmed, and does not reopen it once it is closed", async () => {
+			const cloid = "0x000000000000000000000000000000f5" as const;
+			const { submission, queueId, otherTab } = await handOverConfirmingOrder(20, cloid);
+			act(() => dismissOrderQueueItem(queueId));
+			expect(getOrderQueueItem(queueId)).toMatchObject({ status: "confirming", dismissed: true });
+
+			otherTab.getState().actions.markUnconfirmed(submission.id, Date.now());
+			act(() => window.dispatchEvent(new StorageEvent("storage", { key: storageKeyOf(submission) })));
+			expect(getOrderQueueItem(queueId)).toMatchObject({ status: "unconfirmed", dismissed: false });
+			act(() => dismissOrderQueueItem(queueId));
+
+			mocks.clientKey = USER;
+			act(() => root.render(createReconciliation()));
+			await flush();
+			otherTab.getState().actions.serve(null);
+			await flush();
+			await flush();
+			expect(getPendingOrderActions().owns(submission.id)).toBe(true);
+			expect(getOrderQueueItem(queueId)).toMatchObject({ status: "unconfirmed", dismissed: true });
+
+			mocks.orderUpdatesData = [{ order: { cloid }, status: "open" }];
+			act(() => root.render(createReconciliation()));
+			expect(getOrderQueueItem(queueId)).toMatchObject({ status: "success", outcome: "resting", dismissed: false });
+		});
+
+		it("withdraws this tab's unconfirmed notification once the tab that took the order over settles it", async () => {
+			const cloid = "0x000000000000000000000000000000f6" as const;
+			const { submission, queueId, otherTab } = await handOverConfirmingOrder(23, cloid);
+			otherTab.getState().actions.markUnconfirmed(submission.id, Date.now());
+			act(() => window.dispatchEvent(new StorageEvent("storage", { key: storageKeyOf(submission) })));
+			expect(getOrderQueueItem(queueId)?.status).toBe("unconfirmed");
+
+			expect(otherTab.getState().actions.resolve("Mainnet", USER, cloid, "filled")?.id).toBe(submission.id);
+			act(() => window.dispatchEvent(new StorageEvent("storage", { key: storageKeyOf(submission) })));
+			mocks.clientKey = USER;
+			act(() => root.render(createReconciliation()));
+			await flush();
+
+			expect(getOrderQueueItem(queueId)).toBeUndefined();
+		});
+
+		it("leaves a notification that already shows a result alone when its record is marked unconfirmed elsewhere", async () => {
+			const { submission, queueId, otherTab } = await handOverConfirmingOrder(24, "0x000000000000000000000000000000f7");
+			act(() => {
+				updateOrderQueueItem(queueId, { status: "success", outcome: "resting" });
+			});
+
+			otherTab.getState().actions.markUnconfirmed(submission.id, Date.now());
+			act(() => window.dispatchEvent(new StorageEvent("storage", { key: storageKeyOf(submission) })));
+
+			expect(getOrderQueueItem(queueId)).toMatchObject({ status: "success", outcome: "resting" });
+			window.localStorage.removeItem(storageKeyOf(submission));
+			act(() => getPendingOrderActions().remove(submission.id));
+		});
+
+		it("settles a timed-out submission from a fill it already received once the closed tab's lock is free", async () => {
+			mocks.orderUpdatesData = [{ order: { cloid: OTHER_TAB_CLOID }, status: "filled" }];
+			act(() => root.render(createReconciliation()));
+			act(() => writeOtherTabSubmission(true, Date.now()));
+			await flush();
+			expect(findQueueForAsset(9)).toBeUndefined();
+			expect(hasPendingOrderForAssets("Mainnet", USER, [9])).toBe(false);
+
+			releaseLock(LOCK_NAME);
+			await flush();
+
+			expect(findQueueForAsset(9)).toMatchObject({ owner: USER, status: "success", outcome: "filled" });
+			expect(window.localStorage.getItem(STORAGE_KEY)).toBeNull();
+		});
+	});
+
+	it("drops records older than 24 hours on startup, whichever account they belong to, and keeps newer ones", () => {
+		const otherUser = "0x2222222222222222222222222222222222222222";
+		function writeRecord(id: string, createdAt: number) {
+			const key = `${STORAGE_KEYS.PENDING_ORDERS}:submission:Mainnet:${otherUser}:${id}`;
+			window.localStorage.setItem(
+				key,
+				JSON.stringify({
+					id,
+					env: "Mainnet",
+					user: otherUser,
+					intentKey: id,
+					createdAt,
+					children: [{ assetId: 12, cloid: "0x000000000000000000000000000000cc", attempts: 0, nextCheckAt: createdAt }],
+				}),
+			);
+			window.dispatchEvent(new StorageEvent("storage", { key }));
+			return key;
+		}
+		const expired = writeRecord("expired-other-account", Date.now() - ORDER_RECONCILIATION_MAX_AGE_MS - 1);
+		const recent = writeRecord("recent-other-account", Date.now() - ORDER_RECONCILIATION_MAX_AGE_MS + 60_000);
+
+		act(() => root.render(createReconciliation()));
+
+		expect(window.localStorage.getItem(expired)).toBeNull();
+		expect(window.localStorage.getItem(recent)).not.toBeNull();
+		window.localStorage.removeItem(recent);
+		act(() => getPendingOrderActions().prune(Number.MAX_SAFE_INTEGER));
 	});
 });

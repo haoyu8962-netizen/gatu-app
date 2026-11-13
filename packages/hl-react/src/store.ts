@@ -5,6 +5,7 @@ import {
 	forgetParsedKey,
 	getReconnectDelayMs,
 	getStalenessThresholdForKey,
+	getSubscriptionBaseKey,
 	getSubscriptionMethodForKey,
 	isUserStreamKey,
 	WS_RELIABILITY_LIMITS,
@@ -13,10 +14,18 @@ import { createStalenessWatchdog, getReceiptAgeMs, type StalenessWatchdog } from
 import { getVisibilityState, subscribeVisibility } from "./internal/websocket/visibility";
 import type { HyperliquidConfig, SubscribeFailureOptions, SubscriptionStatus, WebSocketStatus } from "./types";
 
+/**
+ * The shared socket as the monitor sees it: `reconnecting` from a disconnect it reported until the
+ * socket opens again, `offline` while the browser reports no network. Presentation only: subscription
+ * entries keep their own status and staleness, and no execution guard reads this.
+ */
+export type WsTransportStatus = "open" | "reconnecting" | "offline";
+
 export type HyperliquidStoreState = {
 	config: HyperliquidConfig;
 	wsStatus: WebSocketStatus;
 	wsError: unknown;
+	transportStatus: WsTransportStatus;
 	subscriptions: SubscriptionMap;
 	setConfig: (config: HyperliquidConfig) => void;
 	acquireSubscription: (
@@ -113,8 +122,11 @@ function shouldDiscardRetainedDataOnError(key: string): boolean {
 	return method === "l2" || method === "l2Book" || method === "bbo";
 }
 
+// `bbo` sends only on change and has no silence threshold, so a disconnect is the only point at
+// which the store can tell that a retained best bid and offer may no longer be current.
 const FRESH_SNAPSHOT_METHODS = new Set([
 	"l2",
+	"bbo",
 	"activeAssetCtx",
 	"activeSpotAssetCtx",
 	"allMids",
@@ -133,6 +145,35 @@ const FRESH_SNAPSHOT_METHODS = new Set([
 function shouldAwaitFreshSnapshotAfterError(key: string): boolean {
 	const method = getSubscriptionMethodForKey(key);
 	return method !== undefined && FRESH_SNAPSHOT_METHODS.has(method);
+}
+
+// Streams whose every frame is the complete state, so a frame received for one key is the current
+// value for any key of the same method and parameters.
+const COMPLETE_STATE_METHODS = new Set([
+	"activeAssetCtx",
+	"activeAssetData",
+	"activeSpotAssetCtx",
+	"allDexsClearinghouseState",
+	"allMids",
+	"clearinghouseState",
+	"openOrders",
+	"spotState",
+	"twapStates",
+	"webData3",
+]);
+
+type ObservableSocket = {
+	addEventListener: (type: "open", listener: () => void) => void;
+	removeEventListener: (type: "open", listener: () => void) => void;
+};
+
+function getObservableSocket(transport: unknown): ObservableSocket | undefined {
+	if (!transport || typeof transport !== "object") return undefined;
+	const socket = (transport as { socket?: Partial<ObservableSocket> }).socket;
+	if (!socket || typeof socket.addEventListener !== "function" || typeof socket.removeEventListener !== "function") {
+		return undefined;
+	}
+	return socket as ObservableSocket;
 }
 
 function safelyTriggerReconnect(triggerReconnect: (() => void) | undefined): void {
@@ -191,9 +232,36 @@ export function createHyperliquidStore(initialConfig: HyperliquidConfig): Hyperl
 	let detachVisibility: (() => void) | undefined;
 	let detachNetwork: (() => void) | undefined;
 	let detachDisconnect: (() => void) | undefined;
+	let detachSocketOpen: (() => void) | undefined;
 	let wasHidden = false;
 	let wasOffline = false;
+	let transportDisconnected = false;
 	const MAX_RECOVERY_EVENTS = 64;
+
+	function publishTransportStatus(store: StoreApi<HyperliquidStoreState>): void {
+		let next: WsTransportStatus = "open";
+		if (wasOffline) next = "offline";
+		else if (transportDisconnected) next = "reconnecting";
+		if (store.getState().transportStatus === next) return;
+		store.setState({ transportStatus: next });
+	}
+
+	// A new key of a complete-state stream (a `refreshKey` change) shares the SDK's server subscription
+	// with a sibling key that is still held, so the server sends it no new snapshot. The sibling's last
+	// frame belongs to the same method and parameters, user included, and keeps its receipt times.
+	function findRetainedSibling(subscriptions: SubscriptionMap, key: string): SubscriptionEntry | undefined {
+		const method = getSubscriptionMethodForKey(key);
+		if (method === undefined || !COMPLETE_STATE_METHODS.has(method)) return undefined;
+		const baseKey = getSubscriptionBaseKey(key);
+		if (baseKey === undefined) return undefined;
+		for (const [otherKey, entry] of Object.entries(subscriptions)) {
+			if (otherKey === key || getSubscriptionMethodForKey(otherKey) !== method) continue;
+			if (entry.status !== "active" || entry.data === undefined) continue;
+			if (entry.lastMessageAt === undefined || entry.monotonicLastMessageAt === undefined) continue;
+			if (getSubscriptionBaseKey(otherKey) === baseKey) return entry;
+		}
+		return undefined;
+	}
 
 	function recordRecoveryEvent(
 		cause: WsRecoveryEvent["cause"],
@@ -358,6 +426,7 @@ export function createHyperliquidStore(initialConfig: HyperliquidConfig): Hyperl
 	function attachSingletons(
 		triggerReconnect: (() => void) | undefined,
 		subscribeDisconnect: HyperliquidConfig["subscribeDisconnect"],
+		wsTransport: HyperliquidConfig["wsTransport"],
 		store: StoreApi<HyperliquidStoreState>,
 	) {
 		if (singletonsAttached) return;
@@ -391,8 +460,10 @@ export function createHyperliquidStore(initialConfig: HyperliquidConfig): Hyperl
 			if (state === "offline") {
 				wasOffline = true;
 				markRetainedFreshSnapshotsStale(store);
+				publishTransportStatus(store);
 			} else if (wasOffline) {
 				wasOffline = false;
+				publishTransportStatus(store);
 				markRetainedFreshSnapshotsStale(store);
 				if (triggerReconnect) {
 					recordRecoveryEvent("network-resume", "reconnect", []);
@@ -406,9 +477,24 @@ export function createHyperliquidStore(initialConfig: HyperliquidConfig): Hyperl
 		wasHidden = getVisibilityState() === "hidden";
 		wasOffline = getNetworkState() === "offline";
 		if (wasOffline) markRetainedFreshSnapshotsStale(store);
+		// The monitor reports a disconnect but not the recovery; the socket's own `open` event is that
+		// signal. Without an observable socket the status never claims a reconnect it cannot see end.
+		const socket = getObservableSocket(wsTransport);
+		if (socket) {
+			const handleOpen = () => {
+				transportDisconnected = false;
+				publishTransportStatus(store);
+			};
+			socket.addEventListener("open", handleOpen);
+			detachSocketOpen = () => socket.removeEventListener("open", handleOpen);
+		}
 		detachDisconnect = subscribeDisconnect?.(() => {
 			markRetainedFreshSnapshotsStale(store);
+			if (!socket) return;
+			transportDisconnected = true;
+			publishTransportStatus(store);
 		});
+		publishTransportStatus(store);
 	}
 
 	function detachSingletons() {
@@ -420,8 +506,12 @@ export function createHyperliquidStore(initialConfig: HyperliquidConfig): Hyperl
 		detachNetwork = undefined;
 		detachDisconnect?.();
 		detachDisconnect = undefined;
+		detachSocketOpen?.();
+		detachSocketOpen = undefined;
 		wasHidden = false;
 		wasOffline = false;
+		transportDisconnected = false;
+		publishTransportStatus(store);
 		visibilityBuffer.clear();
 	}
 
@@ -446,6 +536,7 @@ export function createHyperliquidStore(initialConfig: HyperliquidConfig): Hyperl
 		config: initialConfig,
 		wsStatus: "idle",
 		wsError: undefined,
+		transportStatus: "open",
 		subscriptions: {},
 		setConfig: (config) => set({ config }),
 		acquireSubscription: (key, subscribe, stalenessThresholdMs?, pauseWhenHidden?) => {
@@ -458,7 +549,12 @@ export function createHyperliquidStore(initialConfig: HyperliquidConfig): Hyperl
 						"Visibility-buffered values will never be flushed because no reconnect can happen on resume.",
 				);
 			}
-			attachSingletons(get().config.triggerReconnect, get().config.subscribeDisconnect, store);
+			attachSingletons(
+				get().config.triggerReconnect,
+				get().config.subscribeDisconnect,
+				get().config.wsTransport,
+				store,
+			);
 
 			let runtime = subscriptionRuntime.get(key);
 			const isNewRuntime = runtime === undefined;
@@ -513,6 +609,20 @@ export function createHyperliquidStore(initialConfig: HyperliquidConfig): Hyperl
 				const existing = state.subscriptions[key];
 				if (existing && existing.status !== "error" && existing.status !== "idle") {
 					return state;
+				}
+
+				const sibling = existing || !isNewRuntime ? undefined : findRetainedSibling(state.subscriptions, key);
+				if (sibling?.lastMessageAt !== undefined && sibling.monotonicLastMessageAt !== undefined && runtime) {
+					runtime.lastMessageAt = sibling.lastMessageAt;
+					runtime.monotonicLastMessageAt = sibling.monotonicLastMessageAt;
+					watchdog.arm(key, sibling.lastMessageAt, sibling.monotonicLastMessageAt);
+					return setSubscriptionEntry(state, key, {
+						status: "subscribing",
+						data: sibling.data,
+						isStale: sibling.isStale === true || watchdog.isStale(key),
+						lastMessageAt: sibling.lastMessageAt,
+						monotonicLastMessageAt: sibling.monotonicLastMessageAt,
+					});
 				}
 
 				const entry: SubscriptionEntry = {

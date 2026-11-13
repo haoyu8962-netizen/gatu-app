@@ -416,6 +416,7 @@ msgstr "Accès restreint"
 #: src/components/trade/positions/send-modal.tsx
 #: src/config/nav.tsx
 #: src/config/trade-panel-labels.ts
+#: src/routes/mobile-agent-sync.tsx
 msgid "Account"
 msgstr "Compte"
 
@@ -3495,6 +3496,7 @@ msgstr "Échec de la copie"
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/trade-panel.tsx
 #: src/config/ui-text.ts
+#: src/lib/errors/action-error.ts
 msgid "Failed to enable trading"
 msgstr "Échec de l'activation du trading"
 
@@ -3686,6 +3688,10 @@ msgstr "Exécuté"
 #: src/components/trade/tradebox/order-toast.tsx
 msgid "Filled (quantity unverified)"
 msgstr "Exécuté (quantité non vérifiée)"
+
+#: src/components/trade/order-reconciliation.tsx
+msgid "Filled before it could be canceled. Check your positions."
+msgstr "L'ordre a été exécuté avant de pouvoir être annulé. Vérifiez vos positions."
 
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Filter by {label}"
@@ -4232,6 +4238,10 @@ msgstr "Important : envoyez uniquement des USDC natifs sur Arbitrum à cette adr
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #~ msgid "Important: this address can only receive native USDC on Arbitrum. Do not send USDC.e or assets from other networks. Minimum deposit is {minimumDeposit}."
 #~ msgstr "Important : cette adresse ne peut recevoir que des USDC natifs sur Arbitrum. N'envoyez pas d'USDC.e ni d'actifs provenant d'autres réseaux. Le dépôt minimum est de {minimumDeposit}."
+
+#: src/routes/mobile-agent-sync.tsx
+msgid "Importing replaces the current trading session on this phone."
+msgstr "L'importation remplace la session de trading actuelle sur ce téléphone."
 
 #: src/components/staking/staking-view.tsx
 #: src/components/staking/staking-view.tsx
@@ -9093,6 +9103,7 @@ msgid "The cancellation response could not be confirmed. Refresh open orders bef
 msgstr "La réponse d'annulation n'a pas pu être confirmée. Actualisez les ordres ouverts avant de réessayer."
 
 #: src/components/trade/order-reconciliation.tsx
+#: src/components/trade/order-reconciliation.tsx
 msgid "The cancellation was not confirmed. Review open orders before retrying."
 msgstr "L’annulation n’a pas été confirmée. Vérifiez les ordres ouverts avant de réessayer."
 
@@ -9249,6 +9260,10 @@ msgstr "L'ordre a changé avant que la modification demandée ne soit confirmée
 #: src/lib/errors/exchange-error-text.ts
 msgid "The order could not immediately match any resting orders."
 msgstr "L'ordre n'a pu être exécuté immédiatement contre aucun ordre en attente."
+
+#: src/components/trade/order-reconciliation.tsx
+msgid "The order is no longer open. Check your fills before retrying."
+msgstr "L'ordre n'est plus ouvert. Vérifiez vos exécutions avant de réessayer."
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #~ msgid "The order is still being confirmed."
@@ -10497,9 +10512,17 @@ msgstr "Historique des exécutions TWAP"
 msgid "TWAP finished"
 msgstr "TWAP achevé"
 
+#: src/components/trade/twap-reconciliation.tsx
+msgid "TWAP finished before it could be terminated."
+msgstr "Le TWAP s’est achevé avant de pouvoir être terminé."
+
 #: src/components/trade/positions/twap-history-table.tsx
 msgid "TWAP history"
 msgstr "Historique TWAP"
+
+#: src/components/trade/twap-reconciliation.tsx
+msgid "TWAP is no longer active. Check TWAP history before retrying."
+msgstr "Le TWAP n’est plus actif. Vérifiez l’historique TWAP avant de réessayer."
 
 #: src/lib/errors/definitions/twap.ts
 #: src/lib/trade/order-submission-feedback.ts
@@ -10576,6 +10599,7 @@ msgstr "Intérêt ouvert bilatéral : somme des positions longues et courtes sur
 msgid "Type"
 msgstr "Type"
 
+#: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/positions/send-modal.tsx
 msgid "Unable to check the destination address. Nothing was sent."
 msgstr "Impossible de vérifier l'adresse de destination. Rien n'a été envoyé."

@@ -106,6 +106,15 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      # The release zips each Lambda entry file alone, so a split-out shared chunk or a module that
+      # does not parse would break /api/geo on both networks at once. About ten seconds.
+      - name: Build the Lambda bundles and check each entry stands alone
+        run: |
+          pnpm --filter @sairn/terminal build:lambda
+          node deploy/cloudfront/deploy.mjs check-lambda
+          node --check apps/terminal/dist-lambda/index.mjs
+          node --check apps/terminal/dist-lambda/csp-report.mjs
+
       - name: Build production terminal and enforce bundle budget
         run: pnpm --filter @sairn/terminal build
         env:

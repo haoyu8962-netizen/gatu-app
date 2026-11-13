@@ -64,6 +64,40 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Changed
 
+- An order, order change or funds action is no longer signed more than 15 seconds after it reaches
+  the trading request queue: it fails with a notice that nothing was signed or sent, and you can submit it again. Before, if
+  the access check before signing hit a network error and you switched away from the page, the action
+  could be sent when you came back, minutes or hours later. The time your own wallet takes to show and
+  confirm a signature request is not counted. With the existing 15-second expiry turned on (the
+  default), an order reaches the exchange within about 30 seconds of entering that queue or not at
+  all (about 45 seconds from your click when trading had to be enabled first or a dialog ran its
+  own checks before queueing; a TP/SL replacement follows its cancel, however long that took);
+  withdrawals, transfers and approvals have no such expiry. When a resting limit order fills is not
+  affected. Cancels are not limited this way, so a busy queue never leaves an order
+  on the book that you asked to cancel.
+- An action that reaches the trading request queue while offline now fails at once instead of
+  waiting and being sent automatically when the connection returns.
+- Dialogs that run their own checks before that point (staking, vaults, withdrawals and manual
+  deposits, Send, referrals, TP/SL and the close dialogs) now count those checks from your click:
+  when they finish more than 15 seconds later, for example because the connection dropped and came
+  back, nothing is signed or sent and you are asked to try again. Once TP/SL has cancelled the old
+  orders it still places the new ones, however long the cancel took; if the new ones are refused,
+  the notice says that the old TP/SL was cancelled and the new one was not placed. A manual deposit
+  from an external wallet is still confirmed in the wallet itself.
+- After such a timeout, the next funds action can start at once instead of waiting about 10 seconds
+  and reporting that another funds operation is in progress, also when the timeout falls during the
+  checks just before signing.
+- Enabling trading no longer asks for the builder-fee or Agent approval signature more than 15 seconds
+  after you clicked, counting the status checks before them, for example after the connection dropped
+  and came back; the request fails and you can click again. An Agent key saved for such an approval
+  but never submitted is removed. The same limit applies to approving or removing an API wallet,
+  to Link mobile device and to the approval a vault deposit asks for. When enabling trading from an
+  external wallet needs two confirmations, the time you take in the wallet for the first is not
+  counted against the second, and if the second still comes too late the message no longer claims
+  that nothing was signed.
+- When a confirm button showing Enable finishes enabling trading more than 15 seconds after your
+  click, the order, swap, TP/SL, margin or leverage change is no longer sent automatically: trading
+  is enabled and the button is ready, so you review the current values and confirm again.
 - The mobile order summary follows the official terminal:
   - empty values read `N/A` in the value colour;
   - order value and margin required are written in the market's collateral, for example `84.20 USDC`;
@@ -624,16 +658,103 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Fixed
 
+- Settings no longer overwrite each other across tabs: a tab that still held older settings used to write all of
+  them back when you changed anything in it, which could undo an order confirmation, slippage limit or
+  transaction-delay protection you had just tightened in another tab. Each tab now writes only what it changed and
+  follows the others; the visible table tab stays per window.
+- After your wallet signs a withdrawal, transfer, approval or the terms, the terminal checks that the signature was
+  made by the selected account before sending it. A signature from another account of the same wallet, or one that
+  cannot be checked (for example from a contract wallet), is not sent and is reported as a wallet mismatch.
+- The phone import page now shows the account the scanned key belongs to, before and after importing, and says
+  when importing replaces the trading session already on the phone.
+- The page footer shows Connecting or Offline while the market data connection is down instead of Connected, the
+  order book's mid price is treated as out of date during a disconnect, and balances no longer fall back to loading
+  for a moment right after signing in.
+- Startup no longer waits without limit for the language file: after three seconds the terminal opens in English
+  and switches when the file arrives. When the app's main script cannot be loaded at all, a reload screen appears
+  instead of a blank page.
+- A damaged local nonce record no longer blocks every action of that signer until site data is cleared, and a
+  trading key record written by a newer version is no longer deleted by an older tab because of fields it does not
+  know (this protects from this version on).
+- The region check (`/api/geo`) limits how many lookups one network can cause and how many each server instance
+  makes, and logs its failures, so address rotation can no longer use up the lookup quota unnoticed. Verdicts stay
+  per address.
+
+- Release tooling (ADR 0051): `deploy.mjs sync` uploads with `aws s3 cp` every file it does not
+  classify as immutable by path (everything outside `assets/` and the hashed chart files), so a
+  rollback from an older build of the same size now writes the shell and `build-meta.json` back
+  instead of skipping them while reporting success; it refuses file names, and a build directory whose path holds a character, that the AWS CLI would
+  read as filter wildcards, the build metadata goes before the shell, the shell is the last upload,
+  both are compared with the local build by content, and an interrupted upload reports only what
+  that run wrote, including how many commands of the failed stage did not run, and names the failed
+  command and its exit code instead of repeating the whole command line. `deploy.mjs lambda` prints only the version, code size, code hash and state of the
+  update instead of the function's configuration (which included its environment variables),
+  refuses a Lambda output with a split-out chunk, and probes `/api/health` and `/api/geo` through
+  the site right after the update, with a 10-second deadline per request that `verify` shares. The
+  production build workflow now builds and checks the Lambda bundles.
+- Opening the installed terminal after a new version was released usually no longer has to
+  download most of the app again while the screen is still blank. When the terminal notices a new
+  version, it switches to it on the next start as before, and meanwhile downloads that version's
+  startup files in the background and keeps them on the device, so the next start reads them from
+  the device instead of the network. The translation files of the other interface languages are
+  kept the same way, so a non-English start does not wait for its language either. If the app is closed before that finishes, or a file cannot be
+  downloaded, the next start fetches the missing files from the network and the download continues
+  later. Files of older versions are removed from the device when a new version arrives, and when
+  the device runs out of room for a new version, the stored files are cleared so the update still
+  goes through. The "Reload terminal" button on the startup error screen also clears these
+  files first. The interface fonts are now kept on the device as intended (they were never stored
+  before), so startup no longer waits for them when the browser has dropped its own copy. Each
+  release is still downloaded once in the background (about 1.5 MB, plus about 0.2 MB for the six
+  language files), and the first start after
+  installing, or after this update, still loads from the network. Not yet confirmed on a phone
+  (ADR 0052).
+- A cancel whose result never came back is no longer reported as Canceled just because the order
+  left your open orders. The terminal first asks the exchange what happened to each order and
+  reports a result only when every order is accounted for: canceled, filled before it could be
+  canceled, or a mix of both. If any order is still open or its status cannot be read, the
+  notification asks you to check your open orders or fills instead of claiming a result. A TWAP
+  termination counts as done only when the exchange confirms it; otherwise the terminal waits up
+  to 15 seconds for the TWAP history and reports a TWAP that finished on its own as such. An
+  unconfirmed cancel notification you closed stays closed until a definite result arrives, also
+  when the order or TWAP turns out to be still active.
+- With the terminal open in two tabs on the same account, an order or TWAP sent in one tab no
+  longer leaves a "Confirming" notification in the other tab that never goes away, and the other
+  tab no longer settles it first. If the sending tab closes, another tab on the same account and
+  network takes it over; tabs on another account, or not connected, leave it alone. When another
+  tab took over and settled it, the first tab drops its own "Confirming" notification instead
+  of keeping it forever; the result is shown in the tab that settled it. When the other tab could
+  not confirm it, the first tab shows it as unconfirmed too. A market close whose result was still
+  pending no longer blocks deposits, settings and other dialogs after you disconnect or switch
+  accounts, and an unconfirmed order-change notice you closed is not shown again without news. Such an
+  order is kept for up to 24 hours waiting for a tab of its account; after that it is dropped
+  without a notification.
 - Reopening the terminal after it sat in the background brings prices, the order book and account
   data back sooner. The terminal now checks its connections the moment the page is shown again,
   or the network returns, instead of up to five seconds later; it retries at once instead of
   finishing a wait of up to thirty seconds left over from attempts that failed in the background;
   and it replaces an order-book connection that went silent instead of leaving it for up to forty
   seconds. In Chrome and other Chromium browsers a dead connection is replaced immediately instead
-  of after up to a minute. A connection that is still receiving data is left alone, so switching
+  of after up to a minute. A connection that still answers is left alone, so switching
   tabs does not reset the chart. Opening the terminal in a background tab no longer leaves market
   data blank until the next update. Not yet confirmed on a phone, and the white screen that iOS
   shows before the page appears is not addressed by this change (ADR 0050).
+- A connection that died while the phone was in the background is no longer mistaken for a live one
+  because data held back during the suspension arrives first: the terminal now waits for the
+  server's answer to a heartbeat, both on the main connection and on order-book connections, and
+  replaces the connection within a few seconds when it does not come. While the page stays open, a
+  connection that has been quiet for fifteen seconds is checked the same way, as on the official
+  terminal, and given five seconds to answer, instead of waiting forty-five seconds. An order-book
+  connection that is still being set up is no longer closed for missing that answer. Pages that
+  Chrome unfreezes while still in the background now recover when they are actually shown. Not yet
+  confirmed on a phone (ADR 0050).
+- Live mark and mid prices for the market list no longer stop silently after one damaged update.
+  If that stream delivers data the terminal cannot read, the list switches to prices from the regular
+  market data instead of retrying it endlessly, and the list prices are briefly blank while that
+  data reloads once. A brief connection problem is retried as before and the live prices come back. Browsers
+  that cannot decompress the compact channels use those prices from the start. These prices count
+  as current only while the data is about ten seconds old or newer.
+- On a phone, opening a trade page no longer opens an extra order-book connection that the phone
+  layout does not use, which leaves more room under the exchange's per-address connection limit.
 - A cross order larger than the account can open now shows a liquidation price. This covers a new
   position or an add to a position in the same direction, including from an empty account or when the
   fee would use up the equity. As on the official terminal, the estimate assumes the account is topped
