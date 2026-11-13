@@ -7,10 +7,10 @@
   "kind": "task",
   "status": "recorded",
   "topics": ["order-entry", "hyperliquid-api"],
-  "summary": "运营方在手机下单摘要上提出六项并要求移除预估费用行。对照官方 HYPE 页面与生产包 config-AY7r1vqO.js：全仓清算价改用官方的初始保证金补足规则（超额与空账户也能估算，桌面手机共用）；手机普通订单摘要的空值统一为同色 N/A，金额写成两位小数加报价币，清算价不带 $，数量为 0 时预估滑点为 0%，最大滑点改为强调色，去掉费用行；桌面与手机点滑点都打开新的 Adjust Max Slippage 面板（懒加载，范围仍为 0.1%–5%）。Scale/TWAP 摘要与桌面摘要的显示未改，待运营方决定；真实钱包与真机未验证。PR #151 于 2026-11-05 以 8ca35543 合入 dev。p40 发布预检中 trade-terminal-page 余 123、交易启动余 195，都低于 200；按复现规则成对测量后，两项基线各提高 #151 的配对关闭增量（+96、+196）。",
+  "summary": "#151 对齐手机普通订单摘要、超额清算价与独立滑点面板，265d7d33 修复 44px 触控区造成的内部溢出。11 月 9 日核对 #154/#155 已合并，来源报告改动随 p40 交付。Scale/TWAP 与桌面摘要的显示仍待决定；真实钱包、真机和带数值的人工观感未验收。",
   "thread": null,
   "baseCommit": "2230c64e",
-  "commits": ["f0ea4119", "d521cffa", "6bfaa1b8", "70b355fa", "265d7d33", "8ca35543"],
+  "commits": ["f0ea4119", "d521cffa", "6bfaa1b8", "70b355fa", "265d7d33", "8ca35543", "94609ed2", "76983456", "af031ae4"],
   "sources": [
     { "path": "apps/terminal/src/domain/trade/order/liquidation.ts" },
     { "path": "apps/terminal/src/components/trade/mobile/mobile-trade-view.tsx" },
@@ -148,3 +148,5 @@
   3. 满足阈值后再开晋升 PR。
   合并晋升 PR 与发布 p40，各需运营方同意。
 - 本记录不替代此前的记录。原 `canEstimateProspectiveLiquidationDraft` 的「超额不估算」决定，由本记录的补足规则取代。
+
+2026-11-09 状态与验证边界补记：#151 的实际 head `265d7d3381dec6d3af9df2360d82ec74cec97a13` 在 01:05:28 UTC 查询时为已合并，检查汇总 6 SUCCESS、3 SKIPPED。旧 head `70b355fa` 的内部滚动失败保留；当前实现的触控区从行底向上展开。原「reduce-only.pw.ts 未在本地运行」早于正文后来补记的完整套件 47/47（来源明确包含该文件），应按后续来源报告理解，不能视为本次重跑或真人操作。#154 已将预算调整合入 `76983456`，#155 将其晋升为 `af031ae4`，两者树对象一致。来源 `6c9e4d27:docs/work-memory/sessions/2026-11-05-cloudfront-release-p40.md` 报告 p40 已发布、verify 主网 15/15、测试网 16/16，CSP 33 步中 2 步跳过、0 违规。该记录只在本地分支，未合入所查 dev/main。前文「重定后再预检、晋升、发布」已由该来源报告完成；Scale/TWAP 与桌面显示的待决项、真实账户和设备验收仍保留。详见[本周整理](2026-11-09-weekly-memory-review.md)。

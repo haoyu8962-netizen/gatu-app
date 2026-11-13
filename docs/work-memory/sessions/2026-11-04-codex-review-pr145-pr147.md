@@ -7,10 +7,10 @@
   "kind": "task",
   "status": "verified",
   "topics": ["pr-review", "order-entry", "i18n-runtime"],
-  "summary": "运营方重新登录 Codex CLI 后要求「前面提交的PR没有审查的 请调用codex 对抗review一遍」。核对后，缺 Codex CLI 审查的代码 PR 是 #145（p38 前重定 trade-terminal-page 基线，当时 401，由子代理代审）与 #147（历史价格改回协议小数位）；两者都已合入 dev 并随 p38 发布。gpt-6-astra 只读 low 两路并行：#147 8.3/10、一项 P2（四张 TWAP 表把 getSzDecimals() 单独传给 getMarketPriceFormatOptions，市场不在目录里时默认 4、只显示 2 位，0.00001234 显示为 $0，违反最多 8 位的兜底），#145 8.0/10、三项 P2（缺路由预加载字节数、误称没有 module manifest、把 12 字节断定为噪声），数字核对全部正确。逐条核实成立后修复：四张 TWAP 表改为把市场对象本身交给 getMarketPriceFormatOptions，测试替身补上真实 szDecimals 并加目录缺失用例，五个变异全被抓到；改正性能基线文档三处措辞、History values 与 CHANGELOG 的表述，原记录追加更正。修复提交的 Codex 复审 9.2/10 无新发现；定向 43 个文件 807 项、类型检查通过，全量终端 Vitest 9,884 项中只有 1 项因沙盒不能监听端口失败、沙盒外重跑通过。推送与开 PR 等运营方同意；真实页面未验证。",
+  "summary": "补审 #145/#147 发现并修复 TWAP 四张历史表对目录外市场误用默认 szDecimals 的问题，同时更正预算归因措辞。修复复审 9.2/10。11 月 9 日核对代码经 #149 进入 dev/main，来源报告随 p39 发布；真实页面与真机仍未验收。",
   "thread": null,
   "baseCommit": "90c2e436",
-  "commits": ["6c533454", "f67cbe04", "ec0b62d3"],
+  "commits": ["6c533454", "f67cbe04", "ec0b62d3", "12241e76", "edf5a5f5", "98e37af8", "97f11aba", "2230c64e", "4608bc7c", "0d75a146"],
   "sources": [
     {"path": "apps/terminal/src/lib/trade/market-price-format.ts"},
     {"path": "apps/terminal/src/components/trade/positions/twap-history-table.tsx"},
@@ -93,5 +93,12 @@
 ## 后续与替代关系
 
 - 推送分支与开 PR 等运营方同意，一次同意只对应一个动作；不开 auto-merge。
+- 2026-11-04 补记（合入与发布）：
+  - 运营方说「推送并开 PR」后，发布会话在自己的工作树把 `dev` `163597c6`（#148）合入这个分支，得到 `97f11aba`；生成的 INDEX 冲突用 `pnpm memory:index` 重生。随后推送并开 [#149](https://github.com/zora4523-bot/gatu-app/pull/149)。
+  - CI 6 项通过、3 项晋升覆盖按设计跳过，Codex 机器人对 `97f11ab` 无发现。以合并提交 `2230c64e` 合入 `dev`。
+  - 同日经晋升 PR #150（`main` `4608bc7c`）发布为 p39，见 [p39 发布记录](2026-11-04-cloudfront-release-p39.md)。
+  - 上文「生产构建与包体未测」的部分，后来在发布预检里测了：`trade-terminal-page` 比 p38 的第二次预检少 3 字节。
 - 审查里的 P3 与只读推断（例如极大数值受 JavaScript `number` 精度限制、委托历史没有独立的成交均价字段）没有改，记在这里。
 - 以后重定基线时，表里的路由预加载一行要真的读出字节数；模块归属需要时读同一次构建写出的 `client-chunk-graph.json`，不要写「没有生成」。
+
+2026-11-09 状态补记：代码修复 `12241e76`、措辞修正 `edf5a5f5` 和记录 `98e37af8` 已经 #149 的 head `97f11abab5514a71ca0a61c22019c1ac6f06e696` 合入 dev（`2230c64e`），再经 #150 进入 p39 的 `4608bc7c`。01:05:27 UTC 的 GitHub 查询返回 #149 已合并，同一 head 汇总 6 SUCCESS、3 SKIPPED。本次静态核对当前四张表都把 market 本身传入 `getMarketPriceFormatOptions`，目录缺失上限八位的规则见现行 History values。发布的 verify 与 CSP 结果来自[p39 记录所在的 #152](https://github.com/zora4523-bot/gatu-app/pull/152)，原文可用 `git show 0d75a146:docs/work-memory/sessions/2026-11-04-cloudfront-release-p39.md` 读取。代码已交付与发布记录 PR 尚未合并是不同状态。没有重跑应用测试、执行发布或验收真实页面。

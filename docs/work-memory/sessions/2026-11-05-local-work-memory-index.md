@@ -7,10 +7,10 @@
   "kind": "task",
   "status": "verified",
   "topics": ["work-memory", "docs-governance"],
-  "summary": "运营方指出，开启 Auto-fix 会不断循环修复、推送、跑 CI。主要来源是生成并入库的 docs/work-memory/INDEX.md：每有 PR 合入 dev，其它改过它的 PR 经常冲突，#153 一天两次。运营方要求在本会话完成。改动：INDEX.md 改由 pnpm memory:index 在本地生成，Git 忽略（ADR 0049）；memory:check 不再比较索引，索引被 Git 跟踪时失败；890 个提交引用改为一次 git cat-file --batch-check，检查从约 18 秒降到 0.3 秒。AGENTS.md、手册、README 与两处入口文档同步更新，手册新增「不默认开 Auto-fix」。测试 11 项通过，八个变异全部被抓到。Codex 审查 8.4/10，五项发现都已修正，其中 P1 是批量核对的默认输出缓冲上限。推送与开 PR 等运营方同意；合入时 #152、#153 如果还改着 INDEX.md，各要保留删除一次。",
+  "summary": "ADR 0049 将 INDEX.md 改为 Git 忽略的本地视图，memory:check 校验记录且拒绝跟踪索引，提交引用改用批量核对；来源 11 项测试及八个变异通过。11 月 9 日核对 c5cc1617 已经 #156 合入 dev，尚未进入 main。#152 仍有旧索引的修改/删除冲突；#153 已保留删除。后续整理只提交任务记录。",
   "thread": null,
   "baseCommit": "76983456",
-  "commits": [],
+  "commits": ["c5cc1617", "19db63d1"],
   "sources": [
     { "path": "scripts/work-memory.mjs" },
     { "path": "scripts/work-memory.test.mjs" },
@@ -135,3 +135,5 @@
   - #152、#153 如果还改着 INDEX.md，各要解决一次「修改/删除」冲突：保留删除，再运行 `pnpm memory:index`。
 - 历史任务记录里「重建 INDEX.md」之类的描述，是当时的做法，保持原样。
 - 本记录不替代此前的任何记录。它取代 README 原来的做法：「最后由一个维护者在没有其他写入者时生成索引」。
+
+2026-11-09 状态补记：01:05:29 UTC 查询 #156，实际 head `c5cc16178796c4dbe685259cf5df35d7257bbcb1` 已于 11 月 5 日 09:29:06 UTC 合入 dev（`19db63d1`），检查汇总为空，不能表述为 CI 已通过。该提交尚不在所查 main。原「等待推送与开 PR」已失效；ADR 0049 状态行仍写未合入，是尚待同步的状态文字，其索引不入库规则已在 dev 生效。本次使用新脚本在独立工作树生成本地索引，不恢复跟踪。GitHub 显示 #152 DIRTY，本地 `git merge-tree` 也只报告 INDEX.md 的修改/删除冲突；#153 在 `2e469718` 已不含被跟踪的 INDEX.md，查询时 CLEAN。未修改这些分支或开启 Auto-fix。

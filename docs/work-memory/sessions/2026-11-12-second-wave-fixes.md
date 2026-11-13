@@ -105,3 +105,5 @@ Codex 报「已到用量上限，11 月 17 日恢复」，没有跑成。改由�
 - `agent-registration-session.ts` 的会话记录写回时会丢掉未知字段。
 
 需要运营方做的：给 `geo_lookup_failure` 日志建指标过滤与告警；给 `/api/*` 加 WAF 速率规则；核对线上分发的 `/api/*` 确实是 CachingDisabled；是否轮换 IPdata 密钥。
+
+2026-11-13 补记：本记录写的「没有推送」已过时。第一波经原仓库 PR #160、第二波经 PR #161 于 2026-11-13 合入原 `dev`，随后原账号被封停；两波的内容随仓库迁移进入 `haoyu8962-netizen/sairn` 的 `main`（[迁移记录](2026-11-13-repository-move-and-chart-library.md)）。没有发布，真实钱包与真机验证仍未做。
