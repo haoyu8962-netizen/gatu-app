@@ -32,6 +32,8 @@
 		"brand:export-motion": "node scripts/brand-export-motion.mjs --write",
 		"og:generate": "node scripts/generate-og-cards.mjs --generate",
 		"og:check": "node scripts/generate-og-cards.mjs --check",
+		"chart:fetch": "node scripts/fetch-chart-library.mjs",
+		"chart:check": "node scripts/fetch-chart-library.mjs --check",
 		"asset-info:generate": "node scripts/generate-spot-asset-info.mjs",
 		"prepare": "lefthook install"
 	},

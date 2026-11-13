@@ -2,8 +2,6 @@ name: Static Checks
 
 # Type checking, Biome and the translation catalog check each took one to two and a half
 # minutes on a runner of their own, most of it checkout and install. They share one job now.
-# Unlike the other pull request workflows it has no promotion coverage job: a dev to main
-# promotion always runs this cheap check on the promoted tree (ADR 0016 D8).
 on:
   pull_request:
     paths:
@@ -43,6 +41,17 @@ jobs:
         with:
           node-version: 22.15.0
           cache: pnpm
+
+      - name: Check out the private chart library
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          repository: ${{ github.repository_owner }}/gatu-chart-library
+          token: ${{ secrets.CHART_LIBRARY_TOKEN }}
+          path: .chart-library-src
+          persist-credentials: false
+
+      - name: Install and verify the chart library
+        run: node scripts/fetch-chart-library.mjs --from .chart-library-src
 
       - run: pnpm install --frozen-lockfile
 

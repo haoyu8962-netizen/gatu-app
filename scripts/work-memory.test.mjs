@@ -271,3 +271,16 @@ test("wrong project, wrong thread and corrupt sources cannot be archived", async
 	await writeFile(source, `${JSON.stringify({ type: "session_meta", payload: { id: "test-thread", cwd: repo } })}\n{`);
 	await assert.rejects(captureWorklog({ repoRoot: repo, source, threadId: "test-thread" }), /incomplete JSON/);
 });
+
+test("a commit of the previous repository passes only when legacy-commits.txt lists it", async (t) => {
+	const { repo } = await fixture(t);
+	const legacy = "ab".repeat(20);
+	const owners = new Map([[legacy.slice(0, 8), "2026-09-12-legacy"]]);
+	assert.throws(() => verifyCommits(repo, owners), /2026-09-12-legacy: unknown commit abababab/);
+	await writeFile(resolve(repo, "docs/work-memory/legacy-commits.txt"), `# old new\n${legacy} ${"cd".repeat(20)}\n`);
+	verifyCommits(repo, owners);
+	assert.throws(
+		() => verifyCommits(repo, new Map([["cdcdcdcd", "2026-09-12-other"]])),
+		/2026-09-12-other: unknown commit cdcdcdcd/,
+	);
+});

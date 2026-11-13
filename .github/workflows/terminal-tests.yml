@@ -14,8 +14,6 @@ on:
       - "scripts/check-client-bundle-budget.mjs"
       - "scripts/check-client-bundle-budget.test.mjs"
       - "scripts/ci-workflows.test.mjs"
-      - "scripts/promotion-coverage.mjs"
-      - "scripts/promotion-coverage.test.mjs"
       - "scripts/inject-shell-preloads.mjs"
       - "scripts/inject-shell-preloads.test.mjs"
       - "scripts/collect-inline-script-hashes.mjs"
@@ -36,38 +34,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # A dev to main promotion skips the jobs below when the pull requests merged into dev already
-  # passed this workflow on the tree being promoted, and runs them in full on any doubt (ADR 0016
-  # D8). Every other event skips this job and runs the rest as before.
-  coverage:
-    if: github.event_name == 'pull_request' && github.base_ref == 'main' && github.head_ref == 'dev'
-    name: Promotion coverage
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    permissions:
-      actions: read
-      contents: read
-    outputs:
-      covered: ${{ steps.check.outputs.covered }}
-    steps:
-      # The script reads commits, trees and this workflow file but no other file contents, so a blobless
-      # clone of the whole history is enough, and it needs nothing but git and the runner's own Node.
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
-        with:
-          fetch-depth: 0
-          filter: blob:none
-          sparse-checkout: |
-            scripts
-            .github/workflows
-
-      - id: check
-        run: node scripts/promotion-coverage.mjs terminal-tests.yml
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-
   terminal-tests:
-    needs: coverage
-    if: ${{ !cancelled() && needs.coverage.outputs.covered != 'true' }}
     # Every Vitest step below runs with `--shard`, so each job runs about half of each step's
     # files, still one worker at a time. Vitest shards by file, and a step whose files all land in
     # the other shard selects nothing here, hence `--passWithNoTests`; `ci-workflows.test.mjs`
@@ -90,6 +57,17 @@ jobs:
           node-version: 22.15.0
           cache: pnpm
 
+      - name: Check out the private chart library
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          repository: ${{ github.repository_owner }}/gatu-chart-library
+          token: ${{ secrets.CHART_LIBRARY_TOKEN }}
+          path: .chart-library-src
+          persist-credentials: false
+
+      - name: Install and verify the chart library
+        run: node scripts/fetch-chart-library.mjs --from .chart-library-src
+
       - run: pnpm install --frozen-lockfile
 
       - name: Test build and release validators
@@ -98,10 +76,10 @@ jobs:
           node --test
           scripts/check-client-bundle-budget.test.mjs
           scripts/ci-workflows.test.mjs
+          scripts/fetch-chart-library.test.mjs
           scripts/inject-shell-preloads.test.mjs
           scripts/collect-inline-script-hashes.test.mjs
           scripts/serve-spa-static.test.mjs
-          scripts/promotion-coverage.test.mjs
 
       - name: Test the CloudFront release tooling
         if: matrix.shard == 1

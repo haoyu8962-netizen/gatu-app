@@ -38,7 +38,7 @@
    - 调试全局变量、Vite 插件名和 `.deepsec` 项目。
 5. **继续保留 `gatu` 的标识。**
    - AWS 资源名：S3 桶 `gatu-terminal-2026`、`gatu-dist-2026`；CloudFront 函数 `gatu-terminal-request`、`gatu-terminal-response`、`gatu-rewrite-index`；策略 `gatu-terminal-*`；Lambda `gatu-terminal-api*`；IAM 用户 `gatu-edge`（策略文件 `deploy/cloudfront/iam/gatu-edge-release-policy.json`）。
-   - GitHub 仓库 `gatu-app`（是否改名由用户决定）和本地检出路径。
+   - GitHub 仓库 `gatu-app`（是否改名由用户决定）和本地检出路径。2026-11-13 补记：仓库迁到新账号后，运营方决定改名为 `sairn`（[ADR 0054](0054-chart-library-outside-the-repository.md)）；私有的图表库仓库仍叫 `gatu-chart-library`，本地检出路径不受影响。
    - `brand.json` 的 `domains.legacy` 里的 `gatu.ai` 组，保留到退役为止（ADR 0031）。
    - 过渡期双写的旧请求头 `x-gatu-forwarded-host`（ADR 0031）。
    - 测试里用来拒绝旧名的断言，以及文档中带日期的历史事实。
