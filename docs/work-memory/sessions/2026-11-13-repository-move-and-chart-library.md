@@ -10,9 +10,10 @@
   "summary": "原账号 zora4523-bot 被 GitHub 封停。按运营方决定把 dev 与 main 迁到 haoyu8962-netizen/gatu-app 并公开；TradingView 图表库与早期的 .env 从全部历史里移除（提交号全部改变），图表库改放私有仓库 gatu-chart-library，由 pnpm chart:fetch 按清单核对后安装，四个 CI 工作流加了检出私有仓库的步骤。本地类型检查、图表测试、生产构建与图表产物校验通过；新仓库上的 CI 没有跑过，Actions 关闭，CHART_LIBRARY_TOKEN 未配置。",
   "thread": null,
   "baseCommit": "5857c410",
-  "commits": [],
+  "commits": ["e8040f4f", "6a6d1066"],
   "sources": [
     { "path": "docs/adr/0054-chart-library-outside-the-repository.md" },
+    { "path": "docs/adr/0055-single-main-branch-and-release-tags.md" },
     { "path": "docs/agent-handbook.md" },
     { "path": "scripts/fetch-chart-library.mjs" }
   ],
@@ -37,11 +38,16 @@
 - 新增 `scripts/fetch-chart-library.mjs` 及测试、`chart:fetch` / `chart:check` 两个命令、忽略规则，四个 CI 工作流在安装依赖前检出私有仓库并安装图表库。
 - 更新工作手册第 3 节、README、`agent.md`、运行时护栏 §4 与 CHANGELOG。
 
+同日运营方问「新仓库有一个 main 主分支就可以了吧」，同意改为单分支后又做了（决策在 [ADR 0055](../../adr/0055-single-main-branch-and-release-tags.md)）：
+
+- 给线上 p41 的提交 `72bb28d1` 补打标签 `cloudfront-2026-11-12-p41`；把 `dev` 合进 `main`（`6a6d1066`，树与 `dev` 相同）并直接推送；PR #1 改为指向 `main`；删除远端 `dev`。
+- 删除晋升覆盖脚本与四个工作流里的覆盖作业，`Production Builds` 每次都构建配对开关的两种状态；两份旧记录（`2026-10-31-promotion-ci-coverage`、`2026-11-02-cloudfront-release-p37`）的证据来源里指向已删除脚本的条目随之移除，正文未改；重写 `.claude/rules/git.md` 的分支一节，更新 `AGENTS.md` 末段、工作手册第 3、8 节与 ADR 0016 的状态说明。
+
 ## 验证与限制
 
-读数在公开仓库的克隆上取得（Node 22.15.0），逐项见 ADR 0054「验证」：取回脚本测试 5 项、工作流结构测试 20 项、类型检查退出码 0、图表相关 Vitest 137 项、生产构建与图表产物校验退出码 0；从私有仓库克隆安装、篡改后检出并修复各实测一次。gitleaks 扫描公开副本的历史有 582 条命中，按文件与变量名判断是生成数据与测试夹具，没有逐条核对值。
+读数在公开仓库的克隆上取得（Node 22.15.0），逐项见 ADR 0054「验证」：取回脚本测试 5 项、工作流结构测试（去掉晋升覆盖之后）19 项、类型检查退出码 0、图表相关 Vitest 137 项、生产构建与图表产物校验退出码 0；从私有仓库克隆安装、篡改后检出并修复各实测一次。gitleaks 扫描公开副本的历史有 582 条命中，按文件与变量名判断是生成数据与测试夹具，没有逐条核对值。
 
-没有验证的：新仓库上的 CI；全量单测与浏览器套件；发布流程。没有改动 AWS、线上部署与原仓库的本地克隆。
+合进 `main` 的那次合并没有 CI 把关。没有验证的：新仓库上的 CI；按单分支流程的一次完整发布；全量单测与浏览器套件；发布流程。没有改动 AWS、线上部署与原仓库的本地克隆。
 
 ## 后续与替代关系
 

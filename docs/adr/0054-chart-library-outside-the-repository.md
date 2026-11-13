@@ -39,7 +39,7 @@
 在公开仓库的克隆上（Node 22.15.0）：
 
 - `node --test scripts/fetch-chart-library.test.mjs`：5 项通过。
-- `node --test scripts/ci-workflows.test.mjs`：20 项通过。
+- `node --test scripts/ci-workflows.test.mjs`：20 项通过（[ADR 0055](0055-single-main-branch-and-release-tags.md) 去掉晋升覆盖之后是 19 项）。
 - `pnpm memory:test`：12 项通过；`pnpm memory:check`：加对照表之前因旧提交号失败，之后通过。
 - `pnpm chart:check`：未安装时退出码 1；安装后报告 1,163 个文件与清单一致。
 - `pnpm typecheck`：退出码 0。

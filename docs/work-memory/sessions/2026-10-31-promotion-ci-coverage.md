@@ -17,8 +17,6 @@
     { "path": ".github/workflows/production-build.yml" },
     { "path": ".github/workflows/website-build.yml" },
     { "path": ".github/workflows/static-checks.yml" },
-    { "path": "scripts/promotion-coverage.mjs" },
-    { "path": "scripts/promotion-coverage.test.mjs" },
     { "path": "scripts/ci-workflows.test.mjs" },
     { "path": "docs/adr/0016-dev-first-pull-requests-and-ci-tiers.md" },
     { "path": ".claude/rules/git.md" },

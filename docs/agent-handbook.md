@@ -17,7 +17,7 @@
 - **只能由运营方本人做的事**：账号登录、输入密码或密钥、填写付款或银行卡信息、接受或拒绝法律条款、创建第三方账号、修改 AWS IAM 权限或账户计费设置。遇到这些步骤就停下来交给运营方。可以先准备好要粘贴的内容、给出操作路径，等运营方做完再核对结果。
 - **秘密**：不读取、不打印 `.env*` 的值、私钥、Agent 密钥、令牌和 AWS 账号 ID。需要核对时比较哈希，或在本地产物里 grep，只报告「一致」或「不一致」。
 - **需要先问的动作**：推送、开 PR、合并 PR、发布，改动 AWS、Cloudflare、Privy 或 GitHub 的设置，以及在 PR 上代替运营方留言。一次同意只对那一个动作有效。不要开启 GitHub auto-merge：`dev` 没有必选检查，auto-merge 可能不等 CI 跑完就合并。
-- **「合并到主分支」「从 main 开分支」**：按 [git 规则](../.claude/rules/git.md)理解为开 PR 进 `dev`、从 `origin/dev` 开分支，并在回复里说明这样理解。只有运营方明确说是紧急修复，才直接对 `main`。
+- **分支**：只有 `main` 一个长期分支（[ADR 0055](adr/0055-single-main-branch-and-release-tags.md)）。「合并到主分支」就是开 PR 进 `main`，「从 main 开分支」就是从 `origin/main` 开分支。`main` 上可以有已合并未发布的改动；线上是什么看最新的 `cloudfront-*` 发布标签。
 - **长任务报告进度**：多轮审查直到评分达标这类循环任务，开始时说明每轮的大致成本（时间和 token）。每轮结束用表格报告轮次、各路评分、主要发现、修复打算和预计剩余时间。达到运营方给的门槛就收尾，不为更高分再加一轮，并写明最后一批改动有没有再送审。
 - **「确保下次不再出现」**：落成四件事。规则写进规范文档；加一个会失败的契约测试，例外逐条带理由和次数，并用变异证明它真的会失败；在 AGENTS.md 加指针和回归清单条目；在任务记录写后续事项。待决项写进测试的待决清单和任务记录，不能只写在回复里。样板是[样式指南「Checking a visual rule」](../.claude/rules/style-ui-guide.md)。
 - **交互缺陷复现不了**：先让现象自己说话，不要凭源码推断。给控件加可观测的结束原因（如滑杆的 `data-gesture-end`），或装只读记录器写进 `sessionStorage`，请运营方在 agent 能读到的页面上复现，再读记录。验证结论写明输入路径：脚本派发、协议注入还是物理输入。找到并修复了一个缺陷，不等于修好了被报告的那一个，交付前要确认是同一个现象（[滑杆交互](slider-interactions.md)、[ADR 0018](adr/0018-slider-gestures-end-on-release.md)）。
@@ -29,13 +29,12 @@
 ## 3. 仓库、分支与 CI
 
 - 远端只有 `origin`，即 `haoyu8962-netizen/gatu-app`，是公开仓库（2026-11-13 起；原账号 `zora4523-bot` 被封停，见 [ADR 0054](adr/0054-chart-library-outside-the-repository.md)）。TradingView Advanced Charts 的许可不允许公开再分发，所以它不在这个仓库里，也不能提交进来：文件在私有仓库 `haoyu8962-netizen/gatu-chart-library`，克隆后跑一次 `pnpm chart:fetch` 装到被忽略的 `apps/terminal/public/charting_library/`。2026-11-13 之前的记录里引用的提交号与 PR 编号属于原仓库，在这里查不到。
-- 分支流向见 [ADR 0016](adr/0016-dev-first-pull-requests-and-ci-tiers.md) 与 [git 规则](../.claude/rules/git.md)：功能分支进 `dev`，`dev` 用 merge commit 晋升到 `main`。任务记录与 ADR 引用分支上的提交号，所以不能 squash 或 rebase。进 `dev` 的 PR 同样用 merge commit 合并：晋升判定（ADR 0016 D8）只认 GitHub 生成的 `Merge pull request #N from …` 提交，squash、rebase 或直接推送 `dev` 都会让下一次晋升全跑。新分支用 `git switch --no-track -c <name> origin/dev`，`--no-track` 防止误推到 `dev`。`main` 比 `dev` 多出几个晋升合并提交属于正常。
+- 分支流向见 [ADR 0055](adr/0055-single-main-branch-and-release-tags.md) 与 [git 规则](../.claude/rules/git.md)：功能分支进 `main`，用 merge commit 合并。任务记录与 ADR 引用分支上的提交号，所以不能 squash 或 rebase。新分支用 `git switch --no-track -c <name> origin/main`，`--no-track` 防止误推到 `main`。2026-11-13 之前的记录里出现的 `dev`、晋升 PR 与 `Promotion coverage` 是原仓库的做法（[ADR 0016](adr/0016-dev-first-pull-requests-and-ci-tiers.md)），已不适用。
 - **合并 PR 之前**先读机器人的审查意见：`gh api repos/haoyu8962-netizen/gatu-app/pulls/<N>/comments` 与 `.../reviews`。没有开 Auto-fix 的 PR 收到意见时不会有任何通知。逐条对照代码核实后再决定改不改，机器人也会出错：2026-10-03 PR #74 的 P2 把 `dev` 的状态当成了 `main` 的，用 `git merge-base` 核对后确认不成立。
-- **CI 成本**：GitHub Actions 额度是每月 3,000 分钟。代码 PR 每推送一次，五个工作流都触发时约 64–68 计费分钟（2026-11-01 PR #130 两轮实测，按作业向上取整）。2026-09-20 PR #32 合入后实测约 33，之后单测拆成两片，单测与浏览器套件也都变长了。工作流都按路径过滤，只改 `docs/`、`notes/`、`.claude/`、`.agents/` 或根目录 Markdown 的 PR 不触发任何检查，`gh pr checks` 显示 no checks reported，可以直接合并。改 `apps/**`（包括其中的 README）、`deploy/**`、`brand/**`、`legal/**` 会触发构建和测试。纯文档补记随下一个 PR 带上。进 `main` 的 PR 另外跑配对开关打开的构建。`dev → main` 的晋升 PR 先由各工作流的 `Promotion coverage` 作业核对 `dev` 是否已经测过同一棵树：测过就只跑静态检查和配对开启构建（预计约 14 计费分钟），否则全跑（约 70 计费分钟），见 [ADR 0016](adr/0016-dev-first-pull-requests-and-ci-tiers.md) D8 与第 8 节。
+- **CI 成本**：仓库自 2026-11-13 起是公开仓库，Actions 不计费，下面的计费分钟读数是原私有仓库的，只作历史参考；`dev → main` 晋升与 `Promotion coverage` 已取消（ADR 0055）。原文：GitHub Actions 额度是每月 3,000 分钟。代码 PR 每推送一次，五个工作流都触发时约 64–68 计费分钟（2026-11-01 PR #130 两轮实测，按作业向上取整）。2026-09-20 PR #32 合入后实测约 33，之后单测拆成两片，单测与浏览器套件也都变长了。工作流都按路径过滤，只改 `docs/`、`notes/`、`.claude/`、`.agents/` 或根目录 Markdown 的 PR 不触发任何检查，`gh pr checks` 显示 no checks reported，可以直接合并。改 `apps/**`（包括其中的 README）、`deploy/**`、`brand/**`、`legal/**` 会触发构建和测试。纯文档补记随下一个 PR 带上。进 `main` 的 PR 另外跑配对开关打开的构建。`dev → main` 的晋升 PR 先由各工作流的 `Promotion coverage` 作业核对 `dev` 是否已经测过同一棵树：测过就只跑静态检查和配对开启构建（预计约 14 计费分钟），否则全跑（约 70 计费分钟），见 [ADR 0016](adr/0016-dev-first-pull-requests-and-ci-tiers.md) D8 与第 8 节。
 - **少跑一轮的做法**（2026-10-12 与运营方商定）：一个代码 PR 尽量只推一次。开 PR 前在工作树跑完改动文件的 Biome、`typecheck`、`node --test scripts/*.test.mjs`（改了工作流或脚本时）和**全量终端 Vitest**（`pnpm --filter @sairn/terminal test --maxWorkers=4`，2026-10-12 实测 678 个文件约 3 分钟；CI 只跑手选清单，定向测试两次漏掉了清单外或自己没想到的文件：#103 的预算测试、#104 的 `embedded-deposit-auto-bridge-sonner`），涉及滑杆、资金、下单的再跑对应浏览器套件；推送后先等一两分钟看 Codex 机器人的评论，成立的和 CI 失败一起改，攒成第二次推送，不要一条评论推一次。代码 PR 的 CI 跑完后如果只剩文档补记，另开一个不触发工作流的文档 PR，不要为它再推一次代码分支。`Terminal Tests` 与浏览器回归各两片并行，一轮等待约等于较慢的那一片；只改 `*.test.ts(x)` 的 PR 不跑浏览器回归（[ADR 0016](adr/0016-dev-first-pull-requests-and-ci-tiers.md) 2026-10-12 补记）。
 - **不默认开 Auto-fix**（运营方 2026-11-05）：开 PR 后不主动提议开启 Auto-fix，运营方明确要求时才开。原因：
   - Auto-fix 会为每个 CI 失败、冲突或评论推一次修复，每推送一次就全跑一轮，形成「修复 → 推送 → 跑 CI」的循环，与上一条「尽量只推一次」冲突。
-  - 晋升 PR 的 head 就是 `dev`，修复只能另开 PR 进 `dev`，所以晋升 PR 永远不开。
 
   运营方问到 CI 时，用 `gh pr checks` 查一次，并读机器人的评论；失败和意见攒成一次推送。
 - **CI 秒失败**：所有 job 十几秒内失败且 steps=0 时，先看 `gh api repos/zora4523-bot/gatu-app/check-runs/<job id>/annotations`。注解如果是额度或预算拒绝（spending limit、Actions budget），就不是代码问题。预算只能由运营方在 GitHub 账户设置里调整，调整后约 3 分钟才生效，先 rerun 最便宜的工作流来探测。
@@ -43,11 +42,11 @@
 - **Claude Code 工作流**：`claude.yml` 在评论里出现 @claude 时运行，需要仓库密钥 `CLAUDE_CODE_OAUTH_TOKEN`；`Claude Code Review` 工作流已手动停用。2026-10-08 查询时仓库没有任何 Actions 密钥，所以 @claude 目前不能用；要启用，由运营方用自己的 Claude 账号生成令牌后写入。
 - **集成 PR**（把多个完成的分支合成一个 PR）：
   - 先确认对应会话已结束、工作树干净、本地分支头等于远端。从最新的 `origin/dev` 建分支，按依赖顺序逐个 `git merge --no-ff`。
-  - 用 `git merge-tree --write-tree --name-only origin/dev <branch>` 预演冲突；用 `git cherry -v origin/dev <branch>` 查哪些补丁已经以别的提交进了 `dev`。
+  - 用 `git merge-tree --write-tree --name-only origin/main <branch>` 预演冲突；用 `git cherry -v origin/main <branch>` 查哪些补丁已经以别的提交进了 `main`。
   - 冲突多在工作记录、CHANGELOG 与 ADR 目录。同名记录取两边的超集。`INDEX.md` 不入库（ADR 0049），不会冲突；早于 ADR 0049 的分支如果改过它，合并时保留删除（`git rm docs/work-memory/INDEX.md`）。`dev` 后来新增的源码契约测试会在合并后才报错，所以每次合并后先跑契约测试，再提交合并。两边都往 CI 清单加了同一个测试文件时要去重。
   - 合并后跑全量单测与相关的浏览器套件；开 PR 前按 CI 环境做一次生产构建量包体（第 6 节）；另写一条集成任务记录。被集成的 PR 会在集成 PR 合并后被 GitHub 自动标为已合并。
   - 签名、下单、资金相关的改动和独立功能单独开 PR；小而无关的低风险改动可以合批。
-- **同步 `dev`**：桌面应用的 `sync_with_base_branch` 只接受 `main` 或默认分支，同步 `dev` 要手动 `git fetch origin dev` 再 `git merge --no-ff origin/dev`，推送前再 fetch 一次。合并跨过依赖升级时先跑 `pnpm install --frozen-lockfile`（比较 `node_modules/.pnpm/lock.yaml` 与 `pnpm-lock.yaml` 可知是否需要），否则测试和构建用的还是旧依赖。
+- **同步 `main`**：`git fetch origin main` 再 `git merge --no-ff origin/main`，推送前再 fetch 一次。合并跨过依赖升级时先跑 `pnpm install --frozen-lockfile`（比较 `node_modules/.pnpm/lock.yaml` 与 `pnpm-lock.yaml` 可知是否需要），否则测试和构建用的还是旧依赖。
 
 ## 4. 共享检出与工作树
 
@@ -129,8 +128,8 @@
 完整手册见 [CloudFront 发布](../deploy/cloudfront/README.md)，官网见 [deploy/website](../deploy/website/README.md)。下面是 agent 视角的要点。
 
 - 三个闸门（主网赞助充值、移动配对、主网银行卡入金）自 2026-10-11 起按运营方决定默认全开，发布前不再逐次询问（运营方原话「以后不要咨询了…全部开」，见 p30 发布记录）；只有运营方明确要求关闭某个闸门时才改。在仓库外新建工作树检出 `origin/main` 来构建，`apps/terminal/.env.local` 只软链、不读内容。所有开关在命令行显式覆盖：`SAIRN_BUILD_SHA`、`SAIRN_RELEASE_ID`、`VITE_MOBILE_PAIRING_ENABLED`、`VITE_CCTP_*`、`VITE_PRIVY_FIAT_FUNDING_*`、`VITE_HYPERLIQUID_TESTNET=`（`VITE_HYPERLIQUID_AGENT_NAME` 自 [ADR 0038](adr/0038-unnamed-default-agent-for-trading-connection.md) 起不再存在）。用 Node 22.15.0。
-- **发布预检**：开晋升 PR 之前，在发布工作树检出 `origin/dev`，用与正式构建相同的命令和开关构建一次。代码相同、只有构建身份（提交号、构建时间、发布号）不同的发布构建，总量读数可相差约 470–550 字节，交易启动约 150 字节，运行时增量只有几十字节（[p37 发布记录](work-memory/sessions/2026-11-02-cloudfront-release-p37.md)、[性能基线](terminal-performance-baseline.md)）。因此，预检中总量余量不足 1,000 字节，或任何其它预算余量不足 200 字节，都按不通过处理：先用一个进 `dev` 的 PR 削减增长，或按复现规则重定基线，合入后再开晋升 PR。p37 的预检总量只剩 324 字节，当时按通过处理，结果正式构建超出 101 字节，只好补一个重定 PR，又晋升了一次。
-- **晋升 PR 的检查**：`dev → main` 的 PR 上，`Terminal Tests`、浏览器回归、`Production Builds` 与 `Website and Brand` 各有一个 `Promotion coverage` 作业（[ADR 0016](adr/0016-dev-first-pull-requests-and-ci-tiers.md) D8）。合并前打开这些作业的运行摘要，每个摘要写明本工作流被哪个 PR 的哪次运行覆盖、因而跳过，或者为什么要全跑。两种结果都正常，把结论写进发布记录。摘要里出现 `the check failed` 警告，说明判定本身出了错：检查照常全跑，但要查明原因。想在开晋升 PR 之前先看判定结果，先 `git fetch`，再在本机运行 `GITHUB_TOKEN=$(gh auth token) GITHUB_REPOSITORY=zora4523-bot/gatu-app node scripts/promotion-coverage.mjs <工作流文件> --base origin/main --head origin/dev`；参数只写文件名（如 `terminal-tests.yml`），带 `.github/workflows/` 前缀会报用法错误。紧急修复（从 `main` 开分支直接进 `main`）的 PR 照常全跑；如果合回 `dev` 时没有经过 PR，下一次晋升也会全跑一次。
+- **发布预检**：发布之前，在发布工作树检出要发布的 `origin/main` 提交，用与正式构建相同的命令和开关构建一次。代码相同、只有构建身份（提交号、构建时间、发布号）不同的发布构建，总量读数可相差约 470–550 字节，交易启动约 150 字节，运行时增量只有几十字节（[p37 发布记录](work-memory/sessions/2026-11-02-cloudfront-release-p37.md)、[性能基线](terminal-performance-baseline.md)）。因此，预检中总量余量不足 1,000 字节，或任何其它预算余量不足 200 字节，都按不通过处理：先用一个进 `main` 的 PR 削减增长，或按复现规则重定基线，合入后再发布。p37 的预检总量只剩 324 字节，当时按通过处理，结果正式构建超出 101 字节，只好补一个重定 PR，又晋升了一次。
+- **发布标签**：发布从 `main` 上的一个提交构建，发布完成后给它打 `cloudfront-<日期>-p<N>` 标签并推送（推送标签会触发 `Production Builds`）；发布记录写明标签与提交号。p41 的标签 `cloudfront-2026-11-12-p41` 是 2026-11-13 补打的。紧急修复从发布标签开分支，发布并打标签后再开 PR 合回 `main`（ADR 0055）。
 - 顺序：`functions --execute --origin https://app.sairn.ai`，然后 `lambda --function-name gatu-terminal-api --origin https://app.sairn.ai --execute`，然后 `sync` 加上对应的 `--allow-…`，再对两条分发各 `invalidate` 一次；约 80 秒后对两个网络各跑一次 `verify`，最后运行 `node apps/terminal/tests/browser/csp-coverage.mjs https://app.sairn.ai`，完整阅读输出，不要只看最后几行。上一版的发布工作树保留到下一次发布，作为回滚产物。
 - `lambda`（[ADR 0051](adr/0051-release-script-rollback-and-lambda-probe.md)）：打包前拒绝拆了块的输出（输出目录里的符号链接、入口以外的模块文件、入口里的相对导入，包括两个入口互相导入）；更新应答只打印 `Version`、`CodeSize`、`CodeSha256`、`State`、`LastUpdateStatus` 一行，不再输出环境变量；`wait function-updated` 之后立即经 `--origin` 探活 `/api/health` 与 `/api/geo`，没有 `--origin` 时拒绝执行；每次请求有 10 秒截止时间，`verify` 的每个请求也带同样的截止时间。探活失败说明两个网络已经在用这个包：停下，不要继续 `sync`，先用上一版发布工作树的包重传（`lambda --function-name gatu-terminal-api --origin https://app.sairn.ai --lambda-dir <上一版工作树>/apps/terminal/dist-lambda --execute`），再看失败明细（`/api/geo` 也可能是 IPdata 自身故障）。2026-11-12 之前的发布日志与会话记录可能含有 IPdata 密钥，是否轮换由运营方决定（[发布手册「Lambda 输出与 IPdata 密钥」](../deploy/cloudfront/README.md#lambda-输出与-ipdata-密钥)）。
 - `sync`：按路径判为 `immutable` 的文件（`assets/` 下全部文件与带哈希的图表文件）用 `aws s3 sync`，其余文件一律 `aws s3 cp`；文件名或产物目录的绝对路径含 `*`、`?`、`[`、`]` 时拒绝上传；`build-meta.json` 在壳之前、`_shell.html` 是最后一条上传。中途失败时脚本只说明本次运行里哪些阶段已返回成功、失败那条命令的对象状态未知、后面的阶段没有写；它不知道运行前桶里是什么。处理方式都是原样重跑同一条 `sync`，再 `verify`。结尾按内容核对壳与 `build-meta.json`，打印 `Release markers match the local build byte for byte`。
@@ -155,4 +154,4 @@
 | 本地证据 | `.worklog/` | Git 忽略，只在本机 |
 | 发布工作树 | 仓库外的 `gatu-release-*` | 回滚产物，按发布记录保留或删除 |
 
-更换之后第一件事：读本文与最新的交接记录，`git fetch` 后核对 `dev`、`main` 和打开的 PR 是否与记录一致。
+更换之后第一件事：读本文与最新的交接记录，`git fetch` 后核对 `main`、最新的发布标签和打开的 PR 是否与记录一致。

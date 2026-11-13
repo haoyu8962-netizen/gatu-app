@@ -1,5 +1,7 @@
 # ADR 0016：工作分支先进 `dev`，CI 按目标分支分层
 
+> 2026-11-13：分支流向（D1）与晋升分层、晋升覆盖（D2′、D8）已被 [ADR 0055](0055-single-main-branch-and-release-tags.md) 取代：仓库只保留 `main`，不再有 `dev` 与晋升 PR。本文其余内容保留为历史记录。
+
 - 状态：D1、D3、D4 已接受并实施（产品负责人，2026-09-19）；D2 在同日、推送之前由产品负责人改为 D2′，并新增 D6、D7；D5 已规划，未执行。实施与验证记录见[分支流向与首版分层](../work-memory/sessions/2026-09-19-ci-tiers-dev-first-flow.md)和[按四条方案的改造](../work-memory/sessions/2026-09-19-ci-restructure.md)。D8 由运营方于 2026-10-31 在两种方案中选定并实施，记录见[晋升 PR 按覆盖跳过重跑](../work-memory/sessions/2026-10-31-promotion-ci-coverage.md)。
 - 关联：`.claude/rules/git.md`（分支与 PR 规则）、`AGENTS.md` 末段、`.github/workflows/`、[CI 分钟耗尽记录](../work-memory/sessions/2026-09-15-ci-minutes-concurrency.md)。
 

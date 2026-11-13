@@ -19,48 +19,13 @@ const PULL_REQUEST_WORKFLOWS = [
 	"slider-browser.yml",
 	"claude-code-review.yml",
 ];
-// The workflows a dev to main promotion may skip, each with the job its coverage job decides about (ADR 0016 D8).
-const PROMOTION_COVERAGE_JOBS = {
+// Each pull request workflow that used to wait for a promotion coverage decision, with its one job (ADR 0055).
+const SINGLE_JOB_WORKFLOWS = {
 	"terminal-tests.yml": "terminal-tests",
 	"slider-browser.yml": "terminal-browser",
 	"production-build.yml": "terminal",
 	"website-build.yml": "website",
 };
-const PROMOTION = { event_name: "pull_request", base_ref: "main", head_ref: "dev" };
-const EVENTS = [
-	{
-		name: "a pull request into dev",
-		github: { event_name: "pull_request", base_ref: "dev", head_ref: "claude/feature" },
-		pairings: ["false"],
-	},
-	{ name: "a covered promotion", github: PROMOTION, covered: "true", skips: true, pairings: ["true"] },
-	{ name: "an uncovered promotion", github: PROMOTION, covered: "false", pairings: ["false", "true"] },
-	{
-		name: "a promotion whose coverage job failed",
-		github: PROMOTION,
-		covered: "",
-		coverageFails: true,
-		pairings: ["false", "true"],
-	},
-	{
-		name: "an urgent fix into main",
-		github: { event_name: "pull_request", base_ref: "main", head_ref: "claude/hotfix" },
-		pairings: ["false", "true"],
-	},
-	{ name: "a release tag", github: { event_name: "push", base_ref: "", head_ref: "" }, pairings: ["false", "true"] },
-	{
-		name: "a manual run",
-		github: { event_name: "workflow_dispatch", base_ref: "", head_ref: "" },
-		pairings: ["false", "true"],
-	},
-	{
-		name: "a cancelled run of a pull request into dev",
-		github: { event_name: "pull_request", base_ref: "dev", head_ref: "claude/feature" },
-		cancelled: true,
-	},
-	{ name: "a cancelled promotion", github: PROMOTION, covered: "false", cancelled: true },
-];
-const EXPRESSION_TOKEN = /\s+|==|!=|&&|\|\||!|\(|\)|'[^']*'|fromJSON\(|cancelled\(\)|(?:github|needs)(?:\.[\w-]+)+/y;
 
 function readWorkflow(name) {
 	return readFileSync(new URL(`../.github/workflows/${name}`, import.meta.url), "utf8");
@@ -84,48 +49,6 @@ function workflowJobs(source) {
 
 function jobValue(job, key) {
 	return new RegExp(`^ {4}${key}: (.+)$`, "m").exec(job)?.[1];
-}
-
-/**
- * Evaluates the part of GitHub's expression syntax these workflows use. Every value compared here is a
- * lowercase string, so JavaScript's operators of the same names give GitHub's results; any other syntax
- * (another function, a number, an object filter) fails the test instead of being guessed at.
- */
-function evaluate(expression, { github, covered = "", cancelled = false }) {
-	const source = expression.trim().replace(/^\$\{\{([\s\S]*)\}\}$/, "$1");
-	EXPRESSION_TOKEN.lastIndex = 0;
-	while (EXPRESSION_TOKEN.lastIndex < source.length) {
-		const at = EXPRESSION_TOKEN.lastIndex;
-		assert.ok(EXPRESSION_TOKEN.exec(source), `unsupported expression syntax: ${source.slice(at)}`);
-	}
-	const needs = { coverage: { outputs: { covered } } };
-	return new Function("github", "needs", "cancelled", `return (${source.replaceAll("fromJSON(", "JSON.parse(")});`)(
-		github,
-		needs,
-		() => cancelled,
-	);
-}
-
-/** What `needs.coverage.outputs.covered` holds for an event: empty unless the coverage job ran. */
-function coverageOutput(name, event) {
-	const { coverage } = workflowJobs(readWorkflow(name));
-	return !event.cancelled && evaluate(jobValue(coverage, "if"), event) ? (event.covered ?? "") : "";
-}
-
-/**
- * Whether GitHub starts a job that needs the coverage job. An `if` that calls no status function also requires
- * `success()`: the run was not cancelled and every job it needs succeeded, so a skipped coverage job (any event but
- * a promotion) would skip it too. A status function's name inside a string literal is not a call.
- */
-function jobRuns(name, job, event) {
-	const { coverage } = workflowJobs(readWorkflow(name));
-	const coverageSucceeded = !event.cancelled && evaluate(jobValue(coverage, "if"), event) && !event.coverageFails;
-	const succeeded = !event.cancelled && (jobValue(job, "needs") === undefined || coverageSucceeded);
-	const condition = jobValue(job, "if");
-	if (condition === undefined) return succeeded;
-	const callsStatusFunction = /\b(?:success|failure|always|cancelled)\(\)/.test(condition.replace(/'[^']*'/g, "''"));
-	const context = { github: event.github, covered: coverageOutput(name, event), cancelled: Boolean(event.cancelled) };
-	return (callsStatusFunction || succeeded) && evaluate(condition, context);
 }
 
 function countOccurrences(source, needle) {
@@ -222,82 +145,35 @@ test("cancels superseded runs in pull request workflows and never in the comment
 	assert.equal(/^concurrency:/m.test(readWorkflow("claude.yml")), false);
 });
 
-test("builds the default on pull requests into dev, the pairing-on state alone on a covered promotion, and both otherwise", () => {
+test("builds both pairing states on every run of the production build", () => {
 	const builds = readWorkflow("production-build.yml");
 	const { terminal } = workflowJobs(builds);
-	const pairing = /^ {8}pairing: >-\n((?: {10}.+\n)+)/m.exec(terminal)?.[1];
-	assert.ok(pairing, "the build matrix is no longer one folded pairing expression");
-
-	for (const event of EVENTS) {
-		const builds = jobRuns("production-build.yml", terminal, event);
-		assert.equal(builds, !event.cancelled, `${event.name} ${builds ? "builds" : "builds nothing"}`);
-		if (!builds) continue;
-		const context = { github: event.github, covered: coverageOutput("production-build.yml", event) };
-		const built = evaluate(pairing.replace(/\n */g, " "), context).map((entry) => entry.enabled);
-		assert.deepEqual(built, event.pairings, `${event.name} builds pairing ${built.join(" and ")}`);
-	}
+	assert.match(
+		terminal,
+		/^ {8}pairing:\n {10}- enabled: "false"\n {10}- enabled: "true"\n(?! {10}-)/m,
+		"the build matrix must list exactly the pairing-off and pairing-on states",
+	);
 	assert.equal(/^  workflow_dispatch:/m.test(builds), true);
 });
 
-test("asks for promotion coverage only on a dev to main promotion, read-only and in one shared form", () => {
-	const forms = new Set();
-	for (const name of Object.keys(PROMOTION_COVERAGE_JOBS)) {
+test("runs every pull request job unconditionally: one branch, no promotion step", () => {
+	for (const [name, job] of Object.entries(SINGLE_JOB_WORKFLOWS)) {
+		const jobs = workflowJobs(readWorkflow(name));
+		assert.deepEqual(Object.keys(jobs), [job], `${name} must have exactly the ${job} job`);
+		assert.equal(jobValue(jobs[job], "needs"), undefined, `${name}: ${job} must not wait for another job`);
+		assert.equal(jobValue(jobs[job], "if"), undefined, `${name}: ${job} must run for every event that starts the workflow`);
+	}
+	for (const name of PULL_REQUEST_WORKFLOWS) {
 		const source = readWorkflow(name);
-		const { coverage } = workflowJobs(source);
-		assert.ok(coverage, `${name} has no coverage job`);
-		for (const event of EVENTS) {
-			assert.equal(
-				evaluate(jobValue(coverage, "if"), event),
-				event.github === PROMOTION,
-				`${name} ${event.github === PROMOTION ? "must" : "must not"} ask for coverage on ${event.name}`,
-			);
-		}
-		assert.equal(jobValue(coverage, "name"), "Promotion coverage");
-		assert.equal(countOccurrences(source, "node scripts/promotion-coverage.mjs"), 1, `${name} asks for coverage once`);
-		assert.equal(coverage.includes(`run: node scripts/promotion-coverage.mjs ${name}\n`), true, `${name} must ask about its own runs`);
-		assert.match(
-			coverage,
-			/^ {4}outputs:\n {6}covered: \$\{\{ steps\.check\.outputs\.covered \}\}\n[\s\S]*- id: check\n {8}run: node /m,
-			"the script's covered= line must reach the jobs that read needs.coverage.outputs.covered",
-		);
-		assert.match(coverage, /^ {10}fetch-depth: 0$/m, "the script walks dev's history and finds main's newest dev commit");
-		assert.match(coverage, /^ {4}permissions:\n {6}actions: read\n {6}contents: read\n(?! {6})/m);
-		assert.equal(/:\s*write\b/.test(coverage), false, "the coverage job only reads");
+		assert.equal(/promotion-coverage|needs\.coverage/.test(source), false, `${name} still refers to promotion coverage`);
+		assert.equal(/github\.(?:base_ref|head_ref)/.test(source), false, `${name} must not depend on the branch names of a pull request`);
 		assert.equal(
 			/^\s+branches(?:-ignore)?:/m.test(source),
 			false,
-			`${name}: a base-branch filter would stop pull requests into dev from running it, or skip a fix that goes straight into main`,
+			`${name}: a base-branch filter would stop a pull request from a release tag's fix branch from running it`,
 		);
-		forms.add(coverage.replace(name, "<workflow>"));
 	}
-	assert.equal(forms.size, 1, "the coverage jobs differ in more than the workflow they ask about");
-
-	const staticChecks = readWorkflow("static-checks.yml");
-	assert.equal(/^\s+needs:/m.test(staticChecks), false, "a promotion always runs the static checks");
-	assert.equal(staticChecks.includes("promotion-coverage.mjs"), false, "a promotion always runs the static checks");
-});
-
-test("skips the tests, browser regressions and website build only on a promotion found covered", () => {
-	for (const [name, job] of Object.entries(PROMOTION_COVERAGE_JOBS)) {
-		const jobs = workflowJobs(readWorkflow(name));
-		assert.deepEqual(Object.keys(jobs), ["coverage", job], `${name} has a job outside the promotion coverage decision`);
-		assert.equal(jobValue(jobs[job], "needs"), "coverage", `${name}: ${job} must wait for the coverage decision`);
-		if (name === "production-build.yml") continue;
-		for (const event of EVENTS) {
-			const runs = jobRuns(name, jobs[job], event);
-			assert.equal(runs, !event.skips && !event.cancelled, `${name} ${runs ? "runs" : "skips"} ${job} for ${event.name}`);
-		}
-	}
-
-	const terminalTests = readWorkflow("terminal-tests.yml");
-	for (const file of ["scripts/promotion-coverage.mjs", "scripts/promotion-coverage.test.mjs"]) {
-		assert.equal(terminalTests.includes(`- "${file}"`), true, `terminal-tests.yml does not start for ${file}`);
-	}
-	assert.match(
-		terminalTests,
-		/node --test\n(?:[ \t]+scripts\/\S+\n)*[ \t]+scripts\/promotion-coverage\.test\.mjs\n/,
-		"the coverage decision's own tests never run in CI",
-	);
+	assert.equal(existsSync(new URL("./promotion-coverage.mjs", import.meta.url)), false);
 });
 
 test("starts the release builds for release tags only, never for archive tags", () => {

@@ -15,7 +15,6 @@
     {"path": "deploy/cloudfront/README.md"},
     {"path": "docs/agent-handbook.md"},
     {"path": "docs/adr/0016-dev-first-pull-requests-and-ci-tiers.md"},
-    {"path": "scripts/promotion-coverage.mjs"},
     {"path": "scripts/check-client-bundle-budget.mjs"},
     {"path": "docs/work-memory/sessions/2026-11-02-cloudfront-release-p36.md"},
     {"path": "docs/work-memory/sessions/2026-11-02-link-language-sw-fixes-to-dev.md"},
