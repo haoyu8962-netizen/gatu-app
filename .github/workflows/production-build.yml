@@ -104,6 +104,17 @@ jobs:
           node-version: 22.15.0
           cache: pnpm
 
+      - name: Check out the private chart library
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          repository: ${{ github.repository_owner }}/gatu-chart-library
+          token: ${{ secrets.CHART_LIBRARY_TOKEN }}
+          path: .chart-library-src
+          persist-credentials: false
+
+      - name: Install and verify the chart library
+        run: node scripts/fetch-chart-library.mjs --from .chart-library-src
+
       - run: pnpm install --frozen-lockfile
 
       # The release zips each Lambda entry file alone, so a split-out shared chunk or a module that

@@ -1,10 +1,12 @@
 import { execFileSync } from "node:child_process";
+import { existsSync, readFileSync } from "node:fs";
 import { readdir, readFile, realpath, rename, unlink, writeFile } from "node:fs/promises";
 import { dirname, isAbsolute, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const indexPath = "docs/work-memory/INDEX.md";
+const legacyCommitsPath = "docs/work-memory/legacy-commits.txt";
 const metadataPattern = /^<!-- work-memory\r?\n([\s\S]*?)\r?\n-->\r?\n/;
 const idPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const statusLabels = { recorded: "已整理，验证见正文", verified: "已验证，范围见正文", superseded: "已被后续记录替代" };
@@ -54,8 +56,18 @@ export function parseRecord(text, filename) {
 /**
  * One `git cat-file --batch-check` for every referenced commit. A name that does not resolve or peel to a commit fails,
  * as `git cat-file -e <name>^{commit}` did; an annotated tag of a commit passes. Output grows with the number of names,
- * so the buffer does too.
+ * so the buffer does too. A name that does not resolve still passes when it is a prefix of a commit of the previous
+ * repository listed in `legacy-commits.txt`: the 2026-11-13 history rewrite changed every hash (ADR 0054).
  */
+function readLegacyCommits(repoRoot) {
+	const file = resolve(repoRoot, legacyCommitsPath);
+	if (!existsSync(file)) return [];
+	return readFileSync(file, "utf8")
+		.split("\n")
+		.filter((line) => line && !line.startsWith("#"))
+		.map((line) => line.split(" ")[0]);
+}
+
 export function verifyCommits(repoRoot, commitOwners) {
 	const commits = [...commitOwners.keys()];
 	if (commits.length === 0) return;
@@ -69,8 +81,14 @@ export function verifyCommits(repoRoot, commitOwners) {
 		.trimEnd()
 		.split("\n");
 	requireValue(lines.length === commits.length, "git cat-file --batch-check returned an unexpected number of lines");
+	let legacyCommits;
 	commits.forEach((commit, index) => {
-		requireValue(lines[index].split(" ")[1] === "commit", `${commitOwners.get(commit)}: unknown commit ${commit}`);
+		if (lines[index].split(" ")[1] === "commit") return;
+		legacyCommits ??= readLegacyCommits(repoRoot);
+		requireValue(
+			legacyCommits.some((legacy) => legacy.startsWith(commit)),
+			`${commitOwners.get(commit)}: unknown commit ${commit}`,
+		);
 	});
 }
 

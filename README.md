@@ -60,9 +60,10 @@ gatu-app/
 Prereqs: **Node 22.15+**, **pnpm 10.21+**.
 
 ```bash
-git clone https://github.com/zora4523-bot/gatu-app.git
+git clone https://github.com/haoyu8962-netizen/gatu-app.git
 cd gatu-app
 pnpm install
+pnpm chart:fetch   # licensed chart library from the private repository (docs/adr/0054-chart-library-outside-the-repository.md)
 pnpm dev --port 3000        # runs apps/terminal at http://localhost:3000
 ```
 

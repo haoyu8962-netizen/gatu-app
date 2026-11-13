@@ -6,6 +6,12 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ## Unreleased
 
+### Changed
+
+- The repository moved to `haoyu8962-netizen/gatu-app` and is public. The licensed chart library is
+  no longer tracked: `pnpm chart:fetch` installs it from a private repository and verifies it against
+  its manifest (ADR 0054). Commit hashes from before 2026-11-13 refer to the previous repository.
+
 ### Added
 
 - Japanese interface language (日本語) in the language menu, including the TradingView chart and

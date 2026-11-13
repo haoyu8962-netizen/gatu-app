@@ -582,6 +582,11 @@ mobile regressions.
   `pointer-events: none` to the loaded TradingView iframe.
 - CSP changes must keep the main document strict while allowing the
   charting-library same-origin iframe mode.
+- The chart library is not tracked in this repository. `pnpm chart:fetch`
+  installs it from the private `gatu-chart-library` repository into the
+  ignored `apps/terminal/public/charting_library/` and checks every file
+  against `deploy/manifests/tradingview-charting-library.json`
+  (`docs/adr/0054-chart-library-outside-the-repository.md`). Never commit it.
 - The vendored loader (`charting_library.js` and its esm/cjs/standalone
   copies) carries one local patch in `_create`: the `innerWindowLoad`
   listener is registered after `document.open()` and before

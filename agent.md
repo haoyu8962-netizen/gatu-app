@@ -80,6 +80,7 @@ Run these from the repository root. The package manager is pinned to pnpm `10.21
 
 ```bash
 pnpm install --frozen-lockfile
+pnpm chart:fetch                       # Licensed chart library, not in this repository (ADR 0054)
 pnpm dev --port 3000                   # Explicit local terminal port
 pnpm dev:browser --port 3006           # System browser; requested port must be free
 pnpm build                            # Terminal build + chunk-cycle and bundle-budget checks
