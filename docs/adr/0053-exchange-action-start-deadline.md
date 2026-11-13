@@ -73,6 +73,7 @@ ADR 0045 的 `expiresAfter` 在 SDK 签名时才计算，管不到签名之前�
 
 | 入口 | 时刻在哪里创建 | 在哪里复核 | 超时后的结果 |
 | --- | --- | --- | --- |
+| TWAP 终止（`use-twap-cancel.ts`，2026-11-13） | `cancelTwap` 登记待确认记录之后 | 拿到资产锁时；另有一个 15 秒计时器中止等锁（`TWAP_CANCEL_LOCK_WAIT_MS`） | `ExchangeActionDeadlineError` 的分类文案，不签名、不发送。只限制等锁这一段，拿到锁之后仍按决策 4 不设上限 |
 | 质押（`use-staking-actions.ts`） | `submit()` 开头 | 写入资金占位之前；调用 `executeStakingMutation` 之前 | `StakingActionPreflightError`，按已有的预检失败报告，不写占位 |
 | 金库存取（`use-vault-action-controller.ts`） | `confirm()` 开头 | `vaultTransfer.mutateAsync` 之前 | `ExchangeActionDeadlineError`，金库分类为确定失败 |
 | 金库触发的 Agent 注册（同一文件） | `requestAction()` 开头 | 调用 `agentRegistration.register` 之前，并把时刻传给它（决策 8 的复核照常生效） | 不生成密钥、不请求签名 |

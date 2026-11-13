@@ -140,3 +140,13 @@ queue 与 pending feedback 的可选 `execution` 保存 `filledSize`、实际主
 生命周期入口 `order-notification-lifecycle.test.tsx` 使用真实 Sonner、queue、根 StrictMode 和 Gate，覆盖冷/热挂载、关闭 RAF 早于插入 timer、真实卸载、身份切换及同批关闭/结果；必须同时验证任务与外层 Sonner DOM，不能只看队列为空。独立浏览器 suite 使用 `pnpm --dir apps/terminal exec playwright test --config tests/browser/notifications.playwright.config.ts`，覆盖原位更新、重复 Gate 挂载、软隐藏迟到结果和桌面/移动两主题堆叠，接入 CI 两分片。夹具缓存隔离规则见 [runtime guardrails §9](runtime-guardrails.md#9-development-and-browser-test-caches)。
 
 生命周期单测在 collection 阶段转换真实宿主，不再仅放宽首条用例超时；Gate 套件用受控延迟 importer 验证加载就绪、身份变化和完整展示时间。2026-09-22 对抗审查的复核、更正与本轮实际验证见[修复记录](work-memory/sessions/2026-09-22-notification-review-remediation.md)。
+
+## TWAP 终止排队（2026-11-13）
+
+TWAP 终止在同一资产的锁被占用时排队等待，最多等 15 秒（与 ADR 0053 的时长相同，`TWAP_CANCEL_LOCK_WAIT_MS`），不再立即失败；排队期间按钮名字不变，重复点击不重复提交。三种情况下排队中的终止作废，不签名、不发送，结果通过通知报告：
+
+- 等满 15 秒（含计时器被浏览器推迟、拿到锁时才发现已超时）：提示 "The checks before this request took too long. Nothing was signed or sent. Try again."。这句是 ADR 0053 的现成文案，「checks」指的其实是同一市场上的另一个操作，不够贴切。
+- 终止所在的列表卸载（切换账户页签、窗口宽度跨过 1000px）：结果代码 `twap-cancel-not-sent`，提示 "Request not submitted"。
+- 账户或网络变化：沿用原有的身份变化提示。
+
+已知边界：执行宿主仍在页签面板里，所以切换页签会让排队中的终止作废；把它搬到页面层（像 `PositionMarketCloseSubmitHost`）是后续项。真实浏览器的 Web Locks 对中止信号的处理与跨标签页排队没有验证。

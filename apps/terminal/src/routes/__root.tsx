@@ -1,6 +1,6 @@
 import { i18n } from "@lingui/core";
 import type { QueryClient } from "@tanstack/react-query";
-import { createRootRouteWithContext, HeadContent, Outlet, Scripts } from "@tanstack/react-router";
+import { createRootRouteWithContext, HeadContent, Outlet, Scripts, useRouterState } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { AppRuntimeOverlays } from "@/components/app-runtime-overlays";
 import { ApplicationErrorBoundary } from "@/components/application-error-boundary";
@@ -9,6 +9,7 @@ import { RouterErrorPage } from "@/components/pages/router-error-page";
 import { StartupFallback } from "@/components/startup-fallback";
 import { isRtlLocale } from "@/config/i18n";
 import { getBootstrapEntryWatchdogScript } from "@/lib/bootstrap-error-page";
+import { markStartupMilestone } from "@/lib/diagnostics/startup-milestones";
 import { areFontsReady, STARTUP_FONT_SPECS, waitForFonts } from "@/lib/fonts/font-readiness";
 import { MarketsInfoProvider } from "@/lib/hyperliquid/hooks/MarketsInfoProvider";
 import { getPersistedLocale, i18nReady, LOCALE_CATALOG_READY_TIMEOUT_MS } from "@/lib/i18n";
@@ -53,9 +54,17 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 });
 
 function RootComponent() {
+	const routeResolved = useRouterState({
+		select: (state) => state.status === "idle" && state.resolvedLocation !== undefined,
+	});
+
 	useEffect(() => {
 		registerServiceWorker();
 	}, []);
+
+	useEffect(() => {
+		if (routeResolved === true) markStartupMilestone("route");
+	}, [routeResolved]);
 
 	const fallback = <StartupFallback />;
 
@@ -70,6 +79,10 @@ function RootComponent() {
 
 function AppRuntime({ fallback }: { fallback: React.ReactNode }) {
 	const clientRuntimeReady = useClientRuntimeReady();
+
+	useEffect(() => {
+		if (clientRuntimeReady) markStartupMilestone("runtime");
+	}, [clientRuntimeReady]);
 
 	if (!clientRuntimeReady) return <>{fallback}</>;
 
@@ -94,10 +107,17 @@ function AppRuntime({ fallback }: { fallback: React.ReactNode }) {
 function StartupReadyGate({ children, fallback }: { children: React.ReactNode; fallback: React.ReactNode }) {
 	const [ready, setReady] = useState(() => i18n.locale === getPersistedLocale() && areFontsReady(STARTUP_FONT_SPECS));
 	useEffect(() => {
-		if (ready) return;
+		if (ready) {
+			markStartupMilestone("locale");
+			markStartupMilestone("fonts");
+			markStartupMilestone("reveal");
+			return;
+		}
 		let active = true;
 		let localeReady = i18n.locale === getPersistedLocale();
 		let fontsReady = areFontsReady(STARTUP_FONT_SPECS);
+		if (localeReady) markStartupMilestone("locale");
+		if (fontsReady) markStartupMilestone("fonts");
 		let localeTimer: ReturnType<typeof setTimeout> | undefined;
 		const reveal = () => {
 			if (active && localeReady && fontsReady) setReady(true);
@@ -105,6 +125,8 @@ function StartupReadyGate({ children, fallback }: { children: React.ReactNode; f
 		if (!localeReady) {
 			const settleLocale = () => {
 				clearTimeout(localeTimer);
+				if (i18n.locale !== getPersistedLocale()) markStartupMilestone("localeFallback");
+				markStartupMilestone("locale");
 				localeReady = true;
 				reveal();
 			};
@@ -113,6 +135,7 @@ function StartupReadyGate({ children, fallback }: { children: React.ReactNode; f
 		}
 		if (!fontsReady) {
 			waitForFonts(STARTUP_FONT_SPECS).then(() => {
+				markStartupMilestone("fonts");
 				fontsReady = true;
 				reveal();
 			});

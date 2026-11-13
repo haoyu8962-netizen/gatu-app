@@ -25,12 +25,12 @@ async function openWindow(): Promise<GlobalSettingsModule> {
 	return module;
 }
 
-function deliverStorageEvent(target: number, oldValue: string | null) {
+function deliverStorageEvent(target: number, oldValue: string | null, storageArea: Storage = window.localStorage) {
 	const event = new StorageEvent("storage", {
 		key: KEY,
 		oldValue,
 		newValue: window.localStorage.getItem(KEY),
-		storageArea: window.localStorage,
+		storageArea,
 	});
 	for (const listener of windowListeners[target] ?? []) listener(event);
 }
@@ -198,6 +198,19 @@ describe("global settings across windows", () => {
 			marketOrderSlippagePercent: 1,
 		});
 		expect(tabB.getSkipOrderConfirmation()).toBe(false);
+	});
+
+	it("ignores a storage event from session storage under the same key", () => {
+		const before = tightenInTabA();
+		deliverStorageEvent(1, before, window.sessionStorage);
+
+		expect(tabB.getSkipOrderConfirmation()).toBe(true);
+		expect(tabB.getTransactionDelayProtection()).toBe(false);
+
+		deliverStorageEvent(1, before);
+
+		expect(tabB.getSkipOrderConfirmation()).toBe(false);
+		expect(tabB.getTransactionDelayProtection()).toBe(true);
 	});
 
 	it("does not write back when it only applies another window's settings", () => {

@@ -1,11 +1,17 @@
 import { useLingui } from "@lingui/react/macro";
+import {
+	EXCHANGE_ACTION_START_DEADLINE_MS,
+	ExchangeActionDeadlineError,
+	hasExchangeActionDeadlinePassed,
+	startExchangeActionDeadline,
+} from "@sairn/hl-react/internal/exchange/request-scheduler";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { isConfirmedTwapCancelResponse } from "@/domain/trade/open-order-cancel";
 import { isAmbiguousOrderRequestError } from "@/domain/trade/order-tracking";
-import { type ActionFailure, formatActionFailure } from "@/lib/errors/action-error";
+import { type ActionFailure, classifyActionError, formatActionFailure } from "@/lib/errors/action-error";
 import { type ExchangeParams, useExchange, useHyperliquid, useMarkets } from "@/lib/hyperliquid";
-import { runWithAvailableOrderAssetLocks } from "@/lib/trade/order-asset-lock";
+import { runWithOrderAssetLocks } from "@/lib/trade/order-asset-lock";
 import {
 	formatOrderSubmissionFeedback,
 	getOrderSubmissionFeedback,
@@ -47,7 +53,12 @@ interface TwapCancelExecutionContext {
 	env: "Mainnet" | "Testnet";
 	owner: string;
 	params: ExchangeParams<"twapCancel">;
+	lockWait: AbortController;
 }
+
+type QueuedTwapCancellations = Set<TwapCancelExecutionContext>;
+
+const TWAP_CANCEL_LOCK_WAIT_MS = EXCHANGE_ACTION_START_DEADLINE_MS;
 
 export function useTwapCancel() {
 	const { t } = useLingui();
@@ -55,10 +66,11 @@ export function useTwapCancel() {
 	const { clientKey, env } = useHyperliquid();
 	const liveIdentityRef = useRef({ clientKey, env });
 	liveIdentityRef.current = { clientKey, env };
-	const executionRef = useRef<TwapCancelExecutionContext | null>(null);
+	const executionsRef = useRef(new Map<ExchangeParams<"twapCancel">["t"], TwapCancelExecutionContext>());
+	const queuedRef = useRef<QueuedTwapCancellations>(new Set());
 
 	function assertTwapCancelExecution(params: ExchangeParams<"twapCancel">) {
-		const execution = executionRef.current;
+		const execution = executionsRef.current.get(params.t);
 		const liveIdentity = liveIdentityRef.current;
 		const pending = execution
 			? getPendingTradingActionSnapshot().twapCancellations.find((action) => action.id === execution.actionId)
@@ -108,10 +120,23 @@ export function useTwapCancel() {
 
 	useEffect(() => {
 		mountedRef.current = true;
+		const queued = queuedRef.current;
 		return () => {
 			mountedRef.current = false;
+			for (const execution of queued) {
+				voidQueuedTwapCancellation(queued, execution, orderSubmissionFeedback("twap-cancel-not-sent"));
+			}
 		};
 	}, []);
+
+	useEffect(() => {
+		const queued = queuedRef.current;
+		for (const execution of queued) {
+			if (!isTwapExecutionIdentityCurrent(execution, { clientKey, env })) {
+				voidQueuedTwapCancellation(queued, execution, orderSubmissionFeedback("twap-cancel-identity-changed"));
+			}
+		}
+	}, [clientKey, env]);
 
 	async function cancelTwap(coin: string, twapId: number): Promise<void> {
 		if (activeCancellations.some((action) => action.twapId === twapId)) return;
@@ -147,8 +172,21 @@ export function useTwapCancel() {
 			env: action.env,
 			owner: action.owner,
 			params: { a: assetId, t: twapId },
+			lockWait: new AbortController(),
 		};
-		executionRef.current = execution;
+		const executions = executionsRef.current;
+		executions.set(twapId, execution);
+		const queued = queuedRef.current;
+		queued.add(execution);
+		const lockWaitDeadline = startExchangeActionDeadline();
+		function abandonLockWait(): void {
+			const value = classifyActionError(new ExchangeActionDeadlineError());
+			if (!voidQueuedTwapCancellation(queued, execution, value)) return;
+			if (mountedRef.current && isTwapExecutionIdentityCurrent(execution, liveIdentityRef.current)) {
+				setFeedback({ tone: "error", value, env: execution.env, owner: execution.owner });
+			}
+		}
+		const lockWaitTimer = setTimeout(abandonLockWait, TWAP_CANCEL_LOCK_WAIT_MS);
 		reset();
 		setFeedback(null);
 		const pendingAction = action;
@@ -166,14 +204,22 @@ export function useTwapCancel() {
 			}
 		}
 		let response: unknown;
+		let sent = false;
 		try {
-			const lockResult = await runWithAvailableOrderAssetLocks(
-				{ env, owner: clientKey, assetIds: [assetId] },
+			const lockResult = await runWithOrderAssetLocks(
+				{ env: execution.env, owner: execution.owner, assetIds: [assetId] },
 				async () => {
+					clearTimeout(lockWaitTimer);
+					if (hasExchangeActionDeadlinePassed(lockWaitDeadline)) abandonLockWait();
+					if (!queued.delete(execution)) return false;
+					sent = true;
 					response = await cancel(execution.params);
+					return true;
 				},
+				execution.lockWait.signal,
 			);
-			if (!lockResult.supported || !lockResult.acquired) {
+			if (lockResult.supported && !lockResult.value) return;
+			if (!lockResult.supported) {
 				getPendingTradingActionActions().resolveTwapCancellation(action.id);
 				const value = orderSubmissionFeedback("coordination-unavailable");
 				updatePendingTradingActionFeedback(action, "twap-cancel", { status: "failed", error: value });
@@ -189,6 +235,7 @@ export function useTwapCancel() {
 			getPendingTradingActionActions().markTwapCancellationAccepted(action.id);
 			syncPendingTradingActionFeedback({ ...action, phase: "awaiting" }, "twap-cancel");
 		} catch (error) {
+			if (!sent && !queued.has(execution)) return;
 			if (execution.guardPasses >= 2 && isAmbiguousOrderRequestError(error)) {
 				reportUnconfirmed();
 				return;
@@ -204,7 +251,9 @@ export function useTwapCancel() {
 				setFeedback({ tone: "error", value, env: execution.env, owner: execution.owner });
 			}
 		} finally {
-			if (executionRef.current === execution) executionRef.current = null;
+			clearTimeout(lockWaitTimer);
+			queued.delete(execution);
+			if (executions.get(twapId) === execution) executions.delete(twapId);
 		}
 	}
 
@@ -217,6 +266,22 @@ function formatStoredTwapCancelFeedback(value: StoredTwapCancelFeedbackValue, tr
 		formatActionFailure(value, translate) ??
 		formatOrderSubmissionFeedback(orderSubmissionFeedback("twap-cancel-failed"), translate)
 	);
+}
+
+function voidQueuedTwapCancellation(
+	queued: QueuedTwapCancellations,
+	execution: TwapCancelExecutionContext,
+	value: StoredTwapCancelFeedbackValue,
+): boolean {
+	if (!queued.delete(execution)) return false;
+	execution.lockWait.abort();
+	getPendingTradingActionActions().resolveTwapCancellation(execution.actionId);
+	updatePendingTradingActionFeedback(
+		{ id: execution.actionId, owner: execution.owner, env: execution.env },
+		"twap-cancel",
+		{ status: "failed", error: value },
+	);
+	return true;
 }
 
 function isTwapExecutionIdentityCurrent(

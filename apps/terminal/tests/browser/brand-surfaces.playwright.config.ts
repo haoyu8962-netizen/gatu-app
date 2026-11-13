@@ -1,5 +1,6 @@
 import { fileURLToPath } from "node:url";
 import { defineConfig, devices } from "@playwright/test";
+import { LOCAL_HOSTS_ONLY_ARGS } from "./local-hosts-only";
 
 // Chromium always runs. `BRAND_SURFACES_ENGINES=webkit,firefox` adds the other engines locally;
 // Firefox needs `BRAND_SURFACES_FIREFOX` pointing at an installed Firefox executable.
@@ -21,7 +22,7 @@ export default defineConfig({
 		viewport: { width: 1100, height: 900 },
 	},
 	projects: [
-		{ name: "chromium", use: { ...devices["Desktop Chrome"], viewport: { width: 1100, height: 900 } } },
+		{ name: "chromium", use: { ...devices["Desktop Chrome"], launchOptions: { args: LOCAL_HOSTS_ONLY_ARGS }, viewport: { width: 1100, height: 900 } } },
 		...(extraEngines.has("webkit")
 			? [{ name: "webkit", use: { ...devices["Desktop Safari"], viewport: { width: 1100, height: 900 } } }]
 			: []),

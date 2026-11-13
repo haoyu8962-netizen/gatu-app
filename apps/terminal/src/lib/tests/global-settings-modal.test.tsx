@@ -43,6 +43,12 @@ const testState = vi.hoisted(() => ({
 	}),
 	numberInputProps: null as Record<string, unknown> | null,
 	toggleProps: [] as Record<string, unknown>[],
+	toastSuccess: vi.fn(),
+	toastError: vi.fn(),
+}));
+
+vi.mock("sonner", () => ({
+	toast: { success: testState.toastSuccess, error: testState.toastError },
 }));
 
 vi.mock("@/hooks/wallet/use-email-wallet-export", () => ({
@@ -139,6 +145,7 @@ vi.mock("@/stores/use-global-settings-store", () => ({
 
 import { GlobalSettingsModal } from "@/components/trade/components/global-settings-modal";
 import { APP_BUILD_COMMIT, APP_RELEASE_ID, APP_RELEASE_LABEL, APP_VERSION } from "@/config/app";
+import { DIAGNOSTICS_STORAGE_KEY } from "@/lib/diagnostics/diagnostics-buffer";
 import { notifyNumberFormatChange } from "@/lib/number-format-reactivity";
 
 describe("GlobalSettingsModal", () => {
@@ -164,6 +171,8 @@ describe("GlobalSettingsModal", () => {
 		testState.setTransactionDelayProtection.mockClear();
 		testState.numberInputProps = null;
 		testState.toggleProps = [];
+		testState.toastSuccess.mockClear();
+		testState.toastError.mockClear();
 		container = document.createElement("div");
 		document.body.appendChild(container);
 		root = createRoot(container);
@@ -380,6 +389,72 @@ describe("GlobalSettingsModal", () => {
 		expect(writeText).toHaveBeenCalledWith(`${APP_VERSION} ${APP_RELEASE_ID} ${APP_BUILD_COMMIT}`);
 	});
 
+	it("copies the stored startup diagnostics with the build and browser state and reports the outcome", async () => {
+		const writeText = vi.fn().mockResolvedValue(undefined);
+		Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
+		const boot = {
+			id: "1794559766310",
+			startedAt: 1794559766310,
+			build: { commit: "74e69f77d0d1", release: "cloudfront-2026-10-12-p31" },
+			navigation: null,
+			resources: { total: 40, fetched: 12, fetchedBytes: 1_500_000 },
+			milestones: { entry: 30, runtime: 400, locale: 450, fonts: 420, reveal: 460, route: 900 },
+			hiddenAt: null,
+			recoveries: [
+				{
+					at: 60_000,
+					cause: "network-resume",
+					action: "reconnect",
+					streams: 4,
+					visibility: "visible",
+					network: "online",
+					durationMs: 1800,
+					result: "recovered",
+				},
+			],
+		};
+		localStorage.setItem(DIAGNOSTICS_STORAGE_KEY, JSON.stringify({ v: 1, boots: [boot] }));
+		const button = container.querySelector<HTMLButtonElement>('button[aria-label="Copy diagnostics"]');
+		expect(container.textContent).toContain("Diagnostics");
+
+		await act(async () => {
+			button?.click();
+		});
+
+		expect(writeText).toHaveBeenCalledOnce();
+		const report = JSON.parse(String(writeText.mock.calls[0]?.[0]));
+		expect(report).toMatchObject({
+			kind: "startup-diagnostics",
+			v: 1,
+			build: { version: APP_VERSION, release: APP_RELEASE_ID, commit: APP_BUILD_COMMIT },
+			userAgent: navigator.userAgent,
+			standalone: false,
+			visibility: "visible",
+			boots: [boot],
+		});
+		expect(testState.toastSuccess).toHaveBeenCalledWith("Copied to clipboard");
+
+		writeText.mockRejectedValueOnce(new Error("denied"));
+		await act(async () => {
+			button?.click();
+		});
+		expect(testState.toastError).toHaveBeenCalledWith("Failed to copy");
+		localStorage.removeItem(DIAGNOSTICS_STORAGE_KEY);
+	});
+
+	it("copies an empty diagnostics list instead of failing when nothing was recorded or the record is corrupt", async () => {
+		const writeText = vi.fn().mockResolvedValue(undefined);
+		Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
+		const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+		localStorage.setItem(DIAGNOSTICS_STORAGE_KEY, "{broken");
+		await act(async () => {
+			container.querySelector<HTMLButtonElement>('button[aria-label="Copy diagnostics"]')?.click();
+		});
+		expect(JSON.parse(String(writeText.mock.calls[0]?.[0])).boots).toEqual([]);
+		expect(localStorage.getItem(DIAGNOSTICS_STORAGE_KEY)).toBeNull();
+		warn.mockRestore();
+	});
+
 	it("opens on the phone with focus on the dialog, not the slippage input, and without the desktop layout reset", () => {
 		testState.isMobile = true;
 		renderModal();
@@ -483,6 +558,23 @@ describe("GlobalSettingsModal", () => {
 		for (const [locale, translation] of Object.entries(translations)) {
 			const catalog = readFileSync(resolve(TEST_DIR, "../..", "locales", locale, "messages.po"), "utf8");
 			expect(catalog).toContain(`msgid "Transaction delay protection"\nmsgstr "${translation}"`);
+		}
+	});
+
+	it("ships the diagnostics labels in every locale catalog", () => {
+		const translations = {
+			en: ["Diagnostics", "Copy diagnostics"],
+			zh: ["诊断信息", "复制诊断信息"],
+			ja: ["診断情報", "診断情報をコピー"],
+			hi: ["निदान जानकारी", "निदान जानकारी कॉपी करें"],
+			es: ["Diagnóstico", "Copiar diagnóstico"],
+			fr: ["Diagnostic", "Copier le diagnostic"],
+			ar: ["معلومات التشخيص", "نسخ معلومات التشخيص"],
+		};
+		for (const [locale, [label, action]] of Object.entries(translations)) {
+			const catalog = readFileSync(resolve(TEST_DIR, "../..", "locales", locale, "messages.po"), "utf8");
+			expect(catalog).toContain(`msgid "Diagnostics"\nmsgstr "${label}"`);
+			expect(catalog).toContain(`msgid "Copy diagnostics"\nmsgstr "${action}"`);
 		}
 	});
 

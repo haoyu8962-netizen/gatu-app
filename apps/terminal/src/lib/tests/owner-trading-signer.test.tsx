@@ -64,6 +64,17 @@ function wallet() {
 	} satisfies AbstractViemJsonRpcAccount;
 }
 
+// The L1 expiry reads the exchange clock through the real HTTP transport; answer it locally so the
+// suite never reaches the live endpoint, and fail any other request.
+const serverClockFetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+	if (String(input).endsWith("/info") && init?.body === JSON.stringify({ type: "exchangeStatus" })) {
+		return new Response(JSON.stringify({ time: Date.now(), specialStatuses: null }), {
+			headers: { "Content-Type": "application/json" },
+		});
+	}
+	throw new Error(`Unexpected network request in a unit test: ${String(input)}`);
+});
+
 function transport() {
 	const requestMock = vi.fn();
 	return {
@@ -104,6 +115,7 @@ describe("embedded owner trading signer", () => {
 	}
 
 	beforeEach(() => {
+		vi.stubGlobal("fetch", serverClockFetch);
 		vi.stubGlobal("navigator", {
 			...navigator,
 			locks: { request: async (_name: string, _options: unknown, callback: () => unknown) => callback() },
@@ -193,6 +205,9 @@ describe("embedded owner trading signer", () => {
 		expect(signer.signTypedData).toHaveBeenCalledOnce();
 		expect(state.httpRequest).toHaveBeenCalledOnce();
 		expect(state.getTradingClient).not.toHaveBeenCalled();
+		expect(serverClockFetch.mock.calls.map(([, init]) => init?.body)).toEqual([
+			JSON.stringify({ type: "exchangeStatus" }),
+		]);
 	});
 
 	it("shares one owner client across ordinary rerenders and replaces it for a new signing session", () => {

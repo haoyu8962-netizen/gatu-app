@@ -1,5 +1,6 @@
 import { fileURLToPath } from "node:url";
 import { defineConfig } from "@playwright/test";
+import { LOCAL_HOSTS_ONLY_ARGS } from "./local-hosts-only";
 
 const terminalRoot = fileURLToPath(new URL("../..", import.meta.url));
 
@@ -22,6 +23,7 @@ export default defineConfig({
 	workers: 1,
 	reporter: "line",
 	use: {
+		launchOptions: { args: LOCAL_HOSTS_ONLY_ARGS },
 		baseURL: "http://127.0.0.1:4179",
 		browserName: "chromium",
 		channel: process.env.CI ? undefined : "chrome",
