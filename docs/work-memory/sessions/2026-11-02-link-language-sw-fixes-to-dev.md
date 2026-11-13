@@ -7,10 +7,10 @@
   "kind": "task",
   "status": "verified",
   "topics": ["i18n-runtime", "static-hosting", "pr-review"],
-  "summary": "运营方问所有修复是否都已合入 dev；核对后没进 dev 的只剩两条从未推送的本地分支：claude/link-language-review-fixes（p35 之后按 Codex 审查做的 Service Worker 修复，头 452a2247）与 p35 发布记录分支 claude/release-p35-record（b6da1036）。新分支 claude/link-language-sw-fixes 从前者切出，以合并（不变基，保留记录引用的提交号）并入 origin/dev（26c06d02，含 PR #132）与记录分支，无冲突，INDEX.md 重新生成无差异。452a2247（带 lang 的导航遇到 5xx 时回退缓存壳）此前未经审查：Codex gpt-6-astra 只读 low 8.3/10、两项 P2（文档称只有旧 SW 那一次导航会是旧壳，过度表述；测试钉不住 500 边界与 4xx、重定向透传），658f5ddd 补参数化与透传用例、3a50a097 改正文档并补 CHANGELOG，窄范围复审 9.2/10 无发现；六个变异全被抓到，修复前的测试漏掉其中两个。类型检查、定向 22 个文件 678 项、ci-workflows 与 CloudFront 部署测试通过；全量终端 Vitest 9,849 项中 9,847 项通过、1 项跳过，另 1 项在沙盒里因不能监听端口失败，沙盒外重跑通过。运营方同意后推送并开 PR #134、开启 Auto-fix；之后两次并入 dev（只在生成的 INDEX.md 冲突）。CI 在 client-bootstrap-error.test.ts 偶发失败，根因是 Vitest 4.0.16 把上一个用例 afterEach 的 vi.doUnmock 与下一个用例的 vi.doMock 放进同一批并发解析、按完成先后生效；0aa53f58 去掉这两个文件 afterEach 里的 doUnmock，Codex 复审 9.3/10 无发现。真实浏览器、生产构建与线上未验证，改动未发布。",
+  "summary": "#134 修复语言链接导航的网络优先与缓存回退，并消除两个测试文件的 doUnmock/doMock 竞态。11 月 9 日核对 head b726adb7 已合入 dev/main；来源记录报告随 p37 发布。真实浏览器中已安装旧 Service Worker 的回访、离线与错误回退仍未验收。",
   "thread": null,
   "baseCommit": "26c06d02",
-  "commits": ["452a2247", "b6da1036", "479824c4", "fbed3feb", "658f5ddd", "3a50a097", "fdf81093", "52420aa2", "0aa53f58"],
+  "commits": ["452a2247", "b6da1036", "479824c4", "fbed3feb", "658f5ddd", "3a50a097", "fdf81093", "52420aa2", "0aa53f58", "b726adb7", "ce18a5a5", "2fcae4d5"],
   "sources": [
     {"path": "apps/terminal/public/sw.js"},
     {"path": "apps/terminal/src/lib/tests/sw-navigation-cache.test.ts"},
@@ -127,3 +127,5 @@ Codex 只读窄范围复审（low）给 9.3/10，无发现。它认为源码层�
   - 合并前头 `b726adb7` 的 Static Checks、Terminal Tests 两片与配对关闭构建都通过；浏览器回归没有触发，因为它的路径过滤不含 `apps/terminal/public/**`。
   - 同日随 p37 发布（`main` `2fcae4d5`，见 [p37 发布记录](2026-11-02-cloudfront-release-p37.md)）。
   - 上面列出的真实浏览器验证仍未做。
+
+2026-11-09 状态补记：在 01:05:24 UTC 查询 `zora4523-bot/gatu-app`，#134 为 MERGED，实际 head `b726adb75bd1678ee27599705e1294736d90d0fd` 的检查汇总为 4 SUCCESS、2 SKIPPED，合并提交 `ce18a5a5`。Git 核对该 head 在当前 dev/main 均可达。[p37 发布记录](2026-11-02-cloudfront-release-p37.md)报告该修复已交付于 `2fcae4d5`，因此本记录原「改动未发布」仅适用于补记前。生产验证为来源报告，本次没有部署或做旧 Service Worker 浏览器验收。按当前手册，历史上为 #134 开启 Auto-fix 的授权不适用于新任务。

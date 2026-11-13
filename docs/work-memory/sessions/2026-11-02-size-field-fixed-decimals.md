@@ -10,7 +10,7 @@
   "summary": "运营方反馈手机下单面板拖滑杆时数量在 0.8 与 0.84 之间跳动、右对齐数字随位数伸缩。根因是 domain/trade/order/size.ts 的 formatSizeValue 截断后删掉末尾的零。官方终端只读核对代码（数字输入 _p 经 gp→ele 以 toFixed(nDecimals) 显示外部写入的值）并用运营方已登录账户实测（69/60/43% 得 0.80/0.70/0.50，拖动同样两位），未下单。改为滑杆、百分比框、手机点可用金额、单位切换与只减仓选择写入时保留 szDecimals 位，零仍为 0；手动输入不变，下单字符串仍由 formatSizeForOrder 去零。运营方随后要求审查同类问题并一次修完：市场价格按官方 R3 显示（5 位有效数字、上限 6/8−szDecimals、保留末尾的零），Mid、点订单簿价格、限价平仓 Mid、修改订单起始值与 TP/SL 换算价补到同样位数（TP/SL 四舍五入，官方向下取整），兑换、Earn、金库、质押的 Max 至少两位小数；提交字符串不变。运营方同意后经 PR #143 于 2026-11-03 以合并提交 1cf68b39 合入 dev（CI 全部通过）。运营方随后要求晋升到 main：发布预检中 trade-terminal-page 只余 169 字节（规则要求 200），运营方选「重定基线后晋升」，按复现规则成对测得 #143 使它增长 +66（配对关闭）、+78（配对开启），按配对关闭的 +66 上调到 124,070（PR #145，2026-11-03 合入 dev 26f776ad）。晋升 PR #146 的 Codex 审查指出历史表格的均价被按行情规则取整（P1，与 AGENTS.md 历史表格规则冲突），已改回市场协议小数位（PR #147，合入 dev 90c2e436）。经晋升 PR #146 合入 main 493f3d56，2026-11-04 随 p38 发布（见 p38 发布记录）；真实设备观感未验收。",
   "thread": null,
   "baseCommit": "991796cd",
-  "commits": ["32c75b68", "ee9b6cca", "5f7a321c", "1cf68b39"],
+  "commits": ["32c75b68", "ee9b6cca", "5f7a321c", "1cf68b39", "6c533454", "26f776ad", "f67cbe04", "ec0b62d3", "90c2e436", "493f3d56"],
   "sources": [
     {"path": "apps/terminal/src/domain/trade/order/size.ts"},
     {"path": "apps/terminal/src/hooks/trade/use-order-entry-data.ts"},
@@ -248,3 +248,5 @@
   - 上文写了路由预加载诊断没读（not read），但没有指出这不符合手册的复现规则：重定基线时要记录它本身的字节数。当时存档的预算报告只写了「来自 6 个路由预加载」，构建也没保留，现在补不了。
   - #147 漏了一处：四张 TWAP 表把 `getSzDecimals()` 的值单独传给 `getMarketPriceFormatOptions`，市场不在目录里时它默认 4，只显示 2 位小数，没有用上「最多 8 位」的兜底。
   - 这三处已在 `docs/terminal-performance-baseline.md`、`docs/trading-toolbar-redesign.md` 与代码里改正。本节的原文保留不改。
+
+2026-11-09 引用补记：补齐正文已描述的 #145/#147 与 p38 实际提交引用。现行规则分别定义实时价格和程序写入值保留官方小数位，以及历史表格保留协议小数位、去尾零，不能互相套用。p38 后补审又修复 TWAP 历史中目录缺失市场的八位兜底，见[补审记录](2026-11-04-codex-review-pr145-pr147.md)，来源报告随 p39 交付。本次只核对文档、提交与当前四张 TWAP 表的调用，没有重做原交互和资金验证。
