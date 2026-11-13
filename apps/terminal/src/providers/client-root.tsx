@@ -11,10 +11,12 @@ import {
 	setTransactionDelayProtectionReader,
 	useLegalStatusLifecycle,
 } from "@sairn/hl-react";
+import { HyperliquidStoreContext } from "@sairn/hl-react/transport-provider";
 import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
 import type { QueryClient } from "@tanstack/react-query";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import type { ReactNode } from "react";
+import { useContext, useEffect } from "react";
 import { toast } from "sonner";
 import { MobileAgentEndedNotifier } from "@/components/trade/components/mobile-agent-ended-notifier";
 import { UnifiedAccountAutoSetup } from "@/components/trade/components/unified-account-auto-setup";
@@ -28,6 +30,7 @@ import { PRIVY_APP_ID, PRIVY_CONFIG_BY_THEME } from "@/config/privy";
 import { config } from "@/config/wagmi";
 import { useExplicitAgentApproval } from "@/hooks/wallet/use-explicit-agent-approval";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
+import { attachRecoveryDiagnostics } from "@/lib/diagnostics/startup-milestones";
 import { MarketsProvider } from "@/lib/hyperliquid/markets";
 import { getNetwork } from "@/lib/network";
 import { createQueryPersistenceCallbacks, createQueryPersistenceOptions } from "@/lib/query-persistence";
@@ -83,6 +86,7 @@ function HyperliquidBridge({ children }: { children: ReactNode }) {
 				<HyperliquidOwnerSignerBridge>
 					<HyperliquidAgentApprovalBridge>
 						<HyperliquidLegalLifecycle />
+						<HyperliquidDiagnosticsBridge />
 						<MarketsProvider>{children}</MarketsProvider>
 					</HyperliquidAgentApprovalBridge>
 				</HyperliquidOwnerSignerBridge>
@@ -96,6 +100,16 @@ function HyperliquidAgentApprovalBridge({ children }: { children: ReactNode }) {
 	return (
 		<HyperliquidAgentApprovalProvider mutateAsync={approval.mutateAsync}>{children}</HyperliquidAgentApprovalProvider>
 	);
+}
+
+function HyperliquidDiagnosticsBridge() {
+	const store = useContext(HyperliquidStoreContext);
+
+	useEffect(() => {
+		if (store) attachRecoveryDiagnostics(store);
+	}, [store]);
+
+	return null;
 }
 
 function HyperliquidLegalLifecycle() {

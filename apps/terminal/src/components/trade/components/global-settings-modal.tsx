@@ -22,6 +22,9 @@ import { MARKET_ORDER_SLIPPAGE_MAX_PERCENT, MARKET_ORDER_SLIPPAGE_MIN_PERCENT } 
 import { useCopyToClipboard } from "@/hooks/ui/use-copy-to-clipboard";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useEmailWalletExport } from "@/hooks/wallet/use-email-wallet-export";
+import { readDiagnosticsBuffer } from "@/lib/diagnostics/diagnostics-buffer";
+import { buildDiagnosticsReport, readDiagnosticsEnvironment } from "@/lib/diagnostics/diagnostics-report";
+import { flushStartupDiagnostics } from "@/lib/diagnostics/startup-milestones";
 import { useNumberFormat } from "@/lib/format";
 import { useHyperliquid } from "@/lib/hyperliquid";
 import {
@@ -52,6 +55,7 @@ export function GlobalSettingsModal() {
 	const { formatNumber } = useNumberFormat();
 	const walletExport = useEmailWalletExport();
 	const { copy: copyVersion } = useCopyToClipboard();
+	const { copy: copyDiagnostics } = useCopyToClipboard();
 	const slippagePercent = useMarketOrderSlippagePercent();
 	const animateOrderbook = useAnimateOrderbook();
 	const skipOrderConfirmation = useSkipOrderConfirmation();
@@ -112,6 +116,16 @@ export function GlobalSettingsModal() {
 	function handleDesktopLayoutReset() {
 		resetDesktopGridLayouts();
 		window.location.reload();
+	}
+
+	function handleCopyDiagnostics() {
+		flushStartupDiagnostics();
+		const environment = readDiagnosticsEnvironment({
+			version: APP_VERSION,
+			release: APP_RELEASE_ID,
+			commit: APP_BUILD_COMMIT,
+		});
+		void copyDiagnostics(buildDiagnosticsReport(environment, readDiagnosticsBuffer()));
 	}
 
 	function handleMarketCloseConfirmationReset() {
@@ -260,6 +274,17 @@ export function GlobalSettingsModal() {
 							>
 								{APP_RELEASE_LABEL}
 							</button>
+						</SettingRow>
+						<SettingRow label={t`Diagnostics`}>
+							<Button
+								variant="outline"
+								intent="neutral"
+								size="xs"
+								aria-label={t`Copy diagnostics`}
+								onClick={handleCopyDiagnostics}
+							>
+								{t`Copy`}
+							</Button>
 						</SettingRow>
 					</SettingsGroup>
 				</ModalContent>

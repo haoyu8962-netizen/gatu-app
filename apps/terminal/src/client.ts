@@ -1,8 +1,11 @@
 import { renderBootstrapErrorPage, reportBootstrapEntryStarted } from "./lib/bootstrap-error-page";
+import { markStartupMilestone, scheduleStartupDiagnostics } from "./lib/diagnostics/startup-milestones";
 import { applyWindowLinkLocale } from "./lib/link-locale";
 
+markStartupMilestone("entry");
 reportBootstrapEntryStarted();
 applyWindowLinkLocale();
+scheduleStartupDiagnostics();
 
 void import("./lib/bootstrap/early-prefetch")
 	.then(({ startEarlyPrefetches }) => startEarlyPrefetches())
