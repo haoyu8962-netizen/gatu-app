@@ -7,6 +7,8 @@ import { act, createElement } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { type PositionReverseTarget, usePositionReverseSubmit } from "@/hooks/trade/use-position-reverse-submit";
+import { getNumberFormatters } from "@/lib/format";
+import { getOrderNotificationCopy } from "@/lib/trade/order-notification-copy";
 import {
 	getOrderQueueItem,
 	type OrderQueueItem,
@@ -807,5 +809,114 @@ describe("usePositionReverseSubmit", () => {
 		expect(currentHook().error).toBe(BLOCKED_MESSAGE_AR);
 		expect(currentHook().phase).toBe("idle");
 		expect(mocks.clearinghouseState).not.toHaveBeenCalled();
+	});
+
+	describe("when the fresh snapshot returns long after the confirmation click", () => {
+		const NOT_SENT = "The checks before this request took too long. Nothing was signed or sent. Try again.";
+		let snapshotDelayMs = 0;
+		let heldLocks = new Set<string>();
+
+		async function waitForSnapshot(): Promise<void> {
+			if (snapshotDelayMs > 0) await new Promise<void>((resolve) => setTimeout(resolve, snapshotDelayMs));
+		}
+
+		beforeEach(() => {
+			vi.useFakeTimers();
+			snapshotDelayMs = 0;
+			heldLocks = new Set();
+			mocks.lockRequest.mockImplementation(
+				async (
+					name: string,
+					_options: LockOptions,
+					callback: (lock: Lock | null) => unknown | PromiseLike<unknown>,
+				) => {
+					heldLocks.add(name);
+					try {
+						return await callback({ name, mode: "exclusive" } as Lock);
+					} finally {
+						heldLocks.delete(name);
+					}
+				},
+			);
+			mocks.clearinghouseState.mockImplementation(async () => {
+				await waitForSnapshot();
+				return createAccountState();
+			});
+			mocks.metaAndAssetCtxs.mockImplementation(async () => {
+				await waitForSnapshot();
+				return createMarketState();
+			});
+		});
+
+		afterEach(() => {
+			vi.useRealTimers();
+		});
+
+		it("sends no reverse order and reports a definite failure when it takes 16 seconds", async () => {
+			snapshotDelayMs = 16_000;
+			let submission!: Promise<unknown>;
+			await act(async () => {
+				submission = currentHook()
+					.submit()
+					.catch((error: unknown) => error);
+			});
+			expect(queueItems[0]).toMatchObject({ status: "pending" });
+			expect(heldLocks.size).toBe(1);
+
+			let failure: unknown;
+			await act(async () => {
+				await vi.advanceTimersByTimeAsync(16_000);
+				failure = await submission;
+			});
+
+			expect(failure).toMatchObject({ name: "ExchangeActionDeadlineError" });
+			expect(mocks.mutateOrder).not.toHaveBeenCalled();
+			expect(mocks.executeOrder).not.toHaveBeenCalled();
+			expect(heldLocks.size).toBe(0);
+			expect(hasPendingOrderForAssets("Mainnet", USER, [ASSET_ID])).toBe(false);
+			expect(queueItems).toHaveLength(1);
+			const failed = queueItems[0];
+			if (!failed) throw new Error("Expected the reverse notification");
+			expect(failed).toMatchObject({
+				status: "failed",
+				acceptedCount: 0,
+				totalCount: 1,
+				children: [{ assetId: ASSET_ID, status: "rejected" }],
+			});
+			expect(getOrderNotificationCopy(failed, (descriptor) => i18n._(descriptor), getNumberFormatters())).toMatchObject(
+				{ summary: `Reverse Position · ${COIN} · Failed`, error: NOT_SENT },
+			);
+			expect(currentHook()).toMatchObject({ phase: "idle", isReconciling: false, error: NOT_SENT });
+
+			snapshotDelayMs = 0;
+			let retry: Awaited<ReturnType<ReturnType<typeof usePositionReverseSubmit>["submit"]>> | undefined;
+			await act(async () => {
+				retry = await currentHook().submit();
+			});
+			expect(retry?.state).toBe("confirmed");
+			expect(mocks.executeOrder).toHaveBeenCalledOnce();
+		});
+
+		it("still submits the reverse order once when it takes 14 seconds", async () => {
+			snapshotDelayMs = 14_000;
+			let submission!: ReturnType<ReturnType<typeof usePositionReverseSubmit>["submit"]>;
+			await act(async () => {
+				submission = currentHook().submit();
+			});
+			expect(mocks.mutateOrder).not.toHaveBeenCalled();
+
+			let outcome: Awaited<typeof submission> | undefined;
+			await act(async () => {
+				await vi.advanceTimersByTimeAsync(14_000);
+				outcome = await submission;
+			});
+
+			expect(outcome?.state).toBe("confirmed");
+			expect(mocks.executeOrder).toHaveBeenCalledOnce();
+			expect(heldLocks.size).toBe(0);
+			expect(queueItems).toHaveLength(1);
+			expect(queueItems[0]).toMatchObject({ status: "success", acceptedCount: 1, totalCount: 1 });
+			expect(currentHook()).toMatchObject({ phase: "idle", error: null });
+		});
 	});
 });

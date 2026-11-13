@@ -1,4 +1,5 @@
 import zlib from "node:zlib";
+import type { ISubscriptionTransport } from "@nktkas/hyperliquid";
 import { describe, expect, it, vi } from "vitest";
 import {
 	COMPACT_ASSET_CTXS_MAX_PENDING_FRAMES,
@@ -7,6 +8,7 @@ import {
 	parseCompactSpotAssetCtxsDelta,
 	subscribeCompactAssetCtxs,
 } from "../../../../../packages/hl-react/src/subscriptions/compact-asset-ctxs";
+import { CompactSubscriptionClient } from "../../../../../packages/hl-react/src/subscriptions/compact-subscription-client";
 import { L2BookStreamError } from "../../../../../packages/hl-react/src/subscriptions/l2";
 
 const PERP_CTX = {
@@ -236,5 +238,82 @@ describe("compact market context subscription", () => {
 			transport.emit(encode({ "@1": SPOT_CTX }));
 		await vi.waitFor(() => expect(onError).toHaveBeenCalledTimes(1));
 		expect(transport.unsubscribe).toHaveBeenCalledTimes(1);
+	});
+});
+
+describe("fast mark and mid price subscription", () => {
+	function createClient(transport: ReturnType<typeof createTransport>) {
+		return new CompactSubscriptionClient({ transport: transport as unknown as ISubscriptionTransport });
+	}
+
+	it("decodes the snapshot and the deltas in arrival order", async () => {
+		const transport = createTransport();
+		const listener = vi.fn();
+		await createClient(transport).fastAssetCtxs(listener);
+		expect(transport.subscribe).toHaveBeenCalledWith(
+			"fastAssetCtxs",
+			{ type: "fastAssetCtxs" },
+			expect.any(Function),
+			expect.anything(),
+		);
+		transport.emit(encode({ BTC: { markPx: "1", midPx: "1.5" }, ETH: { markPx: "2", midPx: null } }));
+		transport.emit(encode({ BTC: { markPx: "3" } }));
+		await vi.waitFor(() => expect(listener).toHaveBeenCalledTimes(2));
+		expect(listener.mock.calls.map(([event]) => event)).toEqual([
+			{ BTC: { markPx: "1", midPx: "1.5" }, ETH: { markPx: "2", midPx: null } },
+			{ BTC: { markPx: "3" } },
+		]);
+	});
+
+	it.each([
+		["cannot be decompressed", () => "!!not base64!!"],
+		["is not the expected shape", () => encode({ BTC: { markPx: 5 } })],
+	])("reports a frame that %s instead of silently dropping every later frame", async (_case, frame) => {
+		const transport = createTransport();
+		const listener = vi.fn();
+		const onError = vi.fn();
+		await createClient(transport).fastAssetCtxs(listener, { onError });
+		transport.emit(frame());
+		transport.emit(encode({ BTC: { markPx: "1" } }));
+		await vi.waitFor(() => expect(onError).toHaveBeenCalledTimes(1));
+		expect(onError.mock.calls[0][0]).toBeInstanceOf(L2BookStreamError);
+		expect(transport.unsubscribe).toHaveBeenCalledTimes(1);
+		expect(listener).not.toHaveBeenCalled();
+	});
+
+	it("drops a decode in flight when the shared socket disconnects", async () => {
+		const transport = createTransport();
+		const listener = vi.fn();
+		const disconnectListeners: (() => void)[] = [];
+		const subscribeDisconnect = vi.fn((handler: () => void) => {
+			disconnectListeners.push(handler);
+			return () => {};
+		});
+		const subscriptionClient = new CompactSubscriptionClient({
+			transport: transport as unknown as ISubscriptionTransport,
+			subscribeDisconnect,
+		});
+		await subscriptionClient.fastAssetCtxs(listener);
+		expect(subscribeDisconnect).toHaveBeenCalledOnce();
+
+		transport.emit(encode({ BTC: { markPx: "1" } }));
+		for (const handler of disconnectListeners) handler();
+		transport.emit(encode({ BTC: { markPx: "2" } }));
+		await vi.waitFor(() => expect(listener).toHaveBeenCalledOnce());
+		await new Promise((resolve) => setTimeout(resolve, 20));
+		expect(listener).toHaveBeenCalledExactlyOnceWith({ BTC: { markPx: "2" } });
+	});
+
+	it("reports a listener failure once instead of skipping the frames that follow", async () => {
+		const transport = createTransport();
+		const onError = vi.fn();
+		const listener = vi.fn(() => {
+			throw new Error("consumer failed");
+		});
+		await createClient(transport).fastAssetCtxs(listener, { onError });
+		transport.emit(encode({ BTC: { markPx: "1" } }));
+		transport.emit(encode({ BTC: { markPx: "2" } }));
+		await vi.waitFor(() => expect(onError).toHaveBeenCalledTimes(1));
+		expect(listener).toHaveBeenCalledTimes(1);
 	});
 });

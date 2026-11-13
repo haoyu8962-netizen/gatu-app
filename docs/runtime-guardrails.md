@@ -31,6 +31,44 @@ Do not collapse these states into one boolean.
   approved agent already exists for the same owner.
 - Legal checks fail closed. A failed or unknown status must not expose Agent
   setup or ordinary global dialogs.
+- The legal re-check before a signed action (`verifyLegalActionAllowed`) sends
+  one request without retries and fails as `status_unavailable` after 10
+  seconds; never give it a retry policy that TanStack can pause while the page
+  is unfocused. An action whose wallet signer has not been called 15 seconds
+  after it entered the request scheduler fails before signing, except cancels;
+  the check runs before the SDK call, after the server-clock sync and in the
+  wallet wrapper of every `ExchangeClient`
+  ([ADR 0053](adr/0053-exchange-action-start-deadline.md)). Passive legal status
+  queries keep their retries.
+- Mutations never pause offline: `useExchange` fixes `networkMode: "always"`
+  and the application `QueryClient` makes it the mutation default, so nothing is
+  replayed without a new confirmation when the network returns.
+- A request rejected before it started (deadline or identity change) aborts its
+  start gate: the wait for the Agent registration session lock ends, a running
+  pre-execution guard stops waiting, and the funds-action lock is released at
+  once; an already aborted signal skips the guard and the legal re-check.
+- The deadline ends where the wallet signer is called. Steps after it (the owner
+  signer's `verifyOwner()`, the embedded wallet's signing round trip, the
+  post-signature identity check, an external wallet's prompt) are not limited:
+  an L1 action is still bounded by `expiresAfter` when Transaction Delay
+  Protection is on and the server-time sample is reliable, a user-signed action
+  is not. The builder-fee and Agent approval flows use the deadline of the
+  explicit authorization that started them, or of the click that started them
+  (API wallet page, Link mobile device, the vault dialog), and check it before
+  they ask for a signature; the Agent flow checks again right before
+  `approveAgent`.
+- A workflow that waits before it calls `useExchange` or an approval
+  implementation (a query `refetch`, an HTTP snapshot, a Web Lock, a host that
+  mounts later) calls `startExchangeActionDeadline()` in its confirming handler
+  before any `await` and checks it right before each submission. A path that
+  queues its request from an asset-lock callback checks inside that callback:
+  the `ifAvailable` request does not queue, but its callback still runs later. A late action
+  is not submitted and reports the workflow's existing not-sent feedback; TP/SL
+  checks before its cancel only: once the old orders are cancelled the
+  replacement is still queued, and a refusal reports that the old TP/SL was
+  cancelled and the new one was not placed. The click deadline is not carried into the
+  scheduler, which counts its own 15 seconds from enqueue. ADR 0053 decision 10
+  lists the entries and the ones that need no check.
 - Preserve the onboarding order documented in `docs/trading-onboarding.md`.
 - Agent registration and builder-fee approval are separate. First-time setup
   approves only the Agent; builder-fee approval is deferred until an action
@@ -765,9 +803,16 @@ transport. Adding account subscriptions must not disturb market subscriptions.
   - `transport-monitor.ts` (the shared socket): a socket that is not open has its
     backoff skipped; an open socket that has been silent for the inactivity
     threshold is replaced at once; any other open socket is sent a heartbeat and
-    replaced only if no frame arrives within `resumeProbeTimeoutMs`. A socket
-    that keeps receiving frames is never replaced because the page became
+    replaced only if no heartbeat answer (`{"channel":"pong"}`) arrives within
+    `resumeProbeTimeoutMs`. Other frames do not count as the answer: a phone
+    that was suspended can deliver frames the kernel buffered before the
+    connection died, and they arrive before or right after the visibility
+    event. A socket that answers is never replaced because the page became
     visible: a desktop tab switch must not reset every stream and the chart.
+    `probeLiveness` is the one implementation of the heartbeat, shared with the
+    order-book pool; it parses only frames of at most forty characters and
+    requires `channel === "pong"`, so market data is never parsed and an error
+    frame that mentions pong does not count; the SDK keep-alive's own answers do.
   - `store.ts`: a subscription waiting out its retry backoff or its cooldown
     retries at once, and its failure count starts over, as it does when a
     cooldown ends: a retry that fails backs off from the first delay instead of
@@ -778,7 +823,15 @@ transport. Adding account subscriptions must not disturb market subscriptions.
     no `l2Book` frame for its stream's staleness threshold is closed, and its
     consumers subscribe again on a new connection inside the pool's connection
     budget. An `l2Book` frame for any coin on the connection counts; heartbeat
-    answers and subscription confirmations do not.
+    answers and subscription confirmations do not. Every other open transport
+    (`readyState === 1`) is sent a heartbeat through its SDK socket and closed
+    when no answer arrives within `resumeProbeTimeoutMs`, even while it keeps
+    receiving book frames, because buffered frames can make a dead connection
+    look fresh at that moment. A connection still opening is not probed: rews
+    would buffer the heartbeat, and the timer would measure the handshake. Each
+    transport keeps the cancel function of its probe; hiding the page, going
+    offline, removing the transport or starting a newer probe cancels it, so a
+    return before the old probe ran out gets a full answer time.
   - `patches/@nktkas__rews@4.1.0.patch`: `reconnect()` and `close()` do not wait
     for the old socket's `close` event, which Chromium fires for a half-open
     connection only after sixty seconds. Never add a path that waits for a
@@ -787,6 +840,81 @@ transport. Adding account subscriptions must not disturb market subscriptions.
   real engines. Re-run it, and `websocket-half-open-reconnect.test.ts`, when
   `@nktkas/rews` or the SDK changes: the patch is pinned to rews 4.1.0, and pnpm
   refuses to install when it no longer applies.
+- While the page stays visible and online, the shared socket is checked every
+  `checkIntervalMs`: one that has received no frame for `quietProbeThresholdMs`
+  (15 seconds, the silence after which the official terminal reconnects) is
+  sent one heartbeat and replaced only when no answer follows within
+  `quietProbeTimeoutMs` (5 seconds, wider than the 2.5-second resume probe
+  because nobody is waiting on a placeholder yet); a second probe is not sent
+  while one is pending. The worst case from the last frame to a reconnect is
+  15 + 5 + 5 seconds. The 45-second `inactivityThresholdMs` remains
+  a backstop that replaces the socket without asking. A quiet page with only
+  low-frequency user streams therefore sends a heartbeat about every fifteen to
+  twenty seconds, in addition to the SDK keep-alive every thirty.
+- `visibility.ts` takes the page's state from `document.hidden` on `resume`:
+  Chromium can unfreeze a page that is still in the background, and marking it
+  visible then would swallow the real return, so no resume recovery would run.
+- Compressed channels (`pac`, `sac`, `fastAssetCtxs`) decode through
+  `subscriptions/compact-asset-ctxs.ts`, which `CompactSubscriptionClient` uses
+  in place of the SDK decoder for `fastAssetCtxs`: the SDK chains every frame on
+  one promise, so one frame that failed to decode, or a listener that threw,
+  left the stream silent while it still looked subscribed. A failing frame now
+  ends the subscription through `onError`. Locking on the first failure is a
+  conservative choice, not a proof that a retry could never help: a decode
+  failure is usually deterministic, but one stray listener exception or backlog
+  overflow locks the channel as well;
+  the store also clears its retry count whenever a subscription is confirmed,
+  so retries would loop at the shortest delay. The first failure of
+  `fastAssetCtxs` on a transport (decoding, the listener or the backlog)
+  therefore locks the channel on that transport: later subscriptions on it are
+  rejected without reaching the server, the store backs off normally and nothing
+  clears the lock. Transports are cached per network and an SDK reconnect keeps
+  the same object, so only a reload starts clean. Known limit: with several
+  `fastAssetCtxs` subscriptions on one transport, those still alive are re-sent
+  by the SDK's subscription manager on reconnect without passing the lock; the
+  terminal shares one store subscription, so it does not happen there. The
+  locking failure and every later rejection are a
+  `FastAssetCtxsLockedError` (exported from `@sairn/hl-react`; the store keeps
+  the original error object). `useMarketsInfo` stops subscribing to
+  `fastAssetCtxs` for the life of the hook only on that error, and reports it
+  once per page as `market_ctxs_fast_fallback`. Any other error (a refused or
+  timed-out request, a lost connection) is transient: the store retries with
+  its own backoff, fast prices return when it recovers, and rows show
+  placeholders meanwhile instead of switching to context prices. A browser without
+  `DecompressionStream("deflate-raw")` subscribes to none of the three. Without
+  fast prices, `useMarketsInfo` prices each row from its own context (`pac` /
+  `sac` or `allDexsAssetCtxs` / `spotAssetCtxs`, with the receipt time of the
+  channel that supplied it), and those four subscriptions then use
+  `LIVE_MARK_MAX_STALE_MS` (10 seconds) as their staleness threshold. The
+  watchdog checks every five seconds, so a context is marked stale 10 to 15
+  seconds after its receipt and is then no longer `success`. The interval of
+  the context channels is not guaranteed by the exchange; observed frames
+  every three to four seconds, throttled to five, keep the receipt age under
+  about nine seconds, and whether a phone sees false staleness is not
+  verified. Switching from fast prices to this path at runtime changes the
+  threshold, which is a dependency of `useSub`'s effect: each context
+  subscription is released and subscribed again once, its snapshot is
+  dropped, and row prices show placeholders until the new snapshot arrives.
+  That one-time gap is accepted; the store does not update thresholds in
+  place. A browser without decompression uses the ten-second threshold from
+  the start and never switches. One execution guard reads these row prices: an
+  open-order modification validates its trigger price against the row's mark
+  (`getMarketBinding` in the desktop and mobile order tabs), which on this
+  path comes from the context channel and stays under the ten-second
+  `isLiveMarkPriceReady` limit. The selected market's order form takes its
+  price from `activeAssetCtx` / `activeSpotAssetCtx`, and the close paths check
+  a ten-second monotonic receipt age (`isLiveExecutionPriceReceiptFresh`).
+- Hyperliquid limits each IP address to 10 WebSocket connections and 30 new
+  connections a minute. One terminal tab holds at most five: the shared socket
+  and four pooled order-book transports, so two tabs reach the limit. The pool
+  opens at most 24 order-book connections a minute; the shared socket's
+  reconnects are outside that budget, so nothing caps one tab at 30 a minute. The phone layout does not warm a full-depth
+  order-book connection at startup (`lib/trade/orderbook-boot.ts`), because its
+  trade page reads the compact book. The official terminal tells the user to
+  close other tabs when the server refuses a connection with a reason starting
+  `Cannot open more than`; this terminal does not recognise that reason yet,
+  and a notice for it is a new category of passive data notice that
+  `docs/mobile-data-presentation.md` would have to admit first.
 
 ### Important Files
 
@@ -920,6 +1048,35 @@ have an install capability.
 - Installation support does not imply offline navigation support. Do not
   advertise the terminal as offline-capable unless the service worker gains a
   tested application-shell/navigation strategy.
+- The service worker's shell write path is v10's: every navigation that
+  receives a cacheable shell stores it, with no read or wait before the write;
+  the one addition is that a write refused for quota empties the rebuildable
+  asset cache and retries once, unless another shell was stored meanwhile
+  ([ADR 0052](adr/0052-service-worker-startup-asset-cache.md)). Other write
+  failures are swallowed as in v10. Same-origin immutable `/assets/` files are
+  answered cache-first from the versioned asset cache: the cache lookup is
+  bounded (past the limit the request goes to the network and nothing is
+  written), and reload-type requests go to the network first. Only clean 200s
+  of the expected content type whose `Cache-Control` declares `immutable` and
+  neither `no-store` nor `no-cache` are stored; dropping `immutable` at the
+  origin stops new writes, while stored entries keep answering until the cache
+  version changes. After each shell write, a serial, idempotent sync
+  reconciles the asset cache with the shell actually cached and a manifest
+  kept inside the asset cache itself, so the manifest disappears whenever the
+  asset cache does. The sync keeps the new and the recorded assets, fetches
+  the missing ones under a time limit that aborts only its requests (it still
+  waits for its Cache API operations), and moves the manifest only when it
+  finished. Provided the network works, nothing times out, the worker is not
+  stopped and storage accepts writes, the latest shell's assets are then all
+  cached; otherwise the next navigation continues the sync. The worker also
+  keeps the six lazy locale catalogs the shell lists in `sairn-locale-catalogs`,
+  so a non-English cold start after a release reads its catalog from the
+  device. It does not precache the whole build, does not intercept the
+  TradingView files (their content-hashed fonts included), and
+  keeps the navigation bypass list, the `?lang=` network-first rule and the
+  cacheable-shell checks. A font or asset response is cloned before it is
+  handed to the page, never afterwards. Cache names, limits, the shell-scanner
+  limits and the release-switch probe live in the ADR.
 
 ### Important Files
 
@@ -958,6 +1115,10 @@ have an install capability.
 - `apps/terminal/src/lib/tests/qr-classification.test.ts`
 - `apps/terminal/src/lib/tests/mobile-pairing-feature-gate.test.ts`
 - `apps/terminal/src/lib/tests/sw-navigation-cache.test.ts`
+- `apps/terminal/src/lib/tests/sw-asset-cache.test.ts`
+- `apps/terminal/src/lib/tests/chart-asset-cache-policy.test.ts`
+- `apps/terminal/tests/browser/sw-release-switch-probe.mjs` (real engines,
+  run from a normal shell; not part of CI)
 
 ## 9. Development And Browser Test Caches
 
@@ -1285,8 +1446,9 @@ Before merging any change that touches the areas above:
 - Hiding mobile UI state behind full route reloads.
 - Waiting for a timer, a backoff or a dead socket's `close` event before
   recovering market data after the page or the network returns.
-- Reconnecting a socket that still receives frames because the tab became
-  visible.
+- Replacing a socket that answered its heartbeat in time because the tab
+  became visible, or treating frames other than the heartbeat answer as proof
+  that a socket is alive.
 - Treating Privy authentication as proof that the expected signing wallet is
   active.
 - Rendering the application wallet drawer underneath a Privy modal.

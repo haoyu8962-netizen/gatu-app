@@ -1,5 +1,6 @@
 import {
 	createWsTransportMonitor,
+	probeLiveness,
 	type WsTransportMonitorOptions,
 } from "@sairn/hl-react/internal/websocket/transport-monitor";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -22,8 +23,12 @@ class FakeSocket extends EventTarget {
 		this.dispatchEvent(new Event("open"));
 	}
 
-	message() {
-		this.dispatchEvent(new MessageEvent("message", { data: "{}" }));
+	message(data = "{}") {
+		this.dispatchEvent(new MessageEvent("message", { data }));
+	}
+
+	pong() {
+		this.message('{"channel":"pong"}');
 	}
 }
 
@@ -272,10 +277,192 @@ describe("WebSocket transport monitor", () => {
 		expect(socket.reconnect).not.toHaveBeenCalled();
 
 		await vi.advanceTimersByTimeAsync(200);
-		socket.message();
+		socket.pong();
 		await vi.advanceTimersByTimeAsync(600);
 
 		expect(socket.reconnect).not.toHaveBeenCalled();
+		unsubscribe();
+	});
+
+	it("does not take frames buffered while the page was suspended as the heartbeat answer", async () => {
+		vi.useFakeTimers({ now: 0 });
+		const page = createPageState();
+		const socket = new FakeSocket();
+		const monitor = createMonitor(socket, {
+			inactivityThresholdMs: 10_000,
+			checkIntervalMs: 60_000,
+			resumeProbeTimeoutMs: 300,
+			...page.options,
+		});
+		const unsubscribe = monitor.subscribeReconnect(vi.fn());
+
+		page.setVisibility("hidden");
+		await vi.advanceTimersByTimeAsync(500);
+		page.setVisibility("visible");
+		socket.message('{"channel":"allMids","data":{"mids":{}}}');
+		socket.message('{"channel":"subscriptionResponse","data":{"method":"subscribe"}}');
+		await vi.advanceTimersByTimeAsync(299);
+		expect(socket.reconnect).not.toHaveBeenCalled();
+
+		await vi.advanceTimersByTimeAsync(1);
+		expect(socket.reconnect).toHaveBeenCalledExactlyOnceWith();
+		unsubscribe();
+	});
+
+	it("sends one heartbeat to a socket that stays quiet past the probe threshold and keeps it when it answers", async () => {
+		vi.useFakeTimers({ now: 0 });
+		const socket = new FakeSocket();
+		const monitor = createMonitor(socket, {
+			quietProbeThresholdMs: 1_000,
+			inactivityThresholdMs: 60_000,
+			checkIntervalMs: 100,
+			resumeProbeTimeoutMs: 300,
+		});
+		const unsubscribe = monitor.subscribeReconnect(vi.fn());
+
+		await vi.advanceTimersByTimeAsync(900);
+		expect(socket.send).not.toHaveBeenCalled();
+
+		await vi.advanceTimersByTimeAsync(100);
+		expect(socket.send).toHaveBeenCalledExactlyOnceWith('{"method":"ping"}');
+		await vi.advanceTimersByTimeAsync(200);
+		expect(socket.send).toHaveBeenCalledOnce();
+
+		socket.pong();
+		await vi.advanceTimersByTimeAsync(900);
+		expect(socket.send).toHaveBeenCalledOnce();
+		expect(socket.reconnect).not.toHaveBeenCalled();
+
+		await vi.advanceTimersByTimeAsync(100);
+		expect(socket.send).toHaveBeenCalledTimes(2);
+		unsubscribe();
+	});
+
+	it("replaces a quiet socket that does not answer the heartbeat, even while other frames arrive", async () => {
+		vi.useFakeTimers({ now: 0 });
+		const socket = new FakeSocket();
+		const monitor = createMonitor(socket, {
+			quietProbeThresholdMs: 1_000,
+			inactivityThresholdMs: 60_000,
+			checkIntervalMs: 100,
+			resumeProbeTimeoutMs: 300,
+			quietProbeTimeoutMs: 700,
+		});
+		const disconnect = vi.fn();
+		const unsubscribe = monitor.subscribeDisconnect(disconnect);
+
+		await vi.advanceTimersByTimeAsync(1_000);
+		expect(socket.send).toHaveBeenCalledOnce();
+		socket.message();
+		socket.message('{"channel":"error","data":"pong"}');
+		await vi.advanceTimersByTimeAsync(699);
+		expect(socket.reconnect).not.toHaveBeenCalled();
+
+		await vi.advanceTimersByTimeAsync(1);
+		expect(socket.reconnect).toHaveBeenCalledExactlyOnceWith();
+		expect(disconnect).toHaveBeenCalledOnce();
+		unsubscribe();
+	});
+
+	it("keeps the resume heartbeat's shorter answer time while quiet probes get the wider one", async () => {
+		vi.useFakeTimers({ now: 0 });
+		const page = createPageState();
+		const socket = new FakeSocket();
+		const monitor = createMonitor(socket, {
+			quietProbeThresholdMs: 60_000,
+			inactivityThresholdMs: 120_000,
+			checkIntervalMs: 60_000,
+			resumeProbeTimeoutMs: 300,
+			quietProbeTimeoutMs: 5_000,
+			...page.options,
+		});
+		const unsubscribe = monitor.subscribeReconnect(vi.fn());
+
+		page.setVisibility("hidden");
+		page.setVisibility("visible");
+		await vi.advanceTimersByTimeAsync(300);
+
+		expect(socket.reconnect).toHaveBeenCalledOnce();
+		unsubscribe();
+	});
+
+	it("settles a probe once and stops listening when it ends", async () => {
+		vi.useFakeTimers({ now: 0 });
+		const socket = new FakeSocket();
+		const remove = vi.spyOn(socket, "removeEventListener");
+		const onSettle = vi.fn();
+
+		probeLiveness(socket, 300, onSettle);
+		socket.pong();
+		socket.pong();
+		expect(onSettle).toHaveBeenCalledExactlyOnceWith(true);
+		expect(remove).toHaveBeenCalledWith("message", expect.any(Function));
+
+		const timedOut = vi.fn();
+		probeLiveness(socket, 300, timedOut);
+		await vi.advanceTimersByTimeAsync(300);
+		socket.pong();
+		expect(timedOut).toHaveBeenCalledExactlyOnceWith(false);
+		expect(remove).toHaveBeenCalledTimes(2);
+	});
+
+	it("does not take an error frame that mentions pong as the heartbeat answer", () => {
+		vi.useFakeTimers({ now: 0 });
+		const socket = new FakeSocket();
+		const onSettle = vi.fn();
+
+		probeLiveness(socket, 300, onSettle);
+		socket.message('{"channel":"error","data":"pong"}');
+		expect(onSettle).not.toHaveBeenCalled();
+		socket.message('{"channel": "pong"}');
+
+		expect(onSettle).toHaveBeenCalledExactlyOnceWith(true);
+	});
+
+	it("declares a socket dead when only error frames that mention pong arrive", async () => {
+		vi.useFakeTimers({ now: 0 });
+		const socket = new FakeSocket();
+		const onSettle = vi.fn();
+
+		probeLiveness(socket, 300, onSettle);
+		socket.message('{"channel":"error","data":"pong"}');
+		await vi.advanceTimersByTimeAsync(300);
+
+		expect(onSettle).toHaveBeenCalledExactlyOnceWith(false);
+	});
+
+	it("does not probe a quiet socket while the page is hidden or offline", async () => {
+		vi.useFakeTimers({ now: 0 });
+		const page = createPageState();
+		const socket = new FakeSocket();
+		const monitor = createMonitor(socket, {
+			quietProbeThresholdMs: 1_000,
+			inactivityThresholdMs: 60_000,
+			checkIntervalMs: 100,
+			...page.options,
+		});
+		const unsubscribe = monitor.subscribeReconnect(vi.fn());
+
+		page.setVisibility("hidden");
+		await vi.advanceTimersByTimeAsync(5_000);
+		page.setNetwork("offline");
+		page.setVisibility("visible");
+		await vi.advanceTimersByTimeAsync(5_000);
+
+		expect(socket.send).not.toHaveBeenCalled();
+		unsubscribe();
+	});
+
+	it("probes on the default schedule fifteen seconds into a silence, as the official terminal checks", async () => {
+		vi.useFakeTimers({ now: 0 });
+		const socket = new FakeSocket();
+		const monitor = createMonitor(socket);
+		const unsubscribe = monitor.subscribeReconnect(vi.fn());
+
+		await vi.advanceTimersByTimeAsync(14_999);
+		expect(socket.send).not.toHaveBeenCalled();
+		await vi.advanceTimersByTimeAsync(5_001);
+		expect(socket.send).toHaveBeenCalledExactlyOnceWith('{"method":"ping"}');
 		unsubscribe();
 	});
 

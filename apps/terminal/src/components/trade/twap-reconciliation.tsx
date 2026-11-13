@@ -1,10 +1,14 @@
 import { msg } from "@lingui/core/macro";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { HL_ALL_DEXS } from "@/config/app";
 import { matchesTwapIntent, TWAP_RECONCILIATION_CONFIRMATION_WINDOW_MS, type TwapStateLike } from "@/domain/trade/twap";
 import { useHyperliquid, useSubscription } from "@/lib/hyperliquid";
-import { orderReconciliationError } from "@/lib/trade/order-reconciliation-feedback";
 import {
+	orderReconciliationError,
+	withdrawNotificationsSettledElsewhere,
+} from "@/lib/trade/order-reconciliation-feedback";
+import {
+	settleUnconfirmedTradingActionFeedback,
 	syncPendingTradingActionFeedback,
 	updatePendingTradingActionFeedback,
 } from "@/lib/trade/pending-trading-action-feedback";
@@ -18,6 +22,7 @@ import {
 	getPendingTradingActionActions,
 	getPendingTradingActionSnapshot,
 	type PendingTwapCancellation,
+	TRADING_ACTION_CONFIRMATION_TIMEOUT_MS,
 	usePendingTwapCancellations,
 	wasReceivedAfter,
 } from "@/stores/use-pending-trading-action-store";
@@ -34,8 +39,6 @@ interface TwapCandidate {
 	status: "activated" | "waitingForTrigger" | "terminated" | "finished" | "stopped" | "error";
 	error?: string;
 }
-
-const activeTwapCancellationReleases = new Set<string>();
 
 const TWAP_RECONCILIATION_RETRY_MS = 1_000;
 const TWAP_CANCELLATION_RELEASE_MAX_ATTEMPTS = 3;
@@ -76,8 +79,44 @@ export function TwapReconciliation() {
 		return () => window.clearTimeout(timer);
 	}, [cancellations]);
 
+	const { data: twapHistory } = useSubscription(
+		"userTwapHistory",
+		{ user: address ?? "0x0000000000000000000000000000000000000000" },
+		{ enabled: !!address },
+	);
+	const queueIdsRef = useRef<ReadonlyMap<string, string>>(new Map());
+	const twapHistoryRef = useRef<TwapHistorySnapshot>(undefined);
 	useEffect(() => {
-		if (!address || activeTwapsStatus !== "active" || activeTwapsStale || !activeTwaps) return;
+		twapHistoryRef.current = twapHistory && {
+			env,
+			user: twapHistory.user.toLowerCase(),
+			entries: twapHistory.history,
+		};
+	}, [env, twapHistory]);
+	const cancellationTasksRef = useRef<TwapCancellationTasks>(undefined);
+	useEffect(() => {
+		const tasks: TwapCancellationTasks = {
+			env,
+			owner: address?.toLowerCase(),
+			running: new Set(),
+			timers: new Set(),
+			disposed: false,
+		};
+		cancellationTasksRef.current = tasks;
+		return () => {
+			tasks.disposed = true;
+			for (const timer of tasks.timers) window.clearTimeout(timer);
+		};
+	}, [address, env]);
+	useEffect(() => {
+		const user = address?.toLowerCase();
+		getPendingTwapActions().serve(user ? { env, user } : null);
+		return () => getPendingTwapActions().serve(null);
+	}, [address, env]);
+
+	useEffect(() => {
+		const tasks = cancellationTasksRef.current;
+		if (!tasks || !address || activeTwapsStatus !== "active" || activeTwapsStale || !activeTwaps) return;
 		const owner = address.toLowerCase();
 		const activeIds = new Set(activeTwaps.states.map(([twapId]) => twapId));
 		for (const cancellation of cancellations) {
@@ -89,25 +128,28 @@ export function TwapReconciliation() {
 				if (cancellation.phase === "unconfirmed") {
 					if (!wasReceivedAfter(activeTwapsReceivedAt, cancellation.monotonicUnconfirmedAt)) continue;
 					getPendingTradingActionActions().resolveTwapCancellation(cancellation.id);
-					updatePendingTradingActionFeedback(cancellation, "twap-cancel", {
-						status: "unconfirmed",
-						message: msg`TWAP termination was not confirmed. Review active TWAPs before retrying.`,
-					});
+					settleUnconfirmedTradingActionFeedback(
+						cancellation,
+						"twap-cancel",
+						msg`TWAP termination was not confirmed. Review active TWAPs before retrying.`,
+					);
 				}
 				continue;
 			}
-			void confirmTwapCancellation(cancellation);
+			void confirmTwapCancellation(tasks, cancellation, (final) =>
+				readTwapCancellationOutcome(cancellation, twapHistoryRef.current, final),
+			);
 		}
 	}, [activeTwaps, activeTwapsReceivedAt, activeTwapsStale, activeTwapsStatus, address, cancellations, env]);
-	const { data: twapHistory } = useSubscription(
-		"userTwapHistory",
-		{ user: address ?? "0x0000000000000000000000000000000000000000" },
-		{ enabled: !!address },
-	);
 
 	useEffect(() => {
+		withdrawNotificationsSettledElsewhere(getPendingTwapActions().takeRemovedElsewhere(), queueIdsRef.current);
+		queueIdsRef.current = new Map(
+			submissions.map((submission) => [submission.id, submission.queueId ?? `reconcile-${submission.id}`]),
+		);
 		for (const submission of submissions) {
 			if (!activeSubmissionIds.has(submission.id)) ensureTwapSubmissionQueue(submission);
+			showTwapSubmissionUnconfirmed(submission);
 		}
 		const eligible = submissions.filter(
 			(submission) => submission.unconfirmedAt === undefined && !activeSubmissionIds.has(submission.id),
@@ -172,49 +214,129 @@ export function TwapReconciliation() {
 	return null;
 }
 
-async function confirmTwapCancellation(cancellation: PendingTwapCancellation, attempt = 1): Promise<void> {
+type TwapCancellationOutcome = Parameters<typeof updatePendingTradingActionFeedback>[2];
+type ReadTwapCancellationOutcome = (final: boolean) => TwapCancellationOutcome | undefined;
+type TwapHistorySnapshot =
+	| { env: string; user: string; entries: ReadonlyArray<{ twapId?: number; status: { status: string } }> }
+	| undefined;
+
+/**
+ * The terminations one mounted host is settling, for its owner and network only: unmounting the host
+ * or changing its identity disposes them, so a later host starts again from its own data.
+ */
+interface TwapCancellationTasks {
+	env: string;
+	owner: string | undefined;
+	running: Set<string>;
+	timers: Set<number>;
+	disposed: boolean;
+}
+
+const TWAP_ENDED_STATUSES: ReadonlySet<string> = new Set(["terminated", "finished", "stopped", "error"]);
+const TWAP_CANCELLATION_OUTCOME_WAIT_ATTEMPTS = TRADING_ACTION_CONFIRMATION_TIMEOUT_MS / TWAP_RECONCILIATION_RETRY_MS;
+
+function scheduleTwapCancellationTask(tasks: TwapCancellationTasks, run: () => void, delay: number): void {
+	const timer = window.setTimeout(() => {
+		tasks.timers.delete(timer);
+		if (!tasks.disposed) run();
+	}, delay);
+	tasks.timers.add(timer);
+}
+
+/**
+ * A termination the exchange accepted ends as Terminated. Otherwise the TWAP may have finished on its
+ * own, so its own entry in the history of the same owner and network decides. The history can arrive
+ * after the active list, so the result waits for it, and stays neutral once the confirmation window
+ * has passed without it.
+ */
+function readTwapCancellationOutcome(
+	cancellation: PendingTwapCancellation,
+	history: TwapHistorySnapshot,
+	final: boolean,
+): TwapCancellationOutcome | undefined {
+	const entries = history?.env === cancellation.env && history.user === cancellation.owner ? history.entries : [];
+	const ended = cancellation.accepted
+		? "terminated"
+		: entries.find((entry) => entry.twapId === cancellation.twapId && TWAP_ENDED_STATUSES.has(entry.status.status))
+				?.status.status;
+	if (ended === "terminated") return { status: "success", message: msg`Terminated` };
+	if (ended === "finished") return { status: "failed", message: msg`TWAP finished before it could be terminated.` };
+	if (!ended && !final) return;
+	return { status: "unconfirmed", message: msg`TWAP is no longer active. Check TWAP history before retrying.` };
+}
+
+async function confirmTwapCancellation(
+	tasks: TwapCancellationTasks,
+	cancellation: PendingTwapCancellation,
+	readOutcome: ReadTwapCancellationOutcome,
+	attempt = 1,
+): Promise<void> {
 	if (attempt === 1) {
-		if (activeTwapCancellationReleases.has(cancellation.id)) return;
-		activeTwapCancellationReleases.add(cancellation.id);
+		if (tasks.running.has(cancellation.id) || cancellation.env !== tasks.env || cancellation.owner !== tasks.owner) {
+			return;
+		}
+		tasks.running.add(cancellation.id);
 	}
 	const current = findPendingTwapCancellation(cancellation);
 	if (!current) {
-		activeTwapCancellationReleases.delete(cancellation.id);
+		tasks.running.delete(cancellation.id);
 		return;
 	}
 	const released = await releaseActiveTwapOrderAssetReservation(
 		{ env: current.env, owner: current.owner, assetIds: [current.assetId] },
 		current.twapId,
 	);
-	const latest = findPendingTwapCancellation(cancellation);
-	if (!latest) {
-		activeTwapCancellationReleases.delete(cancellation.id);
+	if (tasks.disposed) return;
+	if (!findPendingTwapCancellation(cancellation)) {
+		tasks.running.delete(cancellation.id);
 		return;
 	}
 	if (released) {
-		getPendingTradingActionActions().resolveTwapCancellation(latest.id);
-		activeTwapCancellationReleases.delete(cancellation.id);
-		updatePendingTradingActionFeedback(latest, "twap-cancel", {
-			status: "success",
-			message: msg`Terminated`,
-		});
+		settleTwapCancellation(tasks, cancellation, readOutcome, 0);
 		return;
 	}
 	if (attempt >= TWAP_CANCELLATION_RELEASE_MAX_ATTEMPTS) {
-		activeTwapCancellationReleases.delete(cancellation.id);
+		tasks.running.delete(cancellation.id);
 		return;
 	}
-	window.setTimeout(
+	scheduleTwapCancellationTask(
+		tasks,
 		() => {
 			const retriable = findPendingTwapCancellation(cancellation);
 			if (!retriable) {
-				activeTwapCancellationReleases.delete(cancellation.id);
+				tasks.running.delete(cancellation.id);
 				return;
 			}
-			void confirmTwapCancellation(retriable, attempt + 1);
+			void confirmTwapCancellation(tasks, retriable, readOutcome, attempt + 1);
 		},
 		TWAP_RECONCILIATION_RETRY_MS * 2 ** (attempt - 1),
 	);
+}
+
+function settleTwapCancellation(
+	tasks: TwapCancellationTasks,
+	cancellation: PendingTwapCancellation,
+	readOutcome: ReadTwapCancellationOutcome,
+	attempt: number,
+): void {
+	const latest = findPendingTwapCancellation(cancellation);
+	const outcome = latest && readOutcome(attempt >= TWAP_CANCELLATION_OUTCOME_WAIT_ATTEMPTS);
+	if (latest && !outcome) {
+		scheduleTwapCancellationTask(
+			tasks,
+			() => settleTwapCancellation(tasks, cancellation, readOutcome, attempt + 1),
+			TWAP_RECONCILIATION_RETRY_MS,
+		);
+		return;
+	}
+	tasks.running.delete(cancellation.id);
+	if (!latest || !outcome) return;
+	getPendingTradingActionActions().resolveTwapCancellation(latest.id);
+	if (outcome.status === "unconfirmed" && outcome.message) {
+		settleUnconfirmedTradingActionFeedback(latest, "twap-cancel", outcome.message);
+	} else {
+		updatePendingTradingActionFeedback(latest, "twap-cancel", outcome);
+	}
 }
 
 function findPendingTwapCancellation(expected: PendingTwapCancellation): PendingTwapCancellation | null {
@@ -337,6 +459,16 @@ function completeTwapReconciliation(submission: PendingTwapSubmission, candidate
 				error: candidate.error ?? orderReconciliationError("twap-order-rejected"),
 			});
 	}
+}
+
+function showTwapSubmissionUnconfirmed(submission: PendingTwapSubmission): void {
+	if (submission.unconfirmedAt === undefined) return;
+	const queueItem = getOrderQueueItem(submission.queueId ?? `reconcile-${submission.id}`);
+	if (!queueItem || (queueItem.status !== "pending" && queueItem.status !== "confirming")) return;
+	updateOrderQueueItem(queueItem.id, {
+		status: "unconfirmed",
+		error: orderReconciliationError("twap-status-unconfirmed"),
+	});
 }
 
 function ensureTwapSubmissionQueue(submission: PendingTwapSubmission): string {

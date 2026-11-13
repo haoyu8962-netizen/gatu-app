@@ -1,4 +1,9 @@
 import type { InfoClient } from "@nktkas/hyperliquid";
+import {
+	type ExchangeSigningDeadlineSlot,
+	hasExchangeActionDeadlinePassed,
+	startExchangeActionDeadline,
+} from "@sairn/hl-react/internal/exchange/request-scheduler";
 import Big from "big.js";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { isAddress, zeroAddress } from "viem";
@@ -119,6 +124,8 @@ export interface StakingActionErrorDecision {
 
 export function classifyStakingActionError(error: unknown, sdkBoundaryPassed: boolean): StakingActionErrorKind {
 	if (error instanceof StakingActionPreflightError) return "preflight";
+	// Raised before the wallet signs, also after the SDK boundary (ADR 0053): nothing was sent.
+	if (error instanceof Error && error.name === "ExchangeActionDeadlineError") return "preflight";
 	if (!sdkBoundaryPassed) return "preflight";
 	if (error instanceof Error && (error.name === "ApiRequestError" || error.name === "ValidationError")) {
 		return "apiError";
@@ -424,6 +431,7 @@ export function useStakingActions(ownerAddress: `0x${string}` | undefined): Stak
 	}
 
 	async function submit() {
+		const deadline = startExchangeActionDeadline();
 		const current = activeRef.current;
 		if (!current || current.state.stage !== "review" || executionRef.current) return;
 		const startIdentity = identityRef.current;
@@ -473,12 +481,14 @@ export function useStakingActions(ownerAddress: `0x${string}` | undefined): Stak
 			const baseline = createStakingBaseline(lease.submission, baselineSnapshot);
 			if (!baseline) throw new StakingActionPreflightError("Fresh staking reconciliation baseline is unavailable.");
 			const reference = createReference(lease, baseline);
+			assertSubmissionDeadline(deadline);
 			if (!(await acquireFundsActionMarker(reference))) {
 				throw new StakingActionPreflightError("Another funds operation is awaiting verification.");
 			}
 			lease.reference = reference;
 			const acquired = activeRef.current;
 			if (acquired) updateActive({ ...acquired, reference });
+			assertSubmissionDeadline(deadline);
 			await executeStakingMutation(
 				lease.submission,
 				cDeposit.mutateAsync,
@@ -841,6 +851,12 @@ function recoveryIdentityIsCurrent(expected: StakingActionIdentity, current: Sta
 
 function assertExecutionCurrent(expected: ExecutionLease, current: ExecutionLease | null): void {
 	if (expected !== current) throw new StakingActionPreflightError("The staking request is no longer active.");
+}
+
+function assertSubmissionDeadline(deadline: ExchangeSigningDeadlineSlot): void {
+	if (hasExchangeActionDeadlinePassed(deadline)) {
+		throw new StakingActionPreflightError("The checks before this request took too long.");
+	}
 }
 
 function assertGeoAllowed(

@@ -3,6 +3,10 @@
 import { i18n } from "@lingui/core";
 import { I18nProvider } from "@lingui/react";
 import { getFundsActionLockName } from "@sairn/hl-react/internal/exchange/funds-action-lock";
+import {
+	ExchangeActionDeadlineError,
+	startExchangeActionDeadline,
+} from "@sairn/hl-react/internal/exchange/request-scheduler";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, createElement, StrictMode } from "react";
 import { createRoot, type Root } from "react-dom/client";
@@ -18,6 +22,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { EmbeddedDepositAutoBridge } from "@/components/trade/tradebox/embedded-deposit-auto-bridge";
 import { CCTP_DEPOSIT_NETWORKS } from "@/config/cctp-deposit";
 import { useCctpDepositTracking } from "@/hooks/trade/use-cctp-deposit-tracking";
+import { formatTransferError } from "@/lib/errors/format";
 import { LocalizedActionError } from "@/lib/errors/localized-action-error";
 import { getDepositExecutionState } from "@/lib/hyperliquid/deposit-execution-state";
 import { DefinitiveDepositSourceFailureError } from "@/lib/hyperliquid/deposit-source-error";
@@ -1752,6 +1757,130 @@ describe("useDeposit fresh USDC route guard", () => {
 			);
 		});
 		expect(testState.smartSendTransaction).toHaveBeenCalledOnce();
+	});
+
+	describe("click deadline of a manual deposit", () => {
+		const SPONSORED_EXECUTION_KEY = `mainnet:manual:smart:${WALLET_ADDRESS.toLowerCase()}`;
+
+		async function submitWithDelayedRegionalCheck({
+			delayMs,
+			executionScope = "manual",
+			mode,
+			withDeadline,
+		}: {
+			delayMs: number;
+			executionScope?: "automatic" | "manual";
+			mode: "smart" | "wallet";
+			withDeadline: boolean;
+		}) {
+			vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "setInterval", "clearInterval", "Date"] });
+			testState.routingResponse = { depositRoute: "cctp", withdrawalRoute: "cctp" };
+			stubSuccessfulCctpCapacity();
+			testState.geoRefetch.mockImplementation(
+				() =>
+					new Promise((resolve) => {
+						setTimeout(
+							() => resolve({ data: { country: "GB", proxy: false, tradeRestricted: false }, isError: false }),
+							delayMs,
+						);
+					}),
+			);
+			const depositHook = renderMode(mode, "cctp", executionScope);
+			const review: DepositReview | undefined =
+				executionScope === "automatic"
+					? undefined
+					: {
+							expectedBalanceRaw: mode === "smart" ? 5_000_000n : undefined,
+							expectedCctpMaxFeeRaw: 200_000n,
+							deadline: withDeadline ? startExchangeActionDeadline() : undefined,
+						};
+			const regionalChecksBefore = testState.geoRefetch.mock.calls.length;
+			const signaturesBefore = testState.permitSign.mock.calls.length;
+			await act(async () => {
+				const request = depositHook.deposit("5", review);
+				for (
+					let attempt = 0;
+					attempt < 50 && testState.geoRefetch.mock.calls.length === regionalChecksBefore;
+					attempt += 1
+				) {
+					await vi.advanceTimersByTimeAsync(0);
+				}
+				expect(testState.geoRefetch).toHaveBeenCalledTimes(regionalChecksBefore + 1);
+				expect(testState.permitSign).toHaveBeenCalledTimes(signaturesBefore);
+				await vi.advanceTimersByTimeAsync(delayMs);
+				await request;
+			});
+		}
+
+		it("does not sign or submit an embedded deposit whose regional check returned after the deadline", async () => {
+			await submitWithDelayedRegionalCheck({ delayMs: 16_000, mode: "smart", withDeadline: true });
+
+			expect(testState.getClientForChain).toHaveBeenCalledWith({ id: 42161 });
+			expect(testState.permitSign).not.toHaveBeenCalled();
+			expect(testState.smartSendTransaction).not.toHaveBeenCalled();
+			expect(testState.walletWriteContract).not.toHaveBeenCalled();
+			expect(capturedDeposit?.error).toBeInstanceOf(ExchangeActionDeadlineError);
+			expect(capturedDeposit).toMatchObject({
+				status: "error",
+				hash: undefined,
+				submissionOutcomeUnknown: false,
+				cctpRecoveryUnavailable: false,
+			});
+			expect(getDepositExecutionState(SPONSORED_EXECUTION_KEY).status).toBe("error");
+			expect(readCctpDepositTrackingRecords("Mainnet", WALLET_ADDRESS)).toEqual([]);
+			expect(readCctpSponsoredAuthorizationIntent("Mainnet", WALLET_ADDRESS)).toBeNull();
+			expect(reportClientError).not.toHaveBeenCalled();
+			expect(
+				formatTransferError(capturedDeposit?.error ?? null, (descriptor) => i18n._(descriptor), "Deposit failed"),
+			).toBe("The checks before this request took too long. Nothing was signed or sent. Try again.");
+		});
+
+		it("lets the same embedded account deposit again after a deadline refusal", async () => {
+			await submitWithDelayedRegionalCheck({ delayMs: 16_000, mode: "smart", withDeadline: true });
+			expect(testState.permitSign).not.toHaveBeenCalled();
+
+			await submitWithDelayedRegionalCheck({ delayMs: 1_000, mode: "smart", withDeadline: true });
+
+			expect(testState.permitSign).toHaveBeenCalledOnce();
+			expect(testState.smartSendTransaction).toHaveBeenCalledOnce();
+		});
+
+		it("signs and submits an embedded deposit whose regional check returned inside the deadline", async () => {
+			await submitWithDelayedRegionalCheck({ delayMs: 14_000, mode: "smart", withDeadline: true });
+
+			expect(testState.permitSign).toHaveBeenCalledOnce();
+			expect(testState.smartSendTransaction).toHaveBeenCalledOnce();
+			expect(capturedDeposit?.error).not.toBeInstanceOf(ExchangeActionDeadlineError);
+		});
+
+		it("does not hold an external wallet to the deadline, because the wallet asks again before signing", async () => {
+			await submitWithDelayedRegionalCheck({ delayMs: 16_000, mode: "wallet", withDeadline: true });
+
+			expect(testState.permitSign).toHaveBeenCalledOnce();
+			expect(testState.walletWriteContract).toHaveBeenCalledOnce();
+			expect(testState.smartSendTransaction).not.toHaveBeenCalled();
+			expect(capturedDeposit?.error).not.toBeInstanceOf(ExchangeActionDeadlineError);
+		});
+
+		it("does not hold an automatic deposit, which passes no deadline, to any time limit", async () => {
+			await submitWithDelayedRegionalCheck({
+				delayMs: 16_000,
+				executionScope: "automatic",
+				mode: "smart",
+				withDeadline: false,
+			});
+
+			expect(testState.permitSign).toHaveBeenCalledOnce();
+			expect(testState.smartSendTransaction).toHaveBeenCalledOnce();
+			expect(capturedDeposit?.error).not.toBeInstanceOf(ExchangeActionDeadlineError);
+		});
+
+		it("does not hold a manual embedded deposit without a deadline to any time limit", async () => {
+			await submitWithDelayedRegionalCheck({ delayMs: 16_000, mode: "smart", withDeadline: false });
+
+			expect(testState.permitSign).toHaveBeenCalledOnce();
+			expect(testState.smartSendTransaction).toHaveBeenCalledOnce();
+		});
 	});
 
 	it.each([

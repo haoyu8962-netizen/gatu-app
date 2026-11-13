@@ -755,3 +755,30 @@ test("checks the website market snapshot daily, read-only, with the website work
 	const websiteScripts = JSON.parse(readFileSync(new URL("../apps/website/package.json", import.meta.url), "utf8")).scripts;
 	assert.match(websiteScripts["markets:snapshot"], /scripts\/markets-snapshot\.mjs$/);
 });
+
+test("builds the Lambda bundles on every production build and checks each entry before the client build", () => {
+	const builds = readWorkflow("production-build.yml");
+	const steps = workflowListItems(builds).filter((item) => item.lines.some((line) => /^\s*run:/.test(line)));
+	const lambda = stepIndex(steps, "pnpm --filter @sairn/terminal build:lambda");
+	assert.equal(lambda >= 0, true, "production-build.yml no longer builds the Lambda bundles");
+	const executable = stepCommands(steps[lambda]).commands.map(executableCommand);
+	const build = executable.indexOf("pnpm --filter @sairn/terminal build:lambda");
+	for (const command of [
+		"node deploy/cloudfront/deploy.mjs check-lambda",
+		"node --check apps/terminal/dist-lambda/index.mjs",
+		"node --check apps/terminal/dist-lambda/csp-report.mjs",
+	]) {
+		assert.equal(executable.indexOf(command) > build, true, `${command} must run after build:lambda`);
+	}
+	assert.equal(lambda < stepIndex(steps, "pnpm --filter @sairn/terminal build"), true, "the short Lambda check fails before the long client build");
+	assert.equal(
+		steps[lambda].lines.some((line) => /^\s*if:/.test(line)),
+		false,
+		"every matrix entry checks the Lambda bundles",
+	);
+	assert.equal(
+		/^\s*continue-on-error:/m.test(builds),
+		false,
+		"a failed Lambda check, or any other production build step, must fail the job",
+	);
+});

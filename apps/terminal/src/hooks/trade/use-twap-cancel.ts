@@ -1,6 +1,7 @@
 import { useLingui } from "@lingui/react/macro";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { isConfirmedTwapCancelResponse } from "@/domain/trade/open-order-cancel";
 import { isAmbiguousOrderRequestError } from "@/domain/trade/order-tracking";
 import { type ActionFailure, formatActionFailure } from "@/lib/errors/action-error";
 import { type ExchangeParams, useExchange, useHyperliquid, useMarkets } from "@/lib/hyperliquid";
@@ -150,11 +151,26 @@ export function useTwapCancel() {
 		executionRef.current = execution;
 		reset();
 		setFeedback(null);
+		const pendingAction = action;
+		function reportUnconfirmed(): void {
+			getPendingTradingActionActions().markTwapCancellationUnconfirmed(pendingAction.id);
+			syncPendingTradingActionFeedback({ ...pendingAction, phase: "unconfirmed" }, "twap-cancel");
+			if (mountedRef.current && isTwapExecutionIdentityCurrent(execution, liveIdentityRef.current)) {
+				setFeedback({
+					tone: "warning",
+					value: orderSubmissionFeedback("twap-cancel-unconfirmed"),
+					actionId: pendingAction.id,
+					env: execution.env,
+					owner: execution.owner,
+				});
+			}
+		}
+		let response: unknown;
 		try {
 			const lockResult = await runWithAvailableOrderAssetLocks(
 				{ env, owner: clientKey, assetIds: [assetId] },
 				async () => {
-					await cancel(execution.params);
+					response = await cancel(execution.params);
 				},
 			);
 			if (!lockResult.supported || !lockResult.acquired) {
@@ -166,22 +182,15 @@ export function useTwapCancel() {
 				}
 				return;
 			}
-			getPendingTradingActionActions().markTwapCancellationAwaiting(action.id);
+			if (!isConfirmedTwapCancelResponse(response)) {
+				reportUnconfirmed();
+				return;
+			}
+			getPendingTradingActionActions().markTwapCancellationAccepted(action.id);
 			syncPendingTradingActionFeedback({ ...action, phase: "awaiting" }, "twap-cancel");
 		} catch (error) {
 			if (execution.guardPasses >= 2 && isAmbiguousOrderRequestError(error)) {
-				getPendingTradingActionActions().markTwapCancellationUnconfirmed(action.id);
-				syncPendingTradingActionFeedback({ ...action, phase: "unconfirmed" }, "twap-cancel");
-				const value = orderSubmissionFeedback("twap-cancel-unconfirmed");
-				if (mountedRef.current && isTwapExecutionIdentityCurrent(execution, liveIdentityRef.current)) {
-					setFeedback({
-						tone: "warning",
-						value,
-						actionId: action.id,
-						env: execution.env,
-						owner: execution.owner,
-					});
-				}
+				reportUnconfirmed();
 				return;
 			}
 

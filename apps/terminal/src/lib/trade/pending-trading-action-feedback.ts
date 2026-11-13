@@ -80,6 +80,24 @@ export function updatePendingTradingActionFeedback(
 	updateOrderQueueItem(ensurePendingTradingActionFeedback(action, kind), update);
 }
 
+/**
+ * Settles a task on a neutral result. An unconfirmed task learns no new fact from it, so only the
+ * message changes and a notification the user hid stays hidden; any other task becomes unconfirmed.
+ */
+export function settleUnconfirmedTradingActionFeedback(
+	action: TradingActionFeedbackIdentity,
+	kind: TradingActionKind,
+	message: NonNullable<OrderQueueItem["message"]>,
+	facts?: Pick<OrderQueueItem, "acceptedCount" | "countMode" | "error" | "totalCount">,
+): void {
+	const id = ensurePendingTradingActionFeedback(action, kind);
+	const update = { ...facts, message };
+	updateOrderQueueItem(
+		id,
+		getOrderQueueItem(id)?.status === "unconfirmed" ? update : { ...update, status: "unconfirmed" },
+	);
+}
+
 /** The counts and rejections of a partly accepted cancel batch, as its notification shows them. */
 export function getPartialCancellationFeedback(
 	partialResult: PendingOrderCancellationPartialResult,
@@ -148,7 +166,7 @@ export function settlePartialOrderCancellation(
 	};
 	const actions = getPendingTradingActionActions();
 	actions.narrowOrderCancellation(action.id, canceledOids, partialResult);
-	actions.markOrderCancellationAwaiting(action.id);
+	actions.markOrderCancellationAccepted(action.id);
 	updatePendingTradingActionFeedback(action, "cancel", {
 		status: "partial",
 		...getPartialCancellationFeedback(partialResult),

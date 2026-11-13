@@ -55,6 +55,11 @@ export interface PendingOrderCancellation extends TradingActionIdentity {
 	id: string;
 	oids: number[];
 	partialResult?: PendingOrderCancellationPartialResult;
+	/**
+	 * The exchange answered `success` for every order still in `oids`. Without it the orders may have
+	 * filled instead, so their disappearance is checked with `orderStatus` before it is called a cancel.
+	 */
+	accepted?: true;
 	phase: PendingTradingActionPhase;
 	createdAt: number;
 	requestStartedAt: number | null;
@@ -73,6 +78,8 @@ export interface PendingTwapCancellation extends TradingActionIdentity {
 	id: string;
 	twapId: number;
 	assetId: number;
+	/** The exchange accepted the termination; without it a TWAP that left the active list may have finished. */
+	accepted?: true;
 	phase: PendingTradingActionPhase;
 	createdAt: number;
 	requestStartedAt: number | null;
@@ -102,6 +109,7 @@ interface PendingTradingActionStore {
 		claimOrderCancellation: (input: ClaimOrderCancellationInput) => PendingOrderCancellation | null;
 		markOrderCancellationRequestStarted: (id: string, now?: number, monotonicNow?: number) => void;
 		markOrderCancellationAwaiting: (id: string, now?: number, monotonicNow?: number) => void;
+		markOrderCancellationAccepted: (id: string, now?: number, monotonicNow?: number) => void;
 		markOrderCancellationUnconfirmed: (id: string, now?: number, monotonicNow?: number) => void;
 		expireOrderCancellationAwaiting: (id: string, now?: number, monotonicNow?: number) => boolean;
 		releaseOrderCancellation: (id: string) => void;
@@ -113,7 +121,7 @@ interface PendingTradingActionStore {
 		confirmOrderCancellation: (id: string) => void;
 		claimTwapCancellation: (input: ClaimTwapCancellationInput) => PendingTwapCancellation | null;
 		markTwapCancellationRequestStarted: (id: string, now?: number, monotonicNow?: number) => void;
-		markTwapCancellationAwaiting: (id: string, now?: number, monotonicNow?: number) => void;
+		markTwapCancellationAccepted: (id: string, now?: number, monotonicNow?: number) => void;
 		markTwapCancellationUnconfirmed: (id: string, now?: number, monotonicNow?: number) => void;
 		expireTwapCancellationAwaiting: (id: string, now?: number, monotonicNow?: number) => boolean;
 		resolveTwapCancellation: (id: string) => void;
@@ -190,11 +198,13 @@ function transitionAction<T extends TransitionableAction>(
 	phase: Extract<PendingTradingActionPhase, "awaiting" | "unconfirmed">,
 	now: number,
 	monotonicNow: number,
+	accepted?: true,
 ): T[] {
 	return actions.map((action) =>
 		action.id === id
 			? {
 					...action,
+					...(accepted && { accepted }),
 					phase,
 					confirmationStartedAt: action.confirmationStartedAt ?? now,
 					monotonicConfirmationStartedAt: action.monotonicConfirmationStartedAt ?? monotonicNow,
@@ -344,6 +354,11 @@ const usePendingTradingActionStore = create<PendingTradingActionStore>()((set, g
 				orderCancellations: transitionAction(state.orderCancellations, id, "awaiting", now, monotonicNow),
 			}));
 		},
+		markOrderCancellationAccepted: (id, now = Date.now(), monotonicNow = performance.now()) => {
+			set((state) => ({
+				orderCancellations: transitionAction(state.orderCancellations, id, "awaiting", now, monotonicNow, true),
+			}));
+		},
 		markOrderCancellationUnconfirmed: (id, now = Date.now(), monotonicNow = performance.now()) => {
 			set((state) => ({
 				orderCancellations: transitionAction(state.orderCancellations, id, "unconfirmed", now, monotonicNow),
@@ -411,9 +426,9 @@ const usePendingTradingActionStore = create<PendingTradingActionStore>()((set, g
 		markTwapCancellationRequestStarted: (id, now = Date.now(), monotonicNow = performance.now()) => {
 			set((state) => ({ twapCancellations: markRequestStarted(state.twapCancellations, id, now, monotonicNow) }));
 		},
-		markTwapCancellationAwaiting: (id, now = Date.now(), monotonicNow = performance.now()) => {
+		markTwapCancellationAccepted: (id, now = Date.now(), monotonicNow = performance.now()) => {
 			set((state) => ({
-				twapCancellations: transitionAction(state.twapCancellations, id, "awaiting", now, monotonicNow),
+				twapCancellations: transitionAction(state.twapCancellations, id, "awaiting", now, monotonicNow, true),
 			}));
 		},
 		markTwapCancellationUnconfirmed: (id, now = Date.now(), monotonicNow = performance.now()) => {

@@ -3495,6 +3495,7 @@ msgstr "No se pudo copiar"
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/trade-panel.tsx
 #: src/config/ui-text.ts
+#: src/lib/errors/action-error.ts
 msgid "Failed to enable trading"
 msgstr "Error al habilitar trading"
 
@@ -3686,6 +3687,10 @@ msgstr "Ejecutado"
 #: src/components/trade/tradebox/order-toast.tsx
 msgid "Filled (quantity unverified)"
 msgstr "Ejecutado (cantidad sin verificar)"
+
+#: src/components/trade/order-reconciliation.tsx
+msgid "Filled before it could be canceled. Check your positions."
+msgstr "La orden se ejecutó antes de poder cancelarse. Revisa tus posiciones."
 
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Filter by {label}"
@@ -9093,6 +9098,7 @@ msgid "The cancellation response could not be confirmed. Refresh open orders bef
 msgstr "No se pudo confirmar la respuesta de cancelación. Actualiza las órdenes abiertas antes de volver a intentarlo."
 
 #: src/components/trade/order-reconciliation.tsx
+#: src/components/trade/order-reconciliation.tsx
 msgid "The cancellation was not confirmed. Review open orders before retrying."
 msgstr "No se confirmó la cancelación. Revisa las órdenes abiertas antes de volver a intentarlo."
 
@@ -9249,6 +9255,10 @@ msgstr "La orden cambió antes de que se confirmara la modificación solicitada.
 #: src/lib/errors/exchange-error-text.ts
 msgid "The order could not immediately match any resting orders."
 msgstr "La orden no pudo ejecutarse de inmediato contra ninguna orden en el libro."
+
+#: src/components/trade/order-reconciliation.tsx
+msgid "The order is no longer open. Check your fills before retrying."
+msgstr "La orden ya no está abierta. Revisa tus ejecuciones antes de volver a intentarlo."
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #~ msgid "The order is still being confirmed."
@@ -10497,9 +10507,17 @@ msgstr "Historial de ejecuciones TWAP"
 msgid "TWAP finished"
 msgstr "TWAP completado"
 
+#: src/components/trade/twap-reconciliation.tsx
+msgid "TWAP finished before it could be terminated."
+msgstr "El TWAP se completó antes de poder terminarse."
+
 #: src/components/trade/positions/twap-history-table.tsx
 msgid "TWAP history"
 msgstr "Historial de TWAP"
+
+#: src/components/trade/twap-reconciliation.tsx
+msgid "TWAP is no longer active. Check TWAP history before retrying."
+msgstr "El TWAP ya no está activo. Revisa el historial de TWAP antes de volver a intentarlo."
 
 #: src/lib/errors/definitions/twap.ts
 #: src/lib/trade/order-submission-feedback.ts
@@ -10576,6 +10594,7 @@ msgstr "Interés abierto bilateral: suma de las posiciones largas y cortas de es
 msgid "Type"
 msgstr "Tipo"
 
+#: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/positions/send-modal.tsx
 msgid "Unable to check the destination address. Nothing was sent."
 msgstr "No se pudo comprobar la dirección de destino. No se envió nada."

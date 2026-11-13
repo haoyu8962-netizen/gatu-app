@@ -6,6 +6,10 @@ import type {
 } from "@nktkas/hyperliquid/api/exchange";
 import { WarningIcon } from "@phosphor-icons/react";
 import {
+	assertExchangeSigningDeadline,
+	startExchangeActionDeadline,
+} from "@sairn/hl-react/internal/exchange/request-scheduler";
+import {
 	Button,
 	ModalContent,
 	ModalDescription,
@@ -285,6 +289,7 @@ function PositionIsolatedMarginModalBody({ open, isMobile, position, onOpenChang
 	async function handleSubmit() {
 		if (!canSubmit || coordinatingRef.current) return;
 		if (mode === "amount" && direction === "remove" && !allowsRemoval) return;
+		const deadline = startExchangeActionDeadline();
 		coordinatingRef.current = true;
 		setIsCoordinating(true);
 		setIsSubmitted(true);
@@ -303,6 +308,7 @@ function PositionIsolatedMarginModalBody({ open, isMobile, position, onOpenChang
 			const lockResult = await runWithAvailableOrderAssetLocks(
 				{ env: sessionIdentity.env, owner: sessionIdentity.owner, assetIds: [position.assetId] },
 				async (lease) => {
+					assertExchangeSigningDeadline(deadline);
 					assertExecutionContext(params, mode);
 					const reservationIntent = {
 						intentKey: `isolated-margin:${position.assetId}`,

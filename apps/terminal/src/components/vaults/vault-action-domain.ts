@@ -216,6 +216,7 @@ export function classifyVaultMutationFailure(error: unknown): VaultMutationFailu
 			error.name === "FundsActionLockUnavailableError" ||
 			error.name === "LegalActionNotAllowedError" ||
 			error.name === "ExchangeRequestInvalidatedError" ||
+			error.name === "ExchangeActionDeadlineError" ||
 			error.name === "WalletAccountMismatchError")
 	) {
 		return "deterministic";

@@ -41,6 +41,7 @@ This file contains durable project instructions for coding agents. Read `agent.m
 - A desktop-approved key imported on a phone (an env-matching Agent-only owner) takes precedence over any wallet session, as on the official terminal: while it is active the Privy identity is masked (no owner signer, no wallet intent, no user-signed client), a wallet login cannot hide or delete it, and Disconnect removes only that key (`docs/adr/0039-link-mobile-device-builder-fee-and-session-priority.md`).
 - For Privy email sessions, activate only the exact embedded wallet belonging to that user. Never fall back to the first connected or first embedded wallet when the expected address is unavailable.
 - Every L1 action carries `expiresAfter`, 15 seconds after the estimated exchange clock, so a delayed order or cancel is rejected instead of executing late ([ADR 0045](docs/adr/0045-l1-action-expiry.md)); user-signed actions do not support the field. L1 actions are signed only by signers that need no confirmation (Agent or embedded owner), so wallet prompts never consume that window.
+- The wait before signing is bounded too ([ADR 0053](docs/adr/0053-exchange-action-start-deadline.md), `docs/hyperliquid-signing.md`): except for cancels, an action is not signed more than 15 seconds after it entered the request scheduler, an action submitted offline fails at once instead of being replayed, and the legal re-check on the execution path sends one request with a 10-second cap. A workflow that waits before it calls `useExchange` or an approval implementation starts the same deadline in its confirming handler, before any `await`, and checks it right before each submission; a late action is not submitted and reports that nothing was signed or sent. Two deliberate exceptions: once TP/SL has cancelled the old orders it still queues the replacement, and when one authorization needs both the Agent and the builder fee, the builder-fee step counts from the Agent approval's return (ADR 0053 decisions 8 and 10).
 - Hyperliquid Agent/API Wallet keys may be stored locally, but Agent approval must always be signed by the matching master wallet. Missing local Agent state may trigger re-registration; it must never trigger a different browser wallet.
 - Card funding pays out only to the exact Hyperliquid owner: pass the destination resolved by `resolvePrivyFiatFundingDestination` to Privy's `useFiatOnramp`, never a Privy funding hook without an explicit destination (it defaults to the first embedded wallet). Each network keeps its own fail-closed flag, and a Mainnet release needs `--allow-mainnet-card-funding` (`docs/adr/0034-privy-card-funding.md`).
 - Email-wallet funding follows [ADR 0040](docs/adr/0040-automatic-email-wallet-deposits.md): the page-level host automatically deposits eligible native USDC for the exact active embedded owner on either network under its own sponsored flag, including after session restoration. This funds flow is separate from trading onboarding; preserve fresh route/geo/legal/fee checks, locks and pending/unknown recovery, and never require a second Deposit click or promise initiation while the app is closed. The automatic path treats the submitted full balance as the locked value and re-reads it inside the funds-action lock before signing and before broadcasting, and it verifies the exact owner's fresh legal status before the authorization is signed (and again before broadcasting). Its EIP-3009 authorization is the one signature that login or session restoration may trigger without a click, and only for this flow. An automatic submission without a source hash, or a submitted one whose outcome is not a definitive source failure, is reported as a persistent unknown status, never as a failure. The host attempts nothing until the legal status is known to allow actions, binds the execution-boundary legal check to the account that signs, and starts no attempt while an earlier sponsored authorization is unresolved.
@@ -104,8 +105,9 @@ This file contains durable project instructions for coding agents. Read `agent.m
 
 - [ADR 0050](docs/adr/0050-websocket-recovery-on-resume.md) and `docs/runtime-guardrails.md` §6 own the rules and their values. While subscription data is stale the page shows placeholders, so the time recovery takes is time the user sees no data.
 - Recovery starts when the page returns to the foreground or the network returns. It never waits for a periodic check, for a retry backoff or cooldown computed while the page was hidden or offline, or for a dead socket's `close` event.
-- A socket that still receives frames is never replaced because the page became visible: a quiet open socket is sent a heartbeat and replaced only when no frame follows.
-- Pooled order-book transports do not reconnect on their own. One that has been silent for its stream's staleness threshold is closed when the page or the network returns, and its consumers subscribe again through the pool's connection budget.
+- Liveness is proven only by a heartbeat answer (`{"channel":"pong"}`), never by other frames: a suspended phone can deliver frames the kernel buffered before the connection died. When the page returns to the foreground, an open shared socket that is not yet past the inactivity threshold is sent a heartbeat and replaced only when no answer follows; when the network returns, the shared socket is reconnected without a probe; while the page is visible and online, a shared socket that stays quiet for the quiet-probe threshold is asked the same way. A socket that answers in time is never replaced because the page became visible; one that keeps delivering frames but does not answer is replaced, because business frames cannot stop a probe from timing out.
+- Pooled order-book transports do not reconnect on their own. When the page or the network returns, one that has been silent for its stream's staleness threshold is closed, every other open one is sent a heartbeat and closed when no answer follows, and the consumers of a closed one subscribe again through the pool's connection budget. A connection still opening is not probed, and hiding the page, going offline, removing the transport or a newer probe cancels a pending one.
+- Every compressed channel (`pac`, `sac`, `fastAssetCtxs`) decodes through `subscriptions/compact-asset-ctxs.ts`: a frame that fails to decode, or a listener that throws, ends the subscription through the ordinary failure path instead of leaving a stream that looks subscribed but delivers nothing. The first failure of `fastAssetCtxs` on a transport locks that channel on that transport, and `useMarketsInfo` stops subscribing to it only on that locking error (`FastAssetCtxsLockedError`), reported once per page; transient errors are left to the store's retries. Without it, because the browser lacks `DecompressionStream("deflate-raw")` or after that lock, each row takes its price from its own context channel, whose staleness threshold is then the ten-second live-mark limit; switching at runtime resubscribes the context channels once, with a short placeholder gap.
 - `patches/@nktkas__rews@4.1.0.patch` makes `reconnect()` and `close()` act without the old socket's `close` event. Keep it, or its upstream equivalent, when `@nktkas/rews` or the SDK changes, and re-run `apps/terminal/tests/browser/websocket-half-open-probe.mjs`.
 - These rules change when data returns, never what counts as fresh: staleness thresholds, placeholders and every execution guard stay as they are.
 
@@ -176,7 +178,7 @@ This file contains durable project instructions for coding agents. Read `agent.m
 ## Startup rendering contract
 
 - `docs/adr/0010-blank-until-ready-startup.md` and `.claude/rules/startup-rendering.md` own this contract. Every application route prerenders and hydrates the same visually empty `StartupFallback`: `aria-busy` and one screen-reader-only output, with no visible skeleton or chrome.
-- Keep theme bootstrap, head preloads, Service Worker registration and shell caching. Wait for the client runtime and persisted locale catalog before rendering real chrome. Docs, Support and the legal pages are dashboard routes inside the same application chrome, with no separate document navigation or prerendered page (`docs/adr/0020-legal-pages-in-app-shell.md`).
+- Keep theme bootstrap, head preloads, Service Worker registration and shell caching; the worker writes every new shell on v10's path and only reconciles the startup assets afterwards, never making the shell update depend on them (`docs/adr/0052-service-worker-startup-asset-cache.md`). Wait for the client runtime and persisted locale catalog before rendering real chrome. Docs, Support and the legal pages are dashboard routes inside the same application chrome, with no separate document navigation or prerendered page (`docs/adr/0020-legal-pages-in-app-shell.md`).
 - Desktop and mobile trade loading states use their real frame/header/navigation/footer with an empty busy workspace. Reveal market content inside the existing frame when ready, preserving chrome DOM identity and mobile navigation state. Dashboard pending routes use the empty announcement; loaded pages own their real frame.
 - Runtime views stay pure, deterministic and props-only. Preserve mounted component behavior, translated labels, drafts, protocol values and every signing/data-availability guard. Do not reintroduce placeholder trees, shell-specific English catalogs or hydration route-surface overrides.
 - Application webfonts use `font-display: block`, and the startup gate waits (bounded) for the persisted locale catalog and the preloaded startup fonts before the first real render, so text never paints in a fallback font and reflows.
@@ -204,6 +206,9 @@ pnpm --filter @sairn/terminal typecheck
 pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/trading-onboarding-domain.test.ts \
   src/lib/tests/exchange-action-expiry.test.ts \
+  src/lib/tests/exchange-start-deadline.test.tsx \
+  src/lib/tests/exchange-signing-deadline.test.tsx \
+  src/lib/tests/builder-fee-approval.test.tsx \
   src/lib/tests/global-settings-store.test.ts \
   src/lib/tests/global-settings-modal.test.tsx \
   src/lib/tests/trading-onboarding-gate.test.tsx \
@@ -332,7 +337,13 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/visibility.test.ts \
   src/lib/tests/l2-book-transport-pool.test.ts \
   src/lib/tests/l2-book-transport-pool-resume.test.ts \
-  src/lib/tests/websocket-half-open-reconnect.test.ts
+  src/lib/tests/websocket-half-open-reconnect.test.ts \
+  src/lib/tests/compact-asset-ctxs.test.ts \
+  src/lib/tests/use-markets-info-subscriptions.test.tsx \
+  src/lib/tests/fast-asset-ctxs-decode-failures.test.ts \
+  src/lib/tests/markets-info-fast-price-fallback.test.tsx \
+  src/lib/tests/market-ctxs-fallback.test.ts \
+  src/lib/tests/orderbook-boot.test.ts
 
 # Recent trades
 pnpm --dir apps/terminal exec vitest run \
@@ -420,6 +431,9 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/margin-mode-modal.test.tsx \
   src/lib/tests/order-submission-wiring.test.ts \
   src/lib/tests/position-close-all-modal.test.tsx \
+  src/lib/tests/position-close-all-submit.test.tsx \
+  src/lib/tests/position-limit-close-submit.test.tsx \
+  src/lib/tests/position-reverse-submit.test.tsx \
   src/lib/tests/position-reverse-confirmation-controller.test.tsx \
   src/lib/tests/position-reverse-confirmation-modal.test.tsx \
   src/lib/tests/position-dialog-session-ownership.test.tsx \
@@ -433,6 +447,9 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/open-order-modification.test.ts \
   src/lib/tests/open-order-modification-form.test.ts \
   src/lib/tests/order-reconciliation.test.tsx \
+  src/lib/tests/twap-reconciliation.test.tsx \
+  src/lib/tests/twap-cancel-hook.test.tsx \
+  src/lib/tests/pending-submission-tab-ownership.test.ts \
   src/lib/tests/open-order-cancel.test.ts \
   src/lib/tests/pending-trading-action-store.test.ts \
   src/lib/tests/spot-swap-modal.test.tsx \
@@ -444,6 +461,7 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/use-deposit-routing-guard.test.tsx \
   src/lib/tests/cctp-deposit-tracking-notifier.test.tsx \
   src/lib/tests/referral-action-modal.test.tsx \
+  src/lib/tests/use-referral-actions.test.tsx \
   src/lib/tests/api-wallet-action-modal.test.tsx \
   src/lib/tests/vault-action-modal.test.tsx \
   src/lib/tests/vault-action-domain.test.ts \
@@ -493,7 +511,10 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/mobile-nav-drawer-navigation.test.tsx \
   src/lib/tests/dashboard-frame-view.test.tsx \
   src/lib/tests/client-bootstrap-error.test.ts \
-  src/lib/tests/sw-navigation-cache.test.ts
+  src/lib/tests/bootstrap-error-page.test.ts \
+  src/lib/tests/sw-navigation-cache.test.ts \
+  src/lib/tests/sw-asset-cache.test.ts \
+  src/lib/tests/chart-asset-cache-policy.test.ts
 
 # Runtime translation contract (Change discipline) and error text (ADR 0024)
 pnpm --dir apps/terminal exec vitest run \

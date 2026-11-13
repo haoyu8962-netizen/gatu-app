@@ -1,3 +1,7 @@
+import {
+	type ExchangeSigningDeadlineSlot,
+	startExchangeActionDeadline,
+} from "@sairn/hl-react/internal/exchange/request-scheduler";
 import { localizedPositionSubmitFeedback } from "@/lib/trade/position-submit-feedback";
 import {
 	getPositionMarketCloseActions,
@@ -26,6 +30,8 @@ export interface PositionMarketCloseAttempt {
 	readonly sizingIntent: PositionMarketCloseSizingIntent;
 	readonly confirmedCloseSize: string | null;
 	readonly dismissFutureConfirmation: boolean;
+	/** Started in the confirming click itself, so the wait for the submit host counts against it (ADR 0053). */
+	readonly deadline: ExchangeSigningDeadlineSlot;
 }
 
 type PositionMarketCloseExecutor = (attempt: PositionMarketCloseAttempt) => Promise<void>;
@@ -65,6 +71,7 @@ export function beginPositionMarketCloseAttempt(
 	const session = getPositionMarketCloseModal();
 	if (!session || session.sessionId !== input.sessionId || session.phase !== "idle") return null;
 
+	const deadline = startExchangeActionDeadline();
 	const queueId = addOrderQueueItem({
 		id: `market-close:${input.sessionId}`,
 		owner: session.owner,
@@ -97,6 +104,7 @@ export function beginPositionMarketCloseAttempt(
 		sizingIntent: session.sizingIntent,
 		confirmedCloseSize: input.confirmedCloseSize,
 		dismissFutureConfirmation: input.dismissFutureConfirmation === true,
+		deadline,
 	});
 }
 

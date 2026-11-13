@@ -1491,6 +1491,90 @@ describe("funds action balance wiring", () => {
 		expect(toastMocks.error).toHaveBeenCalledWith("Unable to check the destination address. Nothing was sent.");
 		expect(testState.exchangeMutations.spotSend).not.toHaveBeenCalled();
 	});
+
+	describe("when the destination check answers long after the Send click", () => {
+		const DESTINATION = "0x2222222222222222222222222222222222222222";
+		const KNOWN_DESTINATION = { fee: "0.0", isSanctioned: false, userExists: true, userHasSentTx: true };
+		const answerAfter = (ms: number, answer: object) => () =>
+			new Promise<object>((resolve) => setTimeout(() => resolve(answer), ms));
+
+		beforeEach(() => {
+			vi.useFakeTimers({
+				toFake: ["setTimeout", "clearTimeout", "setInterval", "clearInterval", "Date", "performance"],
+			});
+		});
+
+		afterEach(() => {
+			vi.useRealTimers();
+		});
+
+		async function clickSendAndWait(ms: number) {
+			const wallClock = Date.now();
+			const monotonicClock = performance.now();
+			await act(async () => {
+				getButton(container, "Send").click();
+				await vi.advanceTimersByTimeAsync(ms);
+				for (let tick = 0; tick < 8; tick += 1) await Promise.resolve();
+			});
+			expect(Date.now() - wallClock).toBeGreaterThanOrEqual(ms);
+			expect(performance.now() - monotonicClock).toBeGreaterThanOrEqual(ms);
+		}
+
+		it("sends nothing and says so when the check answered 16 seconds after the click", async () => {
+			testState.exchangeIdentity.info.preTransferCheck.mockImplementation(answerAfter(16_000, KNOWN_DESTINATION));
+			renderValidSend(root, container);
+			await clickSendAndWait(16_000);
+
+			expect(testState.exchangeIdentity.info.preTransferCheck).toHaveBeenCalledOnce();
+			expect(testState.exchangeMutations.spotSend).not.toHaveBeenCalled();
+			expect(testState.exchangeMutations.sendAsset).not.toHaveBeenCalled();
+			expect(toastMocks.error).toHaveBeenCalledOnce();
+			expect(toastMocks.error).toHaveBeenCalledWith("Unable to check the destination address. Nothing was sent.");
+			expect(toastMocks.success).not.toHaveBeenCalled();
+			expect(toastMocks.warning).not.toHaveBeenCalled();
+			expect(container.querySelector<HTMLInputElement>('input[placeholder="Destination address"]')?.value).toBe(
+				DESTINATION,
+			);
+			expect(getAmountInput(container).value).toBe("1");
+
+			testState.exchangeIdentity.info.preTransferCheck.mockImplementation(answerAfter(1_000, KNOWN_DESTINATION));
+			await clickSendAndWait(1_000);
+
+			expect(testState.exchangeMutations.spotSend).toHaveBeenCalledOnce();
+			expect(toastMocks.error).toHaveBeenCalledOnce();
+		});
+
+		it("sends once when the check answered 14 seconds after the click", async () => {
+			testState.exchangeIdentity.info.preTransferCheck.mockImplementation(answerAfter(14_000, KNOWN_DESTINATION));
+			renderValidSend(root, container);
+			await clickSendAndWait(14_000);
+
+			expect(testState.exchangeMutations.spotSend).toHaveBeenCalledOnce();
+			expect(testState.exchangeMutations.spotSend).toHaveBeenCalledWith(
+				expect.objectContaining({ amount: "1", destination: DESTINATION }),
+			);
+			expect(testState.exchangeMutations.sendAsset).not.toHaveBeenCalled();
+			expect(toastMocks.error).not.toHaveBeenCalled();
+		});
+
+		it("still asks for the review after a late answer and sends once on the new confirmation", async () => {
+			testState.exchangeIdentity.info.preTransferCheck.mockImplementation(
+				answerAfter(16_000, { fee: "1.0", isSanctioned: false, userExists: false, userHasSentTx: true }),
+			);
+			renderValidSend(root, container);
+			await clickSendAndWait(16_000);
+
+			expect(testState.exchangeMutations.spotSend).not.toHaveBeenCalled();
+			expect(toastMocks.error).not.toHaveBeenCalled();
+			expect(container.textContent).toContain("one-time fee of 1.0");
+
+			act(() => container.querySelector<HTMLInputElement>('input[type="checkbox"]')?.click());
+			await clickAndFlush(getButton(container, "Send with Fee"));
+
+			expect(testState.exchangeMutations.spotSend).toHaveBeenCalledOnce();
+			expect(toastMocks.error).not.toHaveBeenCalled();
+		});
+	});
 });
 
 function renderValidSend(

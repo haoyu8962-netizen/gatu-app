@@ -2,6 +2,11 @@ import { useMutation } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import type { Address } from "viem";
 import { useExchange } from "../hooks/useExchange";
+import {
+	assertExchangeSigningDeadline,
+	type ExchangeSigningDeadlineSlot,
+	startExchangeActionDeadline,
+} from "../internal/exchange/request-scheduler";
 import { useHyperliquid } from "../provider";
 import { convertFeeToPercentageString } from "./agent-utils";
 import { useHyperliquidOwnerSigner } from "./owner-signer-provider";
@@ -10,7 +15,8 @@ import { useTradingStatus } from "./use-trading-status";
 import { withWalletApprovalTimeout } from "./wallet-approval-timeout";
 
 export interface UseBuilderFeeApprovalResult {
-	approve: () => Promise<void>;
+	/** `deadline` is the explicit authorization's (ADR 0053); without it the approval starts its own. */
+	approve: (deadline?: ExchangeSigningDeadlineSlot) => Promise<void>;
 	status: RegistrationStatus;
 	error: Error | null;
 	reset: () => void;
@@ -47,7 +53,8 @@ export function useBuilderFeeApproval(): UseBuilderFeeApprovalResult {
 
 	const approval = useMutation({
 		mutationKey: ["hl", "builderFeeApproval", address],
-		mutationFn: async (): Promise<void> => {
+		mutationFn: async (flowDeadline?: ExchangeSigningDeadlineSlot): Promise<void> => {
+			const deadline = flowDeadline ?? startExchangeActionDeadline();
 			const startAddress = address;
 			if (!startAddress) throw new Error("No wallet connected");
 			assertSameWallet(startAddress);
@@ -57,6 +64,7 @@ export function useBuilderFeeApproval(): UseBuilderFeeApprovalResult {
 			if (!requirements.needsBuilderFee) return;
 			if (!builderConfig?.b || builderConfig.f === undefined)
 				throw new Error("Builder fee configuration is unavailable");
+			assertExchangeSigningDeadline(deadline);
 
 			setAwaitingWallet(true);
 			const approvalPromise = approveBuilderFee.mutateAsync({

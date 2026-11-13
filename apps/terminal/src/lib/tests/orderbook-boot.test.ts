@@ -73,6 +73,23 @@ describe("bootOrderbook", () => {
 		expect(warmL2BookSubscription).toHaveBeenLastCalledWith(false, { coin: "BTC" });
 	});
 
+	it("does not open a full-depth stream on the phone layout, whose trade page reads the compact book", async () => {
+		const matchMedia = vi.fn((query: string) => ({ matches: query === "(max-width: 1000px)" }));
+		vi.stubGlobal("matchMedia", matchMedia);
+		try {
+			const { bootOrderbook } = await import("@/lib/trade/orderbook-boot");
+			bootOrderbook("/trade/HYPE");
+			expect(matchMedia).toHaveBeenCalledWith("(max-width: 1000px)");
+			expect(warmL2BookSubscription).not.toHaveBeenCalled();
+
+			matchMedia.mockReturnValue({ matches: false });
+			bootOrderbook("/trade/HYPE");
+			expect(warmL2BookSubscription).toHaveBeenCalledWith(false, { coin: "HYPE" });
+		} finally {
+			vi.unstubAllGlobals();
+		}
+	});
+
 	it("does nothing for routes whose market needs the catalog", async () => {
 		const { bootOrderbook } = await import("@/lib/trade/orderbook-boot");
 		bootOrderbook("/trade/PURR/USDC");

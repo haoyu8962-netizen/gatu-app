@@ -99,6 +99,19 @@ describe("visibility singleton", () => {
 		removeSpy.mockRestore();
 	});
 
+	it("removes every lifecycle listener it added when the last subscriber leaves", () => {
+		const addSpy = vi.spyOn(document, "addEventListener");
+		const removeSpy = vi.spyOn(document, "removeEventListener");
+		subscribeVisibility(vi.fn())();
+
+		for (const [type, handler] of addSpy.mock.calls) {
+			expect(removeSpy).toHaveBeenCalledWith(type, handler);
+		}
+		expect(addSpy.mock.calls.map(([type]) => type)).toContain("resume");
+		addSpy.mockRestore();
+		removeSpy.mockRestore();
+	});
+
 	it("does not emit when state has not changed", () => {
 		const listener = vi.fn();
 		const unsub = subscribeVisibility(listener);
@@ -107,6 +120,38 @@ describe("visibility singleton", () => {
 		document.dispatchEvent(new Event("visibilitychange"));
 
 		expect(listener).not.toHaveBeenCalled();
+		unsub();
+	});
+
+	it("stays hidden when a frozen page resumes in the background, so the later return is still announced", () => {
+		const listener = vi.fn();
+		const unsub = subscribeVisibility(listener);
+
+		Object.defineProperty(document, "hidden", { value: true, configurable: true });
+		document.dispatchEvent(new Event("visibilitychange"));
+		document.dispatchEvent(new Event("freeze"));
+		document.dispatchEvent(new Event("resume"));
+
+		expect(getVisibilityState()).toBe("hidden");
+		expect(listener).not.toHaveBeenCalledWith("visible");
+
+		Object.defineProperty(document, "hidden", { value: false, configurable: true });
+		document.dispatchEvent(new Event("visibilitychange"));
+
+		expect(listener).toHaveBeenLastCalledWith("visible");
+		expect(getVisibilityState()).toBe("visible");
+		unsub();
+	});
+
+	it("announces a page that resumes in the foreground", () => {
+		const listener = vi.fn();
+		const unsub = subscribeVisibility(listener);
+
+		document.dispatchEvent(new Event("freeze"));
+		expect(listener).toHaveBeenLastCalledWith("hidden");
+		document.dispatchEvent(new Event("resume"));
+
+		expect(listener).toHaveBeenLastCalledWith("visible");
 		unsub();
 	});
 

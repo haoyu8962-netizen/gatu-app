@@ -2,6 +2,12 @@
 
 import { createHash } from "node:crypto";
 import { i18n } from "@lingui/core";
+import {
+	assertExchangeSigningDeadline,
+	ExchangeActionDeadlineError,
+	type ExchangeSigningDeadlineSlot,
+	hasExchangeActionDeadlinePassed,
+} from "@sairn/hl-react/internal/exchange/request-scheduler";
 import { act } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -20,6 +26,7 @@ const DAY_MS = 86_400_000;
 const DUPLICATE_NAME = "This name already exists. A duplicate would replace the existing API wallet.";
 const CHANGED_BEFORE_SIGNING =
 	"API wallet data changed before signing. Close this request and review the refreshed list.";
+const NOT_SENT_IN_TIME = "The checks before this request took too long. Nothing was signed or sent. Try again.";
 const ZH_TRANSLATIONS: Record<string, string> = {
 	"{days} days left": "剩余 {days} 天",
 	"Expires today": "今日到期",
@@ -104,6 +111,39 @@ function Probe() {
 
 function createQueryResult(data: unknown = testState.agents, error: unknown = null) {
 	return { data, error };
+}
+
+interface ObservedApproval {
+	deadline: ExchangeSigningDeadlineSlot | undefined;
+	deadlinePassed: boolean;
+}
+
+function approveByHostDeadlineRule(): ObservedApproval[] {
+	const observed: ObservedApproval[] = [];
+	testState.approveAgent.mockImplementation(
+		async (_params: unknown, options?: { deadline?: ExchangeSigningDeadlineSlot }) => {
+			const deadline = options?.deadline;
+			observed.push({ deadline, deadlinePassed: !!deadline && hasExchangeActionDeadlinePassed(deadline) });
+			if (deadline) assertExchangeSigningDeadline(deadline);
+			return { status: "ok", response: { type: "default" } };
+		},
+	);
+	return observed;
+}
+
+function delayPreflight(delayMs: number) {
+	testState.refetch.mockImplementationOnce(async () => {
+		await new Promise((resolve) => setTimeout(resolve, delayMs));
+		return createQueryResult([]);
+	});
+}
+
+function reconcileApprovedAuthorization() {
+	testState.refetch.mockImplementation(async () => {
+		const params = testState.approveAgent.mock.calls[0]?.[0] as { agentName: string };
+		const validUntil = Number(params.agentName.split(" ").at(-1));
+		return createQueryResult([{ name: "grid-bot", address: AGENT_ADDRESS, validUntil }]);
+	});
 }
 
 describe("useApiWalletController", () => {
@@ -317,7 +357,11 @@ describe("useApiWalletController", () => {
 
 		expect(testState.approveAgent).toHaveBeenCalledExactlyOnceWith(
 			{ agentAddress: API_WALLET_ZERO_ADDRESS, agentName: "Legacy Name" },
-			{ signal: expect.any(AbortSignal), applicationReview: "confirmed" },
+			{
+				signal: expect.any(AbortSignal),
+				applicationReview: "confirmed",
+				deadline: { current: expect.objectContaining({ deadlineMs: 15_000 }) },
+			},
 		);
 		expect(current().action).toMatchObject({ stage: "done", result: "success" });
 		expect(current().action?.privateKey).toBeUndefined();
@@ -343,6 +387,73 @@ describe("useApiWalletController", () => {
 			await verification;
 		});
 		expect(testState.approveAgent).toHaveBeenCalledOnce();
+	});
+
+	it("hands the approval a deadline that started at the click and expired during a 16 second preflight", async () => {
+		vi.useFakeTimers();
+		prepareAuthorization();
+		const approvals = approveByHostDeadlineRule();
+		delayPreflight(16_000);
+		const clickedAt = Date.now();
+
+		await act(async () => {
+			const submission = current().onConfirmAction();
+			await vi.advanceTimersByTimeAsync(15_999);
+			expect(testState.approveAgent).not.toHaveBeenCalled();
+			await vi.advanceTimersByTimeAsync(1);
+			await vi.runAllTimersAsync();
+			await submission;
+		});
+
+		expect(approvals).toHaveLength(1);
+		expect(approvals[0]?.deadline?.current).toMatchObject({ queuedAt: clickedAt, deadlineMs: 15_000 });
+		expect(approvals[0]?.deadlinePassed).toBe(true);
+		const [settled] = testState.approveAgent.mock.settledResults;
+		expect(settled?.type).toBe("rejected");
+		expect(settled?.value).toBeInstanceOf(ExchangeActionDeadlineError);
+		expect(current().action?.locked).toBe(false);
+		expect(current().action?.privateKey).toBeUndefined();
+	});
+
+	it("reports an expired approval deadline as not sent instead of an unknown outcome", async () => {
+		vi.useFakeTimers();
+		prepareAuthorization();
+		const approvals = approveByHostDeadlineRule();
+		delayPreflight(16_000);
+
+		await act(async () => {
+			const submission = current().onConfirmAction();
+			await vi.advanceTimersByTimeAsync(16_000);
+			await vi.runAllTimersAsync();
+			await submission;
+		});
+
+		expect(approvals.map((approval) => approval.deadlinePassed)).toEqual([true]);
+		expect(current().action?.result).not.toBe("unknown");
+		expect(current().action?.errorMessage).toBe(NOT_SENT_IN_TIME);
+		expect(testState.refetch).toHaveBeenCalledOnce();
+	});
+
+	it("authorizes as usual when preflight finishes 14 seconds after the click", async () => {
+		vi.useFakeTimers();
+		prepareAuthorization();
+		const approvals = approveByHostDeadlineRule();
+		delayPreflight(14_000);
+		reconcileApprovedAuthorization();
+		const clickedAt = Date.now();
+
+		await act(async () => {
+			const submission = current().onConfirmAction();
+			await vi.advanceTimersByTimeAsync(13_999);
+			expect(testState.approveAgent).not.toHaveBeenCalled();
+			await vi.advanceTimersByTimeAsync(1);
+			await submission;
+		});
+
+		expect(approvals).toHaveLength(1);
+		expect(approvals[0]?.deadline?.current).toMatchObject({ queuedAt: clickedAt, deadlineMs: 15_000 });
+		expect(approvals[0]?.deadlinePassed).toBe(false);
+		expect(current().action).toMatchObject({ stage: "done", result: "success", privateKey: PRIVATE_KEY });
 	});
 
 	it("classifies wallet code 4001 as a rejected authorization", async () => {

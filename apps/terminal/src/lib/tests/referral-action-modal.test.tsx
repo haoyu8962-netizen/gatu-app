@@ -3,6 +3,7 @@ import { clearFeedback, feedbackErrorText, feedbackText, latestFeedback } from "
 
 import { createHash } from "node:crypto";
 import { i18n, type Messages } from "@lingui/core";
+import { ExchangeActionDeadlineError } from "@sairn/hl-react/internal/exchange/request-scheduler";
 import type { ReactNode } from "react";
 import { act } from "react";
 import type { Root } from "react-dom/client";
@@ -12,6 +13,7 @@ import { ReferralActionStatusUnknownError } from "@/hooks/trade/use-referral-act
 import { createI18nRoot } from "@/lib/tests/harness/react";
 
 const REFERRAL_FAILURE = "Referral request could not be completed.";
+const NOT_SENT_IN_TIME = "The checks before this request took too long. Nothing was signed or sent. Try again.";
 const ARABIC_REFERRAL_FAILURE = "تعذر إكمال طلب الإحالة.";
 
 function getMessageId(message: string): string {
@@ -216,6 +218,25 @@ describe("ReferralActionModal invitation flow", () => {
 		expect(feedbackText("failed", "message")).toBe("");
 		expect(feedbackErrorText(latestFeedback("failed"))).toContain(REFERRAL_FAILURE);
 		expect(latestFeedback("unconfirmed")).toBeUndefined();
+	});
+
+	it("reports a request whose checks outlasted the confirmation as failed with nothing signed or sent", async () => {
+		const onSubmit = vi.fn().mockRejectedValue(new ExchangeActionDeadlineError());
+		await act(async () => {
+			root.render(<ReferralActionModal action="claim" unclaimedRewards={[]} onClose={vi.fn()} onSubmit={onSubmit} />);
+		});
+		const claim = Array.from(container.querySelectorAll("button")).find((button) => button.textContent === "Claim all");
+		await act(async () => {
+			claim?.click();
+			await Promise.resolve();
+		});
+
+		expect(feedbackText("failed", "title")).toBe("Referral request");
+		expect(feedbackErrorText(latestFeedback("failed"))).toBe(NOT_SENT_IN_TIME);
+		expect(latestFeedback("unconfirmed")).toBeUndefined();
+		expect(latestFeedback("success")).toBeUndefined();
+		expect(latestFeedback("pending")).toBeUndefined();
+		expect(onSubmit).toHaveBeenCalledOnce();
 	});
 
 	it("reports a failed request in the locale that is active when it fails, without resubmitting", async () => {

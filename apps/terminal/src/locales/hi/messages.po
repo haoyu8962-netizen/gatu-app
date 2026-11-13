@@ -3495,6 +3495,7 @@ msgstr "कॉपी करने में विफल"
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/trade-panel.tsx
 #: src/config/ui-text.ts
+#: src/lib/errors/action-error.ts
 msgid "Failed to enable trading"
 msgstr "ट्रेडिंग सक्षम करने में विफल"
 
@@ -3686,6 +3687,10 @@ msgstr "पूर्ण"
 #: src/components/trade/tradebox/order-toast.tsx
 msgid "Filled (quantity unverified)"
 msgstr "निष्पादित (मात्रा सत्यापित नहीं)"
+
+#: src/components/trade/order-reconciliation.tsx
+msgid "Filled before it could be canceled. Check your positions."
+msgstr "ऑर्डर रद्द होने से पहले ही भर गया। अपनी पोज़िशन जाँचें।"
 
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Filter by {label}"
@@ -9093,6 +9098,7 @@ msgid "The cancellation response could not be confirmed. Refresh open orders bef
 msgstr "रद्दीकरण प्रतिक्रिया की पुष्टि नहीं हो सकी। फिर से प्रयास करने से पहले खुले ऑर्डर रीफ़्रेश करें।"
 
 #: src/components/trade/order-reconciliation.tsx
+#: src/components/trade/order-reconciliation.tsx
 msgid "The cancellation was not confirmed. Review open orders before retrying."
 msgstr "रद्दीकरण की पुष्टि नहीं हुई। फिर प्रयास करने से पहले खुले ऑर्डर की समीक्षा करें।"
 
@@ -9249,6 +9255,10 @@ msgstr "अनुरोधित संशोधन की पुष्टि �
 #: src/lib/errors/exchange-error-text.ts
 msgid "The order could not immediately match any resting orders."
 msgstr "ऑर्डर तुरंत किसी भी मौजूदा ऑर्डर से मैच नहीं हो सका।"
+
+#: src/components/trade/order-reconciliation.tsx
+msgid "The order is no longer open. Check your fills before retrying."
+msgstr "ऑर्डर अब खुला नहीं है। फिर प्रयास करने से पहले अपने फ़िल जाँचें।"
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #~ msgid "The order is still being confirmed."
@@ -10497,9 +10507,17 @@ msgstr "TWAP निष्पादन इतिहास"
 msgid "TWAP finished"
 msgstr "TWAP पूरा हुआ"
 
+#: src/components/trade/twap-reconciliation.tsx
+msgid "TWAP finished before it could be terminated."
+msgstr "TWAP समाप्त किए जाने से पहले ही पूरा हो गया।"
+
 #: src/components/trade/positions/twap-history-table.tsx
 msgid "TWAP history"
 msgstr "TWAP इतिहास"
+
+#: src/components/trade/twap-reconciliation.tsx
+msgid "TWAP is no longer active. Check TWAP history before retrying."
+msgstr "TWAP अब सक्रिय नहीं है। फिर प्रयास करने से पहले TWAP इतिहास जाँचें।"
 
 #: src/lib/errors/definitions/twap.ts
 #: src/lib/trade/order-submission-feedback.ts
@@ -10576,6 +10594,7 @@ msgstr "दो-तरफ़ा ओपन इंटरेस्ट: इस कॉ
 msgid "Type"
 msgstr "प्रकार"
 
+#: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/positions/send-modal.tsx
 msgid "Unable to check the destination address. Nothing was sent."
 msgstr "गंतव्य पता जाँचा नहीं जा सका। कुछ भी नहीं भेजा गया।"

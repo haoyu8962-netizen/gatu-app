@@ -4,6 +4,11 @@ import { createHash } from "node:crypto";
 import { i18n, type Messages } from "@lingui/core";
 import { I18nProvider } from "@lingui/react";
 import { ApiRequestError, HttpRequestError } from "@nktkas/hyperliquid";
+import {
+	ExchangeActionDeadlineError,
+	type ExchangeSigningDeadlineSlot,
+	hasExchangeActionDeadlinePassed,
+} from "@sairn/hl-react/internal/exchange/request-scheduler";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, type ButtonHTMLAttributes, createElement, type ReactNode, useSyncExternalStore } from "react";
 import { createRoot, type Root } from "react-dom/client";
@@ -15,6 +20,7 @@ import { FundsActionGeoExecutionError } from "@/hooks/trade/use-funds-action-ava
 import { UsdcDepositRouteError } from "@/hooks/trade/use-usdc-routing";
 import { LocalizedActionError } from "@/lib/errors/localized-action-error";
 import { DefinitiveDepositSourceFailureError } from "@/lib/hyperliquid/deposit-source-error";
+import type { DepositReview } from "@/lib/hyperliquid/use-deposit";
 import { notifyNumberFormatChange } from "@/lib/number-format-reactivity";
 import { unknownStatusToastIcon } from "./harness/status-glyph";
 
@@ -639,10 +645,12 @@ vi.mock("@/components/trade/tradebox/deposit/withdraw-form", () => ({
 		showSpotFundsNotice,
 		prerequisiteError,
 		canSubmit,
+		isPending,
 		validation,
 	}: {
 		prerequisiteError: string | null;
 		canSubmit: boolean;
+		isPending: boolean;
 		validation: { valid: boolean; error: string | null };
 		activationFee: string;
 		amount: string;
@@ -673,6 +681,7 @@ vi.mock("@/components/trade/tradebox/deposit/withdraw-form", () => ({
 				"data-testid": "withdraw-routing-status",
 				"data-status": routingStatus,
 				"data-preflight-failed": routingPreflightFailed,
+				"data-is-pending": isPending,
 			},
 			createElement("button", { onClick: () => onAmountChange(testState.withdrawDraft), type: "button" }, "Set amount"),
 			destinationRequired
@@ -1379,6 +1388,196 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 		});
 
 		expect(testState.deposit).not.toHaveBeenCalled();
+	});
+
+	describe("checks that answer long after the click", () => {
+		const WITHDRAWAL_NOT_SUBMITTED =
+			"Withdrawal conditions changed before signing. Review the withdrawal and submit it again.";
+		const DEPOSIT_NOT_SUBMITTED = "Unable to verify the current Hyperliquid deposit route. Deposit was not submitted.";
+		const WITHDRAWAL_WAITS = [
+			{ route: "cctp", method: "sendToEvmWithData", wait: "spotMetaRefetch" },
+			{ route: "cctp", method: "sendToEvmWithData", wait: "fetchFreshRouting" },
+			{ route: "bridge", method: "withdraw3", wait: "fetchFreshRouting" },
+		] as const;
+
+		afterEach(() => {
+			vi.useRealTimers();
+		});
+
+		function advanceWallAndMonotonicClocks(ms: number) {
+			const wallClock = Date.now();
+			const monotonicClock = performance.now();
+			vi.advanceTimersByTime(ms);
+			expect(Date.now() - wallClock).toBe(ms);
+			expect(performance.now() - monotonicClock).toBe(ms);
+		}
+
+		function holdNextCall(check: ReturnType<typeof vi.fn>, getAnswer: () => unknown) {
+			let release!: () => void;
+			const reached = new Promise<void>((resolveReached) => {
+				check.mockImplementationOnce(
+					() =>
+						new Promise((resolve) => {
+							release = () => resolve(getAnswer());
+							resolveReached();
+						}),
+				);
+			});
+			return { reached, release: () => release() };
+		}
+
+		function withdrawForm() {
+			return container.querySelector('[data-testid="withdraw-routing-status"]');
+		}
+
+		function depositForm() {
+			return container.querySelector('[data-testid="deposit-routing-status"]');
+		}
+
+		function submittedDepositDeadline(): ExchangeSigningDeadlineSlot {
+			const review = testState.deposit.mock.calls[0]?.[1] as DepositReview | undefined;
+			if (!review?.deadline) throw new Error("The deposit was started without the click deadline");
+			return review.deadline;
+		}
+
+		async function submitWithdrawalAndHold({ route, wait }: (typeof WITHDRAWAL_WAITS)[number]) {
+			testState.modalOpen = true;
+			testState.activeTab = "withdraw";
+			testState.routingResponse = { depositRoute: "bridge", withdrawalRoute: route };
+			testState.freshRoutingResponse = testState.routingResponse;
+			const held = holdNextCall(testState[wait], () =>
+				wait === "spotMetaRefetch" ? { data: testState.spotMeta, isError: false } : testState.freshRoutingResponse,
+			);
+			await rerender();
+			act(() => getButton("Set amount").click());
+			vi.useFakeTimers({ toFake: ["Date", "performance"] });
+			let submission!: Promise<void>;
+			await act(async () => {
+				if (!testState.withdrawSubmit) throw new Error("Missing withdrawal submit handler");
+				submission = Promise.resolve(testState.withdrawSubmit());
+				await held.reached;
+			});
+			expect(withdrawForm()?.getAttribute("data-is-pending")).toBe("true");
+			return { release: held.release, submission };
+		}
+
+		async function submitDepositAndHoldRouteCheck() {
+			testState.modalOpen = true;
+			testState.activeTab = "deposit";
+			testState.routingResponse = { depositRoute: "cctp", withdrawalRoute: "cctp" };
+			testState.freshRoutingResponse = testState.routingResponse;
+			const held = holdNextCall(testState.fetchFreshRouting, () => testState.freshRoutingResponse);
+			await rerender();
+			act(() => getButton("Set deposit amount").click());
+			vi.useFakeTimers({ toFake: ["Date", "performance"] });
+			await act(async () => {
+				getButton("Submit deposit").click();
+				await held.reached;
+			});
+			expect(depositForm()?.getAttribute("data-is-pending")).toBe("true");
+			return held;
+		}
+
+		it.each(WITHDRAWAL_WAITS)(
+			"does not submit a $route withdrawal when $wait answers 16 seconds after the click",
+			async (waitCase) => {
+				const { release, submission } = await submitWithdrawalAndHold(waitCase);
+				advanceWallAndMonotonicClocks(16_000);
+				await act(async () => {
+					release();
+					await submission;
+				});
+
+				for (const method of ["sendToEvmWithData", "withdraw3"]) {
+					expect(testState.exchangeMutations.get(method)).not.toHaveBeenCalled();
+					expect(testState.exchangeSdkCalls.get(method)).not.toHaveBeenCalled();
+				}
+				expect(container.querySelector('[data-testid="withdrawal-prerequisite"]')?.textContent).toBe(
+					WITHDRAWAL_NOT_SUBMITTED,
+				);
+				expect(withdrawForm()?.getAttribute("data-is-pending")).toBe("false");
+				expect(getButton("Submit withdrawal").disabled).toBe(false);
+				expect(toastMocks.success).not.toHaveBeenCalled();
+				expect(toastMocks.error).not.toHaveBeenCalled();
+				expect(toastMocks.warning).not.toHaveBeenCalled();
+				expect(closeDepositModal).not.toHaveBeenCalled();
+
+				await act(async () => getButton("Submit withdrawal").click());
+				expect(testState.exchangeSdkCalls.get(waitCase.method)).toHaveBeenCalledOnce();
+				expect(toastMocks.success).toHaveBeenCalledOnce();
+				expect(toastMocks.error).not.toHaveBeenCalled();
+				expect(closeDepositModal).toHaveBeenCalledOnce();
+			},
+		);
+
+		it.each(WITHDRAWAL_WAITS)(
+			"submits a $route withdrawal once when $wait answers 14 seconds after the click",
+			async (waitCase) => {
+				const { release, submission } = await submitWithdrawalAndHold(waitCase);
+				advanceWallAndMonotonicClocks(14_000);
+				await act(async () => {
+					release();
+					await submission;
+				});
+
+				expect(testState.exchangeMutations.get(waitCase.method)).toHaveBeenCalledOnce();
+				expect(testState.exchangeSdkCalls.get(waitCase.method)).toHaveBeenCalledOnce();
+				expect(toastMocks.success).toHaveBeenCalledOnce();
+				expect(toastMocks.error).not.toHaveBeenCalled();
+				expect(closeDepositModal).toHaveBeenCalledOnce();
+			},
+		);
+
+		it("does not start a deposit when the route check answers 16 seconds after the click", async () => {
+			const held = await submitDepositAndHoldRouteCheck();
+			advanceWallAndMonotonicClocks(16_000);
+			await act(async () => held.release());
+
+			expect(testState.deposit).not.toHaveBeenCalled();
+			expect(container.querySelector('[data-testid="deposit-routing-preflight-error"]')?.textContent).toBe(
+				DEPOSIT_NOT_SUBMITTED,
+			);
+			expect(depositForm()?.getAttribute("data-status")).toBe("error");
+			expect(depositForm()?.getAttribute("data-is-pending")).toBe("false");
+			expect(toastMocks.error).not.toHaveBeenCalled();
+			expect(closeDepositModal).not.toHaveBeenCalled();
+
+			await act(async () => getButton("Retry deposit route").click());
+			expect(depositForm()?.getAttribute("data-status")).toBe("ready");
+			await act(async () => getButton("Submit deposit").click());
+			expect(testState.deposit).toHaveBeenCalledExactlyOnceWith("0.4", {
+				expectedBalanceRaw: undefined,
+				expectedCctpMaxFeeRaw: 200_000n,
+				deadline: expect.any(Object),
+			});
+			const retriedDeadline = submittedDepositDeadline();
+			expect(hasExchangeActionDeadlinePassed(retriedDeadline)).toBe(false);
+			advanceWallAndMonotonicClocks(14_999);
+			expect(hasExchangeActionDeadlinePassed(retriedDeadline)).toBe(false);
+			advanceWallAndMonotonicClocks(1);
+			expect(hasExchangeActionDeadlinePassed(retriedDeadline)).toBe(true);
+		});
+
+		it("starts a deposit once when the route check answers 14 seconds after the click", async () => {
+			const held = await submitDepositAndHoldRouteCheck();
+			advanceWallAndMonotonicClocks(14_000);
+			await act(async () => held.release());
+
+			expect(testState.deposit).toHaveBeenCalledExactlyOnceWith("0.4", {
+				expectedBalanceRaw: undefined,
+				expectedCctpMaxFeeRaw: 200_000n,
+				deadline: expect.any(Object),
+			});
+			const clickDeadline = submittedDepositDeadline();
+			expect(hasExchangeActionDeadlinePassed(clickDeadline)).toBe(false);
+			advanceWallAndMonotonicClocks(999);
+			expect(hasExchangeActionDeadlinePassed(clickDeadline)).toBe(false);
+			advanceWallAndMonotonicClocks(1);
+			expect(hasExchangeActionDeadlinePassed(clickDeadline)).toBe(true);
+			expect(container.querySelector('[data-testid="deposit-routing-preflight-error"]')).toBeNull();
+			expect(depositForm()?.getAttribute("data-status")).toBe("ready");
+			expect(depositForm()?.getAttribute("data-is-pending")).toBe("false");
+		});
 	});
 
 	it.each([
@@ -2329,6 +2528,21 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 
 		expect(toastMocks.error).toHaveBeenCalledExactlyOnceWith("Deposit failed");
 		expect(resetDeposit).toHaveBeenCalledOnce();
+	});
+
+	it("reports a deposit refused for its click deadline as not signed, and lets the user retry", async () => {
+		testState.modalOpen = true;
+		testState.depositStatus = "error";
+		testState.depositError = new ExchangeActionDeadlineError();
+
+		await rerender();
+
+		expect(toastMocks.error).toHaveBeenCalledExactlyOnceWith(
+			"The checks before this request took too long. Nothing was signed or sent. Try again.",
+		);
+		expect(toastMocks.warning).not.toHaveBeenCalled();
+		expect(resetDeposit).toHaveBeenCalledOnce();
+		expect(closeDepositModal).not.toHaveBeenCalled();
 	});
 
 	it("explains an unavailable wallet provider without its raw provider text", async () => {

@@ -5,10 +5,13 @@ import { join } from "node:path";
 import test from "node:test";
 import {
 	collectChartPrefetches,
+	collectLocaleCatalogFiles,
 	collectShellPreloadFiles,
 	DESKTOP_MEDIA_QUERY,
 	findChartBundles,
 	injectShellPreloads,
+	listSourceLocales,
+	renderShellHeadLinks,
 	stripShellPreloads,
 	readShellAssetHrefs,
 	renderChartPreloadLink,
@@ -38,6 +41,77 @@ test("startup files split into the shared closure and surface-only lists", () =>
 		`<meta name="${SURFACE_PRELOAD_META.desktop}" content="/assets/chart-E.js /assets/panel-F.css"/>`,
 		`<meta name="${SURFACE_PRELOAD_META.mobile}" content="/assets/mobile-D.js"/>`,
 		`<meta name="${SURFACE_PRELOAD_META.chart}" content="/charting_library/sameorigin.html"/>`,
+		`<meta name="${SURFACE_PRELOAD_META.catalogs}" content=""/>`,
+	]);
+});
+
+test("the lazy locale catalogs are listed with their static imports, without what startup already loads", () => {
+	const chunk = (modules, imports = []) => ({ modules, imports, dynamicImports: [] });
+	const graph = {
+		chunks: {
+			"vendor-A.js": chunk(["apps/terminal/src/lib/i18n.ts", "apps/terminal/src/locales/en/messages.po"]),
+			"messages-zh.js": chunk(["apps/terminal/src/locales/zh/messages.po"]),
+			"messages-ja.js": chunk(["apps/terminal/src/locales/ja/messages.po"], ["plurals-B.js", "vendor-A.js"]),
+			"plurals-B.js": chunk(["node_modules/plurals/index.js"]),
+			"language-menu-C.js": chunk(["apps/terminal/src/components/locales/messages.po.tsx", "apps/website/src/locales/zh/messages.po"]),
+		},
+	};
+	const assetFiles = Object.keys(graph.chunks);
+	const localeCatalogs = collectLocaleCatalogFiles({ graph, assetFiles, startupFiles: ["vendor-A.js"] });
+	assert.deepEqual(localeCatalogs, ["messages-ja.js", "messages-zh.js", "plurals-B.js"]);
+	assert.equal(
+		renderSurfacePreloadMeta({ desktopOnly: [], mobileOnly: [], chartPrefetches: [], localeCatalogs }).at(-1),
+		`<meta name="${SURFACE_PRELOAD_META.catalogs}" content="/assets/messages-ja.js /assets/messages-zh.js /assets/plurals-B.js"/>`,
+	);
+	assert.deepEqual(collectLocaleCatalogFiles({ graph, assetFiles, startupFiles: assetFiles }), []);
+	assert.throws(
+		() => collectLocaleCatalogFiles({ graph: { chunks: { "vendor-A.js": chunk(["apps/terminal/src/lib/i18n.ts"]) } }, assetFiles, startupFiles: [] }),
+		/no locale catalog module/,
+	);
+	assert.throws(() => collectLocaleCatalogFiles({ graph, assetFiles: ["vendor-A.js"], startupFiles: [] }), /missing asset/);
+});
+
+test("a source locale whose catalog the chunk graph does not hold fails the build, bundled English or not", () => {
+	const chunk = (modules) => ({ modules, imports: [], dynamicImports: [] });
+	const english = chunk(["apps/terminal/src/locales/en/messages.po"]);
+	const graph = { chunks: { "vendor-A.js": english, "messages-zh.js": chunk(["apps/terminal/src/locales/zh/messages.po"]) } };
+	const assetFiles = Object.keys(graph.chunks);
+	const input = { graph, assetFiles, startupFiles: ["vendor-A.js"] };
+
+	assert.deepEqual(collectLocaleCatalogFiles({ ...input, locales: ["en", "zh"] }), ["messages-zh.js"]);
+	assert.throws(() => collectLocaleCatalogFiles({ ...input, locales: ["en", "ja", "zh"] }), /no locale catalog module for: ja$/);
+	assert.throws(
+		() => collectLocaleCatalogFiles({ graph: { chunks: { "vendor-A.js": english } }, assetFiles, startupFiles: ["vendor-A.js"], locales: ["ar", "en", "zh"] }),
+		/no locale catalog module for: ar, zh$/,
+	);
+});
+
+test("the source locales are the directories that hold a catalog", () => {
+	const directory = mkdtempSync(join(tmpdir(), "sairn-locales-"));
+	for (const locale of ["zh", "en", "empty"]) mkdirSync(join(directory, locale));
+	writeFileSync(join(directory, "zh", "messages.po"), "");
+	writeFileSync(join(directory, "en", "messages.po"), "");
+	writeFileSync(join(directory, "notes.txt"), "");
+	assert.deepEqual(listSourceLocales(directory), ["en", "zh"]);
+});
+
+test("the head links the build writes end with the four lists, the locale catalogs among them", () => {
+	const links = renderShellHeadLinks({
+		html: SHELL,
+		surfaces: { common: ["index-A.js", "vendor-C.js"], desktopOnly: ["desktop-D.js"], mobileOnly: [] },
+		chartLibraryScript: "/charting_library/charting_library.0123456789abcdef.js",
+		chartBundles: { runtime: "/charting_library/bundles/runtime.a.js", library: "/charting_library/bundles/library.b.js" },
+		localeCatalogs: ["messages-ja.js", "messages-zh.js"],
+	});
+	assert.deepEqual(links.slice(0, 2), [
+		'<link rel="modulepreload" href="/assets/vendor-C.js"/>',
+		renderChartPreloadLink({ chartLibraryScript: "/charting_library/charting_library.0123456789abcdef.js" }),
+	]);
+	assert.deepEqual(links.slice(2), [
+		`<meta name="${SURFACE_PRELOAD_META.desktop}" content="/assets/desktop-D.js"/>`,
+		`<meta name="${SURFACE_PRELOAD_META.mobile}" content=""/>`,
+		`<meta name="${SURFACE_PRELOAD_META.chart}" content="/charting_library/bundles/runtime.a.js /charting_library/bundles/library.b.js /charting_library/sameorigin.html /tradingview-theme-dark.css"/>`,
+		`<meta name="${SURFACE_PRELOAD_META.catalogs}" content="/assets/messages-ja.js /assets/messages-zh.js"/>`,
 	]);
 });
 

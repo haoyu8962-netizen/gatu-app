@@ -267,13 +267,18 @@ function writeSessionRecord(
 	}
 }
 
-async function withSessionLock<T>(env: HyperliquidEnv, owner: string, action: () => Promise<T> | T): Promise<T | null> {
+async function withSessionLock<T>(
+	env: HyperliquidEnv,
+	owner: string,
+	action: () => Promise<T> | T,
+	signal?: AbortSignal,
+): Promise<T | null> {
 	if (typeof navigator === "undefined" || !navigator.locks || typeof navigator.locks.request !== "function") {
 		return null;
 	}
 
 	try {
-		return await navigator.locks.request(getLockName(env, owner), { mode: "exclusive" }, action);
+		return await navigator.locks.request(getLockName(env, owner), { mode: "exclusive", signal }, action);
 	} catch {
 		return null;
 	}
@@ -359,22 +364,30 @@ function isRecentRegistrationActivity(record: AgentRegistrationSessionRecord, no
 	return activityAtMs > 0 && nowMs - activityAtMs < AGENT_REGISTRATION_COORDINATION_WINDOW_MS;
 }
 
-async function runPreExecutionGuard(guard: AgentRegistrationPreExecutionGuard): Promise<void> {
+async function runPreExecutionGuard(guard: AgentRegistrationPreExecutionGuard, parent?: AbortSignal): Promise<void> {
 	const controller = new AbortController();
 	let timeout: ReturnType<typeof setTimeout> | undefined;
+	let stopWaiting = () => {};
 	try {
 		await Promise.race([
 			guard(controller.signal),
 			new Promise<never>((_, reject) => {
-				timeout = setTimeout(() => {
-					const error = new AgentRegistrationPreExecutionGuardTimeoutError();
+				function fail(error: unknown) {
 					reject(error);
 					controller.abort(error);
-				}, PRE_EXECUTION_GUARD_TIMEOUT_MS);
+				}
+				timeout = setTimeout(
+					() => fail(new AgentRegistrationPreExecutionGuardTimeoutError()),
+					PRE_EXECUTION_GUARD_TIMEOUT_MS,
+				);
+				const onAbort = () => fail(parent?.reason);
+				parent?.addEventListener("abort", onAbort, { once: true });
+				stopWaiting = () => parent?.removeEventListener("abort", onAbort);
 			}),
 		]);
 	} finally {
 		if (timeout !== undefined) clearTimeout(timeout);
+		stopWaiting();
 		controller.abort();
 	}
 }
@@ -442,6 +455,7 @@ export async function startAgentRegistrationExecution<T>(
 	canStart: () => boolean,
 	execute: () => Promise<T>,
 	preExecutionGuard?: AgentRegistrationPreExecutionGuard,
+	signal?: AbortSignal,
 ): Promise<AgentRegistrationExecutionStartResult<T>> {
 	if (preExecutionGuard && lease.activeOwner) throw new Error(PRE_EXECUTION_GUARD_ACTIVE_OWNER_MESSAGE);
 	const invalidated = { status: "invalidated" } as const;
@@ -468,10 +482,10 @@ export async function startAgentRegistrationExecution<T>(
 		lease.epoch.env,
 		lease.epoch.owner,
 		async () => {
-			if (!matchesExecutionLease(lease)) return invalidated;
+			if (!matchesExecutionLease(lease) || signal?.aborted) return invalidated;
 			if (preExecutionGuard) {
 				try {
-					await runPreExecutionGuard(preExecutionGuard);
+					await runPreExecutionGuard(preExecutionGuard, signal);
 				} catch (error) {
 					guardFailure.error = error;
 					guardFailure.failed = true;
@@ -482,6 +496,7 @@ export async function startAgentRegistrationExecution<T>(
 			if (!lease.activeOwner) return start();
 			return (await runWithActiveAgentOwnerExecutionLease(lease.activeOwner, start)) ?? invalidated;
 		},
+		signal,
 	);
 	if (guardFailure.failed) throw guardFailure.error;
 	return result ?? invalidated;

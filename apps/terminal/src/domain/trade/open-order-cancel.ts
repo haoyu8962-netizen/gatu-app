@@ -47,6 +47,16 @@ export function isConfirmedOpenOrderCancelResponse(response: unknown, expectedCo
 	);
 }
 
+/**
+ * The SDK returns any response that is not one of its three error shapes, so a TWAP termination is
+ * accepted only when the exchange answered exactly `{ status: "ok", response: { type: "twapCancel",
+ * data: { status: "success" } } }`; any other shape leaves its outcome unknown.
+ */
+export function isConfirmedTwapCancelResponse(response: unknown): boolean {
+	const body = isRecord(response) && response.status === "ok" ? response.response : undefined;
+	return isRecord(body) && body.type === "twapCancel" && isRecord(body.data) && body.data.status === "success";
+}
+
 export interface OpenOrderCancelResolution {
 	status: "accepted" | "partial" | "rejected";
 	totalCount: number;

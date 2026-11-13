@@ -2,6 +2,7 @@ import type { ExchangeClient } from "@nktkas/hyperliquid";
 import type { SessionMode } from "../../signing/agent-session";
 import type { HyperliquidEnv } from "../../signing/types";
 import type { ExchangeMethod } from "../../types/clients";
+import { getReceiptAgeMs } from "../websocket/staleness";
 
 export type ExchangeRequestPriority = "normal" | "urgent";
 
@@ -39,7 +40,22 @@ export interface ExchangeRequestGenerationProof {
 
 export type ExchangeRequestStartResult = { status: "started"; execution: Promise<unknown> } | { status: "invalidated" };
 
-export type ExchangeRequestStartGate = (start: () => ExchangeRequestStartResult) => Promise<ExchangeRequestStartResult>;
+/** `signal` aborts when the request is rejected before it started (deadline, identity change). */
+export type ExchangeRequestStartGate = (
+	start: () => ExchangeRequestStartResult,
+	signal: AbortSignal,
+) => Promise<ExchangeRequestStartResult>;
+
+interface SigningDeadline {
+	queuedAt: number;
+	queuedAtMonotonic: number;
+	deadlineMs?: number;
+}
+
+/** The action a client is executing; its wallet checks the deadline before every signature (ADR 0053). */
+export interface ExchangeSigningDeadlineSlot {
+	current?: SigningDeadline;
+}
 
 type QueueEntry<T> = {
 	run: () => Promise<T>;
@@ -49,6 +65,11 @@ type QueueEntry<T> = {
 	startGate?: ExchangeRequestStartGate;
 	started: boolean;
 	settled: boolean;
+	queuedAt: number;
+	queuedAtMonotonic: number;
+	deadlineMs?: number;
+	deadlineTimer?: ReturnType<typeof setTimeout>;
+	controller: AbortController;
 };
 
 const identityGenerations = new Map<string, ExchangeRequestGeneration>();
@@ -93,17 +114,71 @@ export class ExchangeRequestInvalidatedError extends Error {
 	}
 }
 
+/** ADR 0053: the longest an action may wait between enqueue and its signature, as long as ADR 0045's window. */
+export const EXCHANGE_ACTION_START_DEADLINE_MS = 15_000;
+
+export class ExchangeActionDeadlineError extends Error {
+	constructor() {
+		super("Exchange request expired before signing.");
+		this.name = "ExchangeActionDeadlineError";
+	}
+}
+
+/** Cancels only reduce exposure, so they keep their place however long the queue was busy (ADR 0053). */
+export function getExchangeStartDeadlineMs(method: ExchangeMethod): number | undefined {
+	return method === "cancel" || method === "cancelByCloid" || method === "twapCancel"
+		? undefined
+		: EXCHANGE_ACTION_START_DEADLINE_MS;
+}
+
+function hasPassedDeadline(entry: SigningDeadline): boolean {
+	return entry.deadlineMs !== undefined && getReceiptAgeMs(entry.queuedAt, entry.queuedAtMonotonic) >= entry.deadlineMs;
+}
+
+/** A deadline that starts now, for a flow that signs outside the scheduler (builder fee, Agent approval). */
+export function startExchangeActionDeadline(): ExchangeSigningDeadlineSlot {
+	return {
+		current: {
+			queuedAt: Date.now(),
+			queuedAtMonotonic: performance.now(),
+			deadlineMs: EXCHANGE_ACTION_START_DEADLINE_MS,
+		},
+	};
+}
+
+export function hasExchangeActionDeadlinePassed(slot: ExchangeSigningDeadlineSlot): boolean {
+	return !!slot.current && hasPassedDeadline(slot.current);
+}
+
+export function assertExchangeSigningDeadline(slot: ExchangeSigningDeadlineSlot): void {
+	if (hasExchangeActionDeadlinePassed(slot)) throw new ExchangeActionDeadlineError();
+}
+
+/** The SDK wraps a wallet error in `AbstractWalletError`; a deadline error is surfaced as itself. */
+export function unwrapExchangeSigningDeadline(error: unknown): never {
+	throw error instanceof Error && error.cause instanceof ExchangeActionDeadlineError ? error.cause : error;
+}
+
+const signingDeadlineSlots = new WeakMap<ExchangeClient, ExchangeSigningDeadlineSlot>();
+
+export function registerExchangeSigningDeadline(client: ExchangeClient, slot: ExchangeSigningDeadlineSlot): void {
+	signingDeadlineSlots.set(client, slot);
+}
+
 export class ExchangeRequestScheduler {
 	private readonly urgentQueue: QueueEntry<unknown>[] = [];
 	private readonly normalQueue: QueueEntry<unknown>[] = [];
 	private current: QueueEntry<unknown> | null = null;
 	private running = false;
 
+	constructor(private readonly slot: ExchangeSigningDeadlineSlot = {}) {}
+
 	schedule<T>(
 		priority: ExchangeRequestPriority,
 		run: () => Promise<T>,
 		generation?: ExchangeRequestGeneration,
 		startGate?: ExchangeRequestStartGate,
+		deadlineMs?: number,
 	): Promise<T> {
 		return new Promise<T>((resolve, reject) => {
 			const entry = {
@@ -114,10 +189,21 @@ export class ExchangeRequestScheduler {
 				startGate,
 				started: false,
 				settled: false,
+				queuedAt: Date.now(),
+				queuedAtMonotonic: performance.now(),
+				deadlineMs,
+				controller: new AbortController(),
 			} as QueueEntry<unknown>;
 			if (!isGenerationCurrent(generation)) {
 				this.rejectEntry(entry, new ExchangeRequestInvalidatedError());
 				return;
+			}
+			if (deadlineMs !== undefined) {
+				entry.deadlineTimer = setTimeout(() => {
+					if (entry.started) return;
+					this.rejectEntry(entry, new ExchangeActionDeadlineError());
+					this.finishEntry(entry);
+				}, deadlineMs);
 			}
 			if (priority === "urgent") this.urgentQueue.push(entry);
 			else this.normalQueue.push(entry);
@@ -159,13 +245,23 @@ export class ExchangeRequestScheduler {
 	private rejectEntry(entry: QueueEntry<unknown>, reason: unknown): void {
 		if (entry.settled) return;
 		entry.settled = true;
+		clearTimeout(entry.deadlineTimer);
+		entry.controller.abort();
 		entry.reject(reason);
 	}
 
 	private resolveEntry(entry: QueueEntry<unknown>, value: unknown): void {
 		if (entry.settled) return;
 		entry.settled = true;
+		clearTimeout(entry.deadlineTimer);
 		entry.resolve(value);
+	}
+
+	private finishEntry(entry: QueueEntry<unknown>): void {
+		if (this.current !== entry) return;
+		this.current = null;
+		this.running = false;
+		this.drain();
 	}
 
 	private releaseIfIdle(): void {
@@ -192,7 +288,13 @@ export class ExchangeRequestScheduler {
 						if (entry.settled || !isGenerationCurrent(entry.generation)) {
 							return { status: "invalidated" };
 						}
+						if (hasPassedDeadline(entry)) {
+							this.rejectEntry(entry, new ExchangeActionDeadlineError());
+							return { status: "invalidated" };
+						}
 						entry.started = true;
+						clearTimeout(entry.deadlineTimer);
+						this.slot.current = entry;
 						let execution: Promise<unknown>;
 						try {
 							execution = Promise.resolve(entry.run());
@@ -201,7 +303,7 @@ export class ExchangeRequestScheduler {
 						}
 						return { status: "started", execution };
 					};
-					const result = entry.startGate ? await entry.startGate(start) : start();
+					const result = entry.startGate ? await entry.startGate(start, entry.controller.signal) : start();
 					if (result.status === "invalidated") {
 						this.rejectEntry(entry, new ExchangeRequestInvalidatedError());
 						return;
@@ -212,9 +314,8 @@ export class ExchangeRequestScheduler {
 				}
 			})
 			.finally(() => {
-				if (this.current === entry) this.current = null;
-				this.running = false;
-				this.drain();
+				if (this.slot.current === entry) this.slot.current = undefined;
+				this.finishEntry(entry);
 			});
 	}
 }
@@ -318,11 +419,12 @@ export function scheduleExchangeRequest<T>(
 	run: () => Promise<T>,
 	generation?: ExchangeRequestGeneration,
 	startGate?: ExchangeRequestStartGate,
+	deadlineMs?: number,
 ): Promise<T> {
 	let scheduler = schedulers.get(client);
 	if (!scheduler) {
-		scheduler = new ExchangeRequestScheduler();
+		scheduler = new ExchangeRequestScheduler(signingDeadlineSlots.get(client));
 		schedulers.set(client, scheduler);
 	}
-	return scheduler.schedule(priority, run, generation, startGate);
+	return scheduler.schedule(priority, run, generation, startGate, deadlineMs);
 }

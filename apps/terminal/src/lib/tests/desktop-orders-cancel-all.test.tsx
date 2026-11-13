@@ -923,7 +923,10 @@ describe("desktop cancel all orders confirmation", () => {
 			await Promise.resolve();
 		});
 		expect(document.body.textContent).not.toContain("Cancel All Orders");
-		expect(getPendingTradingActionSnapshot().orderCancellations[0]?.phase).toBe("awaiting");
+		expect(getPendingTradingActionSnapshot().orderCancellations[0]).toMatchObject({
+			phase: "awaiting",
+			accepted: true,
+		});
 		expect(mocks.toastSuccess).not.toHaveBeenCalled();
 		expect(queueItems.at(-1)).toMatchObject({ status: "confirming" });
 		expect(mocks.toastError).not.toHaveBeenCalled();
