@@ -64,17 +64,26 @@ export interface PreIpoDocumentation {
 	source: DeployerSource;
 }
 
-// XYZ lists ANT, JIO and OURA in its Pre-IPO specification index, not in the general one the terminal links.
+// XYZ lists ANT and OURA in its Pre-IPO specification index, not in the general one the terminal links.
 // Each references one share of the company (ANT: one Anthropic, PBC Class A common share, added 2026-10-27). XYZ converts each to a standard equity perpetual after the
-// IPO (JIO's anticipated listing date is 2026-10-28), which fails `markets:snapshot --check` until this
-// entry and the snapshot are updated in a reviewed commit.
+// IPO, which fails `markets:snapshot --check` until this entry and the snapshot are updated in a reviewed
+// commit: JIO converted after its 2026-10-28 listing and was removed on 2026-11-04. On that day the index's
+// anticipated listing dates were 2026-11-20 for ANT and 2026-10-02 for OURA, whose grace period ends 2026-12-01.
 const XYZ_PRE_IPO_INDEX: DeployerSource = {
 	url: "https://docs.trade.xyz/perpetuals/specifications-and-schedules/pre-ipo-specification-index",
-	readOn: "2026-10-27",
+	readOn: "2026-11-04",
+};
+
+// Paragon lists ANT (para:ANTH) in its contract specifications, not on the documentation home page the terminal
+// links. While the market has Pre-Listing status it tracks the expected value of one share of Anthropic, PBC;
+// after a public listing Paragon moves the same market to Listed status (expected listing date TBD on 2026-11-04).
+const PARAGON_SPECIFICATIONS: DeployerSource = {
+	url: "https://docs.paragon.trade/resources/specifications#market-specifications",
+	readOn: "2026-11-04",
 };
 
 export const PRE_IPO_DOCS: readonly PreIpoDocumentation[] = [
-	{ coin: "xyz:JIO", quotedPerShare: true, source: XYZ_PRE_IPO_INDEX },
 	{ coin: "xyz:OURA", quotedPerShare: true, source: XYZ_PRE_IPO_INDEX },
 	{ coin: "xyz:ANT", quotedPerShare: true, source: XYZ_PRE_IPO_INDEX },
+	{ coin: "para:ANTH", quotedPerShare: true, source: PARAGON_SPECIFICATIONS },
 ];

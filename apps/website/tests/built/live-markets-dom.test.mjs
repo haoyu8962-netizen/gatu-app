@@ -190,7 +190,7 @@ test("the page under test has the live strip, both pause controls and ten featur
 	assert.equal(document.querySelectorAll("[data-live-pause]").length, 2, "02's Pause updates and the footer's Pause live data");
 	assert.ok(document.querySelector("footer [data-live-pause]"));
 	assert.deepEqual(PLAN.dexes.slice(0, 3), ["", "io", "xyz"], "the stats band's and the featured cards' dexes come first");
-	assert.deepEqual(PLAN.dexes.slice(3).sort(), ["mkts", "para"], "03's tab rows add the other listed dexes");
+	assert.deepEqual(PLAN.dexes.slice(3).sort(), ["para"], "03's tab rows add the other listed dexes");
 	assert.ok(document.querySelectorAll("[data-live-row]").length >= 20, "03 tab rows carry live slots");
 	assert.equal(document.querySelectorAll("[data-live-mirror]").length, 10, "the marquee's mirror copy has one card per featured market");
 	assert.equal(document.querySelector("[data-live-strip]").dataset.ticker, "static", "the ticker is a scroll-snap row until the script runs");
@@ -218,7 +218,7 @@ test("numbers appear only from validated answers, and the strip stays blank unti
 
 test("Pre-IPO rows show EntropyIO's implied valuation and XYZ's per-share mark price from the recorded answers", async () => {
 	const basis = Object.fromEntries(INPUTS.filter((input) => input.kind === "preipo").map((input) => [input.coin, input.quoteBasis]));
-	assert.deepEqual(basis, { "io:OAI": "valuation", "io:ANTH": "valuation", "xyz:JIO": "per-share", "xyz:OURA": "per-share" });
+	assert.deepEqual(basis, { "io:OAI": "valuation", "io:ANTH": "valuation", "xyz:OURA": "per-share" });
 	const page = await boot((dex) => ok(dex));
 	try {
 		await page.advance(2 * PLAN.requestSpacingMs + 1_000);
@@ -226,7 +226,6 @@ test("Pre-IPO rows show EntropyIO's implied valuation and XYZ's per-share mark p
 			const row = page.document.querySelector(`[data-live-row="${coin}"]`);
 			return ["primary", "secondary", "change"].map((name) => row.querySelector(`[data-live-${name}]`).textContent);
 		};
-		assert.deepEqual(slots("xyz:JIO"), ["$12.961", "Quoted per share", "-1.00% ▼"]);
 		assert.deepEqual(slots("xyz:OURA"), ["$48.707", "Quoted per share", "-0.56% ▼"]);
 		const [primary, secondary, change] = slots("io:OAI");
 		assert.match(primary, /^US\$\d[\d.,]*[KMBT]implied valuation$/);
@@ -234,7 +233,7 @@ test("Pre-IPO rows show EntropyIO's implied valuation and XYZ's per-share mark p
 		assert.match(change, /^[+-]?\d+\.\d{2}%/);
 		const label = page.document.querySelector('[data-live-row="io:OAI"] [data-live-primary] span');
 		assert.match(label.className, /\btext-xs\b/, "the unit label is at least 12px");
-		const perShare = page.document.querySelector('[data-live-row="xyz:JIO"] [data-live-secondary] span');
+		const perShare = page.document.querySelector('[data-live-row="xyz:OURA"] [data-live-secondary] span');
 		assert.equal(perShare.textContent, "Quoted per share");
 	} finally {
 		page.close();
@@ -242,31 +241,33 @@ test("Pre-IPO rows show EntropyIO's implied valuation and XYZ's per-share mark p
 });
 
 test("a Pre-IPO input without a verified unit, or without a quote basis, shows no number and derives no valuation", async () => {
-	const inputs = INPUTS.map((input) => {
-		if (input.coin === "xyz:JIO") return { ...input, quoteBasis: "unknown" };
-		if (input.coin === "xyz:OURA") {
-			const { quoteBasis: _dropped, ...rest } = input;
-			return rest;
+	// The page has one per-share Pre-IPO row, so its unknown and missing quote bases each get a page of their own.
+	const variants = [
+		{
+			"xyz:OURA": (input) => ({ ...input, quoteBasis: "unknown" }),
+			"io:ANTH": (input) => ({ ...input, valuationPerPriceUsd: null }),
+		},
+		{ "xyz:OURA": ({ quoteBasis: _dropped, ...rest }) => rest },
+	];
+	for (const variant of variants) {
+		const inputs = INPUTS.map((input) => variant[input.coin]?.(input) ?? input);
+		const html = HOME_HTML.replace(
+			/(<script type="application\/json" data-live-inputs>)[\s\S]*?(<\/script>)/,
+			(_match, open, close) => `${open}${JSON.stringify(inputs)}${close}`,
+		);
+		assert.notEqual(html, HOME_HTML);
+		const page = await boot((dex) => ok(dex), { html });
+		try {
+			await page.advance(2 * PLAN.requestSpacingMs + 1_000);
+			for (const coin of Object.keys(variant)) {
+				const row = page.document.querySelector(`[data-live-row="${coin}"]`);
+				const text = [...row.querySelectorAll("[data-live-primary], [data-live-secondary], [data-live-change]")].map((slot) => slot.textContent).join("");
+				assert.equal(text, "", `${coin} shows nothing`);
+			}
+			assert.match(page.document.querySelector('[data-live-row="io:OAI"] [data-live-primary]').textContent, /implied valuation$/);
+		} finally {
+			page.close();
 		}
-		if (input.coin === "io:ANTH") return { ...input, valuationPerPriceUsd: null };
-		return input;
-	});
-	const html = HOME_HTML.replace(
-		/(<script type="application\/json" data-live-inputs>)[\s\S]*?(<\/script>)/,
-		(_match, open, close) => `${open}${JSON.stringify(inputs)}${close}`,
-	);
-	assert.notEqual(html, HOME_HTML);
-	const page = await boot((dex) => ok(dex), { html });
-	try {
-		await page.advance(2 * PLAN.requestSpacingMs + 1_000);
-		for (const coin of ["xyz:JIO", "xyz:OURA", "io:ANTH"]) {
-			const row = page.document.querySelector(`[data-live-row="${coin}"]`);
-			const text = [...row.querySelectorAll("[data-live-primary], [data-live-secondary], [data-live-change]")].map((slot) => slot.textContent).join("");
-			assert.equal(text, "", `${coin} shows nothing`);
-		}
-		assert.match(page.document.querySelector('[data-live-row="io:OAI"] [data-live-primary]').textContent, /implied valuation$/);
-	} finally {
-		page.close();
 	}
 });
 
