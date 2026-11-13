@@ -174,3 +174,5 @@ pnpm --filter @sairn/terminal test
 | 主网赞助充值（至少 5 USDC） | 智能钱包关联成功，充值到账 |
 
 记录提交、发布号、浏览器和每一项的实际结果。
+
+2026-11-13 补记：`email-wallet-creation-owner-contract` 改为跨文件检查。自动触发（effect、`queryFn`）只登记两处：根部 provider，以及连接对话框打开时 `PrivyWalletLauncher` 的一次重连。后者依据的是「对话框只由点击打开」（页头、交易面板、手机下单按钮三个入口，读代码核对）；将来加入不靠点击就打开对话框的入口时，这条登记不再成立，需要重新审查。

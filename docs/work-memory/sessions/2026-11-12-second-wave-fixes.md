@@ -105,3 +105,5 @@ Codex 报「已到用量上限，11 月 17 日恢复」，没有跑成。改由�
 - `agent-registration-session.ts` 的会话记录写回时会丢掉未知字段。
 
 需要运营方做的：给 `geo_lookup_failure` 日志建指标过滤与告警；给 `/api/*` 加 WAF 速率规则；核对线上分发的 `/api/*` 确实是 CachingDisabled；是否轮换 IPdata 密钥。
+
+2026-11-13 补记（第三波）：上文「后续」里的 `use-market-store.ts` 与 `agent-registration-session.ts` 两条已处理（市场偏好只合并本页改过的所选市场与收藏增删，收藏跨标签页同步、所选市场各窗口独立；会话记录同一 epoch 内保留未知字段），「仍抓不到的变异」两条各补了一条会失败的测试，增量 `l2` 的降级已改为带退避的回切。见[第三波记录](2026-11-13-third-wave-fixes.md)。
