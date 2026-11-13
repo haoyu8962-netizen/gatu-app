@@ -253,7 +253,7 @@ test("the manifest records each icon's measurement and the decision the rule mak
 		assert.equal(icon.backplate, backplateFor(icon.coin, icon.surface), `${icon.coin}: backplate differs from the rule`);
 	}
 	const flagged = manifest.icons.filter((icon) => icon.backplate).map((icon) => icon.coin).sort();
-	assert.deepEqual(flagged, ["ETH", "NEAR", "io:ANTH"], "the dark marks measured on 2026-10-27; update after a review of the renders");
+	assert.deepEqual(flagged, ["ETH", "io:ANTH"], "the dark marks measured on 2026-10-27 (NEAR left the rendered markets on 2026-11-13); update after a review of the renders");
 });
 
 test("the recorded measurements match the committed files", { skip: TOOLS_SKIP }, async () => {

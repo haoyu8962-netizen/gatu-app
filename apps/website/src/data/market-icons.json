@@ -1,6 +1,6 @@
 {
 	"schemaVersion": 2,
-	"fetchedAt": "2026-10-27T05:47:03.928Z",
+	"fetchedAt": "2026-11-13T07:25:26.440Z",
 	"source": "GET https://app.hyperliquid.xyz/coins/<coin>.svg (the terminal's TOKEN_ICON_BASE_URL), sanitized by scripts/svg-sanitize.mjs and optimized by scripts/market-icons.mjs",
 	"icons": [
 		{
@@ -160,39 +160,27 @@
 			}
 		},
 		{
-			"coin": "NEAR",
-			"file": "NEAR.svg",
-			"sourceUrl": "https://app.hyperliquid.xyz/coins/NEAR.svg",
-			"bytes": 563,
-			"backplate": true,
-			"surface": {
-				"transparentShare": 0.8,
-				"inkOnDark": 0,
-				"inkOnWhite": 0.2
-			}
-		},
-		{
-			"coin": "xyz:MU",
-			"file": "xyz--MU.svg",
-			"sourceUrl": "https://app.hyperliquid.xyz/coins/xyz:MU.svg",
-			"bytes": 980,
+			"coin": "XMR",
+			"file": "XMR.svg",
+			"sourceUrl": "https://app.hyperliquid.xyz/coins/XMR.svg",
+			"bytes": 719,
 			"backplate": false,
 			"surface": {
 				"transparentShare": 0,
-				"inkOnDark": 0.21,
-				"inkOnWhite": 0.82
+				"inkOnDark": 0.75,
+				"inkOnWhite": 0.7
 			}
 		},
 		{
-			"coin": "xyz:SPCX",
-			"file": "xyz--SPCX.svg",
-			"sourceUrl": "https://app.hyperliquid.xyz/coins/xyz:SPCX.svg",
-			"bytes": 830,
+			"coin": "xyz:NVDA",
+			"file": "xyz--NVDA.svg",
+			"sourceUrl": "https://app.hyperliquid.xyz/coins/xyz:NVDA.svg",
+			"bytes": 1112,
 			"backplate": false,
 			"surface": {
 				"transparentShare": 0,
-				"inkOnDark": 0.05,
-				"inkOnWhite": 0.96
+				"inkOnDark": 1,
+				"inkOnWhite": 0
 			}
 		},
 		{
@@ -205,6 +193,30 @@
 				"transparentShare": 0,
 				"inkOnDark": 0.12,
 				"inkOnWhite": 0.92
+			}
+		},
+		{
+			"coin": "xyz:AMD",
+			"file": "xyz--AMD.svg",
+			"sourceUrl": "https://app.hyperliquid.xyz/coins/xyz:AMD.svg",
+			"bytes": 394,
+			"backplate": false,
+			"surface": {
+				"transparentShare": 0,
+				"inkOnDark": 0.82,
+				"inkOnWhite": 0.21
+			}
+		},
+		{
+			"coin": "xyz:SPCX",
+			"file": "xyz--SPCX.svg",
+			"sourceUrl": "https://app.hyperliquid.xyz/coins/xyz:SPCX.svg",
+			"bytes": 830,
+			"backplate": false,
+			"surface": {
+				"transparentShare": 0,
+				"inkOnDark": 0.05,
+				"inkOnWhite": 0.96
 			}
 		},
 		{
@@ -244,10 +256,22 @@
 			}
 		},
 		{
-			"coin": "xyz:SILVER",
-			"file": "xyz--SILVER.svg",
-			"sourceUrl": "https://app.hyperliquid.xyz/coins/xyz:SILVER.svg",
-			"bytes": 1012,
+			"coin": "xyz:NIFTY",
+			"file": "xyz--NIFTY.svg",
+			"sourceUrl": "https://app.hyperliquid.xyz/coins/xyz:NIFTY.svg",
+			"bytes": 596,
+			"backplate": false,
+			"surface": {
+				"transparentShare": 0,
+				"inkOnDark": 0.13,
+				"inkOnWhite": 0.9
+			}
+		},
+		{
+			"coin": "xyz:GOLD",
+			"file": "xyz--GOLD.svg",
+			"sourceUrl": "https://app.hyperliquid.xyz/coins/xyz:GOLD.svg",
+			"bytes": 1295,
 			"backplate": false,
 			"surface": {
 				"transparentShare": 0,
@@ -256,10 +280,10 @@
 			}
 		},
 		{
-			"coin": "xyz:GOLD",
-			"file": "xyz--GOLD.svg",
-			"sourceUrl": "https://app.hyperliquid.xyz/coins/xyz:GOLD.svg",
-			"bytes": 1295,
+			"coin": "xyz:SILVER",
+			"file": "xyz--SILVER.svg",
+			"sourceUrl": "https://app.hyperliquid.xyz/coins/xyz:SILVER.svg",
+			"bytes": 1012,
 			"backplate": false,
 			"surface": {
 				"transparentShare": 0,
@@ -302,24 +326,21 @@
 				"inkOnDark": 0.15,
 				"inkOnWhite": 0.87
 			}
+		},
+		{
+			"coin": "xyz:ANT",
+			"file": "xyz--ANT.svg",
+			"sourceUrl": "https://app.hyperliquid.xyz/coins/xyz:ANT.svg",
+			"bytes": 340,
+			"backplate": false,
+			"surface": {
+				"transparentShare": 0,
+				"inkOnDark": 0.82,
+				"inkOnWhite": 0.2
+			}
 		}
 	],
 	"fallbacks": [
-		{
-			"coin": "xyz:META",
-			"sourceUrl": "https://app.hyperliquid.xyz/coins/xyz:META.svg",
-			"reason": "rejected: larger than 262144 bytes"
-		},
-		{
-			"coin": "mkts:USTECH",
-			"sourceUrl": "https://app.hyperliquid.xyz/coins/mkts:USTECH.svg",
-			"reason": "no icon (served text/html)"
-		},
-		{
-			"coin": "mkts:US500",
-			"sourceUrl": "https://app.hyperliquid.xyz/coins/mkts:US500.svg",
-			"reason": "no icon (served text/html)"
-		},
 		{
 			"coin": "xyz:NATGAS",
 			"sourceUrl": "https://app.hyperliquid.xyz/coins/xyz:NATGAS.svg",
@@ -328,11 +349,6 @@
 		{
 			"coin": "xyz:COPPER",
 			"sourceUrl": "https://app.hyperliquid.xyz/coins/xyz:COPPER.svg",
-			"reason": "no icon (served text/html)"
-		},
-		{
-			"coin": "xyz:JIO",
-			"sourceUrl": "https://app.hyperliquid.xyz/coins/xyz:JIO.svg",
 			"reason": "no icon (served text/html)"
 		},
 		{
@@ -351,8 +367,8 @@
 			"reason": "no icon (served text/html)"
 		},
 		{
-			"coin": "xyz:ANT",
-			"sourceUrl": "https://app.hyperliquid.xyz/coins/xyz:ANT.svg",
+			"coin": "para:ANTH",
+			"sourceUrl": "https://app.hyperliquid.xyz/coins/para:ANTH.svg",
 			"reason": "no icon (served text/html)"
 		}
 	]

@@ -266,11 +266,11 @@ test("Pre-IPO rows list every listed preipo market and leave units off where non
 	);
 	assert.deepEqual(findPreIpoDocsProblems(MARKET_STRUCTURE, PRE_IPO_DOCS), []);
 	const converted = snapshotCopy();
-	marketOf(converted, "xyz:JIO").category = "stocks";
-	assert.deepEqual(findPreIpoDocsProblems(converted, PRE_IPO_DOCS), ["deployers.ts xyz:JIO is no longer preipo"]);
+	marketOf(converted, "xyz:OURA").category = "stocks";
+	assert.deepEqual(findPreIpoDocsProblems(converted, PRE_IPO_DOCS), ["deployers.ts xyz:OURA is no longer preipo"]);
 	assert.match(
 		findPreIpoDocsProblems(MARKET_STRUCTURE, [...PRE_IPO_DOCS, PRE_IPO_DOCS[0]]).join("\n"),
-		/lists xyz:JIO twice/,
+		/lists xyz:OURA twice/,
 	);
 	const published = snapshotCopy();
 	const fresh = withoutMarket(snapshotCopy(), "io:OAI");
@@ -286,12 +286,14 @@ test("every Pre-IPO input states its quote basis: a verified valuation unit, per
 		const expected = row.preIpoTerms ? "valuation" : row.quotedPerShare ? "per-share" : "unknown";
 		assert.equal(getPreIpoQuoteBasis(row.coin), expected, row.coin);
 	}
-	// The committed configs: EntropyIO publishes a valuation unit; XYZ quotes JIO and OURA per share.
+	// The committed configs: EntropyIO publishes a valuation unit; XYZ (ANT, OURA) and Paragon (ANT) quote per share.
 	assert.equal(getPreIpoQuoteBasis("io:OAI"), "valuation");
-	assert.equal(getPreIpoQuoteBasis("xyz:JIO"), "per-share");
 	assert.equal(getPreIpoQuoteBasis("xyz:OURA"), "per-share");
+	assert.equal(getPreIpoQuoteBasis("xyz:ANT"), "per-share");
+	assert.equal(getPreIpoQuoteBasis("para:ANTH"), "per-share");
 	const preIpoInputs = getLiveMarketInputs().filter((input) => input.kind === "preipo");
-	assert.ok(preIpoInputs.length >= 4);
+	const inputBases = new Set(preIpoInputs.map((input) => input.quoteBasis));
+	assert.ok(inputBases.has("valuation") && inputBases.has("per-share"), "the live inputs cover both verified quote bases");
 	for (const input of preIpoInputs) {
 		if (input.quoteBasis === "valuation") assert.match(input.valuationPerPriceUsd, /^\d+$/, `${input.coin} carries its unit`);
 		else assert.equal(input.valuationPerPriceUsd, null, `${input.coin} carries no unit, so no valuation can be derived`);
