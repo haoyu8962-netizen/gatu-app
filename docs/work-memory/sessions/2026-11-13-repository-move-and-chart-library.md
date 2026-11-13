@@ -7,7 +7,7 @@
   "kind": "task",
   "status": "recorded",
   "topics": ["docs-governance", "static-hosting"],
-  "summary": "原账号 zora4523-bot 被 GitHub 封停。按运营方决定把 dev 与 main 迁到 haoyu8962-netizen/gatu-app 并公开；TradingView 图表库与早期的 .env 从全部历史里移除（提交号全部改变），图表库改放私有仓库 gatu-chart-library，由 pnpm chart:fetch 按清单核对后安装，四个 CI 工作流加了检出私有仓库的步骤。本地类型检查、图表测试、生产构建与图表产物校验通过；新仓库上的 CI 没有跑过，Actions 关闭，CHART_LIBRARY_TOKEN 未配置。",
+  "summary": "原账号 zora4523-bot 被 GitHub 封停。按运营方决定把 dev 与 main 迁到 haoyu8962-netizen/sairn 并公开；TradingView 图表库与早期的 .env 从全部历史里移除（提交号全部改变），图表库改放私有仓库 gatu-chart-library，由 pnpm chart:fetch 按清单核对后安装，四个 CI 工作流加了检出私有仓库的步骤。本地类型检查、图表测试、生产构建与图表产物校验通过；新仓库上的 CI 没有跑过，Actions 关闭，CHART_LIBRARY_TOKEN 未配置。",
   "thread": null,
   "baseCommit": "9ac903f4",
   "commits": ["0f645dee", "b23cce99"],
@@ -33,7 +33,7 @@
 决策与理由在 [ADR 0054](../../adr/0054-chart-library-outside-the-repository.md)。做了的事：
 
 - 用 `git filter-repo` 生成只含 `dev` 与 `main` 的副本，去掉图表库的三处路径与根目录的 `.env`；2,502 个提交，复查两类路径剩余为 0。`dev` 从原 `61505614` 变为 `9ac903f4`，`main` 从原 `766a8566` 变为 `875bd2c4`。
-- 新建公开仓库 `haoyu8962-netizen/gatu-app` 并推送这两个分支；推送前关闭了该仓库的 Actions，没有工作流运行过。
+- 新建公开仓库 `haoyu8962-netizen/sairn` 并推送这两个分支；推送前关闭了该仓库的 Actions，没有工作流运行过。
 - 新建私有仓库 `haoyu8962-netizen/gatu-chart-library`，内容是原 `dev` 上的图表库（1,163 个文件）加一个说明文件。
 - 新增 `scripts/fetch-chart-library.mjs` 及测试、`chart:fetch` / `chart:check` 两个命令、忽略规则，四个 CI 工作流在安装依赖前检出私有仓库并安装图表库。
 - 更新工作手册第 3 节、README、`agent.md`、运行时护栏 §4 与 CHANGELOG。
@@ -44,6 +44,8 @@
 - 删除晋升覆盖脚本与四个工作流里的覆盖作业，`Production Builds` 每次都构建配对开关的两种状态；两份旧记录（`2026-10-31-promotion-ci-coverage`、`2026-11-02-cloudfront-release-p37`）的证据来源里指向已删除脚本的条目随之移除，正文未改；重写 `.claude/rules/git.md` 的分支一节，更新 `AGENTS.md` 末段、工作手册第 3、8 节与 ADR 0016 的状态说明。
 
 复查遗漏时发现公开历史的提交元数据里有运营方的个人邮箱（148 个提交）；经运营方同意第二次重写历史，把它换成 GitHub 匿名邮箱并强制推送。本记录与两份 ADR 里的本仓库提交号已换成最终的提交号。
+
+强制推送之后旧提交仍可凭提交号访问，所以把那个仓库改为私有并改名 `gatu-app-old-history`，另建干净的公开仓库只推送重写后的历史；随后运营方要求把仓库名改为 `sairn`（本记录里的仓库名已按最终名字书写，创建时叫 `gatu-app`）。
 
 ## 验证与限制
 

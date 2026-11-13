@@ -11,7 +11,7 @@ This repo is a pnpm monorepo. `apps/terminal` is the trading product, `apps/webs
 ## Monorepo map
 
 ```
-gatu-app/
+sairn/
 ├── apps/
 │   ├── terminal/                         # the web app (TanStack Start SPA shell + Vite)
 │   │   └── README.md  ───────────────▶   apps/terminal/README.md
@@ -60,8 +60,8 @@ gatu-app/
 Prereqs: **Node 22.15+**, **pnpm 10.21+**.
 
 ```bash
-git clone https://github.com/haoyu8962-netizen/gatu-app.git
-cd gatu-app
+git clone https://github.com/haoyu8962-netizen/sairn.git
+cd sairn
 pnpm install
 pnpm chart:fetch   # licensed chart library from the private repository (docs/adr/0054-chart-library-outside-the-repository.md)
 pnpm dev --port 3000        # runs apps/terminal at http://localhost:3000

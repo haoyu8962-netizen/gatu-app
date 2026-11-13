@@ -8,7 +8,7 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Changed
 
-- The repository moved to `haoyu8962-netizen/gatu-app` and is public. The licensed chart library is
+- The repository moved to `haoyu8962-netizen/sairn` and is public. The licensed chart library is
   no longer tracked: `pnpm chart:fetch` installs it from a private repository and verifies it against
   its manifest (ADR 0054). Commit hashes from before 2026-11-13 refer to the previous repository.
 - The repository keeps one long-lived branch, `main`. Pull requests go straight into it, the `dev`
