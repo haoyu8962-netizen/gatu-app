@@ -152,6 +152,28 @@ function getLockName(env: HyperliquidEnv, owner: string): string {
 	return `${SESSION_STORAGE_PREFIX}:${getScopeKey(env, owner)}`;
 }
 
+// Every field this version validates. A newer version may add others: they never make a record
+// valid, and they are written back unchanged while the record keeps its epoch.
+const KNOWN_SESSION_RECORD_FIELDS = new Set<string>([
+	"version",
+	"epoch",
+	"state",
+	"registrationPublicKey",
+	"registrationPendingAtMs",
+	"registrationSubmissionStartedAtMs",
+	"registrationActivityAtMs",
+]);
+
+type UnknownSessionRecordFields = Record<string, unknown>;
+
+function readUnknownSessionRecordFields(value: string | null, epoch: string): UnknownSessionRecordFields {
+	if (value === null) return {};
+	const stored = parseSessionRecord(value);
+	if (stored === null || stored === "invalid" || stored.epoch !== epoch) return {};
+	const parsed = JSON.parse(value) as Record<string, unknown>;
+	return Object.fromEntries(Object.entries(parsed).filter(([field]) => !KNOWN_SESSION_RECORD_FIELDS.has(field)));
+}
+
 function parseSessionRecord(value: string | null): AgentRegistrationSessionRecord | null | "invalid" {
 	if (value === null) return null;
 
@@ -244,7 +266,13 @@ function writeSessionRecord(
 	if (typeof window === "undefined") return { status: "failed", reason: "storage_unavailable" };
 
 	const key = getSessionStorageKey(env, owner);
-	const serialized = JSON.stringify(record);
+	let unknownFields: UnknownSessionRecordFields = {};
+	try {
+		unknownFields = readUnknownSessionRecordFields(window.localStorage.getItem(key), record.epoch);
+	} catch {
+		// Without a readable record there is nothing to keep; the readback below still decides.
+	}
+	const serialized = JSON.stringify({ ...unknownFields, ...record });
 	try {
 		window.localStorage.setItem(key, serialized);
 	} catch {
