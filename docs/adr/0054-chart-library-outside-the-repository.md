@@ -12,7 +12,7 @@
 ## 决策
 
 1. **公开仓库 `haoyu8962-netizen/gatu-app` 不含图表库，历史里也不含。** 用 `git filter-repo` 从 `dev` 与 `main` 的全部历史里去掉三处路径（`apps/terminal/public/charting_library/`、早期的 `public/charting_library/`、`src/types/charting_library.d.ts`）以及根目录早期提交过的 `.env`（只含 WalletConnect 项目标识，本来就会打进前端包）。**所有提交号因此改变**；2026-11-13 之前的任务记录、ADR 与发布记录里引用的提交号是原仓库的，在公开仓库里查不到，旧提交号与新提交号的对照在 `docs/work-memory/legacy-commits.txt`（2,502 行，其中 2,469 个在本仓库里）；`pnpm memory:check` 对解析不到的提交号改查这张表，表里没有的仍然失败。原仓库的 PR 编号（#1–#161）同样不再可查。
-   同日第二次重写：公开约一小时后发现 148 个提交的作者或提交者邮箱是运营方的个人邮箱（第一次只扫了文件内容，没有查提交元数据）。用 `git filter-repo --mailmap` 把它换成原账号的 GitHub 匿名邮箱并强制推送，文件树不变，提交号再变一次；对照表按最终提交号重新生成，没有迁移的 33 个提交记为四十个零。上游作者的公开邮箱没有改动。强制推送之前的提交在 GitHub 上仍可凭提交号或经已有 PR 的时间线访问，直到 GitHub 回收。
+   同日第二次重写：公开约一小时后发现 148 个提交的作者或提交者邮箱是运营方的个人邮箱（第一次只扫了文件内容，没有查提交元数据）。用 `git filter-repo --mailmap` 把它换成原账号的 GitHub 匿名邮箱并强制推送，文件树不变，提交号再变一次；对照表按最终提交号重新生成，没有迁移的 33 个提交记为四十个零。上游作者的公开邮箱没有改动。强制推送之后，旧提交在 GitHub 上仍可凭提交号或经已有 PR 的时间线访问，所以把那个仓库改为私有并改名为 `gatu-app-old-history`（留给运营方删除），另建了现在这个公开的 `gatu-app`，只推送重写后的 `main`、本分支与 p41 标签；PR 编号从 1 重新开始。
 2. **只迁移 `dev` 与 `main`。** 四个 `archive/` 标签（其中两个是 Across 归档）与其他工作分支没有推到公开仓库。
 3. **图表库放在同一账号下的私有仓库 `gatu-chart-library`**，文件位于仓库根目录，内容就是原仓库 `dev` 上的那一份（含本地补丁）。
 4. **`pnpm chart:fetch`（`scripts/fetch-chart-library.mjs`）把它装进 `apps/terminal/public/charting_library/`。** 来源依次是 `--from <目录>`、环境变量 `CHART_LIBRARY_DIR`、克隆 `CHART_LIBRARY_REPOSITORY`（默认是上面的私有仓库）。只复制清单里列出的文件；复制前按清单核对来源的每个文件（大小与 SHA-256），复制到临时目录并再次按清单精确核对（不得多出文件）之后才替换目标目录，失败时已安装的那份保持不动。目标目录已与清单一致时什么都不做。`pnpm chart:check` 只核对。
