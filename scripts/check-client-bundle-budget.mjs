@@ -124,7 +124,10 @@ const budgets = {
 	// signature, the entry watchdog and bounded catalog wait, cross-window settings, the transport status and the
 	// nonce and Agent record handling. Fixed-identity pairing-off builds: 3,384,536 minus the first wave's 3,381,009
 	// (docs/terminal-performance-baseline.md).
-	totalGzipBaselineBytes: 3_381_270,
+	// Raised 2026-11-13 by +6,793 for the third wave: local startup diagnostics and their lazy recorder, favourites
+	// merging across windows, the l2 retry after a fallback and the TWAP cancel queue. Fixed-identity pairing-off
+	// builds: 3,391,159 minus main cde6f75b's 3,384,366 (docs/terminal-performance-baseline.md).
+	totalGzipBaselineBytes: 3_388_063,
 	totalGzipAllowedIncreaseBytes: 10_000,
 	tradeStartup: {
 		requiredRouteIds: ["__root__", "/trade/$symbol"],
@@ -150,7 +153,9 @@ const budgets = {
 		// (docs/terminal-performance-baseline.md).
 		// Raised 2026-11-12 by +2,905 for the second wave (see the total above): 1,659,418 minus 1,656,513. Before
 		// the raise the build exceeded the allowance by 951.
-		baselineGzipBytes: 1_651_372,
+		// Raised 2026-11-13 by +3,499 for the third wave (see the total above): 1,662,706 minus main's 1,659,207.
+		// Before the raise the build exceeded the allowance by 1,334.
+		baselineGzipBytes: 1_654_871,
 		allowedIncreaseBytes: 10_000,
 	},
 	tradeRuntimeStartup: {
@@ -191,7 +196,9 @@ const budgets = {
 		// of dev 8ca35543 (127,808) minus that of 2230c64e (127,712), both without .env.local; pairing on measures +92
 		// (docs/terminal-performance-baseline.md). The raises before it were +66 on 2026-11-03 for the price-decimals fix
 		// (PR #143) and +762 on 2026-11-01 for the second batch of audit fixes.
-		{ name: "trade-terminal-page", baselineGzipBytes: 124_166, allowedIncreaseBytes: 4_000 },
+		// Raised 2026-11-13 by +743 for the third wave (the l2 retry and the TWAP cancel queue): 128,558 minus main's
+		// 127,815. Before the raise the build exceeded the allowance by 392.
+		{ name: "trade-terminal-page", baselineGzipBytes: 124_909, allowedIncreaseBytes: 4_000 },
 		{ name: "token-selector-popup", baselineGzipBytes: 14_355, allowedIncreaseBytes: 1_500 },
 		{ name: "api-wallet", baselineGzipBytes: 17_967, allowedIncreaseBytes: 2_000 },
 		{ name: "fundingHistory._address", baselineGzipBytes: 6_820, allowedIncreaseBytes: 1_500 },
