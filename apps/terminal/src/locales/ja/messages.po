@@ -2118,6 +2118,7 @@ msgid "Copied!"
 msgstr "コピーしました"
 
 #: src/components/api-wallet/api-wallet-copy-button.tsx
+#: src/components/trade/components/global-settings-modal.tsx
 msgid "Copy"
 msgstr "コピー"
 
@@ -2137,6 +2138,10 @@ msgstr "アドレスをコピー"
 #: src/components/trade/tradebox/deposit/funding-address-card.tsx
 msgid "Copy deposit address"
 msgstr "入金アドレスをコピー"
+
+#: src/components/trade/components/global-settings-modal.tsx
+msgid "Copy diagnostics"
+msgstr "診断情報をコピー"
 
 #: src/components/trade/positions/position-pnl-share-modal.tsx
 msgid "Copy link"
@@ -2565,6 +2570,10 @@ msgstr "送信先"
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Destination address"
 msgstr "送信先アドレス"
+
+#: src/components/trade/components/global-settings-modal.tsx
+msgid "Diagnostics"
+msgstr "診断情報"
 
 #: src/components/funds-action/funds-action-recovery-host.tsx
 #: src/components/historical-orders/historical-orders-page.tsx
@@ -6622,6 +6631,7 @@ msgid "Request not confirmed"
 msgstr "リクエスト未確認"
 
 #: src/components/staking/domain/staking-action-feedback.ts
+#: src/lib/trade/order-submission-feedback.ts
 msgid "Request not submitted"
 msgstr "リクエスト未送信"
 

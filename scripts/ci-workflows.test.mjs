@@ -19,6 +19,8 @@ const PULL_REQUEST_WORKFLOWS = [
 	"slider-browser.yml",
 	"claude-code-review.yml",
 ];
+const TERMINAL_VITEST_STEP = "Test every terminal Vitest file";
+const TERMINAL_VITEST_FLAGS = ["--maxWorkers=4", "--shard=expression/2"];
 // Each pull request workflow that used to wait for a promotion coverage decision, with its one job (ADR 0055).
 const SINGLE_JOB_WORKFLOWS = {
 	"terminal-tests.yml": "terminal-tests",
@@ -109,6 +111,7 @@ function testRunnerCalls(directory, command) {
 		const end = rest.findIndex((other) => SHELL_OPERATOR.test(other));
 		return [
 			{
+				runner,
 				directory: directoryFlag < 0 ? directory : join(directory, prefix[directoryFlag + 1]),
 				paths: rest.slice(0, end < 0 ? undefined : end).filter((argument) => !argument.startsWith("-")),
 			},
@@ -125,15 +128,6 @@ function matchesAnyFile(directory, listed) {
 	const name = new RegExp(`^${pattern}$`);
 	const parent = dirname(path);
 	return existsSync(parent) && readdirSync(parent).some((entry) => !entry.startsWith(".") && name.test(entry));
-}
-
-function pathSelectsFile(listed, file) {
-	if (dirname(listed) !== dirname(file)) return false;
-	if (!listed.includes("*")) return basename(listed) === basename(file);
-	const pattern = basename(listed)
-		.replace(/[.+?^${}()|[\]\\]/g, "\\$&")
-		.replaceAll("*", ".*");
-	return new RegExp(`^${pattern}$`).test(basename(file));
 }
 
 test("cancels superseded runs in pull request workflows and never in the comment-driven one", () => {
@@ -228,22 +222,40 @@ test("shards every browser invocation by test, in two jobs", () => {
 	);
 });
 
-test("shards every terminal Vitest step across two jobs and runs the other steps once", () => {
+/** The one Vitest call of `terminal-tests.yml`: every collected file of apps/terminal, without path filters. */
+function terminalVitestCall() {
+	const steps = workflowListItems(readWorkflow("terminal-tests.yml")).filter((item) =>
+		item.lines.some((line) => /^\s*run:/.test(line)),
+	);
+	const calls = steps
+		.map(stepCommands)
+		.flatMap(({ directory, commands }) =>
+			commands.flatMap((command) => testRunnerCalls(directory, executableCommand(command))),
+		)
+		.filter((call) => call.runner === "vitest run");
+	assert.equal(calls.length, 1, "terminal-tests.yml runs Vitest in exactly one step");
+	assert.equal(calls[0].directory, "apps/terminal", "the Vitest step runs in apps/terminal");
+	assert.deepEqual(calls[0].paths, [], "a path argument turns the full run into a filter that drops every other file");
+	return calls[0];
+}
+
+/** Fails unless `file` is a test file of apps/terminal that the full Vitest step collects. */
+function assertRunsInTerminalTests(file) {
+	terminalVitestCall();
+	assert.match(file, /^(?:src|tests)\/.+\.test\.tsx?$/, `${file} is not a file Vitest collects by default`);
+	assert.equal(existsSync(join(REPOSITORY_ROOT, "apps/terminal", file)), true, `${file} is missing`);
+}
+
+test("runs every terminal Vitest file in one step split across two jobs, and the other steps once", () => {
 	const terminalTests = readWorkflow("terminal-tests.yml");
-	const vitestShardFlags = "--maxWorkers=1 --shard=${{ matrix.shard }}/2 --passWithNoTests";
 
 	assert.match(
 		terminalTests,
 		/\n    strategy:\n      fail-fast: false\n      matrix:\n        shard: \[1, 2\]\n    name: /,
 		"the matrix is exactly two shards: an include or exclude entry would drop or add a job",
 	);
-	const invocations = countOccurrences(terminalTests, "exec vitest run");
-	assert.equal(invocations >= 14, true);
-	assert.equal(
-		countOccurrences(terminalTests, `exec vitest run ${vitestShardFlags}`),
-		invocations,
-		"an unsharded Vitest step runs in full in both jobs",
-	);
+	terminalVitestCall();
+	assert.equal(countOccurrences(terminalTests, "exec vitest run"), 1, "a second Vitest step reruns files the full step already ran");
 
 	const steps = workflowListItems(terminalTests).filter((item) => item.lines.some((line) => /^\s*run:/.test(line)));
 	const onceOnly = steps.filter((step) => {
@@ -259,37 +271,33 @@ test("shards every terminal Vitest step across two jobs and runs the other steps
 		);
 	}
 	const gated = steps.filter((step) => step.lines.some((line) => line.trim().startsWith("if:")));
-	assert.equal(gated.length, onceOnly.length, "a Vitest step gated to one shard would skip half of its files");
+	assert.equal(gated.length, onceOnly.length, "a Vitest step gated to one shard would skip half of the suite");
 
-	const allowedFlags = ["--maxWorkers=1", "--passWithNoTests", "--shard=expression/2"];
-	let vitestSteps = 0;
-	for (const { commands } of steps.map(stepCommands)) {
-		for (const command of commands) {
-			const tokens = executableCommand(command)
-				.replace(/\$\{\{.*?\}\}/g, "expression")
-				.split(/\s+/)
-				.filter(Boolean);
-			const start = tokens.findIndex((token, index) => token === "vitest" && tokens[index + 1] === "run");
-			if (start < 0) continue;
-			vitestSteps += 1;
-			const argumentsAfterRun = tokens.slice(start + 2);
-			assert.deepEqual(
-				argumentsAfterRun.filter((token) => token.startsWith("-")).sort(),
-				allowedFlags,
-				"an extra flag such as --exclude can empty a selection that --passWithNoTests then accepts",
-			);
-			const paths = argumentsAfterRun.filter((token) => !token.startsWith("-"));
-			assert.equal(paths.length > 0, true, "a Vitest step without paths runs the whole suite in both shards");
-			for (const listed of paths) {
-				assert.match(
-					listed,
-					/\.test\.tsx?$/,
-					`${listed} exists but is not a test file: Vitest would select nothing for it and still pass`,
-				);
-			}
-		}
+	const vitestStep = steps.filter((step) => step.lines.some((line) => line.trim() === `name: ${TERMINAL_VITEST_STEP}`));
+	assert.equal(vitestStep.length, 1, `terminal-tests.yml has exactly one step named ${TERMINAL_VITEST_STEP}`);
+	const [command] = stepCommands(vitestStep[0]).commands.map(executableCommand);
+	const tokens = command
+		.replace(/\$\{\{.*?\}\}/g, "expression")
+		.split(/\s+/)
+		.filter(Boolean);
+	const start = tokens.findIndex((token, index) => token === "vitest" && tokens[index + 1] === "run");
+	assert.equal(start >= 0, true, `${TERMINAL_VITEST_STEP} runs Vitest`);
+	assert.deepEqual(
+		tokens.slice(start + 2).sort(),
+		[...TERMINAL_VITEST_FLAGS].sort(),
+		"without --shard each job runs the whole suite; --passWithNoTests would let an empty selection pass, and a filter flag drops files",
+	);
+});
+
+test("collects every test file with Vitest's defaults, so nothing outside a list is left behind", () => {
+	const config = readFileSync(join(REPOSITORY_ROOT, "apps/terminal/vitest.config.ts"), "utf8");
+	for (const key of ["include", "exclude", "dir", "root", "testNamePattern", "allowOnly", "passWithNoTests"]) {
+		assert.equal(
+			new RegExp(`\\b${key}\\s*:`).test(config),
+			false,
+			`apps/terminal/vitest.config.ts sets ${key}, which changes what the full CI step selects`,
+		);
 	}
-	assert.equal(vitestSteps, invocations, "a Vitest command behind a shell comment does not run");
 });
 
 test("does not start the browser regressions for a change to unit tests only", () => {
@@ -350,7 +358,6 @@ test("keeps the merged static checks in one job", () => {
 
 test("keeps brand coverage when the website workflow only starts for its own inputs", () => {
 	const website = readWorkflow("website-build.yml");
-	const terminalTests = readWorkflow("terminal-tests.yml");
 	const packageScripts = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")).scripts;
 
 	assert.equal(website.includes("run: pnpm test:brand"), true);
@@ -373,9 +380,7 @@ test("keeps brand coverage when the website workflow only starts for its own inp
 		true,
 		"the spinner registry must run with the brand tests",
 	);
-	for (const file of terminalBrandTests) {
-		assert.equal(terminalTests.includes(file), true, `${file} only runs when the website workflow starts`);
-	}
+	for (const file of terminalBrandTests) assertRunsInTerminalTests(file);
 	assert.equal(/vitest run|pnpm test:brand/.test(readWorkflow("production-build.yml")), false);
 });
 
@@ -418,7 +423,7 @@ test("re-runs the brand and legal guards whenever the brand source or legal text
 		"order-summary.test.tsx",
 		"twap-order-summary.test.tsx",
 	]) {
-		assert.equal(terminalTests.includes(`src/lib/tests/${file}`), true, `${file} never runs in CI`);
+		assertRunsInTerminalTests(`src/lib/tests/${file}`);
 	}
 });
 
@@ -457,39 +462,23 @@ function executableCommand(command) {
 	return (comment < 0 ? tokens : tokens.slice(0, comment)).join(" ");
 }
 
-function tradingViewStepCalls(workflow) {
-	const steps = workflowListItems(workflow).filter((item) =>
-		item.lines.some((line) => line.trim() === "name: Test TradingView integration"),
-	);
-	assert.equal(steps.length, 1, "terminal-tests.yml has exactly one TradingView step");
-	const { directory, commands } = stepCommands(steps[0]);
-	return commands.flatMap((command) => testRunnerCalls(directory, executableCommand(command)));
-}
-
-test("selects both TradingView loader handshake tests in the terminal TradingView step", () => {
-	const required = [
+test("runs both TradingView loader handshake tests in the full terminal Vitest step", () => {
+	for (const file of [
 		"src/lib/tests/chart-library-loader-handshake-contract.test.ts",
 		"src/lib/tests/chart-library-loader-handshake.test.ts",
-	];
-	const calls = tradingViewStepCalls(readWorkflow("terminal-tests.yml"));
-	assert.equal(calls.length > 0, true, "the TradingView step runs a test runner");
-	for (const file of required) {
-		assert.equal(existsSync(join(REPOSITORY_ROOT, "apps/terminal", file)), true, `${file} is missing`);
-		const selected = calls.some(
-			({ directory, paths }) => directory === "apps/terminal" && paths.some((listed) => pathSelectsFile(listed, file)),
-		);
-		assert.equal(selected, true, `terminal-tests.yml does not select ${file}; the vendored loader patch would go unchecked`);
+	]) {
+		assertRunsInTerminalTests(file);
 	}
 });
 
-test("ignores a TradingView step whose runner is commented out inline", () => {
+test("ignores a terminal Vitest step whose runner is commented out inline", () => {
 	const workflow = readWorkflow("terminal-tests.yml");
 	const step = workflowListItems(workflow).find((item) =>
-		item.lines.some((line) => line.trim() === "name: Test TradingView integration"),
+		item.lines.some((line) => line.trim() === `name: ${TERMINAL_VITEST_STEP}`),
 	);
 	const runLine = step.lines.findIndex((line) => line.trim().startsWith("run:"));
 	const commentedOut = [...step.lines];
-	commentedOut[runLine + 1] = `${commentedOut[runLine + 1].replace(/^(\s*)/, "$1true; # ")}`;
+	commentedOut[runLine] = commentedOut[runLine].replace("run: ", "run: true # ");
 	const { directory, commands } = stepCommands({ ...step, lines: commentedOut });
 	assert.equal(commands.flatMap((command) => testRunnerCalls(directory, command)).length > 0, true);
 	assert.deepEqual(
@@ -503,15 +492,10 @@ test("rebuilds and re-checks chunking when a dependency patch changes", () => {
 	for (const name of ["terminal-tests.yml", "production-build.yml"]) {
 		assert.equal(readWorkflow(name).includes('- "patches/**"'), true, `${name} does not start for patches/**`);
 	}
-	assert.equal(
-		readWorkflow("terminal-tests.yml").includes("src/lib/tests/vite-manual-chunks.test.ts"),
-		true,
-		"the manual chunk guard never runs in CI",
-	);
+	assertRunsInTerminalTests("src/lib/tests/vite-manual-chunks.test.ts");
 });
 
 test("runs the release metadata, CSP and card funding guards on pull requests", () => {
-	const terminalTests = readWorkflow("terminal-tests.yml");
 	for (const file of [
 		"src/lib/tests/build-meta.test.ts",
 		"src/lib/tests/security-policy-docs.test.ts",
@@ -556,7 +540,7 @@ test("runs the release metadata, CSP and card funding guards on pull requests", 
 		"src/components/staking/__tests__/use-staking-controller.test.tsx",
 		"src/components/vaults/__tests__/use-vault-action-controller.test.tsx",
 	]) {
-		assert.equal(terminalTests.includes(file), true, `${file} never runs in CI`);
+		assertRunsInTerminalTests(file);
 	}
 });
 
@@ -600,34 +584,27 @@ test("runs the website workflows on an exact Node version that satisfies the web
 	const compare = pinned.map((part, index) => part - required[index]).find((difference) => difference !== 0) ?? 0;
 	assert.equal(compare >= 0, true, `Node ${WEBSITE_NODE_VERSION} does not satisfy ${engines}`);
 	assert.equal(pinned[0], required[0], "stay on the same Node major as the website's minimum");
-	for (const name of ["website-build.yml", "website-markets-check.yml"]) {
+	for (const name of ["website-build.yml"]) {
 		const versions = [...readWorkflow(name).matchAll(/node-version: (\S+)/g)].map((match) => match[1]);
 		assert.deepEqual(versions, [WEBSITE_NODE_VERSION], `${name} must set node-version: ${WEBSITE_NODE_VERSION}`);
 	}
 });
 
-test("checks the website market snapshot daily, read-only, with the website workflow's pinned setup", () => {
-	const markets = readWorkflow("website-markets-check.yml");
-	const website = readWorkflow("website-build.yml");
-	// The website workflow checks out twice, once in its promotion coverage job; the rule is the same pinned commits.
-	const actions = (workflow) => [...new Set([...workflow.matchAll(/^\s*- uses: (\S+)/gm)].map((match) => match[1]))].sort();
-
-	assert.match(markets, /^on:\n  schedule:\n    - cron: "[0-9]+ [0-9]+ \* \* \*"\n  workflow_dispatch:\n\n/m, "runs once a day and on demand");
-	assert.equal(/^\s+(pull_request|push):/m.test(markets), false, "the check reads live exchange data, so it never gates a pull request");
-	assert.match(markets, /^permissions:\n  contents: read\n\n/m);
-	assert.equal(/:\s*write\b/.test(markets), false, "the check never needs write access");
-	assert.equal(Number(/timeout-minutes: (\d+)/.exec(markets)?.[1]) <= 10, true, "keep the check short");
-	assert.deepEqual(actions(markets), actions(website), "use the same pinned action commits as the website workflow");
-	for (const uses of actions(markets)) assert.match(uses, /@[0-9a-f]{40}$/, `${uses} is not pinned to a commit`);
-	assert.equal(markets.includes(`node-version: ${WEBSITE_NODE_VERSION}`), true);
-	assert.equal(markets.includes(CONCURRENCY_GROUP), true);
-
-	const steps = workflowListItems(markets).filter((item) => item.lines.some((line) => /^\s*run:/.test(line)));
-	assert.deepEqual(
-		steps.flatMap((step) => stepCommands(step).commands),
-		["pnpm install --frozen-lockfile", "pnpm --filter @sairn/website markets:snapshot --check"],
-		"the check compares the committed snapshot and never rewrites it",
-	);
+test("runs nothing on a schedule and never asks the exchange for data from a workflow", () => {
+	const directory = new URL("../.github/workflows/", import.meta.url);
+	const names = readdirSync(directory).filter((name) => /\.ya?ml$/.test(name));
+	assert.ok(names.length > 0);
+	for (const name of names) {
+		const source = readFileSync(new URL(name, directory), "utf8");
+		assert.equal(/^\s*schedule:/m.test(source), false, `${name}: no workflow runs on a timer (ADR 0056)`);
+		assert.equal(/\bcron:/.test(source), false, `${name}: no workflow runs on a timer (ADR 0056)`);
+		assert.equal(
+			/markets:(?:snapshot|icons)/.test(source),
+			false,
+			`${name}: the market snapshot scripts call the exchange's public API and run on a developer machine only`,
+		);
+	}
+	assert.equal(existsSync(new URL("website-markets-check.yml", directory)), false);
 	const websiteScripts = JSON.parse(readFileSync(new URL("../apps/website/package.json", import.meta.url), "utf8")).scripts;
 	assert.match(websiteScripts["markets:snapshot"], /scripts\/markets-snapshot\.mjs$/);
 });

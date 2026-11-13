@@ -2359,6 +2359,7 @@ msgid "Copied!"
 msgstr "¡Copiado!"
 
 #: src/components/api-wallet/api-wallet-copy-button.tsx
+#: src/components/trade/components/global-settings-modal.tsx
 msgid "Copy"
 msgstr "Copiar"
 
@@ -2378,6 +2379,10 @@ msgstr "Copiar dirección"
 #: src/components/trade/tradebox/deposit/funding-address-card.tsx
 msgid "Copy deposit address"
 msgstr "Copiar dirección de depósito"
+
+#: src/components/trade/components/global-settings-modal.tsx
+msgid "Copy diagnostics"
+msgstr "Copiar diagnóstico"
 
 #: src/components/trade/positions/position-pnl-share-modal.tsx
 msgid "Copy link"
@@ -2850,6 +2855,10 @@ msgstr "Destino"
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Destination address"
 msgstr "Dirección de destino"
+
+#: src/components/trade/components/global-settings-modal.tsx
+msgid "Diagnostics"
+msgstr "Diagnóstico"
 
 #: src/components/funds-action/funds-action-recovery-host.tsx
 #: src/components/historical-orders/historical-orders-page.tsx
@@ -7363,6 +7372,7 @@ msgid "Request not confirmed"
 msgstr "Solicitud no confirmada"
 
 #: src/components/staking/domain/staking-action-feedback.ts
+#: src/lib/trade/order-submission-feedback.ts
 msgid "Request not submitted"
 msgstr "Solicitud no enviada"
 
