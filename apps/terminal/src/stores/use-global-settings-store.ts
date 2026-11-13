@@ -1,6 +1,6 @@
 import Big from "big.js";
 import { create } from "zustand";
-import { createJSONStorage, persist } from "zustand/middleware";
+import { createJSONStorage, persist, type StateStorage } from "zustand/middleware";
 import { useShallow } from "zustand/react/shallow";
 import { STORAGE_KEYS } from "@/config/app";
 import {
@@ -89,6 +89,151 @@ interface GlobalSettingsStore {
 	};
 }
 
+const GLOBAL_SETTINGS_VERSION = 4;
+
+type PersistedGlobalSettings = Partial<Omit<GlobalSettingsStore, "actions" | "network">>;
+
+// Settings every window shares live. The two active-tab fields stay per window: another window's
+// tab choice is kept in storage but never moves the tab this window is showing.
+const SHARED_SETTING_KEYS = [
+	"hideSmallBalances",
+	"animateOrderbook",
+	"showChartScanlines",
+	"skipOrderConfirmation",
+	"transactionDelayProtection",
+	"numberFormatLocale",
+	"marketOrderSlippagePercent",
+	"marginMode",
+	"theme",
+] as const satisfies readonly (keyof PersistedGlobalSettings)[];
+
+function partializeGlobalSettings(state: GlobalSettingsStore): PersistedGlobalSettings {
+	return {
+		hideSmallBalances: state.hideSmallBalances,
+		animateOrderbook: state.animateOrderbook,
+		showChartScanlines: state.showChartScanlines,
+		skipOrderConfirmation: state.skipOrderConfirmation,
+		transactionDelayProtection: state.transactionDelayProtection,
+		...(state.numberFormatLocale === defaultNumberFormatLocale ? {} : { numberFormatLocale: state.numberFormatLocale }),
+		marketOrderSlippagePercent: state.marketOrderSlippagePercent,
+		marginMode: state.marginMode,
+		positionsActiveTab: state.positionsActiveTab,
+		mobileActiveTab: state.mobileActiveTab,
+		theme: state.theme,
+	};
+}
+
+function migrateGlobalSettings(persisted: unknown): PersistedGlobalSettings {
+	const state = persisted as Partial<GlobalSettingsStore>;
+	return {
+		...state,
+		numberFormatLocale: normalizeNumberFormatLocale(state.numberFormatLocale),
+	};
+}
+
+function mergeGlobalSettings(persisted: unknown, current: GlobalSettingsStore): GlobalSettingsStore {
+	const p = (persisted ?? {}) as Partial<GlobalSettingsStore>;
+	const skipOrderConfirmation =
+		typeof p.skipOrderConfirmation === "boolean"
+			? p.skipOrderConfirmation
+			: DEFAULT_GLOBAL_SETTINGS.skipOrderConfirmation;
+	const slippagePercent = Math.min(
+		Math.max(p.marketOrderSlippagePercent ?? DEFAULT_MARKET_ORDER_SLIPPAGE_PERCENT, MARKET_ORDER_SLIPPAGE_MIN_PERCENT),
+		MARKET_ORDER_SLIPPAGE_MAX_PERCENT,
+	);
+	return {
+		...current,
+		...DEFAULT_GLOBAL_SETTINGS,
+		...p,
+		numberFormatLocale: normalizeNumberFormatLocale(p.numberFormatLocale),
+		animateOrderbook:
+			typeof p.animateOrderbook === "boolean" ? p.animateOrderbook : DEFAULT_GLOBAL_SETTINGS.animateOrderbook,
+		skipOrderConfirmation,
+		transactionDelayProtection:
+			typeof p.transactionDelayProtection === "boolean"
+				? p.transactionDelayProtection
+				: DEFAULT_GLOBAL_SETTINGS.transactionDelayProtection,
+		marketOrderSlippagePercent: slippagePercent,
+		marginMode: p.marginMode === "isolated" ? "isolated" : "cross",
+		theme: p.theme === "light" ? "light" : "dark",
+		network: getNetwork(),
+	};
+}
+
+// What this window last agreed with storage, as persisted fields of its own memory. A write sends
+// only the fields that differ from it, on top of whatever another window stored meanwhile.
+let lastSyncedSettings: PersistedGlobalSettings | null = null;
+let applyingStoredSettings = false;
+
+function readStoredSettings(): PersistedGlobalSettings | null {
+	const raw = validatedStorage.getItem(STORAGE_KEYS.GLOBAL_SETTINGS);
+	if (typeof raw !== "string") return null;
+	const stored = JSON.parse(raw) as { state: unknown; version?: unknown };
+	if (typeof stored.version !== "number" || stored.version === GLOBAL_SETTINGS_VERSION) {
+		return stored.state as PersistedGlobalSettings;
+	}
+	if (stored.version > GLOBAL_SETTINGS_VERSION) return null;
+	return migrateGlobalSettings(stored.state);
+}
+
+function applySharedSettings(next: GlobalSettingsStore) {
+	const current = useGlobalSettingsStore.getState();
+	const update: Partial<Record<(typeof SHARED_SETTING_KEYS)[number], unknown>> = {};
+	for (const key of SHARED_SETTING_KEYS) {
+		if (!Object.is(current[key], next[key])) update[key] = next[key];
+	}
+	if (Object.keys(update).length > 0) {
+		applyingStoredSettings = true;
+		try {
+			useGlobalSettingsStore.setState(update as Partial<GlobalSettingsStore>);
+		} finally {
+			applyingStoredSettings = false;
+		}
+	}
+	lastSyncedSettings = partializeGlobalSettings(useGlobalSettingsStore.getState());
+}
+
+function combineWithStoredSettings(outgoing: PersistedGlobalSettings): GlobalSettingsStore | null {
+	const previous = lastSyncedSettings as Record<string, unknown> | null;
+	if (!previous) return null;
+	const stored = readStoredSettings();
+	if (!stored) return null;
+	const changes = outgoing as Record<string, unknown>;
+	const combined: Record<string, unknown> = { ...stored };
+	for (const key of new Set([...Object.keys(previous), ...Object.keys(changes)])) {
+		if (Object.is(previous[key], changes[key])) continue;
+		if (key in changes) combined[key] = changes[key];
+		else delete combined[key];
+	}
+	return mergeGlobalSettings(combined, useGlobalSettingsStore.getState());
+}
+
+const crossWindowSettingsStorage: StateStorage = {
+	getItem: (name) => validatedStorage.getItem(name),
+	setItem: (name, value) => {
+		if (applyingStoredSettings) return;
+		const outgoing = JSON.parse(value) as { state: PersistedGlobalSettings; version: number };
+		const combined = combineWithStoredSettings(outgoing.state);
+		if (!combined) {
+			validatedStorage.setItem(name, value);
+			lastSyncedSettings = outgoing.state;
+			return;
+		}
+		validatedStorage.setItem(
+			name,
+			JSON.stringify({ state: partializeGlobalSettings(combined), version: outgoing.version }),
+		);
+		applySharedSettings(combined);
+	},
+	removeItem: (name) => validatedStorage.removeItem(name),
+};
+
+function syncStoredSettings() {
+	const stored = readStoredSettings();
+	if (!stored) return;
+	applySharedSettings(mergeGlobalSettings(stored, useGlobalSettingsStore.getState()));
+}
+
 const useGlobalSettingsStore = create<GlobalSettingsStore>()(
 	persist(
 		(set, get) => ({
@@ -125,64 +270,29 @@ const useGlobalSettingsStore = create<GlobalSettingsStore>()(
 		}),
 		{
 			name: STORAGE_KEYS.GLOBAL_SETTINGS,
-			version: 4,
-			storage: createJSONStorage(() => validatedStorage),
-			partialize: (state) => ({
-				hideSmallBalances: state.hideSmallBalances,
-				animateOrderbook: state.animateOrderbook,
-				showChartScanlines: state.showChartScanlines,
-				skipOrderConfirmation: state.skipOrderConfirmation,
-				transactionDelayProtection: state.transactionDelayProtection,
-				...(state.numberFormatLocale === defaultNumberFormatLocale
-					? {}
-					: { numberFormatLocale: state.numberFormatLocale }),
-				marketOrderSlippagePercent: state.marketOrderSlippagePercent,
-				marginMode: state.marginMode,
-				positionsActiveTab: state.positionsActiveTab,
-				mobileActiveTab: state.mobileActiveTab,
-				theme: state.theme,
-			}),
-			migrate: (persisted) => {
-				const state = persisted as Partial<GlobalSettingsStore>;
-				return {
-					...state,
-					numberFormatLocale: normalizeNumberFormatLocale(state.numberFormatLocale),
-				};
-			},
-			merge: (persisted, current) => {
-				const p = (persisted ?? {}) as Partial<GlobalSettingsStore>;
-				const skipOrderConfirmation =
-					typeof p.skipOrderConfirmation === "boolean"
-						? p.skipOrderConfirmation
-						: DEFAULT_GLOBAL_SETTINGS.skipOrderConfirmation;
-				const slippagePercent = Math.min(
-					Math.max(
-						p.marketOrderSlippagePercent ?? DEFAULT_MARKET_ORDER_SLIPPAGE_PERCENT,
-						MARKET_ORDER_SLIPPAGE_MIN_PERCENT,
-					),
-					MARKET_ORDER_SLIPPAGE_MAX_PERCENT,
-				);
-				return {
-					...current,
-					...DEFAULT_GLOBAL_SETTINGS,
-					...p,
-					numberFormatLocale: normalizeNumberFormatLocale(p.numberFormatLocale),
-					animateOrderbook:
-						typeof p.animateOrderbook === "boolean" ? p.animateOrderbook : DEFAULT_GLOBAL_SETTINGS.animateOrderbook,
-					skipOrderConfirmation,
-					transactionDelayProtection:
-						typeof p.transactionDelayProtection === "boolean"
-							? p.transactionDelayProtection
-							: DEFAULT_GLOBAL_SETTINGS.transactionDelayProtection,
-					marketOrderSlippagePercent: slippagePercent,
-					marginMode: p.marginMode === "isolated" ? "isolated" : "cross",
-					theme: p.theme === "light" ? "light" : "dark",
-					network: getNetwork(),
-				};
+			version: GLOBAL_SETTINGS_VERSION,
+			storage: createJSONStorage(() => crossWindowSettingsStorage),
+			partialize: partializeGlobalSettings,
+			migrate: migrateGlobalSettings,
+			merge: mergeGlobalSettings,
+			onRehydrateStorage: () => (state) => {
+				if (state) lastSyncedSettings = partializeGlobalSettings(state);
 			},
 		},
 	),
 );
+
+if (typeof window !== "undefined") {
+	window.addEventListener("storage", (event) => {
+		if (event.key !== STORAGE_KEYS.GLOBAL_SETTINGS || event.newValue === null) return;
+		if (event.storageArea && event.storageArea !== window.localStorage) return;
+		syncStoredSettings();
+	});
+	// A page restored from the back/forward cache missed every storage event while it was frozen.
+	window.addEventListener("pageshow", (event) => {
+		if (event.persisted) syncStoredSettings();
+	});
+}
 
 function suppressThemeTransitions(root: HTMLElement) {
 	root.setAttribute(THEME_TRANSITION_GUARD_ATTRIBUTE, "");

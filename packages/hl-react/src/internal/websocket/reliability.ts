@@ -192,6 +192,18 @@ export function getSubscriptionMethodForKey(key: string): string | undefined {
 	return parsed?.method;
 }
 
+// A `refreshKey` is appended to the key as a fifth element `{ refreshKey }`; the base key is the
+// method and parameters alone, which is what the SDK shares one server subscription by.
+export function getSubscriptionBaseKey(key: string): string | undefined {
+	try {
+		const parsed = JSON.parse(key) as unknown;
+		if (!Array.isArray(parsed) || parsed.length < 4) return undefined;
+		return JSON.stringify(parsed.slice(0, 4));
+	} catch {
+		return undefined;
+	}
+}
+
 export function getStalenessThresholdForKey(key: string): number | null {
 	const parsed = parseKey(key);
 	const method = parsed?.method;

@@ -1,11 +1,19 @@
 import { ExchangeClient, type IRequestTransport } from "@nktkas/hyperliquid";
 import { ApproveAgentTypes } from "@nktkas/hyperliquid/api/exchange";
 import { getWalletChainId, signUserSignedAction } from "@nktkas/hyperliquid/signing";
+import { privateKeyToAccount } from "viem/accounts";
 import { describe, expect, it, vi } from "vitest";
 import { createPrivyAgentSigner } from "@/lib/wallet/privy-agent-signer";
 
-const EXPECTED_ADDRESS = "0x1111111111111111111111111111111111111111";
+const OWNER_ACCOUNT = privateKeyToAccount(`0x${"0".repeat(63)}1`);
+const OTHER_ACCOUNT = privateKeyToAccount(`0x${"0".repeat(63)}2`);
+const EXPECTED_ADDRESS = OWNER_ACCOUNT.address.toLowerCase() as `0x${string}`;
 const OTHER_ADDRESS = "0x2222222222222222222222222222222222222222";
+type TypedData = Parameters<typeof OWNER_ACCOUNT.signTypedData>[0];
+
+async function signAsOwner(typedData: unknown) {
+	return { signature: await OWNER_ACCOUNT.signTypedData(typedData as TypedData) };
+}
 
 interface Deferred<T> {
 	promise: Promise<T>;
@@ -48,7 +56,7 @@ const REVIEW_COPY = {
 
 describe("createPrivyAgentSigner", () => {
 	it("targets the exact embedded wallet and forces an explicit approval UI", async () => {
-		const signTypedData = vi.fn().mockResolvedValue({ signature: `0x${"1".repeat(130)}` });
+		const signTypedData = vi.fn(signAsOwner);
 		const signer = createPrivyAgentSigner({
 			expectedAddress: EXPECTED_ADDRESS,
 			activeAddress: EXPECTED_ADDRESS.toUpperCase() as `0x${string}`,
@@ -73,7 +81,7 @@ describe("createPrivyAgentSigner", () => {
 	});
 
 	it("hides only the Privy confirmation after an application review is confirmed", async () => {
-		const signTypedData = vi.fn().mockResolvedValue({ signature: `0x${"1".repeat(130)}` });
+		const signTypedData = vi.fn(signAsOwner);
 		const signer = createPrivyAgentSigner({
 			applicationReview: "confirmed",
 			expectedAddress: EXPECTED_ADDRESS,
@@ -94,8 +102,12 @@ describe("createPrivyAgentSigner", () => {
 	});
 
 	it("is selected by SDK 0.33.3 as a JSON-RPC wallet with the expected approval chain", async () => {
-		const rawSignature = `0x${"11".repeat(64)}1b` as const;
-		const signTypedData = vi.fn().mockResolvedValue({ signature: rawSignature });
+		let rawSignature = "";
+		const signTypedData = vi.fn(async (typedData: unknown) => {
+			const result = await signAsOwner(typedData);
+			rawSignature = result.signature;
+			return result;
+		});
 		const signer = createPrivyAgentSigner({
 			expectedAddress: EXPECTED_ADDRESS,
 			activeAddress: EXPECTED_ADDRESS,
@@ -123,9 +135,9 @@ describe("createPrivyAgentSigner", () => {
 		});
 
 		expect(signature).toEqual({
-			r: `0x${"11".repeat(32)}`,
-			s: `0x${"11".repeat(32)}`,
-			v: 27,
+			r: rawSignature.slice(0, 66),
+			s: `0x${rawSignature.slice(66, 130)}`,
+			v: Number.parseInt(rawSignature.slice(130), 16),
 		});
 		expect(signTypedData).toHaveBeenCalledWith(
 			expect.objectContaining({
@@ -144,9 +156,11 @@ describe("createPrivyAgentSigner", () => {
 	});
 
 	it("revalidates after Privy signs and prevents the real SDK boundary from submitting a stale owner", async () => {
-		const rawSignature = `0x${"11".repeat(64)}1b` as const;
-		const signature = createDeferred<{ signature: typeof rawSignature }>();
-		const signTypedData = vi.fn(async (_typedData: unknown) => signature.promise);
+		const signature = createDeferred<void>();
+		const signTypedData = vi.fn(async (typedData: unknown) => {
+			await signature.promise;
+			return signAsOwner(typedData);
+		});
 		let activeOwner = EXPECTED_ADDRESS;
 		const beforeSubmit = vi.fn(() => {
 			if (activeOwner !== EXPECTED_ADDRESS) throw new Error("Approval owner changed after signing");
@@ -170,7 +184,7 @@ describe("createPrivyAgentSigner", () => {
 		const approval = client.approveAgent({ agentAddress: OTHER_ADDRESS, agentName: "Mobile" });
 		await vi.waitFor(() => expect(signTypedData).toHaveBeenCalledOnce());
 		activeOwner = OTHER_ADDRESS;
-		signature.resolve({ signature: rawSignature });
+		signature.resolve();
 
 		await expect(approval).rejects.toMatchObject({
 			message: "Failed to sign the typed data using the wallet",
@@ -181,8 +195,7 @@ describe("createPrivyAgentSigner", () => {
 	});
 
 	it("prevents the real SDK transport when the post-signature legal check fails", async () => {
-		const rawSignature = `0x${"11".repeat(64)}1b` as const;
-		const signTypedData = vi.fn().mockResolvedValue({ signature: rawSignature });
+		const signTypedData = vi.fn(signAsOwner);
 		const beforeSubmit = vi.fn().mockRejectedValue(new Error("Legal access changed after signing"));
 		const signer = createPrivyAgentSigner({
 			expectedAddress: EXPECTED_ADDRESS,
@@ -207,6 +220,64 @@ describe("createPrivyAgentSigner", () => {
 		expect(signTypedData).toHaveBeenCalledOnce();
 		expect(beforeSubmit).toHaveBeenCalledOnce();
 		expect(signTypedData.mock.invocationCallOrder[0]).toBeLessThan(beforeSubmit.mock.invocationCallOrder[0] ?? 0);
+		expect(request).not.toHaveBeenCalled();
+	});
+
+	it("submits an approval that recovers to the expected embedded owner through the real SDK", async () => {
+		const beforeSubmit = vi.fn();
+		const signer = createPrivyAgentSigner({
+			expectedAddress: EXPECTED_ADDRESS,
+			activeAddress: EXPECTED_ADDRESS,
+			embeddedWalletAddress: EXPECTED_ADDRESS,
+			chainId: 42161,
+			signTypedData: vi.fn(signAsOwner),
+			beforeSubmit,
+			reviewCopy: REVIEW_COPY,
+		});
+		const request = vi.fn().mockResolvedValue({ status: "ok", response: { type: "default" } });
+		const client = new ExchangeClient({
+			transport: { isTestnet: false, request } as IRequestTransport,
+			wallet: signer,
+			nonceManager: () => 1_722_000_000_002,
+		});
+
+		await client.approveAgent({ agentAddress: OTHER_ADDRESS, agentName: "Mobile" });
+
+		expect(beforeSubmit).toHaveBeenCalledOnce();
+		expect(request).toHaveBeenCalledOnce();
+	});
+
+	it.each([
+		[
+			"another embedded wallet",
+			async (typedData: unknown) => ({ signature: await OTHER_ACCOUNT.signTypedData(typedData as TypedData) }),
+		],
+		["an unrecoverable signature", async () => ({ signature: `0x${"11".repeat(64)}1b` })],
+		["a contract-wallet signature", async () => ({ signature: `0x${"ab".repeat(130)}` })],
+	])("never submits an approval signed by %s", async (_label, sign) => {
+		const signTypedData = vi.fn(sign);
+		const beforeSubmit = vi.fn();
+		const signer = createPrivyAgentSigner({
+			expectedAddress: EXPECTED_ADDRESS,
+			activeAddress: EXPECTED_ADDRESS,
+			embeddedWalletAddress: EXPECTED_ADDRESS,
+			chainId: 42161,
+			signTypedData,
+			beforeSubmit,
+			reviewCopy: REVIEW_COPY,
+		});
+		const request = vi.fn().mockResolvedValue({ status: "ok", response: { type: "default" } });
+		const client = new ExchangeClient({
+			transport: { isTestnet: false, request } as IRequestTransport,
+			wallet: signer,
+			nonceManager: () => 1_722_000_000_003,
+		});
+
+		await expect(client.approveAgent({ agentAddress: OTHER_ADDRESS, agentName: "Mobile" })).rejects.toMatchObject({
+			cause: expect.objectContaining({ name: "WalletAccountMismatchError" }),
+		});
+		expect(signTypedData).toHaveBeenCalledOnce();
+		expect(beforeSubmit).not.toHaveBeenCalled();
 		expect(request).not.toHaveBeenCalled();
 	});
 

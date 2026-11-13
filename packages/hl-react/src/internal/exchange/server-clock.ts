@@ -26,6 +26,11 @@ interface ServerTimeSample extends Receipt {
 export interface ServerClock {
 	sync(): Promise<void>;
 	getExpiresAfter(): Promise<number>;
+	/**
+	 * The exchange's current time while a sample exists and both clocks still agree, otherwise `undefined`. The
+	 * monotonic clock stops while a device sleeps, so a sample that slept would read hours behind the exchange.
+	 */
+	estimateNow(): number | undefined;
 }
 
 function receiptNow(): Receipt {
@@ -112,5 +117,10 @@ export function createServerClock(fetchServerTime: (signal: AbortSignal) => Prom
 		return Math.floor(estimateServerNow()) + EXCHANGE_ACTION_EXPIRY_MS;
 	}
 
-	return { sync, getExpiresAfter };
+	function estimateNow(): number | undefined {
+		if (!sample || clocksDisagree(sample)) return undefined;
+		return Math.floor(sample.serverTime + monotonicAgeOf(sample));
+	}
+
+	return { sync, getExpiresAfter, estimateNow };
 }

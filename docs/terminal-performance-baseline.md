@@ -433,6 +433,33 @@ The sixth round (commit `4af147fd`) changed one classification function in the d
 3,286,638 in total (+16), 1,626,663 static trade startup, 117,769 mobile and 201,070 desktop, with the desktop runtime
 increment 918 bytes under its allowance. Later commits on the branch change tests and documents only.
 
+## Second-wave defect fixes total and static-startup re-baseline (2026-11-12)
+
+The second wave of fixes from the same review (branch `claude/second-wave-fixes`, on top of the first-wave
+integration) adds code that every session runs: the signer-address check after an owner signature (viem's
+`recoverTypedDataAddress`), the entry watchdog script and the bounded locale-catalog wait, cross-window settings
+merging, the store's transport status and sibling-key snapshot reuse, and the nonce and Agent record handling.
+
+Same setup as the next section (fixed identity, Node 22.15.0, pairing off, no `.env.local`); the base is the first
+wave's head build recorded there, the head is this branch's working tree after its last code change.
+
+| Metric | First wave | Second wave | Change |
+| --- | ---: | ---: | ---: |
+| Client chunks | 449 | 450 | +1 |
+| All client JS + CSS | 3,381,009 | 3,384,536 | +3,527 |
+| Static trade startup | 1,656,513 | 1,659,418 | +2,905 |
+| Mobile runtime increment | 119,724 | 119,734 | +10 |
+| Desktop runtime increment | 204,451 | 204,621 | +170 |
+| `trade-terminal-page` | 127,788 | 127,813 | +25 |
+| `api-wallet` | 18,394 | 18,413 | +19 |
+| `staking` | 24,456 | 24,455 | −1 |
+| `vaults-page` | 30,638 | 30,636 | −2 |
+
+Before the change the build exceeded the static-startup allowance by 951. Baselines raised by the measured growth,
+allowances unchanged: all client JS + CSS to 3,381,270, static trade startup to 1,651,372. A per-chunk comparison was
+not made for this step. Room left in the pairing-off protocol build is the same as after the first wave: 6,734 for the
+total and 1,954 for static trade startup; 846 for the mobile runtime increment.
+
 ## First-wave defect fixes total, static-startup and vault-page re-baseline (2026-11-12)
 
 The first wave of fixes from the [global defect review](work-memory/sessions/2026-11-12-global-defect-review.md) was

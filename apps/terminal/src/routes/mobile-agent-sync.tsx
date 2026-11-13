@@ -52,7 +52,7 @@ type LoadState =
 type ImportStatus =
 	| { state: "idle"; error: ImportErrorCode | null }
 	| { state: "importing" }
-	| { state: "success"; agentAddress: Address; agentValidUntilMs: number };
+	| { state: "success"; userAddress: Address; agentAddress: Address; agentValidUntilMs: number };
 
 class MobileAgentImportError extends Error {
 	readonly code: ImportErrorCode;
@@ -73,7 +73,7 @@ function takeLocationFragment(): string {
 function MobileAgentSyncRoute() {
 	const { i18n, t } = useLingui();
 	const locale = i18n.locale;
-	const { env, info } = useHyperliquid();
+	const { env, info, sessionMode } = useHyperliquid();
 	const [loadState, setLoadState] = useState<LoadState>({ state: "empty" });
 	const [status, setStatus] = useState<ImportStatus>({ state: "idle", error: null });
 	const importAbortRef = useRef<AbortController | null>(null);
@@ -125,7 +125,12 @@ function MobileAgentSyncRoute() {
 
 			await storeImportedAgent(payload);
 			setLoadState({ state: "empty" });
-			setStatus({ state: "success", agentAddress: payload.agentAddress, agentValidUntilMs: payload.agentValidUntilMs });
+			setStatus({
+				state: "success",
+				userAddress: payload.userAddress,
+				agentAddress: payload.agentAddress,
+				agentValidUntilMs: payload.agentValidUntilMs,
+			});
 		} catch (error) {
 			if (abortController.signal.aborted) return;
 			const code = error instanceof MobileAgentImportError ? error.code : "storage_failed";
@@ -145,6 +150,7 @@ function MobileAgentSyncRoute() {
 	const importError =
 		status.state === "idle" && status.error ? getImportErrorMessage(status.error, (descriptor) => t(descriptor)) : null;
 	const isImporting = status.state === "importing";
+	const replacesSession = payload !== null && status.state !== "success" && sessionMode !== "disconnected";
 
 	return (
 		<main className="min-h-[100dvh] bg-background px-4 py-5 text-fg sm:px-6">
@@ -174,20 +180,35 @@ function MobileAgentSyncRoute() {
 						{importError && <ErrorCallout message={importError} />}
 
 						{status.state === "success" ? (
-							<SuccessPanel agentAddress={status.agentAddress} agentValidUntilMs={status.agentValidUntilMs} />
+							<SuccessPanel
+								userAddress={status.userAddress}
+								agentAddress={status.agentAddress}
+								agentValidUntilMs={status.agentValidUntilMs}
+							/>
 						) : (
-							<Button
-								type="button"
-								variant="filled"
-								intent="brand"
-								size="md"
-								className="w-full"
-								disabled={!payload || isImporting}
-								onClick={handleImport}
-								iconLeft={isImporting ? <ButtonLoading /> : <DeviceMobileIcon className="size-4" aria-hidden />}
-							>
-								<Trans>Import</Trans>
-							</Button>
+							<>
+								{payload && <AccountRow userAddress={payload.userAddress} />}
+								{replacesSession && (
+									<p className="flex items-start gap-2 rounded-16 border border-stroke-warning-weak bg-warning-soft p-3 text-xs text-warning">
+										<WarningCircleIcon className="mt-0.5 size-4 shrink-0 text-icon-warning" weight="fill" aria-hidden />
+										<span>
+											<Trans>Importing replaces the current trading session on this phone.</Trans>
+										</span>
+									</p>
+								)}
+								<Button
+									type="button"
+									variant="filled"
+									intent="brand"
+									size="md"
+									className="w-full"
+									disabled={!payload || isImporting}
+									onClick={handleImport}
+									iconLeft={isImporting ? <ButtonLoading /> : <DeviceMobileIcon className="size-4" aria-hidden />}
+								>
+									<Trans>Import</Trans>
+								</Button>
+							</>
 						)}
 					</div>
 				</div>
@@ -274,7 +295,28 @@ function ErrorCallout({ message }: { message: string }) {
 	);
 }
 
-function SuccessPanel({ agentAddress, agentValidUntilMs }: { agentAddress: string; agentValidUntilMs: number }) {
+function AccountRow({ userAddress }: { userAddress: string }) {
+	return (
+		<dl className="flex items-start justify-between gap-3 text-xs">
+			<dt className="shrink-0 text-fg-muted">
+				<Trans>Account</Trans>
+			</dt>
+			<dd className="min-w-0 break-all text-end font-mono text-fg" data-slot="mobile-sync-account">
+				{userAddress}
+			</dd>
+		</dl>
+	);
+}
+
+function SuccessPanel({
+	userAddress,
+	agentAddress,
+	agentValidUntilMs,
+}: {
+	userAddress: string;
+	agentAddress: string;
+	agentValidUntilMs: number;
+}) {
 	const { i18n } = useLingui();
 	const { capability: pwaCapability } = usePwaInstall();
 
@@ -303,6 +345,7 @@ function SuccessPanel({ agentAddress, agentValidUntilMs }: { agentAddress: strin
 					)}
 				</div>
 			</output>
+			<AccountRow userAddress={userAddress} />
 			<Button
 				type="button"
 				variant="outline"

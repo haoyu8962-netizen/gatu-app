@@ -1,6 +1,7 @@
-import { renderBootstrapErrorPage } from "./lib/bootstrap-error-page";
+import { renderBootstrapErrorPage, reportBootstrapEntryStarted } from "./lib/bootstrap-error-page";
 import { applyWindowLinkLocale } from "./lib/link-locale";
 
+reportBootstrapEntryStarted();
 applyWindowLinkLocale();
 
 void import("./lib/bootstrap/early-prefetch")

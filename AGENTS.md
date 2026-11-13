@@ -42,6 +42,7 @@ This file contains durable project instructions for coding agents. Read `agent.m
 - For Privy email sessions, activate only the exact embedded wallet belonging to that user. Never fall back to the first connected or first embedded wallet when the expected address is unavailable.
 - Every L1 action carries `expiresAfter`, 15 seconds after the estimated exchange clock, so a delayed order or cancel is rejected instead of executing late ([ADR 0045](docs/adr/0045-l1-action-expiry.md)); user-signed actions do not support the field. L1 actions are signed only by signers that need no confirmation (Agent or embedded owner), so wallet prompts never consume that window.
 - The wait before signing is bounded too ([ADR 0053](docs/adr/0053-exchange-action-start-deadline.md), `docs/hyperliquid-signing.md`): except for cancels, an action is not signed more than 15 seconds after it entered the request scheduler, an action submitted offline fails at once instead of being replayed, and the legal re-check on the execution path sends one request with a 10-second cap. A workflow that waits before it calls `useExchange` or an approval implementation starts the same deadline in its confirming handler, before any `await`, and checks it right before each submission; a late action is not submitted and reports that nothing was signed or sent. Two deliberate exceptions: once TP/SL has cancelled the old orders it still queues the replacement, and when one authorization needs both the Agent and the builder fee, the builder-fee step counts from the Agent approval's return (ADR 0053 decisions 8 and 10).
+- After an owner signs (external wallet, embedded wallet, Agent approval, terms), the signer is recovered from the signature and the same typed data and compared with the selected owner before anything is sent; a mismatch or an unrecoverable signature fails closed as a wallet mismatch. Local Agent keys are not checked (`docs/hyperliquid-signing.md`).
 - Hyperliquid Agent/API Wallet keys may be stored locally, but Agent approval must always be signed by the matching master wallet. Missing local Agent state may trigger re-registration; it must never trigger a different browser wallet.
 - Card funding pays out only to the exact Hyperliquid owner: pass the destination resolved by `resolvePrivyFiatFundingDestination` to Privy's `useFiatOnramp`, never a Privy funding hook without an explicit destination (it defaults to the first embedded wallet). Each network keeps its own fail-closed flag, and a Mainnet release needs `--allow-mainnet-card-funding` (`docs/adr/0034-privy-card-funding.md`).
 - Email-wallet funding follows [ADR 0040](docs/adr/0040-automatic-email-wallet-deposits.md): the page-level host automatically deposits eligible native USDC for the exact active embedded owner on either network under its own sponsored flag, including after session restoration. This funds flow is separate from trading onboarding; preserve fresh route/geo/legal/fee checks, locks and pending/unknown recovery, and never require a second Deposit click or promise initiation while the app is closed. The automatic path treats the submitted full balance as the locked value and re-reads it inside the funds-action lock before signing and before broadcasting, and it verifies the exact owner's fresh legal status before the authorization is signed (and again before broadcasting). Its EIP-3009 authorization is the one signature that login or session restoration may trigger without a click, and only for this flow. An automatic submission without a source hash, or a submitted one whose outcome is not a definitive source failure, is reported as a persistent unknown status, never as a failure. The host attempts nothing until the legal status is known to allow actions, binds the execution-boundary legal check to the account that signs, and starts no attempt while an earlier sponsored authorization is unresolved.
@@ -210,6 +211,7 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/exchange-signing-deadline.test.tsx \
   src/lib/tests/builder-fee-approval.test.tsx \
   src/lib/tests/global-settings-store.test.ts \
+  src/lib/tests/global-settings-cross-window.test.ts \
   src/lib/tests/global-settings-modal.test.tsx \
   src/lib/tests/trading-onboarding-gate.test.tsx \
   src/lib/tests/account-mode-setup.test.ts \
@@ -220,6 +222,11 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/trade-header-mobile-actions.test.tsx \
   src/lib/tests/agent-registration-session.test.ts \
   src/lib/tests/agent-storage-scope.test.ts \
+  src/lib/tests/agent-storage-forward-compat.test.ts \
+  src/lib/tests/cross-tab-nonce-manager.test.ts \
+  src/lib/tests/hl-react-wallet.test.ts \
+  src/lib/tests/privy-legal-signer.test.ts \
+  src/lib/tests/geo-api-upstream-budget.test.ts \
   src/lib/tests/agent-verification-status.test.ts \
   src/lib/tests/use-agent-status-verification.test.tsx \
   src/lib/tests/use-agent-status-mobile-cleanup.test.tsx \
@@ -333,6 +340,8 @@ pnpm --dir apps/terminal exec vitest run \
 pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/ws-transport-monitor.test.ts \
   src/lib/tests/store-resume.test.ts \
+  src/lib/tests/store-transport-status.test.ts \
+  src/lib/tests/api-status-transport.test.tsx \
   src/lib/tests/store-visibility-pause.test.ts \
   src/lib/tests/visibility.test.ts \
   src/lib/tests/l2-book-transport-pool.test.ts \
@@ -501,6 +510,7 @@ pnpm --dir apps/terminal exec vitest run \
 # Startup rendering (see .claude/rules/startup-rendering.md)
 pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/root-startup-fallback.test.tsx \
+  src/lib/tests/bootstrap-entry-watchdog.test.tsx \
   src/lib/tests/root-route-transition.test.tsx \
   src/lib/tests/theme-bootstrap.test.ts \
   src/lib/tests/theme-document-sync.test.tsx \

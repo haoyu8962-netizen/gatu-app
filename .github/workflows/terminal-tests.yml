@@ -124,6 +124,8 @@ jobs:
           pnpm exec vitest run --maxWorkers=1 --shard=${{ matrix.shard }}/2 --passWithNoTests
           src/lib/tests/ws-transport-monitor.test.ts
           src/lib/tests/store-resume.test.ts
+          src/lib/tests/store-transport-status.test.ts
+          src/lib/tests/api-status-transport.test.tsx
           src/lib/tests/store-visibility-pause.test.ts
           src/lib/tests/visibility.test.ts
           src/lib/tests/l2-book-transport-pool.test.ts
@@ -426,6 +428,12 @@ jobs:
           src/lib/tests/locale-format-contract.test.ts
           src/lib/tests/decimal-input-normalization.test.tsx
           src/lib/tests/global-settings-store.test.ts
+          src/lib/tests/global-settings-cross-window.test.ts
+          src/lib/tests/agent-storage-forward-compat.test.ts
+          src/lib/tests/cross-tab-nonce-manager.test.ts
+          src/lib/tests/hl-react-wallet.test.ts
+          src/lib/tests/privy-legal-signer.test.ts
+          src/lib/tests/geo-api-upstream-budget.test.ts
           src/lib/tests/i18n-reactivity-contract.test.ts
           src/lib/tests/date-locale-reactivity-contract.test.ts
           src/lib/tests/number-format-direction.test.tsx
@@ -550,6 +558,7 @@ jobs:
           src/lib/tests/brand-semantics-contract.test.ts
           src/lib/tests/brand-logo.test.tsx
           src/lib/tests/root-startup-fallback.test.tsx
+          src/lib/tests/bootstrap-entry-watchdog.test.tsx
           src/lib/tests/mobile-header-brand.test.tsx
           src/lib/tests/pwa-manifest.test.ts
           src/lib/tests/public-origins.test.ts

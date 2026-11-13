@@ -1,11 +1,19 @@
 import { ExchangeClient, type IRequestTransport } from "@nktkas/hyperliquid";
+import { ApproveAgentTypes } from "@nktkas/hyperliquid/api/exchange";
 import type { WalletClient } from "viem";
+import { privateKeyToAccount } from "viem/accounts";
 import { describe, expect, it, vi } from "vitest";
 import { createExternalAgentSigner } from "@/lib/wallet/external-agent-signer";
 
-const EXPECTED_ADDRESS = "0x1111111111111111111111111111111111111111";
+const OWNER_ACCOUNT = privateKeyToAccount(`0x${"0".repeat(63)}1`);
+const OTHER_ACCOUNT = privateKeyToAccount(`0x${"0".repeat(63)}2`);
+const EXPECTED_ADDRESS = OWNER_ACCOUNT.address.toLowerCase() as `0x${string}`;
 const OTHER_ADDRESS = "0x2222222222222222222222222222222222222222";
-const RAW_SIGNATURE = `0x${"11".repeat(64)}1b` as const;
+type TypedData = Parameters<typeof OWNER_ACCOUNT.signTypedData>[0];
+
+function signAsOwner(typedData: unknown) {
+	return OWNER_ACCOUNT.signTypedData(typedData as TypedData);
+}
 
 interface Deferred<T> {
 	promise: Promise<T>;
@@ -48,7 +56,7 @@ function createClient(walletClient: WalletClient, beforeSubmit: () => void | Pro
 
 describe("createExternalAgentSigner", () => {
 	it("signs with the exact active Wagmi account and revalidates before returning the signature", async () => {
-		const signTypedData = vi.fn().mockResolvedValue(RAW_SIGNATURE);
+		const signTypedData = vi.fn(signAsOwner);
 		const beforeSubmit = vi.fn();
 		const signer = createExternalAgentSigner({
 			expectedAddress: EXPECTED_ADDRESS,
@@ -63,9 +71,9 @@ describe("createExternalAgentSigner", () => {
 				chainId: 42161,
 				verifyingContract: "0x0000000000000000000000000000000000000000",
 			},
-			types: {},
+			types: ApproveAgentTypes,
 			primaryType: "HyperliquidTransaction:ApproveAgent",
-			message: {},
+			message: { hyperliquidChain: "Mainnet", agentAddress: OTHER_ADDRESS, agentName: "", nonce: 1 },
 		});
 
 		expect(signTypedData).toHaveBeenCalledWith(
@@ -76,8 +84,11 @@ describe("createExternalAgentSigner", () => {
 	});
 
 	it("blocks the real SDK transport when identity changes after external-wallet signing", async () => {
-		const signature = createDeferred<typeof RAW_SIGNATURE>();
-		const signTypedData = vi.fn(async (_typedData: unknown) => signature.promise);
+		const signature = createDeferred<void>();
+		const signTypedData = vi.fn(async (typedData: unknown) => {
+			await signature.promise;
+			return signAsOwner(typedData);
+		});
 		let activeOwner = EXPECTED_ADDRESS;
 		const beforeSubmit = vi.fn(() => {
 			if (activeOwner !== EXPECTED_ADDRESS) throw new Error("Approval owner changed after signing");
@@ -87,7 +98,7 @@ describe("createExternalAgentSigner", () => {
 		const approval = client.approveAgent({ agentAddress: OTHER_ADDRESS, agentName: "Mobile" });
 		await vi.waitFor(() => expect(signTypedData).toHaveBeenCalledOnce());
 		activeOwner = OTHER_ADDRESS;
-		signature.resolve(RAW_SIGNATURE);
+		signature.resolve();
 
 		await expect(approval).rejects.toMatchObject({
 			message: "Failed to sign the typed data using the wallet",
@@ -98,7 +109,7 @@ describe("createExternalAgentSigner", () => {
 	});
 
 	it("blocks the real SDK transport when the post-signature legal check fails", async () => {
-		const signTypedData = vi.fn().mockResolvedValue(RAW_SIGNATURE);
+		const signTypedData = vi.fn(signAsOwner);
 		const beforeSubmit = vi.fn().mockRejectedValue(new Error("Legal access changed after signing"));
 		const { client, request } = createClient(createWalletClient(signTypedData), beforeSubmit);
 
@@ -108,6 +119,34 @@ describe("createExternalAgentSigner", () => {
 		});
 		expect(signTypedData).toHaveBeenCalledOnce();
 		expect(beforeSubmit).toHaveBeenCalledOnce();
+		expect(request).not.toHaveBeenCalled();
+	});
+
+	it("submits an approval that recovers to the expected owner through the real SDK", async () => {
+		const signTypedData = vi.fn(signAsOwner);
+		const beforeSubmit = vi.fn();
+		const { client, request } = createClient(createWalletClient(signTypedData), beforeSubmit);
+
+		await client.approveAgent({ agentAddress: OTHER_ADDRESS, agentName: "Mobile" });
+
+		expect(beforeSubmit).toHaveBeenCalledOnce();
+		expect(request).toHaveBeenCalledOnce();
+	});
+
+	it.each([
+		["another account of the same wallet", (typedData: unknown) => OTHER_ACCOUNT.signTypedData(typedData as TypedData)],
+		["an unrecoverable signature", async () => `0x${"11".repeat(64)}1b` as const],
+		["a contract-wallet signature", async () => `0x${"ab".repeat(130)}` as const],
+	])("never submits an approval signed by %s", async (_label, sign) => {
+		const signTypedData = vi.fn(sign);
+		const beforeSubmit = vi.fn();
+		const { client, request } = createClient(createWalletClient(signTypedData), beforeSubmit);
+
+		await expect(client.approveAgent({ agentAddress: OTHER_ADDRESS, agentName: "Mobile" })).rejects.toMatchObject({
+			cause: expect.objectContaining({ name: "WalletAccountMismatchError" }),
+		});
+		expect(signTypedData).toHaveBeenCalledOnce();
+		expect(beforeSubmit).not.toHaveBeenCalled();
 		expect(request).not.toHaveBeenCalled();
 	});
 

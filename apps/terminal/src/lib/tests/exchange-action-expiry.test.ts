@@ -65,6 +65,18 @@ describe("server clock for L1 action expiry", () => {
 		expect(fetchServerTime).toHaveBeenCalledOnce();
 	});
 
+	it("estimates the exchange time only while a sample exists and the clocks agree", async () => {
+		const clock = createServerClock(async () => 1_060_000);
+		expect(clock.estimateNow()).toBeUndefined();
+
+		await clock.getExpiresAfter();
+		await vi.advanceTimersByTimeAsync(5_000);
+		expect(clock.estimateNow()).toBe(1_065_000);
+
+		vi.setSystemTime(Date.now() + 30 * 60 * 60 * 1000);
+		expect(clock.estimateNow()).toBeUndefined();
+	});
+
 	it("waits for one server time request when several actions start before it answers", async () => {
 		const pending = deferred<number>();
 		const fetchServerTime = vi.fn(() => pending.promise);

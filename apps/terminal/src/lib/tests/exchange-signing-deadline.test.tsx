@@ -18,13 +18,15 @@ import {
 import { onlineManager, QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
+import { privateKeyToAccount } from "viem/accounts";
 import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from "vitest";
 import { classifyVaultMutationFailure } from "@/components/vaults/vault-action-domain";
 import { classifyActionError } from "@/lib/errors/action-error";
 import { verifyLegalActionAllowed } from "@/lib/hyperliquid";
 import { createOwnerSignerClient } from "../../../../../packages/hl-react/src/signing/owner-signer-client";
 
-const OWNER = "0x1234567890abcdef1234567890abcdef12345678" as const;
+const OWNER_ACCOUNT = privateKeyToAccount(`0x${"0".repeat(63)}2`);
+const OWNER = OWNER_ACCOUNT.address.toLowerCase() as `0x${string}`;
 const AGENT = "0x7e5f4552091a69125d5dfcb7b8c2659029395bdf" as const;
 const AGENT_PRIVATE_KEY = `0x${"0".repeat(63)}1`;
 const SESSION_STORAGE_KEY = `hyperliquid_agent_registration_session_Mainnet_${OWNER}`;
@@ -216,9 +218,9 @@ function createJsonRpcWallet(address: string) {
 	return {
 		getAddresses: async () => [address as `0x${string}`],
 		getChainId: async () => 42161,
-		async signTypedData(_typedData: unknown) {
+		async signTypedData(typedData: unknown) {
 			signatures.push(address);
-			return SIGNATURE as `0x${string}`;
+			return OWNER_ACCOUNT.signTypedData(typedData as Parameters<typeof OWNER_ACCOUNT.signTypedData>[0]);
 		},
 	};
 }

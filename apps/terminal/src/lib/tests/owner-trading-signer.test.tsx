@@ -16,6 +16,7 @@ import {
 } from "../../../../../packages/hl-react/src/signing/owner-signer-provider";
 
 const account = privateKeyToAccount(`0x${"0".repeat(63)}1`);
+const otherAccount = privateKeyToAccount(`0x${"0".repeat(63)}2`);
 const OWNER = account.address;
 const OTHER = "0x2222222222222222222222222222222222222222";
 const state = vi.hoisted(() => ({
@@ -249,6 +250,34 @@ describe("embedded owner trading signer", () => {
 		);
 		await expect(client?.cancel({ cancels: [{ a: 0, o: 1 }] })).rejects.toThrow();
 		expect(signer.signTypedData).not.toHaveBeenCalled();
+		expect(http.requestMock).not.toHaveBeenCalled();
+	});
+
+	it.each([
+		[
+			"another account of the same wallet",
+			(data: Parameters<typeof account.signTypedData>[0]) => otherAccount.signTypedData(data),
+		],
+		["an unrecoverable signature", async () => `0x${"11".repeat(64)}1b` as const],
+		["a contract-wallet signature", async () => `0x${"ab".repeat(130)}` as const],
+	])("never sends an owner action, L1 or user-signed, signed by %s", async (_label, sign) => {
+		const signer = wallet();
+		signer.signTypedData.mockImplementation(sign);
+		const http = transport();
+		const client = createOwnerSignerClient(
+			{ ownerAddress: OWNER, wallet: signer, assertCurrent: vi.fn() },
+			false,
+			http,
+		);
+		if (!client) throw new Error("Missing owner client");
+		const mismatch = { cause: expect.objectContaining({ name: "WalletAccountMismatchError" }) };
+
+		await expect(client.cancel({ cancels: [{ a: 0, o: 1 }] })).rejects.toMatchObject(mismatch);
+		await expect(client.withdraw3({ destination: OTHER, amount: "1" })).rejects.toMatchObject(mismatch);
+		expect(signer.signTypedData.mock.calls.map(([data]) => data.primaryType)).toEqual([
+			"Agent",
+			"HyperliquidTransaction:Withdraw",
+		]);
 		expect(http.requestMock).not.toHaveBeenCalled();
 	});
 

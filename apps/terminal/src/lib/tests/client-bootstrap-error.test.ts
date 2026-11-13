@@ -37,6 +37,23 @@ describe("client bootstrap error handling", () => {
 		expect(document.body.textContent).not.toContain("private bootstrap detail");
 	});
 
+	it("reports to the shell watchdog as soon as the entry module runs", async () => {
+		const entryStarted = vi.fn();
+		Object.assign(window, { __sairnEntryStarted: entryStarted });
+		vi.doMock("../error-reporting/client", () => ({
+			installGlobalErrorReporting: () => () => {},
+			reportClientError: vi.fn(),
+		}));
+		vi.doMock("../../client-hydrate", () => ({}));
+
+		try {
+			await import("../../client");
+			expect(entryStarted).toHaveBeenCalledOnce();
+		} finally {
+			Reflect.deleteProperty(window, "__sairnEntryStarted");
+		}
+	});
+
 	it("still renders the safe fallback if the minimal telemetry module cannot load", async () => {
 		vi.doMock("../error-reporting/client", () => {
 			throw new Error("private telemetry detail");

@@ -120,7 +120,11 @@ const budgets = {
 	// minus that of dev 810a45db (3,376,264), both without .env.local; the +3,266 dev had already used stays counted.
 	// Without the raise the pairing-off build keeps 1,989 bytes and a release build, which reads about 3,000 more,
 	// would exceed the allowance (docs/terminal-performance-baseline.md).
-	totalGzipBaselineBytes: 3_377_743,
+	// Raised 2026-11-12 by +3,527 for the second wave of fixes from the same review: the signer check after an owner
+	// signature, the entry watchdog and bounded catalog wait, cross-window settings, the transport status and the
+	// nonce and Agent record handling. Fixed-identity pairing-off builds: 3,384,536 minus the first wave's 3,381,009
+	// (docs/terminal-performance-baseline.md).
+	totalGzipBaselineBytes: 3_381_270,
 	totalGzipAllowedIncreaseBytes: 10_000,
 	tradeStartup: {
 		requiredRouteIds: ["__root__", "/trade/$symbol"],
@@ -144,7 +148,9 @@ const budgets = {
 		// shared chunk (+2,059), the reconciliation hosts mounted at the root (+1,066), the pending order and TWAP stores
 		// (+850) and the English catalog (+471). Before the raise the integration build exceeded the allowance by 2,033
 		// (docs/terminal-performance-baseline.md).
-		baselineGzipBytes: 1_648_467,
+		// Raised 2026-11-12 by +2,905 for the second wave (see the total above): 1,659,418 minus 1,656,513. Before
+		// the raise the build exceeded the allowance by 951.
+		baselineGzipBytes: 1_651_372,
 		allowedIncreaseBytes: 10_000,
 	},
 	tradeRuntimeStartup: {
