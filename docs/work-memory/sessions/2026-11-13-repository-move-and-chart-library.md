@@ -9,8 +9,8 @@
   "topics": ["docs-governance", "static-hosting"],
   "summary": "原账号 zora4523-bot 被 GitHub 封停。按运营方决定把 dev 与 main 迁到 haoyu8962-netizen/gatu-app 并公开；TradingView 图表库与早期的 .env 从全部历史里移除（提交号全部改变），图表库改放私有仓库 gatu-chart-library，由 pnpm chart:fetch 按清单核对后安装，四个 CI 工作流加了检出私有仓库的步骤。本地类型检查、图表测试、生产构建与图表产物校验通过；新仓库上的 CI 没有跑过，Actions 关闭，CHART_LIBRARY_TOKEN 未配置。",
   "thread": null,
-  "baseCommit": "5857c410",
-  "commits": ["e8040f4f", "6a6d1066"],
+  "baseCommit": "9ac903f4",
+  "commits": ["0f645dee", "b23cce99"],
   "sources": [
     { "path": "docs/adr/0054-chart-library-outside-the-repository.md" },
     { "path": "docs/adr/0055-single-main-branch-and-release-tags.md" },
@@ -32,7 +32,7 @@
 
 决策与理由在 [ADR 0054](../../adr/0054-chart-library-outside-the-repository.md)。做了的事：
 
-- 用 `git filter-repo` 生成只含 `dev` 与 `main` 的副本，去掉图表库的三处路径与根目录的 `.env`；2,502 个提交，复查两类路径剩余为 0。`dev` 从原 `61505614` 变为 `5857c410`，`main` 从原 `766a8566` 变为 `72bb28d1`。
+- 用 `git filter-repo` 生成只含 `dev` 与 `main` 的副本，去掉图表库的三处路径与根目录的 `.env`；2,502 个提交，复查两类路径剩余为 0。`dev` 从原 `61505614` 变为 `9ac903f4`，`main` 从原 `766a8566` 变为 `875bd2c4`。
 - 新建公开仓库 `haoyu8962-netizen/gatu-app` 并推送这两个分支；推送前关闭了该仓库的 Actions，没有工作流运行过。
 - 新建私有仓库 `haoyu8962-netizen/gatu-chart-library`，内容是原 `dev` 上的图表库（1,163 个文件）加一个说明文件。
 - 新增 `scripts/fetch-chart-library.mjs` 及测试、`chart:fetch` / `chart:check` 两个命令、忽略规则，四个 CI 工作流在安装依赖前检出私有仓库并安装图表库。
@@ -40,8 +40,10 @@
 
 同日运营方问「新仓库有一个 main 主分支就可以了吧」，同意改为单分支后又做了（决策在 [ADR 0055](../../adr/0055-single-main-branch-and-release-tags.md)）：
 
-- 给线上 p41 的提交 `72bb28d1` 补打标签 `cloudfront-2026-11-12-p41`；把 `dev` 合进 `main`（`6a6d1066`，树与 `dev` 相同）并直接推送；PR #1 改为指向 `main`；删除远端 `dev`。
+- 给线上 p41 的提交 `875bd2c4` 补打标签 `cloudfront-2026-11-12-p41`；把 `dev` 合进 `main`（`b23cce99`，树与 `dev` 相同）并直接推送；PR #1 改为指向 `main`；删除远端 `dev`。
 - 删除晋升覆盖脚本与四个工作流里的覆盖作业，`Production Builds` 每次都构建配对开关的两种状态；两份旧记录（`2026-10-31-promotion-ci-coverage`、`2026-11-02-cloudfront-release-p37`）的证据来源里指向已删除脚本的条目随之移除，正文未改；重写 `.claude/rules/git.md` 的分支一节，更新 `AGENTS.md` 末段、工作手册第 3、8 节与 ADR 0016 的状态说明。
+
+复查遗漏时发现公开历史的提交元数据里有运营方的个人邮箱（148 个提交）；经运营方同意第二次重写历史，把它换成 GitHub 匿名邮箱并强制推送。本记录与两份 ADR 里的本仓库提交号已换成最终的提交号。
 
 ## 验证与限制
 
