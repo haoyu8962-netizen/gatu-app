@@ -38,6 +38,7 @@ export type OrderSubmissionFeedbackCode =
 	| "twap-cancel-failed"
 	| "twap-cancel-identity-changed"
 	| "twap-cancel-market-unavailable"
+	| "twap-cancel-not-sent"
 	| "twap-cancel-unconfirmed"
 	| "twap-min-notional"
 	| "twap-minutes-range"
@@ -74,6 +75,7 @@ const messages: Record<OrderSubmissionFeedbackCode, MessageDescriptor> = {
 	"twap-cancel-failed": msg`Failed to terminate TWAP.`,
 	"twap-cancel-identity-changed": msg`The trading account or network changed. Review active TWAP orders before retrying.`,
 	"twap-cancel-market-unavailable": msg`Unable to identify this TWAP market. Refresh market data before retrying.`,
+	"twap-cancel-not-sent": msg`Request not submitted`,
 	"twap-cancel-unconfirmed": msg`TWAP termination was submitted, but its status could not be confirmed. Check active TWAPs before retrying.`,
 	"twap-min-notional": msg`TWAP order value must be at least $${TWAP_MIN_NOTIONAL_USD}.`,
 	"twap-minutes-range": msg`TWAP minutes must be ${TWAP_MINUTES_MIN}-${TWAP_MINUTES_MAX}`,
@@ -234,6 +236,8 @@ export function getDefaultOrderSubmissionFeedbackMessage(feedback: OrderSubmissi
 			return "The trading account or network changed. Review active TWAP orders before retrying.";
 		case "twap-cancel-market-unavailable":
 			return "Unable to identify this TWAP market. Refresh market data before retrying.";
+		case "twap-cancel-not-sent":
+			return "Request not submitted";
 		case "twap-cancel-unconfirmed":
 			return "TWAP termination was submitted, but its status could not be confirmed. Check active TWAPs before retrying.";
 		case "twap-min-notional":

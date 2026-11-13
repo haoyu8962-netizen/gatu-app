@@ -1,5 +1,26 @@
 import { getSdkReconnectionDelayMs } from "@sairn/hl-react/internal/websocket/reliability";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
+
+// The transport is real; only the browser socket under it is a stand-in, so the test never
+// reaches the live endpoint and runs the same with or without a network.
+class OfflineSocket extends EventTarget {
+	static readonly CONNECTING = 0;
+	static readonly OPEN = 1;
+	static readonly CLOSING = 2;
+	static readonly CLOSED = 3;
+	static instances: OfflineSocket[] = [];
+	readyState = OfflineSocket.CONNECTING;
+	binaryType = "blob";
+	bufferedAmount = 0;
+	constructor(readonly url: string) {
+		super();
+		OfflineSocket.instances.push(this);
+	}
+	send() {}
+	close() {
+		this.readyState = OfflineSocket.CLOSED;
+	}
+}
 
 describe("SDK reconnect backoff constant", () => {
 	it("doubles up to a 30s cap", () => {
@@ -16,6 +37,10 @@ describe("SDK reconnect backoff constant", () => {
 });
 
 describe("createWsReconnectTrigger SDK coupling", () => {
+	afterEach(() => {
+		vi.unstubAllGlobals();
+	});
+
 	// Regression guard: if @nktkas/hyperliquid ever hides or renames
 	// WebSocketTransport.socket, the guard in clients.ts silently returns a
 	// no-op. Observable-behavior check: construct a real transport, spy on the
@@ -23,10 +48,15 @@ describe("createWsReconnectTrigger SDK coupling", () => {
 	// was called. Surfaces any SDK breakage in tests rather than silently in
 	// production.
 	it("invokes socket.reconnect() against a real WebSocketTransport", async () => {
+		OfflineSocket.instances = [];
+		vi.stubGlobal("WebSocket", OfflineSocket);
 		const { createWsReconnectTrigger, getWsTransport } = await import("@sairn/hl-react/clients");
 
 		// Retrieve the module-cached transport the trigger will target.
 		const transport = getWsTransport(true);
+		await vi.waitFor(() =>
+			expect(OfflineSocket.instances.map((socket) => socket.url)).toEqual(["wss://api.hyperliquid-testnet.xyz/ws"]),
+		);
 		expect(transport.constructor.name).toBe("WebSocketTransport");
 		const socket = (
 			transport as unknown as {
@@ -43,6 +73,7 @@ describe("createWsReconnectTrigger SDK coupling", () => {
 			expect(spy).toHaveBeenCalledWith();
 		} finally {
 			spy.mockRestore();
+			await (transport as unknown as { close: () => Promise<void> }).close();
 		}
 	});
 });

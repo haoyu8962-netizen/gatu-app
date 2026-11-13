@@ -279,7 +279,7 @@
 
 - `FEATURED_MARKETS`（`src/config/featured-markets.ts`）：每项写 coin、品类、按部署方写法的名称、可选的 `hero` 标记。构建时校验每项仍未下架、分类不变，不满足就构建失败。
 - 快照：`apps/website/src/data/market-structure.json` 由 `pnpm --filter @sairn/website markets:snapshot` 生成并提交，带 `fetchedAt`，不手改；`fetchedAt` 超过 7 天时构建失败。测试断言其中没有 `/0x[0-9a-fA-F]{40}/`。每次发布前刷新快照，并在任务记录里写明 diff。
-- 每日检查：GitHub Actions 每天跑一次 `markets:snapshot --check`（约 1 分钟，每月约 30 分钟，在 3,000 分钟的额度内）。`FEATURED_MARKETS` 或已发布的 Pre-IPO 行下架、改分类时检查失败并通知运营方；下一次构建也会失败。新工作流同步写进 `scripts/ci-workflows.test.mjs`。
+- 每日检查：已于 2026-11-13 移除（[ADR 0056](adr/0056-no-external-requests-from-automation.md)）。原做法是 GitHub Actions 每天跑一次 `markets:snapshot --check`；现在仓库里没有定时工作流，任何工作流都不请求交易所接口。快照在发布官网前由人在本机刷新，`markets:snapshot --check` 只作为本机命令保留；构建里的日期规则不变，所以快照超过 7 天时官网构建仍会失败。
 - 数据体积：接口不压缩（2026-10-25 带 `Accept-Encoding: gzip, br` 实测也没有 `content-encoding`）；主 dex 约 72 KB、xyz 约 61 KB、io 约 7 KB，一轮约 140 KB。实时数据不计入交互前预算，首轮在 `load` 之后才发，稳态约 70 KB/min；手机 ≤120 KB/min、桌面 ≤400 KB/min 的上限保留，超出时拉长间隔。备选：主 dex 改用 `allMids`（权重 2，约 25 KB，但没有 24h 涨跌）；阶段 3 实测只订阅展示币种的 WebSocket `activeAssetCtx`。
 - 2026-10-26 实施修订：02 的行情卡与 03 的市场表共用一个请求计划，覆盖页面上所有市场所在的 dex：主 dex、xyz、io、para、mkts 共 5 个（上表「实时数值」一行原写 3 个）。每次 `metaAndAssetCtxs` 权重 20，60 s 滑动窗口内最多 3 次，所以请求间隔至少 20 s，每个 dex 的刷新周期按下一条的公式为 200 s；统计带的 Live activity 只读同一批响应，不另发请求。
 - 刷新周期：首轮各 dex 同时请求，之后每个 dex 间隔 max(120 s, 请求总数 × 40 s)，请求总数含主 dex；退避重试计入同一个 60 s 滑动窗口，合计 ≤60 权重/分钟（Hyperliquid 单 IP 上限 1200 的 5%），由单测覆盖。（2026-10-26 实施时修订：原定 ≤30 权重/分钟只能每 60 s 发一次请求，行情条要约 2 分钟才出齐数字。）只有持锁的标签页发请求；页面隐藏或区块离屏 30 s 后停止。

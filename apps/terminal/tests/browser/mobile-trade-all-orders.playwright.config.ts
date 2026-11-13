@@ -1,5 +1,6 @@
 import { fileURLToPath } from "node:url";
 import { defineConfig } from "@playwright/test";
+import { LOCAL_HOSTS_ONLY_ARGS } from "./local-hosts-only";
 export default defineConfig({
 	testDir: fileURLToPath(new URL(".", import.meta.url)),
 	testMatch: ["mobile-trade-all-orders.pw.ts", "desktop-order-entry-layout.pw.ts", "reduce-only.pw.ts"],
@@ -8,6 +9,7 @@ export default defineConfig({
 	fullyParallel: false,
 	reporter: "line",
 	use: {
+		launchOptions: { args: LOCAL_HOSTS_ONLY_ARGS },
 		baseURL: "http://127.0.0.1:4183",
 		browserName: "chromium",
 		channel: process.env.CI ? undefined : "chrome",

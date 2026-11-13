@@ -41,15 +41,17 @@ export type AvailableOrderAssetLockResult<T> =
 	| { supported: false };
 export type OrderAssetReservationState = "clear" | "conflict" | "unavailable";
 
+/** `signal` abandons the wait for a lock not yet granted; the request then rejects with its abort reason. */
 export async function runWithOrderAssetLocks<T>(
 	identity: OrderAssetLockIdentity,
 	task: (lease: OrderAssetLockLease) => Promise<T>,
+	signal?: AbortSignal,
 ): Promise<OrderAssetLockResult<T>> {
 	const lockManager = typeof navigator === "undefined" ? undefined : navigator.locks;
 	if (!lockManager || typeof lockManager.request !== "function") return { supported: false };
 
 	const normalizedIdentity = normalizeIdentity(identity);
-	const value = await acquireLockAtIndex(lockManager, normalizedIdentity, 0, async () => {
+	const value = await acquireLockAtIndex(lockManager, normalizedIdentity, 0, signal, async () => {
 		const lease: OrderAssetLockLease = normalizedIdentity;
 		activeLeases.add(lease);
 		try {
@@ -187,12 +189,15 @@ async function acquireLockAtIndex<T>(
 	lockManager: LockManager,
 	identity: OrderAssetLockIdentity,
 	index: number,
+	signal: AbortSignal | undefined,
 	task: () => Promise<T>,
 ): Promise<T> {
 	const assetId = identity.assetIds[index];
 	if (assetId === undefined) return task();
-	return lockManager.request(getOrderAssetLockName(identity, assetId), { mode: "exclusive" }, () =>
-		acquireLockAtIndex(lockManager, identity, index + 1, task),
+	return lockManager.request(
+		getOrderAssetLockName(identity, assetId),
+		signal ? { mode: "exclusive", signal } : { mode: "exclusive" },
+		() => acquireLockAtIndex(lockManager, identity, index + 1, signal, task),
 	);
 }
 

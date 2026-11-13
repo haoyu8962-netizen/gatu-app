@@ -2359,6 +2359,7 @@ msgid "Copied!"
 msgstr "कॉपी हो गया!"
 
 #: src/components/api-wallet/api-wallet-copy-button.tsx
+#: src/components/trade/components/global-settings-modal.tsx
 msgid "Copy"
 msgstr "कॉपी करें"
 
@@ -2378,6 +2379,10 @@ msgstr "पता कॉपी करें"
 #: src/components/trade/tradebox/deposit/funding-address-card.tsx
 msgid "Copy deposit address"
 msgstr "जमा पता कॉपी करें"
+
+#: src/components/trade/components/global-settings-modal.tsx
+msgid "Copy diagnostics"
+msgstr "निदान जानकारी कॉपी करें"
 
 #: src/components/trade/positions/position-pnl-share-modal.tsx
 msgid "Copy link"
@@ -2850,6 +2855,10 @@ msgstr "गंतव्य"
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Destination address"
 msgstr "गंतव्य पता"
+
+#: src/components/trade/components/global-settings-modal.tsx
+msgid "Diagnostics"
+msgstr "निदान जानकारी"
 
 #: src/components/funds-action/funds-action-recovery-host.tsx
 #: src/components/historical-orders/historical-orders-page.tsx
@@ -7363,6 +7372,7 @@ msgid "Request not confirmed"
 msgstr "अनुरोध की पुष्टि नहीं हुई"
 
 #: src/components/staking/domain/staking-action-feedback.ts
+#: src/lib/trade/order-submission-feedback.ts
 msgid "Request not submitted"
 msgstr "अनुरोध सबमिट नहीं हुआ"
 

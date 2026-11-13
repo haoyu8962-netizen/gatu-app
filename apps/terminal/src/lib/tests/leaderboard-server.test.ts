@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import Big from "big.js";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createLeaderboardApiHandler, LEADERBOARD_API_CACHE_POLICY } from "../leaderboard/leaderboard-server";
@@ -7,6 +9,7 @@ const TRADER_B = "0x2222222222222222222222222222222222222222";
 const VAULT = "0x3333333333333333333333333333333333333333";
 const GENERATED_AT = 1_700_000_000_000;
 const LAST_MODIFIED = "Tue, 14 Nov 2023 22:13:20 GMT";
+const DISTRIBUTION_CONFIG_PATH = resolve(__dirname, "../../../../../deploy/cloudfront/distribution-config.mjs");
 
 function rawLeaderboardRow(address: string, displayName: string, pnl: string) {
 	return {
@@ -214,15 +217,28 @@ describe("leaderboard API server", () => {
 
 	it("aborts an upstream refresh after the production timeout", async () => {
 		vi.useFakeTimers();
-		const fetchImplementation = vi.fn(async () => new Promise<Response>(() => undefined));
+		const signals: AbortSignal[] = [];
+		const fetchImplementation = vi.fn(async (_url: string, init: RequestInit) => {
+			if (init.signal) signals.push(init.signal);
+			return new Promise<Response>(() => undefined);
+		});
 		const handler = createLeaderboardApiHandler({ fetch: fetchImplementation, now: () => GENERATED_AT });
 
-		const pendingResponse = handler(request());
-		await vi.advanceTimersByTimeAsync(LEADERBOARD_API_CACHE_POLICY.upstreamTimeoutMs);
+		let settled = false;
+		const pendingResponse = handler(request()).finally(() => {
+			settled = true;
+		});
+		await vi.advanceTimersByTimeAsync(LEADERBOARD_API_CACHE_POLICY.upstreamTimeoutMs - 1);
+		expect(settled).toBe(false);
+		await vi.advanceTimersByTimeAsync(1);
 		const response = await pendingResponse;
 
 		expect(response.status).toBe(503);
+		expect(response.headers.get("cache-control")).toBe("no-store");
+		expect(response.headers.get("retry-after")).toBe("30");
 		expect(await response.json()).toEqual({ error: "temporarily_unavailable" });
+		expect(signals).toHaveLength(2);
+		expect(signals.every((signal) => signal.aborted)).toBe(true);
 	});
 
 	it("applies failure cooldown to cold serial and concurrent requests", async () => {
@@ -295,6 +311,57 @@ describe("leaderboard API server inside a lambda invocation", () => {
 		expect(response.headers.get("warning")).toBeNull();
 		expect((await response.json()).stale).toBe(false);
 		expect(fetchImplementation).toHaveBeenCalledTimes(4);
+	});
+
+	it("answers with the stale snapshot by the upstream deadline when the refresh hangs", async () => {
+		let now = GENERATED_AT;
+		let hang = false;
+		const signals: AbortSignal[] = [];
+		const fetchImplementation = vi.fn(async (url: string, init: RequestInit) => {
+			if (hang) {
+				if (init.signal) signals.push(init.signal);
+				return new Promise<Response>(() => undefined);
+			}
+			return url.endsWith("/leaderboard")
+				? jsonResponse(leaderboardFixture(), '"leaderboard-v1"')
+				: jsonResponse(vaultFixture(), '"vaults-v1"');
+		});
+		const handler = createLeaderboardApiHandler({
+			fetch: fetchImplementation,
+			now: () => now,
+			awaitStaleRefresh: true,
+		});
+		await handler(request());
+
+		vi.useFakeTimers();
+		hang = true;
+		now += LEADERBOARD_API_CACHE_POLICY.freshForMs + 1;
+		let settled = false;
+		const pendingResponse = handler(request()).finally(() => {
+			settled = true;
+		});
+		await vi.advanceTimersByTimeAsync(LEADERBOARD_API_CACHE_POLICY.upstreamTimeoutMs - 1);
+		expect(settled).toBe(false);
+		await vi.advanceTimersByTimeAsync(1);
+		const response = await pendingResponse;
+
+		expect(response.status).toBe(200);
+		expect(response.headers.get("cache-control")).toBe("public, max-age=0, s-maxage=30, stale-if-error=1800");
+		expect(response.headers.get("warning")).toContain("Response is stale");
+		expect(response.headers.get("last-modified")).toBe(new Date(GENERATED_AT).toUTCString());
+		expect(await response.json()).toMatchObject({ stale: true, generatedAt: GENERATED_AT, totalRows: 2 });
+		expect(signals).toHaveLength(2);
+		expect(signals.every((signal) => signal.aborted)).toBe(true);
+	});
+
+	it("leaves at least half of the API origin's read timeout after the upstream deadline", () => {
+		// The Lambda function timeout lives in AWS (ADR 0006 sets it to 30 s, equal to this read timeout).
+		const match = /OriginReadTimeout:\s*(\d+)/.exec(readFileSync(DISTRIBUTION_CONFIG_PATH, "utf8"));
+		if (!match?.[1]) throw new Error("Missing the API origin read timeout");
+		const originReadTimeoutMs = Number(match[1]) * 1_000;
+
+		expect(originReadTimeoutMs).toBe(30_000);
+		expect(LEADERBOARD_API_CACHE_POLICY.upstreamTimeoutMs * 2).toBeLessThanOrEqual(originReadTimeoutMs);
 	});
 
 	it("falls back to the bounded stale snapshot when the awaited refresh fails", async () => {

@@ -453,4 +453,26 @@ describe("exchange clients", () => {
 		expect(exchangeRequests[0]?.payload).not.toHaveProperty("expiresAfter");
 		expect(http.requests.some((request) => request.endpoint === "info")).toBe(false);
 	});
+
+	it("judges a stored nonce against the exchange clock once the client has a sample", async () => {
+		vi.resetModules();
+		const { createExchangeClient } = await import("@sairn/hl-react/clients");
+		const owner = privateKeyToAccount(`0x${"0".repeat(63)}9`);
+		const nonceKey = `hyperliquid_exchange_nonce_Mainnet_${owner.address.toLowerCase()}`;
+		const client = createExchangeClient(owner, false);
+		await client.cancel({ cancels: [{ a: 0, o: 1 }] });
+		expect(http.requests.some((request) => request.endpoint === "info" && !request.testnet)).toBe(true);
+
+		const now = Date.now();
+		const oneDayMs = 24 * 60 * 60 * 1_000;
+		const beyondExchangeWindow = now + http.serverOffset + oneDayMs + 5_000;
+		localStorage.setItem(nonceKey, JSON.stringify({ version: 1, nonce: beyondExchangeWindow }));
+		http.requests = [];
+
+		await client.cancel({ cancels: [{ a: 0, o: 2 }] });
+
+		const [request] = http.requests.filter((entry) => entry.endpoint === "exchange");
+		expect(request?.payload.nonce).toBe(now);
+		expect(JSON.parse(localStorage.getItem(nonceKey) ?? "{}")).toEqual({ version: 1, nonce: now });
+	});
 });

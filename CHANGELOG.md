@@ -8,6 +8,14 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Changed
 
+- The compact order book returns to twenty levels on its own after it fell back to five.
+- Terminating a TWAP while another action on the same market is in progress now waits up to 15
+  seconds instead of failing at once.
+- Favorites follow other tabs, and two tabs no longer overwrite each other's favorites; each tab keeps
+  its own selected market.
+- CI runs every terminal unit test on each pull request. The daily website market check is removed: no
+  workflow runs on a schedule or calls a third-party API (ADR 0056).
+
 - The repository moved to `haoyu8962-netizen/sairn` and is public. The licensed chart library is
   no longer tracked: `pnpm chart:fetch` installs it from a private repository and verifies it against
   its manifest (ADR 0054). Commit hashes from before 2026-11-13 refer to the previous repository.
@@ -16,6 +24,10 @@ changes, not evidence that a build has been deployed or accepted on real devices
   (ADR 0055). Every production build run now builds both states of the mobile pairing switch.
 
 ### Added
+
+- Settings → About → Diagnostics copies a local record of the last ten startups (timings and counts)
+  and connection recoveries, to help explain a blank screen or a long wait for data. Nothing is sent
+  anywhere and it contains no addresses or account data.
 
 - Japanese interface language (日本語) in the language menu, including the TradingView chart and
   Japanese dates; numbers keep following the separate number-format setting.

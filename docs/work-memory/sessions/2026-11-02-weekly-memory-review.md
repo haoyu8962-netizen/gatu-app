@@ -57,9 +57,6 @@
       "path": "docs/adr/0045-l1-action-expiry.md"
     },
     {
-      "path": ".github/workflows/website-markets-check.yml"
-    },
-    {
       "path": "apps/website/src/config/deployers.ts"
     },
     {

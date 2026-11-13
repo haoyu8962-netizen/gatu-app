@@ -3,6 +3,7 @@
 import { createHash } from "node:crypto";
 import { i18n, type Messages } from "@lingui/core";
 import { ApiRequestError, HttpRequestError } from "@nktkas/hyperliquid";
+import { EXCHANGE_ACTION_START_DEADLINE_MS } from "@sairn/hl-react/internal/exchange/request-scheduler";
 import { act, createElement, Fragment } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -32,6 +33,7 @@ const MARKET_UNAVAILABLE_MESSAGE_AR = "تعذر تحديد سوق TWAP هذا. �
 
 const CANCEL_FAILED_MESSAGE = "Failed to terminate TWAP.";
 const CANCEL_FAILED_MESSAGE_AR = "تعذر إنهاء TWAP.";
+const NOT_SENT_IN_TIME_MESSAGE = "The checks before this request took too long. Nothing was signed or sent. Try again.";
 
 function getMessageId(message: string): string {
 	return createHash("sha256").update(`${message}\x1f`).digest("base64").slice(0, 6);
@@ -116,6 +118,68 @@ function installExclusiveLockManager(): void {
 	Object.defineProperty(window.navigator, "locks", { configurable: true, value: manager });
 }
 
+function installQueueingLockManager(): { abandonedWaits: () => number } {
+	const held = new Set<string>();
+	const waiters = new Map<string, Array<() => void>>();
+	let abandoned = 0;
+	const manager = {
+		async request<T>(
+			name: string,
+			options: LockOptions,
+			callback: (lock: Lock | null) => T | PromiseLike<T>,
+		): Promise<T> {
+			if (held.has(name)) {
+				if (options.ifAvailable) return callback(null);
+				await new Promise<void>((resolve, reject) => {
+					const signal = options.signal;
+					function grant() {
+						signal?.removeEventListener("abort", abandon);
+						resolve();
+					}
+					function abandon() {
+						abandoned += 1;
+						waiters.set(
+							name,
+							(waiters.get(name) ?? []).filter((waiter) => waiter !== grant),
+						);
+						reject(new DOMException("The lock request was aborted.", "AbortError"));
+					}
+					signal?.addEventListener("abort", abandon, { once: true });
+					waiters.set(name, [...(waiters.get(name) ?? []), grant]);
+				});
+			}
+			held.add(name);
+			try {
+				return await callback({ name, mode: "exclusive" } as Lock);
+			} finally {
+				const next = waiters.get(name)?.shift();
+				if (next) next();
+				else held.delete(name);
+			}
+		},
+	} as unknown as LockManager;
+	Object.defineProperty(window.navigator, "locks", { configurable: true, value: manager });
+	return { abandonedWaits: () => abandoned };
+}
+
+function holdAssetLock(): { release: () => Promise<void> } {
+	let open = () => {};
+	const gate = new Promise<void>((resolve) => {
+		open = resolve;
+	});
+	const holder = runWithOrderAssetLocks({ env: "Mainnet", owner: USER, assetIds: [7] }, () => gate);
+	return {
+		release: async () => {
+			open();
+			await holder;
+		},
+	};
+}
+
+async function flushMicrotasks(): Promise<void> {
+	for (let index = 0; index < 10; index += 1) await Promise.resolve();
+}
+
 describe("useTwapCancel", () => {
 	let container: HTMLDivElement;
 	let root: Root;
@@ -147,6 +211,7 @@ describe("useTwapCancel", () => {
 	});
 
 	afterEach(() => {
+		vi.useRealTimers();
 		act(() => {
 			for (const item of queueItems) removeOrderQueueItem(item.id);
 			root.unmount();
@@ -430,6 +495,235 @@ describe("useTwapCancel", () => {
 		const item = getOrderQueueItem(`pending-trading-action:${action.id}`);
 		expect(item?.status).toBe("failed");
 		expect(item?.message ? i18n._(item.message) : null).toBe("TWAP finished before it could be terminated.");
+	});
+
+	it("queues a termination behind a held asset lock and sends it once after release", async () => {
+		installQueueingLockManager();
+		const lock = holdAssetLock();
+		mocks.mutateAsync.mockResolvedValue({
+			status: "ok",
+			response: { type: "twapCancel", data: { status: "success" } },
+		});
+
+		let cancellation: Promise<void> | undefined;
+		await act(async () => {
+			cancellation = hookValue?.cancelTwap("BTC", 42);
+			await flushMicrotasks();
+		});
+		await act(async () => {
+			await hookValue?.cancelTwap("BTC", 42);
+			await hookValue?.cancelTwap("BTC", 42);
+			await flushMicrotasks();
+		});
+
+		expect(mocks.mutateAsync).not.toHaveBeenCalled();
+		expect(getPendingTradingActionSnapshot().twapCancellations).toHaveLength(1);
+		expect(getPendingTradingActionSnapshot().twapCancellations[0]).toMatchObject({ twapId: 42, phase: "submitting" });
+		expect(hookValue?.cancellingTwapId).toBe(42);
+		expect(hookValue?.feedback).toBeNull();
+		expect(queueItems.at(-1)).toMatchObject({ owner: USER, env: "Mainnet", status: "pending" });
+		expect(mocks.errorToast).not.toHaveBeenCalled();
+
+		await act(async () => {
+			await lock.release();
+			await cancellation;
+		});
+
+		expect(mocks.mutateAsync).toHaveBeenCalledOnce();
+		expect(mocks.mutateAsync).toHaveBeenCalledWith({ a: 7, t: 42 });
+		expect(getPendingTradingActionSnapshot().twapCancellations[0]).toMatchObject({ phase: "awaiting", accepted: true });
+		expect(hookValue?.feedback).toBeNull();
+	});
+
+	it.each([
+		{ name: "another wallet", changes: [{ clientKey: "0x2222222222222222222222222222222222222222" }] },
+		{ name: "another network", changes: [{ env: "Testnet" }] },
+		{ name: "a disconnect", changes: [{ clientKey: "disconnected" }] },
+		{
+			name: "another wallet and back",
+			changes: [{ clientKey: "0x2222222222222222222222222222222222222222" }, { clientKey: USER }],
+		},
+	] as const)("voids a queued termination after $name and never sends it", async ({ changes }) => {
+		installQueueingLockManager();
+		const lock = holdAssetLock();
+
+		let cancellation: Promise<void> | undefined;
+		await act(async () => {
+			cancellation = hookValue?.cancelTwap("BTC", 42);
+			await flushMicrotasks();
+		});
+		const action = getPendingTradingActionSnapshot().twapCancellations[0];
+		if (!action) throw new Error("Expected a queued TWAP termination");
+
+		for (const change of changes) {
+			Object.assign(mocks, change);
+			act(() => root.render(createElement(Probe)));
+		}
+
+		expect(getPendingTradingActionSnapshot().twapCancellations).toEqual([]);
+		expect(getOrderQueueItem(`pending-trading-action:${action.id}`)).toMatchObject({
+			owner: USER,
+			env: "Mainnet",
+			status: "failed",
+			error: { kind: "order-submission", code: "twap-cancel-identity-changed" },
+		});
+
+		await act(async () => {
+			await lock.release();
+			await cancellation;
+		});
+
+		expect(mocks.mutateAsync).not.toHaveBeenCalled();
+		expect(mocks.errorToast).not.toHaveBeenCalled();
+		expect(getPendingTradingActionSnapshot().twapCancellations).toEqual([]);
+	});
+
+	it("voids a queued termination as not sent when its surface unmounts", async () => {
+		const lockManager = installQueueingLockManager();
+		const lock = holdAssetLock();
+
+		let cancellation: Promise<void> | undefined;
+		await act(async () => {
+			cancellation = hookValue?.cancelTwap("BTC", 42);
+			await flushMicrotasks();
+		});
+		const action = getPendingTradingActionSnapshot().twapCancellations[0];
+		if (!action) throw new Error("Expected a queued TWAP termination");
+
+		act(() => root.render(null));
+		await act(flushMicrotasks);
+
+		const voided = getOrderQueueItem(`pending-trading-action:${action.id}`);
+		expect(getPendingTradingActionSnapshot().twapCancellations).toEqual([]);
+		expect(voided).toMatchObject({
+			status: "failed",
+			error: { kind: "order-submission", code: "twap-cancel-not-sent" },
+		});
+		expect(lockManager.abandonedWaits()).toBe(1);
+
+		await act(async () => {
+			await lock.release();
+			await cancellation;
+		});
+
+		expect(mocks.mutateAsync).not.toHaveBeenCalled();
+		expect(getOrderQueueItem(`pending-trading-action:${action.id}`)).toEqual(voided);
+	});
+
+	it("gives up a queued termination at the lock-wait limit without sending it", async () => {
+		vi.useFakeTimers();
+		const lockManager = installQueueingLockManager();
+		const lock = holdAssetLock();
+
+		let cancellation: Promise<void> | undefined;
+		await act(async () => {
+			cancellation = hookValue?.cancelTwap("BTC", 42);
+			await flushMicrotasks();
+		});
+		const action = getPendingTradingActionSnapshot().twapCancellations[0];
+		if (!action) throw new Error("Expected a queued TWAP termination");
+
+		await act(() => vi.advanceTimersByTimeAsync(EXCHANGE_ACTION_START_DEADLINE_MS - 1));
+		expect(getPendingTradingActionSnapshot().twapCancellations[0]).toMatchObject({
+			id: action.id,
+			phase: "submitting",
+		});
+		expect(hookValue?.feedback).toBeNull();
+
+		await act(async () => {
+			await vi.advanceTimersByTimeAsync(1);
+			await cancellation;
+		});
+
+		expect(getPendingTradingActionSnapshot().twapCancellations).toEqual([]);
+		expect(hookValue?.cancellingTwapId).toBeNull();
+		expect(hookValue?.feedback).toEqual({ tone: "error", message: NOT_SENT_IN_TIME_MESSAGE });
+		const item = getOrderQueueItem(`pending-trading-action:${action.id}`);
+		expect(item?.status).toBe("failed");
+		expect(lockManager.abandonedWaits()).toBe(1);
+
+		await act(() => lock.release());
+		expect(mocks.mutateAsync).not.toHaveBeenCalled();
+		expect(getOrderQueueItem(`pending-trading-action:${action.id}`)).toEqual(item);
+	});
+
+	it("does not send a termination whose lock arrives after the limit while its timer was held back", async () => {
+		vi.useFakeTimers();
+		installQueueingLockManager();
+		const lock = holdAssetLock();
+
+		let cancellation: Promise<void> | undefined;
+		await act(async () => {
+			cancellation = hookValue?.cancelTwap("BTC", 42);
+			await flushMicrotasks();
+		});
+		vi.setSystemTime(Date.now() + EXCHANGE_ACTION_START_DEADLINE_MS);
+		await act(async () => {
+			await lock.release();
+			await cancellation;
+		});
+
+		expect(mocks.mutateAsync).not.toHaveBeenCalled();
+		expect(getPendingTradingActionSnapshot().twapCancellations).toEqual([]);
+		expect(hookValue?.feedback).toEqual({ tone: "error", message: NOT_SENT_IN_TIME_MESSAGE });
+	});
+
+	it("sends a queued termination once when the lock frees just inside the limit", async () => {
+		vi.useFakeTimers();
+		installQueueingLockManager();
+		const lock = holdAssetLock();
+		mocks.mutateAsync.mockResolvedValue({
+			status: "ok",
+			response: { type: "twapCancel", data: { status: "success" } },
+		});
+
+		let cancellation: Promise<void> | undefined;
+		await act(async () => {
+			cancellation = hookValue?.cancelTwap("BTC", 42);
+			await flushMicrotasks();
+		});
+		await act(() => vi.advanceTimersByTimeAsync(EXCHANGE_ACTION_START_DEADLINE_MS - 1));
+		await act(async () => {
+			await lock.release();
+			await cancellation;
+		});
+		await act(() => vi.advanceTimersByTimeAsync(EXCHANGE_ACTION_START_DEADLINE_MS));
+
+		expect(mocks.mutateAsync).toHaveBeenCalledOnce();
+		expect(mocks.mutateAsync).toHaveBeenCalledWith({ a: 7, t: 42 });
+		expect(getPendingTradingActionSnapshot().twapCancellations[0]).toMatchObject({ phase: "awaiting", accepted: true });
+		expect(queueItems.at(-1)?.status).not.toBe("failed");
+		expect(hookValue?.feedback).toBeNull();
+	});
+
+	it("lets two queued terminations on one asset each pass their own execution guard", async () => {
+		installQueueingLockManager();
+		const lock = holdAssetLock();
+		mocks.mutateAsync.mockResolvedValue({
+			status: "ok",
+			response: { type: "twapCancel", data: { status: "success" } },
+		});
+
+		let cancellations: Array<Promise<void> | undefined> = [];
+		await act(async () => {
+			cancellations = [hookValue?.cancelTwap("BTC", 42), hookValue?.cancelTwap("BTC", 43)];
+			await flushMicrotasks();
+		});
+		expect(getPendingTradingActionSnapshot().twapCancellations).toHaveLength(2);
+
+		await act(async () => {
+			await lock.release();
+			await Promise.all(cancellations);
+		});
+
+		expect(mocks.mutateAsync).toHaveBeenCalledTimes(2);
+		expect(mocks.mutateAsync).toHaveBeenNthCalledWith(1, { a: 7, t: 42 });
+		expect(mocks.mutateAsync).toHaveBeenNthCalledWith(2, { a: 7, t: 43 });
+		expect(getPendingTradingActionSnapshot().twapCancellations.map((action) => action.phase)).toEqual([
+			"awaiting",
+			"awaiting",
+		]);
+		expect(hookValue?.feedback).toBeNull();
 	});
 
 	it("keeps the active TWAP asset reservation until a fresh snapshot confirms cancellation", async () => {

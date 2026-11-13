@@ -433,6 +433,35 @@ The sixth round (commit `4af147fd`) changed one classification function in the d
 3,286,638 in total (+16), 1,626,663 static trade startup, 117,769 mobile and 201,070 desktop, with the desktop runtime
 increment 918 bytes under its allowance. Later commits on the branch change tests and documents only.
 
+## Third-wave fixes total, static-startup and trade-page re-baseline (2026-11-13)
+
+The third wave (branch `fix/third-wave` of `haoyu8962-netizen/sairn`, on `main` `cde6f75b`) adds the local
+startup diagnostics (the milestone recorder in the entry chunk, a lazily loaded recorder and buffer), favourites
+merging across windows in the market store, the retry of the incremental `l2` feed after a fallback and the
+queued TWAP termination.
+
+Same setup as the sections below (fixed identity, Node 22.15.0, pairing off, no `.env.local`). The base is a
+build of `main` in a clean clone, the head is this branch's working tree after its last code change.
+
+| Metric | `main` | Third wave | Change |
+| --- | ---: | ---: | ---: |
+| All client JS + CSS | 3,384,366 | 3,391,159 | +6,793 |
+| Static trade startup | 1,659,207 | 1,662,706 | +3,499 |
+| Mobile runtime increment | 119,726 | 119,745 | +19 |
+| Desktop runtime increment | 204,621 | 204,663 | +42 |
+| `trade-terminal-page` | 127,815 | 128,558 | +743 |
+
+Per-chunk comparison of an earlier build of the same branch (before the review fixes) against `main`, chunks
+that moved by more than 150 bytes: `vendor-tanstack-router` +2,072 (the application entry lives there),
+`diagnostics-recorder` +1,680 and `diagnostics-buffer` +820 (new, loaded after the reveal),
+`trade-terminal-page` +745, `global-settings-modal` +517, `use-account-abstraction-control` +293.
+
+Before the change the build exceeded the static-startup allowance by 1,334 and the `trade-terminal-page`
+allowance by 392. Baselines raised by the measured growth, allowances unchanged: all client JS + CSS to 3,388,063,
+static trade startup to 1,654,871, `trade-terminal-page` to 124,909. Room left in the pairing-off protocol build
+stays what it was on `main`: 6,904 for the total, 2,165 for static trade startup and 351 for
+`trade-terminal-page`; 835 for the mobile runtime increment, which was not raised.
+
 ## Second-wave defect fixes total and static-startup re-baseline (2026-11-12)
 
 The second wave of fixes from the same review (branch `claude/second-wave-fixes`, on top of the first-wave
