@@ -70,9 +70,6 @@
       "path": "docs/trading-toolbar-redesign.md"
     },
     {
-      "path": ".github/workflows/website-markets-check.yml"
-    },
-    {
       "path": "apps/website/src/config/deployers.ts"
     },
     {
